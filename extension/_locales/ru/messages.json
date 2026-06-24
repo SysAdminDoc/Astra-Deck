@@ -273,1924 +273,1924 @@
     "description": "The extension name displayed in the browser UI."
   },
   "feature_abHide_ask_desc": {
-    "message": "Hide Ask or AI button below videos"
+    "message": "Скрыть кнопку «Спросить» или AI под видео"
   },
   "feature_abHide_ask_name": {
-    "message": "Ask/AI Button"
+    "message": "Кнопка «Спросить/AI»"
   },
   "feature_abHide_clip_desc": {
-    "message": "Hide clip button below videos"
+    "message": "Скрыть кнопку «Клип» под видео"
   },
   "feature_abHide_clip_name": {
-    "message": "Clip Button"
+    "message": "Кнопка «Клип»"
   },
   "feature_abHide_like_desc": {
-    "message": "Hide like button below videos"
+    "message": "Скрыть кнопку «Нравится» под видео"
   },
   "feature_abHide_like_name": {
-    "message": "Like Button"
+    "message": "Кнопка «Нравится»"
   },
   "feature_abHide_moreActions_desc": {
-    "message": "Hide more actions button below videos"
+    "message": "Скрыть кнопку «Ещё» под видео"
   },
   "feature_abHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "Ещё (...)"
   },
   "feature_abHide_save_desc": {
-    "message": "Hide save button below videos"
+    "message": "Скрыть кнопку «Сохранить» под видео"
   },
   "feature_abHide_save_name": {
-    "message": "Save Button"
+    "message": "Кнопка «Сохранить»"
   },
   "feature_abHide_share_desc": {
-    "message": "Hide share button below videos"
+    "message": "Скрыть кнопку «Поделиться» под видео"
   },
   "feature_abHide_share_name": {
-    "message": "Share Button"
+    "message": "Кнопка «Поделиться»"
   },
   "feature_abHide_sponsor_desc": {
-    "message": "Hide join/sponsor button below videos"
+    "message": "Скрыть кнопку «Спонсировать/Вступить» под видео"
   },
   "feature_abHide_sponsor_name": {
-    "message": "Join/Sponsor Button"
+    "message": "Кнопка «Вступить/Спонсировать»"
   },
   "feature_abHide_thanks_desc": {
-    "message": "Hide thanks button below videos"
+    "message": "Скрыть кнопку «Спасибо» под видео"
   },
   "feature_abHide_thanks_name": {
-    "message": "Thanks Button"
+    "message": "Кнопка «Спасибо»"
   },
   "feature_abLoop_desc": {
-    "message": "Set two points on the video timeline and loop between them. Visual markers on the progress bar."
+    "message": "Задайте две точки на временной шкале видео и зациклите воспроизведение между ними. Визуальные маркеры на полосе прогресса."
   },
   "feature_abLoop_name": {
-    "message": "A-B Loop"
+    "message": "Цикл A-B"
   },
   "feature_adaptiveLiveLayout_desc": {
-    "message": "Automatically adjust layout for live stream chat side-by-side"
+    "message": "Автоматическая подстройка макета для отображения чата прямого эфира рядом с видео"
   },
   "feature_adaptiveLiveLayout_name": {
-    "message": "Adaptive Live Layout"
+    "message": "Адаптивный макет прямого эфира"
   },
   "feature_ageRestrictionBypass_desc": {
-    "message": "Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required."
+    "message": "Обход проверки возраста через получение данных видео из встроенного эндпоинта YouTube. Вход в аккаунт не требуется."
   },
   "feature_ageRestrictionBypass_name": {
-    "message": "Age Restriction Bypass"
+    "message": "Обход возрастных ограничений"
   },
   "feature_aiVideoSummary_desc": {
-    "message": "Bring-your-own-key LLM summary of the current video transcript (OpenAI/Anthropic/Gemini/Ollama)"
+    "message": "Краткое изложение транскрипта текущего видео с помощью LLM с вашим ключом (OpenAI/Anthropic/Gemini/Ollama)"
   },
   "feature_aiVideoSummary_name": {
-    "message": "AI Video Summary"
+    "message": "AI-резюме видео"
   },
   "feature_alwaysShowProgressBar_desc": {
-    "message": "Keep the video progress bar visible at all times instead of hiding on idle"
+    "message": "Полоса прогресса видео всегда видна, а не скрывается при бездействии"
   },
   "feature_alwaysShowProgressBar_name": {
-    "message": "Always Show Progress Bar"
+    "message": "Всегда показывать полосу прогресса"
   },
   "feature_antiTranslate_desc": {
-    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
+    "message": "Запретить YouTube автоматически переводить названия и описания видео на ваш язык. Восстанавливает оригинальный текст на миниатюрах и странице просмотра."
   },
   "feature_antiTranslate_name": {
-    "message": "Anti-Translate (Original Titles + Descriptions)"
+    "message": "Антиперевод (оригинальные заголовки + описания)"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
+    "message": "Когда YouTube подставляет автоматически дублированную аудиодорожку, попытаться переключиться на оригинальную. Наилучшие усилия — работает через movie_player getAvailableAudioTracks() / setAudioTrack() при наличии."
   },
   "feature_antiTranslateAudioTrack_name": {
-    "message": "Anti-Translate Audio Track"
+    "message": "Антиперевод аудиодорожки"
   },
   "feature_antiTranslateTranscript_desc": {
-    "message": "Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available."
+    "message": "Убирает параметры перевода из URL транскрипта, чтобы YouTube показывал субтитры на оригинальном языке. Наилучшие усилия; работает при доступности оригинальной дорожки."
   },
   "feature_antiTranslateTranscript_name": {
-    "message": "Anti-Translate Transcript"
+    "message": "Антиперевод транскрипта"
   },
   "feature_astraContextMenu_desc": {
-    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
+    "message": "Правый клик по плееру или карточке ленты открывает действия Astra: скрыть канал, копировать URL видео, копировать ссылку с таймкодом, открыть транскрипт. По умолчанию выключено — добавляет обработчик контекстного меню; не блокирует стандартное меню YouTube."
   },
   "feature_astraContextMenu_name": {
-    "message": "Astra Context Menu"
+    "message": "Контекстное меню Astra"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu."
+    "message": "Сохраняет предпочтительный язык аудио без автоматического открытия настроек YouTube. YouTube перезапускает воспроизведение при переключении аудиодорожки через встроенное меню."
   },
   "feature_audioTrackLanguage_name": {
-    "message": "Preferred Audio Track Language"
+    "message": "Предпочтительный язык аудиодорожки"
   },
   "feature_autoClosePopups_desc": {
-    "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
+    "message": "Автоматически закрывает согласие на cookie, опросы и другие всплывающие окна YouTube"
   },
   "feature_autoClosePopups_name": {
-    "message": "Auto-Close Popups"
+    "message": "Автозакрытие всплывающих окон"
   },
   "feature_autoDismissContentWarning_desc": {
-    "message": "Automatically clicks \"I understand and wish to proceed\" on videos with content warnings"
+    "message": "Автоматически нажимает «Я понимаю и хочу продолжить» на видео с предупреждениями о контенте"
   },
   "feature_autoDismissContentWarning_name": {
-    "message": "Auto-Dismiss Content Warnings"
+    "message": "Автоскрытие предупреждений о контенте"
   },
   "feature_autoDismissStillWatching_desc": {
-    "message": "Automatically clicks the \"Continue Watching\" button when YouTube pauses playback for inactivity"
+    "message": "Автоматически нажимает кнопку «Продолжить просмотр», когда YouTube ставит воспроизведение на паузу из-за бездействия"
   },
   "feature_autoDismissStillWatching_name": {
-    "message": "Auto-Dismiss \"Still Watching?\""
+    "message": "Автоскрытие «Вы ещё смотрите?»"
   },
   "feature_autoDownloadOnVisit_desc": {
-    "message": "Automatically start download when visiting a video page"
+    "message": "Автоматически начинать загрузку при посещении страницы видео"
   },
   "feature_autoDownloadOnVisit_name": {
-    "message": "Auto-Download Videos"
+    "message": "Автозагрузка видео"
   },
   "feature_autoExpandComments_desc": {
-    "message": "Automatically expand truncated comments so full text is always visible"
+    "message": "Автоматически разворачивать обрезанные комментарии, чтобы весь текст был виден"
   },
   "feature_autoExpandComments_name": {
-    "message": "Auto-Expand Comments"
+    "message": "Авторазворот комментариев"
   },
   "feature_autoExpandDescription_desc": {
-    "message": "Automatically expands the video description so you never need to click \"Show more\""
+    "message": "Автоматически разворачивает описание видео, чтобы не нажимать «Развернуть»"
   },
   "feature_autoExpandDescription_name": {
-    "message": "Auto-Expand Description"
+    "message": "Авторазворот описания"
   },
   "feature_autoLikeSubscribed_desc": {
-    "message": "Automatically like videos from channels you're subscribed to after watching for 30 seconds"
+    "message": "Автоматически ставить «Нравится» видео от каналов, на которые вы подписаны, после 30 секунд просмотра"
   },
   "feature_autoLikeSubscribed_name": {
-    "message": "Auto-Like Subscribed Channels"
+    "message": "Автолайк подписок"
   },
   "feature_autoMaxResolution_desc": {
-    "message": "Force the highest available stream on every video (1080p Premium when offered)"
+    "message": "Принудительно выбирать наивысшее доступное качество для каждого видео (1080p Premium при наличии)"
   },
   "feature_autoMaxResolution_name": {
-    "message": "Always Best Quality"
+    "message": "Всегда лучшее качество"
   },
   "feature_autoOpenChapters_desc": {
-    "message": "Automatically open the chapters panel when available"
+    "message": "Автоматически открывать панель глав при наличии"
   },
   "feature_autoOpenChapters_name": {
-    "message": "Auto-Open Chapters"
+    "message": "Автооткрытие глав"
   },
   "feature_autoOpenTranscript_desc": {
-    "message": "Automatically open the transcript panel when available"
+    "message": "Автоматически открывать панель транскрипта при наличии"
   },
   "feature_autoOpenTranscript_name": {
-    "message": "Auto-Open Transcript"
+    "message": "Автооткрытие транскрипта"
   },
   "feature_autoPauseOnSwitch_desc": {
-    "message": "Pauses playback when you switch to another tab, resumes when you return"
+    "message": "Приостанавливает воспроизведение при переключении на другую вкладку, возобновляет при возврате"
   },
   "feature_autoPauseOnSwitch_name": {
-    "message": "Auto-Pause on Tab Switch"
+    "message": "Автопауза при смене вкладки"
   },
   "feature_autoSkipChapters_desc": {
-    "message": "Automatically skip chapters matching patterns (intro, outro, recap, sponsor). Comma-separated."
+    "message": "Автоматически пропускать главы, соответствующие шаблонам (intro, outro, recap, sponsor). Через запятую."
   },
   "feature_autoSkipChapters_name": {
-    "message": "Auto-Skip Chapters"
+    "message": "Автопропуск глав"
   },
   "feature_autoSubtitles_desc": {
-    "message": "Automatically turns on closed captions when a video starts playing"
+    "message": "Автоматически включает субтитры при начале воспроизведения видео"
   },
   "feature_autoSubtitles_name": {
-    "message": "Auto-Enable Subtitles"
+    "message": "Автовключение субтитров"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "Автоматически входить в режим Theater (широкий) при открытии видео"
   },
   "feature_autoTheaterMode_name": {
     "message": "Авто-театр"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Наложить тёплый оттенок для снижения синего света. Настраиваемая интенсивность."
   },
   "feature_blueLightFilter_name": {
     "message": "Фильтр синего света"
   },
   "feature_bulkCardActions_desc": {
-    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
+    "message": "Включите режим выделения для множественного выбора карточек ленты, затем массово скройте, разрешите или скопируйте URL. Плавающая панель действий появляется при выделении."
   },
   "feature_bulkCardActions_name": {
-    "message": "Bulk Card Actions"
+    "message": "Массовые действия с карточками"
   },
   "feature_bypassPlaylistMode_desc": {
-    "message": "Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist"
+    "message": "Убирает параметр &list= из кликнутых миниатюр, чтобы не застревать в чужом плейлисте"
   },
   "feature_bypassPlaylistMode_name": {
-    "message": "Bypass Playlist Mode on Clicks"
+    "message": "Обход режима плейлиста при кликах"
   },
   "feature_channelAgeDisplay_desc": {
-    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date"
+    "message": "Показывает возраст видео (например, «2 года, 3 месяца назад») рядом с датой загрузки"
   },
   "feature_channelAgeDisplay_name": {
-    "message": "Video Age Display"
+    "message": "Отображение возраста видео"
   },
   "feature_channelSubCount_desc": {
-    "message": "Shows the channel subscriber count more prominently below videos"
+    "message": "Более заметное отображение числа подписчиков канала под видео"
   },
   "feature_channelSubCount_name": {
-    "message": "Enhanced Channel Info"
+    "message": "Расширенная информация о канале"
   },
   "feature_chapterJumpButtons_desc": {
-    "message": "Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter"
+    "message": "Кнопки предыдущей/следующей главы в правой части управления плеером — быстрый переход к соседним главам"
   },
   "feature_chapterJumpButtons_name": {
-    "message": "Chapter Jump Buttons"
+    "message": "Кнопки перехода по главам"
   },
   "feature_chapterNavButtons_desc": {
-    "message": "Add Previous/Next Chapter buttons to the video player controls"
+    "message": "Добавить кнопки «Предыдущая/Следующая глава» в элементы управления видеоплеера"
   },
   "feature_chapterNavButtons_name": {
-    "message": "Chapter Navigation"
+    "message": "Навигация по главам"
   },
   "feature_chatHide_banner_desc": {
-    "message": "Hide chat banners"
+    "message": "Скрыть баннеры чата"
   },
   "feature_chatHide_banner_name": {
-    "message": "Chat Banner"
+    "message": "Баннер чата"
   },
   "feature_chatHide_bots_desc": {
-    "message": "Filter out known bot messages"
+    "message": "Фильтровать сообщения от известных ботов"
   },
   "feature_chatHide_bots_name": {
-    "message": "Bot Messages"
+    "message": "Сообщения ботов"
   },
   "feature_chatHide_emoji_desc": {
-    "message": "Hide emoji picker button"
+    "message": "Скрыть кнопку выбора эмодзи"
   },
   "feature_chatHide_emoji_name": {
-    "message": "Emoji Button"
+    "message": "Кнопка эмодзи"
   },
   "feature_chatHide_header_desc": {
-    "message": "Hide the live chat header bar"
+    "message": "Скрыть заголовок чата прямого эфира"
   },
   "feature_chatHide_header_name": {
-    "message": "Chat Header"
+    "message": "Заголовок чата"
   },
   "feature_chatHide_leaderboard_desc": {
-    "message": "Hide chat leaderboard"
+    "message": "Скрыть таблицу лидеров чата"
   },
   "feature_chatHide_leaderboard_name": {
-    "message": "Leaderboard"
+    "message": "Таблица лидеров"
   },
   "feature_chatHide_levelUp_desc": {
-    "message": "Hide level up messages"
+    "message": "Скрыть сообщения о повышении уровня"
   },
   "feature_chatHide_levelUp_name": {
-    "message": "Level Up Messages"
+    "message": "Сообщения о повышении уровня"
   },
   "feature_chatHide_menu_desc": {
-    "message": "Hide the chat overflow menu"
+    "message": "Скрыть дополнительное меню чата"
   },
   "feature_chatHide_menu_name": {
-    "message": "Chat Menu (...)"
+    "message": "Меню чата (...)"
   },
   "feature_chatHide_polls_desc": {
-    "message": "Hide polls in live chat"
+    "message": "Скрыть опросы в чате прямого эфира"
   },
   "feature_chatHide_polls_name": {
-    "message": "Polls & Poll Banner"
+    "message": "Опросы и баннер опросов"
   },
   "feature_chatHide_popout_desc": {
-    "message": "Hide the popout chat button"
+    "message": "Скрыть кнопку «Открыть чат в отдельном окне»"
   },
   "feature_chatHide_popout_name": {
-    "message": "Popout Button"
+    "message": "Кнопка отдельного окна"
   },
   "feature_chatHide_reactions_desc": {
-    "message": "Hide chat reactions panel"
+    "message": "Скрыть панель реакций чата"
   },
   "feature_chatHide_reactions_name": {
-    "message": "Reactions"
+    "message": "Реакции"
   },
   "feature_chatHide_superChats_desc": {
-    "message": "Hide super chat messages"
+    "message": "Скрыть сообщения Super Chat"
   },
   "feature_chatHide_superChats_name": {
     "message": "Super Chats"
   },
   "feature_chatHide_support_desc": {
-    "message": "Hide support/buy buttons in chat"
+    "message": "Скрыть кнопки поддержки/покупки в чате"
   },
   "feature_chatHide_support_name": {
-    "message": "Support Buttons"
+    "message": "Кнопки поддержки"
   },
   "feature_chatHide_ticker_desc": {
-    "message": "Hide the super chat ticker"
+    "message": "Скрыть бегущую строку Super Chat"
   },
   "feature_chatHide_ticker_name": {
-    "message": "Super Chat Ticker"
+    "message": "Бегущая строка Super Chat"
   },
   "feature_chatHide_timestamps_desc": {
-    "message": "Hide chat timestamps"
+    "message": "Скрыть временные метки чата"
   },
   "feature_chatHide_timestamps_name": {
-    "message": "Timestamps"
+    "message": "Временные метки"
   },
   "feature_chatHide_topFan_desc": {
-    "message": "Hide fan/member badges"
+    "message": "Скрыть значки фанатов/участников"
   },
   "feature_chatHide_topFan_name": {
-    "message": "Fan Badges"
+    "message": "Значки фанатов"
   },
   "feature_chatKeywordFilter_desc": {
-    "message": "Hide chat messages containing these words (comma-separated)"
+    "message": "Скрыть сообщения чата, содержащие указанные слова (через запятую)"
   },
   "feature_chatKeywordFilter_name": {
-    "message": "Chat Keyword Filter"
+    "message": "Фильтр ключевых слов чата"
   },
   "feature_chatStyleComments_desc": {
-    "message": "Premium comment layout that preserves pinned comments, creator hearts, replies, and native actions"
+    "message": "Премиум-макет комментариев с сохранением закреплённых комментариев, сердечек автора, ответов и стандартных действий"
   },
   "feature_chatStyleComments_name": {
-    "message": "Studio Comments"
+    "message": "Студийные комментарии"
   },
   "feature_chronologicalNotifications_desc": {
-    "message": "Sort notifications chronologically (newest first)"
+    "message": "Сортировка уведомлений в хронологическом порядке (новые первыми)"
   },
   "feature_chronologicalNotifications_name": {
-    "message": "Sort Notifications"
+    "message": "Сортировка уведомлений"
   },
   "feature_cinemaAmbientGlow_desc": {
-    "message": "Projects dominant video colors as a soft glow behind the player for an immersive cinema feel"
+    "message": "Проецирует доминирующие цвета видео как мягкое свечение позади плеера для эффекта кинотеатра"
   },
   "feature_cinemaAmbientGlow_name": {
-    "message": "Cinema Ambient Glow"
+    "message": "Кинематографическое свечение"
   },
   "feature_classicLayoutProfile_desc": {
-    "message": "Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
+    "message": "Выберите профиль макета. Современный сохраняет макет YouTube 2025. Классика 2020 возвращает более плотные отступы и уменьшенную шапку. Классика 2016 восстанавливает пропорции старой страницы просмотра."
   },
   "feature_classicLayoutProfile_name": {
-    "message": "Layout Profile"
+    "message": "Профиль макета"
   },
   "feature_classicPlayerChrome_desc": {
-    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display"
+    "message": "Возврат к виду плеера до Delhi/Liquid Glass одним переключателем: непрозрачные квадратные элементы управления, классическая полоса прогресса, оригинальное отображение времени"
   },
   "feature_classicPlayerChrome_name": {
-    "message": "Classic Player Chrome"
+    "message": "Классический интерфейс плеера"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "Удалять параметры отслеживания (si, pp, feature) из скопированных/общих ссылок YouTube"
   },
   "feature_cleanShareUrls_name": {
     "message": "Чистые URL"
   },
   "feature_cleanUiPreset_desc": {
-    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
+    "message": "Предустановка: скрывает брендинг панели, поиск и заголовки категорий, сжимает навигацию, подавляет уведомления и скрывает баннер возобновления подписок. По умолчанию выключено."
   },
   "feature_cleanUiPreset_name": {
-    "message": "Compact Clean UI"
+    "message": "Компактный чистый интерфейс"
   },
   "feature_codecSelector_desc": {
-    "message": "Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
+    "message": "Выберите предпочтительный видеокодек: Авто, H.264 (низкая нагрузка CPU), VP9 или AV1 (лучшее качество). Использует общий движок кодеков с «Принудительно H.264»."
   },
   "feature_codecSelector_name": {
-    "message": "Codec Selector"
+    "message": "Выбор кодека"
   },
   "feature_colorThemeManager_desc": {
-    "message": "Apply a color palette across YouTube (dark mode only)"
+    "message": "Применить цветовую палитру на YouTube (только тёмный режим)"
   },
   "feature_colorThemeManager_name": {
-    "message": "Color Theme"
+    "message": "Цветовая тема"
   },
   "feature_commentEnhancements_desc": {
-    "message": "Highlight creator/OP replies, show like heat indicators, and add collapse-all-replies toggle per thread"
+    "message": "Выделять ответы автора/OP, показывать индикаторы популярности лайков и добавлять переключатель сворачивания всех ответов в ветке"
   },
   "feature_commentEnhancements_name": {
-    "message": "Comment Enhancements"
+    "message": "Улучшения комментариев"
   },
   "feature_commentFilterManager_desc": {
-    "message": "Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded)."
+    "message": "Скрывать ветки комментариев, автор или текст которых соответствует правилу. Ключевые слова через запятую, !слово для белого списка, или /шаблон/флаги для регулярного выражения (защита от ReDoS)."
   },
   "feature_commentFilterManager_name": {
-    "message": "Comment Filter"
+    "message": "Фильтр комментариев"
   },
   "feature_commentFilterRules_desc": {
-    "message": "One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded)."
+    "message": "Одно правило в строке или через запятую. Слово скрывает совпадения, !слово всегда пропускает, @автор нацелен на автора, /шаблон/i запускает регулярное выражение (защита от ReDoS)."
   },
   "feature_commentFilterRules_name": {
-    "message": "Comment Filter Rules"
+    "message": "Правила фильтра комментариев"
   },
   "feature_commentNavigator_desc": {
-    "message": "Floating thread navigator with live counts for visible comments and filtered results"
+    "message": "Плавающий навигатор по веткам с подсчётом видимых комментариев и отфильтрованных результатов в реальном времени"
   },
   "feature_commentNavigator_name": {
-    "message": "Comment Navigator"
+    "message": "Навигатор по комментариям"
   },
   "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "Добавляет строку поиска над комментариями для фильтрации и поиска конкретных комментариев"
   },
   "feature_commentSearch_name": {
     "message": "Поиск в комментариях"
   },
   "feature_compactLayout_desc": {
-    "message": "Reduce spacing and padding for a denser interface"
+    "message": "Уменьшить отступы и поля для более плотного интерфейса"
   },
   "feature_compactLayout_name": {
-    "message": "Compact Layout"
+    "message": "Компактный макет"
   },
   "feature_compactUnfixedHeader_desc": {
-    "message": "Reduce header height and let it scroll away instead of staying fixed"
+    "message": "Уменьшить высоту шапки и позволить ей прокручиваться вместо фиксации"
   },
   "feature_compactUnfixedHeader_name": {
-    "message": "Compact / Unfixed Header"
+    "message": "Компактная / нефиксированная шапка"
   },
   "feature_condenseComments_desc": {
-    "message": "Reduce spacing between comments for a tighter layout"
+    "message": "Уменьшить расстояние между комментариями для более плотного отображения"
   },
   "feature_condenseComments_name": {
-    "message": "Condense Comments"
+    "message": "Сжатые комментарии"
   },
   "feature_copyChapterMarkdown_desc": {
-    "message": "Copy all video chapters as a markdown timestamp list — button in player controls"
+    "message": "Скопировать все главы видео в виде списка таймкодов Markdown — кнопка в элементах управления плеера"
   },
   "feature_copyChapterMarkdown_name": {
-    "message": "Copy Chapters as Markdown"
+    "message": "Копировать главы как Markdown"
   },
   "feature_copyVideoTitle_desc": {
-    "message": "Adds a copy button next to the video title for one-click title copying"
+    "message": "Добавляет кнопку копирования рядом с названием видео для быстрого копирования в один клик"
   },
   "feature_copyVideoTitle_name": {
-    "message": "Copy Video Title Button"
+    "message": "Кнопка копирования названия видео"
   },
   "feature_creatorCommentHighlight_desc": {
-    "message": "Makes creator-badged and creator-hearted comments stand out with a stronger visual treatment"
+    "message": "Выделяет комментарии с значком автора и сердечком автора более заметным оформлением"
   },
   "feature_creatorCommentHighlight_name": {
-    "message": "Highlight Creator Comments"
+    "message": "Подсветка комментариев автора"
   },
   "feature_customCssInjection_desc": {
-    "message": "Inject your own custom CSS rules into YouTube pages"
+    "message": "Вставка собственных CSS-правил на страницы YouTube"
   },
   "feature_customCssInjection_name": {
-    "message": "Custom CSS"
+    "message": "Пользовательский CSS"
   },
   "feature_customProgressBarColor_desc": {
-    "message": "Change the red progress bar to any color"
+    "message": "Изменить цвет красной полосы прогресса на любой другой"
   },
   "feature_customProgressBarColor_name": {
-    "message": "Custom Progress Bar Color"
+    "message": "Пользовательский цвет полосы прогресса"
   },
   "feature_customSelectionColor_desc": {
-    "message": "Override the default text-selection background with your chosen color"
+    "message": "Заменить стандартный цвет выделения текста на выбранный вами"
   },
   "feature_customSelectionColor_name": {
-    "message": "Custom Text Selection Color"
+    "message": "Пользовательский цвет выделения текста"
   },
   "feature_customSpeedButtons_desc": {
-    "message": "Adds quick speed buttons below the video player with presets from 0.5x to 3x"
+    "message": "Добавляет кнопки быстрого выбора скорости под видеоплеером с предустановками от 0.5x до 3x"
   },
   "feature_customSpeedButtons_name": {
-    "message": "Speed Preset Buttons"
+    "message": "Кнопки предустановок скорости"
   },
   "feature_daCacheTTL_desc": {
-    "message": "Hours to cache branding data locally before refreshing"
+    "message": "Сколько часов кешировать данные брендинга локально до обновления"
   },
   "feature_daCacheTTL_name": {
-    "message": "Cache Duration"
+    "message": "Длительность кеша"
   },
   "feature_daFallbackFormat_desc": {
-    "message": "Format the original title when no crowdsourced submission exists"
+    "message": "Формат оригинального заголовка, если нет краудсорсингового варианта"
   },
   "feature_daFallbackFormat_name": {
-    "message": "Format Original Titles"
+    "message": "Форматирование оригинальных заголовков"
   },
   "feature_daReplaceThumbs_desc": {
-    "message": "Replace clickbait thumbnails with video screenshots"
+    "message": "Заменить кликбейтные миниатюры скриншотами видео"
   },
   "feature_daReplaceThumbs_name": {
-    "message": "Replace Thumbnails"
+    "message": "Замена миниатюр"
   },
   "feature_daReplaceTitles_desc": {
-    "message": "Replace clickbait titles with crowdsourced alternatives"
+    "message": "Заменить кликбейтные заголовки краудсорсинговыми альтернативами"
   },
   "feature_daReplaceTitles_name": {
-    "message": "Replace Titles"
+    "message": "Замена заголовков"
   },
   "feature_daShowOriginalHover_desc": {
-    "message": "Hover over a replaced title to see the original"
+    "message": "Наведите курсор на заменённый заголовок, чтобы увидеть оригинал"
   },
   "feature_daShowOriginalHover_name": {
-    "message": "Show Original on Hover"
+    "message": "Показать оригинал при наведении"
   },
   "feature_daTitleFormat_desc": {
-    "message": "How to format replacement titles"
+    "message": "Как форматировать заменённые заголовки"
   },
   "feature_daTitleFormat_name": {
-    "message": "Title Format"
+    "message": "Формат заголовков"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "Заменить кликбейтные заголовки и миниатюры краудсорсинговыми альтернативами из базы данных DeArrow"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
   },
   "feature_deArrowChannelOverridesPanel_desc": {
-    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
+    "message": "Добавляет небольшой чип режима DeArrow рядом с именем канала на странице просмотра. Переключение по кругу: DeArrow → Оригинал → Выкл → DeArrow. Переопределения сохраняются в deArrowChannelOverrides по ID канала."
   },
   "feature_deArrowChannelOverridesPanel_name": {
-    "message": "DeArrow Per-Channel Overrides"
+    "message": "Переопределения DeArrow по каналам"
   },
   "feature_dearrowPeekButton_desc": {
-    "message": "Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)"
+    "message": "Удерживайте Alt, чтобы временно показать оригинальные заголовки YouTube (отменяет DeArrow/пользовательские заголовки, пока нажата)"
   },
   "feature_dearrowPeekButton_name": {
-    "message": "DeArrow Peek Button"
+    "message": "Кнопка просмотра DeArrow"
   },
   "feature_deArrowVoting_desc": {
-    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles. Uses a local private userID. Off by default."
+    "message": "Голосуйте за замены заголовков DeArrow. Добавляет кнопки «За/Против» рядом с заменёнными заголовками. Использует локальный приватный userID. По умолчанию выключено."
   },
   "feature_deArrowVoting_name": {
-    "message": "DeArrow Voting"
+    "message": "Голосование DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "Включить подробное диагностическое логирование в консоль"
   },
   "feature_debugMode_name": {
     "message": "Режим отладки"
   },
   "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars."
+    "message": "Уменьшает межстрочные интервалы, отступы и метрики шрифтов на поверхностях Astra. Не изменяет стандартный макет YouTube — только собственные панели, чипы, кнопки и панели инструментов."
   },
   "feature_denseMode_name": {
-    "message": "Dense Mode"
+    "message": "Плотный режим"
   },
   "feature_diagnosticLog_desc": {
-    "message": "Capture a rolling log of YTKit errors and export as JSON for bug reports"
+    "message": "Записывать скользящий журнал ошибок YTKit и экспортировать как JSON для отчётов об ошибках"
   },
   "feature_diagnosticLog_name": {
-    "message": "Diagnostic Error Log"
+    "message": "Журнал диагностических ошибок"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "Напоминания о перерывах каждые N минут активного воспроизведения + необязательный дневной лимит просмотра. Таймеры сохраняются при навигации внутри SPA."
   },
   "feature_digitalWellbeing_name": {
     "message": "Цифровое благополучие"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Запрещает автоматическое воспроизведение следующего видео после окончания текущего"
   },
   "feature_disableAutoplayNext_name": {
     "message": "Без автовоспроизведения"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "Заменить бесконечную прокрутку кнопкой «Загрузить ещё» на главной, в поиске и подписках"
   },
   "feature_disableInfiniteScroll_name": {
     "message": "Ограничить прокрутку"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren’t officially supported."
+    "message": "Запретить YouTube сжимать динамический диапазон новых видео. Наилучшие усилия — YouTube контролирует усиление через неофициальные API movie_player."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Disable Loudness Normalization"
+    "message": "Отключить нормализацию громкости"
   },
   "feature_disableMiniPlayer_desc": {
-    "message": "Prevent the mini player from appearing when navigating away"
+    "message": "Запретить появление мини-плеера при переходе на другую страницу"
   },
   "feature_disableMiniPlayer_name": {
-    "message": "Disable Mini Player"
+    "message": "Отключить мини-плеер"
   },
   "feature_disablePlayOnHover_desc": {
-    "message": "Stop videos from playing when hovering over thumbnails"
+    "message": "Запретить автовоспроизведение видео при наведении на миниатюры"
   },
   "feature_disablePlayOnHover_name": {
-    "message": "Disable Hover Preview"
+    "message": "Отключить превью при наведении"
   },
   "feature_disableSpaNavigation_desc": {
-    "message": "Force full page loads instead of YouTube's smooth transitions (fixes player sizing issues)"
+    "message": "Принудительная полная перезагрузка страницы вместо плавных переходов YouTube (исправляет проблемы с размером плеера)"
   },
   "feature_disableSpaNavigation_name": {
-    "message": "Disable SPA Navigation"
+    "message": "Отключить SPA-навигацию"
   },
   "feature_downloadAudioFormat_desc": {
-    "message": "Default format for audio-only downloads"
+    "message": "Формат по умолчанию для загрузки только аудио"
   },
   "feature_downloadAudioFormat_name": {
-    "message": "Audio Format"
+    "message": "Формат аудио"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab."
+    "message": "Когда Astra Downloader недоступен, переключиться на настраиваемый экземпляр cobalt.tools. Работает только в GitHub/полном профиле и только когда Astra Downloader оффлайн. Отправляет URL видео на настроенный экземпляр и открывает полученный медиа-URL в новой вкладке."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt Fallback (GitHub profile)"
+    "message": "Резервный Cobalt (профиль GitHub)"
   },
   "feature_downloadHealthPanel_desc": {
-    "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."
+    "message": "Показывать индикаторы версии yt-dlp, актуальности ffmpeg и состояния PO Token рядом с кнопкой загрузки. Запрашивает /health каждые 30 с; без дополнительного хранилища."
   },
   "feature_downloadHealthPanel_name": {
-    "message": "Downloader Health Pills"
+    "message": "Индикаторы состояния загрузчика"
   },
   "feature_downloadHistoryPanel_desc": {
-    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session."
+    "message": "Добавляет кнопку «История» рядом с кнопкой загрузки на странице просмотра. Показывает последние 50 загрузок, записанных Astra Downloader. Только локально — данные из локального эндпоинта /history за сессию."
   },
   "feature_downloadHistoryPanel_name": {
-    "message": "Download History Panel"
+    "message": "Панель истории загрузок"
   },
   "feature_downloadQuality_desc": {
-    "message": "Preferred video quality for downloads"
+    "message": "Предпочтительное качество видео для загрузок"
   },
   "feature_downloadQuality_name": {
-    "message": "Download Quality"
+    "message": "Качество загрузки"
   },
   "feature_downloadScreenshotFormat_desc": {
-    "message": "Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only."
+    "message": "Формат вывода для кнопки скриншота плеера. PNG — без потерь и копируется в буфер обмена; JPEG/WebP — файлы меньше, но только загрузка."
   },
   "feature_downloadScreenshotFormat_name": {
-    "message": "Screenshot Format"
+    "message": "Формат скриншота"
   },
   "feature_downloadStreamLinksPanel_desc": {
-    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off."
+    "message": "Расширенное: показать необработанные адаптивные URL видео/аудио потоков (mp4/webm) из ytInitialPlayerResponse. Только локально — без телеметрии. Полезно для передачи в yt-dlp / VLC. По умолчанию выключено."
   },
   "feature_downloadStreamLinksPanel_name": {
-    "message": "Stream Links Panel"
+    "message": "Панель ссылок на потоки"
   },
   "feature_downloadSubtitlesWithScreenshot_desc": {
-    "message": "Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot."
+    "message": "Встроить текущую строку субтитров в нижнюю часть скриншота. По умолчанию выключено. Требует «Скриншот видео»."
   },
   "feature_downloadSubtitlesWithScreenshot_name": {
-    "message": "Include Subtitles In Screenshot"
+    "message": "Включить субтитры в скриншот"
   },
   "feature_downloadThumbnail_desc": {
-    "message": "Adds a button below the video to download the current video thumbnail in max resolution"
+    "message": "Добавляет кнопку под видео для загрузки миниатюры текущего видео в максимальном разрешении"
   },
   "feature_downloadThumbnail_name": {
-    "message": "Download Thumbnail Button"
+    "message": "Кнопка загрузки миниатюры"
   },
   "feature_downloadVideoFormat_desc": {
-    "message": "Default container format for video downloads"
+    "message": "Контейнер по умолчанию для загрузки видео"
   },
   "feature_downloadVideoFormat_name": {
-    "message": "Video Format"
+    "message": "Формат видео"
   },
   "feature_enableCPU_Tamer_desc": {
-    "message": "Reduce CPU usage by throttling background timers via requestAnimationFrame gating"
+    "message": "Снизить нагрузку на CPU путём ограничения фоновых таймеров через requestAnimationFrame"
   },
   "feature_enableCPU_Tamer_name": {
     "message": "CPU Tamer"
   },
   "feature_enableHandleRevealer_desc": {
-    "message": "Show the original channel name next to @handle in comments"
+    "message": "Показать оригинальное имя канала рядом с @handle в комментариях"
   },
   "feature_enableHandleRevealer_name": {
-    "message": "Comment Handle Revealer"
+    "message": "Раскрытие handle в комментариях"
   },
   "feature_expandVideoWidth_desc": {
-    "message": "Stretch the video to fill the space when sidebar is hidden"
+    "message": "Растянуть видео на всю ширину при скрытой боковой панели"
   },
   "feature_expandVideoWidth_name": {
-    "message": "Expand Video Width"
+    "message": "Расширить ширину видео"
   },
   "feature_feedTriageProfile_desc": {
-    "message": "Flip on a curated focus recipe: hides Shorts, live streams, upcoming premieres, mixes, watched videos, and AI Summary. Toggling off restores prior values."
+    "message": "Включить кураторский фокус-рецепт: скрывает Shorts, прямые эфиры, ожидающие премьеры, миксы, просмотренные видео и AI-резюме. Выключение восстанавливает прежние значения."
   },
   "feature_feedTriageProfile_name": {
-    "message": "Feed Triage Profile"
+    "message": "Профиль фильтрации ленты"
   },
   "feature_fineSpeedControl_desc": {
-    "message": "Extend speed range to 0.1x-16x with 0.05x increments. Scroll on the speed badge to adjust."
+    "message": "Расширить диапазон скорости до 0.1x–16x с шагом 0.05x. Прокрутка на значке скорости для регулировки."
   },
   "feature_fineSpeedControl_name": {
-    "message": "Fine Speed Control"
+    "message": "Точное управление скоростью"
   },
   "feature_fitPlayerToWindow_desc": {
-    "message": "Make the video player fill the entire browser window"
+    "message": "Развернуть видеоплеер на всё окно браузера"
   },
   "feature_fitPlayerToWindow_name": {
-    "message": "Fit Player to Window"
+    "message": "Подогнать плеер под окно"
   },
   "feature_floatingLogoOnWatch_desc": {
-    "message": "Replace native player right-controls with Astra quick links, local tools, and settings"
+    "message": "Заменить стандартные правые элементы управления плеера на быстрые ссылки Astra, локальные инструменты и настройки"
   },
   "feature_floatingLogoOnWatch_name": {
-    "message": "Astra Player Dock"
+    "message": "Док Astra в плеере"
   },
   "feature_focusedMode_desc": {
-    "message": "Hides everything except the video player and comments for a distraction-free experience"
+    "message": "Скрывает всё, кроме видеоплеера и комментариев, для просмотра без отвлечений"
   },
   "feature_focusedMode_name": {
-    "message": "Focused Mode"
+    "message": "Режим фокуса"
   },
   "feature_forceDarkEverywhere_desc": {
-    "message": "Applies dark theme to YouTube pages that may not respect dark mode (settings, about, etc.)"
+    "message": "Применяет тёмную тему к страницам YouTube, которые могут не поддерживать тёмный режим (настройки, информация и т. д.)"
   },
   "feature_forceDarkEverywhere_name": {
-    "message": "Force Dark on All YouTube Pages"
+    "message": "Принудительная тёмная тема на всех страницах YouTube"
   },
   "feature_forcedColorsSupport_desc": {
-    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
+    "message": "Всегда активно: когда ОС сообщает о принудительных цветах (высокая контрастность Windows, принудительные цвета GTK), элементы управления Astra автоматически используют системные цвета для сохранения читаемости текста и видимости рамок фокуса. Медиа-запрос сам является условием; этот переключатель сохранён для совместимости настроек и не даёт дополнительного эффекта."
   },
   "feature_forcedColorsSupport_name": {
-    "message": "Forced Colors / High Contrast Support"
+    "message": "Поддержка принудительных цветов / высокой контрастности"
   },
   "feature_forceH264_desc": {
-    "message": "Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge."
+    "message": "Предпочитать H.264 (AVC) вместо VP9/AV1 для снижения нагрузки на CPU на старом оборудовании. Может снизить максимальное качество. Использует мост кодеков MAIN-мира."
   },
   "feature_forceH264_name": {
-    "message": "Force H.264 Codec"
+    "message": "Принудительно H.264"
   },
   "feature_forceStandardFps_desc": {
-    "message": "Dims HFR entries in the quality menu. For reliable 30fps, enable Force H.264 which caps at 1080p30."
+    "message": "Затемняет пункты HFR в меню качества. Для надёжных 30fps включите «Принудительно H.264», который ограничивает до 1080p30."
   },
   "feature_forceStandardFps_name": {
-    "message": "Force Standard Frame Rate"
+    "message": "Принудительная стандартная частота кадров"
   },
   "feature_frameByFrameButtons_desc": {
-    "message": "Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation"
+    "message": "Добавить видимые кнопки «Назад на кадр» (,) и «Вперёд на кадр» (.) в элементы управления плеера для точной покадровой навигации"
   },
   "feature_frameByFrameButtons_name": {
-    "message": "Frame-by-Frame Buttons"
+    "message": "Кнопки покадрового перемещения"
   },
   "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
+    "message": "Двойной клик в любом месте видео для переключения полноэкранного режима (заменяет стандартную перемотку)"
   },
   "feature_fullscreenOnDoubleClick_name": {
-    "message": "Double-Click Fullscreen"
+    "message": "Полноэкранный режим по двойному клику"
   },
   "feature_fullTitles_desc": {
-    "message": "Remove the 2-line clamp on thumbnail titles so long titles show in full"
+    "message": "Убрать ограничение в 2 строки для названий на миниатюрах, чтобы длинные названия отображались полностью"
   },
   "feature_fullTitles_name": {
-    "message": "Show Full Video Titles"
+    "message": "Полные названия видео"
   },
   "feature_fullWidthSubscriptions_desc": {
-    "message": "Expand the subscription grid to fill the page"
+    "message": "Расширить сетку подписок на всю ширину страницы"
   },
   "feature_fullWidthSubscriptions_name": {
-    "message": "Full-Width Subscriptions"
+    "message": "Подписки во всю ширину"
   },
   "feature_globalAriaLiveRegion_desc": {
-    "message": "Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes)."
+    "message": "Монтирует единый скрытый контейнер role=status / aria-live=polite в body документа. Программы чтения с экрана объявляют текст, который Astra записывает в него (уведомления, результаты фильтрации, изменения статуса загрузки)."
   },
   "feature_globalAriaLiveRegion_name": {
-    "message": "Live Region For Toasts"
+    "message": "Живая область для уведомлений"
   },
   "feature_grayscaleThumbnails_desc": {
-    "message": "Shows thumbnails in grayscale to reduce visual distraction — color restores on hover"
+    "message": "Показывает миниатюры в оттенках серого для снижения визуального отвлечения — цвет восстанавливается при наведении"
   },
   "feature_grayscaleThumbnails_name": {
-    "message": "Grayscale Thumbnails"
+    "message": "Серые миниатюры"
   },
   "feature_hiddenActionButtonsManager_desc": {
-    "message": "Choose which action buttons to hide below videos"
+    "message": "Выберите, какие кнопки действий скрыть под видео"
   },
   "feature_hiddenActionButtonsManager_name": {
-    "message": "Hide Action Buttons"
+    "message": "Скрытие кнопок действий"
   },
   "feature_hiddenChatElementsManager_desc": {
-    "message": "Choose which live chat elements to hide"
+    "message": "Выберите, какие элементы чата прямого эфира скрыть"
   },
   "feature_hiddenChatElementsManager_name": {
-    "message": "Hide Chat Elements"
+    "message": "Скрытие элементов чата"
   },
   "feature_hiddenPlayerControlsManager_desc": {
-    "message": "Choose which player control buttons to hide"
+    "message": "Выберите, какие кнопки управления плеером скрыть"
   },
   "feature_hiddenPlayerControlsManager_name": {
-    "message": "Hide Player Controls"
+    "message": "Скрытие элементов управления плеера"
   },
   "feature_hiddenWatchElementsManager_desc": {
-    "message": "Choose which elements to hide below videos"
+    "message": "Выберите, какие элементы скрыть под видео"
   },
   "feature_hiddenWatchElementsManager_name": {
-    "message": "Hide Watch Page Elements"
+    "message": "Скрытие элементов страницы просмотра"
   },
   "feature_hideAirplayButton_desc": {
-    "message": "Remove the Airplay icon from the player controls"
+    "message": "Убрать значок Airplay из элементов управления плеера"
   },
   "feature_hideAirplayButton_name": {
-    "message": "Hide Airplay Button"
+    "message": "Скрыть кнопку Airplay"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
+    "message": "Убрать AI-генерированные резюме и кнопки «Спросить AI»"
   },
   "feature_hideAiSummary_name": {
-    "message": "Hide AI Summary"
+    "message": "Скрыть AI-резюме"
   },
   "feature_hideAutoplayToggle_desc": {
-    "message": "Removes the autoplay toggle switch from the player controls"
+    "message": "Убрать переключатель автовоспроизведения из элементов управления плеера"
   },
   "feature_hideAutoplayToggle_name": {
-    "message": "Hide Autoplay Toggle"
+    "message": "Скрыть переключатель автовоспроизведения"
   },
   "feature_hideChannelJoinButton_desc": {
-    "message": "Remove the Join/membership button on channel pages"
+    "message": "Убрать кнопку «Вступить»/«Подписка» на страницах каналов"
   },
   "feature_hideChannelJoinButton_name": {
-    "message": "Hide Channel Join Button"
+    "message": "Скрыть кнопку «Вступить в канал»"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you're not subscribed to in your subscriptions feed"
+    "message": "Скрыть видео от каналов, на которые вы не подписаны, в ленте подписок"
   },
   "feature_hideCollaborations_name": {
-    "message": "Hide Collaborations"
+    "message": "Скрыть коллаборации"
   },
   "feature_hideCommentActionMenu_desc": {
-    "message": "Remove action menu from individual comments"
+    "message": "Убрать меню действий из отдельных комментариев"
   },
   "feature_hideCommentActionMenu_name": {
-    "message": "Hide Comment Actions"
+    "message": "Скрыть действия комментариев"
   },
   "feature_hideCommentDislikeButton_desc": {
-    "message": "Remove the dislike button from comment actions since it adds no useful feedback"
+    "message": "Убрать кнопку «Не нравится» из действий комментариев, так как она не несёт полезной обратной связи"
   },
   "feature_hideCommentDislikeButton_name": {
-    "message": "Hide Comment Dislike"
+    "message": "Скрыть «Не нравится» в комментариях"
   },
   "feature_hideCommentTeaser_desc": {
-    "message": "Remove the \"Scroll for comments\" prompt on watch pages"
+    "message": "Убрать подсказку «Прокрутите к комментариям» на страницах просмотра"
   },
   "feature_hideCommentTeaser_name": {
-    "message": "Hide Comment Teaser"
+    "message": "Скрыть тизер комментариев"
   },
   "feature_hideCreateButton_desc": {
-    "message": "Remove the \"Create\" button from the header toolbar"
+    "message": "Убрать кнопку «Создать» из панели инструментов шапки"
   },
   "feature_hideCreateButton_name": {
-    "message": "Hide Create Button"
+    "message": "Скрыть кнопку «Создать»"
   },
   "feature_hideDescriptionExtras_desc": {
-    "message": "Remove extra elements in the description area"
+    "message": "Убрать дополнительные элементы в области описания"
   },
   "feature_hideDescriptionExtras_name": {
-    "message": "Hide Description Extras"
+    "message": "Скрыть дополнения описания"
   },
   "feature_hideDescriptionRow_desc": {
-    "message": "Remove the video description panel below the player"
+    "message": "Убрать панель описания видео под плеером"
   },
   "feature_hideDescriptionRow_name": {
-    "message": "Hide Description"
+    "message": "Скрыть описание"
   },
   "feature_hideEndCards_desc": {
-    "message": "Removes the clickable end screen cards/annotations that overlay the video in the last seconds. Also covered by Hide Video End Content."
+    "message": "Убирает кликабельные конечные заставки/аннотации, которые перекрывают видео в последние секунды. Также покрывается функцией «Скрыть контент в конце видео»."
   },
   "feature_hideEndCards_name": {
-    "message": "Hide End Screen Cards"
+    "message": "Скрыть конечные заставки"
   },
   "feature_hideFundraiser_desc": {
-    "message": "Remove fundraiser and donation badges"
+    "message": "Убрать значки сборов средств и пожертвований"
   },
   "feature_hideFundraiser_name": {
-    "message": "Hide Fundraisers"
+    "message": "Скрыть сборы средств"
   },
   "feature_hideHashtags_desc": {
-    "message": "Remove hashtag links above video titles"
+    "message": "Убрать ссылки хештегов над названиями видео"
   },
   "feature_hideHashtags_name": {
-    "message": "Hide Hashtags"
+    "message": "Скрыть хештеги"
   },
   "feature_hideInfoCards_desc": {
-    "message": "Removes the \"i\" info card teasers and popups that appear during video playback"
+    "message": "Убирает тизеры и всплывающие окна информационных карточек «i», появляющихся во время воспроизведения видео"
   },
   "feature_hideInfoCards_name": {
-    "message": "Hide Info Cards"
+    "message": "Скрыть информационные карточки"
   },
   "feature_hideInfoPanels_desc": {
-    "message": "Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)"
+    "message": "Убрать информационные блоки Wikipedia/контекста, появляющиеся под видео (FEMA, COVID и т. д.)"
   },
   "feature_hideInfoPanels_name": {
-    "message": "Hide Info Panels"
+    "message": "Скрыть информационные панели"
   },
   "feature_hideJumpAheadButton_desc": {
-    "message": "Remove the Jump Ahead prompt that appears after skipping on eligible videos."
+    "message": "Убрать подсказку «Перейти вперёд», появляющуюся после перемотки в подходящих видео."
   },
   "feature_hideJumpAheadButton_name": {
-    "message": "Hide Jump Ahead"
+    "message": "Скрыть «Перейти вперёд»"
   },
   "feature_hideLatestPosts_desc": {
-    "message": "Hide community posts and updates sections from feeds"
+    "message": "Скрыть публикации сообщества и обновления из лент"
   },
   "feature_hideLatestPosts_name": {
-    "message": "Hide Latest Posts"
+    "message": "Скрыть последние публикации"
   },
   "feature_hideLiveChatEngagement_desc": {
-    "message": "Remove engagement prompts in live chat"
+    "message": "Убрать подсказки вовлечения в чате прямого эфира"
   },
   "feature_hideLiveChatEngagement_name": {
-    "message": "Hide Chat Engagement"
+    "message": "Скрыть вовлечение в чате"
   },
   "feature_hideMembersOnly_desc": {
-    "message": "Hide members-only feed cards on Home and Subscriptions"
+    "message": "Скрыть карточки «Только для участников» на Главной и в Подписках"
   },
   "feature_hideMembersOnly_name": {
-    "message": "Hide Members Only"
+    "message": "Скрыть «Только для участников»"
   },
   "feature_hideMerchShelf_desc": {
-    "message": "Remove merchandise promotions below videos"
+    "message": "Убрать рекламу товаров под видео"
   },
   "feature_hideMerchShelf_name": {
-    "message": "Hide Merch Shelf"
+    "message": "Скрыть полку товаров"
   },
   "feature_hideNewsHome_desc": {
-    "message": "Hide news sections from the homepage"
+    "message": "Скрыть разделы новостей на главной странице"
   },
   "feature_hideNewsHome_name": {
-    "message": "Hide News Section"
+    "message": "Скрыть раздел новостей"
   },
   "feature_hideNotificationBadge_desc": {
-    "message": "Removes the red notification count badge from the bell icon"
+    "message": "Убирает красный значок количества уведомлений с иконки колокольчика"
   },
   "feature_hideNotificationBadge_name": {
-    "message": "Hide Notification Badge"
+    "message": "Скрыть значок уведомлений"
   },
   "feature_hideNotificationButton_desc": {
-    "message": "Remove the notification bell icon from the header"
+    "message": "Убрать иконку колокольчика уведомлений из шапки"
   },
   "feature_hideNotificationButton_name": {
-    "message": "Hide Notification Bell"
+    "message": "Скрыть колокольчик уведомлений"
   },
   "feature_hidePaidContentOverlay_desc": {
-    "message": "Remove \"Includes paid promotion\" overlays on thumbnails and watch pages"
+    "message": "Убрать наклейки «Содержит платную рекламу» с миниатюр и страниц просмотра"
   },
   "feature_hidePaidContentOverlay_name": {
-    "message": "Hide Promotion Badges"
+    "message": "Скрыть значки рекламы"
   },
   "feature_hidePaidPromotionWatch_desc": {
-    "message": "Remove \"paid promotion\" labels on watch pages"
+    "message": "Убрать надписи «Платная реклама» на страницах просмотра"
   },
   "feature_hidePaidPromotionWatch_name": {
-    "message": "Hide Paid Promotion"
+    "message": "Скрыть платную рекламу"
   },
   "feature_hidePinnedComments_desc": {
-    "message": "Remove pinned comments from the comments section"
+    "message": "Убрать закреплённые комментарии из раздела комментариев"
   },
   "feature_hidePinnedComments_name": {
-    "message": "Hide Pinned Comments"
+    "message": "Скрыть закреплённые комментарии"
   },
   "feature_hidePlayables_desc": {
-    "message": "Hide YouTube Playables gaming content from feeds"
+    "message": "Скрыть игровой контент YouTube Playables из лент"
   },
   "feature_hidePlayables_name": {
-    "message": "Hide Playables"
+    "message": "Скрыть Playables"
   },
   "feature_hidePlaylistsHome_desc": {
-    "message": "Hide playlist sections from the homepage"
+    "message": "Скрыть разделы плейлистов с главной страницы"
   },
   "feature_hidePlaylistsHome_name": {
-    "message": "Hide Playlist Shelves"
+    "message": "Скрыть полки плейлистов"
   },
   "feature_hideQueueOnThumbnails_desc": {
-    "message": "Remove the \"Add to queue\" overlay button that appears on thumbnail hover"
+    "message": "Убрать кнопку «Добавить в очередь» с наложения при наведении на миниатюры"
   },
   "feature_hideQueueOnThumbnails_name": {
-    "message": "Hide \"Add to Queue\" on Thumbnails"
+    "message": "Скрыть «Добавить в очередь» на миниатюрах"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "Убрать панель похожих видео на страницах просмотра"
   },
   "feature_hideRelatedVideos_name": {
     "message": "Скрыть похожие"
   },
   "feature_hideSidebar_desc": {
-    "message": "Remove the left navigation sidebar completely"
+    "message": "Полностью убрать левую навигационную боковую панель"
   },
   "feature_hideSidebar_name": {
-    "message": "Hide Sidebar"
+    "message": "Скрыть боковую панель"
   },
   "feature_hideSubscriptionOptions_desc": {
-    "message": "Remove the \"Latest\" header and view toggles on subscriptions"
+    "message": "Убрать заголовок «Последнее» и переключатели вида в подписках"
   },
   "feature_hideSubscriptionOptions_name": {
-    "message": "Hide Layout Options"
+    "message": "Скрыть параметры макета"
   },
   "feature_hideVideoEndContent_desc": {
-    "message": "Remove end cards, end screen, annotations, and video grid when videos finish. Superset of Hide End Screen Cards."
+    "message": "Убрать конечные заставки, финальный экран, аннотации и сетку видео по завершении. Включает в себя «Скрыть конечные заставки»."
   },
   "feature_hideVideoEndContent_name": {
-    "message": "Hide Video End Content"
+    "message": "Скрыть контент в конце видео"
   },
   "feature_hideVideosFromHome_desc": {
-    "message": "Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking."
+    "message": "Скрывать видео/каналы из лент. Включает фильтр по ключевым словам, фильтр по длительности и блокировку каналов."
   },
   "feature_hideVideosFromHome_name": {
-    "message": "Video Hider"
+    "message": "Скрытие видео"
   },
   "feature_hideVoiceSearch_desc": {
-    "message": "Remove the microphone icon from the search bar"
+    "message": "Убрать значок микрофона из строки поиска"
   },
   "feature_hideVoiceSearch_name": {
-    "message": "Hide Voice Search"
+    "message": "Скрыть голосовой поиск"
   },
   "feature_hideWatchedVideos_desc": {
-    "message": "Dim or hide videos with a red progress bar (already watched) from feeds"
+    "message": "Затемнить или скрыть видео с красной полосой прогресса (уже просмотренные) из лент"
   },
   "feature_hideWatchedVideos_name": {
-    "message": "Hide Watched Videos"
+    "message": "Скрыть просмотренные видео"
   },
   "feature_homepageGridAlign_desc": {
-    "message": "Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights"
+    "message": "Принудительная равномерная сетка миниатюр на главной странице — предотвращает смещение строк из-за разной высоты заголовков/метаданных"
   },
   "feature_homepageGridAlign_name": {
-    "message": "Homepage Grid Align"
+    "message": "Выравнивание сетки главной страницы"
   },
   "feature_initialPlayerStateBackground_desc": {
-    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube’s default. Useful for queueing-up multiple tabs."
+    "message": "При открытии страницы просмотра в фоновой вкладке — воспроизведение или пауза независимо от настроек YouTube. Полезно для одновременного открытия нескольких вкладок."
   },
   "feature_initialPlayerStateBackground_name": {
-    "message": "Initial Player State (Background)"
+    "message": "Начальное состояние плеера (фон)"
   },
   "feature_initialPlayerStateForeground_desc": {
-    "message": "When opening a watch page in the foreground, play or pause regardless of the previous session’s autoplay choice. “Inherit” leaves YouTube’s native behavior alone."
+    "message": "При открытии страницы просмотра на переднем плане — воспроизведение или пауза независимо от предыдущего выбора автовоспроизведения. «Наследовать» оставляет стандартное поведение YouTube."
   },
   "feature_initialPlayerStateForeground_name": {
-    "message": "Initial Player State (Foreground)"
+    "message": "Начальное состояние плеера (передний план)"
   },
   "feature_keyMoments_desc": {
-    "message": "Highlights chapter markers on the progress bar with colored segments for quick visual navigation"
+    "message": "Подсвечивает маркеры глав на полосе прогресса цветными сегментами для быстрой визуальной навигации"
   },
   "feature_keyMoments_name": {
-    "message": "Key Moments Highlights"
+    "message": "Подсветка ключевых моментов"
   },
   "feature_likeViewRatio_desc": {
-    "message": "Shows the like-to-view percentage next to the view count on watch pages"
+    "message": "Показывает процент лайков к просмотрам рядом со счётчиком просмотров на страницах просмотра"
   },
   "feature_likeViewRatio_name": {
-    "message": "Like-to-View Ratio"
+    "message": "Соотношение лайков к просмотрам"
   },
   "feature_localAiSummary_desc": {
-    "message": "Use Chrome’s built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
+    "message": "Использовать встроенный API Summarizer Chrome при наличии. При недоступности показывает понятное сообщение — никогда не перенаправляет на удалённого провайдера. Добавляет кнопку «Локальное резюме» рядом с существующей кнопкой AI-резюме."
   },
   "feature_localAiSummary_name": {
-    "message": "Local AI Summary (browser built-in)"
+    "message": "Локальное AI-резюме (встроенное в браузер)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Ask questions about the current video transcript using Chrome Prompt API (Gemini Nano). Runs on-device, no API keys needed."
+    "message": "Задавайте вопросы по транскрипту текущего видео с помощью Chrome Prompt API (Gemini Nano). Работает на устройстве, API-ключи не нужны."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Transcript Q&A (browser built-in)"
+    "message": "Вопросы по транскрипту (встроенное в браузер)"
   },
   "feature_logoToSubscriptions_desc": {
-    "message": "Point the native YouTube home mark to your subscriptions feed"
+    "message": "Перенаправить клик по логотипу YouTube на ленту подписок"
   },
   "feature_logoToSubscriptions_name": {
-    "message": "Logo Click → Subscriptions"
+    "message": "Клик по логотипу → Подписки"
   },
   "feature_lowPowerProfile_desc": {
-    "message": "When on, disables CPU-heavy features (cinema ambient glow, visual filters, playback stats overlay, monetization indicator, transcript index, transcript viewer, blue light filter) and bumps storage LRU sweep cadence. Toggle off to restore previous values from the backup snapshot."
+    "message": "При включении отключает ресурсоёмкие функции (кинематографическое свечение, визуальные фильтры, наложение статистики воспроизведения, индикатор монетизации, индекс транскриптов, просмотрщик транскриптов, фильтр синего света) и увеличивает частоту очистки LRU хранилища. Выключите для восстановления прежних значений из резервной копии."
   },
   "feature_lowPowerProfile_name": {
-    "message": "Low Power Profile"
+    "message": "Профиль низкого энергопотребления"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "Показывает плавающую мини-панель плеера внизу при прокрутке ниже видео"
   },
   "feature_miniPlayerBar_name": {
     "message": "Мини-плеер"
   },
   "feature_monetizationIndicator_desc": {
-    "message": "Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available."
+    "message": "Добавляет индикатор под заголовком, показывающий, монетизировано ли видео (есть реклама / наложение спонсорства) или нет. Эвристика — использует наложение платной рекламы, карточку спонсорства и данные категорий SponsorBlock при наличии."
   },
   "feature_monetizationIndicator_name": {
-    "message": "Monetization Indicator"
+    "message": "Индикатор монетизации"
   },
   "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up"
+    "message": "При включённой постоянной скорости воспроизведения оставлять видео категории «Музыка» на 1×, чтобы песни не ускорялись"
   },
   "feature_musicVideoSpeedLock_name": {
-    "message": "Lock 1× Speed on Music Videos"
+    "message": "Фиксация скорости 1× для музыкальных видео"
   },
   "feature_newPlayerUiRestore_desc": {
-    "message": "Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
+    "message": "Скрывает новые элементы интерфейса плеера YouTube (панель Delhi, поверхности действий). Восстанавливает более компактную полосу прогресса и оригинальные элементы управления."
   },
   "feature_newPlayerUiRestore_name": {
-    "message": "Restore Classic Player Chrome"
+    "message": "Восстановить классический интерфейс плеера"
   },
   "feature_noAmbientMode_desc": {
-    "message": "Turn off the glowing background effect that matches video colors"
+    "message": "Отключить эффект свечения фона, соответствующий цветам видео"
   },
   "feature_noAmbientMode_name": {
-    "message": "Disable Ambient Mode"
+    "message": "Отключить режим окружения"
   },
   "feature_noFrostedGlass_desc": {
-    "message": "Remove blur effects from UI elements"
+    "message": "Убрать эффекты размытия с элементов интерфейса"
   },
   "feature_noFrostedGlass_name": {
-    "message": "Disable Frosted Glass"
+    "message": "Отключить матовое стекло"
   },
   "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
+    "message": "Показать одноразовое уведомление, когда YouTube автоматически выбирает AI-дублированную аудиодорожку (например, английский дубляж корейского видео). Вы можете вручную переключиться на оригинальную дорожку в настройках плеера."
   },
   "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notify on AI-dubbed audio"
+    "message": "Уведомление об AI-дубляже"
   },
   "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
+    "message": "Добавить кнопку X на миниатюрах видео для быстрого удаления видео через API обратной связи YouTube"
   },
   "feature_notInterestedButton_name": {
-    "message": "\"Not Interested\" on Thumbnails"
+    "message": "«Не интересно» на миниатюрах"
   },
   "feature_nyanCatProgressBar_desc": {
-    "message": "Replace the video progress bar with a Nyan Cat animation"
+    "message": "Заменить полосу прогресса видео анимацией Nyan Cat"
   },
   "feature_nyanCatProgressBar_name": {
-    "message": "Nyan Cat Progress Bar"
+    "message": "Полоса прогресса Nyan Cat"
   },
   "feature_oledTheme_desc": {
-    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes."
+    "message": "Настоящий OLED-чёрный (#000) фон через токены --yt-sys-color-baseline. Выдерживает переключения тем YouTube, так как мы перехватываем сами токены, а не классы поверхностей."
   },
   "feature_oledTheme_name": {
-    "message": "OLED Theme"
+    "message": "Тема OLED"
   },
   "feature_openInAlternativeFrontend_desc": {
-    "message": "Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting."
+    "message": "Добавляет кнопку рядом с плеером для открытия текущего видео в настроенном альтернативном фронтенде (Invidious / Piped / FreeTube). Экземпляр по умолчанию — yewtu.be; изменяется через настройку alternativeFrontendInstance."
   },
   "feature_openInAlternativeFrontend_name": {
-    "message": "Open In Alternative Frontend"
+    "message": "Открыть в альтернативном фронтенде"
   },
   "feature_openInNewTab_desc": {
-    "message": "Makes video links on the home/subscriptions page open in a new tab instead of navigating away"
+    "message": "Ссылки на видео на главной/странице подписок открываются в новой вкладке вместо перехода"
   },
   "feature_openInNewTab_name": {
-    "message": "Open Videos in New Tab"
+    "message": "Открывать видео в новой вкладке"
   },
   "feature_pauseOtherTabs_desc": {
-    "message": "When a video starts playing, pause YouTube in all other tabs"
+    "message": "При начале воспроизведения видео — приостановить YouTube во всех других вкладках"
   },
   "feature_pauseOtherTabs_name": {
-    "message": "Pause Other Tabs on Play"
+    "message": "Пауза в других вкладках при воспроизведении"
   },
   "feature_pcHide_autoplay_desc": {
-    "message": "Hide autoplay toggle from player"
+    "message": "Скрыть переключатель автовоспроизведения в плеере"
   },
   "feature_pcHide_autoplay_name": {
-    "message": "Autoplay Toggle"
+    "message": "Переключатель автовоспроизведения"
   },
   "feature_pcHide_captions_desc": {
-    "message": "Hide captions overlay on video"
+    "message": "Скрыть наложение субтитров на видео"
   },
   "feature_pcHide_captions_name": {
-    "message": "Captions Display"
+    "message": "Отображение субтитров"
   },
   "feature_pcHide_fullscreen_desc": {
-    "message": "Hide fullscreen button from player"
+    "message": "Скрыть кнопку полноэкранного режима в плеере"
   },
   "feature_pcHide_fullscreen_name": {
-    "message": "Fullscreen Button"
+    "message": "Кнопка полноэкранного режима"
   },
   "feature_pcHide_miniplayer_desc": {
-    "message": "Hide miniplayer button from player"
+    "message": "Скрыть кнопку мини-плеера в плеере"
   },
   "feature_pcHide_miniplayer_name": {
-    "message": "Miniplayer Button"
+    "message": "Кнопка мини-плеера"
   },
   "feature_pcHide_next_desc": {
-    "message": "Hide next video button from player"
+    "message": "Скрыть кнопку следующего видео в плеере"
   },
   "feature_pcHide_next_name": {
-    "message": "Next Video Button"
+    "message": "Кнопка следующего видео"
   },
   "feature_pcHide_pip_desc": {
-    "message": "Hide PiP button from player"
+    "message": "Скрыть кнопку PiP в плеере"
   },
   "feature_pcHide_pip_name": {
-    "message": "Picture-in-Picture"
+    "message": "Картинка в картинке"
   },
   "feature_pcHide_settings_desc": {
-    "message": "Hide settings gear from player controls"
+    "message": "Скрыть шестерёнку настроек из элементов управления плеера"
   },
   "feature_pcHide_settings_name": {
-    "message": "Settings Gear"
+    "message": "Шестерёнка настроек"
   },
   "feature_pcHide_subtitles_desc": {
-    "message": "Hide subtitles button from player"
+    "message": "Скрыть кнопку субтитров в плеере"
   },
   "feature_pcHide_subtitles_name": {
-    "message": "Subtitles Button"
+    "message": "Кнопка субтитров"
   },
   "feature_pcHide_theater_desc": {
-    "message": "Hide theater mode button from player"
+    "message": "Скрыть кнопку режима Theater в плеере"
   },
   "feature_pcHide_theater_name": {
-    "message": "Theater Mode Button"
+    "message": "Кнопка режима Theater"
   },
   "feature_pcHide_ytLogo_desc": {
-    "message": "Hide the native brand button from player controls"
+    "message": "Скрыть стандартную кнопку бренда из элементов управления плеера"
   },
   "feature_pcHide_ytLogo_name": {
-    "message": "Native Brand Button"
+    "message": "Кнопка бренда"
   },
   "feature_perChannelIntroOutro_desc": {
-    "message": "Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools → Set Intro/Outro). Stored under perChannelIntroOutroData."
+    "message": "Пропускать первые N и последние M секунд каждого видео на заданном канале. Настройте смещения для каждого канала со страницы просмотра (Инструменты → Установить вступление/концовку). Сохраняется в perChannelIntroOutroData."
   },
   "feature_perChannelIntroOutro_name": {
-    "message": "Per-Channel Intro/Outro Skip"
+    "message": "Пропуск вступления/концовки по каналам"
   },
   "feature_perChannelSpeed_desc": {
-    "message": "Remember and auto-apply preferred playback speed for each channel"
+    "message": "Запоминать и автоматически применять предпочтительную скорость воспроизведения для каждого канала"
   },
   "feature_perChannelSpeed_name": {
-    "message": "Per-Channel Speed Memory"
+    "message": "Память скорости по каналам"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "Запоминать предпочтительную скорость воспроизведения глобально и автоматически применять к каждому видео"
   },
   "feature_persistentSpeed_name": {
     "message": "Постоянная скорость"
   },
   "feature_pipButton_desc": {
-    "message": "Adds a one-click PiP button to the player controls for native browser Picture-in-Picture"
+    "message": "Добавляет кнопку PiP в один клик в элементы управления плеера для встроенного режима «Картинка в картинке» браузера"
   },
   "feature_pipButton_name": {
-    "message": "Picture-in-Picture Button"
+    "message": "Кнопка «Картинка в картинке»"
   },
   "feature_playbackSpeedOSD_desc": {
-    "message": "Show speed overlay on the video player (like VLC) instead of corner toast"
+    "message": "Показывать наложение скорости на видеоплеере (как в VLC) вместо уведомления в углу"
   },
   "feature_playbackSpeedOSD_name": {
-    "message": "Speed Change OSD"
+    "message": "OSD смены скорости"
   },
   "feature_playbackStatsOverlay_desc": {
-    "message": "Shows video codec, resolution, bitrate, and dropped frame count as a togglable overlay"
+    "message": "Показывает кодек видео, разрешение, битрейт и количество пропущенных кадров как переключаемое наложение"
   },
   "feature_playbackStatsOverlay_name": {
-    "message": "Playback Stats Overlay"
+    "message": "Наложение статистики воспроизведения"
   },
   "feature_playlistEnhancer_desc": {
-    "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
+    "message": "Добавляет инструменты перемешивания, копирования и скрытия дубликатов в панели плейлистов"
   },
   "feature_playlistEnhancer_name": {
-    "message": "Playlist Enhancer"
+    "message": "Улучшение плейлистов"
   },
   "feature_playlistQuickRemove_desc": {
-    "message": "Show a trash icon on each item in playlists you own for one-click removal"
+    "message": "Показать значок корзины на каждом элементе в ваших плейлистах для удаления в один клик"
   },
   "feature_playlistQuickRemove_name": {
-    "message": "Playlist Quick-Remove Overlay"
+    "message": "Быстрое удаление из плейлиста"
   },
   "feature_playlistSearch_desc": {
-    "message": "Adds a search input above playlist panels to filter items by title"
+    "message": "Добавляет поле поиска над панелями плейлистов для фильтрации элементов по названию"
   },
   "feature_playlistSearch_name": {
-    "message": "Playlist Search"
+    "message": "Поиск в плейлисте"
   },
   "feature_popOutPlayer_desc": {
-    "message": "Detach the video into a resizable floating Picture-in-Picture window with transport controls"
+    "message": "Открепить видео в изменяемое по размеру плавающее окно «Картинка в картинке» с элементами управления воспроизведением"
   },
   "feature_popOutPlayer_name": {
-    "message": "Pop-Out Player"
+    "message": "Плавающий плеер"
   },
   "feature_preciseViewCounts_desc": {
-    "message": "Show full view counts (1,234,567) instead of truncated (1.2M)"
+    "message": "Показывать полное количество просмотров (1 234 567) вместо сокращённого (1,2 млн)"
   },
   "feature_preciseViewCounts_name": {
-    "message": "Precise View Counts"
+    "message": "Точное количество просмотров"
   },
   "feature_preloadComments_desc": {
-    "message": "Eagerly load the comment section so it is ready when you scroll down"
+    "message": "Предварительная загрузка раздела комментариев, чтобы он был готов при прокрутке вниз"
   },
   "feature_preloadComments_name": {
-    "message": "Preload Comments"
+    "message": "Предзагрузка комментариев"
   },
   "feature_premiumLiveChat_desc": {
-    "message": "Refine live chat with a polished header, elevated message rows, and a premium composer."
+    "message": "Улучшенный чат прямого эфира с полированным заголовком, приподнятыми строками сообщений и премиум-редактором."
   },
   "feature_premiumLiveChat_name": {
-    "message": "Premium Live Chat"
+    "message": "Премиум-чат прямого эфира"
   },
   "feature_presetPowerUser_desc": {
-    "message": "Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values."
+    "message": "Максимальная плотность функций: статистика воспроизведения, постоянная скорость, точное управление скоростью, возобновление воспроизведения, мини-плеер, режим фокуса, цикл A-B. Выключите для восстановления прежних значений."
   },
   "feature_presetPowerUser_name": {
-    "message": "Power User Preset"
+    "message": "Предустановка «Продвинутый»"
   },
   "feature_presetPrivacy_desc": {
-    "message": "Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values."
+    "message": "Набор для конфиденциальности: чистые URL, скрытие чипов отслеживания, блокировка бесконечной прокрутки, отключение SPA-навигации. Выключите для восстановления прежних значений."
   },
   "feature_presetPrivacy_name": {
-    "message": "Privacy Preset"
+    "message": "Предустановка «Конфиденциальность»"
   },
   "feature_presetResearcher_desc": {
-    "message": "Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values."
+    "message": "Набор для исследований/учёбы: просмотрщик транскриптов, закладки с таймкодами, трекер времени просмотра, AI-резюме, поиск в комментариях. Выключите для восстановления прежних значений."
   },
   "feature_presetResearcher_name": {
-    "message": "Researcher Preset"
+    "message": "Предустановка «Исследователь»"
   },
   "feature_preventAutoplay_desc": {
-    "message": "Stop videos from automatically playing on page load"
+    "message": "Остановить автоматическое воспроизведение видео при загрузке страницы"
   },
   "feature_preventAutoplay_name": {
-    "message": "Prevent Autoplay"
+    "message": "Запретить автовоспроизведение"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "Set different default qualities for normal / theater / fullscreen / background / embed contexts. ISOLATED-world detects the context and writes data-ytkit-quality-context on <html>; the MAIN-world bridge re-applies the matching quality via movie_player.setPlaybackQualityRange()."
+    "message": "Задать различные качества по умолчанию для обычного / Theater / полноэкранного / фонового / встроенного режимов. ISOLATED-мир определяет контекст и записывает data-ytkit-quality-context на <html>; мост MAIN-мира повторно применяет соответствующее качество через movie_player.setPlaybackQualityRange()."
   },
   "feature_qualityProfileMatrix_name": {
-    "message": "Per-Context Quality"
+    "message": "Качество по контексту"
   },
   "feature_quickLinkEditor_desc": {
-    "message": "Customize the Astra launcher menu. One link per line: Label | URL"
+    "message": "Настройте меню запуска Astra. Одна ссылка в строке: Название | URL"
   },
   "feature_quickLinkEditor_name": {
-    "message": "Edit Launcher Links"
+    "message": "Редактор ссылок запуска"
   },
   "feature_quickLinkMenu_desc": {
-    "message": "Adds a compact quick-links menu in the masthead with customizable links"
+    "message": "Добавляет компактное меню быстрых ссылок в шапку с настраиваемыми ссылками"
   },
   "feature_quickLinkMenu_name": {
-    "message": "Quick Links"
+    "message": "Быстрые ссылки"
   },
   "feature_reactionSpammer_desc": {
-    "message": "Select live chat reactions and send them in a randomized loop."
+    "message": "Выберите реакции чата и отправляйте их в случайном цикле."
   },
   "feature_reactionSpammer_name": {
-    "message": "Reaction Spammer"
+    "message": "Спам реакциями"
   },
   "feature_rectangularizeYouTube_desc": {
-    "message": "Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
+    "message": "Убирает закруглённые/овальные/капсульные фоны YouTube. Любой фон с border-radius > 12px ограничивается до 8px. Аватары и индикаторы прогресса остаются круглыми."
   },
   "feature_rectangularizeYouTube_name": {
-    "message": "Rectangularize UI"
+    "message": "Прямоугольный интерфейс"
   },
   "feature_redditComments_desc": {
-    "message": "Find Reddit discussions mentioning the current video (button in secondary sidebar)"
+    "message": "Найти обсуждения на Reddit, упоминающие текущее видео (кнопка на вторичной боковой панели)"
   },
   "feature_redditComments_name": {
-    "message": "Reddit Comments"
+    "message": "Комментарии Reddit"
   },
   "feature_redirectHomeToSubs_desc": {
-    "message": "Automatically redirect the YouTube homepage to your subscriptions feed"
+    "message": "Автоматически перенаправлять главную страницу YouTube на ленту подписок"
   },
   "feature_redirectHomeToSubs_name": {
-    "message": "Redirect Home to Subscriptions"
+    "message": "Перенаправить главную на подписки"
   },
   "feature_redirectShorts_desc": {
-    "message": "Open Shorts in the standard video player"
+    "message": "Открывать Shorts в стандартном видеоплеере"
   },
   "feature_redirectShorts_name": {
-    "message": "Redirect Shorts"
+    "message": "Перенаправить Shorts"
   },
   "feature_redirectToVideosTab_desc": {
-    "message": "Open channel pages directly on the Videos tab"
+    "message": "Открывать страницы каналов сразу на вкладке «Видео»"
   },
   "feature_redirectToVideosTab_name": {
-    "message": "Channels → Videos Tab"
+    "message": "Каналы → вкладка «Видео»"
   },
   "feature_reducedMotion_desc": {
-    "message": "Forces every Astra-injected animation, transition, and scroll behavior to be near-instant. Respects the OS prefers-reduced-motion setting automatically; this toggle adds an unconditional override on top."
+    "message": "Делает все анимации, переходы и поведение прокрутки Astra практически мгновенными. Автоматически учитывает настройку ОС prefers-reduced-motion; этот переключатель добавляет безусловное принудительное переопределение."
   },
   "feature_reducedMotion_name": {
-    "message": "Reduced Motion (strong)"
+    "message": "Уменьшение движения (сильное)"
   },
   "feature_remainingTimeDisplay_desc": {
-    "message": "Show time remaining next to current time in the player, adjusted for playback speed"
+    "message": "Показывать оставшееся время рядом с текущим в плеере с учётом скорости воспроизведения"
   },
   "feature_remainingTimeDisplay_name": {
-    "message": "Remaining Time Display"
+    "message": "Отображение оставшегося времени"
   },
   "feature_rememberVolume_desc": {
-    "message": "Persist your volume level across videos and sessions"
+    "message": "Сохранять уровень громкости между видео и сессиями"
   },
   "feature_rememberVolume_name": {
-    "message": "Remember Volume"
+    "message": "Запоминание громкости"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "Скрыть все видео Shorts из лент и рекомендаций"
   },
   "feature_removeAllShorts_name": {
     "message": "Скрыть Shorts"
   },
   "feature_researchSpacedReview_desc": {
-    "message": "Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links."
+    "message": "Экспорт данных режима учёбы/работы в Markdown или CSV: итоги времени просмотра, состояние режима фокуса, состояние цифрового благополучия и закладки с таймкодами с глубокими ссылками."
   },
   "feature_researchSpacedReview_name": {
-    "message": "Study / Work Export"
+    "message": "Экспорт учёбы / работы"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes the transcript of every video you open into a local IndexedDB. Adds a global \"Search Transcripts\" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry."
+    "message": "Индексирует транскрипт каждого открытого видео в локальную IndexedDB. Добавляет глобальную панель «Поиск по транскриптам» из всплывающего окна или через window.__ytkitSearchTranscripts(query). Индекс можно очистить в настройках; без телеметрии."
   },
   "feature_researchTranscriptIndex_name": {
-    "message": "Transcript Search Index"
+    "message": "Индекс поиска по транскриптам"
   },
   "feature_researchTranscriptSearchPanel_desc": {
-    "message": "Adds a \"Search transcripts\" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off."
+    "message": "Добавляет кнопку «Поиск по транскриптам» на странице просмотра, которая открывает интерфейс поиска по локальному индексу IndexedDB. Требует включённого «Индекса поиска по транскриптам». По умолчанию выключено."
   },
   "feature_researchTranscriptSearchPanel_name": {
-    "message": "Transcript Search Panel"
+    "message": "Панель поиска по транскриптам"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+    "message": "Показать аватары каналов/комментариев и полки главной ленты, которые Astra Deck скрывает по умолчанию."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restore Native YouTube UI"
+    "message": "Восстановить стандартный интерфейс YouTube"
   },
   "feature_resumePlayback_desc": {
-    "message": "Remember where you stopped watching and automatically resume from that point"
+    "message": "Запоминать место остановки и автоматически продолжать просмотр с этой точки"
   },
   "feature_resumePlayback_name": {
-    "message": "Resume Playback Position"
+    "message": "Возобновление воспроизведения"
   },
   "feature_returnDislike_desc": {
-    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
+    "message": "Восстановить приблизительное количество дизлайков через публичный API Return YouTube Dislike. Кешируется локально; лимит 100 запросов/мин. Cookie не отправляются. По умолчанию выключено."
   },
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
   "feature_reversePlaylist_desc": {
-    "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
+    "message": "Добавляет кнопку «Реверс» в панели плейлистов для воспроизведения сначала самых старых"
   },
   "feature_reversePlaylist_name": {
-    "message": "Reverse Playlist Button"
+    "message": "Кнопка реверса плейлиста"
   },
   "feature_rssFeedLink_desc": {
-    "message": "Show an RSS feed link on channel pages for subscribing via RSS readers"
+    "message": "Показать ссылку на RSS-ленту на страницах каналов для подписки через RSS-ридеры"
   },
   "feature_rssFeedLink_name": {
-    "message": "RSS Feed Link"
+    "message": "Ссылка на RSS-ленту"
   },
   "feature_sbCat_filler_desc": {
-    "message": "Tangential or filler content"
+    "message": "Побочный или заполняющий контент"
   },
   "feature_sbCat_filler_name": {
-    "message": "Skip Filler"
+    "message": "Пропуск заполнителей"
   },
   "feature_sbCat_interaction_desc": {
-    "message": "\"Like, subscribe, comment\" reminders"
+    "message": "Напоминания «Поставьте лайк, подпишитесь, оставьте комментарий»"
   },
   "feature_sbCat_interaction_name": {
-    "message": "Skip Interaction Reminders"
+    "message": "Пропуск призывов к действию"
   },
   "feature_sbCat_intro_desc": {
-    "message": "Intro animations and branding"
+    "message": "Вступительные анимации и брендирование"
   },
   "feature_sbCat_intro_name": {
-    "message": "Skip Intros"
+    "message": "Пропуск вступлений"
   },
   "feature_sbCat_music_offtopic_desc": {
-    "message": "Non-music sections in music videos"
+    "message": "Немузыкальные разделы в музыкальных видео"
   },
   "feature_sbCat_music_offtopic_name": {
-    "message": "Skip Non-Music"
+    "message": "Пропуск немузыкальных частей"
   },
   "feature_sbCat_outro_desc": {
-    "message": "Endcards and outro sequences"
+    "message": "Конечные заставки и завершающие последовательности"
   },
   "feature_sbCat_outro_name": {
-    "message": "Skip Outros"
+    "message": "Пропуск концовок"
   },
   "feature_sbCat_poi_highlight_desc": {
-    "message": "Jump to the highlight/point of interest (disabled by default)"
+    "message": "Перейти к ключевому моменту/точке интереса (по умолчанию отключено)"
   },
   "feature_sbCat_poi_highlight_name": {
-    "message": "Highlight Point of Interest"
+    "message": "Подсветка точки интереса"
   },
   "feature_sbCat_preview_desc": {
-    "message": "Preview or recap of upcoming content"
+    "message": "Предварительный просмотр или краткое содержание будущего контента"
   },
   "feature_sbCat_preview_name": {
-    "message": "Skip Previews"
+    "message": "Пропуск превью"
   },
   "feature_sbCat_selfpromo_desc": {
-    "message": "Creator promoting their own products or channels"
+    "message": "Автор рекламирует собственные продукты или каналы"
   },
   "feature_sbCat_selfpromo_name": {
-    "message": "Skip Self-Promotion"
+    "message": "Пропуск саморекламы"
   },
   "feature_sbCat_sponsor_desc": {
-    "message": "Paid promotions and sponsorship segments"
+    "message": "Платные промоакции и спонсорские сегменты"
   },
   "feature_sbCat_sponsor_name": {
-    "message": "Skip Sponsors"
+    "message": "Пропуск спонсоров"
   },
   "feature_sbPerChannelProfiles_desc": {
-    "message": "Override which SponsorBlock categories are skipped on a per-channel basis"
+    "message": "Переопределять, какие категории SponsorBlock пропускаются для каждого канала отдельно"
   },
   "feature_sbPerChannelProfiles_name": {
-    "message": "SponsorBlock Per-Channel Profiles"
+    "message": "Профили SponsorBlock по каналам"
   },
   "feature_scrollToPlayer_desc": {
-    "message": "Automatically scrolls to the top of the page when navigating to a new video"
+    "message": "Автоматическая прокрутка к верху страницы при переходе к новому видео"
   },
   "feature_scrollToPlayer_name": {
-    "message": "Scroll to Player on Navigate"
+    "message": "Прокрутка к плееру при навигации"
   },
   "feature_scrollWheelSpeed_desc": {
-    "message": "Adjust playback speed by scrolling the mouse wheel over the video player"
+    "message": "Регулировать скорость воспроизведения прокруткой колеса мыши над видеоплеером"
   },
   "feature_scrollWheelSpeed_name": {
-    "message": "Scroll Wheel Speed"
+    "message": "Скорость колесом мыши"
   },
   "feature_searchFilterDefaults_desc": {
-    "message": "Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results"
+    "message": "Автоматически применять сортировку по умолчанию (дата загрузки, количество просмотров или рейтинг) к результатам поиска YouTube"
   },
   "feature_searchFilterDefaults_name": {
-    "message": "Search Filter Defaults"
+    "message": "Фильтры поиска по умолчанию"
   },
   "feature_selectorHealthPanel_desc": {
-    "message": "Review live selector drift signals and export a JSON health report for fixture refreshes."
+    "message": "Просмотр сигналов дрейфа селекторов в реальном времени и экспорт JSON-отчёта о состоянии для обновления фикстур."
   },
   "feature_selectorHealthPanel_name": {
-    "message": "Selector Health"
+    "message": "Состояние селекторов"
   },
   "feature_settingsProfiles_desc": {
-    "message": "Save, load, switch, import, and export named setting configurations (e.g. Gaming / Work / Music). Controls appear at the top of the settings panel when enabled."
+    "message": "Сохраняйте, загружайте, переключайте, импортируйте и экспортируйте именованные конфигурации настроек (например, Игры / Работа / Музыка). Элементы управления появляются вверху панели настроек при включении."
   },
   "feature_settingsProfiles_name": {
-    "message": "Settings Profiles"
+    "message": "Профили настроек"
   },
   "feature_shareMenuCleaner_desc": {
-    "message": "Removes social media buttons from the share dialog, leaving only the URL copy option"
+    "message": "Убирает кнопки социальных сетей из диалога «Поделиться», оставляя только опцию копирования URL"
   },
   "feature_shareMenuCleaner_name": {
-    "message": "Clean Share Menu"
+    "message": "Очистка меню «Поделиться»"
   },
   "feature_shortsAsRegularVideo_desc": {
-    "message": "Add native browser playback controls and scrubbing to YouTube Shorts"
+    "message": "Добавить стандартные элементы управления воспроизведением и перемотку в YouTube Shorts"
   },
   "feature_shortsAsRegularVideo_name": {
-    "message": "Shorts Player Controls"
+    "message": "Элементы управления плеера Shorts"
   },
   "feature_showChannelVideoCount_desc": {
-    "message": "Display total uploaded video count next to the channel name on watch pages"
+    "message": "Отображать общее количество загруженных видео рядом с названием канала на страницах просмотра"
   },
   "feature_showChannelVideoCount_name": {
-    "message": "Show Channel Video Count"
+    "message": "Показать количество видео канала"
   },
   "feature_showLocalDownloadButton_desc": {
-    "message": "Add a yt-dlp download options button on watch pages"
+    "message": "Добавить кнопку загрузки yt-dlp на страницы просмотра"
   },
   "feature_showLocalDownloadButton_name": {
-    "message": "Download Button"
+    "message": "Кнопка загрузки"
   },
   "feature_showPlaylistDuration_desc": {
-    "message": "Display total playlist runtime and speed-adjusted estimate next to the playlist header"
+    "message": "Показать общую длительность плейлиста и оценку с учётом скорости рядом с заголовком плейлиста"
   },
   "feature_showPlaylistDuration_name": {
-    "message": "Show Playlist Duration"
+    "message": "Показать длительность плейлиста"
   },
   "feature_showStatisticsDashboard_desc": {
-    "message": "Track videos watched, time on YouTube, and videos hidden"
+    "message": "Отслеживать просмотренные видео, время на YouTube и скрытые видео"
   },
   "feature_showStatisticsDashboard_name": {
-    "message": "Statistics Dashboard"
+    "message": "Панель статистики"
   },
   "feature_showTimeInTabTitle_desc": {
-    "message": "Prepend current playback time [5:23] to the browser tab title"
+    "message": "Добавить текущее время воспроизведения [5:23] к заголовку вкладки браузера"
   },
   "feature_showTimeInTabTitle_name": {
-    "message": "Show Time in Tab Title"
+    "message": "Время в заголовке вкладки"
   },
   "feature_sleepTimer_desc": {
-    "message": "Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes."
+    "message": "Приостановить воспроизведение через выбранное количество минут. Чип обратного отсчёта на плеере позволяет отменить или добавить 5 минут."
   },
   "feature_sleepTimer_name": {
-    "message": "Sleep Timer"
+    "message": "Таймер сна"
   },
   "feature_sortCommentsNewest_desc": {
-    "message": "Automatically switch the comment sort order to \"Newest first\" on every video"
+    "message": "Автоматически переключать сортировку комментариев на «Сначала новые» для каждого видео"
   },
   "feature_sortCommentsNewest_name": {
-    "message": "Sort Comments Newest First"
+    "message": "Сортировка комментариев: сначала новые"
   },
   "feature_speedIndicatorOverlay_desc": {
-    "message": "Shows the current playback speed as a small overlay on the video when not at 1x"
+    "message": "Показывает текущую скорость воспроизведения небольшим наложением на видео, когда скорость не 1x"
   },
   "feature_speedIndicatorOverlay_name": {
-    "message": "Speed Indicator Overlay"
+    "message": "Индикатор скорости"
   },
   "feature_speedStep_desc": {
-    "message": "How much to change speed per scroll tick"
+    "message": "На сколько изменять скорость за одно деление прокрутки"
   },
   "feature_speedStep_name": {
-    "message": "Speed Step Amount"
+    "message": "Шаг изменения скорости"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "Автоматический пропуск спонсорских сегментов, вступлений, концовок и другого нетематического контента на основе краудсорсинговых данных"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "feature_squareAvatars_desc": {
-    "message": "Make channel avatars square instead of round"
+    "message": "Сделать аватары каналов квадратными вместо круглых"
   },
   "feature_squareAvatars_name": {
-    "message": "Square Avatars"
+    "message": "Квадратные аватары"
   },
   "feature_squareSearchBar_desc": {
-    "message": "Remove rounded corners from the search bar"
+    "message": "Убрать скруглённые углы строки поиска"
   },
   "feature_squareSearchBar_name": {
-    "message": "Square Search Bar"
+    "message": "Квадратная строка поиска"
   },
   "feature_stickyChat_desc": {
-    "message": "Keeps the live chat panel pinned at the top of the sidebar when scrolling"
+    "message": "Фиксирует панель чата прямого эфира вверху боковой панели при прокрутке"
   },
   "feature_stickyChat_name": {
-    "message": "Sticky Live Chat"
+    "message": "Закреплённый чат прямого эфира"
   },
   "feature_stickyVideo_desc": {
-    "message": "Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen."
+    "message": "Полноэкранное видео на страницах просмотра. Прокрутите вниз, чтобы увидеть комментарии рядом. Прокрутите обратно для возврата к полноэкранному режиму."
   },
   "feature_stickyVideo_name": {
-    "message": "Theater Split"
+    "message": "Разделённый Theater"
   },
   "feature_storageQuotaLRU_desc": {
-    "message": "LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
+    "message": "LRU-ограничение растущих настроек (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) для предотвращения исчерпания квоты"
   },
   "feature_storageQuotaLRU_name": {
-    "message": "Storage Quota Management"
+    "message": "Управление квотой хранилища"
   },
   "feature_styledFilterChips_desc": {
-    "message": "Compact, native-feeling filter chips on home and subscriptions"
+    "message": "Компактные, нативные фильтры-чипы на главной и в подписках"
   },
   "feature_styledFilterChips_name": {
-    "message": "Styled Filter Chips"
+    "message": "Стилизованные фильтры-чипы"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up."
+    "message": "Локальные группы уровня PocketTube для ленты подписок. Создавайте именованные группы, перетаскивайте каналы, сортируйте по дате/длительности/непросмотренным/новым с последнего визита. Данные групп хранятся в subscriptionGroupData (только локально); используйте Экспорт для резервного копирования."
   },
   "feature_subscriptionGroups_name": {
-    "message": "Subscription Groups"
+    "message": "Группы подписок"
   },
   "feature_subscriptionsGrid_desc": {
-    "message": "Use a denser grid layout on the subscriptions page"
+    "message": "Использовать более плотную сетку на странице подписок"
   },
   "feature_subscriptionsGrid_name": {
-    "message": "Subscriptions Grid"
+    "message": "Сетка подписок"
   },
   "feature_subtitleDownload_desc": {
-    "message": "One-click SRT download of the active caption track — standalone player button, no sidebar required"
+    "message": "Загрузка SRT активной дорожки субтитров в один клик — отдельная кнопка плеера, боковая панель не нужна"
   },
   "feature_subtitleDownload_name": {
-    "message": "Subtitle Download (SRT)"
+    "message": "Загрузка субтитров (SRT)"
   },
   "feature_subtitleStyling_desc": {
-    "message": "Override YouTube caption appearance — font size/family/color, background, position, shadow"
+    "message": "Переопределение внешнего вида субтитров YouTube — размер/шрифт/цвет, фон, положение, тень"
   },
   "feature_subtitleStyling_name": {
-    "message": "Subtitle Styling"
+    "message": "Стилизация субтитров"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Scroll video into full view when theater mode activates"
+    "message": "Автопрокрутка видео в полный вид при активации режима Theater"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Theater Auto-Scroll"
+    "message": "Автопрокрутка Theater"
   },
   "feature_themeAccentColor_desc": {
-    "message": "Custom accent color for highlights, progress bar, and active UI elements"
+    "message": "Пользовательский акцентный цвет для выделений, полосы прогресса и активных элементов интерфейса"
   },
   "feature_themeAccentColor_name": {
-    "message": "Accent Color"
+    "message": "Акцентный цвет"
   },
   "feature_thinScrollbar_desc": {
-    "message": "Use a slim, unobtrusive scrollbar"
+    "message": "Использовать тонкую, незаметную полосу прокрутки"
   },
   "feature_thinScrollbar_name": {
-    "message": "Thin Scrollbar"
+    "message": "Тонкая полоса прокрутки"
   },
   "feature_thumbnailPreviewSize_desc": {
-    "message": "Increase the size of thumbnail hover previews for easier viewing on large screens"
+    "message": "Увеличить размер превью миниатюр при наведении для удобного просмотра на больших экранах"
   },
   "feature_thumbnailPreviewSize_name": {
-    "message": "Large Thumbnail Previews"
+    "message": "Увеличенные превью миниатюр"
   },
   "feature_thumbnailQualityUpgrade_desc": {
-    "message": "Upgrades video thumbnails to maximum resolution where available"
+    "message": "Обновляет миниатюры видео до максимального разрешения при наличии"
   },
   "feature_thumbnailQualityUpgrade_name": {
-    "message": "HD Thumbnails"
+    "message": "HD-миниатюры"
   },
   "feature_timestampBookmarks_desc": {
-    "message": "Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions."
+    "message": "Сохраняйте закладки на моменты в видео с пользовательскими заметками. Кликните на закладку для перехода. Сохраняются между сессиями."
   },
   "feature_timestampBookmarks_name": {
-    "message": "Timestamp Bookmarks"
+    "message": "Закладки с таймкодами"
   },
   "feature_titleCaseTransform_desc": {
-    "message": "Override YouTube's clickbait UPPERCASE titles with a casing style of your choice"
+    "message": "Заменить кликбейтные ЗАГЛАВНЫЕ заголовки YouTube на выбранный вами стиль регистра"
   },
   "feature_titleCaseTransform_name": {
-    "message": "Transform Video Title Case"
+    "message": "Преобразование регистра заголовков"
   },
   "feature_titleNormalization_desc": {
-    "message": "Convert ALL CAPS titles to Title Case. Reduces clickbait without changing meaning."
+    "message": "Преобразовать заголовки КАПСЛОКОМ в нормальный регистр. Снижает кликбейт без изменения смысла."
   },
   "feature_titleNormalization_name": {
-    "message": "Normalize Clickbait Titles"
+    "message": "Нормализация кликбейтных заголовков"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
+    "message": "Передаёт themeAccentColor пользователя в нативные токены YouTube --yt-sys-color-*, чтобы стандартные значки, состояния наведения и кнопки следовали акценту Astra без перестилизации каждой поверхности."
   },
   "feature_tokenThemeBridge_name": {
-    "message": "Native Token Theme Bridge"
+    "message": "Мост нативных токенов темы"
   },
   "feature_transcriptAiHandoff_desc": {
-    "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
+    "message": "Добавляет кнопку плеера, которая копирует транскрипт и открывает выбранный AI-инструмент с предзаполненным промптом для резюмирования"
   },
   "feature_transcriptAiHandoff_name": {
-    "message": "Transcript → AI One-Click Handoff"
+    "message": "Транскрипт → AI в один клик"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "Добавляет кликабельную панель транскрипта на боковую панель с навигацией по таймкодам и экспортом (txt/srt/буфер обмена/промпт LLM)"
   },
   "feature_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
   },
   "feature_uiStyleManager_desc": {
-    "message": "Choose rounded or square UI elements"
+    "message": "Выберите скруглённые или квадратные элементы интерфейса"
   },
   "feature_uiStyleManager_name": {
-    "message": "UI Style"
+    "message": "Стиль интерфейса"
   },
   "feature_videoAgeColors_desc": {
-    "message": "Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
+    "message": "Цветовая маркировка рамок миниатюр по возрасту загрузки — свежее (зелёный), неделя (синий), месяц (жёлтый), год (оранжевый), старое (красный)"
   },
   "feature_videoAgeColors_name": {
-    "message": "Video Age Color Coding"
+    "message": "Цветовая маркировка возраста видео"
   },
   "feature_videoContextMenu_desc": {
-    "message": "Right-click on the video player for yt-dlp download actions"
+    "message": "Правый клик по видеоплееру для действий загрузки yt-dlp"
   },
   "feature_videoContextMenu_name": {
-    "message": "Player Download Menu"
+    "message": "Меню загрузки плеера"
   },
   "feature_videoLoopButton_desc": {
-    "message": "Add a loop toggle button to the player controls for one-click video looping"
+    "message": "Добавить кнопку переключения зацикливания в элементы управления плеера для повтора видео в один клик"
   },
   "feature_videoLoopButton_name": {
-    "message": "Video Loop Button"
+    "message": "Кнопка зацикливания видео"
   },
   "feature_videoNotes_desc": {
-    "message": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos."
+    "message": "Вести локальную заметку для текущего видео, экспортировать архив заметок. Хранилище ограничено 1000 последних редактированных видео."
   },
   "feature_videoNotes_name": {
-    "message": "Per-Video Notes"
+    "message": "Заметки к видео"
   },
   "feature_videoResolutionBadge_desc": {
-    "message": "Shows a 4K, HD, or SD badge on video thumbnails based on available quality"
+    "message": "Показывает значок 4K, HD или SD на миниатюрах видео в зависимости от доступного качества"
   },
   "feature_videoResolutionBadge_name": {
-    "message": "Resolution Badge on Thumbnails"
+    "message": "Значок разрешения на миниатюрах"
   },
   "feature_videoFlip_desc": {
-    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+    "message": "Зеркальное отражение видео по горизонтали или вертикали — полезно для зеркальных уроков танцев, читаемости текста или перевёрнутых записей"
   },
   "feature_videoFlip_name": {
-    "message": "Video Flip"
+    "message": "Отражение видео"
   },
   "feature_monoToStereo_desc": {
-    "message": "Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones"
+    "message": "Центрировать монозвук равномерно в обоих ушах — исправляет односторонние записи, лекции и старый контент, который звучит неравномерно в наушниках"
   },
   "feature_monoToStereo_name": {
-    "message": "Mono to Stereo"
+    "message": "Моно в стерео"
   },
   "feature_videoRotation_desc": {
-    "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
+    "message": "Поворот видео на 90/180/270 градусов через CSS-трансформацию — полезно для боковых записей с телефона"
   },
   "feature_videoRotation_name": {
-    "message": "Video Rotation"
+    "message": "Поворот видео"
   },
   "feature_videoScreenshot_desc": {
-    "message": "Capture the current video frame as a PNG image — copies to clipboard and downloads"
+    "message": "Захват текущего кадра видео как PNG — копируется в буфер обмена и скачивается"
   },
   "feature_videoScreenshot_name": {
-    "message": "Video Screenshot"
+    "message": "Скриншот видео"
   },
   "feature_videosPerRow_desc": {
-    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
+    "message": "Задать количество миниатюр видео в ряду (0 = динамически по ширине окна)"
   },
   "feature_videosPerRow_name": {
-    "message": "Videos Per Row"
+    "message": "Видео в ряду"
   },
   "feature_videoVisualFilters_desc": {
-    "message": "Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element"
+    "message": "Настроить яркость / контраст / насыщенность / оттенок / серый тон / сепию через CSS-фильтр на элементе видео"
   },
   "feature_videoVisualFilters_name": {
-    "message": "Video Visual Filters"
+    "message": "Визуальные фильтры видео"
   },
   "feature_videoZoom_desc": {
-    "message": "Hold Ctrl and scroll on the video to zoom in, then drag to pan around"
+    "message": "Удерживайте Ctrl и прокручивайте на видео для увеличения, затем перетаскивайте для панорамирования"
   },
   "feature_videoZoom_name": {
-    "message": "Video Zoom & Pan"
+    "message": "Масштабирование и панорамирование видео"
   },
   "feature_vlcMpvHandoff_desc": {
-    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
+    "message": "Только для полного профиля GitHub. Добавляет кнопки рядом с плеером, которые запускают URL протоколов ytvlc:// или ytmpv://. Обработчик протокола должен быть зарегистрирован в вашей ОС — Astra Deck никогда не запускает бинарные файлы напрямую. По умолчанию выключено."
   },
   "feature_vlcMpvHandoff_name": {
-    "message": "VLC / MPV Stream Handoff"
+    "message": "Передача потока в VLC / MPV"
   },
   "feature_volumeWheelMode_desc": {
-    "message": "Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added."
+    "message": "Прокручивайте колесо мыши над плеером для изменения громкости с шагом 5%. Плавающий индикатор показывает новый уровень 1,2 с; горячие клавиши не добавляются."
   },
   "feature_volumeWheelMode_name": {
-    "message": "Volume Wheel"
+    "message": "Громкость колесом мыши"
   },
   "feature_watchHistoryAnalytics_desc": {
-    "message": "Modal dashboard visualizing your 30-day YouTube watch time as a CSS bar chart (requires Watch Time Tracker)"
+    "message": "Модальная панель, визуализирующая ваше время просмотра YouTube за 30 дней в виде CSS-столбчатой диаграммы (требуется «Трекер времени просмотра»)"
   },
   "feature_watchHistoryAnalytics_name": {
-    "message": "Watch History Analytics"
+    "message": "Аналитика истории просмотров"
   },
   "feature_watchLaterCleanup_desc": {
-    "message": "Adds a \"Remove Watched\" button to the Watch Later playlist header for batch cleanup"
+    "message": "Добавляет кнопку «Удалить просмотренные» в заголовок плейлиста «Смотреть позже» для пакетной очистки"
   },
   "feature_watchLaterCleanup_name": {
-    "message": "Watch Later Cleanup Button"
+    "message": "Кнопка очистки «Смотреть позже»"
   },
   "feature_watchLaterQuickAdd_desc": {
-    "message": "Adds a clock icon on every thumbnail for one-click Watch Later saving"
+    "message": "Добавляет значок часов на каждую миниатюру для добавления в «Смотреть позже» в один клик"
   },
   "feature_watchLaterQuickAdd_name": {
-    "message": "Watch Later Quick Button"
+    "message": "Быстрая кнопка «Смотреть позже»"
   },
   "feature_watchPageRestyle_desc": {
-    "message": "Premium watch-page layout for title, description, and metadata without hiding native controls"
+    "message": "Премиум-макет страницы просмотра для заголовка, описания и метаданных без скрытия стандартных элементов управления"
   },
   "feature_watchPageRestyle_name": {
-    "message": "Watch Page Restyle"
+    "message": "Рестайлинг страницы просмотра"
   },
   "feature_watchPageTabs_desc": {
-    "message": "Horizontal tab bar above the comments/description area to quickly switch views on the watch page"
+    "message": "Горизонтальная панель вкладок над областью комментариев/описания для быстрого переключения видов на странице просмотра"
   },
   "feature_watchPageTabs_name": {
-    "message": "Watch Page Tabs"
+    "message": "Вкладки страницы просмотра"
   },
   "feature_watchProgress_desc": {
-    "message": "Show colored progress bars on video thumbnails based on your watch history (saved locally)"
+    "message": "Показывать цветные полосы прогресса на миниатюрах видео на основе вашей истории просмотров (сохраняется локально)"
   },
   "feature_watchProgress_name": {
-    "message": "Watch Progress Indicators"
+    "message": "Индикаторы прогресса просмотра"
   },
   "feature_watchTimeTracker_desc": {
-    "message": "Track your daily/weekly YouTube watch time with a stats widget in the settings panel"
+    "message": "Отслеживать ваше ежедневное/еженедельное время просмотра YouTube с виджетом статистики в панели настроек"
   },
   "feature_watchTimeTracker_name": {
-    "message": "Watch Time Tracker"
+    "message": "Трекер времени просмотра"
   },
   "feature_wheelSeek_desc": {
-    "message": "Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict."
+    "message": "Прокручивайте колесо мыши над полосой прогресса для перемотки. Шаг по умолчанию 5 с (настраивается через wheelSeekStepSec). Прокрутка в других местах плеера по-прежнему управляет громкостью при включённой «Громкости колесом мыши»; функции не конфликтуют."
   },
   "feature_wheelSeek_name": {
-    "message": "Wheel Seek"
+    "message": "Перемотка колесом"
   },
   "feature_widenSearchBar_desc": {
-    "message": "Expand the search bar to use more available space"
+    "message": "Расширить строку поиска для использования большего доступного пространства"
   },
   "feature_widenSearchBar_name": {
-    "message": "Widen Search Bar"
+    "message": "Расширить строку поиска"
   },
   "feature_wpHide_askAISection_desc": {
-    "message": "Hide AI section in description"
+    "message": "Скрыть раздел AI в описании"
   },
   "feature_wpHide_askAISection_name": {
-    "message": "Ask AI Section"
+    "message": "Раздел «Спросить AI»"
   },
   "feature_wpHide_askButton_desc": {
-    "message": "Hide Ask AI button"
+    "message": "Скрыть кнопку «Спросить AI»"
   },
   "feature_wpHide_askButton_name": {
-    "message": "Ask Button"
+    "message": "Кнопка «Спросить»"
   },
   "feature_wpHide_channelInfoCards_desc": {
-    "message": "Hide channel info cards in description"
+    "message": "Скрыть карточки информации о канале в описании"
   },
   "feature_wpHide_channelInfoCards_name": {
-    "message": "Channel Info Cards"
+    "message": "Карточки информации о канале"
   },
   "feature_wpHide_joinButton_desc": {
-    "message": "Hide join/membership button"
+    "message": "Скрыть кнопку «Вступить»/«Подписка»"
   },
   "feature_wpHide_joinButton_name": {
-    "message": "Join Button"
+    "message": "Кнопка «Вступить»"
   },
   "feature_wpHide_moreActions_desc": {
-    "message": "Hide more actions menu button"
+    "message": "Скрыть кнопку меню дополнительных действий"
   },
   "feature_wpHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "Ещё (...)"
   },
   "feature_wpHide_podcastSection_desc": {
-    "message": "Hide podcast/course section in description"
+    "message": "Скрыть раздел подкастов/курсов в описании"
   },
   "feature_wpHide_podcastSection_name": {
-    "message": "Podcast/Course Section"
+    "message": "Раздел подкастов/курсов"
   },
   "feature_wpHide_saveButton_desc": {
-    "message": "Hide save to playlist button"
+    "message": "Скрыть кнопку сохранения в плейлист"
   },
   "feature_wpHide_saveButton_name": {
-    "message": "Save Button"
+    "message": "Кнопка «Сохранить»"
   },
   "feature_wpHide_transcriptSection_desc": {
-    "message": "Hide transcript section in description"
+    "message": "Скрыть раздел транскрипта в описании"
   },
   "feature_wpHide_transcriptSection_name": {
-    "message": "Transcript Section"
+    "message": "Раздел транскрипта"
   },
   "feature_youtubeMusicCompat_desc": {
-    "message": "Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating."
+    "message": "Применяет темы Astra Deck + OLED + функции плотности на music.youtube.com. Функции плеера (загрузки, RYD, SponsorBlock) сохраняют существующее ограничение по страницам."
   },
   "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music Compatibility"
+    "message": "Совместимость с YouTube Music"
   },
   "feature_zenMode_desc": {
-    "message": "Dims the page around the video player for a focused viewing experience"
+    "message": "Затемняет страницу вокруг видеоплеера для сосредоточенного просмотра"
   },
   "feature_zenMode_name": {
-    "message": "Zen Mode"
+    "message": "Дзен-режим"
   },
   "filterTogglesLabel": {
     "message": "Фильтр быстрых переключателей"
@@ -2331,91 +2331,91 @@
     "message": "Astra Deck"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "Открывать видео в режиме Theater"
   },
   "qt_autoTheaterMode_name": {
     "message": "Авто-театр"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Утеплить плеер для вечернего просмотра"
   },
   "qt_blueLightFilter_name": {
     "message": "Фильтр синего света"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "Удалять отслеживание из ссылок для публикации"
   },
   "qt_cleanShareUrls_name": {
     "message": "Чистые URL"
   },
   "qt_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "Фильтровать комментарии на странице просмотра"
   },
   "qt_commentSearch_name": {
     "message": "Поиск в комментариях"
   },
   "qt_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "Заменить кликбейтные заголовки и миниатюры"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "Записывать подробную локальную диагностику"
   },
   "qt_debugMode_name": {
     "message": "Режим отладки"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "Отслеживать перерывы и дневной просмотр"
   },
   "qt_digitalWellbeing_name": {
     "message": "Цифровое благополучие"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Не запускать следующее видео автоматически"
   },
   "qt_disableAutoplayNext_name": {
     "message": "Без автовоспроизведения"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "Остановить бесконечную загрузку ленты"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "Ограничить прокрутку"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "Очистить боковую панель страницы просмотра"
   },
   "qt_hideRelatedVideos_name": {
     "message": "Скрыть похожие"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "Элементы управления видны при прокрутке"
   },
   "qt_miniPlayerBar_name": {
     "message": "Мини-плеер"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "Сохранять скорость воспроизведения"
   },
   "qt_persistentSpeed_name": {
     "message": "Постоянная скорость"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "Убрать полки и ссылки Shorts"
   },
   "qt_removeAllShorts_name": {
     "message": "Скрыть Shorts"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "Пропускать краудсорсинговые спонсорские сегменты"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "Читать, переходить и экспортировать субтитры"
   },
   "qt_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
