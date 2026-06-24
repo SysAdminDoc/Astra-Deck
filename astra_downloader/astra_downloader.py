@@ -1851,6 +1851,28 @@ def _sanitize_cookie_field(value, max_len=4096):
     return value
 
 
+ALLOWED_COOKIE_DOMAINS = frozenset({
+    ".youtube.com", "youtube.com",
+    ".www.youtube.com", "www.youtube.com",
+    ".m.youtube.com", "m.youtube.com",
+    ".music.youtube.com", "music.youtube.com",
+    ".youtube-nocookie.com", "youtube-nocookie.com",
+    ".www.youtube-nocookie.com", "www.youtube-nocookie.com",
+    ".youtu.be", "youtu.be",
+    ".google.com", "google.com",
+    ".accounts.google.com", "accounts.google.com",
+})
+
+
+def _is_allowed_cookie_domain(domain):
+    if not domain:
+        return False
+    d = domain.lower().strip()
+    return d in ALLOWED_COOKIE_DOMAINS or any(
+        d.endswith(allowed) for allowed in ALLOWED_COOKIE_DOMAINS if allowed.startswith(".")
+    )
+
+
 def write_cookies_netscape(cookies, target_path):
     """
     Persist browser-supplied cookies in the Netscape cookies.txt format
@@ -1876,7 +1898,7 @@ def write_cookies_netscape(cookies, target_path):
         if not name:
             continue
         domain = _sanitize_cookie_field(entry.get("domain"), 256)
-        if not domain:
+        if not domain or not _is_allowed_cookie_domain(domain):
             continue
         value = _sanitize_cookie_field(entry.get("value"), 4096)
         path_field = _sanitize_cookie_field(entry.get("path"), 512) or "/"
@@ -3203,6 +3225,8 @@ def create_api(config, dl_manager, history):
         vary_tokens = {v.strip() for v in existing_vary.split(",") if v.strip()}
         vary_tokens.add("Cookie")
         resp.headers["Vary"] = ", ".join(sorted(vary_tokens))
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["X-Frame-Options"] = "DENY"
         if extra_headers:
             for k, v in extra_headers.items():
                 resp.headers[k] = v

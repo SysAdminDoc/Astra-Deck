@@ -617,14 +617,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
+        let responded = false;
+
         const startFetch = () => {
             const validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
             const normalizedMethod = String(method || 'GET').toUpperCase();
             const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
 
             const controller = new AbortController();
-            // Default to 30 s when the caller does not pass a timeout so unauthenticated
-            // or hung upstream fetches cannot stall the service worker indefinitely.
             const DEFAULT_FETCH_TIMEOUT_MS = 30000;
             const MIN_FETCH_TIMEOUT_MS = 1000;
             const requestedTimeout = Number.isFinite(timeout) && timeout > 0
@@ -632,7 +632,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 : DEFAULT_FETCH_TIMEOUT_MS;
             const clampedTimeout = Math.max(MIN_FETCH_TIMEOUT_MS, Math.min(requestedTimeout, MAX_FETCH_TIMEOUT_MS));
             let timer = null;
-            let responded = false;
 
             timer = setTimeout(() => {
                 if (responded) return;
@@ -790,7 +789,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (timer) { clearTimeout(timer); timer = null; }
             const responseHeaders = [...resp.headers.entries()]
                 .filter(([k]) => !BLOCKED_RESPONSE_HEADERS.has(k.toLowerCase()))
-                .map(([k, v]) => `${k}: ${v}`)
+                .map(([k, v]) => `${k}: ${String(v).replace(/[\r\n]/g, ' ')}`)
                 .join('\r\n');
 
             sendResponse({
@@ -811,6 +810,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         requireRuntimeOptionalHostGrant(url).then(() => {
             startFetch();
         }).catch((err) => {
+            if (responded) return;
+            responded = true;
             sendResponse({ error: err.message || 'Runtime host permission check failed.' });
         });
 

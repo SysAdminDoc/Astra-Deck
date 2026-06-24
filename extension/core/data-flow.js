@@ -207,11 +207,22 @@
     function originMatchesManifest(origin, hostPermissions) {
         if (!Array.isArray(hostPermissions)) return null;
         for (const perm of hostPermissions) {
-            // host_permissions look like 'https://*.youtube.com/*' or
-            // 'http://127.0.0.1:9751/*'; trim the trailing /* for the
-            // panel display.
             const trimmed = perm.replace(/\/\*$/, '');
-            if (origin.startsWith(trimmed) || trimmed.startsWith(origin)) return perm;
+            try {
+                const permUrl = new URL(trimmed.endsWith('/') ? trimmed : trimmed + '/');
+                const originUrl = new URL(origin.endsWith('/') ? origin : origin + '/');
+                if (permUrl.protocol !== originUrl.protocol) continue;
+                const ph = permUrl.hostname;
+                const oh = originUrl.hostname;
+                if (ph.startsWith('*.')) {
+                    const base = ph.slice(2);
+                    if (oh === base || oh.endsWith('.' + base)) return perm;
+                } else if (ph === oh) {
+                    if (!permUrl.port || permUrl.port === originUrl.port) return perm;
+                }
+            } catch (_) {
+                if (origin.startsWith(trimmed)) return perm;
+            }
         }
         return null;
     }

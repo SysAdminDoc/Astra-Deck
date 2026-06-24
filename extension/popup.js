@@ -1911,7 +1911,9 @@ async function copySelectorHealthReport() {
             // Prepend the active tab URL + the per-ctx counts the formatter
             // doesn't otherwise include. The popup ctx-counts strip already
             // surfaces them, but a bug report should carry them inline.
-            const tabLine = 'activeTab: ' + (tab.url || 'unknown');
+            let safeTabUrl = 'unknown';
+            try { const u = new URL(tab.url || ''); safeTabUrl = u.origin + u.pathname; } catch (_) { /* reason: unparseable URL */ }
+            const tabLine = 'activeTab: ' + safeTabUrl;
             const ctxLines = [];
             const ctx = (response.ctxCounts && typeof response.ctxCounts === 'object') ? response.ctxCounts : {};
             const ordered = Object.entries(ctx).filter(([, v]) => Number(v) > 0).sort((a, b) => b[1] - a[1]);
@@ -1924,10 +1926,12 @@ async function copySelectorHealthReport() {
         } else {
             // Minimal fallback — emit the raw snapshot so the user still has
             // something to file. Should never trigger in production.
+            let safeTabUrlFallback = 'unknown';
+            try { const u = new URL(tab.url || ''); safeTabUrlFallback = u.origin + u.pathname; } catch (_) { /* reason: unparseable URL */ }
             payload = JSON.stringify({
                 productVersion: getVersion(),
                 exportedAt: new Date().toISOString(),
-                activeTab: tab.url || 'unknown',
+                activeTab: safeTabUrlFallback,
                 surfaces: response.surfaces,
                 ctxCounts: response.ctxCounts || {}
             }, null, 2);
