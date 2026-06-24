@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Monolith decomposition: Download UI peel.** Extracted 1,626 lines of
+  download UI code into `extension/features/download-ui/index.js`:
+  MediaDLManager singleton, ytKitDownload orchestrator, showDownloadPopup,
+  showDownloadProgress, downloadHealthPanel, downloadStreamLinksPanel,
+  downloadCobaltFallback, downloadHistoryPanel. Monolith delegates through
+  the factory with inline fallback. 826 tests pass (5 new).
+- **Companion module split.** Split `astra_downloader.py` into focused
+  re-export modules: `config.py`, `download.py`, `health.py`, `routes.py`,
+  `gui.py`. Each module is independently importable for testing. The main
+  entry point and test import path unchanged. All 146 Python tests pass.
+- **Userscript: subscription groups.** Ported group CRUD, chip filtering,
+  6 sort modes, digest panel, channel membership editor, CSV/JSON
+  export/import, content-type filter, and new-since-last-visit markers
+  to the userscript. Omits AI tags (Chrome API) and queue playback.
 - **Chrome Side Panel: settings panel.** The Side Panel diagnostic dashboard
   now includes a full schema-driven settings panel with search filter,
   toggle switches, and live sync to YouTube tabs. Persists across SPA

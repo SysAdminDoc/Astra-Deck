@@ -12,19 +12,6 @@
 
 ### P2 — Quick Wins / Enhancement
 
-- [ ] P2 — Monolith decomposition: Download UI peel
-  Why: Download popup, progress panel, health panel, stream links panel, and Cobalt fallback total ~1500 lines. They have clear boundaries and a single integration surface (`ytKitDownload`).
-  Evidence: Download UI is the largest unpelled feature domain; `MediaDLManager` singleton is already semi-isolated.
-  Touches: New `extension/features/download-ui/index.js`, `extension/ytkit.js`, `extension/manifest.json`
-  Acceptance: Download flows work identically; monolith shrinks by ~1500 lines.
-  Complexity: L
-
-- [ ] P2 — Companion module split
-  Why: `astra_downloader/astra_downloader.py` (5.3K lines) mixes Flask routes, Qt GUI, download management, yt-dlp subprocess control, config management, and health probes in a single file. Splitting improves testability and maintainability.
-  Evidence: H26 audit noted threading concerns; `test_astra_downloader.py` must mock deeply to test individual concerns.
-  Touches: `astra_downloader/astra_downloader.py` (split into `routes.py`, `downloader.py`, `gui.py`, `health.py`, `config.py`), `astra_downloader/test_astra_downloader.py`
-  Acceptance: All 111 Python tests pass; companion starts and serves downloads identically; each module is independently importable for testing.
-  Complexity: L
 
 (Competitor migration docs and supply chain transparency docs moved to Roadmap_Blocked.md — require creating new markdown files.)
 
@@ -70,12 +57,6 @@
 ### P2 — Quick Wins / Enhancement
 
 
-- [ ] P2 — Subscription group features: port to userscript
-  Why: Subscription groups (nesting, digest, stale-channel staging, CSV export, queue playback) are extension-only. The userscript has 65% feature parity; subscription management is a high-value gap alongside SponsorBlock.
-  Evidence: `check-userscript-drift.js` reports 144/221 (65%) parity; `YTKit.user.js` has no `subscriptionGroupData` or group toolbar code.
-  Touches: `YTKit.user.js`, `sync-userscript.js`
-  Acceptance: Userscript renders group toolbar on /feed/subscriptions, supports create/edit/filter/sort, persists via GM_setValue.
-  Complexity: L
 
 ### P2 — Observability / Developer Experience
 
