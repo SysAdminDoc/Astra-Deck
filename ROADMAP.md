@@ -79,12 +79,6 @@
 
 ### P2 — Observability / Developer Experience
 
-- [ ] P2 — Settings panel as Chrome Side Panel option
-  Why: The in-page settings panel is injected into YouTube's DOM and destroyed on SPA navigation. The Chrome Side Panel persists across navigation, doesn't pollute YouTube's DOM, and provides a native-feeling workspace. The Side Panel already exists for diagnostics.
-  Evidence: `extension/sidepanel.js` and `extension/sidepanel.html` exist. Chrome Side Panel API is stable since Chrome 114. The popup currently opens the in-page panel via `YTKIT_OPEN_PANEL` message.
-  Touches: `extension/sidepanel.js`, `extension/sidepanel.html`, `extension/sidepanel.css`, `extension/popup.js` (add Side Panel launch option)
-  Acceptance: Users can open the full settings panel in the Chrome Side Panel. Settings changes sync immediately to the active YouTube tab. The in-page panel remains as fallback for Firefox.
-  Complexity: L
 
 ### P3 — Later / Under Consideration
 
