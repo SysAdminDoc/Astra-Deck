@@ -224,6 +224,7 @@
   "customCssCode": "",
   "shareMenuCleaner": false,
   "autoClosePopups": false,
+  "autoDismissContentWarning": true,
   "videoResolutionBadge": false,
   "likeViewRatio": false,
   "downloadThumbnail": false,
