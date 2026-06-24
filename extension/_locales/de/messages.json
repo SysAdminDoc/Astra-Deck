@@ -174,7 +174,7 @@
     "message": "Lokal"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck hat die Verbindung zu Astra Downloader verloren. Wähle „Downloader reparieren", um die Verbindung wiederherzustellen."
+    "message": "Astra Deck hat die Verbindung zu Astra Downloader verloren. Wähle \"Downloader reparieren\", um die Verbindung wiederherzustellen."
   },
   "dlProgressLostTitle": {
     "message": "Verbindung zum Downloader verloren"
@@ -387,16 +387,16 @@
     "message": "Popups automatisch schließen"
   },
   "feature_autoDismissContentWarning_desc": {
-    "message": "Klickt automatisch auf „Ich verstehe und möchte fortfahren" bei Videos mit Inhaltswarnungen"
+    "message": "Klickt automatisch auf \"Ich verstehe und möchte fortfahren\" bei Videos mit Inhaltswarnungen"
   },
   "feature_autoDismissContentWarning_name": {
     "message": "Inhaltswarnungen automatisch schließen"
   },
   "feature_autoDismissStillWatching_desc": {
-    "message": "Klickt automatisch auf „Weiter ansehen", wenn YouTube die Wiedergabe wegen Inaktivität pausiert"
+    "message": "Klickt automatisch auf \"Weiter ansehen\", wenn YouTube die Wiedergabe wegen Inaktivität pausiert"
   },
   "feature_autoDismissStillWatching_name": {
-    "message": "„Schaust du noch?" automatisch schließen"
+    "message": "\"Schaust du noch?\" automatisch schließen"
   },
   "feature_autoDownloadOnVisit_desc": {
     "message": "Download automatisch starten, wenn eine Videoseite besucht wird"
@@ -411,7 +411,7 @@
     "message": "Kommentare automatisch aufklappen"
   },
   "feature_autoExpandDescription_desc": {
-    "message": "Klappt die Videobeschreibung automatisch auf, sodass „Mehr anzeigen" nie angeklickt werden muss"
+    "message": "Klappt die Videobeschreibung automatisch auf, sodass \"Mehr anzeigen\" nie angeklickt werden muss"
   },
   "feature_autoExpandDescription_name": {
     "message": "Beschreibung automatisch aufklappen"
@@ -483,7 +483,7 @@
     "message": "Playlist-Modus bei Klicks umgehen"
   },
   "feature_channelAgeDisplay_desc": {
-    "message": "Zeigt das Alter eines Videos (z. B. „vor 2 Jahren, 3 Monaten") neben dem Upload-Datum"
+    "message": "Zeigt das Alter eines Videos (z. B. \"vor 2 Jahren, 3 Monaten\") neben dem Upload-Datum"
   },
   "feature_channelAgeDisplay_name": {
     "message": "Videoalter-Anzeige"
@@ -837,7 +837,7 @@
     "message": "Automatische Wiedergabe des nächsten Videos deaktivieren"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Endloses Scrollen durch eine „Mehr laden"-Schaltfläche auf Start-, Such- und Abo-Seiten ersetzen"
+    "message": "Endloses Scrollen durch eine \"Mehr laden\"-Schaltfläche auf Start-, Such- und Abo-Seiten ersetzen"
   },
   "feature_disableInfiniteScroll_name": {
     "message": "Endloses Scrollen deaktivieren"
@@ -885,7 +885,7 @@
     "message": "Downloader-Zustandsanzeige"
   },
   "feature_downloadHistoryPanel_desc": {
-    "message": "Fügt eine „Verlauf"-Schaltfläche neben der Download-Schaltfläche auf Wiedergabeseiten hinzu. Listet die letzten 50 Downloads von Astra Downloader auf. Nur lokal — wird pro Sitzung vom lokalen /history-Endpunkt abgerufen."
+    "message": "Fügt eine \"Verlauf\"-Schaltfläche neben der Download-Schaltfläche auf Wiedergabeseiten hinzu. Listet die letzten 50 Downloads von Astra Downloader auf. Nur lokal — wird pro Sitzung vom lokalen /history-Endpunkt abgerufen."
   },
   "feature_downloadHistoryPanel_name": {
     "message": "Download-Verlauf-Panel"
@@ -1101,13 +1101,13 @@
     "message": "Kommentar-Dislike ausblenden"
   },
   "feature_hideCommentTeaser_desc": {
-    "message": "„Für Kommentare scrollen"-Hinweis auf Wiedergabeseiten entfernen"
+    "message": "\"Für Kommentare scrollen\"-Hinweis auf Wiedergabeseiten entfernen"
   },
   "feature_hideCommentTeaser_name": {
     "message": "Kommentar-Teaser ausblenden"
   },
   "feature_hideCreateButton_desc": {
-    "message": "„Erstellen"-Schaltfläche aus der Kopfzeilen-Werkzeugleiste entfernen"
+    "message": "\"Erstellen\"-Schaltfläche aus der Kopfzeilen-Werkzeugleiste entfernen"
   },
   "feature_hideCreateButton_name": {
     "message": "Erstellen-Schaltfläche ausblenden"
@@ -1125,7 +1125,7 @@
     "message": "Beschreibung ausblenden"
   },
   "feature_hideEndCards_desc": {
-    "message": "Entfernt die klickbaren Endscreen-Karten/Anmerkungen, die das Video in den letzten Sekunden überlagern. Auch durch „Video-Endinhalt ausblenden" abgedeckt."
+    "message": "Entfernt die klickbaren Endscreen-Karten/Anmerkungen, die das Video in den letzten Sekunden überlagern. Auch durch \"Video-Endinhalt ausblenden\" abgedeckt."
   },
   "feature_hideEndCards_name": {
     "message": "Endscreen-Karten ausblenden"
@@ -1143,7 +1143,7 @@
     "message": "Hashtags ausblenden"
   },
   "feature_hideInfoCards_desc": {
-    "message": "Entfernt die „i"-Infokarten-Teaser und Popups, die während der Videowiedergabe erscheinen"
+    "message": "Entfernt die \"i\"-Infokarten-Teaser und Popups, die während der Videowiedergabe erscheinen"
   },
   "feature_hideInfoCards_name": {
     "message": "Infokarten ausblenden"
@@ -1203,13 +1203,13 @@
     "message": "Benachrichtigungsglocke ausblenden"
   },
   "feature_hidePaidContentOverlay_desc": {
-    "message": "„Enthält bezahlte Werbung"-Overlays auf Thumbnails und Wiedergabeseiten entfernen"
+    "message": "\"Enthält bezahlte Werbung\"-Overlays auf Thumbnails und Wiedergabeseiten entfernen"
   },
   "feature_hidePaidContentOverlay_name": {
     "message": "Werbehinweise ausblenden"
   },
   "feature_hidePaidPromotionWatch_desc": {
-    "message": "„Bezahlte Werbung"-Hinweise auf Wiedergabeseiten entfernen"
+    "message": "\"Bezahlte Werbung\"-Hinweise auf Wiedergabeseiten entfernen"
   },
   "feature_hidePaidPromotionWatch_name": {
     "message": "Bezahlte Werbung ausblenden"
@@ -1233,10 +1233,10 @@
     "message": "Playlist-Regale ausblenden"
   },
   "feature_hideQueueOnThumbnails_desc": {
-    "message": "Die „Zur Warteschlange hinzufügen"-Overlay-Schaltfläche entfernen, die beim Thumbnail-Hover erscheint"
+    "message": "Die \"Zur Warteschlange hinzufügen\"-Overlay-Schaltfläche entfernen, die beim Thumbnail-Hover erscheint"
   },
   "feature_hideQueueOnThumbnails_name": {
-    "message": "„Zur Warteschlange" auf Thumbnails ausblenden"
+    "message": "\"Zur Warteschlange\" auf Thumbnails ausblenden"
   },
   "feature_hideRelatedVideos_desc": {
     "message": "Das Panel für ähnliche Videos auf Wiedergabeseiten entfernen"
@@ -1251,13 +1251,13 @@
     "message": "Seitenleiste ausblenden"
   },
   "feature_hideSubscriptionOptions_desc": {
-    "message": "Die „Neueste"-Kopfzeile und Ansichtsumschalter bei Abonnements entfernen"
+    "message": "Die \"Neueste\"-Kopfzeile und Ansichtsumschalter bei Abonnements entfernen"
   },
   "feature_hideSubscriptionOptions_name": {
     "message": "Layout-Optionen ausblenden"
   },
   "feature_hideVideoEndContent_desc": {
-    "message": "Endkarten, Endscreen, Anmerkungen und Videoraster am Videoende entfernen. Obermenge von „Endscreen-Karten ausblenden"."
+    "message": "Endkarten, Endscreen, Anmerkungen und Videoraster am Videoende entfernen. Obermenge von \"Endscreen-Karten ausblenden\"."
   },
   "feature_hideVideoEndContent_name": {
     "message": "Video-Endinhalt ausblenden"
@@ -1293,7 +1293,7 @@
     "message": "Anfänglicher Player-Zustand (Hintergrund)"
   },
   "feature_initialPlayerStateForeground_desc": {
-    "message": "Beim Öffnen einer Wiedergabeseite im Vordergrund abspielen oder pausieren, unabhängig von der vorherigen Autoplay-Auswahl. „Erben" belässt YouTubes natives Verhalten."
+    "message": "Beim Öffnen einer Wiedergabeseite im Vordergrund abspielen oder pausieren, unabhängig von der vorherigen Autoplay-Auswahl. \"Erben\" belässt YouTubes natives Verhalten."
   },
   "feature_initialPlayerStateForeground_name": {
     "message": "Anfänglicher Player-Zustand (Vordergrund)"
@@ -1311,7 +1311,7 @@
     "message": "Gefällt-mir-zu-Aufrufe-Verhältnis"
   },
   "feature_localAiSummary_desc": {
-    "message": "Verwendet Chromes integrierte Summarizer-API, wenn verfügbar. Fällt auf eine klare „nicht verfügbar"-Meldung zurück — leitet nie stillschweigend an einen entfernten Anbieter weiter. Fügt eine „Lokale Zusammenfassung"-Schaltfläche neben der bestehenden AI-Zusammenfassung hinzu."
+    "message": "Verwendet Chromes integrierte Summarizer-API, wenn verfügbar. Fällt auf eine klare \"nicht verfügbar\"-Meldung zurück — leitet nie stillschweigend an einen entfernten Anbieter weiter. Fügt eine \"Lokale Zusammenfassung\"-Schaltfläche neben der bestehenden AI-Zusammenfassung hinzu."
   },
   "feature_localAiSummary_name": {
     "message": "Lokale AI-Zusammenfassung (Browser-integriert)"
@@ -1380,7 +1380,7 @@
     "message": "X-Schaltfläche auf Video-Thumbnails hinzufügen, um Videos schnell über YouTubes Feedback-API zu verwerfen"
   },
   "feature_notInterestedButton_name": {
-    "message": "„Kein Interesse" auf Thumbnails"
+    "message": "\"Kein Interesse\" auf Thumbnails"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "Den Video-Fortschrittsbalken durch eine Nyan-Cat-Animation ersetzen"
@@ -1659,13 +1659,13 @@
     "message": "Lern- / Arbeit-Export"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indiziert das Transkript jedes geöffneten Videos in einer lokalen IndexedDB. Fügt ein globales „Transkripte durchsuchen"-Panel hinzu, erreichbar über das Popup oder window.__ytkitSearchTranscripts(query). Index kann in den Einstellungen gelöscht werden; keine Telemetrie."
+    "message": "Indiziert das Transkript jedes geöffneten Videos in einer lokalen IndexedDB. Fügt ein globales \"Transkripte durchsuchen\"-Panel hinzu, erreichbar über das Popup oder window.__ytkitSearchTranscripts(query). Index kann in den Einstellungen gelöscht werden; keine Telemetrie."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "Transkript-Suchindex"
   },
   "feature_researchTranscriptSearchPanel_desc": {
-    "message": "Fügt eine „Transkripte durchsuchen"-Schaltfläche auf der Wiedergabeseite hinzu, die eine Such-Oberfläche über dem lokalen IndexedDB-Transkript-Index öffnet. Erfordert aktivierten Transkript-Suchindex. Standardmäßig aus."
+    "message": "Fügt eine \"Transkripte durchsuchen\"-Schaltfläche auf der Wiedergabeseite hinzu, die eine Such-Oberfläche über dem lokalen IndexedDB-Transkript-Index öffnet. Erfordert aktivierten Transkript-Suchindex. Standardmäßig aus."
   },
   "feature_researchTranscriptSearchPanel_name": {
     "message": "Transkript-Suchpanel"
@@ -1689,7 +1689,7 @@
     "message": "Return YouTube Dislike"
   },
   "feature_reversePlaylist_desc": {
-    "message": "Fügt eine „Umkehren"-Schaltfläche zu Playlist-Panels hinzu, um älteste zuerst abzuspielen"
+    "message": "Fügt eine \"Umkehren\"-Schaltfläche zu Playlist-Panels hinzu, um älteste zuerst abzuspielen"
   },
   "feature_reversePlaylist_name": {
     "message": "Playlist-Umkehren-Schaltfläche"
@@ -1707,7 +1707,7 @@
     "message": "Füllmaterial überspringen"
   },
   "feature_sbCat_interaction_desc": {
-    "message": "„Liken, Abonnieren, Kommentieren"-Erinnerungen"
+    "message": "\"Liken, Abonnieren, Kommentieren\"-Erinnerungen"
   },
   "feature_sbCat_interaction_name": {
     "message": "Interaktions-Erinnerungen überspringen"
@@ -1839,7 +1839,7 @@
     "message": "Einschlaf-Timer"
   },
   "feature_sortCommentsNewest_desc": {
-    "message": "Kommentar-Sortierung bei jedem Video automatisch auf „Neueste zuerst" umstellen"
+    "message": "Kommentar-Sortierung bei jedem Video automatisch auf \"Neueste zuerst\" umstellen"
   },
   "feature_sortCommentsNewest_name": {
     "message": "Kommentare nach Neueste sortieren"
@@ -2085,13 +2085,13 @@
     "message": "Wiedergabeverlauf-Analyse"
   },
   "feature_watchLaterCleanup_desc": {
-    "message": "Fügt eine „Gesehene entfernen"-Schaltfläche zur „Später ansehen"-Playlist-Kopfzeile für Massenbereinigung hinzu"
+    "message": "Fügt eine \"Gesehene entfernen\"-Schaltfläche zur \"Später ansehen\"-Playlist-Kopfzeile für Massenbereinigung hinzu"
   },
   "feature_watchLaterCleanup_name": {
     "message": "Später-ansehen-Bereinigung"
   },
   "feature_watchLaterQuickAdd_desc": {
-    "message": "Fügt ein Uhr-Symbol auf jedem Thumbnail für Ein-Klick-Speichern in „Später ansehen" hinzu"
+    "message": "Fügt ein Uhr-Symbol auf jedem Thumbnail für Ein-Klick-Speichern in \"Später ansehen\" hinzu"
   },
   "feature_watchLaterQuickAdd_name": {
     "message": "Später-ansehen-Schnellschaltfläche"
@@ -2529,7 +2529,7 @@
     "message": "Alle Daten gelöscht."
   },
   "statusAllDataClearedUndo": {
-    "message": "Alle Daten gelöscht. Auf „Zurücksetzen rückgängig" klicken, um wiederherzustellen (bis der Browser geschlossen wird)."
+    "message": "Alle Daten gelöscht. Auf \"Zurücksetzen rückgängig\" klicken, um wiederherzustellen (bis der Browser geschlossen wird)."
   },
   "statusBackupExported": {
     "message": "Backup exportiert."
