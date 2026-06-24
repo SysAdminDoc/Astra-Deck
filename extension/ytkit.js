@@ -3067,7 +3067,10 @@ return response;
 
     function _closeDlPopup() {
         if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
-        if (_dlPopup) { _dlPopup.remove(); _dlPopup = null; }
+        if (_dlPopup) {
+            try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
+            _dlPopup.remove(); _dlPopup = null;
+        }
     }
 
     // ── Speed control popup (driven by player chrome speedBtn) ──
@@ -3081,7 +3084,10 @@ return response;
 
     function _closeSpeedPopup() {
         if (_speedPopupCleanup) { _speedPopupCleanup(); _speedPopupCleanup = null; }
-        if (_speedPopup) { _speedPopup.remove(); _speedPopup = null; }
+        if (_speedPopup) {
+            try { if (_speedPopup.hidePopover) _speedPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
+            _speedPopup.remove(); _speedPopup = null;
+        }
     }
 
     function showSpeedPopup(anchorEl, onChange) {
@@ -3092,6 +3098,8 @@ return response;
         popup.className = 'ytkit-speed-popup';
         popup.setAttribute('role', 'menu');
         popup.setAttribute('aria-label', t('speedPopupAria', 'Default playback speed'));
+        const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+        if (_usePopover) popup.setAttribute('popover', 'auto');
 
         const header = document.createElement('div');
         header.className = 'ytkit-speed-popup__header';
@@ -3140,7 +3148,13 @@ return response;
         document.body.appendChild(popup);
         _speedPopup = popup;
 
-        // Position above the anchor; skip when CSS Anchor Positioning is active.
+        if (_usePopover) {
+            popup.showPopover();
+            popup.addEventListener('toggle', (e) => {
+                if (e.newState === 'closed') _closeSpeedPopup();
+            }, { once: true });
+        }
+
         if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
@@ -3156,19 +3170,25 @@ return response;
 
         anchorEl?.setAttribute?.('aria-expanded', 'true');
 
-        const outsideClick = (e) => {
-            if (!popup.contains(e.target) && e.target !== anchorEl) _closeSpeedPopup();
-        };
-        const escHandler = (e) => { if (e.key === 'Escape') _closeSpeedPopup(); };
-        setTimeout(() => {
-            document.addEventListener('click', outsideClick, true);
-            document.addEventListener('keydown', escHandler);
-        }, 50);
-        _speedPopupCleanup = () => {
-            document.removeEventListener('click', outsideClick, true);
-            document.removeEventListener('keydown', escHandler);
-            anchorEl?.setAttribute?.('aria-expanded', 'false');
-        };
+        if (!_usePopover) {
+            const outsideClick = (e) => {
+                if (!popup.contains(e.target) && e.target !== anchorEl) _closeSpeedPopup();
+            };
+            const escHandler = (e) => { if (e.key === 'Escape') _closeSpeedPopup(); };
+            setTimeout(() => {
+                document.addEventListener('click', outsideClick, true);
+                document.addEventListener('keydown', escHandler);
+            }, 50);
+            _speedPopupCleanup = () => {
+                document.removeEventListener('click', outsideClick, true);
+                document.removeEventListener('keydown', escHandler);
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        } else {
+            _speedPopupCleanup = () => {
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        }
     }
 
     async function _fetchServerConfig(token) {
@@ -3212,6 +3232,8 @@ return response;
         popup.className = 'ytkit-dl-popup';
         popup.setAttribute('role', 'dialog');
         popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
+        const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+        if (_usePopover) popup.setAttribute('popover', 'auto');
 
         // ── Header ──
         const header = document.createElement('div');
@@ -3425,11 +3447,16 @@ return response;
         footer.appendChild(dlBtn);
         popup.appendChild(footer);
 
-        // Position relative to anchor
         document.body.appendChild(popup);
         _dlPopup = popup;
 
-        // Position above the anchor; skip when CSS Anchor Positioning is active.
+        if (_usePopover) {
+            popup.showPopover();
+            popup.addEventListener('toggle', (e) => {
+                if (e.newState === 'closed') _closeDlPopup();
+            }, { once: true });
+        }
+
         if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
@@ -3443,19 +3470,20 @@ return response;
             popup.style.top = top + 'px';
         }
 
-        // Outside click handler
-        const outsideClick = (e) => {
-            if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
-        };
-        const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
-        setTimeout(() => {
-            document.addEventListener('click', outsideClick, true);
-            document.addEventListener('keydown', escHandler);
-        }, 50);
-        _dlPopupCleanup = () => {
-            document.removeEventListener('click', outsideClick, true);
-            document.removeEventListener('keydown', escHandler);
-        };
+        if (!_usePopover) {
+            const outsideClick = (e) => {
+                if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
+            };
+            const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
+            setTimeout(() => {
+                document.addEventListener('click', outsideClick, true);
+                document.addEventListener('keydown', escHandler);
+            }, 50);
+            _dlPopupCleanup = () => {
+                document.removeEventListener('click', outsideClick, true);
+                document.removeEventListener('keydown', escHandler);
+            };
+        }
 
         // Fetch server config to show current directory.
         // Server returns both downloadPath (camelCase, v1.2.2+) and DownloadPath

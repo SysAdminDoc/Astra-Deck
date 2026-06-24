@@ -101,10 +101,4 @@
   Acceptance: Extension discovers companion token via native messaging when available, falling back to `/health` probe.
   Complexity: L
 
-- [ ] P3 — Popover API adoption for player popup menus
-  Why: Speed popup and download popup currently use manual positioning and click-outside-to-close logic. The Popover API (Baseline 2024: Chrome 114+, Firefox 125+) provides native dismiss-on-outside-click, top-layer rendering, and accessibility for free.
-  Evidence: CSS Anchor Positioning already adopted for popup positioning (commit `945e3f1`). Popover API is the complementary standard for popup behavior.
-  Touches: `extension/ytkit.js` (showSpeedPopup, showDownloadPopup), `extension/early.css`
-  Acceptance: Player popups use `popover` attribute and `showPopover()`/`hidePopover()`. Dismiss-on-outside-click handled by platform. Fallback retained for browsers without support.
-  Complexity: M
 
