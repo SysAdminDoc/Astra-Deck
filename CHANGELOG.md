@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Popover API adoption for player popup menus.** Speed popup and
+  download popup now use `popover="auto"` with `showPopover()` /
+  `hidePopover()` when the Popover API is available (Chrome 114+,
+  Firefox 125+, Safari 17.4+). Provides native dismiss-on-outside-click
+  and Escape handling via the platform. Manual click/keydown listener
+  fallback retained for browsers without support.
 - **i18n: batch-translate feature definitions across all 10 locales.**
   All `feature_*_name` and `feature_*_desc` keys translated from English
   to Arabic, German, Spanish, French, Italian, Japanese, Korean, Brazilian
