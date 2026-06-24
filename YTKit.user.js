@@ -14458,6 +14458,13 @@
             preferredMediaPlayer: 'vlc',
             showDownloadPlayButton: false,
             subsVlcPlaylist: false,
+            subscriptionGroups: true,
+            subscriptionGroupData: {},
+            subscriptionSortMode: 'default',
+            subscriptionShowNewSinceLastVisit: true,
+            subscriptionLastVisitData: {},
+            subscriptionFilterLive: false,
+            subscriptionFilterStreamed: false,
             sponsorBlock: true,
             sbCat_sponsor: true,
             sbCat_intro: true,
@@ -23913,6 +23920,1102 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._container?.remove(); this._container = null;
                 document.querySelectorAll('.ytkit-subs-vlc-btn, .ytkit-subs-clear-btn, .ytkit-queued-badge').forEach(el => el.remove());
                 document.querySelectorAll('.ytkit-video-queued').forEach(el => el.classList.remove('ytkit-video-queued'));
+            }
+        },
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  SUBSCRIPTION GROUPS — PocketTube-grade local groups
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'subscriptionGroups',
+            name: 'Subscription Groups',
+            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit/popular. Groups data lives in subscriptionGroupData (local only); use Export to back it up.',
+            group: 'Subscriptions',
+            icon: 'folder-tree',
+            pages: [PageTypes.SUBSCRIPTIONS],
+            _styleElement: null,
+            _toolbar: null,
+            _digestPanel: null,
+            _membersPanel: null,
+            _activeGroupId: '',
+            _observer: null,
+            _navRule: null,
+            _renderTimer: null,
+            _stampTimer: null,
+            _GROUPS_KEY: 'subscriptionGroupData',
+            _LAST_VISIT_KEY: 'subscriptionLastVisitData',
+            _SORT_MODES: Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']),
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-sub-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
+                    .ytkit-sub-toolbar__label{font:600 11px/1 system-ui;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
+                    .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible,.ytkit-sub-group-chip:focus-visible,.ytkit-sub-digest-close:focus-visible,.ytkit-sub-digest-row button:focus-visible,.ytkit-sub-group-dialog button:focus-visible,.ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
+                    .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
+                    .ytkit-sub-toolbar button[data-action="digest"]{background:rgba(14,165,233,0.12);border-color:rgba(14,165,233,0.32);color:#bae6fd;}
+                    .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
+                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
+                    .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
+                    .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-digest-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                    .ytkit-sub-digest-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+                    .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
+                    .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
+                    .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-digest-close:hover,.ytkit-sub-digest-row button:hover{background:rgba(255,255,255,0.08);}
+                    .ytkit-sub-group-dialog input{min-height:34px;outline:none;}
+                    .ytkit-sub-group-dialog button{min-height:30px;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-digest-list{display:flex;flex-direction:column;gap:6px;}
+                    .ytkit-sub-digest-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto auto;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
+                    .ytkit-sub-digest-row[data-depth="1"]{margin-left:16px;}
+                    .ytkit-sub-digest-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:700;}
+                    .ytkit-sub-digest-count{font-variant-numeric:tabular-nums;color:#bae6fd;font-weight:700;}
+                    .ytkit-sub-digest-muted{color:rgba(226,232,240,0.58);font-variant-numeric:tabular-nums;}
+                    .ytkit-sub-digest-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
+                    .ytkit-sub-hidden-by-group,.ytkit-sub-hidden-by-type{display:none !important;}
+                    .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 system-ui;}
+                    .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                    .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+                    .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
+                    .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
+                    .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-members-close:hover{background:rgba(255,255,255,0.08);}
+                    .ytkit-sub-members-close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
+                    .ytkit-sub-members-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px;max-height:280px;overflow:auto;}
+                    .ytkit-sub-members-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);cursor:pointer;}
+                    .ytkit-sub-members-row:hover{background:rgba(255,255,255,0.07);}
+                    .ytkit-sub-members-row input{accent-color:#7c3aed;cursor:pointer;}
+                    .ytkit-sub-members-row input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
+                    .ytkit-sub-members-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:600;}
+                    .ytkit-sub-members-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
+                    html:not([dark]) .ytkit-sub-toolbar{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(0,0,0,0.1);}
+                    html:not([dark]) .ytkit-sub-toolbar__label{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-toolbar select,html:not([dark]) .ytkit-sub-toolbar button{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-toolbar button:hover{background:rgba(0,0,0,0.1);}
+                    html:not([dark]) .ytkit-sub-toolbar button[data-action="digest"]{color:#075985;}
+                    html:not([dark]) .ytkit-sub-group-chip{background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.38);color:#5b21b6;}
+                    html:not([dark]) .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
+                    html:not([dark]) .ytkit-sub-group-chip[data-depth="1"]{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.34);color:#1d4ed8;}
+                    html:not([dark]) .ytkit-sub-group-empty{background:rgba(245,158,11,0.1);border-color:rgba(180,83,9,0.4);color:#92400e;}
+                `, 'subscription-groups', true);
+            },
+
+            _readGroups() {
+                const data = appState?.settings?.[this._GROUPS_KEY];
+                return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+            },
+
+            _writeGroups(next) {
+                appState.settings[this._GROUPS_KEY] = next;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', 'Save failed: ' + e.message); }
+            },
+
+            _readLastVisit() {
+                const data = appState?.settings?.[this._LAST_VISIT_KEY];
+                return (data && typeof data === 'object') ? data : {};
+            },
+
+            _writeLastVisit(next) {
+                appState.settings[this._LAST_VISIT_KEY] = next;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', 'Save failed: ' + e.message); }
+            },
+
+            _capLastVisitMap(lastVisit) {
+                const LAST_VISIT_CAP = 2000;
+                const next = { ...(lastVisit || {}) };
+                const keys = Object.keys(next);
+                if (keys.length <= LAST_VISIT_CAP) return next;
+                const sorted = keys.sort((a, b) => (next[a] || 0) - (next[b] || 0));
+                const drop = sorted.slice(0, keys.length - LAST_VISIT_CAP);
+                for (const key of drop) delete next[key];
+                return next;
+            },
+
+            _normalizeSubscriptionSortMode(mode) {
+                const value = String(mode || 'default');
+                return this._SORT_MODES.includes(value) ? value : 'default';
+            },
+
+            _getActiveSortMode(groups) {
+                if (!groups) groups = this._readGroups();
+                const groupSortMode = this._activeGroupId && groups[this._activeGroupId]?.sortMode;
+                if (groupSortMode) return this._normalizeSubscriptionSortMode(groupSortMode);
+                return this._normalizeSubscriptionSortMode(appState?.settings?.subscriptionSortMode || 'default');
+            },
+
+            _setActiveSortMode(mode) {
+                const normalized = this._normalizeSubscriptionSortMode(mode);
+                const groups = this._readGroups();
+                if (this._activeGroupId && groups[this._activeGroupId]) {
+                    const next = {
+                        ...groups,
+                        [this._activeGroupId]: {
+                            ...groups[this._activeGroupId],
+                            sortMode: normalized,
+                            updatedAt: Date.now()
+                        }
+                    };
+                    this._writeGroups(next);
+                    return normalized;
+                }
+                appState.settings.subscriptionSortMode = normalized;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', 'Sort save failed: ' + e.message); }
+                return normalized;
+            },
+
+            _getGroupParentId(groupId, groups) {
+                if (!groups) groups = this._readGroups();
+                const id = String(groupId || '');
+                const parentId = String(groups[id]?.parentId || '');
+                if (!id || !parentId || parentId === id || !groups[parentId]) return '';
+                const grandParentId = String(groups[parentId]?.parentId || '');
+                return grandParentId && groups[grandParentId] ? '' : parentId;
+            },
+
+            _normalizeNewGroupParentId(parentId, groups) {
+                if (!groups) groups = this._readGroups();
+                const value = String(parentId || '');
+                if (!value || !groups[value]) return '';
+                return this._getGroupParentId(value, groups) ? '' : value;
+            },
+
+            _getTopLevelGroupIds(groups) {
+                if (!groups) groups = this._readGroups();
+                return Object.keys(groups).filter(id => !this._getGroupParentId(id, groups));
+            },
+
+            _getChildGroupIds(parentId, groups) {
+                if (!groups) groups = this._readGroups();
+                return Object.keys(groups).filter(id => this._getGroupParentId(id, groups) === parentId);
+            },
+
+            _getGroupChannelIdSet(groupId, groups) {
+                if (!groups) groups = this._readGroups();
+                const group = groups[groupId];
+                const ids = new Set(Array.isArray(group?.channelIds) ? group.channelIds : []);
+                if (group && !this._getGroupParentId(groupId, groups)) {
+                    for (const childId of this._getChildGroupIds(groupId, groups)) {
+                        const child = groups[childId];
+                        if (Array.isArray(child?.channelIds)) child.channelIds.forEach(id => ids.add(id));
+                    }
+                }
+                return ids;
+            },
+
+            _exportGroups() {
+                const payload = {
+                    schemaVersion: 2,
+                    exportedAt: new Date().toISOString(),
+                    groups: this._readGroups()
+                };
+                const json = JSON.stringify(payload, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'astra-deck-subscription-groups-' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast('Exported subscription groups', '#22c55e');
+            },
+
+            _csvEscape(value) {
+                const s = String(value != null ? value : '');
+                if (/[",\r\n]/.test(s) || s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') || s.startsWith('\t')) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            },
+
+            _exportGroupsCsv() {
+                const groups = this._readGroups();
+                const rows = ['Group,Channel,Handle,URL'];
+                for (const [id, group] of Object.entries(groups)) {
+                    const name = group.name || id;
+                    const channels = Array.isArray(group.channels) ? group.channels : [];
+                    if (channels.length === 0) {
+                        rows.push(this._csvEscape(name) + ',,,');
+                        continue;
+                    }
+                    for (const ch of channels) {
+                        const chName = ch.name || '';
+                        const handle = ch.handle || '';
+                        const url = ch.url || (handle ? 'https://www.youtube.com/' + handle : '');
+                        rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                    }
+                }
+                const csv = rows.join('\r\n') + '\r\n';
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'astra-deck-subscription-groups-' + new Date().toISOString().slice(0, 10) + '.csv';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast('Exported subscription groups as CSV', '#22c55e');
+            },
+
+            _importGroups(json) {
+                try {
+                    const data = JSON.parse(json);
+                    if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
+                    const sanitized = {};
+                    const rawParentById = {};
+                    for (const [id, raw] of Object.entries(data.groups)) {
+                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) continue;
+                        if (!raw || typeof raw !== 'object') continue;
+                        const name = String(raw.name || '').slice(0, 80);
+                        const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
+                        const channelIds = Array.isArray(raw.channelIds)
+                            ? raw.channelIds.filter(s => typeof s === 'string' && s.length < 64).slice(0, 1000)
+                            : [];
+                        sanitized[id] = {
+                            name,
+                            color,
+                            channelIds,
+                            parentId: '',
+                            sortMode: this._normalizeSubscriptionSortMode(raw.sortMode),
+                            updatedAt: Date.now()
+                        };
+                        const parentId = String(raw.parentId || '');
+                        if (parentId && parentId !== id && parentId.length <= 64 && isSafeObjectKey(parentId)) rawParentById[id] = parentId;
+                    }
+                    for (const [id, parentId] of Object.entries(rawParentById)) {
+                        if (sanitized[id] && sanitized[parentId] && !rawParentById[parentId]) {
+                            sanitized[id].parentId = parentId;
+                        }
+                    }
+                    this._writeGroups(sanitized);
+                    showToast('Imported ' + Object.keys(sanitized).length + ' subscription groups', '#22c55e');
+                    this._renderToolbar();
+                    this._applyGroupFilter();
+                } catch (e) {
+                    showToast('Import failed: ' + e.message, '#ef4444');
+                }
+            },
+
+            _extractChannelIdFromCard(card) {
+                const link = card.querySelector('a[href*="/channel/"], a[href*="/@"]');
+                if (!link) return '';
+                const href = link.getAttribute('href') || '';
+                const m = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
+                if (m) return m[1];
+                const h = href.match(/^\/@([A-Za-z0-9._-]+)/);
+                if (h) return '@' + h[1];
+                return '';
+            },
+
+            _applyGroupFilter() {
+                const groups = this._readGroups();
+                const active = this._activeGroupId;
+                const allowed = active && groups[active] ? this._getGroupChannelIdSet(active, groups) : null;
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                cards.forEach(card => {
+                    if (!allowed) {
+                        card.classList.remove('ytkit-sub-hidden-by-group');
+                        return;
+                    }
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId || !allowed.has(channelId)) card.classList.add('ytkit-sub-hidden-by-group');
+                    else card.classList.remove('ytkit-sub-hidden-by-group');
+                });
+                this._renderGroupEmptyState(allowed);
+            },
+
+            _applyContentTypeFilter() {
+                const filterLive = !!appState?.settings?.subscriptionFilterLive;
+                const filterStreamed = !!appState?.settings?.subscriptionFilterStreamed;
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                cards.forEach(card => {
+                    if (!filterLive && !filterStreamed) {
+                        card.classList.remove('ytkit-sub-hidden-by-type');
+                        return;
+                    }
+                    const isLive = filterLive && !!card.querySelector(
+                        'ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"],' +
+                        'ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"],' +
+                        '.badge-style-type-live-now, [aria-label*="LIVE"]'
+                    );
+                    const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(
+                        card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || ''
+                    );
+                    if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
+                    else card.classList.remove('ytkit-sub-hidden-by-type');
+                });
+            },
+
+            _applyNewSinceMarkers() {
+                document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
+                if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
+                const lastVisit = this._readLastVisit();
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId) return;
+                    if (this._isCardNewSinceLastVisit(card, channelId, lastVisit)) {
+                        const target = card.querySelector('#metadata-line, ytd-video-meta-block, #meta');
+                        if (target) {
+                            const badge = document.createElement('span');
+                            badge.className = 'ytkit-sub-new-badge';
+                            badge.textContent = 'NEW';
+                            target.appendChild(badge);
+                        }
+                    }
+                });
+            },
+
+            _stampLastVisit() {
+                const lastVisit = { ...this._readLastVisit() };
+                const now = Date.now();
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (channelId) lastVisit[channelId] = now;
+                });
+                this._writeLastVisit(this._capLastVisitMap(lastVisit));
+                if (this._digestPanel) this._renderDigestPanel();
+            },
+
+            _getCardMetaText(card) {
+                return [
+                    card.querySelector('#metadata-line')?.textContent,
+                    card.querySelector('ytd-video-meta-block')?.textContent,
+                    card.querySelector('#meta')?.textContent,
+                    card.querySelector('[aria-label*="ago"]')?.getAttribute?.('aria-label'),
+                    card.querySelector('[aria-label*="view"]')?.getAttribute?.('aria-label'),
+                    card.textContent
+                ].filter(Boolean).join(' ');
+            },
+
+            _extractCardAgeMs(text) {
+                const raw = String(text || '').replace(/ /g, ' ').trim().toLowerCase();
+                if (!raw) return null;
+                const match = raw.match(/\b(\d+(?:[,.]\d+)?)\s*(minute|hour|day|week|month|year)s?\s+ago\b/);
+                if (!match) return null;
+                const value = Number.parseFloat(match[1].replace(',', '.'));
+                if (!Number.isFinite(value) || value < 0) return null;
+                const unitMs = {
+                    minute: 60 * 1000,
+                    hour: 60 * 60 * 1000,
+                    day: 24 * 60 * 60 * 1000,
+                    week: 7 * 24 * 60 * 60 * 1000,
+                    month: 30 * 24 * 60 * 60 * 1000,
+                    year: 365 * 24 * 60 * 60 * 1000
+                }[match[2]];
+                return unitMs ? Math.round(value * unitMs) : null;
+            },
+
+            _extractChannelNameFromCard(card, channelId) {
+                const selectors = [
+                    'ytd-channel-name #text a',
+                    'ytd-channel-name a',
+                    '#channel-name a',
+                    'a[href*="/channel/"]',
+                    'a[href*="/@"]'
+                ];
+                for (const selector of selectors) {
+                    const text = (card.querySelector(selector)?.textContent || '').trim();
+                    if (text) return text.slice(0, 120);
+                }
+                return String(channelId || '').slice(0, 120);
+            },
+
+            _isCardNewSinceLastVisit(card, channelId, lastVisit) {
+                if (!lastVisit) lastVisit = this._readLastVisit();
+                const id = String(channelId || '');
+                if (!id) return false;
+                const lastSeen = Number(lastVisit?.[id]) || 0;
+                if (!lastSeen) return true;
+                const ageMs = this._extractCardAgeMs(this._getCardMetaText(card));
+                if (ageMs === null) return false;
+                return (Date.now() - ageMs) > lastSeen;
+            },
+
+            _collectRenderedCardSummaries(lastVisit) {
+                if (!lastVisit) lastVisit = this._readLastVisit();
+                return Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'))
+                    .map(card => {
+                        const channelId = this._extractChannelIdFromCard(card);
+                        if (!channelId) return null;
+                        return {
+                            card,
+                            channelId,
+                            channelName: this._extractChannelNameFromCard(card, channelId),
+                            isNew: this._isCardNewSinceLastVisit(card, channelId, lastVisit)
+                        };
+                    })
+                    .filter(Boolean);
+            },
+
+            _buildGroupDigestEntries(groups, lastVisit) {
+                if (!groups) groups = this._readGroups();
+                if (!lastVisit) lastVisit = this._readLastVisit();
+                const summaries = this._collectRenderedCardSummaries(lastVisit);
+                const buildEntry = (groupId, depth) => {
+                    const allowed = this._getGroupChannelIdSet(groupId, groups);
+                    const matches = summaries.filter(item => allowed.has(item.channelId));
+                    const newMatches = matches.filter(item => item.isNew);
+                    return {
+                        groupId,
+                        name: groups[groupId]?.name || groupId,
+                        depth,
+                        renderedVideos: matches.length,
+                        newVideos: newMatches.length,
+                        newChannels: new Set(newMatches.map(item => item.channelId)).size
+                    };
+                };
+                const entries = [];
+                for (const id of this._getTopLevelGroupIds(groups)) {
+                    entries.push(buildEntry(id, 0));
+                    for (const childId of this._getChildGroupIds(id, groups)) {
+                        entries.push(buildEntry(childId, 1));
+                    }
+                }
+                return entries;
+            },
+
+            _closeDigestPanel() {
+                this._digestPanel?.remove();
+                this._digestPanel = null;
+            },
+
+            _markGroupDigestRead(groupId) {
+                if (groupId === undefined) groupId = '';
+                const groups = this._readGroups();
+                const safeGroupId = groupId && groups[groupId] ? groupId : '';
+                const allowed = safeGroupId ? this._getGroupChannelIdSet(safeGroupId, groups) : null;
+                const summaries = this._collectRenderedCardSummaries();
+                const next = { ...this._readLastVisit() };
+                const now = Date.now();
+                const markedChannels = new Set();
+                for (const item of summaries) {
+                    if (allowed && !allowed.has(item.channelId)) continue;
+                    next[item.channelId] = now;
+                    markedChannels.add(item.channelId);
+                }
+                if (allowed && markedChannels.size === 0) {
+                    for (const channelId of allowed) {
+                        next[channelId] = now;
+                        markedChannels.add(channelId);
+                    }
+                }
+                const marked = markedChannels.size;
+                this._writeLastVisit(this._capLastVisitMap(next));
+                this._applyNewSinceMarkers();
+                this._applySort();
+                this._renderDigestPanel();
+                const label = safeGroupId ? (groups[safeGroupId]?.name || safeGroupId) : 'rendered subscriptions';
+                showToast('Marked ' + marked + ' ' + (marked === 1 ? 'channel' : 'channels') + ' read for ' + label, '#22c55e', { duration: 4 });
+            },
+
+            _toggleDigestPanel() {
+                if (this._digestPanel) {
+                    this._closeDigestPanel();
+                    return;
+                }
+                this._renderDigestPanel();
+            },
+
+            _renderDigestPanel() {
+                if (!this._toolbar?.isConnected) this._renderToolbar();
+                if (!this._toolbar?.isConnected) return;
+                const lastVisit = this._readLastVisit();
+                const summaries = this._collectRenderedCardSummaries(lastVisit);
+                const entries = this._buildGroupDigestEntries(this._readGroups(), lastVisit);
+                const allNew = summaries.filter(item => item.isNew);
+                this._closeDigestPanel();
+
+                const panel = document.createElement('section');
+                panel.className = 'ytkit-sub-digest-panel';
+                panel.setAttribute('role', 'region');
+                panel.setAttribute('aria-label', 'Group notifications digest');
+
+                const head = document.createElement('div');
+                head.className = 'ytkit-sub-digest-head';
+                const titleWrap = document.createElement('div');
+                const title = document.createElement('h3');
+                title.className = 'ytkit-sub-digest-title';
+                title.textContent = 'Group Digest';
+                const meta = document.createElement('div');
+                meta.className = 'ytkit-sub-digest-meta';
+                meta.textContent = allNew.length + ' new of ' + summaries.length + ' rendered videos';
+                titleWrap.append(title, meta);
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'ytkit-sub-digest-close';
+                close.textContent = 'Close';
+                close.setAttribute('aria-label', 'Close group notifications digest');
+                close.addEventListener('click', () => this._closeDigestPanel());
+                head.append(titleWrap, close);
+
+                const list = document.createElement('div');
+                list.className = 'ytkit-sub-digest-list';
+
+                const self = this;
+                const appendRow = (entry) => {
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-sub-digest-row';
+                    row.dataset.depth = String(entry.depth || 0);
+                    const name = document.createElement('div');
+                    name.className = 'ytkit-sub-digest-name';
+                    name.textContent = entry.name;
+                    const count = document.createElement('div');
+                    count.className = 'ytkit-sub-digest-count';
+                    count.textContent = entry.newVideos + ' new';
+                    const rendered = document.createElement('div');
+                    rendered.className = 'ytkit-sub-digest-muted';
+                    rendered.textContent = entry.renderedVideos + ' shown / ' + entry.newChannels + ' channel' + (entry.newChannels === 1 ? '' : 's');
+                    const actions = document.createElement('div');
+                    const mark = document.createElement('button');
+                    mark.type = 'button';
+                    mark.textContent = 'Mark read';
+                    mark.disabled = entry.newVideos === 0;
+                    mark.setAttribute('aria-label', 'Mark ' + entry.name + ' digest as read');
+                    mark.addEventListener('click', () => self._markGroupDigestRead(entry.groupId || ''));
+                    const view = document.createElement('button');
+                    view.type = 'button';
+                    view.textContent = 'View';
+                    view.setAttribute('aria-label', 'View ' + entry.name + ' subscriptions');
+                    view.addEventListener('click', () => {
+                        self._activeGroupId = entry.groupId || '';
+                        self._renderToolbar();
+                        self._applyGroupFilter();
+                        self._applyNewSinceMarkers();
+                        self._applySort();
+                    });
+                    actions.append(mark, view);
+                    row.append(name, count, rendered, actions);
+                    list.appendChild(row);
+                };
+
+                appendRow({
+                    groupId: '',
+                    name: 'All subscriptions',
+                    depth: 0,
+                    renderedVideos: summaries.length,
+                    newVideos: allNew.length,
+                    newChannels: new Set(allNew.map(item => item.channelId)).size
+                });
+                entries.forEach(appendRow);
+                if (!entries.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-sub-digest-empty';
+                    empty.textContent = 'Create subscription groups to split new-video counts by topic.';
+                    list.appendChild(empty);
+                }
+
+                panel.append(head, list);
+                this._toolbar.insertAdjacentElement('afterend', panel);
+                this._digestPanel = panel;
+            },
+
+            _parseCompactViewCount(text) {
+                const raw = String(text || '').toLowerCase();
+                const m = raw.match(/([\d,.]+)\s*([kmbt]?)\s*view/);
+                if (!m) return 0;
+                const num = parseFloat(m[1].replace(/,/g, ''));
+                if (!Number.isFinite(num)) return 0;
+                const mult = { k: 1e3, m: 1e6, b: 1e9, t: 1e12 }[m[2]] || 1;
+                return Math.round(num * mult);
+            },
+
+            _applySort(modeOverride) {
+                const mode = this._normalizeSubscriptionSortMode(modeOverride || this._getActiveSortMode());
+                const container = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents');
+                if (!container) return;
+                const cards = Array.from(container.querySelectorAll(':scope > ytd-rich-item-renderer, :scope > ytd-video-renderer'));
+                if (!cards.length) return;
+                if (mode === 'default') {
+                    const stamped = cards.filter(card => card.dataset.ytkitOrigIdx !== undefined);
+                    if (!stamped.length) return;
+                    cards.sort((a, b) =>
+                        (Number(a.dataset.ytkitOrigIdx) || 0) - (Number(b.dataset.ytkitOrigIdx) || 0));
+                    cards.forEach(card => container.appendChild(card));
+                    return;
+                }
+                let nextOrigIdx = cards.reduce((max, card) => {
+                    const idx = Number(card.dataset.ytkitOrigIdx);
+                    return Number.isFinite(idx) && idx >= max ? idx + 1 : max;
+                }, 0);
+                cards.forEach(card => {
+                    if (card.dataset.ytkitOrigIdx === undefined) card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
+                });
+                const lastVisit = mode === 'new-since-last-visit' ? this._readLastVisit() : null;
+                const self = this;
+                const score = (card) => {
+                    const text = card.textContent || '';
+                    if (mode === 'duration-asc') {
+                        const badge = card.querySelector('ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model, .badge-shape__text, .yt-badge-shape__text');
+                        const source = badge?.textContent || text;
+                        const matches = badge?.textContent
+                            ? [source.match(/(\d+):(\d+)(?::(\d+))?/)].filter(Boolean)
+                            : Array.from(source.matchAll(/(\d+):(\d+)(?::(\d+))?/g));
+                        const m = matches.length ? matches[matches.length - 1] : null;
+                        if (!m) return Number.POSITIVE_INFINITY;
+                        return m[3] !== undefined
+                            ? (Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 + (Number(m[3]) || 0)
+                            : (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0);
+                    }
+                    if (mode === 'unwatched') {
+                        return card.querySelector('ytd-thumbnail-overlay-resume-playback-renderer') ? 1 : 0;
+                    }
+                    if (mode === 'date-desc') {
+                        return 0;
+                    }
+                    if (mode === 'new-since-last-visit') {
+                        const channelId = self._extractChannelIdFromCard(card);
+                        return self._isCardNewSinceLastVisit(card, channelId, lastVisit) ? 0 : 1;
+                    }
+                    if (mode === 'popular') {
+                        const meta = card.querySelector('#metadata-line, ytd-video-meta-block, [aria-label*="view"]');
+                        const views = self._parseCompactViewCount((meta?.textContent || '') + ' ' + (meta?.getAttribute?.('aria-label') || ''));
+                        return -views;
+                    }
+                    return 0;
+                };
+                cards.sort((a, b) => score(a) - score(b));
+                cards.forEach(card => container.appendChild(card));
+            },
+
+            _showNewGroupDialog(anchorEl, parentId) {
+                if (parentId === undefined) parentId = '';
+                const groups = this._readGroups();
+                const safeParentId = this._normalizeNewGroupParentId(parentId, groups);
+                document.querySelector('.ytkit-sub-group-dialog')?.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'ytkit-sub-group-dialog';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
+                overlay.setAttribute('role', 'dialog');
+                overlay.setAttribute('aria-modal', 'true');
+                overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group');
+                const card = document.createElement('div');
+                card.style.cssText = 'min-width:320px;max-width:420px;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 22px 48px rgba(0,0,0,.6);';
+                const h = document.createElement('div');
+                h.style.cssText = 'font:600 14px/1.3 system-ui;color:#fafafa;margin-bottom:10px;';
+                h.textContent = safeParentId ? 'Name a subgroup under ' + (groups[safeParentId]?.name || safeParentId) : 'Name this group';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 80;
+                input.placeholder = safeParentId ? 'e.g. Frontend, DevOps, Jazz' : 'e.g. Coding, Music, News';
+                input.setAttribute('aria-label', 'Group name');
+                input.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;box-sizing:border-box;';
+                const actions = document.createElement('div');
+                actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:14px;';
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = 'Cancel';
+                cancel.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#e5e7eb;cursor:pointer;';
+                const create = document.createElement('button');
+                create.type = 'button';
+                create.textContent = 'Create';
+                create.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(124,58,237,0.5);background:#7c3aed;color:#fff;cursor:pointer;font-weight:600;';
+                actions.append(cancel, create);
+                card.append(h, input, actions);
+                overlay.appendChild(card);
+                document.body.appendChild(overlay);
+                setTimeout(() => input.focus(), 30);
+
+                const self = this;
+                const dismiss = () => {
+                    overlay.remove();
+                    if (anchorEl?.focus) try { anchorEl.focus(); } catch (_) { /* reason: focus restore is best-effort */ }
+                };
+                const submit = () => {
+                    const name = (input.value || '').trim().slice(0, 80);
+                    if (!name) { input.focus(); return; }
+                    const id = 'g_' + Math.random().toString(36).slice(2, 9);
+                    const next = {
+                        ...self._readGroups(),
+                        [id]: {
+                            name,
+                            color: '#7c3aed',
+                            channelIds: [],
+                            parentId: safeParentId,
+                            sortMode: self._getActiveSortMode(),
+                            updatedAt: Date.now()
+                        }
+                    };
+                    self._writeGroups(next);
+                    dismiss();
+                    self._renderToolbar();
+                };
+                cancel.addEventListener('click', dismiss);
+                create.addEventListener('click', submit);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); submit(); }
+                });
+                overlay.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { e.preventDefault(); dismiss(); }
+                });
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) dismiss();
+                });
+            },
+
+            _renderToolbar() {
+                const target = document.querySelector('ytd-rich-grid-renderer, ytd-section-list-renderer');
+                if (!target || !target.parentElement) return;
+                const hadDigestPanel = Boolean(this._digestPanel);
+                this._closeDigestPanel();
+                this._closeMembersPanel();
+                this._toolbar?.remove();
+                const bar = document.createElement('div');
+                bar.className = 'ytkit-sub-toolbar';
+                bar.setAttribute('role', 'toolbar');
+                bar.setAttribute('aria-label', 'Subscription group controls');
+
+                const groupLabel = document.createElement('span');
+                groupLabel.className = 'ytkit-sub-toolbar__label';
+                groupLabel.textContent = 'Groups';
+                bar.appendChild(groupLabel);
+
+                const groups = this._readGroups();
+                const allChip = document.createElement('button');
+                allChip.type = 'button';
+                allChip.className = 'ytkit-sub-group-chip';
+                allChip.dataset.active = this._activeGroupId ? '0' : '1';
+                allChip.textContent = 'All';
+                allChip.setAttribute('aria-pressed', String(!this._activeGroupId));
+                allChip.setAttribute('aria-label', 'Show all subscriptions');
+                const self = this;
+                allChip.addEventListener('click', () => {
+                    self._activeGroupId = '';
+                    self._renderToolbar();
+                    self._applyGroupFilter();
+                    self._applySort();
+                });
+                bar.appendChild(allChip);
+
+                const renderGroupChip = (id) => {
+                    const group = groups[id];
+                    if (!group) return;
+                    const depth = self._getGroupParentId(id, groups) ? 1 : 0;
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'ytkit-sub-group-chip';
+                    chip.dataset.active = self._activeGroupId === id ? '1' : '0';
+                    chip.setAttribute('aria-pressed', String(self._activeGroupId === id));
+                    chip.dataset.depth = String(depth);
+                    chip.style.borderColor = group.color || '#7c3aed';
+                    const groupName = group.name || id;
+                    const prefix = depth ? '- ' : '';
+                    chip.textContent = prefix + groupName + ' (' + (group.channelIds?.length || 0) + ')';
+                    chip.setAttribute('aria-label', groupName + '. ' + (group.channelIds?.length || 0) + ' channel' + (group.channelIds?.length === 1 ? '' : 's') + (depth ? '. Subgroup' : ''));
+                    chip.addEventListener('click', () => {
+                        self._activeGroupId = self._activeGroupId === id ? '' : id;
+                        self._renderToolbar();
+                        self._applyGroupFilter();
+                        self._applySort();
+                    });
+                    bar.appendChild(chip);
+                };
+
+                for (const id of this._getTopLevelGroupIds(groups)) {
+                    renderGroupChip(id);
+                    for (const childId of this._getChildGroupIds(id, groups)) renderGroupChip(childId);
+                }
+
+                const newBtn = document.createElement('button');
+                newBtn.type = 'button';
+                newBtn.textContent = '+ Group';
+                newBtn.setAttribute('aria-label', 'Create subscription group');
+                newBtn.addEventListener('click', () => self._showNewGroupDialog(newBtn));
+                bar.appendChild(newBtn);
+
+                if (this._activeGroupId && groups[this._activeGroupId] && !this._getGroupParentId(this._activeGroupId, groups)) {
+                    const subBtn = document.createElement('button');
+                    subBtn.type = 'button';
+                    subBtn.textContent = '+ Subgroup';
+                    subBtn.setAttribute('aria-label', 'Create subscription subgroup');
+                    subBtn.addEventListener('click', () => self._showNewGroupDialog(subBtn, self._activeGroupId));
+                    bar.appendChild(subBtn);
+                }
+
+                if (this._activeGroupId && groups[this._activeGroupId]) {
+                    const activeGroupId = this._activeGroupId;
+                    const editBtn = document.createElement('button');
+                    editBtn.type = 'button';
+                    editBtn.dataset.action = 'edit-channels';
+                    editBtn.textContent = 'Edit Channels';
+                    editBtn.setAttribute('aria-label', 'Edit channels in ' + (groups[activeGroupId].name || activeGroupId));
+                    editBtn.setAttribute('aria-haspopup', 'dialog');
+                    editBtn.addEventListener('click', () => self._toggleMembersPanel(activeGroupId));
+                    bar.appendChild(editBtn);
+                }
+
+                const sortLabel = document.createElement('span');
+                sortLabel.className = 'ytkit-sub-toolbar__label';
+                sortLabel.textContent = 'Sort';
+                bar.appendChild(sortLabel);
+
+                const sortSelect = document.createElement('select');
+                sortSelect.setAttribute('aria-label', 'Sort subscriptions');
+                const activeSortMode = this._getActiveSortMode(groups);
+                for (const [v, label] of [
+                    ['default', 'YouTube default'],
+                    ['date-desc', 'Latest first'],
+                    ['duration-asc', 'Shortest first'],
+                    ['unwatched', 'Unwatched first'],
+                    ['new-since-last-visit', 'New since last visit'],
+                    ['popular', 'Most popular (views)']
+                ]) {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = label;
+                    if (activeSortMode === v) opt.selected = true;
+                    sortSelect.appendChild(opt);
+                }
+                sortSelect.addEventListener('change', () => {
+                    const mode = self._setActiveSortMode(sortSelect.value);
+                    self._applySort(mode);
+                });
+                bar.appendChild(sortSelect);
+
+                const digestBtn = document.createElement('button');
+                digestBtn.type = 'button';
+                digestBtn.dataset.action = 'digest';
+                digestBtn.textContent = 'Digest';
+                digestBtn.setAttribute('aria-label', 'Open group notifications digest');
+                digestBtn.addEventListener('click', () => self._toggleDigestPanel());
+                bar.appendChild(digestBtn);
+
+                const exportBtn = document.createElement('button');
+                exportBtn.type = 'button';
+                exportBtn.dataset.action = 'export';
+                exportBtn.textContent = 'Export';
+                exportBtn.setAttribute('aria-label', 'Export subscription groups as JSON');
+                exportBtn.addEventListener('click', () => self._exportGroups());
+                bar.appendChild(exportBtn);
+
+                const csvBtn = document.createElement('button');
+                csvBtn.type = 'button';
+                csvBtn.dataset.action = 'export-csv';
+                csvBtn.textContent = 'CSV';
+                csvBtn.setAttribute('aria-label', 'Export subscription groups as CSV');
+                csvBtn.addEventListener('click', () => self._exportGroupsCsv());
+                bar.appendChild(csvBtn);
+
+                const importBtn = document.createElement('button');
+                importBtn.type = 'button';
+                importBtn.textContent = 'Import';
+                importBtn.setAttribute('aria-label', 'Import subscription groups');
+                importBtn.addEventListener('click', () => {
+                    const inp = document.createElement('input');
+                    inp.type = 'file';
+                    inp.accept = 'application/json';
+                    inp.addEventListener('change', () => {
+                        const file = inp.files?.[0];
+                        if (!file) return;
+                        file.text().then(text => self._importGroups(text));
+                    });
+                    inp.click();
+                });
+                bar.appendChild(importBtn);
+
+                target.parentElement.insertBefore(bar, target);
+                this._toolbar = bar;
+                if (hadDigestPanel) this._renderDigestPanel();
+            },
+
+            _renderGroupEmptyState(allowed) {
+                document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
+                if (!allowed || allowed.size > 0) return;
+                if (!this._toolbar?.isConnected) return;
+                const notice = document.createElement('div');
+                notice.className = 'ytkit-sub-group-empty';
+                notice.setAttribute('role', 'status');
+                notice.textContent = 'No channels in this group yet — click Edit channels to add some.';
+                this._toolbar.insertAdjacentElement('afterend', notice);
+            },
+
+            _closeMembersPanel(restoreFocus) {
+                if (!this._membersPanel) return;
+                this._membersPanel.remove();
+                this._membersPanel = null;
+                if (restoreFocus) {
+                    const btn = this._toolbar?.querySelector('button[data-action="edit-channels"]');
+                    if (btn) try { btn.focus(); } catch (_) { /* reason: focus restore is best-effort */ }
+                }
+            },
+
+            _toggleMembersPanel(groupId) {
+                if (this._membersPanel) {
+                    this._closeMembersPanel();
+                    return;
+                }
+                this._renderMembersPanel(groupId);
+            },
+
+            _renderMembersPanel(groupId) {
+                this._closeMembersPanel();
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group || !this._toolbar?.isConnected) return;
+                const own = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
+                const channels = new Map();
+                for (const item of this._collectRenderedCardSummaries()) {
+                    if (!channels.has(item.channelId)) channels.set(item.channelId, item.channelName || item.channelId);
+                }
+                for (const id of own) {
+                    if (!channels.has(id)) channels.set(id, id);
+                }
+
+                const panel = document.createElement('section');
+                panel.className = 'ytkit-sub-members-panel';
+                panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', 'Edit channels in ' + (group.name || groupId));
+                panel.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._closeMembersPanel(true);
+                    }
+                });
+
+                const head = document.createElement('div');
+                head.className = 'ytkit-sub-members-head';
+                const titleWrap = document.createElement('div');
+                const title = document.createElement('h3');
+                title.className = 'ytkit-sub-members-title';
+                title.textContent = 'Edit channels — ' + (group.name || groupId);
+                const meta = document.createElement('div');
+                meta.className = 'ytkit-sub-members-meta';
+                meta.textContent = 'Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels.';
+                titleWrap.append(title, meta);
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'ytkit-sub-members-close';
+                close.textContent = 'Done';
+                close.setAttribute('aria-label', 'Close the channel membership editor');
+                const self = this;
+                close.addEventListener('click', () => {
+                    self._closeMembersPanel(true);
+                    self._renderToolbar();
+                    self._applyGroupFilter();
+                });
+                head.append(titleWrap, close);
+
+                const list = document.createElement('div');
+                list.className = 'ytkit-sub-members-list';
+                list.setAttribute('role', 'group');
+                list.setAttribute('aria-label', 'Rendered channels');
+
+                if (!channels.size) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-sub-members-empty';
+                    empty.textContent = 'No channels rendered yet — scroll the subscriptions feed, then reopen this panel.';
+                    list.appendChild(empty);
+                }
+
+                const sorted = Array.from(channels.entries())
+                    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), undefined, { sensitivity: 'base' }));
+                for (const [channelId, channelName] of sorted) {
+                    const row = document.createElement('label');
+                    row.className = 'ytkit-sub-members-row';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = own.has(channelId);
+                    checkbox.setAttribute('aria-label', 'Include ' + channelName + ' in ' + (group.name || groupId));
+                    checkbox.addEventListener('change', () => {
+                        self._setGroupMembership(groupId, channelId, checkbox.checked);
+                    });
+                    const name = document.createElement('span');
+                    name.className = 'ytkit-sub-members-name';
+                    name.textContent = channelName;
+                    name.title = channelId;
+                    row.append(checkbox, name);
+                    list.appendChild(row);
+                }
+
+                panel.append(head, list);
+                this._toolbar.insertAdjacentElement('afterend', panel);
+                this._membersPanel = panel;
+                const firstFocusable = panel.querySelector('input, button');
+                if (firstFocusable) try { firstFocusable.focus(); } catch (_) { /* reason: focus is best-effort on detached re-renders */ }
+            },
+
+            _setGroupMembership(groupId, channelId, included) {
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group || !channelId) return;
+                const ids = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
+                if (included) ids.add(channelId);
+                else ids.delete(channelId);
+                const next = {
+                    ...groups,
+                    [groupId]: {
+                        ...group,
+                        channelIds: Array.from(ids).slice(0, 1000),
+                        updatedAt: Date.now()
+                    }
+                };
+                this._writeGroups(next);
+                this._applyGroupFilter();
+                this._applyNewSinceMarkers();
+                showToast(included ? 'Channel added to group' : 'Channel removed from group', '#7c3aed', { duration: 2 });
+            },
+
+            init() {
+                this._ensureStyles();
+                const self = this;
+                this._navRule = () => {
+                    if (window.location.pathname !== '/feed/subscriptions') return;
+                    if (self._renderTimer) clearTimeout(self._renderTimer);
+                    if (self._stampTimer) clearTimeout(self._stampTimer);
+                    self._renderTimer = setTimeout(() => {
+                        self._renderTimer = null;
+                        if (window.location.pathname !== '/feed/subscriptions') return;
+                        self._renderToolbar();
+                        self._applyGroupFilter();
+                        self._applyContentTypeFilter();
+                        self._applyNewSinceMarkers();
+                        self._applySort();
+                    }, 1200);
+                    self._stampTimer = setTimeout(() => {
+                        self._stampTimer = null;
+                        if (window.location.pathname !== '/feed/subscriptions') return;
+                        self._stampLastVisit();
+                    }, 8000);
+                };
+                addNavigateRule(this.id, this._navRule);
+                // Observe new cards added to the feed for group filtering
+                this._observer = new MutationObserver(() => {
+                    if (window.location.pathname !== '/feed/subscriptions') return;
+                    this._applyGroupFilter();
+                    this._applyNewSinceMarkers();
+                    if (this._digestPanel) this._renderDigestPanel();
+                });
+                const observeTarget = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents, body');
+                if (observeTarget) {
+                    this._observer.observe(observeTarget, { childList: true, subtree: true });
+                }
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._observer?.disconnect();
+                this._observer = null;
+                if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }
+                if (this._stampTimer) { clearTimeout(this._stampTimer); this._stampTimer = null; }
+                this._navRule = null;
+                this._closeDigestPanel();
+                this._closeMembersPanel();
+                document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
+                this._toolbar?.remove();
+                this._toolbar = null;
+                document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
+                document.querySelectorAll('.ytkit-sub-hidden-by-type').forEach(el => el.classList.remove('ytkit-sub-hidden-by-type'));
+                document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
+                document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; });
+                document.querySelector('.ytkit-sub-group-dialog')?.remove();
+                this._styleElement?.remove();
+                this._styleElement = null;
+                this._activeGroupId = '';
             }
         },
 
