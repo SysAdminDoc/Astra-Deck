@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: DeArrow cache timestamp gate.** `_doFetch()` now checks whether
+  the existing cache entry has a newer `_ts` before overwriting, preventing
+  a staler concurrent response from replacing fresher data.
 - **Security: companion subprocess env whitelist.** yt-dlp subprocesses now
   receive a minimal whitelisted environment (`PATH`, `SYSTEMROOT`, `TEMP`, etc.)
   instead of the full `os.environ.copy()`. Prevents a compromised `PYTHONPATH`
