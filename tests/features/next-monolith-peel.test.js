@@ -231,13 +231,19 @@ test('downloadUI monolith delegates feature objects through the module factory',
         'downloadCobaltFallback',
         'downloadHistoryPanel'
     ]) {
+        // Accept both parenthesized and bare delegation forms
         const delegateNeedle = `_downloadUI?.${featureId} || {`;
+        const delegateNeedleAlt = `(_downloadUI?.${featureId} || {`;
+        const hasDelegation = sources.ytkit.includes(delegateNeedle) || sources.ytkit.includes(delegateNeedleAlt);
         assert.ok(
-            sources.ytkit.includes(delegateNeedle),
+            hasDelegation,
             `ytkit.js must delegate ${featureId} through _downloadUI with inline fallback`
         );
         const fallbackNeedle = `id: '${featureId}'`;
-        const delegateIndex = sources.ytkit.indexOf(delegateNeedle);
+        const delegateIndex = Math.max(
+            sources.ytkit.indexOf(delegateNeedle),
+            sources.ytkit.indexOf(delegateNeedleAlt)
+        );
         const fallbackIndex = sources.ytkit.indexOf(fallbackNeedle, delegateIndex);
         assert.ok(
             fallbackIndex > delegateIndex,
