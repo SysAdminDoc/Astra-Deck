@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **SharedAudio: volume boost + audio normalization.** New MAIN world audio
+  features via `ytkit-main.js`: `volumeBoost` amplifies audio beyond 100%
+  via a GainNode (1-10x, configurable via `volumeBoostLevel` range setting);
+  `audioNormalization` compresses dynamic range via a DynamicsCompressorNode
+  so quiet and loud passages play at similar volume. Both share a single
+  AudioContext and audio graph (source -> compressor -> gain -> destination).
+  Off by default; i18n keys added across all 11 locales.
 - **Native messaging token bootstrap.** Extension-side `NATIVE_MSG_GET_TOKEN`
   handler in background.js uses `chrome.runtime.connectNative()` to request
   the companion token via a browser-pinned stdio pipe. Falls back to HTTP
