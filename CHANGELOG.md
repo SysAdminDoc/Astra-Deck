@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: merge all MAIN world audio into single AudioContext.** Mono-to-stereo
+  (Feature 3) and volume boost/normalization (Feature 4) each had independent
+  AudioContexts calling `createMediaElementSource()` on the same video — a
+  Web Audio API spec violation that causes `InvalidStateError`. Consolidated
+  into a single shared graph: source -> monoMerge -> compressor -> gain ->
+  destination. Each node passes through when its feature is disabled.
+- **Fix: native messaging double-sendResponse race.** The `NATIVE_MSG_GET_TOKEN`
+  handler's timeout, onMessage, and onDisconnect callbacks all called
+  `sendResponse`. Added a `responded` guard so only the first path through
+  delivers the response.
+- **Fix: download-ui health panel `_poll()` undefined.** The Deno provisioning
+  success callback called `this._poll()` which doesn't exist. Changed to
+  `this._render()`. Also added `_destroyed` guard to the 30s poll interval.
+- **Fix: download popup missing aria-expanded.** Speed popup correctly set
+  `aria-expanded` on its anchor but download popup didn't. Added consistent
+  aria-expanded management to the download popup.
+- **Fix: sidepanel setting names.** Toggle labels now convert camelCase keys
+  to human-readable form (`hideCreateButton` → `Hide Create Button`).
 - **SharedAudio: volume boost + audio normalization.** New MAIN world audio
   features via `ytkit-main.js`: `volumeBoost` amplifies audio beyond 100%
   via a GainNode (1-10x, configurable via `volumeBoostLevel` range setting);

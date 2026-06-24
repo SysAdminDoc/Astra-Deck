@@ -297,117 +297,36 @@
 })();
 
     // ──────────────────────────────────────────────────────────────────
-    // Feature 3: Mono-to-stereo audio converter (data-ytkit-mono-to-stereo)
+    // Feature 3+4: Shared audio processing graph
     // ──────────────────────────────────────────────────────────────────
-    // Forces mono downmix via a channelCount=1 gain node, then the
-    // browser's built-in mono→stereo upmix centers the signal equally
-    // in both ears. When disabled, the gain node passes through at
-    // channelCount=2. createMediaElementSource is one-shot per element,
-    // so we keep the graph alive and toggle the merge behavior.
+    // Single AudioContext for ALL audio features (mono-to-stereo,
+    // volume boost, audio normalization). createMediaElementSource is
+    // one-shot per element — multiple AudioContexts competing for the
+    // same <video> would throw InvalidStateError. The shared graph is:
+    //   source → monoMerge → compressor → boostGain → destination
+    // Each node passes through when its feature is disabled.
 (function() {
     'use strict';
     var AC = typeof AudioContext !== 'undefined' ? AudioContext
            : typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null;
     if (!AC) return;
 
-    var _enabled = false;
-    var _ctx = null;
-    var _source = null;
-    var _merge = null;
-    var _connectedVideo = null;
-
-    function getVideo() {
-        return document.querySelector('.html5-main-video');
-    }
-
-    function connect() {
-        var video = getVideo();
-        if (!video) return;
-        if (_connectedVideo === video && _ctx) {
-            syncMerge();
-            return;
-        }
-        cleanup();
-        try {
-            _ctx = new AC();
-            _source = _ctx.createMediaElementSource(video);
-            _merge = _ctx.createGain();
-            syncMerge();
-            _source.connect(_merge);
-            _merge.connect(_ctx.destination);
-            _connectedVideo = video;
-        } catch (e) {
-            // reason: createMediaElementSource can throw if already connected
-            cleanup();
-        }
-    }
-
-    function syncMerge() {
-        if (!_merge) return;
-        if (_enabled) {
-            _merge.channelCount = 1;
-            _merge.channelCountMode = 'explicit';
-            _merge.channelInterpretation = 'speakers';
-        } else {
-            _merge.channelCount = 2;
-            _merge.channelCountMode = 'max';
-            _merge.channelInterpretation = 'speakers';
-        }
-    }
-
-    function cleanup() {
-        if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
-        if (_merge) { try { _merge.disconnect(); } catch (e) { /* reason: already disconnected */ } _merge = null; }
-        if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
-        _ctx = null;
-        _connectedVideo = null;
-    }
-
-    _obsRegister(['data-ytkit-mono-to-stereo'], function() {
-        var val = document.documentElement.getAttribute('data-ytkit-mono-to-stereo');
-        var next = val === '1';
-        if (next === _enabled) return;
-        _enabled = next;
-        if (_enabled) connect();
-        else cleanup();
-    });
-
-    document.addEventListener('loadstart', function(e) {
-        if (!_enabled) return;
-        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
-            _connectedVideo = null;
-            connect();
-        }
-    }, true);
-
-    window.addEventListener('yt-navigate-finish', function() {
-        if (_enabled) { _connectedVideo = null; setTimeout(connect, 500); }
-    });
-})();
-
-    // ──────────────────────────────────────────────────────────────────
-    // Feature 4: Volume Boost (data-ytkit-volume-boost)
-    // ──────────────────────────────────────────────────────────────────
-    // Amplifies audio via a GainNode. Value is the gain multiplier
-    // (1.0 = unity, max 10.0). createMediaElementSource is one-shot
-    // per element, so the graph stays alive and gain is adjusted live.
-    // Shares an AudioContext with audio normalization (Feature 5).
-(function() {
-    'use strict';
-    var AC = typeof AudioContext !== 'undefined' ? AudioContext
-           : typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null;
-    if (!AC) return;
-
+    var _monoEnabled = false;
     var _boostGain = 1.0;
     var _normalizeEnabled = false;
     var _ctx = null;
     var _source = null;
-    var _gainNode = null;
+    var _monoMerge = null;
     var _compressor = null;
+    var _gainNode = null;
     var _connectedVideo = null;
 
     function getVideo() {
         return document.querySelector('.html5-main-video');
+    }
+
+    function isActive() {
+        return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled;
     }
 
     function connect() {
@@ -421,6 +340,7 @@
         try {
             _ctx = new AC();
             _source = _ctx.createMediaElementSource(video);
+            _monoMerge = _ctx.createGain();
             _compressor = _ctx.createDynamicsCompressor();
             _compressor.threshold.value = -24;
             _compressor.knee.value = 30;
@@ -428,7 +348,8 @@
             _compressor.attack.value = 0.003;
             _compressor.release.value = 0.25;
             _gainNode = _ctx.createGain();
-            _source.connect(_compressor);
+            _source.connect(_monoMerge);
+            _monoMerge.connect(_compressor);
             _compressor.connect(_gainNode);
             _gainNode.connect(_ctx.destination);
             syncGraph();
@@ -439,6 +360,17 @@
     }
 
     function syncGraph() {
+        if (_monoMerge) {
+            if (_monoEnabled) {
+                _monoMerge.channelCount = 1;
+                _monoMerge.channelCountMode = 'explicit';
+                _monoMerge.channelInterpretation = 'speakers';
+            } else {
+                _monoMerge.channelCount = 2;
+                _monoMerge.channelCountMode = 'max';
+                _monoMerge.channelInterpretation = 'speakers';
+            }
+        }
         if (_gainNode) _gainNode.gain.value = _boostGain;
         if (_compressor) {
             if (_normalizeEnabled) {
@@ -453,6 +385,7 @@
 
     function cleanup() {
         if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
+        if (_monoMerge) { try { _monoMerge.disconnect(); } catch (e) { /* reason: already disconnected */ } _monoMerge = null; }
         if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
         if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
         if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
@@ -460,7 +393,14 @@
         _connectedVideo = null;
     }
 
-    function isActive() { return _boostGain > 1.001 || _normalizeEnabled; }
+    _obsRegister(['data-ytkit-mono-to-stereo'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-mono-to-stereo');
+        var next = val === '1';
+        if (next === _monoEnabled) return;
+        _monoEnabled = next;
+        if (isActive()) connect();
+        else cleanup();
+    });
 
     _obsRegister(['data-ytkit-volume-boost'], function() {
         var val = document.documentElement.getAttribute('data-ytkit-volume-boost');
@@ -469,14 +409,14 @@
         if (next > 10) next = 10;
         _boostGain = next;
         if (isActive()) connect();
-        else if (!isActive() && _ctx) cleanup();
+        else cleanup();
     });
 
     _obsRegister(['data-ytkit-audio-normalize'], function() {
         var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
         _normalizeEnabled = val === '1';
         if (isActive()) connect();
-        else if (!isActive() && _ctx) cleanup();
+        else cleanup();
     });
 
     document.addEventListener('loadstart', function(e) {
