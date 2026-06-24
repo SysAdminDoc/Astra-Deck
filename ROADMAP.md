@@ -69,17 +69,6 @@
 
 ### P1 — Security / Reliability
 
-- [ ] P1 — Companion: whitelist subprocess environment variables
-  Why: `os.environ.copy()` passes the full environment to yt-dlp subprocesses; a compromised PYTHONPATH or LD_LIBRARY_PATH injected before launch could execute arbitrary code.
-  Where: `astra_downloader/astra_downloader.py` (subprocess.Popen env= parameter)
-
-- [ ] P1 — Companion: add --max-filesize config to prevent disk exhaustion
-  Why: yt-dlp is invoked without any download size cap; a queue of large videos could fill disk.
-  Where: `astra_downloader/astra_downloader.py` (_run_download)
-
-- [ ] P1 — Companion: cap total queued downloads to prevent memory exhaustion
-  Why: The `downloads` dict grows unbounded; aggressive rate limiting slows but doesn't prevent accumulation.
-  Where: `astra_downloader/astra_downloader.py` (start_download, cleanup_old)
 
 - [ ] P2 — Add regex execution timeout for user-supplied filter patterns
   Why: ReDoS guard checks pattern structure but doesn't enforce execution timeout. Alternation groups can still cause exponential backtracking.
