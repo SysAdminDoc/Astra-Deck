@@ -907,6 +907,40 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return true;
     }
 
+    if (msg.type === 'NATIVE_MSG_GET_TOKEN') {
+        (async () => {
+            try {
+                if (!chrome.runtime?.connectNative) {
+                    sendResponse({ token: null, error: 'Native messaging unavailable' });
+                    return;
+                }
+                const port = chrome.runtime.connectNative('com.astra.deck.downloader');
+                const timeout = setTimeout(() => {
+                    try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
+                    sendResponse({ token: null, error: 'Native messaging timeout' });
+                }, 5000);
+                port.onMessage.addListener((response) => {
+                    clearTimeout(timeout);
+                    try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
+                    if (response && response.ok && response.token) {
+                        sendResponse({ token: response.token, error: null });
+                    } else {
+                        sendResponse({ token: null, error: response?.error || 'Token not available' });
+                    }
+                });
+                port.onDisconnect.addListener(() => {
+                    clearTimeout(timeout);
+                    const lastError = chrome.runtime.lastError?.message || '';
+                    sendResponse({ token: null, error: lastError || 'Native host disconnected' });
+                });
+                port.postMessage({ type: 'get-token' });
+            } catch (err) {
+                sendResponse({ token: null, error: err?.message || 'Native messaging failed' });
+            }
+        })();
+        return true;
+    }
+
     // Unknown message type — respond explicitly so the caller sees an
     // actionable error instead of the generic Chrome "The message port closed
     // before a response was received." Without this fallthrough an in-extension
