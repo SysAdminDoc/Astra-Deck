@@ -369,7 +369,7 @@
         if (next === _enabled) return;
         _enabled = next;
         if (_enabled) connect();
-        else if (_merge) syncMerge();
+        else cleanup();
     });
 
     document.addEventListener('loadstart', function(e) {
