@@ -350,12 +350,6 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "إظهار شريط التقدم دائماً"
   },
-  "feature_antiTranslate_desc": {
-    "message": "منع YouTube من ترجمة عناوين الفيديو والأوصاف تلقائياً إلى لغتك المحلية. يستعيد النص باللغة الأصلية على صور الشبكة المصغرة + صفحة المشاهدة."
-  },
-  "feature_antiTranslate_name": {
-    "message": "منع الترجمة (العناوين + الأوصاف الأصلية)"
-  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "عندما يقدّم YouTube مساراً صوتياً مُدبلجاً تلقائياً، يحاول الرجوع إلى الأصلي. أفضل جهد — يعمل عبر movie_player getAvailableAudioTracks() / setAudioTrack() عند توفره."
   },
@@ -368,11 +362,23 @@
   "feature_antiTranslateTranscript_name": {
     "message": "منع ترجمة النص المكتوب"
   },
+  "feature_antiTranslate_desc": {
+    "message": "منع YouTube من ترجمة عناوين الفيديو والأوصاف تلقائياً إلى لغتك المحلية. يستعيد النص باللغة الأصلية على صور الشبكة المصغرة + صفحة المشاهدة."
+  },
+  "feature_antiTranslate_name": {
+    "message": "منع الترجمة (العناوين + الأوصاف الأصلية)"
+  },
   "feature_astraContextMenu_desc": {
     "message": "انقر بزر الماوس الأيمن على المشغّل أو بطاقة خلاصة للحصول على إجراءات Astra: إخفاء القناة، نسخ عنوان الفيديو، نسخ رابط الطابع الزمني، فتح النص. معطَّل افتراضياً — يضيف مستمع قائمة سياق؛ لا يحجب قائمة YouTube الأصلية."
   },
   "feature_astraContextMenu_name": {
     "message": "قائمة سياق Astra"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "ضغط النطاق الديناميكي بحيث يتم تشغيل المقاطع الهادئة والصاخبة بمستوى صوت متقارب."
+  },
+  "feature_audioNormalization_name": {
+    "message": "تطبيع الصوت"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "يحفظ لغة الصوت المفضلة دون فتح إعدادات YouTube تلقائياً. يعيد YouTube تشغيل الفيديو عند تبديل المسارات الصوتية عبر القائمة الأصلية."
@@ -782,29 +788,29 @@
   "feature_daTitleFormat_name": {
     "message": "تنسيق العنوان"
   },
-  "feature_deArrow_desc": {
-    "message": "استبدال العناوين والصور المصغرة المضلِّلة ببدائل مقترحة جماعياً من قاعدة بيانات DeArrow"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "يضيف شريحة وضع DeArrow صغيرة بجانب اسم القناة في صفحة المشاهدة. يتنقل بين DeArrow ← الأصلي ← إيقاف ← DeArrow بكل نقرة. تُحفظ التخصيصات حسب معرّف القناة."
   },
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "تخصيصات DeArrow لكل قناة"
   },
-  "feature_dearrowPeekButton_desc": {
-    "message": "اضغط مع الاستمرار على Alt لإظهار عناوين YouTube الأصلية مؤقتاً (يلغي عناوين DeArrow/المخصصة أثناء الضغط)"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "زر استعراض DeArrow"
-  },
   "feature_deArrowVoting_desc": {
     "message": "التصويت على بدائل عناوين DeArrow. يضيف أزرار إعجاب/عدم إعجاب بجانب العناوين المستبدلة. يستخدم معرّف مستخدم محلي خاص. معطَّل افتراضياً."
   },
   "feature_deArrowVoting_name": {
     "message": "تصويت DeArrow"
+  },
+  "feature_deArrow_desc": {
+    "message": "استبدال العناوين والصور المصغرة المضلِّلة ببدائل مقترحة جماعياً من قاعدة بيانات DeArrow"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "اضغط مع الاستمرار على Alt لإظهار عناوين YouTube الأصلية مؤقتاً (يلغي عناوين DeArrow/المخصصة أثناء الضغط)"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "زر استعراض DeArrow"
   },
   "feature_debugMode_desc": {
     "message": "تفعيل التسجيل التشخيصي المفصّل في وحدة التحكم"
@@ -980,12 +986,6 @@
   "feature_forceDarkEverywhere_name": {
     "message": "فرض الوضع الداكن على جميع صفحات YouTube"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "نشط دائماً: عندما يبلّغ نظام التشغيل عن ألوان إجبارية (Windows High Contrast، GTK)، تستخدم عناصر تحكم Astra المحقونة ألوان النظام تلقائياً لتبقى النصوص مقروءة وحلقات التركيز مرئية. استعلام الوسائط نفسه هو البوابة؛ هذا التبديل محتفظ به للتوافق."
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "دعم الألوان الإجبارية / التباين العالي"
-  },
   "feature_forceH264_desc": {
     "message": "تفضيل H.264 (AVC) على VP9/AV1 لاستخدام CPU أقل على الأجهزة القديمة. قد يقلل الجودة القصوى. يستخدم جسر ترميز العالم الرئيسي."
   },
@@ -998,17 +998,17 @@
   "feature_forceStandardFps_name": {
     "message": "فرض معدل الإطارات القياسي"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "نشط دائماً: عندما يبلّغ نظام التشغيل عن ألوان إجبارية (Windows High Contrast، GTK)، تستخدم عناصر تحكم Astra المحقونة ألوان النظام تلقائياً لتبقى النصوص مقروءة وحلقات التركيز مرئية. استعلام الوسائط نفسه هو البوابة؛ هذا التبديل محتفظ به للتوافق."
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "دعم الألوان الإجبارية / التباين العالي"
+  },
   "feature_frameByFrameButtons_desc": {
     "message": "إضافة أزرار خطوة للخلف (,) وخطوة للأمام (.) مرئية إلى عناصر تحكم المشغّل للتنقل الدقيق بالإطارات"
   },
   "feature_frameByFrameButtons_name": {
     "message": "أزرار التنقل إطاراً بإطار"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "انقر نقراً مزدوجاً في أي مكان على الفيديو لتبديل ملء الشاشة (يستبدل سلوك التقديم الافتراضي)"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "ملء الشاشة بالنقر المزدوج"
   },
   "feature_fullTitles_desc": {
     "message": "إزالة قيد السطرين على عناوين الصور المصغرة لعرض العناوين الطويلة كاملة"
@@ -1021,6 +1021,12 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "اشتراكات بعرض كامل"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "انقر نقراً مزدوجاً في أي مكان على الفيديو لتبديل ملء الشاشة (يستبدل سلوك التقديم الافتراضي)"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "ملء الشاشة بالنقر المزدوج"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "يثبّت حاوية مخفية واحدة role=status / aria-live=polite تحت نص المستند. تعلن قارئات الشاشة أي نص يكتبه Astra فيها (نصوص التنبيهات، نتائج الفلاتر، تغييرات حالة التنزيل)."
@@ -1058,17 +1064,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "إخفاء عناصر صفحة المشاهدة"
   },
-  "feature_hideAirplayButton_desc": {
-    "message": "إزالة أيقونة Airplay من عناصر تحكم المشغّل"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "إخفاء زر Airplay"
-  },
   "feature_hideAiSummary_desc": {
     "message": "إزالة الملخصات المُنشأة بالذكاء الاصطناعي وأزرار السؤال بالذكاء الاصطناعي"
   },
   "feature_hideAiSummary_name": {
     "message": "إخفاء ملخص الذكاء الاصطناعي"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "إزالة أيقونة Airplay من عناصر تحكم المشغّل"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "إخفاء زر Airplay"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "إزالة مفتاح تبديل التشغيل التلقائي من عناصر تحكم المشغّل"
@@ -1346,6 +1352,12 @@
   "feature_monetizationIndicator_name": {
     "message": "مؤشر تحقيق الأرباح"
   },
+  "feature_monoToStereo_desc": {
+    "message": "توسيط الصوت الأحادي بالتساوي في كلتا الأذنين — يصلح التسجيلات أحادية الجانب والمحاضرات والمحتوى القديم الذي يبدو غير متوازن على سماعات الرأس"
+  },
+  "feature_monoToStereo_name": {
+    "message": "أحادي إلى ستيريو"
+  },
   "feature_musicVideoSpeedLock_desc": {
     "message": "عند تفعيل سرعة التشغيل الثابتة، إبقاء فيديوهات فئة الموسيقى عند 1x حتى لا تُسرَّع الأغاني"
   },
@@ -1370,17 +1382,17 @@
   "feature_noFrostedGlass_name": {
     "message": "تعطيل الزجاج المصنفر"
   },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "عرض تنبيه لمرة واحدة عندما يختار YouTube تلقائياً مساراً صوتياً مُدبلجاً بالذكاء الاصطناعي (مثلاً فيديو كوري مُدبلج بالإنجليزية). يمكنك التبديل يدوياً إلى المسار الأصلي في إعدادات المشغّل."
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "إشعار عند الدبلجة بالذكاء الاصطناعي"
-  },
   "feature_notInterestedButton_desc": {
     "message": "إضافة زر X على صور الفيديو المصغرة لتجاهل الفيديوهات بسرعة عبر واجهة ملاحظات YouTube"
   },
   "feature_notInterestedButton_name": {
     "message": "\"غير مهتم\" على الصور المصغرة"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "عرض تنبيه لمرة واحدة عندما يختار YouTube تلقائياً مساراً صوتياً مُدبلجاً بالذكاء الاصطناعي (مثلاً فيديو كوري مُدبلج بالإنجليزية). يمكنك التبديل يدوياً إلى المسار الأصلي في إعدادات المشغّل."
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "إشعار عند الدبلجة بالذكاء الاصطناعي"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "استبدال شريط تقدم الفيديو برسوم متحركة Nyan Cat"
@@ -2006,6 +2018,12 @@
   "feature_videoContextMenu_name": {
     "message": "قائمة تنزيل المشغّل"
   },
+  "feature_videoFlip_desc": {
+    "message": "قلب الفيديو أفقياً أو رأسياً — مفيد لدروس الرقص المعكوسة وقراءة النصوص أو التسجيلات المقلوبة"
+  },
+  "feature_videoFlip_name": {
+    "message": "قلب الفيديو"
+  },
   "feature_videoLoopButton_desc": {
     "message": "إضافة زر تبديل التكرار إلى عناصر تحكم المشغّل لتكرار الفيديو بنقرة واحدة"
   },
@@ -2024,18 +2042,6 @@
   "feature_videoResolutionBadge_name": {
     "message": "شارة الدقة على الصور المصغرة"
   },
-  "feature_videoFlip_desc": {
-    "message": "قلب الفيديو أفقياً أو رأسياً — مفيد لدروس الرقص المعكوسة وقراءة النصوص أو التسجيلات المقلوبة"
-  },
-  "feature_videoFlip_name": {
-    "message": "قلب الفيديو"
-  },
-  "feature_monoToStereo_desc": {
-    "message": "توسيط الصوت الأحادي بالتساوي في كلتا الأذنين — يصلح التسجيلات أحادية الجانب والمحاضرات والمحتوى القديم الذي يبدو غير متوازن على سماعات الرأس"
-  },
-  "feature_monoToStereo_name": {
-    "message": "أحادي إلى ستيريو"
-  },
   "feature_videoRotation_desc": {
     "message": "تدوير الفيديو 90/180/270 درجة عبر تحويل CSS — مفيد لتسجيلات الهاتف الجانبية"
   },
@@ -2047,12 +2053,6 @@
   },
   "feature_videoScreenshot_name": {
     "message": "لقطة شاشة الفيديو"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "تحديد عدد صور الفيديو المصغرة في كل صف (0 = ديناميكي حسب عرض النافذة)"
-  },
-  "feature_videosPerRow_name": {
-    "message": "فيديوهات لكل صف"
   },
   "feature_videoVisualFilters_desc": {
     "message": "ضبط السطوع / التباين / التشبع / درجة اللون / التدرج الرمادي / البني الداكن عبر فلتر CSS على عنصر الفيديو"
@@ -2066,11 +2066,29 @@
   "feature_videoZoom_name": {
     "message": "تكبير وتحريك الفيديو"
   },
+  "feature_videosPerRow_desc": {
+    "message": "تحديد عدد صور الفيديو المصغرة في كل صف (0 = ديناميكي حسب عرض النافذة)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "فيديوهات لكل صف"
+  },
   "feature_vlcMpvHandoff_desc": {
     "message": "ملف GitHub الكامل فقط. يضيف أزراراً بجانب المشغّل تُطلق عناوين URL لبروتوكول ytvlc:// أو ytmpv://. يجب تسجيل معالج البروتوكول على نظام التشغيل — Astra Deck لا يشغّل ملفات تنفيذية مباشرة. معطَّل افتراضياً."
   },
   "feature_vlcMpvHandoff_name": {
     "message": "تسليم البث إلى VLC / MPV"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "مضاعف الكسب لتعزيز الصوت (1.0 = الأصلي، الحد الأقصى 10.0)"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "مستوى تعزيز الصوت"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "تضخيم الصوت بما يتجاوز 100% عبر عقدة كسب Web Audio (حتى 10 أضعاف). مفيد للتسجيلات الهادئة."
+  },
+  "feature_volumeBoost_name": {
+    "message": "تعزيز الصوت"
   },
   "feature_volumeWheelMode_desc": {
     "message": "تمرير عجلة الماوس فوق المشغّل لتغيير مستوى الصوت بخطوات 5%. تظهر شريحة مؤشر عائمة بالمستوى الجديد لمدة 1.2 ثانية؛ لا تُضاف اختصارات لوحة مفاتيح."
@@ -2330,6 +2348,21 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "تنظيف الخلاصة"
+  },
+  "qtGroup_Focus": {
+    "message": "التركيز"
+  },
+  "qtGroup_Playback": {
+    "message": "التشغيل"
+  },
+  "qtGroup_Utilities": {
+    "message": "الأدوات"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "تدفق المشاهدة"
+  },
   "qt_autoTheaterMode_desc": {
     "message": "فتح مقاطع الفيديو في وضع المسرح"
   },
@@ -2420,21 +2453,6 @@
   "qt_transcriptViewer_name": {
     "message": "الشريط الجانبي للنص"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "تنظيف الخلاصة"
-  },
-  "qtGroup_Focus": {
-    "message": "التركيز"
-  },
-  "qtGroup_Playback": {
-    "message": "التشغيل"
-  },
-  "qtGroup_Utilities": {
-    "message": "الأدوات"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "تدفق المشاهدة"
-  },
   "quickTogglesAria": {
     "message": "التبديلات السريعة"
   },
@@ -2453,11 +2471,11 @@
   "resultsAllAvailableTpl": {
     "message": "… عنصر تحكم سريع متاح في هذه النافذة"
   },
-  "resultsMatching": {
-    "message": "مطابق"
-  },
   "resultsMatchTpl": {
     "message": "… من … … يطابق هذا الفلتر"
+  },
+  "resultsMatching": {
+    "message": "مطابق"
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} إعداد مُفعَّل عبر {categories} فئة"
@@ -2540,20 +2558,20 @@
   "statusClipboardUnavailable": {
     "message": "الحافظة غير متاحة — انظر وحدة تحكم المتصفح."
   },
-  "statusDiagCleared": {
-    "message": "تم مسح سجل التشخيص."
-  },
   "statusDiagClearFail": {
     "message": "تعذّر مسح السجل"
+  },
+  "statusDiagCleared": {
+    "message": "تم مسح سجل التشخيص."
   },
   "statusDiagCopied": {
     "message": "تم نسخ التشخيص إلى الحافظة."
   },
-  "statusDiagSaved": {
-    "message": "تم حفظ سجل التشخيص."
-  },
   "statusDiagSaveFail": {
     "message": "تعذّر حفظ السجل"
+  },
+  "statusDiagSaved": {
+    "message": "تم حفظ سجل التشخيص."
   },
   "statusExportFail": {
     "message": "فشل التصدير"
@@ -2561,11 +2579,11 @@
   "statusImportFail": {
     "message": "فشل الاستيراد"
   },
-  "statusMediadlReenabled": {
-    "message": "تم إعادة تفعيل مطالبات تثبيت Astra Downloader — أعِد تحميل تبويبة YouTube لرؤيتها."
-  },
   "statusMediadlReenableFail": {
     "message": "تعذّر إعادة تفعيل مطالبات Astra Downloader. افتح chrome://extensions وأعِد التحميل."
+  },
+  "statusMediadlReenabled": {
+    "message": "تم إعادة تفعيل مطالبات تثبيت Astra Downloader — أعِد تحميل تبويبة YouTube لرؤيتها."
   },
   "statusOpenWorkspaceFail": {
     "message": "تعذّر فتح مساحة العمل الكاملة. حاول مرة أخرى."

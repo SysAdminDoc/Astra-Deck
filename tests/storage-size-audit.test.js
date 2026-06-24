@@ -56,7 +56,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Subscription content-type filter adds 2 booleans.
     // Mono-to-stereo adds 1 boolean.
     // Auto-dismiss content warning adds 1 boolean (default true).
-    assert.equal(assessment.totalBytes, 178464);
+    // Volume boost adds boolean + number level. Audio normalization adds boolean.
+    assert.equal(assessment.totalBytes, 178532);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

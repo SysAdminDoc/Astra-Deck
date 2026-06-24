@@ -350,12 +350,6 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "Toujours afficher la barre de progression"
   },
-  "feature_antiTranslate_desc": {
-    "message": "Empêcher YouTube de traduire automatiquement les titres ET descriptions des vidéos dans votre langue. Restaure le texte en langue originale sur les miniatures et la page de visionnage."
-  },
-  "feature_antiTranslate_name": {
-    "message": "Anti-traduction (titres + descriptions originaux)"
-  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "Lorsque YouTube propose une piste audio doublée automatiquement, tente de revenir à l'originale. Fonctionne au mieux via movie_player getAvailableAudioTracks() / setAudioTrack() lorsque disponible."
   },
@@ -368,11 +362,23 @@
   "feature_antiTranslateTranscript_name": {
     "message": "Anti-traduction de la transcription"
   },
+  "feature_antiTranslate_desc": {
+    "message": "Empêcher YouTube de traduire automatiquement les titres ET descriptions des vidéos dans votre langue. Restaure le texte en langue originale sur les miniatures et la page de visionnage."
+  },
+  "feature_antiTranslate_name": {
+    "message": "Anti-traduction (titres + descriptions originaux)"
+  },
   "feature_astraContextMenu_desc": {
     "message": "Clic droit sur le Player ou une carte de flux pour accéder aux actions Astra : Masquer la chaîne, Copier l'URL, Copier le lien horodaté, Ouvrir la transcription. Désactivé par défaut — ne bloque jamais le clic droit natif de YouTube."
   },
   "feature_astraContextMenu_name": {
     "message": "Menu contextuel Astra"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "Compresse la plage dynamique pour que les passages calmes et forts jouent a un volume similaire."
+  },
+  "feature_audioNormalization_name": {
+    "message": "Normalisation audio"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "Mémorise votre langue audio préférée sans ouvrir les paramètres YouTube automatiquement. YouTube redémarre la lecture lorsque les scripts changent de piste audio via le menu natif."
@@ -782,29 +788,29 @@
   "feature_daTitleFormat_name": {
     "message": "Format des titres"
   },
-  "feature_deArrow_desc": {
-    "message": "Remplacer les titres et Thumbnails racoleurs par des alternatives participatives de la base de données DeArrow"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "Ajoute une puce de mode DeArrow à côté du nom de la chaîne sur la page de visionnage. Alterne entre DeArrow, Original, Désactivé par clic. Les préférences sont conservées par identifiant de chaîne."
   },
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "Préférences DeArrow par chaîne"
   },
-  "feature_dearrowPeekButton_desc": {
-    "message": "Maintenir Alt pour révéler temporairement les titres YouTube originaux (annule les titres DeArrow/personnalisés tant qu'appuyé)"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "Bouton aperçu DeArrow"
-  },
   "feature_deArrowVoting_desc": {
     "message": "Voter sur les remplacements de titres DeArrow. Ajoute des boutons pouce haut/bas à côté des titres remplacés. Utilise un identifiant utilisateur privé local. Désactivé par défaut."
   },
   "feature_deArrowVoting_name": {
     "message": "Vote DeArrow"
+  },
+  "feature_deArrow_desc": {
+    "message": "Remplacer les titres et Thumbnails racoleurs par des alternatives participatives de la base de données DeArrow"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "Maintenir Alt pour révéler temporairement les titres YouTube originaux (annule les titres DeArrow/personnalisés tant qu'appuyé)"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "Bouton aperçu DeArrow"
   },
   "feature_debugMode_desc": {
     "message": "Activer la journalisation diagnostique détaillée dans la console"
@@ -980,12 +986,6 @@
   "feature_forceDarkEverywhere_name": {
     "message": "Forcer le sombre sur toutes les pages YouTube"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "Toujours actif : quand l'OS signale des couleurs forcées (contraste élevé Windows, couleurs forcées GTK), les contrôles injectés par Astra utilisent automatiquement les couleurs système pour que le texte reste lisible et les anneaux de focus visibles. La requête média elle-même sert de déclencheur ; ce commutateur est conservé pour la compatibilité des paramètres et n'a pas d'effet supplémentaire."
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "Prise en charge des couleurs forcées / contraste élevé"
-  },
   "feature_forceH264_desc": {
     "message": "Préférer H.264 (AVC) au VP9/AV1 pour une utilisation CPU plus faible sur du matériel ancien. Peut réduire la qualité maximale. Utilise le pont codec du monde MAIN."
   },
@@ -998,17 +998,17 @@
   "feature_forceStandardFps_name": {
     "message": "Forcer le FPS standard"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "Toujours actif : quand l'OS signale des couleurs forcées (contraste élevé Windows, couleurs forcées GTK), les contrôles injectés par Astra utilisent automatiquement les couleurs système pour que le texte reste lisible et les anneaux de focus visibles. La requête média elle-même sert de déclencheur ; ce commutateur est conservé pour la compatibilité des paramètres et n'a pas d'effet supplémentaire."
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "Prise en charge des couleurs forcées / contraste élevé"
+  },
   "feature_frameByFrameButtons_desc": {
     "message": "Ajouter des boutons visibles de recul (,) et d'avance (.) image par image aux commandes du Player pour une navigation précise"
   },
   "feature_frameByFrameButtons_name": {
     "message": "Boutons image par image"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-cliquer n'importe où sur la vidéo pour basculer en plein écran (remplace le comportement de recherche par défaut)"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "Plein écran au double-clic"
   },
   "feature_fullTitles_desc": {
     "message": "Supprimer la limite de 2 lignes sur les titres des miniatures pour que les titres longs s'affichent en entier"
@@ -1021,6 +1021,12 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "Abonnements pleine largeur"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "Double-cliquer n'importe où sur la vidéo pour basculer en plein écran (remplace le comportement de recherche par défaut)"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "Plein écran au double-clic"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Monte un conteneur unique masqué role=status / aria-live=polite sous le body du document. Les lecteurs d'écran annoncent tout texte qu'Astra y écrit (corps des toasts, résultats de filtrage, changements d'état de téléchargement)."
@@ -1058,17 +1064,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "Masquer les éléments de la page de visionnage"
   },
-  "feature_hideAirplayButton_desc": {
-    "message": "Supprimer l'icône Airplay des commandes du Player"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "Masquer le bouton Airplay"
-  },
   "feature_hideAiSummary_desc": {
     "message": "Supprimer les résumés générés par IA et les boutons Demander à l'IA"
   },
   "feature_hideAiSummary_name": {
     "message": "Masquer le résumé IA"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "Supprimer l'icône Airplay des commandes du Player"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "Masquer le bouton Airplay"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "Supprime le commutateur de lecture automatique des commandes du Player"
@@ -1346,6 +1352,12 @@
   "feature_monetizationIndicator_name": {
     "message": "Indicateur de monétisation"
   },
+  "feature_monoToStereo_desc": {
+    "message": "Centrer l'audio mono dans les deux oreilles — corrige les enregistrements d'un seul côté, conférences et anciens contenus déséquilibrés au casque"
+  },
+  "feature_monoToStereo_name": {
+    "message": "Mono vers stéréo"
+  },
   "feature_musicVideoSpeedLock_desc": {
     "message": "Lorsque la vitesse persistante est activée, maintenir les vidéos musicales à 1x pour ne pas accélérer les chansons"
   },
@@ -1370,17 +1382,17 @@
   "feature_noFrostedGlass_name": {
     "message": "Désactiver le verre dépoli"
   },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Afficher un toast unique quand YouTube sélectionne automatiquement une piste audio doublée par IA (ex. vidéo coréenne doublée en anglais). Vous pouvez changer manuellement vers la piste originale dans les paramètres du Player."
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notification de doublage IA"
-  },
   "feature_notInterestedButton_desc": {
     "message": "Ajouter un bouton X sur les miniatures pour rejeter rapidement des vidéos via l'API de retour YouTube"
   },
   "feature_notInterestedButton_name": {
     "message": "\"Pas intéressé\" sur les miniatures"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "Afficher un toast unique quand YouTube sélectionne automatiquement une piste audio doublée par IA (ex. vidéo coréenne doublée en anglais). Vous pouvez changer manuellement vers la piste originale dans les paramètres du Player."
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "Notification de doublage IA"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "Remplacer la barre de progression vidéo par une animation Nyan Cat"
@@ -2006,6 +2018,12 @@
   "feature_videoContextMenu_name": {
     "message": "Menu de téléchargement du Player"
   },
+  "feature_videoFlip_desc": {
+    "message": "Miroir horizontal ou vertical de la vidéo — utile pour les tutoriels de danse en miroir, la lisibilité du texte ou les enregistrements inversés"
+  },
+  "feature_videoFlip_name": {
+    "message": "Miroir vidéo"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Ajouter un bouton boucle aux commandes du Player pour la lecture en boucle en un clic"
   },
@@ -2024,18 +2042,6 @@
   "feature_videoResolutionBadge_name": {
     "message": "Badge de résolution sur les miniatures"
   },
-  "feature_videoFlip_desc": {
-    "message": "Miroir horizontal ou vertical de la vidéo — utile pour les tutoriels de danse en miroir, la lisibilité du texte ou les enregistrements inversés"
-  },
-  "feature_videoFlip_name": {
-    "message": "Miroir vidéo"
-  },
-  "feature_monoToStereo_desc": {
-    "message": "Centrer l'audio mono dans les deux oreilles — corrige les enregistrements d'un seul côté, conférences et anciens contenus déséquilibrés au casque"
-  },
-  "feature_monoToStereo_name": {
-    "message": "Mono vers stéréo"
-  },
   "feature_videoRotation_desc": {
     "message": "Faire pivoter la vidéo de 90/180/270 degrés via une transformation CSS — utile pour les enregistrements de téléphone de travers"
   },
@@ -2047,12 +2053,6 @@
   },
   "feature_videoScreenshot_name": {
     "message": "Capture d'écran vidéo"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "Définir le nombre de miniatures vidéo par ligne (0 = dynamique selon la largeur de la fenêtre)"
-  },
-  "feature_videosPerRow_name": {
-    "message": "Vidéos par ligne"
   },
   "feature_videoVisualFilters_desc": {
     "message": "Ajuster luminosité / contraste / saturation / teinte / niveaux de gris / sépia via un Filter CSS sur l'élément vidéo"
@@ -2066,11 +2066,29 @@
   "feature_videoZoom_name": {
     "message": "Zoom et panoramique vidéo"
   },
+  "feature_videosPerRow_desc": {
+    "message": "Définir le nombre de miniatures vidéo par ligne (0 = dynamique selon la largeur de la fenêtre)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "Vidéos par ligne"
+  },
   "feature_vlcMpvHandoff_desc": {
     "message": "Profil GitHub uniquement. Ajoute des boutons à côté du Player qui lancent des URL de protocole ytvlc:// ou ytmpv://. Le gestionnaire de protocole doit être enregistré sur votre OS — Astra Deck n'exécute jamais de binaires directement. Désactivé par défaut."
   },
   "feature_vlcMpvHandoff_name": {
     "message": "Transfert Stream VLC / MPV"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "Multiplicateur de gain pour lamplification du volume (1.0 = unite, max 10.0)"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "Niveau damplification du volume"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "Amplifie laudio au-dela de 100% via un noeud de gain Web Audio (jusqua 10x). Utile pour les enregistrements silencieux."
+  },
+  "feature_volumeBoost_name": {
+    "message": "Amplification du volume"
   },
   "feature_volumeWheelMode_desc": {
     "message": "Faire défiler la molette de la souris sur le Player pour changer le volume par paliers de 5 %. Une puce indicatrice flottante affiche le nouveau niveau pendant 1,2 s ; aucun raccourci clavier n'est ajouté."
@@ -2330,6 +2348,21 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Nettoyage du flux"
+  },
+  "qtGroup_Focus": {
+    "message": "Concentration"
+  },
+  "qtGroup_Playback": {
+    "message": "Lecture"
+  },
+  "qtGroup_Utilities": {
+    "message": "Utilitaires"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Flux de visionnage"
+  },
   "qt_autoTheaterMode_desc": {
     "message": "Ouvrir les vidéos en vue Theater"
   },
@@ -2420,21 +2453,6 @@
   "qt_transcriptViewer_name": {
     "message": "Barre transcription"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "Nettoyage du flux"
-  },
-  "qtGroup_Focus": {
-    "message": "Concentration"
-  },
-  "qtGroup_Playback": {
-    "message": "Lecture"
-  },
-  "qtGroup_Utilities": {
-    "message": "Utilitaires"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "Flux de visionnage"
-  },
   "quickTogglesAria": {
     "message": "Commutateurs rapides"
   },
@@ -2453,11 +2471,11 @@
   "resultsAllAvailableTpl": {
     "message": "... commandes rapides sont disponibles dans cette fenêtre"
   },
-  "resultsMatching": {
-    "message": "correspondants"
-  },
   "resultsMatchTpl": {
     "message": "... sur ... ... correspondent à ce filtre"
+  },
+  "resultsMatching": {
+    "message": "correspondants"
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} paramètres activés dans {categories} catégories"
@@ -2540,20 +2558,20 @@
   "statusClipboardUnavailable": {
     "message": "Presse-papiers indisponible — voir la console du navigateur."
   },
-  "statusDiagCleared": {
-    "message": "Journal de diagnostic effacé."
-  },
   "statusDiagClearFail": {
     "message": "Impossible d'effacer le journal"
+  },
+  "statusDiagCleared": {
+    "message": "Journal de diagnostic effacé."
   },
   "statusDiagCopied": {
     "message": "Diagnostic copié dans le presse-papiers."
   },
-  "statusDiagSaved": {
-    "message": "Journal de diagnostic enregistré."
-  },
   "statusDiagSaveFail": {
     "message": "Impossible d'enregistrer le journal"
+  },
+  "statusDiagSaved": {
+    "message": "Journal de diagnostic enregistré."
   },
   "statusExportFail": {
     "message": "Échec de l'exportation"
@@ -2561,11 +2579,11 @@
   "statusImportFail": {
     "message": "Échec de l'importation"
   },
-  "statusMediadlReenabled": {
-    "message": "Invites d'installation d'Astra Downloader réactivées — rechargez un onglet YouTube pour les voir."
-  },
   "statusMediadlReenableFail": {
     "message": "Impossible de réactiver les invites d'Astra Downloader. Ouvrez chrome://extensions et rechargez."
+  },
+  "statusMediadlReenabled": {
+    "message": "Invites d'installation d'Astra Downloader réactivées — rechargez un onglet YouTube pour les voir."
   },
   "statusOpenWorkspaceFail": {
     "message": "Impossible d'ouvrir l'espace de travail complet. Réessayez."
