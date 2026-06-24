@@ -83,13 +83,6 @@
 
 ### P2 — Quick Wins / Enhancement
 
-- [ ] P2 — In-page settings panel search and filter
-  Why: 380 schema entries across 18 categories. The popup has a search bar with field:value DSL but the in-page settings panel (opened via gear icon on YouTube) lacks search. Users must scroll through hundreds of toggles to find features.
-  Evidence: `extension/popup.js` has `parseSearchQuery()` with `risk:`, `category:`, `scope:`, `profile:` filters. The in-page settings panel in `extension/ytkit.js` has no equivalent search input.
-  Touches: `extension/ytkit.js` (settings panel render), `extension/early.css` or inline styles
-  Acceptance: Settings panel has a debounced search input that filters features by name, description, and category. Supports the same field:value DSL as the popup.
-  Complexity: M
-
 
 - [ ] P2 — Subscription group features: port to userscript
   Why: Subscription groups (nesting, digest, stale-channel staging, CSV export, queue playback) are extension-only. The userscript has 65% feature parity; subscription management is a high-value gap alongside SponsorBlock.
