@@ -1549,31 +1549,43 @@ function render(settings, filter) {
 
             row.appendChild(label);
             row.appendChild(toggleSwitch);
-            row.addEventListener('click', async () => {
-                row.disabled = true;
-                try {
-                    const next = !Boolean(popupState.settings[item.key]);
-                    await writeSetting(item.key, next);
-                    render(popupState.settings, q.value);
-                    // render() rebuilds the list, destroying the button the user
-                    // just activated — restore focus to the freshly-rendered row
-                    // so keyboard users don't get bounced to <body> on every toggle.
-                    const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(item.key)}"]`);
-                    if (refocus) refocus.focus();
-                    void broadcast(item.key, next);
-                    showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
-                } catch (error) {
-                    console.warn('[Astra Deck popup] Failed to toggle setting:', error);
-                    showStatus(formatSettingWriteError(tName, error), 'error', 5200);
-                } finally {
-                    row.disabled = false;
-                }
-            });
             section.appendChild(row);
         }
 
         list.appendChild(section);
     }
+}
+
+// ── Toggle click delegation ──
+// Single listener on #toggles handles all toggle clicks. Replaces
+// per-row addEventListener which leaked detached-DOM listeners on
+// every render() rebuild.
+
+function installToggleClickDelegation() {
+    if (!list) return;
+    list.addEventListener('click', async (e) => {
+        const row = e.target.closest('.toggle[data-key]');
+        if (!row || row.disabled) return;
+        const key = row.dataset.key;
+        const toggle = QUICK_TOGGLES.find((t) => t.key === key);
+        if (!toggle) return;
+        const tName = t(`qt_${toggle.key}_name`, toggle.name);
+        row.disabled = true;
+        try {
+            const next = !Boolean(popupState.settings[key]);
+            await writeSetting(key, next);
+            render(popupState.settings, q.value);
+            const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
+            if (refocus) refocus.focus();
+            void broadcast(key, next);
+            showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
+        } catch (error) {
+            console.warn('[Astra Deck popup] Failed to toggle setting:', error);
+            showStatus(formatSettingWriteError(tName, error), 'error', 5200);
+        } finally {
+            row.disabled = false;
+        }
+    });
 }
 
 // ── Storage stats ──
@@ -3907,6 +3919,7 @@ function installWheelScrolling() {
 
     installWheelScrolling();
     installPopupFocusManagement();
+    installToggleClickDelegation();
     renderLoading();
 
     try {
