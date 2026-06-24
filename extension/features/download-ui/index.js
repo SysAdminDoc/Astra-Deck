@@ -1252,7 +1252,7 @@
                                 );
                                 if (resp?.ok) {
                                     showToast('Deno provisioned successfully', '#22c55e');
-                                    this._poll();
+                                    this._render();
                                 } else {
                                     showToast(resp?.error || 'Deno provision failed', '#ef4444');
                                     pill.textContent = 'Deno: failed';
@@ -1300,6 +1300,7 @@
                 this._attach();
                 this._render();
                 this._pollTimer = setInterval(() => {
+                    if (this._destroyed) return;
                     if (typeof isWatchPagePath === 'function' && !isWatchPagePath()) return;
                     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
                     this._render();

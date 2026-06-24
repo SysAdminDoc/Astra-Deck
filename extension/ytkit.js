@@ -3470,6 +3470,8 @@ return response;
             popup.style.top = top + 'px';
         }
 
+        anchorEl?.setAttribute?.('aria-expanded', 'true');
+
         if (!_usePopover) {
             const outsideClick = (e) => {
                 if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
@@ -3482,6 +3484,11 @@ return response;
             _dlPopupCleanup = () => {
                 document.removeEventListener('click', outsideClick, true);
                 document.removeEventListener('keydown', escHandler);
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        } else {
+            _dlPopupCleanup = () => {
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
             };
         }
 
