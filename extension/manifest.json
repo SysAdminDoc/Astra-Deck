@@ -27,6 +27,7 @@
     "unlimitedStorage",
     "cookies",
     "downloads",
+    "nativeMessaging",
     "sidePanel"
   ],
   "side_panel": {
