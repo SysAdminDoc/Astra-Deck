@@ -17179,7 +17179,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
                                     const regex = new RegExp(regexMatch[1], regexMatch[2]);
-                                    if (regex.test(title) || regex.test(channelName)) return true;
+                                    if (regex.test(title.slice(0, 500)) || regex.test(channelName.slice(0, 200))) return true;
                                 }
                             }
                         } catch (e) {
@@ -31284,8 +31284,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (deny.kind === 'author' && author.includes(deny.value)) return true;
                     if (deny.kind === 'text' && body.includes(deny.value)) return true;
                 }
+                const cappedBody = body.slice(0, 2000);
+                const cappedAuthor = author.slice(0, 200);
                 for (const re of rules.regexes) {
-                    try { if (re.test(body) || re.test(author)) return true; }
+                    try { if (re.test(cappedBody) || re.test(cappedAuthor)) return true; }
                     catch { /* reason: regex evaluation error only invalidates the current rule */ }
                 }
                 return false;
