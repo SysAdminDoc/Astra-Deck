@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Security: companion subprocess env whitelist.** yt-dlp subprocesses now
+  receive a minimal whitelisted environment (`PATH`, `SYSTEMROOT`, `TEMP`, etc.)
+  instead of the full `os.environ.copy()`. Prevents a compromised `PYTHONPATH`
+  or `LD_LIBRARY_PATH` from hijacking yt-dlp execution.
+- **Security: companion download size cap.** New `MaxFileSizeMB` config key
+  (default 0 = unlimited) passes `--max-filesize` to yt-dlp when set. Prevents
+  disk exhaustion from queueing extremely large videos.
+- **Security: companion queue size cap.** Download queue hard-capped at 200
+  total entries (`MAX_QUEUED_TOTAL`). Prevents memory exhaustion from a
+  compromised extension flooding `/download` with requests.
 - **Security: fix double-sendResponse race in EXT_FETCH.** The `responded`
   guard was scoped inside `startFetch()` but the permission-check `.catch()`
   path was outside that scope. If `startFetch()` threw synchronously after

@@ -108,6 +108,7 @@ INSTANCE_LOCK_PORT = 9753
 # The browser extension probes the same list to discover the running port.
 PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
 MAX_CONCURRENT = 3
+MAX_QUEUED_TOTAL = 200
 # Stall watchdog for the download subprocess. `for line in proc.stdout` blocks
 # forever if yt-dlp wedges on a dead socket — there is no other timeout on the
 # download path, so a hung process permanently consumes one of MAX_CONCURRENT
@@ -179,6 +180,7 @@ DEFAULT_CONFIG = {
     "ExtraOutputRoots": [],
     # v1.2.0: last ffmpeg freshness stamp (used for the monthly update nag).
     "LastFfmpegCheck": "",
+    "MaxFileSizeMB": 0,
 }
 
 # v1.2.0: rate-limit for /download. Token-bucket sliding window — tuned so a
@@ -1820,6 +1822,7 @@ def sanitize_config(raw):
     data["Proxy"] = normalize_proxy(data.get("Proxy"))
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
     data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
+    data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
     extra = data.get("ExtraOutputRoots")
     if not isinstance(extra, list):
         extra = []
@@ -2425,6 +2428,26 @@ def is_playlist_url(url):
         return False
 
 
+_SUBPROCESS_ENV_ALLOWLIST = (
+    'PATH', 'PATHEXT', 'SYSTEMROOT', 'SYSTEMDRIVE', 'COMSPEC',
+    'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA',
+    'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'WINDIR',
+    'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'OS',
+    'LANG', 'LC_ALL', 'LC_CTYPE',
+)
+
+
+def _build_subprocess_env():
+    env = {}
+    for key in _SUBPROCESS_ENV_ALLOWLIST:
+        val = os.environ.get(key)
+        if val is not None:
+            env[key] = val
+    if DENO_PATH.exists():
+        env['PATH'] = str(DENO_DIR) + os.pathsep + env.get('PATH', '')
+    return env
+
+
 def terminate_process_tree(proc, timeout=3):
     if not proc or proc.poll() is not None:
         return
@@ -2664,6 +2687,9 @@ class DownloadManager(QObject):
         audio_only = coerce_bool(audio_only, False)
 
         with self._lock:
+            total = len(self.downloads)
+            if total >= MAX_QUEUED_TOTAL:
+                return None, "Download queue is full. Wait for some downloads to complete."
             active = sum(1 for d in self.downloads.values()
                          if d.status in DOWNLOAD_ACTIVE_STATES)
             if active >= MAX_CONCURRENT:
@@ -2775,6 +2801,9 @@ class DownloadManager(QObject):
         proxy = self.config.get("Proxy", "")
         if proxy and re.match(r'^(socks(?:4a?|5h?)?|https?)://', proxy):
             args += ['--proxy', proxy]
+        max_filesize = int(self.config.get("MaxFileSizeMB", 0) or 0)
+        if max_filesize > 0:
+            args += ['--max-filesize', f'{max_filesize}M']
         if dl.referer:
             args += ['--referer', dl.referer]
         if dl.cookies_file:
@@ -2807,10 +2836,7 @@ class DownloadManager(QObject):
         watchdog_thread = None
         watchdog_killed = {'value': None}
         try:
-            env = None
-            if DENO_PATH.exists():
-                env = os.environ.copy()
-                env['PATH'] = str(DENO_DIR) + os.pathsep + env.get('PATH', '')
+            env = _build_subprocess_env()
             proc = subprocess.Popen(
                 args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding='utf-8', errors='replace', bufsize=1,
