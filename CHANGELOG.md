@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Perf: popup toggle click delegation.** Replaced per-row
+  `addEventListener('click')` in `render()` with a single delegated click
+  handler on `#toggles`. Eliminates detached-DOM listener accumulation
+  when the toggle list is rebuilt on every setting change.
 - **Fix: DeArrow cache timestamp gate.** `_doFetch()` now checks whether
   the existing cache entry has a newer `_ts` before overwriting, preventing
   a staler concurrent response from replacing fresher data.
