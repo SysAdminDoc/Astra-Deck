@@ -214,7 +214,7 @@ function renderSettings(filter) {
 
         const name = document.createElement('span');
         name.className = 'sp-setting-name';
-        name.textContent = entry.key;
+        name.textContent = entry.key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim();
 
         const sw = document.createElement('span');
         sw.className = 'sp-setting-switch';
