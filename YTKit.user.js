@@ -14458,6 +14458,16 @@
             preferredMediaPlayer: 'vlc',
             showDownloadPlayButton: false,
             subsVlcPlaylist: false,
+            sponsorBlock: true,
+            sbCat_sponsor: true,
+            sbCat_intro: true,
+            sbCat_outro: true,
+            sbCat_selfpromo: true,
+            sbCat_interaction: true,
+            sbCat_music_offtopic: true,
+            sbCat_preview: true,
+            sbCat_filler: true,
+            sbCat_poi_highlight: false,
             deArrow: false,
             daReplaceTitles: true,
             daReplaceThumbs: true,
@@ -23906,6 +23916,301 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
 
+
+        // ── SponsorBlock ──
+        {
+            id: 'sponsorBlock',
+            name: 'SponsorBlock',
+            description: 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data',
+            group: 'Content',
+            icon: 'skip-forward',
+            isParent: true,
+            pages: [PageTypes.WATCH],
+            _segments: [],
+            _videoId: null,
+            _skipTimer: null,
+            _navRuleId: 'sponsorBlockNav',
+            _styleEl: null,
+            _barSegments: [],
+            _barObserver: null,
+            _reloadTimer: null,
+            _generation: 0,
+            _playHandler: null,
+            _seekHandler: null,
+            _pauseHandler: null,
+            _durationHandler: null,
+            _CATEGORY_MAP: {
+                sbCat_sponsor: 'sponsor',
+                sbCat_intro: 'intro',
+                sbCat_outro: 'outro',
+                sbCat_selfpromo: 'selfpromo',
+                sbCat_interaction: 'interaction',
+                sbCat_music_offtopic: 'music_offtopic',
+                sbCat_preview: 'preview',
+                sbCat_filler: 'filler',
+                sbCat_poi_highlight: 'poi_highlight',
+            },
+            _CATEGORY_COLORS: {
+                sponsor: '#00d400',
+                selfpromo: '#ffff00',
+                interaction: '#cc00ff',
+                intro: '#00ffff',
+                outro: '#0202ed',
+                preview: '#008fd6',
+                music_offtopic: '#ff9900',
+                filler: '#7300FF',
+                poi_highlight: '#ff1684',
+            },
+            _CACHE_KEY: 'sb_segments_cache',
+            _CACHE_TTL_MS: 12 * 60 * 60 * 1000,
+            _CACHE_MAX_ENTRIES: 500,
+            _cache: null,
+            _cachePersistTimer: null,
+
+            _getEnabledCategories() {
+                const cats = [];
+                for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
+                    if (appState.settings[key]) cats.push(apiName);
+                }
+                return cats;
+            },
+
+            _getCache() {
+                if (this._cache && typeof this._cache === 'object' && !Array.isArray(this._cache)) return this._cache;
+                const stored = StorageManager.get(this._CACHE_KEY, {});
+                this._cache = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
+                return this._cache;
+            },
+
+            _normalizeSegments(segments) {
+                if (!Array.isArray(segments)) return [];
+                return segments.filter(s =>
+                    s && typeof s === 'object'
+                    && Array.isArray(s.segment) && s.segment.length === 2
+                    && Number.isFinite(s.segment[0]) && Number.isFinite(s.segment[1])
+                    && s.segment[0] >= 0 && s.segment[1] > s.segment[0]
+                    && typeof s.category === 'string'
+                ).map(s => ({
+                    segment: [s.segment[0], s.segment[1]],
+                    category: s.category,
+                    UUID: s.UUID
+                }));
+            },
+
+            _getCachedSegments(videoId, categories) {
+                const cache = this._getCache();
+                const entry = cache[videoId];
+                if (!entry || typeof entry !== 'object' || !Array.isArray(entry.segments)) return null;
+                const cachedAt = Number(entry.ts);
+                if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null;
+                if (Date.now() - cachedAt > this._CACHE_TTL_MS) return null;
+                return entry;
+            },
+
+            _rememberSegments(videoId, categories, segments) {
+                const normalized = this._normalizeSegments(segments);
+                const cache = this._getCache();
+                cache[videoId] = { ts: Date.now(), segments: normalized };
+                const entries = Object.entries(cache);
+                if (entries.length > this._CACHE_MAX_ENTRIES) {
+                    entries.sort((a, b) => (Number(b[1]?.ts) || 0) - (Number(a[1]?.ts) || 0));
+                    for (const [k] of entries.slice(this._CACHE_MAX_ENTRIES)) delete cache[k];
+                }
+                this._scheduleCachePersist();
+            },
+
+            _scheduleCachePersist() {
+                clearTimeout(this._cachePersistTimer);
+                this._cachePersistTimer = setTimeout(() => {
+                    this._cachePersistTimer = null;
+                    StorageManager.setSync(this._CACHE_KEY, this._getCache());
+                }, 1000);
+            },
+
+            async _fetchSegments(videoId) {
+                const cats = this._getEnabledCategories();
+                if (!cats.length) return [];
+                const cached = this._getCachedSegments(videoId, cats);
+                if (cached) return this._normalizeSegments(cached.segments);
+                try {
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(videoId));
+                    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                    const prefix = hashHex.substring(0, 4);
+                    const url = `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`;
+                    const data = await new Promise((resolve, reject) => {
+                        GM_xmlhttpRequest({
+                            method: 'GET',
+                            url,
+                            timeout: 8000,
+                            responseType: 'json',
+                            onload(resp) {
+                                try { resolve(typeof resp.response === 'string' ? JSON.parse(resp.response) : resp.response); }
+                                catch (_) { resolve(null); }
+                            },
+                            onerror() { reject(new Error('SB fetch failed')); },
+                            ontimeout() { reject(new Error('SB fetch timeout')); }
+                        });
+                    });
+                    if (!Array.isArray(data)) return [];
+                    const match = data.find(entry => entry.videoID === videoId);
+                    const segments = match && Array.isArray(match.segments)
+                        ? this._normalizeSegments(match.segments)
+                        : [];
+                    this._rememberSegments(videoId, cats, segments);
+                    return segments;
+                } catch (e) {
+                    DebugManager.log('SponsorBlock', `Fetch failed: ${e?.message}`);
+                    return [];
+                }
+            },
+
+            async _loadForVideo() {
+                const videoId = getVideoId();
+                if (!videoId || videoId === this._videoId) return;
+                this._videoId = videoId;
+                this._segments = [];
+                this._clearBarSegments();
+                const gen = this._generation;
+                const fetched = await this._fetchSegments(videoId);
+                if (gen !== this._generation || getVideoId() !== videoId) return;
+                this._segments = fetched;
+                if (this._segments.length) {
+                    DebugManager.log('SponsorBlock', `Loaded ${this._segments.length} segments for ${videoId}`);
+                    this._renderBarSegments();
+                }
+            },
+
+            _checkSkip() {
+                if (!this._segments.length) return;
+                const video = document.querySelector('video.html5-main-video');
+                if (!video || video.paused) return;
+                const currentTime = video.currentTime;
+                const enabledCats = this._getEnabledCategories();
+                for (const seg of this._segments) {
+                    if (!enabledCats.includes(seg.category)) continue;
+                    if (seg.category === 'poi_highlight') continue;
+                    const [start, end] = seg.segment;
+                    if (currentTime >= start && currentTime < end - 0.3) {
+                        video.currentTime = end;
+                        DebugManager.log('SponsorBlock', `Skipped ${seg.category}: ${start.toFixed(1)}s -> ${end.toFixed(1)}s`);
+                        this._scheduleNextSkip();
+                        return;
+                    }
+                }
+            },
+
+            _scheduleNextSkip() {
+                this._clearSchedule();
+                const video = document.querySelector('video.html5-main-video');
+                if (!video || video.paused || !this._segments.length) return;
+                const currentTime = video.currentTime;
+                const rate = video.playbackRate || 1;
+                const enabledCats = this._getEnabledCategories();
+                let minDelay = Infinity;
+                for (const seg of this._segments) {
+                    if (!enabledCats.includes(seg.category)) continue;
+                    if (seg.category === 'poi_highlight') continue;
+                    const [start, end] = seg.segment;
+                    if (currentTime >= start && currentTime < end - 0.3) { minDelay = 0; break; }
+                    if (start > currentTime) {
+                        const wallMs = ((start - currentTime) / rate) * 1000;
+                        if (wallMs < minDelay) minDelay = wallMs;
+                    }
+                }
+                if (minDelay === Infinity) return;
+                const delay = Math.max(0, Math.min(minDelay - 100, 2000));
+                this._skipTimer = setTimeout(() => {
+                    this._checkSkip();
+                    const v = document.querySelector('video.html5-main-video');
+                    if (v && !v.paused) this._scheduleNextSkip();
+                }, delay);
+            },
+
+            _clearSchedule() {
+                if (this._skipTimer) { clearTimeout(this._skipTimer); this._skipTimer = null; }
+            },
+
+            _renderBarSegments() {
+                this._clearBarSegments();
+                const video = document.querySelector('video.html5-main-video');
+                const progressBar = document.querySelector('.ytp-progress-bar-container .ytp-progress-list, .ytp-progress-bar');
+                if (!video || !progressBar || !video.duration) return;
+                const duration = video.duration;
+                const enabledCats = this._getEnabledCategories();
+                for (const seg of this._segments) {
+                    if (!enabledCats.includes(seg.category)) continue;
+                    const [start, end] = seg.segment;
+                    const left = (start / duration) * 100;
+                    const width = ((end - start) / duration) * 100;
+                    const bar = document.createElement('div');
+                    bar.className = 'ytkit-sb-segment';
+                    bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;width:${width}%;background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:0.7;pointer-events:none;z-index:35;`;
+                    bar.title = seg.category.replace(/_/g, ' ');
+                    progressBar.appendChild(bar);
+                    this._barSegments.push(bar);
+                }
+            },
+
+            _clearBarSegments() {
+                this._barSegments.forEach(el => el.remove());
+                this._barSegments = [];
+            },
+
+            init() {
+                const self = this;
+                this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
+                this._playHandler = () => self._scheduleNextSkip();
+                this._seekHandler = () => self._scheduleNextSkip();
+                this._pauseHandler = () => self._clearSchedule();
+                document.addEventListener('playing', this._playHandler, true);
+                document.addEventListener('seeked', this._seekHandler, true);
+                document.addEventListener('ratechange', this._seekHandler, true);
+                document.addEventListener('pause', this._pauseHandler, true);
+                const reloadSegments = () => {
+                    self._videoId = null;
+                    self._segments = [];
+                    self._clearBarSegments();
+                    self._clearSchedule();
+                    clearTimeout(self._reloadTimer);
+                    self._reloadTimer = setTimeout(() => {
+                        self._reloadTimer = null;
+                        self._loadForVideo().then(() => self._scheduleNextSkip()).catch(() => {});
+                    }, 800);
+                };
+                addNavigateRule(this._navRuleId, reloadSegments);
+                this._durationHandler = () => {
+                    if (this._segments.length) this._renderBarSegments();
+                };
+                document.addEventListener('durationchange', this._durationHandler, true);
+                this._loadForVideo().then(() => this._scheduleNextSkip()).catch(() => {});
+            },
+
+            destroy() {
+                this._generation = (this._generation + 1) | 0;
+                clearTimeout(this._reloadTimer);
+                this._reloadTimer = null;
+                this._clearSchedule();
+                if (this._playHandler) document.removeEventListener('playing', this._playHandler, true);
+                if (this._seekHandler) {
+                    document.removeEventListener('seeked', this._seekHandler, true);
+                    document.removeEventListener('ratechange', this._seekHandler, true);
+                }
+                if (this._pauseHandler) document.removeEventListener('pause', this._pauseHandler, true);
+                if (this._durationHandler) document.removeEventListener('durationchange', this._durationHandler, true);
+                removeNavigateRule(this._navRuleId);
+                this._barObserver?.disconnect();
+                this._clearBarSegments();
+                this._styleEl?.remove();
+                if (this._cachePersistTimer) {
+                    clearTimeout(this._cachePersistTimer);
+                    this._cachePersistTimer = null;
+                    StorageManager.setSync(this._CACHE_KEY, this._getCache());
+                }
+                this._cache = null;
+                this._segments = [];
+                this._videoId = null;
+            }
+        },
 
         // ── DeArrow ──
         {
