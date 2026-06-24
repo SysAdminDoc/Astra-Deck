@@ -22207,31 +22207,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!loginPrompt?.textContent?.toLowerCase()?.includes('sign in') && !loginPrompt?.textContent?.toLowerCase()?.includes('age')) return;
 
                 const videoId = getVideoId();
-                if (!videoId) return;
+                if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return;
                 DebugManager.log('AgeBypass', `Attempting bypass for ${videoId}`);
 
                 try {
-                    // Fetch from embed endpoint — doesn't require authentication
                     const { text: html } = await extensionFetchText({
                         url: `https://www.youtube.com/embed/${videoId}`
                     });
-                    // Extract embedded player config
                     const configMatch = html.match(/ytcfg\.set\((\{[^}]+\})\)/);
                     if (!configMatch) { DebugManager.log('AgeBypass', 'No config found in embed'); return; }
 
-                    // Use the embed page to get the video URL and redirect to embedded player
                     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
                     const player = document.querySelector('#player-container, #player');
                     if (player) {
-                        // Replace player with embedded iframe
                         const iframe = document.createElement('iframe');
                         iframe.src = embedUrl;
                         iframe.style.cssText = 'width:100%;height:100%;border:none;';
+                        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
                         iframe.setAttribute('allowfullscreen', '');
                         iframe.setAttribute('allow', 'autoplay; encrypted-media');
                         player.textContent = '';
                         player.appendChild(iframe);
-                        // Hide the error message
                         if (ageGate) ageGate.style.display = 'none';
                         showToast('Age restriction bypassed', '#22c55e');
                     }
@@ -33860,7 +33856,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const sanitized = {};
                     const rawParentById = {};
                     for (const [id, raw] of Object.entries(data.groups)) {
-                        if (typeof id !== 'string' || id.length > 64) continue;
+                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) continue;
                         if (!raw || typeof raw !== 'object') continue;
                         const name = String(raw.name || '').slice(0, 80);
                         const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
@@ -33876,7 +33872,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             updatedAt: Date.now()
                         };
                         const parentId = String(raw.parentId || '');
-                        if (parentId && parentId !== id && parentId.length <= 64) rawParentById[id] = parentId;
+                        if (parentId && parentId !== id && parentId.length <= 64 && isSafeObjectKey(parentId)) rawParentById[id] = parentId;
                     }
                     for (const [id, parentId] of Object.entries(rawParentById)) {
                         if (sanitized[id] && sanitized[parentId] && !rawParentById[parentId]) {
