@@ -385,4 +385,111 @@
     });
 })();
 
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 4: Volume Boost (data-ytkit-volume-boost)
+    // ──────────────────────────────────────────────────────────────────
+    // Amplifies audio via a GainNode. Value is the gain multiplier
+    // (1.0 = unity, max 10.0). createMediaElementSource is one-shot
+    // per element, so the graph stays alive and gain is adjusted live.
+    // Shares an AudioContext with audio normalization (Feature 5).
+(function() {
+    'use strict';
+    var AC = typeof AudioContext !== 'undefined' ? AudioContext
+           : typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null;
+    if (!AC) return;
+
+    var _boostGain = 1.0;
+    var _normalizeEnabled = false;
+    var _ctx = null;
+    var _source = null;
+    var _gainNode = null;
+    var _compressor = null;
+    var _connectedVideo = null;
+
+    function getVideo() {
+        return document.querySelector('.html5-main-video');
+    }
+
+    function connect() {
+        var video = getVideo();
+        if (!video) return;
+        if (_connectedVideo === video && _ctx) {
+            syncGraph();
+            return;
+        }
+        cleanup();
+        try {
+            _ctx = new AC();
+            _source = _ctx.createMediaElementSource(video);
+            _compressor = _ctx.createDynamicsCompressor();
+            _compressor.threshold.value = -24;
+            _compressor.knee.value = 30;
+            _compressor.ratio.value = 12;
+            _compressor.attack.value = 0.003;
+            _compressor.release.value = 0.25;
+            _gainNode = _ctx.createGain();
+            _source.connect(_compressor);
+            _compressor.connect(_gainNode);
+            _gainNode.connect(_ctx.destination);
+            syncGraph();
+            _connectedVideo = video;
+        } catch (e) {
+            cleanup();
+        }
+    }
+
+    function syncGraph() {
+        if (_gainNode) _gainNode.gain.value = _boostGain;
+        if (_compressor) {
+            if (_normalizeEnabled) {
+                _compressor.threshold.value = -24;
+                _compressor.ratio.value = 12;
+            } else {
+                _compressor.threshold.value = 0;
+                _compressor.ratio.value = 1;
+            }
+        }
+    }
+
+    function cleanup() {
+        if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
+        if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
+        if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
+        if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
+        _ctx = null;
+        _connectedVideo = null;
+    }
+
+    function isActive() { return _boostGain > 1.001 || _normalizeEnabled; }
+
+    _obsRegister(['data-ytkit-volume-boost'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-volume-boost');
+        var next = parseFloat(val) || 1.0;
+        if (next < 1) next = 1;
+        if (next > 10) next = 10;
+        _boostGain = next;
+        if (isActive()) connect();
+        else if (!isActive() && _ctx) cleanup();
+    });
+
+    _obsRegister(['data-ytkit-audio-normalize'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
+        _normalizeEnabled = val === '1';
+        if (isActive()) connect();
+        else if (!isActive() && _ctx) cleanup();
+    });
+
+    document.addEventListener('loadstart', function(e) {
+        if (!isActive()) return;
+        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+            _connectedVideo = null;
+            connect();
+        }
+    }, true);
+
+    window.addEventListener('yt-navigate-finish', function() {
+        if (isActive()) { _connectedVideo = null; setTimeout(connect, 500); }
+    });
+})();
+
 })();  // outer N9 IIFE closes here

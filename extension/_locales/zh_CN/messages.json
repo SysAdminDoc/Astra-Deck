@@ -350,12 +350,6 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "始终显示进度条"
   },
-  "feature_antiTranslate_desc": {
-    "message": "阻止 YouTube 将视频标题和描述自动翻译为你的语言。恢复网格缩略图和观看页上的原始语言文本。"
-  },
-  "feature_antiTranslate_name": {
-    "message": "反翻译（原始标题 + 描述）"
-  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "当 YouTube 提供自动配音音轨时，尝试切换回原始音轨。尽力而为 — 通过 movie_player getAvailableAudioTracks() / setAudioTrack() 实现（如果可用）。"
   },
@@ -368,11 +362,23 @@
   "feature_antiTranslateTranscript_name": {
     "message": "反翻译字幕"
   },
+  "feature_antiTranslate_desc": {
+    "message": "阻止 YouTube 将视频标题和描述自动翻译为你的语言。恢复网格缩略图和观看页上的原始语言文本。"
+  },
+  "feature_antiTranslate_name": {
+    "message": "反翻译（原始标题 + 描述）"
+  },
   "feature_astraContextMenu_desc": {
     "message": "右键播放器或信息流卡片可获取 Astra 操作：隐藏频道、复制视频 URL、复制时间戳链接、打开字幕。默认关闭 — 添加右键菜单监听器；不会阻止 YouTube 原生右键菜单。"
   },
   "feature_astraContextMenu_name": {
     "message": "Astra 右键菜单"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "压缩动态范围，使安静和响亮的段落以相似的音量播放。"
+  },
+  "feature_audioNormalization_name": {
+    "message": "音频标准化"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "存储首选音频语言，无需自动打开 YouTube 设置。通过原生菜单切换音轨时 YouTube 会重新开始播放。"
@@ -782,29 +788,29 @@
   "feature_daTitleFormat_name": {
     "message": "标题格式"
   },
-  "feature_deArrow_desc": {
-    "message": "使用 DeArrow 数据库中的众包替代方案替换标题党标题和缩略图"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "在观看页频道名旁添加小型 DeArrow 模式标签。每次点击可在 DeArrow → 原始 → 关闭 → DeArrow 之间循环切换。覆盖设置按频道 ID 保存在 deArrowChannelOverrides 中。"
   },
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "DeArrow 按频道覆盖"
   },
-  "feature_dearrowPeekButton_desc": {
-    "message": "按住 Alt 临时显示原始 YouTube 标题（按下期间撤销 DeArrow/自定义标题）"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "DeArrow 快速预览按钮"
-  },
   "feature_deArrowVoting_desc": {
     "message": "为 DeArrow 标题替换投票。在替换标题旁添加赞/踩按钮。使用本地私有用户 ID。默认关闭。"
   },
   "feature_deArrowVoting_name": {
     "message": "DeArrow 投票"
+  },
+  "feature_deArrow_desc": {
+    "message": "使用 DeArrow 数据库中的众包替代方案替换标题党标题和缩略图"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "按住 Alt 临时显示原始 YouTube 标题（按下期间撤销 DeArrow/自定义标题）"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "DeArrow 快速预览按钮"
   },
   "feature_debugMode_desc": {
     "message": "启用详细的诊断日志输出到控制台"
@@ -980,12 +986,6 @@
   "feature_forceDarkEverywhere_name": {
     "message": "所有 YouTube 页面强制深色"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "始终生效：当操作系统启用强制颜色（Windows 高对比度、GTK 强制颜色）时，Astra 注入的控件自动使用系统颜色，确保文本可读且焦点环可见。媒体查询本身即为开关；此开关保留用于设置兼容性，无额外效果。"
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "强制颜色/高对比度支持"
-  },
   "feature_forceH264_desc": {
     "message": "优先使用 H.264 (AVC) 而非 VP9/AV1，降低旧硬件的 CPU 占用。可能降低最高画质。使用 MAIN world 编解码器桥接。"
   },
@@ -998,17 +998,17 @@
   "feature_forceStandardFps_name": {
     "message": "强制标准帧率"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "始终生效：当操作系统启用强制颜色（Windows 高对比度、GTK 强制颜色）时，Astra 注入的控件自动使用系统颜色，确保文本可读且焦点环可见。媒体查询本身即为开关；此开关保留用于设置兼容性，无额外效果。"
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "强制颜色/高对比度支持"
+  },
   "feature_frameByFrameButtons_desc": {
     "message": "在播放器控件中添加可见的后退 (,) 和前进 (.) 按钮，用于精确逐帧导航"
   },
   "feature_frameByFrameButtons_name": {
     "message": "逐帧按钮"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "双击视频任意位置切换全屏（替换默认的快进/快退行为）"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "双击全屏"
   },
   "feature_fullTitles_desc": {
     "message": "移除缩略图标题的两行截断限制，完整显示长标题"
@@ -1021,6 +1021,12 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "全宽订阅页"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "双击视频任意位置切换全屏（替换默认的快进/快退行为）"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "双击全屏"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "在文档正文下挂载一个隐藏的 role=status / aria-live=polite 容器。屏幕阅读器会朗读 Astra 写入其中的任何文本（通知内容、过滤结果、下载状态变更）。"
@@ -1058,17 +1064,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "隐藏观看页元素"
   },
-  "feature_hideAirplayButton_desc": {
-    "message": "从播放器控件中移除 Airplay 图标"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "隐藏 Airplay 按钮"
-  },
   "feature_hideAiSummary_desc": {
     "message": "移除 AI 生成的摘要和提问 AI 按钮"
   },
   "feature_hideAiSummary_name": {
     "message": "隐藏 AI 摘要"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "从播放器控件中移除 Airplay 图标"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "隐藏 Airplay 按钮"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "从播放器控件中移除自动播放开关"
@@ -1346,6 +1352,12 @@
   "feature_monetizationIndicator_name": {
     "message": "盈利指示器"
   },
+  "feature_monoToStereo_desc": {
+    "message": "将单声道音频均匀分配到双耳 — 修复单侧录音、讲座和在耳机上听起来不平衡的旧内容"
+  },
+  "feature_monoToStereo_name": {
+    "message": "单声道转立体声"
+  },
   "feature_musicVideoSpeedLock_desc": {
     "message": "启用持久播放速度时，保持音乐类视频为 1x 速度以免歌曲被加速"
   },
@@ -1370,17 +1382,17 @@
   "feature_noFrostedGlass_name": {
     "message": "禁用毛玻璃效果"
   },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "当 YouTube 自动选择 AI 配音音轨时显示一次性通知（例如英语配音的韩语视频）。你可以在播放器设置中手动切换到原始音轨。"
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "AI 配音通知"
-  },
   "feature_notInterestedButton_desc": {
     "message": "在视频缩略图上添加 X 按钮，通过 YouTube 的反馈 API 快速忽略视频"
   },
   "feature_notInterestedButton_name": {
     "message": "缩略图上的「不感兴趣」"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "当 YouTube 自动选择 AI 配音音轨时显示一次性通知（例如英语配音的韩语视频）。你可以在播放器设置中手动切换到原始音轨。"
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "AI 配音通知"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "将视频进度条替换为 Nyan Cat 动画"
@@ -2006,6 +2018,12 @@
   "feature_videoContextMenu_name": {
     "message": "播放器下载菜单"
   },
+  "feature_videoFlip_desc": {
+    "message": "水平或垂直镜像视频 — 适用于镜像舞蹈教程、文字可读性或翻转的录制"
+  },
+  "feature_videoFlip_name": {
+    "message": "视频翻转"
+  },
   "feature_videoLoopButton_desc": {
     "message": "在播放器控件中添加循环切换按钮，一键循环播放视频"
   },
@@ -2024,18 +2042,6 @@
   "feature_videoResolutionBadge_name": {
     "message": "缩略图分辨率徽章"
   },
-  "feature_videoFlip_desc": {
-    "message": "水平或垂直镜像视频 — 适用于镜像舞蹈教程、文字可读性或翻转的录制"
-  },
-  "feature_videoFlip_name": {
-    "message": "视频翻转"
-  },
-  "feature_monoToStereo_desc": {
-    "message": "将单声道音频均匀分配到双耳 — 修复单侧录音、讲座和在耳机上听起来不平衡的旧内容"
-  },
-  "feature_monoToStereo_name": {
-    "message": "单声道转立体声"
-  },
   "feature_videoRotation_desc": {
     "message": "通过 CSS 变换将视频旋转 90/180/270 度 — 适用于侧拍的手机录制"
   },
@@ -2047,12 +2053,6 @@
   },
   "feature_videoScreenshot_name": {
     "message": "视频截图"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "设置每行显示的视频缩略图数量（0 = 根据窗口宽度动态调整）"
-  },
-  "feature_videosPerRow_name": {
-    "message": "每行视频数"
   },
   "feature_videoVisualFilters_desc": {
     "message": "通过 CSS 滤镜调整视频元素的亮度/对比度/饱和度/色相/灰度/复古"
@@ -2066,11 +2066,29 @@
   "feature_videoZoom_name": {
     "message": "视频缩放与平移"
   },
+  "feature_videosPerRow_desc": {
+    "message": "设置每行显示的视频缩略图数量（0 = 根据窗口宽度动态调整）"
+  },
+  "feature_videosPerRow_name": {
+    "message": "每行视频数"
+  },
   "feature_vlcMpvHandoff_desc": {
     "message": "仅限 GitHub 完整配置文件。在播放器旁添加按钮，触发 ytvlc:// 或 ytmpv:// 协议 URL。协议处理程序必须在操作系统上注册 — Astra Deck 不会直接运行二进制文件。默认关闭。"
   },
   "feature_vlcMpvHandoff_name": {
     "message": "VLC / MPV 流交接"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "音量增强的增益倍数（1.0 = 原始，最大 10.0）"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "音量增强级别"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "通过 Web Audio 增益节点将音频放大超过 100%（最高 10 倍）。适用于安静的录制内容。"
+  },
+  "feature_volumeBoost_name": {
+    "message": "音量增强"
   },
   "feature_volumeWheelMode_desc": {
     "message": "在播放器上滚动鼠标滚轮以 5% 步进调整音量。浮动指示标签显示新音量级别 1.2 秒；不添加键盘快捷键。"
@@ -2330,6 +2348,21 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "信息流清理"
+  },
+  "qtGroup_Focus": {
+    "message": "专注"
+  },
+  "qtGroup_Playback": {
+    "message": "播放"
+  },
+  "qtGroup_Utilities": {
+    "message": "实用工具"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "观看流程"
+  },
   "qt_autoTheaterMode_desc": {
     "message": "默认使用影院视图"
   },
@@ -2420,21 +2453,6 @@
   "qt_transcriptViewer_name": {
     "message": "字幕侧边栏"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "信息流清理"
-  },
-  "qtGroup_Focus": {
-    "message": "专注"
-  },
-  "qtGroup_Playback": {
-    "message": "播放"
-  },
-  "qtGroup_Utilities": {
-    "message": "实用工具"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "观看流程"
-  },
   "quickTogglesAria": {
     "message": "快捷开关"
   },
@@ -2453,11 +2471,11 @@
   "resultsAllAvailableTpl": {
     "message": "此弹窗中提供 {count} 项快捷控件"
   },
-  "resultsMatching": {
-    "message": "项匹配"
-  },
   "resultsMatchTpl": {
     "message": "{visible} 项控件中的 {total} 项与此筛选匹配"
+  },
+  "resultsMatching": {
+    "message": "项匹配"
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} 项设置已开启，分布在 {categories} 个分类中"
@@ -2540,20 +2558,20 @@
   "statusClipboardUnavailable": {
     "message": "剪贴板不可用 — 请查看浏览器控制台。"
   },
-  "statusDiagCleared": {
-    "message": "诊断日志已清除。"
-  },
   "statusDiagClearFail": {
     "message": "无法清除日志"
+  },
+  "statusDiagCleared": {
+    "message": "诊断日志已清除。"
   },
   "statusDiagCopied": {
     "message": "诊断信息已复制到剪贴板。"
   },
-  "statusDiagSaved": {
-    "message": "诊断日志已保存。"
-  },
   "statusDiagSaveFail": {
     "message": "无法保存日志"
+  },
+  "statusDiagSaved": {
+    "message": "诊断日志已保存。"
   },
   "statusExportFail": {
     "message": "导出失败"
@@ -2561,11 +2579,11 @@
   "statusImportFail": {
     "message": "导入失败"
   },
-  "statusMediadlReenabled": {
-    "message": "Astra Downloader 安装提示已重新启用 — 重新加载 YouTube 标签页即可看到。"
-  },
   "statusMediadlReenableFail": {
     "message": "无法重新启用 Astra Downloader 提示。请打开 chrome://extensions 并重新加载。"
+  },
+  "statusMediadlReenabled": {
+    "message": "Astra Downloader 安装提示已重新启用 — 重新加载 YouTube 标签页即可看到。"
   },
   "statusOpenWorkspaceFail": {
     "message": "无法打开完整工作区。请重试。"

@@ -350,12 +350,6 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "Fortschrittsbalken immer anzeigen"
   },
-  "feature_antiTranslate_desc": {
-    "message": "Verhindert, dass YouTube Videotitel UND Beschreibungen automatisch in deine Sprache übersetzt. Stellt den Originaltext auf Raster-Thumbnails und der Wiedergabeseite wieder her."
-  },
-  "feature_antiTranslate_name": {
-    "message": "Anti-Übersetzung (Originaltitel + Beschreibungen)"
-  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "Wenn YouTube eine automatisch synchronisierte Audiospur liefert, wird versucht, zur Originalspur zurückzuwechseln. Best-Effort — funktioniert über movie_player getAvailableAudioTracks() / setAudioTrack(), sofern vorhanden."
   },
@@ -368,11 +362,23 @@
   "feature_antiTranslateTranscript_name": {
     "message": "Anti-Übersetzung Transkript"
   },
+  "feature_antiTranslate_desc": {
+    "message": "Verhindert, dass YouTube Videotitel UND Beschreibungen automatisch in deine Sprache übersetzt. Stellt den Originaltext auf Raster-Thumbnails und der Wiedergabeseite wieder her."
+  },
+  "feature_antiTranslate_name": {
+    "message": "Anti-Übersetzung (Originaltitel + Beschreibungen)"
+  },
   "feature_astraContextMenu_desc": {
     "message": "Rechtsklick auf den Player oder eine Feed-Karte für Astra-Aktionen: Kanal ausblenden, Video-URL kopieren, Zeitstempel-Link kopieren, Transkript öffnen. Standardmäßig aus — fügt einen Kontextmenü-Listener hinzu; blockiert nie das native YouTube-Rechtsklickmenü."
   },
   "feature_astraContextMenu_name": {
     "message": "Astra-Kontextmenü"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "Komprimiert den Dynamikbereich, sodass leise und laute Passagen bei aehnlicher Lautstaerke wiedergegeben werden."
+  },
+  "feature_audioNormalization_name": {
+    "message": "Audio-Normalisierung"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "Speichert die bevorzugte Audiosprache, ohne die YouTube-Einstellungen automatisch zu öffnen. YouTube startet die Wiedergabe neu, wenn Skripte Audiospuren über das native Menü wechseln."
@@ -782,29 +788,29 @@
   "feature_daTitleFormat_name": {
     "message": "Titelformat"
   },
-  "feature_deArrow_desc": {
-    "message": "Clickbait-Titel und Thumbnails durch Community-Alternativen aus der DeArrow-Datenbank ersetzen"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "Fügt einen kleinen DeArrow-Modus-Chip neben dem Kanalnamen auf der Wiedergabeseite hinzu. Wechselt per Klick zwischen DeArrow → Original → Aus → DeArrow. Überschreibungen werden in deArrowChannelOverrides nach Kanal-ID gespeichert."
   },
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "DeArrow Kanal-Überschreibungen"
   },
-  "feature_dearrowPeekButton_desc": {
-    "message": "Alt gedrückt halten, um vorübergehend die originalen YouTube-Titel anzuzeigen (hebt DeArrow/benutzerdefinierte Titel auf, solange gedrückt)"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "DeArrow-Vorschau-Schaltfläche"
-  },
   "feature_deArrowVoting_desc": {
     "message": "Über DeArrow-Titelersetzungen abstimmen. Fügt Daumen-hoch/runter-Schaltflächen neben ersetzten Titeln hinzu. Verwendet eine lokale private Benutzer-ID. Standardmäßig aus."
   },
   "feature_deArrowVoting_name": {
     "message": "DeArrow-Abstimmung"
+  },
+  "feature_deArrow_desc": {
+    "message": "Clickbait-Titel und Thumbnails durch Community-Alternativen aus der DeArrow-Datenbank ersetzen"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "Alt gedrückt halten, um vorübergehend die originalen YouTube-Titel anzuzeigen (hebt DeArrow/benutzerdefinierte Titel auf, solange gedrückt)"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "DeArrow-Vorschau-Schaltfläche"
   },
   "feature_debugMode_desc": {
     "message": "Ausführliche Diagnoseprotokollierung in der Konsole aktivieren"
@@ -980,12 +986,6 @@
   "feature_forceDarkEverywhere_name": {
     "message": "Dunkelmodus auf allen YouTube-Seiten erzwingen"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "Immer aktiv: Wenn das Betriebssystem erzwungene Farben meldet (Windows Hoher Kontrast, GTK erzwungene Farben), verwenden Astra-injizierte Steuerelemente automatisch Systemfarben, damit Text lesbar bleibt und Fokusringe sichtbar sind. Die Media-Query selbst ist die Bedingung; dieser Schalter wird für Einstellungskompatibilität beibehalten und hat keine zusätzliche Wirkung."
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "Erzwungene Farben / Hoher Kontrast"
-  },
   "feature_forceH264_desc": {
     "message": "H.264 (AVC) gegenüber VP9/AV1 bevorzugen für geringere CPU-Auslastung auf älterer Hardware. Kann die maximale Qualität reduzieren. Verwendet die MAIN-World-Codec-Bridge."
   },
@@ -998,17 +998,17 @@
   "feature_forceStandardFps_name": {
     "message": "Standard-Bildrate erzwingen"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "Immer aktiv: Wenn das Betriebssystem erzwungene Farben meldet (Windows Hoher Kontrast, GTK erzwungene Farben), verwenden Astra-injizierte Steuerelemente automatisch Systemfarben, damit Text lesbar bleibt und Fokusringe sichtbar sind. Die Media-Query selbst ist die Bedingung; dieser Schalter wird für Einstellungskompatibilität beibehalten und hat keine zusätzliche Wirkung."
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "Erzwungene Farben / Hoher Kontrast"
+  },
   "feature_frameByFrameButtons_desc": {
     "message": "Sichtbare Bild-zurück (,) und Bild-vor (.)-Schaltflächen zu den Player-Steuerelementen für präzise Einzelbildnavigation hinzufügen"
   },
   "feature_frameByFrameButtons_name": {
     "message": "Einzelbild-Schaltflächen"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Doppelklick auf eine beliebige Stelle des Videos, um Vollbild umzuschalten (ersetzt das Standard-Sprungverhalten)"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "Doppelklick-Vollbild"
   },
   "feature_fullTitles_desc": {
     "message": "Die 2-Zeilen-Begrenzung bei Thumbnail-Titeln entfernen, damit lange Titel vollständig angezeigt werden"
@@ -1021,6 +1021,12 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "Abonnements in voller Breite"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "Doppelklick auf eine beliebige Stelle des Videos, um Vollbild umzuschalten (ersetzt das Standard-Sprungverhalten)"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "Doppelklick-Vollbild"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Bindet einen einzelnen versteckten role=status / aria-live=polite Container unter dem Dokument-Body ein. Screenreader lesen jeden Text vor, den Astra dort hineinschreibt (Toast-Inhalte, Filter-Ergebnisse, Download-Statusänderungen)."
@@ -1058,17 +1064,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "Wiedergabeseiten-Elemente ausblenden"
   },
-  "feature_hideAirplayButton_desc": {
-    "message": "Airplay-Symbol aus den Player-Steuerelementen entfernen"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "Airplay-Schaltfläche ausblenden"
-  },
   "feature_hideAiSummary_desc": {
     "message": "AI-generierte Zusammenfassungen und AI-Fragen-Schaltflächen entfernen"
   },
   "feature_hideAiSummary_name": {
     "message": "AI-Zusammenfassung ausblenden"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "Airplay-Symbol aus den Player-Steuerelementen entfernen"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "Airplay-Schaltfläche ausblenden"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "Entfernt den Autoplay-Schalter aus den Player-Steuerelementen"
@@ -1346,6 +1352,12 @@
   "feature_monetizationIndicator_name": {
     "message": "Monetarisierungsanzeige"
   },
+  "feature_monoToStereo_desc": {
+    "message": "Mono-Audio gleichmäßig auf beide Ohren verteilen — behebt einseitige Aufnahmen, Vorlesungen und alte Inhalte, die auf Kopfhörern unausgewogen klingen"
+  },
+  "feature_monoToStereo_name": {
+    "message": "Mono zu Stereo"
+  },
   "feature_musicVideoSpeedLock_desc": {
     "message": "Bei aktivierter dauerhafter Wiedergabegeschwindigkeit Musikvideos bei 1× belassen, damit Lieder nicht beschleunigt werden"
   },
@@ -1370,17 +1382,17 @@
   "feature_noFrostedGlass_name": {
     "message": "Milchglas deaktivieren"
   },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Einmaligen Toast anzeigen, wenn YouTube automatisch eine AI-synchronisierte Audiospur auswählt (z. B. ein englisch synchronisiertes koreanisches Video). Die Originalspur kann manuell in den Player-Einstellungen gewechselt werden."
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "Bei AI-synchronisiertem Audio benachrichtigen"
-  },
   "feature_notInterestedButton_desc": {
     "message": "X-Schaltfläche auf Video-Thumbnails hinzufügen, um Videos schnell über YouTubes Feedback-API zu verwerfen"
   },
   "feature_notInterestedButton_name": {
     "message": "\"Kein Interesse\" auf Thumbnails"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "Einmaligen Toast anzeigen, wenn YouTube automatisch eine AI-synchronisierte Audiospur auswählt (z. B. ein englisch synchronisiertes koreanisches Video). Die Originalspur kann manuell in den Player-Einstellungen gewechselt werden."
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "Bei AI-synchronisiertem Audio benachrichtigen"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "Den Video-Fortschrittsbalken durch eine Nyan-Cat-Animation ersetzen"
@@ -2006,6 +2018,12 @@
   "feature_videoContextMenu_name": {
     "message": "Player-Download-Menü"
   },
+  "feature_videoFlip_desc": {
+    "message": "Video horizontal oder vertikal spiegeln — nützlich für gespiegelte Tanzanleitungen, Textlesbarkeit oder umgedrehte Aufnahmen"
+  },
+  "feature_videoFlip_name": {
+    "message": "Video spiegeln"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Schleifen-Umschalter zu den Player-Steuerelementen für Ein-Klick-Videoschleife hinzufügen"
   },
@@ -2024,18 +2042,6 @@
   "feature_videoResolutionBadge_name": {
     "message": "Auflösungsabzeichen auf Thumbnails"
   },
-  "feature_videoFlip_desc": {
-    "message": "Video horizontal oder vertikal spiegeln — nützlich für gespiegelte Tanzanleitungen, Textlesbarkeit oder umgedrehte Aufnahmen"
-  },
-  "feature_videoFlip_name": {
-    "message": "Video spiegeln"
-  },
-  "feature_monoToStereo_desc": {
-    "message": "Mono-Audio gleichmäßig auf beide Ohren verteilen — behebt einseitige Aufnahmen, Vorlesungen und alte Inhalte, die auf Kopfhörern unausgewogen klingen"
-  },
-  "feature_monoToStereo_name": {
-    "message": "Mono zu Stereo"
-  },
   "feature_videoRotation_desc": {
     "message": "Video um 90/180/270 Grad per CSS-Transformation drehen — nützlich für seitlich aufgenommene Handyvideos"
   },
@@ -2047,12 +2053,6 @@
   },
   "feature_videoScreenshot_name": {
     "message": "Video-Screenshot"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "Anzahl der Video-Thumbnails pro Zeile festlegen (0 = dynamisch basierend auf Fensterbreite)"
-  },
-  "feature_videosPerRow_name": {
-    "message": "Videos pro Zeile"
   },
   "feature_videoVisualFilters_desc": {
     "message": "Helligkeit / Kontrast / Sättigung / Farbton / Graustufen / Sepia über CSS-Filter auf dem Videoelement anpassen"
@@ -2066,11 +2066,29 @@
   "feature_videoZoom_name": {
     "message": "Video-Zoom & Schwenken"
   },
+  "feature_videosPerRow_desc": {
+    "message": "Anzahl der Video-Thumbnails pro Zeile festlegen (0 = dynamisch basierend auf Fensterbreite)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "Videos pro Zeile"
+  },
   "feature_vlcMpvHandoff_desc": {
     "message": "Nur GitHub-Vollprofil. Fügt Schaltflächen neben dem Player hinzu, die ytvlc:// oder ytmpv:// Protokoll-URLs auslösen. Der Protokoll-Handler muss auf dem Betriebssystem registriert sein — Astra Deck führt nie direkt Binärdateien aus. Standardmäßig aus."
   },
   "feature_vlcMpvHandoff_name": {
     "message": "VLC / MPV Stream-Übergabe"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "Verstaerkungsfaktor fuer Lautstaerkeverstaerkung (1.0 = normal, max 10.0)"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "Lautstaerkeverstaerkungsstufe"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "Verstaerkt Audio ueber 100% mit einem Web Audio Gain-Knoten (bis zu 10x). Nuetzlich fuer leise Aufnahmen."
+  },
+  "feature_volumeBoost_name": {
+    "message": "Lautstaerkeverstaerkung"
   },
   "feature_volumeWheelMode_desc": {
     "message": "Mausrad über dem Player scrollen, um die Lautstärke in 5%-Schritten zu ändern. Ein schwebendes Anzeige-Chip zeigt den neuen Pegel für 1,2 s an; es wird kein Tastenkürzel hinzugefügt."
@@ -2330,6 +2348,21 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Feed-Bereinigung"
+  },
+  "qtGroup_Focus": {
+    "message": "Fokus"
+  },
+  "qtGroup_Playback": {
+    "message": "Wiedergabe"
+  },
+  "qtGroup_Utilities": {
+    "message": "Dienstprogramme"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Wiedergabe-Fluss"
+  },
   "qt_autoTheaterMode_desc": {
     "message": "Videos in der Theater-Ansicht öffnen"
   },
@@ -2420,21 +2453,6 @@
   "qt_transcriptViewer_name": {
     "message": "Transkript-Seitenleiste"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "Feed-Bereinigung"
-  },
-  "qtGroup_Focus": {
-    "message": "Fokus"
-  },
-  "qtGroup_Playback": {
-    "message": "Wiedergabe"
-  },
-  "qtGroup_Utilities": {
-    "message": "Dienstprogramme"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "Wiedergabe-Fluss"
-  },
   "quickTogglesAria": {
     "message": "Schnellumschalter"
   },
@@ -2453,11 +2471,11 @@
   "resultsAllAvailableTpl": {
     "message": "… Schnellsteuerungen sind in diesem Popup verfügbar"
   },
-  "resultsMatching": {
-    "message": "übereinstimmend"
-  },
   "resultsMatchTpl": {
     "message": "… von … … entsprechen diesem Filter"
+  },
+  "resultsMatching": {
+    "message": "übereinstimmend"
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} Einstellungen aktiv in {categories} Kategorien"
@@ -2540,20 +2558,20 @@
   "statusClipboardUnavailable": {
     "message": "Zwischenablage nicht verfügbar — siehe Browser-Konsole."
   },
-  "statusDiagCleared": {
-    "message": "Diagnoseprotokoll gelöscht."
-  },
   "statusDiagClearFail": {
     "message": "Protokoll konnte nicht gelöscht werden"
+  },
+  "statusDiagCleared": {
+    "message": "Diagnoseprotokoll gelöscht."
   },
   "statusDiagCopied": {
     "message": "Diagnose in die Zwischenablage kopiert."
   },
-  "statusDiagSaved": {
-    "message": "Diagnoseprotokoll gespeichert."
-  },
   "statusDiagSaveFail": {
     "message": "Protokoll konnte nicht gespeichert werden"
+  },
+  "statusDiagSaved": {
+    "message": "Diagnoseprotokoll gespeichert."
   },
   "statusExportFail": {
     "message": "Export fehlgeschlagen"
@@ -2561,11 +2579,11 @@
   "statusImportFail": {
     "message": "Import fehlgeschlagen"
   },
-  "statusMediadlReenabled": {
-    "message": "Astra Downloader Installationsaufforderungen erneut aktiviert — einen YouTube-Tab neu laden, um sie zu sehen."
-  },
   "statusMediadlReenableFail": {
     "message": "Astra Downloader Aufforderungen konnten nicht erneut aktiviert werden. chrome://extensions öffnen und neu laden."
+  },
+  "statusMediadlReenabled": {
+    "message": "Astra Downloader Installationsaufforderungen erneut aktiviert — einen YouTube-Tab neu laden, um sie zu sehen."
   },
   "statusOpenWorkspaceFail": {
     "message": "Vollständiger Arbeitsbereich konnte nicht geöffnet werden. Versuche es erneut."
