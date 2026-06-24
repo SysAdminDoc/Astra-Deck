@@ -74,9 +74,6 @@
   Why: ReDoS guard checks pattern structure but doesn't enforce execution timeout. Alternation groups can still cause exponential backtracking.
   Where: `extension/ytkit.js` (commentFilterManager, hideVideosFromHome)
 
-- [ ] P2 — Popup: migrate toggle row event listeners to event delegation
-  Why: render() rebuilds the toggle list on every change; each rebuild creates new listeners on detached DOM nodes.
-  Where: `extension/popup.js` (render function)
 
 ### P1 — i18n / Distribution
 
