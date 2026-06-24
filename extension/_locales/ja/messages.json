@@ -12,13 +12,13 @@
     "message": "閉じる"
   },
   "contextNoteAnyTab": {
-    "message": "Quick toggles are saved now and sync when YouTube is open."
+    "message": "クイックトグルは保存済みで、YouTube を開くと同期されます。"
   },
   "contextNoteInlinePanel": {
-    "message": "Open the full workspace on this tab; quick toggles apply immediately."
+    "message": "このタブでフルワークスペースを開きます。クイックトグルは即座に反映されます。"
   },
   "contextNoteLaunch": {
-    "message": "Open a watchable YouTube tab to use the full in-page workspace."
+    "message": "フルページ内ワークスペースを使用するには、YouTube タブを開いてください。"
   },
   "contextStateAnyTab": {
     "message": "任意のタブ"
@@ -39,31 +39,31 @@
     "message": "コントロール"
   },
   "dataFlowActive": {
-    "message": "active"
+    "message": "アクティブ"
   },
   "dataFlowCreds": {
-    "message": "creds"
+    "message": "認証情報"
   },
   "dataFlowDriver": {
-    "message": "driver"
+    "message": "ドライバー"
   },
   "dataFlowInactive": {
-    "message": "idle"
+    "message": "待機中"
   },
   "dataFlowNote": {
-    "message": "Active origins are highlighted. Disable the driving toggle to mute an origin entirely."
+    "message": "アクティブなオリジンがハイライトされます。駆動トグルを無効にするとオリジン全体をミュートできます。"
   },
   "dataFlowProfile": {
-    "message": "profile"
+    "message": "プロファイル"
   },
   "dataFlowRisk": {
-    "message": "risk"
+    "message": "リスク"
   },
   "dataFlowSummaryTpl": {
-    "message": "{active}/{total} origins active"
+    "message": "{active}/{total} 個のオリジンがアクティブ"
   },
   "dataFlowTitle": {
-    "message": "Data flow"
+    "message": "データフロー"
   },
   "dataMgmtAria": {
     "message": "データ管理"
@@ -81,13 +81,13 @@
     "message": "音声をダウンロード"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as …"
+    "message": "音声を … としてダウンロード"
   },
   "dlPopupCtaVideo": {
     "message": "動画をダウンロード"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as … at …"
+    "message": "動画を … で … としてダウンロード"
   },
   "dlPopupDefault": {
     "message": "デフォルト"
@@ -132,10 +132,10 @@
     "message": "ダウンロードタイプ"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% complete. … remaining."
+    "message": "…% 完了。残り …。"
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
+    "message": "…% 完了。Astra Downloader が完了するまで YouTube を開いたままにしてください。"
   },
   "dlProgressAriaAudio": {
     "message": "音声ダウンロードの進捗"
@@ -150,7 +150,7 @@
     "message": "動画ダウンロード"
   },
   "dlProgressCompleteCopy": {
-    "message": "Astra Downloader finished successfully."
+    "message": "Astra Downloader が正常に完了しました。"
   },
   "dlProgressConnectAudio": {
     "message": "ローカル音声ダウンローダーに接続中。"
@@ -162,10 +162,10 @@
     "message": "ダウンロード進捗を閉じる"
   },
   "dlProgressEtaPrefix": {
-    "message": "ETA"
+    "message": "残り時間"
   },
   "dlProgressFailureDefault": {
-    "message": "Astra Downloader failed"
+    "message": "Astra Downloader が失敗しました"
   },
   "dlProgressInProgress": {
     "message": "進行中"
@@ -174,13 +174,13 @@
     "message": "ローカル"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
+    "message": "Astra Deck が Astra Downloader との接続を失いました。「ダウンローダーを修復」を選択して復旧してください。"
   },
   "dlProgressLostTitle": {
     "message": "ダウンローダーへの接続喪失"
   },
   "dlProgressLostToast": {
-    "message": "Lost contact with Astra Downloader."
+    "message": "Astra Downloader との接続が切れました。"
   },
   "dlProgressPreparing": {
     "message": "ダウンロードの準備中…"
@@ -192,7 +192,7 @@
     "message": "準備完了"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
+    "message": "Astra Downloader で一時的な接続障害が発生しました。自動的に再試行中です。"
   },
   "dlProgressSkippedDefault": {
     "message": "すでにダウンロード済み — スキップしました。"
@@ -237,7 +237,7 @@
     "message": "完了処理中"
   },
   "dlRepairAria": {
-    "message": "Open Astra Downloader repair steps"
+    "message": "Astra Downloader の修復手順を開く"
   },
   "dlRepairBtn": {
     "message": "ダウンローダーを修復"
@@ -273,1930 +273,1930 @@
     "description": "The extension name displayed in the browser UI."
   },
   "feature_abHide_ask_desc": {
-    "message": "Hide Ask or AI button below videos"
+    "message": "動画の下にある Ask/AI ボタンを非表示にする"
   },
   "feature_abHide_ask_name": {
-    "message": "Ask/AI Button"
+    "message": "Ask/AI ボタン"
   },
   "feature_abHide_clip_desc": {
-    "message": "Hide clip button below videos"
+    "message": "動画の下にあるクリップボタンを非表示にする"
   },
   "feature_abHide_clip_name": {
-    "message": "Clip Button"
+    "message": "クリップボタン"
   },
   "feature_abHide_like_desc": {
-    "message": "Hide like button below videos"
+    "message": "動画の下にある高評価ボタンを非表示にする"
   },
   "feature_abHide_like_name": {
-    "message": "Like Button"
+    "message": "高評価ボタン"
   },
   "feature_abHide_moreActions_desc": {
-    "message": "Hide more actions button below videos"
+    "message": "動画の下にあるその他のアクションボタンを非表示にする"
   },
   "feature_abHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "その他のアクション (...)"
   },
   "feature_abHide_save_desc": {
-    "message": "Hide save button below videos"
+    "message": "動画の下にある保存ボタンを非表示にする"
   },
   "feature_abHide_save_name": {
-    "message": "Save Button"
+    "message": "保存ボタン"
   },
   "feature_abHide_share_desc": {
-    "message": "Hide share button below videos"
+    "message": "動画の下にある共有ボタンを非表示にする"
   },
   "feature_abHide_share_name": {
-    "message": "Share Button"
+    "message": "共有ボタン"
   },
   "feature_abHide_sponsor_desc": {
-    "message": "Hide join/sponsor button below videos"
+    "message": "動画の下にある参加/スポンサーボタンを非表示にする"
   },
   "feature_abHide_sponsor_name": {
-    "message": "Join/Sponsor Button"
+    "message": "参加/スポンサーボタン"
   },
   "feature_abHide_thanks_desc": {
-    "message": "Hide thanks button below videos"
+    "message": "動画の下にある Thanks ボタンを非表示にする"
   },
   "feature_abHide_thanks_name": {
-    "message": "Thanks Button"
+    "message": "Thanks ボタン"
   },
   "feature_abLoop_desc": {
-    "message": "Set two points on the video timeline and loop between them. Visual markers on the progress bar."
+    "message": "タイムライン上に2つのポイントを設定し、その間をループ再生します。プログレスバーに視覚マーカーが表示されます。"
   },
   "feature_abLoop_name": {
-    "message": "A-B Loop"
+    "message": "A-B ループ"
   },
   "feature_adaptiveLiveLayout_desc": {
-    "message": "Automatically adjust layout for live stream chat side-by-side"
+    "message": "ライブ配信のチャットを横並びに表示するようレイアウトを自動調整"
   },
   "feature_adaptiveLiveLayout_name": {
-    "message": "Adaptive Live Layout"
+    "message": "アダプティブライブレイアウト"
   },
   "feature_ageRestrictionBypass_desc": {
-    "message": "Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required."
+    "message": "YouTube の埋め込みエンドポイントから動画データを取得して年齢確認をバイパスします。ログイン不要。"
   },
   "feature_ageRestrictionBypass_name": {
-    "message": "Age Restriction Bypass"
+    "message": "年齢制限バイパス"
   },
   "feature_aiVideoSummary_desc": {
-    "message": "Bring-your-own-key LLM summary of the current video transcript (OpenAI/Anthropic/Gemini/Ollama)"
+    "message": "自前の API キーで現在の動画の文字起こしを LLM で要約 (OpenAI/Anthropic/Gemini/Ollama)"
   },
   "feature_aiVideoSummary_name": {
-    "message": "AI Video Summary"
+    "message": "AI 動画要約"
   },
   "feature_alwaysShowProgressBar_desc": {
-    "message": "Keep the video progress bar visible at all times instead of hiding on idle"
+    "message": "操作がないときも動画のプログレスバーを常に表示し続ける"
   },
   "feature_alwaysShowProgressBar_name": {
-    "message": "Always Show Progress Bar"
+    "message": "プログレスバーを常時表示"
   },
   "feature_antiTranslate_desc": {
-    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
+    "message": "YouTube による動画タイトルと説明文の自動翻訳を防止します。グリッドサムネイルと視聴ページで原語テキストを復元します。"
   },
   "feature_antiTranslate_name": {
-    "message": "Anti-Translate (Original Titles + Descriptions)"
+    "message": "翻訳防止（原語タイトル＋説明文）"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
+    "message": "YouTube が自動吹き替え音声トラックを配信した場合、元の音声に切り替えを試みます。ベストエフォート — movie_player の getAvailableAudioTracks() / setAudioTrack() を使用。"
   },
   "feature_antiTranslateAudioTrack_name": {
-    "message": "Anti-Translate Audio Track"
+    "message": "音声トラック翻訳防止"
   },
   "feature_antiTranslateTranscript_desc": {
-    "message": "Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available."
+    "message": "エンゲージメントパネルの文字起こし URL から翻訳トラックパラメータを除去し、YouTube に原語字幕を配信させます。ベストエフォート。原語トラックが利用可能な場合に動作します。"
   },
   "feature_antiTranslateTranscript_name": {
-    "message": "Anti-Translate Transcript"
+    "message": "文字起こし翻訳防止"
   },
   "feature_astraContextMenu_desc": {
-    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
+    "message": "プレーヤーやフィードカードを右クリックして Astra アクションを利用: チャンネル非表示、動画 URL コピー、タイムスタンプリンクコピー、文字起こしを開く。デフォルトオフ — contextmenu リスナーを追加しますが、YouTube のネイティブ右クリックをブロックしません。"
   },
   "feature_astraContextMenu_name": {
-    "message": "Astra Context Menu"
+    "message": "Astra コンテキストメニュー"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu."
+    "message": "YouTube の設定を開かずに優先音声言語を保存します。スクリプトがネイティブメニューから音声トラックを切り替えると、YouTube は再生を再開します。"
   },
   "feature_audioTrackLanguage_name": {
-    "message": "Preferred Audio Track Language"
+    "message": "優先音声トラック言語"
   },
   "feature_autoClosePopups_desc": {
-    "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
+    "message": "Cookie 同意、アンケート、その他の YouTube ポップアップを自動的に閉じる"
   },
   "feature_autoClosePopups_name": {
-    "message": "Auto-Close Popups"
+    "message": "ポップアップ自動クローズ"
   },
   "feature_autoDismissContentWarning_desc": {
-    "message": "Automatically clicks \"I understand and wish to proceed\" on videos with content warnings"
+    "message": "コンテンツ警告のある動画で「理解した上で続行する」を自動的にクリック"
   },
   "feature_autoDismissContentWarning_name": {
-    "message": "Auto-Dismiss Content Warnings"
+    "message": "コンテンツ警告の自動非表示"
   },
   "feature_autoDismissStillWatching_desc": {
-    "message": "Automatically clicks the \"Continue Watching\" button when YouTube pauses playback for inactivity"
+    "message": "YouTube が無操作で再生を一時停止したとき、「視聴を続ける」ボタンを自動クリック"
   },
   "feature_autoDismissStillWatching_name": {
-    "message": "Auto-Dismiss \"Still Watching?\""
+    "message": "「まだ視聴中？」の自動非表示"
   },
   "feature_autoDownloadOnVisit_desc": {
-    "message": "Automatically start download when visiting a video page"
+    "message": "動画ページにアクセスしたとき自動的にダウンロードを開始"
   },
   "feature_autoDownloadOnVisit_name": {
-    "message": "Auto-Download Videos"
+    "message": "動画の自動ダウンロード"
   },
   "feature_autoExpandComments_desc": {
-    "message": "Automatically expand truncated comments so full text is always visible"
+    "message": "省略されたコメントを自動展開し、全文を常に表示"
   },
   "feature_autoExpandComments_name": {
-    "message": "Auto-Expand Comments"
+    "message": "コメント自動展開"
   },
   "feature_autoExpandDescription_desc": {
-    "message": "Automatically expands the video description so you never need to click \"Show more\""
+    "message": "動画の説明文を自動展開。「もっと見る」をクリックする必要がなくなります"
   },
   "feature_autoExpandDescription_name": {
-    "message": "Auto-Expand Description"
+    "message": "説明文の自動展開"
   },
   "feature_autoLikeSubscribed_desc": {
-    "message": "Automatically like videos from channels you're subscribed to after watching for 30 seconds"
+    "message": "登録チャンネルの動画を 30 秒視聴後に自動で高評価"
   },
   "feature_autoLikeSubscribed_name": {
-    "message": "Auto-Like Subscribed Channels"
+    "message": "登録チャンネルの自動高評価"
   },
   "feature_autoMaxResolution_desc": {
-    "message": "Force the highest available stream on every video (1080p Premium when offered)"
+    "message": "すべての動画で利用可能な最高画質を強制 (1080p Premium も含む)"
   },
   "feature_autoMaxResolution_name": {
-    "message": "Always Best Quality"
+    "message": "常に最高画質"
   },
   "feature_autoOpenChapters_desc": {
-    "message": "Automatically open the chapters panel when available"
+    "message": "チャプターパネルが利用可能なとき自動的に開く"
   },
   "feature_autoOpenChapters_name": {
-    "message": "Auto-Open Chapters"
+    "message": "チャプター自動オープン"
   },
   "feature_autoOpenTranscript_desc": {
-    "message": "Automatically open the transcript panel when available"
+    "message": "文字起こしパネルが利用可能なとき自動的に開く"
   },
   "feature_autoOpenTranscript_name": {
-    "message": "Auto-Open Transcript"
+    "message": "文字起こし自動オープン"
   },
   "feature_autoPauseOnSwitch_desc": {
-    "message": "Pauses playback when you switch to another tab, resumes when you return"
+    "message": "別のタブに切り替えたとき再生を一時停止し、戻ったとき再開"
   },
   "feature_autoPauseOnSwitch_name": {
-    "message": "Auto-Pause on Tab Switch"
+    "message": "タブ切り替え時の自動一時停止"
   },
   "feature_autoSkipChapters_desc": {
-    "message": "Automatically skip chapters matching patterns (intro, outro, recap, sponsor). Comma-separated."
+    "message": "パターンに一致するチャプターを自動スキップ (イントロ、アウトロ、まとめ、スポンサー)。カンマ区切り。"
   },
   "feature_autoSkipChapters_name": {
-    "message": "Auto-Skip Chapters"
+    "message": "チャプター自動スキップ"
   },
   "feature_autoSubtitles_desc": {
-    "message": "Automatically turns on closed captions when a video starts playing"
+    "message": "動画の再生開始時に字幕を自動でオン"
   },
   "feature_autoSubtitles_name": {
-    "message": "Auto-Enable Subtitles"
+    "message": "字幕の自動有効化"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "動画を開いたとき自動的にシアター（ワイド）モードに切り替え"
   },
   "feature_autoTheaterMode_name": {
-    "message": "自動シアター"
+    "message": "自動シアターモード"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "ブルーライトを軽減するために暖色のフィルターを適用。強度を調整可能。"
   },
   "feature_blueLightFilter_name": {
     "message": "ブルーライトフィルター"
   },
   "feature_bulkCardActions_desc": {
-    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
+    "message": "選択モードに切り替えてフィードカードを複数選択し、一括で非表示・許可・URL コピーが可能。選択中はフローティングアクションバーが表示されます。"
   },
   "feature_bulkCardActions_name": {
-    "message": "Bulk Card Actions"
+    "message": "一括カードアクション"
   },
   "feature_bypassPlaylistMode_desc": {
-    "message": "Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist"
+    "message": "クリックしたサムネイルから &list= パラメータを除去し、他人のプレイリストに入り込むのを防止"
   },
   "feature_bypassPlaylistMode_name": {
-    "message": "Bypass Playlist Mode on Clicks"
+    "message": "クリック時のプレイリストモードをバイパス"
   },
   "feature_channelAgeDisplay_desc": {
-    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date"
+    "message": "アップロード日の横に動画の経過年数を表示（例: 「2年3か月前」）"
   },
   "feature_channelAgeDisplay_name": {
-    "message": "Video Age Display"
+    "message": "動画の経過年数表示"
   },
   "feature_channelSubCount_desc": {
-    "message": "Shows the channel subscriber count more prominently below videos"
+    "message": "動画の下にチャンネル登録者数をより目立つように表示"
   },
   "feature_channelSubCount_name": {
-    "message": "Enhanced Channel Info"
+    "message": "チャンネル情報の強化"
   },
   "feature_chapterJumpButtons_desc": {
-    "message": "Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter"
+    "message": "プレーヤーの右側コントロールに前/次のチャプターボタンを追加。前後のチャプターにジャンプできます。"
   },
   "feature_chapterJumpButtons_name": {
-    "message": "Chapter Jump Buttons"
+    "message": "チャプタージャンプボタン"
   },
   "feature_chapterNavButtons_desc": {
-    "message": "Add Previous/Next Chapter buttons to the video player controls"
+    "message": "プレーヤーのコントロールに前/次のチャプターボタンを追加"
   },
   "feature_chapterNavButtons_name": {
-    "message": "Chapter Navigation"
+    "message": "チャプターナビゲーション"
   },
   "feature_chatHide_banner_desc": {
-    "message": "Hide chat banners"
+    "message": "チャットバナーを非表示"
   },
   "feature_chatHide_banner_name": {
-    "message": "Chat Banner"
+    "message": "チャットバナー"
   },
   "feature_chatHide_bots_desc": {
-    "message": "Filter out known bot messages"
+    "message": "既知のボットメッセージをフィルター"
   },
   "feature_chatHide_bots_name": {
-    "message": "Bot Messages"
+    "message": "ボットメッセージ"
   },
   "feature_chatHide_emoji_desc": {
-    "message": "Hide emoji picker button"
+    "message": "絵文字ピッカーボタンを非表示"
   },
   "feature_chatHide_emoji_name": {
-    "message": "Emoji Button"
+    "message": "絵文字ボタン"
   },
   "feature_chatHide_header_desc": {
-    "message": "Hide the live chat header bar"
+    "message": "ライブチャットのヘッダーバーを非表示"
   },
   "feature_chatHide_header_name": {
-    "message": "Chat Header"
+    "message": "チャットヘッダー"
   },
   "feature_chatHide_leaderboard_desc": {
-    "message": "Hide chat leaderboard"
+    "message": "チャットのリーダーボードを非表示"
   },
   "feature_chatHide_leaderboard_name": {
-    "message": "Leaderboard"
+    "message": "リーダーボード"
   },
   "feature_chatHide_levelUp_desc": {
-    "message": "Hide level up messages"
+    "message": "レベルアップメッセージを非表示"
   },
   "feature_chatHide_levelUp_name": {
-    "message": "Level Up Messages"
+    "message": "レベルアップメッセージ"
   },
   "feature_chatHide_menu_desc": {
-    "message": "Hide the chat overflow menu"
+    "message": "チャットのオーバーフローメニューを非表示"
   },
   "feature_chatHide_menu_name": {
-    "message": "Chat Menu (...)"
+    "message": "チャットメニュー (...)"
   },
   "feature_chatHide_polls_desc": {
-    "message": "Hide polls in live chat"
+    "message": "ライブチャットの投票を非表示"
   },
   "feature_chatHide_polls_name": {
-    "message": "Polls & Poll Banner"
+    "message": "投票とバナー"
   },
   "feature_chatHide_popout_desc": {
-    "message": "Hide the popout chat button"
+    "message": "ポップアウトチャットボタンを非表示"
   },
   "feature_chatHide_popout_name": {
-    "message": "Popout Button"
+    "message": "ポップアウトボタン"
   },
   "feature_chatHide_reactions_desc": {
-    "message": "Hide chat reactions panel"
+    "message": "チャットのリアクションパネルを非表示"
   },
   "feature_chatHide_reactions_name": {
-    "message": "Reactions"
+    "message": "リアクション"
   },
   "feature_chatHide_superChats_desc": {
-    "message": "Hide super chat messages"
+    "message": "Super Chat メッセージを非表示"
   },
   "feature_chatHide_superChats_name": {
-    "message": "Super Chats"
+    "message": "Super Chat"
   },
   "feature_chatHide_support_desc": {
-    "message": "Hide support/buy buttons in chat"
+    "message": "チャットのサポート/購入ボタンを非表示"
   },
   "feature_chatHide_support_name": {
-    "message": "Support Buttons"
+    "message": "サポートボタン"
   },
   "feature_chatHide_ticker_desc": {
-    "message": "Hide the super chat ticker"
+    "message": "Super Chat ティッカーを非表示"
   },
   "feature_chatHide_ticker_name": {
-    "message": "Super Chat Ticker"
+    "message": "Super Chat ティッカー"
   },
   "feature_chatHide_timestamps_desc": {
-    "message": "Hide chat timestamps"
+    "message": "チャットのタイムスタンプを非表示"
   },
   "feature_chatHide_timestamps_name": {
-    "message": "Timestamps"
+    "message": "タイムスタンプ"
   },
   "feature_chatHide_topFan_desc": {
-    "message": "Hide fan/member badges"
+    "message": "ファン/メンバーバッジを非表示"
   },
   "feature_chatHide_topFan_name": {
-    "message": "Fan Badges"
+    "message": "ファンバッジ"
   },
   "feature_chatKeywordFilter_desc": {
-    "message": "Hide chat messages containing these words (comma-separated)"
+    "message": "指定したワードを含むチャットメッセージを非表示（カンマ区切り）"
   },
   "feature_chatKeywordFilter_name": {
-    "message": "Chat Keyword Filter"
+    "message": "チャットキーワードフィルター"
   },
   "feature_chatStyleComments_desc": {
-    "message": "Premium comment layout that preserves pinned comments, creator hearts, replies, and native actions"
+    "message": "ピン留めコメント、クリエイターのハート、返信、ネイティブアクションを維持したプレミアムコメントレイアウト"
   },
   "feature_chatStyleComments_name": {
-    "message": "Studio Comments"
+    "message": "スタジオコメント"
   },
   "feature_chronologicalNotifications_desc": {
-    "message": "Sort notifications chronologically (newest first)"
+    "message": "通知を時系列順（新しい順）に並べ替え"
   },
   "feature_chronologicalNotifications_name": {
-    "message": "Sort Notifications"
+    "message": "通知を並べ替え"
   },
   "feature_cinemaAmbientGlow_desc": {
-    "message": "Projects dominant video colors as a soft glow behind the player for an immersive cinema feel"
+    "message": "動画の主要色をプレーヤー背後にソフトグローとして投影し、没入感のあるシネマ体験を実現"
   },
   "feature_cinemaAmbientGlow_name": {
-    "message": "Cinema Ambient Glow"
+    "message": "シネマアンビエントグロー"
   },
   "feature_classicLayoutProfile_desc": {
-    "message": "Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
+    "message": "レイアウトプロファイルを選択。Modern は YouTube の 2025 レイアウト、Classic 2020 はよりコンパクトな間隔と小さいマストヘッドを復元、Classic 2016 は旧視聴ページの比率を復元。"
   },
   "feature_classicLayoutProfile_name": {
-    "message": "Layout Profile"
+    "message": "レイアウトプロファイル"
   },
   "feature_classicPlayerChrome_desc": {
-    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display"
+    "message": "Delhi/Liquid Glass 以前のプレーヤー外観をワンクリックで復元: 不透明な四角形コントロール、クラシックプログレスバー、元の時間表示"
   },
   "feature_classicPlayerChrome_name": {
-    "message": "Classic Player Chrome"
+    "message": "クラシックプレーヤークローム"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "コピー/共有される YouTube リンクからトラッキングパラメータ (si, pp, feature) を除去"
   },
   "feature_cleanShareUrls_name": {
-    "message": "クリーンな URL"
+    "message": "クリーンな共有 URL"
   },
   "feature_cleanUiPreset_desc": {
-    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
+    "message": "オーナープリセット: パネルブランディング、検索、カテゴリヘッダーを非表示にし、ナビゲーションを圧縮し、トースト通知を抑制し、登録チャンネルの再開バナーを非表示にします。デフォルトオフ。"
   },
   "feature_cleanUiPreset_name": {
-    "message": "Compact Clean UI"
+    "message": "コンパクトクリーン UI"
   },
   "feature_codecSelector_desc": {
-    "message": "Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
+    "message": "優先するビデオコーデックを選択: Auto、H.264 (低 CPU)、VP9、AV1 (最高画質)。Force H.264 とコーデックエンジンを共有。"
   },
   "feature_codecSelector_name": {
-    "message": "Codec Selector"
+    "message": "コーデックセレクター"
   },
   "feature_colorThemeManager_desc": {
-    "message": "Apply a color palette across YouTube (dark mode only)"
+    "message": "YouTube 全体にカラーパレットを適用（ダークモードのみ）"
   },
   "feature_colorThemeManager_name": {
-    "message": "Color Theme"
+    "message": "カラーテーマ"
   },
   "feature_commentEnhancements_desc": {
-    "message": "Highlight creator/OP replies, show like heat indicators, and add collapse-all-replies toggle per thread"
+    "message": "クリエイター/OP の返信をハイライト、高評価のヒートインジケーターを表示、スレッドごとに全返信折りたたみトグルを追加"
   },
   "feature_commentEnhancements_name": {
-    "message": "Comment Enhancements"
+    "message": "コメント機能の強化"
   },
   "feature_commentFilterManager_desc": {
-    "message": "Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded)."
+    "message": "投稿者やテキストがルールに一致するコメントスレッドを非表示。カンマ区切りのキーワード、!word でホワイトリスト、/pattern/flags で正規表現（ReDoS 対策済み）。"
   },
   "feature_commentFilterManager_name": {
-    "message": "Comment Filter"
+    "message": "コメントフィルター"
   },
   "feature_commentFilterRules_desc": {
-    "message": "One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded)."
+    "message": "1行に1ルールまたはカンマ区切り。word で一致を非表示、!word で常に許可、@author で投稿者を対象、/pattern/i で正規表現（ReDoS 対策済み）。"
   },
   "feature_commentFilterRules_name": {
-    "message": "Comment Filter Rules"
+    "message": "コメントフィルタールール"
   },
   "feature_commentNavigator_desc": {
-    "message": "Floating thread navigator with live counts for visible comments and filtered results"
+    "message": "表示中のコメント数とフィルター結果のライブカウントを備えたフローティングスレッドナビゲーター"
   },
   "feature_commentNavigator_name": {
-    "message": "Comment Navigator"
+    "message": "コメントナビゲーター"
   },
   "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "コメントの上に検索バーを追加して特定のコメントを検索・フィルター"
   },
   "feature_commentSearch_name": {
     "message": "コメント検索"
   },
   "feature_compactLayout_desc": {
-    "message": "Reduce spacing and padding for a denser interface"
+    "message": "余白とパディングを縮小して、より密なインターフェースに"
   },
   "feature_compactLayout_name": {
-    "message": "Compact Layout"
+    "message": "コンパクトレイアウト"
   },
   "feature_compactUnfixedHeader_desc": {
-    "message": "Reduce header height and let it scroll away instead of staying fixed"
+    "message": "ヘッダーの高さを縮小し、固定表示ではなくスクロールで隠れるように変更"
   },
   "feature_compactUnfixedHeader_name": {
-    "message": "Compact / Unfixed Header"
+    "message": "コンパクト/非固定ヘッダー"
   },
   "feature_condenseComments_desc": {
-    "message": "Reduce spacing between comments for a tighter layout"
+    "message": "コメント間の余白を縮小してよりコンパクトな表示に"
   },
   "feature_condenseComments_name": {
-    "message": "Condense Comments"
+    "message": "コメントの圧縮表示"
   },
   "feature_copyChapterMarkdown_desc": {
-    "message": "Copy all video chapters as a markdown timestamp list — button in player controls"
+    "message": "すべての動画チャプターを Markdown のタイムスタンプリストとしてコピー — プレーヤーコントロールにボタンを追加"
   },
   "feature_copyChapterMarkdown_name": {
-    "message": "Copy Chapters as Markdown"
+    "message": "チャプターを Markdown でコピー"
   },
   "feature_copyVideoTitle_desc": {
-    "message": "Adds a copy button next to the video title for one-click title copying"
+    "message": "動画タイトルの横にコピーボタンを追加し、ワンクリックでタイトルをコピー"
   },
   "feature_copyVideoTitle_name": {
-    "message": "Copy Video Title Button"
+    "message": "動画タイトルコピーボタン"
   },
   "feature_creatorCommentHighlight_desc": {
-    "message": "Makes creator-badged and creator-hearted comments stand out with a stronger visual treatment"
+    "message": "クリエイターバッジ付きやクリエイターハート付きのコメントを、より強調した視覚処理で目立たせる"
   },
   "feature_creatorCommentHighlight_name": {
-    "message": "Highlight Creator Comments"
+    "message": "クリエイターコメントのハイライト"
   },
   "feature_customCssInjection_desc": {
-    "message": "Inject your own custom CSS rules into YouTube pages"
+    "message": "YouTube ページに独自のカスタム CSS ルールを注入"
   },
   "feature_customCssInjection_name": {
-    "message": "Custom CSS"
+    "message": "カスタム CSS"
   },
   "feature_customProgressBarColor_desc": {
-    "message": "Change the red progress bar to any color"
+    "message": "赤いプログレスバーの色を自由に変更"
   },
   "feature_customProgressBarColor_name": {
-    "message": "Custom Progress Bar Color"
+    "message": "プログレスバーのカスタムカラー"
   },
   "feature_customSelectionColor_desc": {
-    "message": "Override the default text-selection background with your chosen color"
+    "message": "テキスト選択時の背景色を指定した色でオーバーライド"
   },
   "feature_customSelectionColor_name": {
-    "message": "Custom Text Selection Color"
+    "message": "テキスト選択色のカスタム"
   },
   "feature_customSpeedButtons_desc": {
-    "message": "Adds quick speed buttons below the video player with presets from 0.5x to 3x"
+    "message": "0.5x～3x のプリセット付きクイック速度ボタンをプレーヤーの下に追加"
   },
   "feature_customSpeedButtons_name": {
-    "message": "Speed Preset Buttons"
+    "message": "速度プリセットボタン"
   },
   "feature_daCacheTTL_desc": {
-    "message": "Hours to cache branding data locally before refreshing"
+    "message": "ブランディングデータをローカルにキャッシュしてから更新するまでの時間数"
   },
   "feature_daCacheTTL_name": {
-    "message": "Cache Duration"
+    "message": "キャッシュ期間"
   },
   "feature_daFallbackFormat_desc": {
-    "message": "Format the original title when no crowdsourced submission exists"
+    "message": "クラウドソースの投稿がない場合の元タイトルのフォーマット"
   },
   "feature_daFallbackFormat_name": {
-    "message": "Format Original Titles"
+    "message": "元タイトルのフォーマット"
   },
   "feature_daReplaceThumbs_desc": {
-    "message": "Replace clickbait thumbnails with video screenshots"
+    "message": "釣りサムネイルを動画のスクリーンショットに置換"
   },
   "feature_daReplaceThumbs_name": {
-    "message": "Replace Thumbnails"
+    "message": "サムネイル置換"
   },
   "feature_daReplaceTitles_desc": {
-    "message": "Replace clickbait titles with crowdsourced alternatives"
+    "message": "釣りタイトルをクラウドソースの代替タイトルに置換"
   },
   "feature_daReplaceTitles_name": {
-    "message": "Replace Titles"
+    "message": "タイトル置換"
   },
   "feature_daShowOriginalHover_desc": {
-    "message": "Hover over a replaced title to see the original"
+    "message": "置換されたタイトルにカーソルを合わせると元のタイトルを表示"
   },
   "feature_daShowOriginalHover_name": {
-    "message": "Show Original on Hover"
+    "message": "ホバーで元のタイトルを表示"
   },
   "feature_daTitleFormat_desc": {
-    "message": "How to format replacement titles"
+    "message": "置換タイトルのフォーマット方法"
   },
   "feature_daTitleFormat_name": {
-    "message": "Title Format"
+    "message": "タイトルフォーマット"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "釣りタイトルとサムネイルを DeArrow データベースのクラウドソース代替に置換"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
   },
   "feature_deArrowChannelOverridesPanel_desc": {
-    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
+    "message": "視聴ページのチャンネル名横に小さな DeArrow モードチップを追加。クリックで DeArrow → 元 → オフ → DeArrow を切り替え。オーバーライドはチャンネル ID ごとに保持されます。"
   },
   "feature_deArrowChannelOverridesPanel_name": {
-    "message": "DeArrow Per-Channel Overrides"
+    "message": "DeArrow チャンネル別オーバーライド"
   },
   "feature_dearrowPeekButton_desc": {
-    "message": "Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)"
+    "message": "Alt キーを押している間、元の YouTube タイトルを一時的に表示 (DeArrow/カスタムタイトルを一時解除)"
   },
   "feature_dearrowPeekButton_name": {
-    "message": "DeArrow Peek Button"
+    "message": "DeArrow ピークボタン"
   },
   "feature_deArrowVoting_desc": {
-    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles. Uses a local private userID. Off by default."
+    "message": "DeArrow のタイトル置換に投票。置換されたタイトルの横にサムズアップ/ダウンボタンを追加。ローカルのプライベート userID を使用。デフォルトオフ。"
   },
   "feature_deArrowVoting_name": {
-    "message": "DeArrow Voting"
+    "message": "DeArrow 投票"
   },
   "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "コンソールに詳細な診断ログを有効化"
   },
   "feature_debugMode_name": {
     "message": "デバッグモード"
   },
   "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars."
+    "message": "Astra が注入するサーフェス全体の行間、パディング、フォントサイズを縮小。YouTube のネイティブレイアウトは変更せず、Astra 独自のパネル、チップ、ツールバーのみに適用。"
   },
   "feature_denseMode_name": {
-    "message": "Dense Mode"
+    "message": "高密度モード"
   },
   "feature_diagnosticLog_desc": {
-    "message": "Capture a rolling log of YTKit errors and export as JSON for bug reports"
+    "message": "YTKit エラーのローリングログを記録し、バグ報告用に JSON としてエクスポート"
   },
   "feature_diagnosticLog_name": {
-    "message": "Diagnostic Error Log"
+    "message": "診断エラーログ"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "アクティブ再生 N 分ごとの休憩リマインダーと、任意の1日の視聴時間上限。タイマーは SPA ナビゲーション間で持続します。"
   },
   "feature_digitalWellbeing_name": {
     "message": "デジタルウェルビーイング"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "現在の動画が終了したとき次の動画が自動的に再生されるのを防止"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "自動再生なし"
+    "message": "次の動画の自動再生を無効化"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "ホーム、検索、登録チャンネルページで無限スクロールを「もっと読み込む」ボタンに置換"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "スクロール制限"
+    "message": "無限スクロールを無効化"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren’t officially supported."
+    "message": "YouTube による新規読み込み動画のダイナミックレンジ圧縮を停止。ベストエフォート — YouTube は公式にはサポートされていない movie_player API でゲインを制限します。"
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Disable Loudness Normalization"
+    "message": "ラウドネスノーマライゼーションを無効化"
   },
   "feature_disableMiniPlayer_desc": {
-    "message": "Prevent the mini player from appearing when navigating away"
+    "message": "ページ移動時にミニプレーヤーが表示されるのを防止"
   },
   "feature_disableMiniPlayer_name": {
-    "message": "Disable Mini Player"
+    "message": "ミニプレーヤーを無効化"
   },
   "feature_disablePlayOnHover_desc": {
-    "message": "Stop videos from playing when hovering over thumbnails"
+    "message": "サムネイルにカーソルを合わせたときの動画再生を停止"
   },
   "feature_disablePlayOnHover_name": {
-    "message": "Disable Hover Preview"
+    "message": "ホバープレビューを無効化"
   },
   "feature_disableSpaNavigation_desc": {
-    "message": "Force full page loads instead of YouTube's smooth transitions (fixes player sizing issues)"
+    "message": "YouTube のスムーズ遷移の代わりにフルページ読み込みを強制 (プレーヤーサイズの問題を修正)"
   },
   "feature_disableSpaNavigation_name": {
-    "message": "Disable SPA Navigation"
+    "message": "SPA ナビゲーションを無効化"
   },
   "feature_downloadAudioFormat_desc": {
-    "message": "Default format for audio-only downloads"
+    "message": "音声のみダウンロードのデフォルトフォーマット"
   },
   "feature_downloadAudioFormat_name": {
-    "message": "Audio Format"
+    "message": "音声フォーマット"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab."
+    "message": "Astra Downloader に到達できない場合、設定可能な Cobalt インスタンスにフォールバック。GitHub/フルプロファイルかつ Astra Downloader がオフラインの場合のみ動作。"
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt Fallback (GitHub profile)"
+    "message": "Cobalt フォールバック (GitHub プロファイル)"
   },
   "feature_downloadHealthPanel_desc": {
-    "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."
+    "message": "ダウンロードボタンの横に Astra Downloader の yt-dlp バージョン、ffmpeg の鮮度、PO Token プロバイダーの状態をピルとして表示。30 秒ごとに /health を読み取り。追加ストレージなし。"
   },
   "feature_downloadHealthPanel_name": {
-    "message": "Downloader Health Pills"
+    "message": "ダウンローダーヘルスピル"
   },
   "feature_downloadHistoryPanel_desc": {
-    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session."
+    "message": "視聴ページのダウンロードボタンの横に「履歴」ボタンを追加。Astra Downloader が記録した直近 50 件のダウンロードを一覧表示。ローカル専用。"
   },
   "feature_downloadHistoryPanel_name": {
-    "message": "Download History Panel"
+    "message": "ダウンロード履歴パネル"
   },
   "feature_downloadQuality_desc": {
-    "message": "Preferred video quality for downloads"
+    "message": "ダウンロードの優先動画画質"
   },
   "feature_downloadQuality_name": {
-    "message": "Download Quality"
+    "message": "ダウンロード画質"
   },
   "feature_downloadScreenshotFormat_desc": {
-    "message": "Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only."
+    "message": "プレーヤースクリーンショットボタンの出力フォーマット。PNG はロスレスでクリップボードにコピー可能。JPEG/WebP はファイルサイズが小さいがダウンロードのみ。"
   },
   "feature_downloadScreenshotFormat_name": {
-    "message": "Screenshot Format"
+    "message": "スクリーンショットフォーマット"
   },
   "feature_downloadStreamLinksPanel_desc": {
-    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off."
+    "message": "上級者向け: ytInitialPlayerResponse から解析した生のアダプティブ動画/音声ストリーム URL (mp4/webm) を公開。ローカル専用、テレメトリなし。yt-dlp / VLC への連携に便利。デフォルトオフ。"
   },
   "feature_downloadStreamLinksPanel_name": {
-    "message": "Stream Links Panel"
+    "message": "ストリームリンクパネル"
   },
   "feature_downloadSubtitlesWithScreenshot_desc": {
-    "message": "Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot."
+    "message": "スクリーンショットの下部に現在表示中の字幕行を焼き込み。デフォルトオフ。動画スクリーンショット機能が必要。"
   },
   "feature_downloadSubtitlesWithScreenshot_name": {
-    "message": "Include Subtitles In Screenshot"
+    "message": "スクリーンショットに字幕を含める"
   },
   "feature_downloadThumbnail_desc": {
-    "message": "Adds a button below the video to download the current video thumbnail in max resolution"
+    "message": "動画の下に最高解像度のサムネイルをダウンロードするボタンを追加"
   },
   "feature_downloadThumbnail_name": {
-    "message": "Download Thumbnail Button"
+    "message": "サムネイルダウンロードボタン"
   },
   "feature_downloadVideoFormat_desc": {
-    "message": "Default container format for video downloads"
+    "message": "動画ダウンロードのデフォルトコンテナフォーマット"
   },
   "feature_downloadVideoFormat_name": {
-    "message": "Video Format"
+    "message": "動画フォーマット"
   },
   "feature_enableCPU_Tamer_desc": {
-    "message": "Reduce CPU usage by throttling background timers via requestAnimationFrame gating"
+    "message": "requestAnimationFrame ゲーティングでバックグラウンドタイマーを抑制し、CPU 使用率を削減"
   },
   "feature_enableCPU_Tamer_name": {
     "message": "CPU Tamer"
   },
   "feature_enableHandleRevealer_desc": {
-    "message": "Show the original channel name next to @handle in comments"
+    "message": "コメント内の @ハンドル横に元のチャンネル名を表示"
   },
   "feature_enableHandleRevealer_name": {
-    "message": "Comment Handle Revealer"
+    "message": "コメントハンドル名表示"
   },
   "feature_expandVideoWidth_desc": {
-    "message": "Stretch the video to fill the space when sidebar is hidden"
+    "message": "サイドバーが非表示のとき動画を横幅いっぱいに引き伸ばす"
   },
   "feature_expandVideoWidth_name": {
-    "message": "Expand Video Width"
+    "message": "動画の横幅を拡大"
   },
   "feature_feedTriageProfile_desc": {
-    "message": "Flip on a curated focus recipe: hides Shorts, live streams, upcoming premieres, mixes, watched videos, and AI Summary. Toggling off restores prior values."
+    "message": "厳選されたフォーカスレシピをオンに: Shorts、ライブ配信、プレミア公開予定、ミックス、視聴済み動画、AI 要約を非表示。オフにすると以前の値を復元。"
   },
   "feature_feedTriageProfile_name": {
-    "message": "Feed Triage Profile"
+    "message": "フィードトリアージプロファイル"
   },
   "feature_fineSpeedControl_desc": {
-    "message": "Extend speed range to 0.1x-16x with 0.05x increments. Scroll on the speed badge to adjust."
+    "message": "速度範囲を 0.1x～16x に拡大し、0.05x 刻みで調整可能。速度バッジ上でスクロールして変更。"
   },
   "feature_fineSpeedControl_name": {
-    "message": "Fine Speed Control"
+    "message": "精密速度コントロール"
   },
   "feature_fitPlayerToWindow_desc": {
-    "message": "Make the video player fill the entire browser window"
+    "message": "動画プレーヤーをブラウザウィンドウ全体に拡大"
   },
   "feature_fitPlayerToWindow_name": {
-    "message": "Fit Player to Window"
+    "message": "プレーヤーをウィンドウにフィット"
   },
   "feature_floatingLogoOnWatch_desc": {
-    "message": "Replace native player right-controls with Astra quick links, local tools, and settings"
+    "message": "ネイティブのプレーヤー右コントロールを Astra のクイックリンク、ローカルツール、設定に置換"
   },
   "feature_floatingLogoOnWatch_name": {
-    "message": "Astra Player Dock"
+    "message": "Astra プレーヤードック"
   },
   "feature_focusedMode_desc": {
-    "message": "Hides everything except the video player and comments for a distraction-free experience"
+    "message": "動画プレーヤーとコメント以外をすべて非表示にし、集中視聴環境を提供"
   },
   "feature_focusedMode_name": {
-    "message": "Focused Mode"
+    "message": "集中モード"
   },
   "feature_forceDarkEverywhere_desc": {
-    "message": "Applies dark theme to YouTube pages that may not respect dark mode (settings, about, etc.)"
+    "message": "ダークモードに対応しない YouTube ページ（設定、概要など）にもダークテーマを適用"
   },
   "feature_forceDarkEverywhere_name": {
-    "message": "Force Dark on All YouTube Pages"
+    "message": "全 YouTube ページでダーク強制"
   },
   "feature_forcedColorsSupport_desc": {
-    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
+    "message": "常時有効: OS が強制カラーを報告した場合（Windows ハイコントラスト、GTK 強制カラー）、Astra が注入するコントロールはシステムカラーを自動使用し、テキストの可読性とフォーカスリングの視認性を確保。メディアクエリ自体がゲートであり、このトグルは設定の互換性のために残されています。"
   },
   "feature_forcedColorsSupport_name": {
-    "message": "Forced Colors / High Contrast Support"
+    "message": "強制カラー/ハイコントラストサポート"
   },
   "feature_forceH264_desc": {
-    "message": "Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge."
+    "message": "古いハードウェアでの CPU 負荷を低減するため H.264 (AVC) を VP9/AV1 より優先。最大画質が下がる可能性あり。MAIN ワールドコーデックブリッジを使用。"
   },
   "feature_forceH264_name": {
-    "message": "Force H.264 Codec"
+    "message": "H.264 コーデック強制"
   },
   "feature_forceStandardFps_desc": {
-    "message": "Dims HFR entries in the quality menu. For reliable 30fps, enable Force H.264 which caps at 1080p30."
+    "message": "画質メニューで HFR エントリを暗くします。安定した 30fps には、1080p30 に制限される Force H.264 を有効にしてください。"
   },
   "feature_forceStandardFps_name": {
-    "message": "Force Standard Frame Rate"
+    "message": "標準フレームレート強制"
   },
   "feature_frameByFrameButtons_desc": {
-    "message": "Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation"
+    "message": "正確なフレームナビゲーション用に、プレーヤーコントロールに戻る (,) と進む (.) のコマ送りボタンを追加"
   },
   "feature_frameByFrameButtons_name": {
-    "message": "Frame-by-Frame Buttons"
+    "message": "コマ送りボタン"
   },
   "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
+    "message": "動画上のどこでもダブルクリックでフルスクリーンを切り替え（デフォルトのシーク動作を置換）"
   },
   "feature_fullscreenOnDoubleClick_name": {
-    "message": "Double-Click Fullscreen"
+    "message": "ダブルクリックでフルスクリーン"
   },
   "feature_fullTitles_desc": {
-    "message": "Remove the 2-line clamp on thumbnail titles so long titles show in full"
+    "message": "サムネイルタイトルの 2 行制限を解除し、長いタイトルを全文表示"
   },
   "feature_fullTitles_name": {
-    "message": "Show Full Video Titles"
+    "message": "動画タイトルを全文表示"
   },
   "feature_fullWidthSubscriptions_desc": {
-    "message": "Expand the subscription grid to fill the page"
+    "message": "登録チャンネルのグリッドをページ全体に拡大"
   },
   "feature_fullWidthSubscriptions_name": {
-    "message": "Full-Width Subscriptions"
+    "message": "全幅登録チャンネル"
   },
   "feature_globalAriaLiveRegion_desc": {
-    "message": "Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes)."
+    "message": "ドキュメント本文に role=status / aria-live=polite の非表示コンテナを1つ配置。スクリーンリーダーが Astra の書き込み（トースト、フィルター結果、ダウンロード状態の変化）を読み上げます。"
   },
   "feature_globalAriaLiveRegion_name": {
-    "message": "Live Region For Toasts"
+    "message": "トースト用ライブリージョン"
   },
   "feature_grayscaleThumbnails_desc": {
-    "message": "Shows thumbnails in grayscale to reduce visual distraction — color restores on hover"
+    "message": "サムネイルをグレースケール表示して視覚的な気散りを軽減 — ホバーでカラーに戻ります"
   },
   "feature_grayscaleThumbnails_name": {
-    "message": "Grayscale Thumbnails"
+    "message": "グレースケールサムネイル"
   },
   "feature_hiddenActionButtonsManager_desc": {
-    "message": "Choose which action buttons to hide below videos"
+    "message": "動画の下に表示されるアクションボタンのうち、非表示にするものを選択"
   },
   "feature_hiddenActionButtonsManager_name": {
-    "message": "Hide Action Buttons"
+    "message": "アクションボタンを非表示"
   },
   "feature_hiddenChatElementsManager_desc": {
-    "message": "Choose which live chat elements to hide"
+    "message": "ライブチャットの要素のうち、非表示にするものを選択"
   },
   "feature_hiddenChatElementsManager_name": {
-    "message": "Hide Chat Elements"
+    "message": "チャット要素を非表示"
   },
   "feature_hiddenPlayerControlsManager_desc": {
-    "message": "Choose which player control buttons to hide"
+    "message": "プレーヤーコントロールボタンのうち、非表示にするものを選択"
   },
   "feature_hiddenPlayerControlsManager_name": {
-    "message": "Hide Player Controls"
+    "message": "プレーヤーコントロールを非表示"
   },
   "feature_hiddenWatchElementsManager_desc": {
-    "message": "Choose which elements to hide below videos"
+    "message": "動画の下に表示される要素のうち、非表示にするものを選択"
   },
   "feature_hiddenWatchElementsManager_name": {
-    "message": "Hide Watch Page Elements"
+    "message": "視聴ページの要素を非表示"
   },
   "feature_hideAirplayButton_desc": {
-    "message": "Remove the Airplay icon from the player controls"
+    "message": "プレーヤーコントロールから Airplay アイコンを削除"
   },
   "feature_hideAirplayButton_name": {
-    "message": "Hide Airplay Button"
+    "message": "Airplay ボタンを非表示"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
+    "message": "AI 生成の要約と Ask AI ボタンを削除"
   },
   "feature_hideAiSummary_name": {
-    "message": "Hide AI Summary"
+    "message": "AI 要約を非表示"
   },
   "feature_hideAutoplayToggle_desc": {
-    "message": "Removes the autoplay toggle switch from the player controls"
+    "message": "プレーヤーコントロールから自動再生トグルスイッチを削除"
   },
   "feature_hideAutoplayToggle_name": {
-    "message": "Hide Autoplay Toggle"
+    "message": "自動再生トグルを非表示"
   },
   "feature_hideChannelJoinButton_desc": {
-    "message": "Remove the Join/membership button on channel pages"
+    "message": "チャンネルページの参加/メンバーシップボタンを削除"
   },
   "feature_hideChannelJoinButton_name": {
-    "message": "Hide Channel Join Button"
+    "message": "チャンネル参加ボタンを非表示"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you're not subscribed to in your subscriptions feed"
+    "message": "登録チャンネルフィードで未登録チャンネルの動画を非表示"
   },
   "feature_hideCollaborations_name": {
-    "message": "Hide Collaborations"
+    "message": "コラボ動画を非表示"
   },
   "feature_hideCommentActionMenu_desc": {
-    "message": "Remove action menu from individual comments"
+    "message": "個別コメントのアクションメニューを削除"
   },
   "feature_hideCommentActionMenu_name": {
-    "message": "Hide Comment Actions"
+    "message": "コメントアクションを非表示"
   },
   "feature_hideCommentDislikeButton_desc": {
-    "message": "Remove the dislike button from comment actions since it adds no useful feedback"
+    "message": "有用なフィードバックにならないコメントの低評価ボタンを削除"
   },
   "feature_hideCommentDislikeButton_name": {
-    "message": "Hide Comment Dislike"
+    "message": "コメントの低評価を非表示"
   },
   "feature_hideCommentTeaser_desc": {
-    "message": "Remove the \"Scroll for comments\" prompt on watch pages"
+    "message": "視聴ページの「コメントを表示」プロンプトを削除"
   },
   "feature_hideCommentTeaser_name": {
-    "message": "Hide Comment Teaser"
+    "message": "コメントティーザーを非表示"
   },
   "feature_hideCreateButton_desc": {
-    "message": "Remove the \"Create\" button from the header toolbar"
+    "message": "ヘッダーツールバーから「作成」ボタンを削除"
   },
   "feature_hideCreateButton_name": {
-    "message": "Hide Create Button"
+    "message": "作成ボタンを非表示"
   },
   "feature_hideDescriptionExtras_desc": {
-    "message": "Remove extra elements in the description area"
+    "message": "説明文エリアの余分な要素を削除"
   },
   "feature_hideDescriptionExtras_name": {
-    "message": "Hide Description Extras"
+    "message": "説明文の付加情報を非表示"
   },
   "feature_hideDescriptionRow_desc": {
-    "message": "Remove the video description panel below the player"
+    "message": "プレーヤー下の動画説明文パネルを削除"
   },
   "feature_hideDescriptionRow_name": {
-    "message": "Hide Description"
+    "message": "説明文を非表示"
   },
   "feature_hideEndCards_desc": {
-    "message": "Removes the clickable end screen cards/annotations that overlay the video in the last seconds. Also covered by Hide Video End Content."
+    "message": "動画の最後の数秒間にオーバーレイ表示されるクリック可能なエンドスクリーンカード/注釈を削除。「動画終了コンテンツを非表示」にも含まれます。"
   },
   "feature_hideEndCards_name": {
-    "message": "Hide End Screen Cards"
+    "message": "エンドスクリーンカードを非表示"
   },
   "feature_hideFundraiser_desc": {
-    "message": "Remove fundraiser and donation badges"
+    "message": "募金活動と寄付バッジを削除"
   },
   "feature_hideFundraiser_name": {
-    "message": "Hide Fundraisers"
+    "message": "募金活動を非表示"
   },
   "feature_hideHashtags_desc": {
-    "message": "Remove hashtag links above video titles"
+    "message": "動画タイトル上のハッシュタグリンクを削除"
   },
   "feature_hideHashtags_name": {
-    "message": "Hide Hashtags"
+    "message": "ハッシュタグを非表示"
   },
   "feature_hideInfoCards_desc": {
-    "message": "Removes the \"i\" info card teasers and popups that appear during video playback"
+    "message": "動画再生中に表示される「i」情報カードのティーザーとポップアップを削除"
   },
   "feature_hideInfoCards_name": {
-    "message": "Hide Info Cards"
+    "message": "情報カードを非表示"
   },
   "feature_hideInfoPanels_desc": {
-    "message": "Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)"
+    "message": "動画の下に表示される Wikipedia/コンテキスト情報ボックスを削除（FEMA、COVID など）"
   },
   "feature_hideInfoPanels_name": {
-    "message": "Hide Info Panels"
+    "message": "情報パネルを非表示"
   },
   "feature_hideJumpAheadButton_desc": {
-    "message": "Remove the Jump Ahead prompt that appears after skipping on eligible videos."
+    "message": "対象動画でスキップ後に表示される「先にジャンプ」プロンプトを削除"
   },
   "feature_hideJumpAheadButton_name": {
-    "message": "Hide Jump Ahead"
+    "message": "先にジャンプを非表示"
   },
   "feature_hideLatestPosts_desc": {
-    "message": "Hide community posts and updates sections from feeds"
+    "message": "フィードからコミュニティ投稿と更新セクションを非表示"
   },
   "feature_hideLatestPosts_name": {
-    "message": "Hide Latest Posts"
+    "message": "最新の投稿を非表示"
   },
   "feature_hideLiveChatEngagement_desc": {
-    "message": "Remove engagement prompts in live chat"
+    "message": "ライブチャットのエンゲージメントプロンプトを削除"
   },
   "feature_hideLiveChatEngagement_name": {
-    "message": "Hide Chat Engagement"
+    "message": "チャットエンゲージメントを非表示"
   },
   "feature_hideMembersOnly_desc": {
-    "message": "Hide members-only feed cards on Home and Subscriptions"
+    "message": "ホームと登録チャンネルのメンバー限定フィードカードを非表示"
   },
   "feature_hideMembersOnly_name": {
-    "message": "Hide Members Only"
+    "message": "メンバー限定を非表示"
   },
   "feature_hideMerchShelf_desc": {
-    "message": "Remove merchandise promotions below videos"
+    "message": "動画の下のグッズプロモーションを削除"
   },
   "feature_hideMerchShelf_name": {
-    "message": "Hide Merch Shelf"
+    "message": "グッズ棚を非表示"
   },
   "feature_hideNewsHome_desc": {
-    "message": "Hide news sections from the homepage"
+    "message": "ホームページからニュースセクションを非表示"
   },
   "feature_hideNewsHome_name": {
-    "message": "Hide News Section"
+    "message": "ニュースセクションを非表示"
   },
   "feature_hideNotificationBadge_desc": {
-    "message": "Removes the red notification count badge from the bell icon"
+    "message": "ベルアイコンの赤い通知カウントバッジを削除"
   },
   "feature_hideNotificationBadge_name": {
-    "message": "Hide Notification Badge"
+    "message": "通知バッジを非表示"
   },
   "feature_hideNotificationButton_desc": {
-    "message": "Remove the notification bell icon from the header"
+    "message": "ヘッダーから通知ベルアイコンを削除"
   },
   "feature_hideNotificationButton_name": {
-    "message": "Hide Notification Bell"
+    "message": "通知ベルを非表示"
   },
   "feature_hidePaidContentOverlay_desc": {
-    "message": "Remove \"Includes paid promotion\" overlays on thumbnails and watch pages"
+    "message": "サムネイルと視聴ページの「有料プロモーションを含みます」オーバーレイを削除"
   },
   "feature_hidePaidContentOverlay_name": {
-    "message": "Hide Promotion Badges"
+    "message": "プロモーションバッジを非表示"
   },
   "feature_hidePaidPromotionWatch_desc": {
-    "message": "Remove \"paid promotion\" labels on watch pages"
+    "message": "視聴ページの「有料プロモーション」ラベルを削除"
   },
   "feature_hidePaidPromotionWatch_name": {
-    "message": "Hide Paid Promotion"
+    "message": "有料プロモーションを非表示"
   },
   "feature_hidePinnedComments_desc": {
-    "message": "Remove pinned comments from the comments section"
+    "message": "コメントセクションからピン留めコメントを削除"
   },
   "feature_hidePinnedComments_name": {
-    "message": "Hide Pinned Comments"
+    "message": "ピン留めコメントを非表示"
   },
   "feature_hidePlayables_desc": {
-    "message": "Hide YouTube Playables gaming content from feeds"
+    "message": "フィードから YouTube Playables ゲームコンテンツを非表示"
   },
   "feature_hidePlayables_name": {
-    "message": "Hide Playables"
+    "message": "Playables を非表示"
   },
   "feature_hidePlaylistsHome_desc": {
-    "message": "Hide playlist sections from the homepage"
+    "message": "ホームページからプレイリストセクションを非表示"
   },
   "feature_hidePlaylistsHome_name": {
-    "message": "Hide Playlist Shelves"
+    "message": "プレイリスト棚を非表示"
   },
   "feature_hideQueueOnThumbnails_desc": {
-    "message": "Remove the \"Add to queue\" overlay button that appears on thumbnail hover"
+    "message": "サムネイルホバー時に表示される「キューに追加」オーバーレイボタンを削除"
   },
   "feature_hideQueueOnThumbnails_name": {
-    "message": "Hide \"Add to Queue\" on Thumbnails"
+    "message": "サムネイルの「キューに追加」を非表示"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "視聴ページの関連動画パネルを削除"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "関連を非表示"
+    "message": "関連動画を非表示"
   },
   "feature_hideSidebar_desc": {
-    "message": "Remove the left navigation sidebar completely"
+    "message": "左ナビゲーションサイドバーを完全に削除"
   },
   "feature_hideSidebar_name": {
-    "message": "Hide Sidebar"
+    "message": "サイドバーを非表示"
   },
   "feature_hideSubscriptionOptions_desc": {
-    "message": "Remove the \"Latest\" header and view toggles on subscriptions"
+    "message": "登録チャンネルページの「最新」ヘッダーと表示切り替えを削除"
   },
   "feature_hideSubscriptionOptions_name": {
-    "message": "Hide Layout Options"
+    "message": "レイアウトオプションを非表示"
   },
   "feature_hideVideoEndContent_desc": {
-    "message": "Remove end cards, end screen, annotations, and video grid when videos finish. Superset of Hide End Screen Cards."
+    "message": "動画終了時にエンドカード、エンドスクリーン、注釈、動画グリッドを削除。「エンドスクリーンカードを非表示」の上位互換。"
   },
   "feature_hideVideoEndContent_name": {
-    "message": "Hide Video End Content"
+    "message": "動画終了コンテンツを非表示"
   },
   "feature_hideVideosFromHome_desc": {
-    "message": "Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking."
+    "message": "フィードから動画/チャンネルを非表示。キーワードフィルター、再生時間フィルター、チャンネルブロックを含む。"
   },
   "feature_hideVideosFromHome_name": {
-    "message": "Video Hider"
+    "message": "動画フィルター"
   },
   "feature_hideVoiceSearch_desc": {
-    "message": "Remove the microphone icon from the search bar"
+    "message": "検索バーからマイクアイコンを削除"
   },
   "feature_hideVoiceSearch_name": {
-    "message": "Hide Voice Search"
+    "message": "音声検索を非表示"
   },
   "feature_hideWatchedVideos_desc": {
-    "message": "Dim or hide videos with a red progress bar (already watched) from feeds"
+    "message": "フィードから赤いプログレスバー付き（視聴済み）の動画を暗くしたり非表示にする"
   },
   "feature_hideWatchedVideos_name": {
-    "message": "Hide Watched Videos"
+    "message": "視聴済み動画を非表示"
   },
   "feature_homepageGridAlign_desc": {
-    "message": "Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights"
+    "message": "ホームページでサムネイルグリッドを均一化 — タイトル/メタデータの高さの違いによる行のずれを防止"
   },
   "feature_homepageGridAlign_name": {
-    "message": "Homepage Grid Align"
+    "message": "ホームページグリッド整列"
   },
   "feature_initialPlayerStateBackground_desc": {
-    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube’s default. Useful for queueing-up multiple tabs."
+    "message": "バックグラウンドタブで視聴ページを開いたとき、YouTube のデフォルトに関わらず再生または一時停止。複数タブを先に開いておく場合に便利。"
   },
   "feature_initialPlayerStateBackground_name": {
-    "message": "Initial Player State (Background)"
+    "message": "初期プレーヤー状態（バックグラウンド）"
   },
   "feature_initialPlayerStateForeground_desc": {
-    "message": "When opening a watch page in the foreground, play or pause regardless of the previous session’s autoplay choice. “Inherit” leaves YouTube’s native behavior alone."
+    "message": "フォアグラウンドで視聴ページを開いたとき、前回の自動再生設定に関わらず再生または一時停止。「継承」は YouTube のネイティブ動作を維持。"
   },
   "feature_initialPlayerStateForeground_name": {
-    "message": "Initial Player State (Foreground)"
+    "message": "初期プレーヤー状態（フォアグラウンド）"
   },
   "feature_keyMoments_desc": {
-    "message": "Highlights chapter markers on the progress bar with colored segments for quick visual navigation"
+    "message": "プログレスバー上のチャプターマーカーを色分けしたセグメントでハイライトし、素早い視覚ナビゲーションを実現"
   },
   "feature_keyMoments_name": {
-    "message": "Key Moments Highlights"
+    "message": "キーモメントハイライト"
   },
   "feature_likeViewRatio_desc": {
-    "message": "Shows the like-to-view percentage next to the view count on watch pages"
+    "message": "視聴ページの再生回数の横に高評価/再生回数の割合を表示"
   },
   "feature_likeViewRatio_name": {
-    "message": "Like-to-View Ratio"
+    "message": "高評価/再生回数比"
   },
   "feature_localAiSummary_desc": {
-    "message": "Use Chrome’s built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
+    "message": "利用可能な場合に Chrome 内蔵の Summarizer API を使用。利用不可時は明確なメッセージを表示し、リモートプロバイダーに暗黙でルーティングしません。既存の AI 要約ボタンの横に「ローカル要約」ボタンを追加。"
   },
   "feature_localAiSummary_name": {
-    "message": "Local AI Summary (browser built-in)"
+    "message": "ローカル AI 要約（ブラウザ内蔵）"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Ask questions about the current video transcript using Chrome Prompt API (Gemini Nano). Runs on-device, no API keys needed."
+    "message": "Chrome Prompt API (Gemini Nano) を使って現在の動画の文字起こしに質問。デバイス上で動作し、API キー不要。"
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Transcript Q&A (browser built-in)"
+    "message": "文字起こし Q&A（ブラウザ内蔵）"
   },
   "feature_logoToSubscriptions_desc": {
-    "message": "Point the native YouTube home mark to your subscriptions feed"
+    "message": "YouTube ロゴのリンク先を登録チャンネルフィードに変更"
   },
   "feature_logoToSubscriptions_name": {
-    "message": "Logo Click → Subscriptions"
+    "message": "ロゴクリック → 登録チャンネル"
   },
   "feature_lowPowerProfile_desc": {
-    "message": "When on, disables CPU-heavy features (cinema ambient glow, visual filters, playback stats overlay, monetization indicator, transcript index, transcript viewer, blue light filter) and bumps storage LRU sweep cadence. Toggle off to restore previous values from the backup snapshot."
+    "message": "有効にすると、CPU 負荷の高い機能（シネマアンビエントグロー、ビジュアルフィルター、再生統計オーバーレイ、収益化インジケーター、文字起こしインデックス、文字起こしビューアー、ブルーライトフィルター）を無効化し、ストレージ LRU スイープの頻度を上げます。オフにするとバックアップスナップショットから以前の値を復元。"
   },
   "feature_lowPowerProfile_name": {
-    "message": "Low Power Profile"
+    "message": "省電力プロファイル"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "動画を過ぎてスクロールしたときにフローティングミニプレーヤーバーを表示"
   },
   "feature_miniPlayerBar_name": {
     "message": "ミニプレーヤーバー"
   },
   "feature_monetizationIndicator_desc": {
-    "message": "Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available."
+    "message": "タイトルの下に、動画が収益化されているか（広告/スポンサーオーバーレイがあるか）を示すピルを追加。ヒューリスティック — 利用可能な場合、有料プロモーションオーバーレイ、スポンサーカード、SponsorBlock カテゴリデータを使用。"
   },
   "feature_monetizationIndicator_name": {
-    "message": "Monetization Indicator"
+    "message": "収益化インジケーター"
   },
   "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up"
+    "message": "持続的再生速度が有効のとき、音楽カテゴリの動画を 1x に維持して楽曲の速度変更を防止"
   },
   "feature_musicVideoSpeedLock_name": {
-    "message": "Lock 1× Speed on Music Videos"
+    "message": "音楽動画で 1x 速度をロック"
   },
   "feature_newPlayerUiRestore_desc": {
-    "message": "Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
+    "message": "YouTube の新プレーヤー UI 要素（Delhi モダンオーバーフローパネル、ピルアクションサーフェス）を非表示。よりコンパクトなプログレスバーと元のスタイルのコントロールを復元。"
   },
   "feature_newPlayerUiRestore_name": {
-    "message": "Restore Classic Player Chrome"
+    "message": "クラシックプレーヤークロームを復元"
   },
   "feature_noAmbientMode_desc": {
-    "message": "Turn off the glowing background effect that matches video colors"
+    "message": "動画の色に合わせた発光背景エフェクトをオフ"
   },
   "feature_noAmbientMode_name": {
-    "message": "Disable Ambient Mode"
+    "message": "アンビエントモードを無効化"
   },
   "feature_noFrostedGlass_desc": {
-    "message": "Remove blur effects from UI elements"
+    "message": "UI 要素からブラーエフェクトを削除"
   },
   "feature_noFrostedGlass_name": {
-    "message": "Disable Frosted Glass"
+    "message": "すりガラス効果を無効化"
   },
   "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
+    "message": "YouTube が AI 吹き替え音声トラックを自動選択したとき（例: 韓国語の動画に英語吹き替え）、一度だけトーストを表示。プレーヤー設定から手動で元のトラックに切り替えできます。"
   },
   "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notify on AI-dubbed audio"
+    "message": "AI 吹き替え音声の通知"
   },
   "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
+    "message": "動画サムネイルに X ボタンを追加し、YouTube のフィードバック API で動画を素早く非表示"
   },
   "feature_notInterestedButton_name": {
-    "message": "\"Not Interested\" on Thumbnails"
+    "message": "サムネイルに「興味なし」ボタン"
   },
   "feature_nyanCatProgressBar_desc": {
-    "message": "Replace the video progress bar with a Nyan Cat animation"
+    "message": "動画のプログレスバーを Nyan Cat アニメーションに置換"
   },
   "feature_nyanCatProgressBar_name": {
-    "message": "Nyan Cat Progress Bar"
+    "message": "Nyan Cat プログレスバー"
   },
   "feature_oledTheme_desc": {
-    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes."
+    "message": "--yt-sys-color-baseline トークンによる真の OLED ブラック (#000) 背景。YouTube のネイティブテーマ切り替えを乗り越えます。サーフェスクラスではなくトークン自体をフックするため。"
   },
   "feature_oledTheme_name": {
-    "message": "OLED Theme"
+    "message": "OLED テーマ"
   },
   "feature_openInAlternativeFrontend_desc": {
-    "message": "Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting."
+    "message": "プレーヤーの横に、設定済みの代替フロントエンド (Invidious / Piped / FreeTube) で現在の動画を開くボタンを追加。デフォルトインスタンスは yewtu.be。alternativeFrontendInstance 設定で変更可能。"
   },
   "feature_openInAlternativeFrontend_name": {
-    "message": "Open In Alternative Frontend"
+    "message": "代替フロントエンドで開く"
   },
   "feature_openInNewTab_desc": {
-    "message": "Makes video links on the home/subscriptions page open in a new tab instead of navigating away"
+    "message": "ホーム/登録チャンネルページの動画リンクをページ遷移せずに新しいタブで開く"
   },
   "feature_openInNewTab_name": {
-    "message": "Open Videos in New Tab"
+    "message": "新しいタブで動画を開く"
   },
   "feature_pauseOtherTabs_desc": {
-    "message": "When a video starts playing, pause YouTube in all other tabs"
+    "message": "動画の再生を開始したとき、他の全タブの YouTube を一時停止"
   },
   "feature_pauseOtherTabs_name": {
-    "message": "Pause Other Tabs on Play"
+    "message": "再生時に他のタブを一時停止"
   },
   "feature_pcHide_autoplay_desc": {
-    "message": "Hide autoplay toggle from player"
+    "message": "プレーヤーから自動再生トグルを非表示"
   },
   "feature_pcHide_autoplay_name": {
-    "message": "Autoplay Toggle"
+    "message": "自動再生トグル"
   },
   "feature_pcHide_captions_desc": {
-    "message": "Hide captions overlay on video"
+    "message": "動画上の字幕オーバーレイを非表示"
   },
   "feature_pcHide_captions_name": {
-    "message": "Captions Display"
+    "message": "字幕表示"
   },
   "feature_pcHide_fullscreen_desc": {
-    "message": "Hide fullscreen button from player"
+    "message": "プレーヤーからフルスクリーンボタンを非表示"
   },
   "feature_pcHide_fullscreen_name": {
-    "message": "Fullscreen Button"
+    "message": "フルスクリーンボタン"
   },
   "feature_pcHide_miniplayer_desc": {
-    "message": "Hide miniplayer button from player"
+    "message": "プレーヤーからミニプレーヤーボタンを非表示"
   },
   "feature_pcHide_miniplayer_name": {
-    "message": "Miniplayer Button"
+    "message": "ミニプレーヤーボタン"
   },
   "feature_pcHide_next_desc": {
-    "message": "Hide next video button from player"
+    "message": "プレーヤーから次の動画ボタンを非表示"
   },
   "feature_pcHide_next_name": {
-    "message": "Next Video Button"
+    "message": "次の動画ボタン"
   },
   "feature_pcHide_pip_desc": {
-    "message": "Hide PiP button from player"
+    "message": "プレーヤーから PiP ボタンを非表示"
   },
   "feature_pcHide_pip_name": {
-    "message": "Picture-in-Picture"
+    "message": "ピクチャーインピクチャー"
   },
   "feature_pcHide_settings_desc": {
-    "message": "Hide settings gear from player controls"
+    "message": "プレーヤーコントロールから設定ギアを非表示"
   },
   "feature_pcHide_settings_name": {
-    "message": "Settings Gear"
+    "message": "設定ギア"
   },
   "feature_pcHide_subtitles_desc": {
-    "message": "Hide subtitles button from player"
+    "message": "プレーヤーから字幕ボタンを非表示"
   },
   "feature_pcHide_subtitles_name": {
-    "message": "Subtitles Button"
+    "message": "字幕ボタン"
   },
   "feature_pcHide_theater_desc": {
-    "message": "Hide theater mode button from player"
+    "message": "プレーヤーからシアターモードボタンを非表示"
   },
   "feature_pcHide_theater_name": {
-    "message": "Theater Mode Button"
+    "message": "シアターモードボタン"
   },
   "feature_pcHide_ytLogo_desc": {
-    "message": "Hide the native brand button from player controls"
+    "message": "プレーヤーコントロールからネイティブブランドボタンを非表示"
   },
   "feature_pcHide_ytLogo_name": {
-    "message": "Native Brand Button"
+    "message": "ネイティブブランドボタン"
   },
   "feature_perChannelIntroOutro_desc": {
-    "message": "Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools → Set Intro/Outro). Stored under perChannelIntroOutroData."
+    "message": "指定チャンネルのすべての動画で最初の N 秒と最後の M 秒をスキップ。視聴ページから「ツール → イントロ/アウトロを設定」でチャンネルごとにオフセットを設定。perChannelIntroOutroData に保存。"
   },
   "feature_perChannelIntroOutro_name": {
-    "message": "Per-Channel Intro/Outro Skip"
+    "message": "チャンネル別イントロ/アウトロスキップ"
   },
   "feature_perChannelSpeed_desc": {
-    "message": "Remember and auto-apply preferred playback speed for each channel"
+    "message": "チャンネルごとの優先再生速度を記憶し自動適用"
   },
   "feature_perChannelSpeed_name": {
-    "message": "Per-Channel Speed Memory"
+    "message": "チャンネル別速度メモリ"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "優先する再生速度をグローバルに記憶し、すべての動画に自動適用"
   },
   "feature_persistentSpeed_name": {
-    "message": "持続的な速度"
+    "message": "持続的な再生速度"
   },
   "feature_pipButton_desc": {
-    "message": "Adds a one-click PiP button to the player controls for native browser Picture-in-Picture"
+    "message": "ブラウザネイティブのピクチャーインピクチャー用にワンクリック PiP ボタンをプレーヤーコントロールに追加"
   },
   "feature_pipButton_name": {
-    "message": "Picture-in-Picture Button"
+    "message": "ピクチャーインピクチャーボタン"
   },
   "feature_playbackSpeedOSD_desc": {
-    "message": "Show speed overlay on the video player (like VLC) instead of corner toast"
+    "message": "コーナーのトーストの代わりに、VLC のように動画プレーヤー上に速度オーバーレイを表示"
   },
   "feature_playbackSpeedOSD_name": {
-    "message": "Speed Change OSD"
+    "message": "速度変更 OSD"
   },
   "feature_playbackStatsOverlay_desc": {
-    "message": "Shows video codec, resolution, bitrate, and dropped frame count as a togglable overlay"
+    "message": "動画コーデック、解像度、ビットレート、ドロップフレーム数を切り替え可能なオーバーレイで表示"
   },
   "feature_playbackStatsOverlay_name": {
-    "message": "Playback Stats Overlay"
+    "message": "再生統計オーバーレイ"
   },
   "feature_playlistEnhancer_desc": {
-    "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
+    "message": "プレイリストパネルにシャッフル、コピー、重複非表示ツールを追加"
   },
   "feature_playlistEnhancer_name": {
-    "message": "Playlist Enhancer"
+    "message": "プレイリスト強化"
   },
   "feature_playlistQuickRemove_desc": {
-    "message": "Show a trash icon on each item in playlists you own for one-click removal"
+    "message": "自分のプレイリスト内の各アイテムにゴミ箱アイコンを表示し、ワンクリックで削除"
   },
   "feature_playlistQuickRemove_name": {
-    "message": "Playlist Quick-Remove Overlay"
+    "message": "プレイリストクイック削除オーバーレイ"
   },
   "feature_playlistSearch_desc": {
-    "message": "Adds a search input above playlist panels to filter items by title"
+    "message": "プレイリストパネルの上に検索入力を追加し、タイトルでアイテムをフィルター"
   },
   "feature_playlistSearch_name": {
-    "message": "Playlist Search"
+    "message": "プレイリスト検索"
   },
   "feature_popOutPlayer_desc": {
-    "message": "Detach the video into a resizable floating Picture-in-Picture window with transport controls"
+    "message": "動画をリサイズ可能なフローティングのピクチャーインピクチャーウィンドウに切り離し、再生コントロール付き"
   },
   "feature_popOutPlayer_name": {
-    "message": "Pop-Out Player"
+    "message": "ポップアウトプレーヤー"
   },
   "feature_preciseViewCounts_desc": {
-    "message": "Show full view counts (1,234,567) instead of truncated (1.2M)"
+    "message": "省略された再生回数（1.2M）の代わりに完全な数値（1,234,567）を表示"
   },
   "feature_preciseViewCounts_name": {
-    "message": "Precise View Counts"
+    "message": "正確な再生回数"
   },
   "feature_preloadComments_desc": {
-    "message": "Eagerly load the comment section so it is ready when you scroll down"
+    "message": "スクロールしたときにすぐ表示できるよう、コメントセクションを先読み"
   },
   "feature_preloadComments_name": {
-    "message": "Preload Comments"
+    "message": "コメントの先読み"
   },
   "feature_premiumLiveChat_desc": {
-    "message": "Refine live chat with a polished header, elevated message rows, and a premium composer."
+    "message": "洗練されたヘッダー、強化されたメッセージ行、プレミアムな入力欄でライブチャットをリファイン。"
   },
   "feature_premiumLiveChat_name": {
-    "message": "Premium Live Chat"
+    "message": "プレミアムライブチャット"
   },
   "feature_presetPowerUser_desc": {
-    "message": "Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values."
+    "message": "機能最大密度: 再生統計、持続的速度、精密速度コントロール、再生再開、ミニプレーヤーバー、集中モード、A-B ループ。オフにすると以前の値を復元。"
   },
   "feature_presetPowerUser_name": {
-    "message": "Power User Preset"
+    "message": "パワーユーザープリセット"
   },
   "feature_presetPrivacy_desc": {
-    "message": "Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values."
+    "message": "プライバシー重視バンドル: クリーンな共有 URL、トラッキングチップ非表示、無限スクロールブロック、SPA ナビゲーション無効化。オフにすると以前の値を復元。"
   },
   "feature_presetPrivacy_name": {
-    "message": "Privacy Preset"
+    "message": "プライバシープリセット"
   },
   "feature_presetResearcher_desc": {
-    "message": "Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values."
+    "message": "リサーチ/学習バンドル: 文字起こしビューアー、タイムスタンプブックマーク、視聴時間トラッカー、AI 要約、コメント検索。オフにすると以前の値を復元。"
   },
   "feature_presetResearcher_name": {
-    "message": "Researcher Preset"
+    "message": "リサーチャープリセット"
   },
   "feature_preventAutoplay_desc": {
-    "message": "Stop videos from automatically playing on page load"
+    "message": "ページ読み込み時の動画の自動再生を停止"
   },
   "feature_preventAutoplay_name": {
-    "message": "Prevent Autoplay"
+    "message": "自動再生の防止"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "Set different default qualities for normal / theater / fullscreen / background / embed contexts. ISOLATED-world detects the context and writes data-ytkit-quality-context on <html>; the MAIN-world bridge re-applies the matching quality via movie_player.setPlaybackQualityRange()."
+    "message": "通常/シアター/フルスクリーン/バックグラウンド/埋め込みのコンテキストごとに異なるデフォルト画質を設定。ISOLATED ワールドがコンテキストを検出し <html> に data-ytkit-quality-context を書き込み、MAIN ワールドブリッジが movie_player.setPlaybackQualityRange() で対応する画質を再適用。"
   },
   "feature_qualityProfileMatrix_name": {
-    "message": "Per-Context Quality"
+    "message": "コンテキスト別画質"
   },
   "feature_quickLinkEditor_desc": {
-    "message": "Customize the Astra launcher menu. One link per line: Label | URL"
+    "message": "Astra ランチャーメニューをカスタマイズ。1行に1リンク: ラベル | URL"
   },
   "feature_quickLinkEditor_name": {
-    "message": "Edit Launcher Links"
+    "message": "ランチャーリンクの編集"
   },
   "feature_quickLinkMenu_desc": {
-    "message": "Adds a compact quick-links menu in the masthead with customizable links"
+    "message": "マストヘッドにカスタマイズ可能なリンク付きのコンパクトなクイックリンクメニューを追加"
   },
   "feature_quickLinkMenu_name": {
-    "message": "Quick Links"
+    "message": "クイックリンク"
   },
   "feature_reactionSpammer_desc": {
-    "message": "Select live chat reactions and send them in a randomized loop."
+    "message": "ライブチャットのリアクションを選択してランダムなループで送信。"
   },
   "feature_reactionSpammer_name": {
-    "message": "Reaction Spammer"
+    "message": "リアクション連打"
   },
   "feature_rectangularizeYouTube_desc": {
-    "message": "Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
+    "message": "YouTube のピル型/スタジアム型/完全丸角の背景を除去。border-radius が 12px を超える背景を 8px にクランプ。アバターとプログレスリングは円形を維持。"
   },
   "feature_rectangularizeYouTube_name": {
-    "message": "Rectangularize UI"
+    "message": "UI の角丸除去"
   },
   "feature_redditComments_desc": {
-    "message": "Find Reddit discussions mentioning the current video (button in secondary sidebar)"
+    "message": "現在の動画に言及している Reddit のディスカッションを検索（セカンダリサイドバーにボタンを追加）"
   },
   "feature_redditComments_name": {
-    "message": "Reddit Comments"
+    "message": "Reddit コメント"
   },
   "feature_redirectHomeToSubs_desc": {
-    "message": "Automatically redirect the YouTube homepage to your subscriptions feed"
+    "message": "YouTube ホームページを登録チャンネルフィードに自動リダイレクト"
   },
   "feature_redirectHomeToSubs_name": {
-    "message": "Redirect Home to Subscriptions"
+    "message": "ホームを登録チャンネルにリダイレクト"
   },
   "feature_redirectShorts_desc": {
-    "message": "Open Shorts in the standard video player"
+    "message": "Shorts を通常の動画プレーヤーで開く"
   },
   "feature_redirectShorts_name": {
-    "message": "Redirect Shorts"
+    "message": "Shorts リダイレクト"
   },
   "feature_redirectToVideosTab_desc": {
-    "message": "Open channel pages directly on the Videos tab"
+    "message": "チャンネルページを直接「動画」タブで開く"
   },
   "feature_redirectToVideosTab_name": {
-    "message": "Channels → Videos Tab"
+    "message": "チャンネル → 動画タブ"
   },
   "feature_reducedMotion_desc": {
-    "message": "Forces every Astra-injected animation, transition, and scroll behavior to be near-instant. Respects the OS prefers-reduced-motion setting automatically; this toggle adds an unconditional override on top."
+    "message": "Astra が注入するすべてのアニメーション、トランジション、スクロール動作をほぼ瞬時にします。OS の prefers-reduced-motion 設定を自動で尊重しますが、このトグルはその上に無条件のオーバーライドを追加。"
   },
   "feature_reducedMotion_name": {
-    "message": "Reduced Motion (strong)"
+    "message": "モーション軽減（強）"
   },
   "feature_remainingTimeDisplay_desc": {
-    "message": "Show time remaining next to current time in the player, adjusted for playback speed"
+    "message": "プレーヤーの現在時刻の横に、再生速度を考慮した残り時間を表示"
   },
   "feature_remainingTimeDisplay_name": {
-    "message": "Remaining Time Display"
+    "message": "残り時間表示"
   },
   "feature_rememberVolume_desc": {
-    "message": "Persist your volume level across videos and sessions"
+    "message": "音量レベルを動画やセッションを超えて保持"
   },
   "feature_rememberVolume_name": {
-    "message": "Remember Volume"
+    "message": "音量を記憶"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "フィードとおすすめからすべての Shorts 動画を非表示"
   },
   "feature_removeAllShorts_name": {
     "message": "Shorts を非表示"
   },
   "feature_researchSpacedReview_desc": {
-    "message": "Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links."
+    "message": "学習/仕事モードのデータを Markdown または CSV にエクスポート: 視聴時間合計、集中モード状態、デジタルウェルビーイング状態、ディープリンク付きタイムスタンプブックマーク。"
   },
   "feature_researchSpacedReview_name": {
-    "message": "Study / Work Export"
+    "message": "学習/仕事エクスポート"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes the transcript of every video you open into a local IndexedDB. Adds a global \"Search Transcripts\" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry."
+    "message": "開いた動画の文字起こしをローカル IndexedDB にインデックス。ポップアップまたは window.__ytkitSearchTranscripts(query) からアクセスできるグローバル「文字起こし検索」パネルを追加。インデックスは設定からクリア可能。テレメトリなし。"
   },
   "feature_researchTranscriptIndex_name": {
-    "message": "Transcript Search Index"
+    "message": "文字起こし検索インデックス"
   },
   "feature_researchTranscriptSearchPanel_desc": {
-    "message": "Adds a \"Search transcripts\" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off."
+    "message": "視聴ページに「文字起こし検索」ボタンを追加し、ローカル IndexedDB の文字起こしインデックスに対する検索 UI を開きます。文字起こし検索インデックスが有効であることが必要。デフォルトオフ。"
   },
   "feature_researchTranscriptSearchPanel_name": {
-    "message": "Transcript Search Panel"
+    "message": "文字起こし検索パネル"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+    "message": "Astra Deck がデフォルトで非表示にするチャンネル/コメントのアバターやホームフィード棚を表示。"
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restore Native YouTube UI"
+    "message": "ネイティブ YouTube UI を復元"
   },
   "feature_resumePlayback_desc": {
-    "message": "Remember where you stopped watching and automatically resume from that point"
+    "message": "前回の視聴停止位置を記憶し、自動的にその地点から再開"
   },
   "feature_resumePlayback_name": {
-    "message": "Resume Playback Position"
+    "message": "再生位置の再開"
   },
   "feature_returnDislike_desc": {
-    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
+    "message": "Return YouTube Dislike の公開 API で推定低評価数を復元。ローカルにキャッシュし、100 req/min の予算を遵守。Cookie 送信なし。デフォルトオフ。"
   },
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
   "feature_reversePlaylist_desc": {
-    "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
+    "message": "プレイリストパネルに「逆順」ボタンを追加し、古い順から再生"
   },
   "feature_reversePlaylist_name": {
-    "message": "Reverse Playlist Button"
+    "message": "プレイリスト逆順ボタン"
   },
   "feature_rssFeedLink_desc": {
-    "message": "Show an RSS feed link on channel pages for subscribing via RSS readers"
+    "message": "チャンネルページに RSS フィードリンクを表示し、RSS リーダーで購読可能に"
   },
   "feature_rssFeedLink_name": {
-    "message": "RSS Feed Link"
+    "message": "RSS フィードリンク"
   },
   "feature_sbCat_filler_desc": {
-    "message": "Tangential or filler content"
+    "message": "本題から逸れた内容や水増しコンテンツ"
   },
   "feature_sbCat_filler_name": {
-    "message": "Skip Filler"
+    "message": "水増しをスキップ"
   },
   "feature_sbCat_interaction_desc": {
-    "message": "\"Like, subscribe, comment\" reminders"
+    "message": "「高評価、チャンネル登録、コメント」などの呼びかけ"
   },
   "feature_sbCat_interaction_name": {
-    "message": "Skip Interaction Reminders"
+    "message": "交流リマインダーをスキップ"
   },
   "feature_sbCat_intro_desc": {
-    "message": "Intro animations and branding"
+    "message": "イントロアニメーションとブランディング"
   },
   "feature_sbCat_intro_name": {
-    "message": "Skip Intros"
+    "message": "イントロをスキップ"
   },
   "feature_sbCat_music_offtopic_desc": {
-    "message": "Non-music sections in music videos"
+    "message": "ミュージックビデオの非音楽セクション"
   },
   "feature_sbCat_music_offtopic_name": {
-    "message": "Skip Non-Music"
+    "message": "非音楽パートをスキップ"
   },
   "feature_sbCat_outro_desc": {
-    "message": "Endcards and outro sequences"
+    "message": "エンドカードとアウトロシーケンス"
   },
   "feature_sbCat_outro_name": {
-    "message": "Skip Outros"
+    "message": "アウトロをスキップ"
   },
   "feature_sbCat_poi_highlight_desc": {
-    "message": "Jump to the highlight/point of interest (disabled by default)"
+    "message": "ハイライト/注目ポイントにジャンプ（デフォルト無効）"
   },
   "feature_sbCat_poi_highlight_name": {
-    "message": "Highlight Point of Interest"
+    "message": "注目ポイントのハイライト"
   },
   "feature_sbCat_preview_desc": {
-    "message": "Preview or recap of upcoming content"
+    "message": "今後のコンテンツのプレビューまたはまとめ"
   },
   "feature_sbCat_preview_name": {
-    "message": "Skip Previews"
+    "message": "プレビューをスキップ"
   },
   "feature_sbCat_selfpromo_desc": {
-    "message": "Creator promoting their own products or channels"
+    "message": "クリエイターによる自社製品やチャンネルの宣伝"
   },
   "feature_sbCat_selfpromo_name": {
-    "message": "Skip Self-Promotion"
+    "message": "自己宣伝をスキップ"
   },
   "feature_sbCat_sponsor_desc": {
-    "message": "Paid promotions and sponsorship segments"
+    "message": "有料プロモーションとスポンサーセグメント"
   },
   "feature_sbCat_sponsor_name": {
-    "message": "Skip Sponsors"
+    "message": "スポンサーをスキップ"
   },
   "feature_sbPerChannelProfiles_desc": {
-    "message": "Override which SponsorBlock categories are skipped on a per-channel basis"
+    "message": "チャンネルごとにスキップする SponsorBlock カテゴリをオーバーライド"
   },
   "feature_sbPerChannelProfiles_name": {
-    "message": "SponsorBlock Per-Channel Profiles"
+    "message": "SponsorBlock チャンネル別プロファイル"
   },
   "feature_scrollToPlayer_desc": {
-    "message": "Automatically scrolls to the top of the page when navigating to a new video"
+    "message": "新しい動画に移動したとき自動的にページ上部にスクロール"
   },
   "feature_scrollToPlayer_name": {
-    "message": "Scroll to Player on Navigate"
+    "message": "移動時にプレーヤーへスクロール"
   },
   "feature_scrollWheelSpeed_desc": {
-    "message": "Adjust playback speed by scrolling the mouse wheel over the video player"
+    "message": "動画プレーヤー上でマウスホイールをスクロールして再生速度を調整"
   },
   "feature_scrollWheelSpeed_name": {
-    "message": "Scroll Wheel Speed"
+    "message": "スクロールホイール速度"
   },
   "feature_searchFilterDefaults_desc": {
-    "message": "Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results"
+    "message": "YouTube の検索結果にデフォルトの並べ替え（アップロード日、再生回数、評価順）を自動適用"
   },
   "feature_searchFilterDefaults_name": {
-    "message": "Search Filter Defaults"
+    "message": "検索フィルターの初期設定"
   },
   "feature_selectorHealthPanel_desc": {
-    "message": "Review live selector drift signals and export a JSON health report for fixture refreshes."
+    "message": "ライブのセレクタードリフト信号を確認し、フィクスチャ更新用の JSON ヘルスレポートをエクスポート。"
   },
   "feature_selectorHealthPanel_name": {
-    "message": "Selector Health"
+    "message": "セレクターヘルス"
   },
   "feature_settingsProfiles_desc": {
-    "message": "Save, load, switch, import, and export named setting configurations (e.g. Gaming / Work / Music). Controls appear at the top of the settings panel when enabled."
+    "message": "名前付き設定プロファイルの保存、読み込み、切り替え、インポート、エクスポート（例: ゲーミング / 仕事 / 音楽）。有効にすると設定パネルの上部にコントロールが表示されます。"
   },
   "feature_settingsProfiles_name": {
-    "message": "Settings Profiles"
+    "message": "設定プロファイル"
   },
   "feature_shareMenuCleaner_desc": {
-    "message": "Removes social media buttons from the share dialog, leaving only the URL copy option"
+    "message": "共有ダイアログからソーシャルメディアボタンを削除し、URL コピーオプションのみを残す"
   },
   "feature_shareMenuCleaner_name": {
-    "message": "Clean Share Menu"
+    "message": "クリーンな共有メニュー"
   },
   "feature_shortsAsRegularVideo_desc": {
-    "message": "Add native browser playback controls and scrubbing to YouTube Shorts"
+    "message": "YouTube Shorts にブラウザネイティブの再生コントロールとスクラブバーを追加"
   },
   "feature_shortsAsRegularVideo_name": {
-    "message": "Shorts Player Controls"
+    "message": "Shorts プレーヤーコントロール"
   },
   "feature_showChannelVideoCount_desc": {
-    "message": "Display total uploaded video count next to the channel name on watch pages"
+    "message": "視聴ページのチャンネル名横にアップロード動画の合計数を表示"
   },
   "feature_showChannelVideoCount_name": {
-    "message": "Show Channel Video Count"
+    "message": "チャンネル動画数を表示"
   },
   "feature_showLocalDownloadButton_desc": {
-    "message": "Add a yt-dlp download options button on watch pages"
+    "message": "視聴ページに yt-dlp ダウンロードオプションボタンを追加"
   },
   "feature_showLocalDownloadButton_name": {
-    "message": "Download Button"
+    "message": "ダウンロードボタン"
   },
   "feature_showPlaylistDuration_desc": {
-    "message": "Display total playlist runtime and speed-adjusted estimate next to the playlist header"
+    "message": "プレイリストヘッダーの横に合計再生時間と速度調整後の見積もりを表示"
   },
   "feature_showPlaylistDuration_name": {
-    "message": "Show Playlist Duration"
+    "message": "プレイリストの再生時間を表示"
   },
   "feature_showStatisticsDashboard_desc": {
-    "message": "Track videos watched, time on YouTube, and videos hidden"
+    "message": "視聴した動画数、YouTube での滞在時間、非表示にした動画数を追跡"
   },
   "feature_showStatisticsDashboard_name": {
-    "message": "Statistics Dashboard"
+    "message": "統計ダッシュボード"
   },
   "feature_showTimeInTabTitle_desc": {
-    "message": "Prepend current playback time [5:23] to the browser tab title"
+    "message": "ブラウザタブのタイトルに現在の再生時刻 [5:23] を先頭付加"
   },
   "feature_showTimeInTabTitle_name": {
-    "message": "Show Time in Tab Title"
+    "message": "タブタイトルに時刻を表示"
   },
   "feature_sleepTimer_desc": {
-    "message": "Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes."
+    "message": "指定した分数後に再生を一時停止。プレーヤーのカウントダウンチップでキャンセルまたは 5 分追加が可能。"
   },
   "feature_sleepTimer_name": {
-    "message": "Sleep Timer"
+    "message": "スリープタイマー"
   },
   "feature_sortCommentsNewest_desc": {
-    "message": "Automatically switch the comment sort order to \"Newest first\" on every video"
+    "message": "すべての動画でコメントの並べ替えを自動的に「新しい順」に切り替え"
   },
   "feature_sortCommentsNewest_name": {
-    "message": "Sort Comments Newest First"
+    "message": "コメントを新しい順に並べ替え"
   },
   "feature_speedIndicatorOverlay_desc": {
-    "message": "Shows the current playback speed as a small overlay on the video when not at 1x"
+    "message": "1x 以外のとき、現在の再生速度を小さなオーバーレイとして動画上に表示"
   },
   "feature_speedIndicatorOverlay_name": {
-    "message": "Speed Indicator Overlay"
+    "message": "速度インジケーターオーバーレイ"
   },
   "feature_speedStep_desc": {
-    "message": "How much to change speed per scroll tick"
+    "message": "スクロール1回あたりの速度変更量"
   },
   "feature_speedStep_name": {
-    "message": "Speed Step Amount"
+    "message": "速度ステップ量"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "クラウドソースデータを使用して、スポンサーセグメント、イントロ、アウトロなどの非コンテンツ区間を自動スキップ"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "feature_squareAvatars_desc": {
-    "message": "Make channel avatars square instead of round"
+    "message": "チャンネルアバターを丸形から四角形に変更"
   },
   "feature_squareAvatars_name": {
-    "message": "Square Avatars"
+    "message": "四角形アバター"
   },
   "feature_squareSearchBar_desc": {
-    "message": "Remove rounded corners from the search bar"
+    "message": "検索バーの角丸を除去"
   },
   "feature_squareSearchBar_name": {
-    "message": "Square Search Bar"
+    "message": "四角形検索バー"
   },
   "feature_stickyChat_desc": {
-    "message": "Keeps the live chat panel pinned at the top of the sidebar when scrolling"
+    "message": "スクロール時にライブチャットパネルをサイドバーの上部に固定表示"
   },
   "feature_stickyChat_name": {
-    "message": "Sticky Live Chat"
+    "message": "ライブチャットの固定表示"
   },
   "feature_stickyVideo_desc": {
-    "message": "Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen."
+    "message": "視聴ページで動画をフルスクリーン表示。下にスクロールするとコメントが横並びで表示。上に戻るとフルスクリーンに復帰。"
   },
   "feature_stickyVideo_name": {
-    "message": "Theater Split"
+    "message": "シアタースプリット"
   },
   "feature_storageQuotaLRU_desc": {
-    "message": "LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
+    "message": "増大する設定（hiddenVideos、hiddenChannels、timestampBookmarks、da_branding_cache、sb_segments_cache）に LRU 上限を設け、ストレージ枯渇を防止"
   },
   "feature_storageQuotaLRU_name": {
-    "message": "Storage Quota Management"
+    "message": "ストレージ容量管理"
   },
   "feature_styledFilterChips_desc": {
-    "message": "Compact, native-feeling filter chips on home and subscriptions"
+    "message": "ホームと登録チャンネルに、コンパクトでネイティブ感のあるフィルターチップ"
   },
   "feature_styledFilterChips_name": {
-    "message": "Styled Filter Chips"
+    "message": "スタイル付きフィルターチップ"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up."
+    "message": "PocketTube クラスのローカルグループで登録チャンネルフィードを整理。名前付きグループを作成し、チャンネルをドラッグ、日付/長さ/未視聴/前回訪問からの新着でソート。グループデータは subscriptionGroupData にローカル保存。エクスポートでバックアップ。"
   },
   "feature_subscriptionGroups_name": {
-    "message": "Subscription Groups"
+    "message": "登録チャンネルグループ"
   },
   "feature_subscriptionsGrid_desc": {
-    "message": "Use a denser grid layout on the subscriptions page"
+    "message": "登録チャンネルページでより密なグリッドレイアウトを使用"
   },
   "feature_subscriptionsGrid_name": {
-    "message": "Subscriptions Grid"
+    "message": "登録チャンネルグリッド"
   },
   "feature_subtitleDownload_desc": {
-    "message": "One-click SRT download of the active caption track — standalone player button, no sidebar required"
+    "message": "アクティブな字幕トラックをワンクリックで SRT ダウンロード — プレーヤーのスタンドアロンボタン、サイドバー不要"
   },
   "feature_subtitleDownload_name": {
-    "message": "Subtitle Download (SRT)"
+    "message": "字幕ダウンロード (SRT)"
   },
   "feature_subtitleStyling_desc": {
-    "message": "Override YouTube caption appearance — font size/family/color, background, position, shadow"
+    "message": "YouTube の字幕表示をオーバーライド — フォントサイズ/ファミリー/色、背景、位置、影"
   },
   "feature_subtitleStyling_name": {
-    "message": "Subtitle Styling"
+    "message": "字幕スタイリング"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Scroll video into full view when theater mode activates"
+    "message": "シアターモードが有効になったとき動画を全画面表示にスクロール"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Theater Auto-Scroll"
+    "message": "シアター自動スクロール"
   },
   "feature_themeAccentColor_desc": {
-    "message": "Custom accent color for highlights, progress bar, and active UI elements"
+    "message": "ハイライト、プログレスバー、アクティブ UI 要素のカスタムアクセントカラー"
   },
   "feature_themeAccentColor_name": {
-    "message": "Accent Color"
+    "message": "アクセントカラー"
   },
   "feature_thinScrollbar_desc": {
-    "message": "Use a slim, unobtrusive scrollbar"
+    "message": "細くて目立たないスクロールバーを使用"
   },
   "feature_thinScrollbar_name": {
-    "message": "Thin Scrollbar"
+    "message": "細いスクロールバー"
   },
   "feature_thumbnailPreviewSize_desc": {
-    "message": "Increase the size of thumbnail hover previews for easier viewing on large screens"
+    "message": "大画面で見やすいようにサムネイルホバープレビューのサイズを拡大"
   },
   "feature_thumbnailPreviewSize_name": {
-    "message": "Large Thumbnail Previews"
+    "message": "大きなサムネイルプレビュー"
   },
   "feature_thumbnailQualityUpgrade_desc": {
-    "message": "Upgrades video thumbnails to maximum resolution where available"
+    "message": "利用可能な場合、動画サムネイルを最大解像度にアップグレード"
   },
   "feature_thumbnailQualityUpgrade_name": {
-    "message": "HD Thumbnails"
+    "message": "HD サムネイル"
   },
   "feature_timestampBookmarks_desc": {
-    "message": "Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions."
+    "message": "動画内の瞬間をカスタムメモ付きでブックマーク。ブックマークをクリックしてシーク。セッション間で保持。"
   },
   "feature_timestampBookmarks_name": {
-    "message": "Timestamp Bookmarks"
+    "message": "タイムスタンプブックマーク"
   },
   "feature_titleCaseTransform_desc": {
-    "message": "Override YouTube's clickbait UPPERCASE titles with a casing style of your choice"
+    "message": "YouTube の大文字煽りタイトルを好みの大小文字スタイルでオーバーライド"
   },
   "feature_titleCaseTransform_name": {
-    "message": "Transform Video Title Case"
+    "message": "動画タイトルの大文字小文字変換"
   },
   "feature_titleNormalization_desc": {
-    "message": "Convert ALL CAPS titles to Title Case. Reduces clickbait without changing meaning."
+    "message": "全大文字のタイトルをタイトルケースに変換。意味を変えずに煽りを軽減。"
   },
   "feature_titleNormalization_name": {
-    "message": "Normalize Clickbait Titles"
+    "message": "煽りタイトルの正規化"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
+    "message": "ユーザーの themeAccentColor を YouTube のネイティブ --yt-sys-color-* トークンに流し込み、ネイティブバッジ、ホバー状態、プライマリボタンが Astra のアクセントに追従するようにします。各サーフェスの再スタイリング不要。"
   },
   "feature_tokenThemeBridge_name": {
-    "message": "Native Token Theme Bridge"
+    "message": "ネイティブトークンテーマブリッジ"
   },
   "feature_transcriptAiHandoff_desc": {
-    "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
+    "message": "文字起こしをコピーして、選択した AI ツールを要約プロンプト付きで開くプレーヤーボタンを追加"
   },
   "feature_transcriptAiHandoff_name": {
-    "message": "Transcript → AI One-Click Handoff"
+    "message": "文字起こし → AI ワンクリック連携"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "タイムスタンプナビゲーションとエクスポート（txt/srt/クリップボード/LLM プロンプト）付きのクリック可能な文字起こしパネルをサイドバーに追加"
   },
   "feature_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
   },
   "feature_uiStyleManager_desc": {
-    "message": "Choose rounded or square UI elements"
+    "message": "UI 要素を角丸または四角形から選択"
   },
   "feature_uiStyleManager_name": {
-    "message": "UI Style"
+    "message": "UI スタイル"
   },
   "feature_videoAgeColors_desc": {
-    "message": "Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
+    "message": "アップロード日からの経過時間でサムネイル枠を色分け — 新着(緑)、1週間(青)、1か月(黄)、1年(橙)、古い(赤)"
   },
   "feature_videoAgeColors_name": {
-    "message": "Video Age Color Coding"
+    "message": "動画経過年数カラーコーディング"
   },
   "feature_videoContextMenu_desc": {
-    "message": "Right-click on the video player for yt-dlp download actions"
+    "message": "動画プレーヤー上で右クリックし、yt-dlp ダウンロードアクションを実行"
   },
   "feature_videoContextMenu_name": {
-    "message": "Player Download Menu"
+    "message": "プレーヤーダウンロードメニュー"
   },
   "feature_videoLoopButton_desc": {
-    "message": "Add a loop toggle button to the player controls for one-click video looping"
+    "message": "プレーヤーコントロールにワンクリックで動画をループさせるトグルボタンを追加"
   },
   "feature_videoLoopButton_name": {
-    "message": "Video Loop Button"
+    "message": "動画ループボタン"
   },
   "feature_videoNotes_desc": {
-    "message": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos."
+    "message": "現在の動画のローカルメモを保持し、メモアーカイブをエクスポート。最近編集された 1000 動画分を上限に保存。"
   },
   "feature_videoNotes_name": {
-    "message": "Per-Video Notes"
+    "message": "動画別メモ"
   },
   "feature_videoResolutionBadge_desc": {
-    "message": "Shows a 4K, HD, or SD badge on video thumbnails based on available quality"
+    "message": "利用可能な画質に基づき、動画サムネイルに 4K、HD、SD バッジを表示"
   },
   "feature_videoResolutionBadge_name": {
-    "message": "Resolution Badge on Thumbnails"
+    "message": "サムネイルの解像度バッジ"
   },
   "feature_videoFlip_desc": {
-    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+    "message": "動画を水平または垂直に反転 — 鏡像ダンス動画、テキストの可読性、反転した録画に便利"
   },
   "feature_videoFlip_name": {
-    "message": "Video Flip"
+    "message": "動画の反転"
   },
   "feature_monoToStereo_desc": {
-    "message": "Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones"
+    "message": "モノラル音声を両耳に均等に配置 — 片側だけの録音、講義、ヘッドホンで偏って聞こえる古いコンテンツを修正"
   },
   "feature_monoToStereo_name": {
-    "message": "Mono to Stereo"
+    "message": "モノラルからステレオ"
   },
   "feature_videoRotation_desc": {
-    "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
+    "message": "CSS transform で動画を 90/180/270 度回転 — 横向きのスマホ録画に便利"
   },
   "feature_videoRotation_name": {
-    "message": "Video Rotation"
+    "message": "動画の回転"
   },
   "feature_videoScreenshot_desc": {
-    "message": "Capture the current video frame as a PNG image — copies to clipboard and downloads"
+    "message": "現在の動画フレームを PNG 画像としてキャプチャ — クリップボードにコピーしてダウンロード"
   },
   "feature_videoScreenshot_name": {
-    "message": "Video Screenshot"
+    "message": "動画スクリーンショット"
   },
   "feature_videosPerRow_desc": {
-    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
+    "message": "1行あたりの動画サムネイル数を設定 (0 = ウィンドウ幅に応じて動的)"
   },
   "feature_videosPerRow_name": {
-    "message": "Videos Per Row"
+    "message": "1行あたりの動画数"
   },
   "feature_videoVisualFilters_desc": {
-    "message": "Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element"
+    "message": "動画要素に CSS フィルターで明るさ / コントラスト / 彩度 / 色相 / グレースケール / セピアを調整"
   },
   "feature_videoVisualFilters_name": {
-    "message": "Video Visual Filters"
+    "message": "動画ビジュアルフィルター"
   },
   "feature_videoZoom_desc": {
-    "message": "Hold Ctrl and scroll on the video to zoom in, then drag to pan around"
+    "message": "Ctrl を押しながら動画上でスクロールしてズームイン、ドラッグでパン"
   },
   "feature_videoZoom_name": {
-    "message": "Video Zoom & Pan"
+    "message": "動画ズーム＆パン"
   },
   "feature_vlcMpvHandoff_desc": {
-    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
+    "message": "GitHub フルプロファイル専用。プレーヤー横に ytvlc:// または ytmpv:// プロトコル URL を発行するボタンを追加。プロトコルハンドラーは OS 側で登録が必要 — Astra Deck はバイナリを直接実行しません。デフォルトオフ。"
   },
   "feature_vlcMpvHandoff_name": {
-    "message": "VLC / MPV Stream Handoff"
+    "message": "VLC / MPV ストリーム連携"
   },
   "feature_volumeWheelMode_desc": {
-    "message": "Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added."
+    "message": "プレーヤー上でマウスホイールをスクロールして 5% 刻みで音量を変更。フローティングインジケーターチップが 1.2 秒間新しいレベルを表示。キーボードショートカットは追加されません。"
   },
   "feature_volumeWheelMode_name": {
-    "message": "Volume Wheel"
+    "message": "ボリュームホイール"
   },
   "feature_watchHistoryAnalytics_desc": {
-    "message": "Modal dashboard visualizing your 30-day YouTube watch time as a CSS bar chart (requires Watch Time Tracker)"
+    "message": "30 日間の YouTube 視聴時間を CSS 棒グラフで可視化するモーダルダッシュボード（視聴時間トラッカーが必要）"
   },
   "feature_watchHistoryAnalytics_name": {
-    "message": "Watch History Analytics"
+    "message": "視聴履歴分析"
   },
   "feature_watchLaterCleanup_desc": {
-    "message": "Adds a \"Remove Watched\" button to the Watch Later playlist header for batch cleanup"
+    "message": "「後で見る」プレイリストヘッダーに「視聴済みを削除」ボタンを追加し、一括クリーンアップ"
   },
   "feature_watchLaterCleanup_name": {
-    "message": "Watch Later Cleanup Button"
+    "message": "「後で見る」クリーンアップボタン"
   },
   "feature_watchLaterQuickAdd_desc": {
-    "message": "Adds a clock icon on every thumbnail for one-click Watch Later saving"
+    "message": "すべてのサムネイルに時計アイコンを追加し、ワンクリックで「後で見る」に保存"
   },
   "feature_watchLaterQuickAdd_name": {
-    "message": "Watch Later Quick Button"
+    "message": "「後で見る」クイックボタン"
   },
   "feature_watchPageRestyle_desc": {
-    "message": "Premium watch-page layout for title, description, and metadata without hiding native controls"
+    "message": "ネイティブコントロールを隠さずに、タイトル、説明文、メタデータのプレミアム視聴ページレイアウト"
   },
   "feature_watchPageRestyle_name": {
-    "message": "Watch Page Restyle"
+    "message": "視聴ページのリスタイル"
   },
   "feature_watchPageTabs_desc": {
-    "message": "Horizontal tab bar above the comments/description area to quickly switch views on the watch page"
+    "message": "コメント/説明文エリアの上に水平タブバーを追加し、視聴ページのビューを素早く切り替え"
   },
   "feature_watchPageTabs_name": {
-    "message": "Watch Page Tabs"
+    "message": "視聴ページタブ"
   },
   "feature_watchProgress_desc": {
-    "message": "Show colored progress bars on video thumbnails based on your watch history (saved locally)"
+    "message": "視聴履歴に基づく色付きプログレスバーを動画サムネイルに表示（ローカル保存）"
   },
   "feature_watchProgress_name": {
-    "message": "Watch Progress Indicators"
+    "message": "視聴進捗インジケーター"
   },
   "feature_watchTimeTracker_desc": {
-    "message": "Track your daily/weekly YouTube watch time with a stats widget in the settings panel"
+    "message": "日次/週次の YouTube 視聴時間を設定パネルのウィジェットで追跡"
   },
   "feature_watchTimeTracker_name": {
-    "message": "Watch Time Tracker"
+    "message": "視聴時間トラッカー"
   },
   "feature_wheelSeek_desc": {
-    "message": "Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict."
+    "message": "プログレスバー上でマウスホイールをスクロールしてシーク。デフォルトは 5 秒刻み（wheelSeekStepSec で設定可能）。プレーヤー上の他の場所でのスクロールはボリュームホイールが有効ならそちらが動作。両機能は競合しません。"
   },
   "feature_wheelSeek_name": {
-    "message": "Wheel Seek"
+    "message": "ホイールシーク"
   },
   "feature_widenSearchBar_desc": {
-    "message": "Expand the search bar to use more available space"
+    "message": "検索バーを利用可能なスペースに合わせて拡大"
   },
   "feature_widenSearchBar_name": {
-    "message": "Widen Search Bar"
+    "message": "検索バーの拡大"
   },
   "feature_wpHide_askAISection_desc": {
-    "message": "Hide AI section in description"
+    "message": "説明文内の AI セクションを非表示"
   },
   "feature_wpHide_askAISection_name": {
-    "message": "Ask AI Section"
+    "message": "Ask AI セクション"
   },
   "feature_wpHide_askButton_desc": {
-    "message": "Hide Ask AI button"
+    "message": "Ask AI ボタンを非表示"
   },
   "feature_wpHide_askButton_name": {
-    "message": "Ask Button"
+    "message": "Ask ボタン"
   },
   "feature_wpHide_channelInfoCards_desc": {
-    "message": "Hide channel info cards in description"
+    "message": "説明文内のチャンネル情報カードを非表示"
   },
   "feature_wpHide_channelInfoCards_name": {
-    "message": "Channel Info Cards"
+    "message": "チャンネル情報カード"
   },
   "feature_wpHide_joinButton_desc": {
-    "message": "Hide join/membership button"
+    "message": "参加/メンバーシップボタンを非表示"
   },
   "feature_wpHide_joinButton_name": {
-    "message": "Join Button"
+    "message": "参加ボタン"
   },
   "feature_wpHide_moreActions_desc": {
-    "message": "Hide more actions menu button"
+    "message": "その他のアクションメニューボタンを非表示"
   },
   "feature_wpHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "その他のアクション (...)"
   },
   "feature_wpHide_podcastSection_desc": {
-    "message": "Hide podcast/course section in description"
+    "message": "説明文内のポッドキャスト/コースセクションを非表示"
   },
   "feature_wpHide_podcastSection_name": {
-    "message": "Podcast/Course Section"
+    "message": "ポッドキャスト/コースセクション"
   },
   "feature_wpHide_saveButton_desc": {
-    "message": "Hide save to playlist button"
+    "message": "プレイリストに保存ボタンを非表示"
   },
   "feature_wpHide_saveButton_name": {
-    "message": "Save Button"
+    "message": "保存ボタン"
   },
   "feature_wpHide_transcriptSection_desc": {
-    "message": "Hide transcript section in description"
+    "message": "説明文内の文字起こしセクションを非表示"
   },
   "feature_wpHide_transcriptSection_name": {
-    "message": "Transcript Section"
+    "message": "文字起こしセクション"
   },
   "feature_youtubeMusicCompat_desc": {
-    "message": "Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating."
+    "message": "music.youtube.com に Astra Deck のテーマ + OLED + 密度機能を適用。プレーヤー固有の機能（ダウンロード、RYD、SponsorBlock）は既存のページ別制御を維持。"
   },
   "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music Compatibility"
+    "message": "YouTube Music 互換"
   },
   "feature_zenMode_desc": {
-    "message": "Dims the page around the video player for a focused viewing experience"
+    "message": "動画プレーヤーの周囲を暗くして集中視聴環境を提供"
   },
   "feature_zenMode_name": {
-    "message": "Zen Mode"
+    "message": "Zen モード"
   },
   "filterTogglesLabel": {
     "message": "クイックトグルをフィルター"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter — try risk:api or category:downloads"
+    "message": "フィルター — risk:api や category:downloads をお試しください"
   },
   "groupQuickControls": {
     "message": "クイックコントロール"
@@ -2235,7 +2235,7 @@
     "message": "インポート"
   },
   "languageAr": {
-    "message": "العربية (Arabic)"
+    "message": "العربية (アラビア語)"
   },
   "languageAuto": {
     "message": "自動（ブラウザの既定）"
@@ -2244,7 +2244,7 @@
     "message": "Deutsch (ドイツ語)"
   },
   "languageEn": {
-    "message": "英語"
+    "message": "English (英語)"
   },
   "languageEs": {
     "message": "Español (スペイン語)"
@@ -2322,100 +2322,100 @@
     "message": "動画をダウンロード"
   },
   "playerGearAriaTpl": {
-    "message": "Open … settings"
+    "message": "… の設定を開く"
   },
   "playerGearTitleTpl": {
-    "message": "… Settings"
+    "message": "… の設定"
   },
   "popupTitle": {
     "message": "Astra Deck"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "動画をシアター表示で開く"
   },
   "qt_autoTheaterMode_name": {
     "message": "自動シアター"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "夜間視聴用にプレーヤーを暖色化"
   },
   "qt_blueLightFilter_name": {
     "message": "ブルーライトフィルター"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "共有リンクからトラッキングを除去"
   },
   "qt_cleanShareUrls_name": {
     "message": "クリーンな URL"
   },
   "qt_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "視聴ページのコメントをインラインでフィルター"
   },
   "qt_commentSearch_name": {
     "message": "コメント検索"
   },
   "qt_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "釣りタイトルとサムネイルを置換"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "詳細なローカル診断を記録"
   },
   "qt_debugMode_name": {
     "message": "デバッグモード"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "休憩と1日の視聴時間を追跡"
   },
   "qt_digitalWellbeing_name": {
     "message": "デジタルウェルビーイング"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "次の動画の開始を停止"
   },
   "qt_disableAutoplayNext_name": {
     "message": "自動再生なし"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "エンドレスなフィード読み込みを停止"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "スクロール制限"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "視聴ページのサイドレールをクリア"
   },
   "qt_hideRelatedVideos_name": {
     "message": "関連を非表示"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "スクロール中もコントロールを表示"
   },
   "qt_miniPlayerBar_name": {
     "message": "ミニプレーヤーバー"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "再生速度を一定に維持"
   },
   "qt_persistentSpeed_name": {
     "message": "持続的な速度"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "Shorts の棚とリンクを削除"
   },
   "qt_removeAllShorts_name": {
     "message": "Shorts を非表示"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "クラウドマークされたスポンサーセグメントをスキップ"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "字幕を読み、ジャンプし、エクスポート"
   },
   "qt_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
@@ -2442,49 +2442,49 @@
     "message": "クイックトグル"
   },
   "reenableMediadlAria": {
-    "message": "Re-enable Astra Downloader install prompts"
+    "message": "Astra Downloader のインストールプロンプトを再有効化"
   },
   "reenableMediadlBtn": {
-    "message": "Enable Downloader Prompts"
+    "message": "ダウンローダープロンプトを有効化"
   },
   "resetBtn": {
     "message": "リセット"
   },
   "resultsAllAvailableTpl": {
-    "message": "… quick controls are available in this popup"
+    "message": "… 個のクイックコントロールがこのポップアップで利用可能"
   },
   "resultsMatching": {
     "message": "一致"
   },
   "resultsMatchTpl": {
-    "message": "… of … … match this filter"
+    "message": "… 中 … 件がこのフィルターに一致"
   },
   "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} settings on across {categories} categories"
+    "message": "{categories} カテゴリで {enabled}/{total} 個の設定がオン"
   },
   "schemaOverviewEyebrow": {
-    "message": "Settings overview"
+    "message": "設定の概要"
   },
   "selectorHealthCopyAria": {
-    "message": "Copy selector-health report to clipboard"
+    "message": "セレクターヘルスレポートをクリップボードにコピー"
   },
   "selectorHealthCopyBtn": {
-    "message": "Copy report"
+    "message": "レポートをコピー"
   },
   "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
+    "message": "コピーしました — GitHub Issue に貼り付けてください。"
   },
   "selectorHealthCopyFail": {
-    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
+    "message": "クリップボード書き込みがブロックされました。DevTools を開き window.__ytkitDiagnostics.download() を呼び出してください。"
   },
   "selectorHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
+    "message": "レポートを作成するには YouTube タブを開いてください。"
   },
   "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
+    "message": "スナップショットがありません — ページがまだ読み込み中の可能性があります。"
   },
   "selectorHealthCopyPending": {
-    "message": "Building report…"
+    "message": "レポートを作成中…"
   },
   "selectorHealthEmpty": {
     "message": "まだサーフェスがサンプリングされていません。"
@@ -2496,10 +2496,10 @@
     "message": "{count} 個のサーフェスを追跡中"
   },
   "speedBtnAriaTpl": {
-    "message": "Default playback speed …. Click to change."
+    "message": "デフォルト再生速度 …。クリックで変更。"
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: … — applies to every video"
+    "message": "デフォルト再生速度: … — すべての動画に適用"
   },
   "speedPopupAria": {
     "message": "デフォルト再生速度"
@@ -2529,7 +2529,7 @@
     "message": "すべてのデータをクリアしました。"
   },
   "statusAllDataClearedUndo": {
-    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
+    "message": "すべてのデータをクリアしました。「リセットを元に戻す」をクリックで復元できます（ブラウザを閉じるまで）。"
   },
   "statusBackupExported": {
     "message": "バックアップをエクスポートしました。"
@@ -2562,10 +2562,10 @@
     "message": "インポート失敗"
   },
   "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+    "message": "Astra Downloader のインストールプロンプトを再有効化しました。YouTube タブを再読み込みしてください。"
   },
   "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+    "message": "Astra Downloader プロンプトを再有効化できませんでした。chrome://extensions を開いて再読み込みしてください。"
   },
   "statusOpenWorkspaceFail": {
     "message": "完全なワークスペースを開けませんでした。再試行してください。"
@@ -2577,16 +2577,16 @@
     "message": "リセット失敗"
   },
   "statusResetSnapshotFail": {
-    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
+    "message": "リセット中止 — 復元用スナップショットを作成できませんでした（データが大きすぎます）。先にバックアップをエクスポートしてください。"
   },
   "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
+    "message": "元に戻すが利用できません — スナップショットはブラウザセッションとともに期限切れになりました。"
   },
   "statusResetUndoFail": {
-    "message": "Undo failed"
+    "message": "元に戻す失敗"
   },
   "statusResetUndone": {
-    "message": "Reset undone — all data restored."
+    "message": "リセットを取り消しました — すべてのデータを復元しました。"
   },
   "statusStorageReadFail": {
     "message": "ストレージ読み取り失敗"
@@ -2619,13 +2619,13 @@
     "message": "ダウンロードはすでに進行中です。"
   },
   "toastDlInstallPrompt": {
-    "message": "Install Astra Downloader to enable downloads."
+    "message": "ダウンロードを有効にするには Astra Downloader をインストールしてください。"
   },
   "toastDlReady": {
-    "message": "Astra Downloader is ready."
+    "message": "Astra Downloader の準備が完了しました。"
   },
   "toastDlRequestFailed": {
-    "message": "Astra Downloader request failed."
+    "message": "Astra Downloader のリクエストが失敗しました。"
   },
   "toastDlRunning": {
     "message": "Astra Downloader は実行中です！"
@@ -2637,7 +2637,7 @@
     "message": "Astra Downloader を起動中…"
   },
   "toastDlStopped": {
-    "message": "Astra Downloader stopped. Starting it again…"
+    "message": "Astra Downloader が停止しました。再起動中…"
   },
   "toggleStateOff": {
     "message": "無効"
@@ -2652,21 +2652,21 @@
     "message": "有効"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update …. Try again."
+    "message": "… を更新できませんでした。再試行してください。"
   },
   "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
+    "message": "直近のリセットからデータを復元"
   },
   "undoResetBtn": {
-    "message": "Undo Reset"
+    "message": "リセットを元に戻す"
   },
   "workspaceEyebrow": {
     "message": "設定ワークスペース"
   },
   "workspaceSupport": {
-    "message": "Quick toggles save immediately and sync to YouTube."
+    "message": "クイックトグルは即座に保存され、YouTube に同期されます。"
   },
   "workspaceTitle": {
-    "message": "Controls and backups"
+    "message": "コントロールとバックアップ"
   }
 }
