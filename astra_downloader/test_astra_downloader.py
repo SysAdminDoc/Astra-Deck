@@ -1261,7 +1261,6 @@ class PoTokenProviderTests(unittest.TestCase):
                             ("with-provider", with_provider)):
             with self.subTest(label=label):
                 self.assertIn('youtube:formats=duplicate', args)
-                # Must be paired with --extractor-args so yt-dlp parses it.
                 idx = args.index('youtube:formats=duplicate')
                 self.assertEqual(args[idx - 1], '--extractor-args')
 
