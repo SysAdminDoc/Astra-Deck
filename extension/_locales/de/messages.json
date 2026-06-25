@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "Ablenkungsfreies Ansehen: Shorts, verwandte Videos, endloses Scrollen, Benachrichtigungen und Autoplay ausblenden. Aktiviert Zen-Modus und Digital-Wellbeing-Tracking."
+  },
+  "feature_audioPan_name": {
+    "message": "Audio-Balance"
+  },
+  "feature_audioPan_desc": {
+    "message": "Audio-Balance nach links oder rechts verschieben. Bereich -1 (ganz links) bis 1 (ganz rechts), 0 ist Mitte."
   }
 }

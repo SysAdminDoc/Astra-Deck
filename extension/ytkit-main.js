@@ -314,10 +314,12 @@
     var _monoEnabled = false;
     var _boostGain = 1.0;
     var _normalizeEnabled = false;
+    var _panValue = 0;
     var _ctx = null;
     var _source = null;
     var _monoMerge = null;
     var _compressor = null;
+    var _panNode = null;
     var _gainNode = null;
     var _connectedVideo = null;
 
@@ -326,7 +328,7 @@
     }
 
     function isActive() {
-        return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled;
+        return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled || Math.abs(_panValue) > 0.001;
     }
 
     function connect() {
@@ -347,10 +349,16 @@
             _compressor.ratio.value = 12;
             _compressor.attack.value = 0.003;
             _compressor.release.value = 0.25;
+            _panNode = _ctx.createStereoPanner ? _ctx.createStereoPanner() : null;
             _gainNode = _ctx.createGain();
             _source.connect(_monoMerge);
             _monoMerge.connect(_compressor);
-            _compressor.connect(_gainNode);
+            if (_panNode) {
+                _compressor.connect(_panNode);
+                _panNode.connect(_gainNode);
+            } else {
+                _compressor.connect(_gainNode);
+            }
             _gainNode.connect(_ctx.destination);
             syncGraph();
             _connectedVideo = video;
@@ -371,6 +379,7 @@
                 _monoMerge.channelInterpretation = 'speakers';
             }
         }
+        if (_panNode) _panNode.pan.value = _panValue;
         if (_gainNode) _gainNode.gain.value = _boostGain;
         if (_compressor) {
             if (_normalizeEnabled) {
@@ -387,6 +396,7 @@
         if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
         if (_monoMerge) { try { _monoMerge.disconnect(); } catch (e) { /* reason: already disconnected */ } _monoMerge = null; }
         if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
+        if (_panNode) { try { _panNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _panNode = null; }
         if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
         if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
         _ctx = null;
@@ -415,6 +425,15 @@
     _obsRegister(['data-ytkit-audio-normalize'], function() {
         var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
         _normalizeEnabled = val === '1';
+        if (isActive()) connect();
+        else cleanup();
+    });
+
+    _obsRegister(['data-ytkit-audio-pan'], function() {
+        var val = parseFloat(document.documentElement.getAttribute('data-ytkit-audio-pan')) || 0;
+        if (val < -1) val = -1;
+        if (val > 1) val = 1;
+        _panValue = val;
         if (isActive()) connect();
         else cleanup();
     });
