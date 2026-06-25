@@ -635,6 +635,68 @@ body {
   color: var(--text-muted, #c7cad1);
 }
 
+.welcome-step[hidden] { display: none; }
+
+.welcome-preset-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.welcome-preset-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid rgba(255, 217, 168, 0.18);
+  background: rgba(255, 217, 168, 0.04);
+  color: var(--text-primary, #f4f6fb);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              border-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              transform var(--dur-quick, 120ms) var(--ease-out, ease-out);
+}
+.welcome-preset-btn:hover {
+  background: rgba(255, 184, 77, 0.12);
+  border-color: rgba(255, 184, 77, 0.5);
+  transform: translateY(-1px);
+}
+.welcome-preset-btn:focus-visible {
+  outline: 2px solid rgba(255, 184, 77, 0.75);
+  outline-offset: 1px;
+}
+.welcome-preset-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd9a8;
+}
+.welcome-preset-desc {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--text-muted, #c7cad1);
+}
+.welcome-preset-skip {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #c7cad1);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: var(--radius-xs, 4px);
+  text-align: center;
+}
+.welcome-preset-skip:hover { color: var(--text-primary, #f4f6fb); background: rgba(255,255,255,0.04); }
+.welcome-preset-skip:focus-visible { outline: 2px solid rgba(255,184,77,0.75); outline-offset: 1px; }
+
 /* v4.47.0 NF21: What's New banner. Same geometry as storage-banner /
    health-banner, accent tone matches the welcome card so the
    relationship reads visually. */
@@ -987,6 +1049,80 @@ body {
 }
 
 .selector-health-empty {
+  text-align: center;
+  padding: 6px 0;
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
+/* ── Feature performance dashboard ──────────────────────────────── */
+.feature-perf {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.feature-perf[hidden] { display: none; }
+.feature-perf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.feature-perf-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.feature-perf-total {
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.feature-perf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.feature-perf-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 0;
+}
+.feature-perf-row .fp-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feature-perf-row .fp-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent, #ff4e45);
+  min-width: 2px;
+}
+.feature-perf-row .fp-ms {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 10px;
+  min-width: 36px;
+  text-align: right;
+}
+.feature-perf-slow .fp-name { color: #ff8585; }
+.feature-perf-slow .fp-bar { background: #ff8585; }
+.feature-perf-empty {
   text-align: center;
   padding: 6px 0;
   color: var(--text-subtle);
@@ -1649,6 +1785,21 @@ body {
 .cta-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.cta-button.cta-secondary {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  color: var(--text-secondary, #c7cad1);
+  font-size: 11px;
+}
+.cta-button.cta-secondary:hover { border-color: var(--border-strong, rgba(255,255,255,0.15)); color: var(--text-primary, #f4f6fb); }
+.cta-button.cta-secondary::before { display: none; }
+.cta-button.cta-secondary[hidden] { display: none; }
+
+.main-action {
+  display: flex;
+  gap: 6px;
 }
 
 /* ── Actions Row ── */
@@ -2459,6 +2610,35 @@ textarea:focus-visible {
     transition: none !important;
   }
 }
+
+/* ── RTL layout overrides ──
+   Applied when popup.js sets dir="rtl" on <html> for Arabic, Hebrew, etc. */
+
+[dir="rtl"] .search-icon { left: auto; right: 10px; }
+[dir="rtl"] .clear-search { right: auto; left: 4px; }
+[dir="rtl"] .search-row input { padding: 0 32px 0 30px; }
+
+[dir="rtl"] .toggle,
+[dir="rtl"] .so-row-head,
+[dir="rtl"] .welcome-profile-btn { text-align: right; }
+
+[dir="rtl"] .welcome-profile-btn { align-items: flex-end; }
+[dir="rtl"] .welcome-profile-rec { right: auto; left: 8px; }
+
+[dir="rtl"] .actions-end { margin-left: 0; margin-right: auto; }
+
+[dir="rtl"] .so-key-reset-btn { margin-left: 0; margin-right: 4px; }
+
+[dir="rtl"] button[aria-busy="true"]::before { margin-right: 0; margin-left: 6px; }
+[dir="rtl"] button.undo-action { margin-right: 0; margin-left: 6px; }
+
+[dir="rtl"] #languageSelect {
+  padding: 0 10px 0 28px;
+  background-position: left 10px center;
+}
+
+[dir="rtl"] .switch::after { left: auto; right: 2px; }
+[dir="rtl"] .toggle.on .switch::after { transform: translateX(-14px); }
 
 @media (forced-colors: active) {
   .toggle,

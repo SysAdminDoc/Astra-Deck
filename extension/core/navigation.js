@@ -145,7 +145,7 @@
         });
     }
 
-    function runNavigateRules() {
+    function _executeNavigateRules() {
         const isWatch = getIsWatchPage();
         ensureWatchFlexyObserver();
         for (const rule of navigateRules.values()) {
@@ -154,6 +154,14 @@
             } catch (error) {
                 console.error('[YTKit] Navigate rule error:', error);
             }
+        }
+    }
+
+    function runNavigateRules() {
+        if (typeof document.startViewTransition === 'function') {
+            document.startViewTransition(() => _executeNavigateRules());
+        } else {
+            _executeNavigateRules();
         }
     }
 

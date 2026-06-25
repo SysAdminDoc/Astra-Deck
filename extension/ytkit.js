@@ -1413,6 +1413,29 @@ return response;
             font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace !important;
         }
         /* Speed control popup */
+        /* CSS Anchor Positioning: anchor the speed popup to its trigger */
+        @supports (anchor-name: --ytkit-speed-anchor) {
+            .ytkit-po-speed { anchor-name: --ytkit-speed-anchor !important; }
+            .ytkit-speed-popup {
+                position-anchor: --ytkit-speed-anchor !important;
+                inset: unset !important;
+                top: unset !important; left: unset !important;
+                bottom: anchor(top) !important;
+                left: anchor(center) !important;
+                translate: -50% -8px !important;
+                position-try-fallbacks: flip-block !important;
+            }
+            .ytkit-po-dl { anchor-name: --ytkit-dl-anchor !important; }
+            .ytkit-dl-popup {
+                position-anchor: --ytkit-dl-anchor !important;
+                inset: unset !important;
+                top: unset !important; left: unset !important;
+                bottom: anchor(top) !important;
+                left: anchor(center) !important;
+                translate: -50% -8px !important;
+                position-try-fallbacks: flip-block !important;
+            }
+        }
         .ytkit-speed-popup {
             position: fixed !important;
             z-index: 2147483647 !important;
@@ -2341,6 +2364,7 @@ return response;
 
                 if (data.status === 'done' || data.status === 'complete') {
                     stopPolling();
+                    DiagnosticLog?.record?.('download-outcome', 'success');
                     fill.style.width = '100%';
                     fill.classList.remove('is-error');
                     fill.classList.add('is-success');
@@ -2358,6 +2382,7 @@ return response;
                     // staring at a "downloading" spinner that never ends.
                     stopPolling();
                     const skipReason = data.error || t('dlProgressSkippedDefault', 'Already downloaded — skipped.');
+                    DiagnosticLog?.record?.('download-outcome', `skipped: ${skipReason.slice(0, 200)}`);
                     fill.style.width = '100%';
                     fill.classList.remove('is-error');
                     title.textContent = skipReason;
@@ -2372,6 +2397,7 @@ return response;
                 if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                     stopPolling();
                     const failureReason = data.error || t('dlProgressFailureDefault', 'Astra Downloader failed');
+                    DiagnosticLog?.record?.('download-outcome', `${data.status}: ${failureReason.slice(0, 200)}`);
                     fill.classList.remove('is-success');
                     fill.classList.add('is-error');
                     title.textContent = failureReason;
@@ -3041,7 +3067,10 @@ return response;
 
     function _closeDlPopup() {
         if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
-        if (_dlPopup) { _dlPopup.remove(); _dlPopup = null; }
+        if (_dlPopup) {
+            try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
+            _dlPopup.remove(); _dlPopup = null;
+        }
     }
 
     // ── Speed control popup (driven by player chrome speedBtn) ──
@@ -3055,7 +3084,10 @@ return response;
 
     function _closeSpeedPopup() {
         if (_speedPopupCleanup) { _speedPopupCleanup(); _speedPopupCleanup = null; }
-        if (_speedPopup) { _speedPopup.remove(); _speedPopup = null; }
+        if (_speedPopup) {
+            try { if (_speedPopup.hidePopover) _speedPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
+            _speedPopup.remove(); _speedPopup = null;
+        }
     }
 
     function showSpeedPopup(anchorEl, onChange) {
@@ -3066,6 +3098,8 @@ return response;
         popup.className = 'ytkit-speed-popup';
         popup.setAttribute('role', 'menu');
         popup.setAttribute('aria-label', t('speedPopupAria', 'Default playback speed'));
+        const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+        if (_usePopover) popup.setAttribute('popover', 'auto');
 
         const header = document.createElement('div');
         header.className = 'ytkit-speed-popup__header';
@@ -3114,8 +3148,14 @@ return response;
         document.body.appendChild(popup);
         _speedPopup = popup;
 
-        // Position above the anchor; flip below if no room.
-        if (anchorEl) {
+        if (_usePopover) {
+            popup.showPopover();
+            popup.addEventListener('toggle', (e) => {
+                if (e.newState === 'closed') _closeSpeedPopup();
+            }, { once: true });
+        }
+
+        if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
             const ph = popup.offsetHeight;
@@ -3130,19 +3170,25 @@ return response;
 
         anchorEl?.setAttribute?.('aria-expanded', 'true');
 
-        const outsideClick = (e) => {
-            if (!popup.contains(e.target) && e.target !== anchorEl) _closeSpeedPopup();
-        };
-        const escHandler = (e) => { if (e.key === 'Escape') _closeSpeedPopup(); };
-        setTimeout(() => {
-            document.addEventListener('click', outsideClick, true);
-            document.addEventListener('keydown', escHandler);
-        }, 50);
-        _speedPopupCleanup = () => {
-            document.removeEventListener('click', outsideClick, true);
-            document.removeEventListener('keydown', escHandler);
-            anchorEl?.setAttribute?.('aria-expanded', 'false');
-        };
+        if (!_usePopover) {
+            const outsideClick = (e) => {
+                if (!popup.contains(e.target) && e.target !== anchorEl) _closeSpeedPopup();
+            };
+            const escHandler = (e) => { if (e.key === 'Escape') _closeSpeedPopup(); };
+            setTimeout(() => {
+                document.addEventListener('click', outsideClick, true);
+                document.addEventListener('keydown', escHandler);
+            }, 50);
+            _speedPopupCleanup = () => {
+                document.removeEventListener('click', outsideClick, true);
+                document.removeEventListener('keydown', escHandler);
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        } else {
+            _speedPopupCleanup = () => {
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        }
     }
 
     async function _fetchServerConfig(token) {
@@ -3186,24 +3232,12 @@ return response;
         popup.className = 'ytkit-dl-popup';
         popup.setAttribute('role', 'dialog');
         popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
+        const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+        if (_usePopover) popup.setAttribute('popover', 'auto');
 
-        // ── Header ──
-        const header = document.createElement('div');
-        header.className = 'ytkit-dl-popup__header';
-        const title = document.createElement('span');
-        title.className = 'ytkit-dl-popup__title';
-        title.textContent = t('dlPopupTitle', 'Download options');
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'ytkit-dl-popup__close';
-        closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
-        closeBtn.textContent = '\u2715';
-        closeBtn.addEventListener('click', _closeDlPopup);
-        header.appendChild(title);
-        header.appendChild(closeBtn);
-        popup.appendChild(header);
-
-        // ── Mode tabs (Video / Audio) ──
+        // ── Toolbar: tabs + close in one row ──
+        const toolbar = document.createElement('div');
+        toolbar.className = 'ytkit-dl-popup__toolbar';
         const tabs = document.createElement('div');
         tabs.className = 'ytkit-dl-popup__tabs';
         tabs.setAttribute('role', 'tablist');
@@ -3219,7 +3253,7 @@ return response;
         audTab.className = 'ytkit-dl-popup__tab';
         audTab.setAttribute('role', 'tab');
         audTab.setAttribute('aria-selected', 'false');
-        audTab.textContent = t('dlPopupTabAudioOnly', 'Audio only');
+        audTab.textContent = t('dlPopupTabAudioOnly', 'Audio');
 
         const updateTabs = () => {
             vidTab.classList.toggle('is-active', selectedMode === 'video');
@@ -3235,7 +3269,15 @@ return response;
         audTab.addEventListener('click', () => { selectedMode = 'audio'; updateTabs(); });
         tabs.appendChild(vidTab);
         tabs.appendChild(audTab);
-        popup.appendChild(tabs);
+        toolbar.appendChild(tabs);
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'ytkit-dl-popup__close';
+        closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', _closeDlPopup);
+        toolbar.appendChild(closeBtn);
+        popup.appendChild(toolbar);
 
         // ── Body ──
         const body = document.createElement('div');
@@ -3399,12 +3441,17 @@ return response;
         footer.appendChild(dlBtn);
         popup.appendChild(footer);
 
-        // Position relative to anchor
         document.body.appendChild(popup);
         _dlPopup = popup;
 
-        // Position above the anchor
-        if (anchorEl) {
+        if (_usePopover) {
+            popup.showPopover();
+            popup.addEventListener('toggle', (e) => {
+                if (e.newState === 'closed') _closeDlPopup();
+            }, { once: true });
+        }
+
+        if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
             const ph = popup.offsetHeight;
@@ -3417,19 +3464,27 @@ return response;
             popup.style.top = top + 'px';
         }
 
-        // Outside click handler
-        const outsideClick = (e) => {
-            if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
-        };
-        const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
-        setTimeout(() => {
-            document.addEventListener('click', outsideClick, true);
-            document.addEventListener('keydown', escHandler);
-        }, 50);
-        _dlPopupCleanup = () => {
-            document.removeEventListener('click', outsideClick, true);
-            document.removeEventListener('keydown', escHandler);
-        };
+        anchorEl?.setAttribute?.('aria-expanded', 'true');
+
+        if (!_usePopover) {
+            const outsideClick = (e) => {
+                if (!popup.contains(e.target) && e.target !== anchorEl) _closeDlPopup();
+            };
+            const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
+            setTimeout(() => {
+                document.addEventListener('click', outsideClick, true);
+                document.addEventListener('keydown', escHandler);
+            }, 50);
+            _dlPopupCleanup = () => {
+                document.removeEventListener('click', outsideClick, true);
+                document.removeEventListener('keydown', escHandler);
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        } else {
+            _dlPopupCleanup = () => {
+                anchorEl?.setAttribute?.('aria-expanded', 'false');
+            };
+        }
 
         // Fetch server config to show current directory.
         // Server returns both downloadPath (camelCase, v1.2.2+) and DownloadPath
@@ -3885,9 +3940,11 @@ return response;
             autoSubtitles: false,
             autoSubtitleLang: 'en',
             focusedMode: false,
+            zenMode: false,
             thumbnailQualityUpgrade: false,
             watchLaterQuickAdd: false,
             playlistEnhancer: false,
+            playlistSearch: false,
             commentSearch: false,
             videoZoom: false,
             forceDarkEverywhere: false,
@@ -3897,6 +3954,7 @@ return response;
             customCssCode: '',
             shareMenuCleaner: false,
             autoClosePopups: false,
+            autoDismissContentWarning: true,
             videoResolutionBadge: false,
             likeViewRatio: false,
             downloadThumbnail: false,
@@ -3935,6 +3993,7 @@ return response;
             daReplaceTitles: true,
             daReplaceThumbs: true,
             daTitleFormat: 'sentence',
+            deArrowCasualMode: false,
             daFallbackFormat: true,
             daShowOriginalHover: true,
             daCacheTTL: '4',
@@ -3948,6 +4007,8 @@ return response;
             sbCat_preview: true,
             sbCat_filler: true,
             sbCat_poi_highlight: false,
+            sbPerChannelProfiles: false,       // Per-channel SponsorBlock skip category overrides
+            sbPerChannelProfilesData: {},      // { channelId: { categories: { sponsor: true, intro: false, ... }, updatedAt: ts } }
             showStatisticsDashboard: false,
             settingsProfiles: false,
             debugMode: false,
@@ -3957,6 +4018,13 @@ return response;
             // v3.8.0 additions
             videoRotation: false,
             videoRotationAngle: 0,           // 0 | 90 | 180 | 270
+            videoFlip: false,
+            videoFlipMode: 'none',           // none | horizontal | vertical | both
+            monoToStereo: false,
+            volumeBoost: false,
+            volumeBoostLevel: 2,
+            audioNormalization: false,
+            audioPan: 0,
             frameByFrameButtons: false,
             digitalWellbeing: false,
             dwBreakIntervalMin: 30,          // 0 = off
@@ -3990,7 +4058,8 @@ return response;
                 'hiddenPlayerControls', 'hiddenWatchElementsManager', 'hiddenWatchElements',
                 'sponsorBlock', 'sbCat_sponsor', 'sbCat_intro', 'sbCat_outro',
                 'sbCat_selfpromo', 'sbCat_interaction', 'sbCat_music_offtopic',
-                'sbCat_preview', 'sbCat_filler', 'sbCat_poi_highlight'
+                'sbCat_preview', 'sbCat_filler', 'sbCat_poi_highlight',
+                'sbPerChannelProfiles'
             ],
             advancedLocalPredicate: false,
             advancedLocalPredicateCode: '',
@@ -4023,6 +4092,7 @@ return response;
             returnDislikeShowRatio: true,
             deArrowChannelOverrides: {},               // { channelId: { mode: 'off' | 'original' | 'dearrow' } }
             deArrowChannelOverridesPanel: false,       // Watch-page button to set the override for the current channel
+            deArrowVoting: false,                      // Vote on DeArrow title replacements (off by default; requires local userID)
             // v3.26.0 deferred → v4.1.0: per-context quality matrix scaffold
             // Data model only. The MAIN-world bridge listens to data-ytkit-quality-context
             // and switches active quality. Default 'inherit' means "no override".
@@ -4044,8 +4114,11 @@ return response;
             subscriptionUnsubscribeStagingData: {},    // { channelId: { channelId, channelName, ageDays, stagedAt, undoUntil, reason, source } }
             subscriptionAiTags: false,                 // Master toggle for AI-generated group tags
             subscriptionAiTagData: {},                 // { groupId: { tags: string[], generatedAt: ms } }
+            subscriptionFilterLive: false,             // Hide live/streaming cards from subscription feed
+            subscriptionFilterStreamed: false,          // Hide previously-streamed cards from subscription feed
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
+            localAiTranscriptQa: false,                // Uses Chrome's Prompt API (Gemini Nano) for transcript Q&A
             researchSpacedReview: false,               // Export study/work data to Markdown + CSV
             researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
             researchTranscriptSearchPanel: false,      // Adds a watch-page button that opens a search UI on the index
@@ -4054,6 +4127,10 @@ return response;
             forcedColorsSupport: false,                // Windows High Contrast / forced-colors media handling
             globalAriaLiveRegion: false,               // Mounts a single role=status live region for all toasts
             lowPowerProfile: false,                    // Throttles intervals/observers when on battery-saver
+            presetPrivacy: false,                      // Preset: privacy-focused settings bundle
+            presetResearcher: false,                   // Preset: research/study workflow
+            presetPowerUser: false,                    // Preset: max feature density
+            presetFocus: false,                        // Preset: distraction-free viewing
             lowPowerProfileBackup: null,               // Backup of pre-applied flags
             // v3.32.0 — Premium visual system
             oledTheme: false,                          // True OLED black via --yt-sys-* token bridge
@@ -4061,6 +4138,7 @@ return response;
             rectangularizeYouTube: false,              // Forces 4-12px radii everywhere (no pill backdrops, ever)
             classicLayoutProfile: 'modern',            // 'modern' | 'classic-2020' | 'classic-2016'
             newPlayerUiRestore: false,                 // Control Panel-style restoration of older player chrome
+            classicPlayerChrome: false,                // One-toggle pre-redesign player look (CSS-only superset)
             tokenThemeBridge: false,                   // Maps Astra accent into --yt-sys-color-* tokens
             // v3.33.0 — Integrations & interop
             openInAlternativeFrontend: false,          // FreeTube / Invidious / Piped open-in buttons
@@ -4799,6 +4877,85 @@ return response;
         return byCode(pref) || byCode(navLang) || byCode('en') || tracks[0];
     }
 
+    // PO Token resilience: engagement-panel HTML transcript scrape.
+    // YouTube increasingly requires Proof-of-Origin Tokens for timedtext
+    // API access. When the json3 fetch returns empty or errors, this
+    // fallback reads the rendered engagement-panel transcript DOM instead.
+    function _scrapeEngagementPanelTranscript() {
+        const segs = document.querySelectorAll(
+            'ytd-transcript-segment-renderer .segment-text, ' +
+            'ytd-transcript-segment-renderer yt-formatted-string'
+        );
+        if (!segs || segs.length === 0) return null;
+        const cues = [];
+        segs.forEach(seg => {
+            const text = seg.textContent?.trim();
+            if (!text) return;
+            const row = seg.closest('ytd-transcript-segment-renderer');
+            const tsEl = row?.querySelector('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]');
+            const tsText = tsEl?.textContent?.trim() || '';
+            // Parse timestamp like "1:23" or "12:34" into seconds
+            const parts = tsText.split(':').map(Number).filter(n => !isNaN(n));
+            let startSec = 0;
+            if (parts.length === 2) startSec = parts[0] * 60 + parts[1];
+            else if (parts.length === 3) startSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            cues.push({ start: startSec, text });
+        });
+        return cues.length > 0 ? cues : null;
+    }
+
+    // Fetch transcript with PO Token fallback. Tries json3 API first,
+    // then falls back to engagement-panel DOM scraping.
+    // Returns { cues: [{start, text}], source: 'api'|'panel'|null }
+    async function fetchTranscriptWithFallback(tracks) {
+        const track = pickTranscriptTrack(tracks);
+        if (!track) return { cues: null, source: null, error: 'No caption tracks available' };
+
+        // Guard against missing/corrupt baseUrl — skip API fetch, try panel fallback
+        if (!track.baseUrl || typeof track.baseUrl !== 'string') {
+            DiagnosticLog?.record('transcript-po-token', 'Caption track has no baseUrl; trying engagement-panel fallback.');
+            const panelCues = _scrapeEngagementPanelTranscript();
+            if (panelCues) return { cues: panelCues, source: 'panel', track };
+            return { cues: null, source: null, track, error: 'Caption track has no fetchable URL.' };
+        }
+
+        // Try json3 API first
+        try {
+            const { response, data } = await extensionFetchJson({
+                url: track.baseUrl + '&fmt=json3'
+            });
+            if (response && response.status >= 200 && response.status < 300 && data?.events?.length > 0) {
+                const cues = [];
+                for (const ev of data.events) {
+                    if (!ev.segs) continue;
+                    const text = ev.segs.map(s => s.utf8 || '').join('').trim();
+                    if (!text) continue;
+                    const startSec = (ev.tStartMs || 0) / 1000;
+                    const durSec = (ev.dDurationMs != null) ? ev.dDurationMs / 1000 : null;
+                    const endSec = durSec != null ? startSec + durSec : null;
+                    cues.push({ start: startSec, end: endSec, text });
+                }
+                if (cues.length > 0) {
+                    return { cues, source: 'api', track };
+                }
+            }
+            // Empty response — likely PO Token required
+            DiagnosticLog?.record('transcript-po-token',
+                'timedtext API returned empty or error — may require PO Token. Attempting engagement-panel fallback.');
+        } catch (e) {
+            DiagnosticLog?.record('transcript-po-token',
+                `timedtext API fetch failed: ${e.message}. Attempting engagement-panel fallback.`);
+        }
+
+        // Fallback: engagement-panel HTML scrape
+        const panelCues = _scrapeEngagementPanelTranscript();
+        if (panelCues) {
+            return { cues: panelCues, source: 'panel', track };
+        }
+
+        return { cues: null, source: null, track, error: 'Transcript unavailable — YouTube may require a Proof-of-Origin Token for this video.' };
+    }
+
     // v3.14.0: Selector chain with first-miss diagnostics. Used at the
     // highest-churn YouTube DOM regions so platform drift surfaces in
     // diagnosticLog instead of silent feature no-ops.
@@ -4889,10 +5046,10 @@ return response;
         return !!feature && !feature._arrayKey && !feature.type && !isRetiredCommentFeature(feature);
     }
 
-    function updateFeatureHealth(feature, status, source = 'runtime', error = null) {
+    function updateFeatureHealth(feature, status, source = 'runtime', error = null, elapsedMs = null) {
         if (!feature?.id) return;
         try {
-            setFeatureHealth(feature.id, {
+            const patch = {
                 status,
                 source,
                 name: getFeatureName(feature) || feature.id,
@@ -4900,7 +5057,12 @@ return response;
                 settingKey: getFeatureSettingKey(feature),
                 initialized: !!feature._initialized,
                 lastError: error ? String(error?.message || error) : null
-            });
+            };
+            if (typeof elapsedMs === 'number') {
+                if (status === 'initialized') patch.initMs = Math.round(elapsedMs * 100) / 100;
+                if (status === 'destroyed') patch.destroyMs = Math.round(elapsedMs * 100) / 100;
+            }
+            setFeatureHealth(feature.id, patch);
         } catch (healthError) {
             DebugManager.log('Runtime', `Feature health update failed for "${feature.id}": ${healthError.message}`);
         }
@@ -4908,10 +5070,12 @@ return response;
 
     function initFeatureLifecycle(feature, source = 'runtime') {
         if (!feature || feature._arrayKey) return false;
+        const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
         try {
             feature.init?.();
             feature._initialized = true;
-            updateFeatureHealth(feature, 'initialized', source);
+            const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
+            updateFeatureHealth(feature, 'initialized', source, null, elapsed);
             return true;
         } catch (error) {
             updateFeatureHealth(feature, 'init-error', source, error);
@@ -4921,10 +5085,12 @@ return response;
 
     function destroyFeatureLifecycle(feature, source = 'runtime') {
         if (!feature || feature._arrayKey) return false;
+        const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
         try {
             feature.destroy?.();
             feature._initialized = false;
-            updateFeatureHealth(feature, 'destroyed', source);
+            const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
+            updateFeatureHealth(feature, 'destroyed', source, null, elapsed);
             return true;
         } catch (error) {
             updateFeatureHealth(feature, 'destroy-error', source, error);
@@ -5117,8 +5283,188 @@ return response;
         return true;
     }
 
-    function toggleSettingsPanel(force) {
-        return setSettingsPanelOpen(force ?? !isSettingsPanelOpen());
+    // ── Settings PIN gate ──
+    const PIN_STORAGE_KEY = 'ytkit_pin_hash';
+    const PIN_SALT = 'ytkit-pin-salt-v1:';
+    let _pinHashCache = null;
+    let _pinSessionUnlocked = false;
+
+    async function _hashPin(pin) {
+        const data = new TextEncoder().encode(PIN_SALT + pin);
+        const buf = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function _loadPinHash() {
+        if (_pinHashCache !== null) return _pinHashCache;
+        try {
+            const result = await chrome.storage.local.get(PIN_STORAGE_KEY);
+            _pinHashCache = result[PIN_STORAGE_KEY] || '';
+        } catch (_) { /* reason: storage may be unavailable in userscript mode */ _pinHashCache = ''; }
+        return _pinHashCache;
+    }
+
+    async function isPinSet() { return !!(await _loadPinHash()); }
+
+    async function verifyPin(pin) {
+        const stored = await _loadPinHash();
+        if (!stored) return true;
+        return (await _hashPin(pin)) === stored;
+    }
+
+    async function setPin(pin) {
+        const hash = await _hashPin(pin);
+        await chrome.storage.local.set({ [PIN_STORAGE_KEY]: hash });
+        _pinHashCache = hash;
+        _pinSessionUnlocked = true;
+    }
+
+    async function clearPin() {
+        await chrome.storage.local.remove(PIN_STORAGE_KEY);
+        _pinHashCache = '';
+        _pinSessionUnlocked = false;
+    }
+
+    function _showPinDialog(onSuccess) {
+        if (document.getElementById('ytkit-pin-overlay')) return;
+        const overlay = document.createElement('div');
+        overlay.id = 'ytkit-pin-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a2e;border-radius:12px;padding:24px 28px;min-width:280px;text-align:center;color:#e0e0e0;font-family:system-ui,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+        card.innerHTML = '';
+        const title = document.createElement('div');
+        title.textContent = 'Enter PIN';
+        title.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:16px;';
+        card.appendChild(title);
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.inputMode = 'numeric';
+        input.pattern = '[0-9]*';
+        input.maxLength = 6;
+        input.placeholder = '4–6 digits';
+        input.autocomplete = 'off';
+        input.style.cssText = 'width:120px;padding:10px 12px;font-size:20px;text-align:center;border:2px solid #333;border-radius:8px;background:#0d0d1a;color:#fff;letter-spacing:8px;outline:none;';
+        card.appendChild(input);
+        const error = document.createElement('div');
+        error.style.cssText = 'color:#ef4444;font-size:13px;margin-top:8px;min-height:20px;';
+        card.appendChild(error);
+        const actions = document.createElement('div');
+        actions.style.cssText = 'margin-top:16px;display:flex;gap:8px;justify-content:center;';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'padding:8px 16px;border:1px solid #444;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:13px;';
+        const unlockBtn = document.createElement('button');
+        unlockBtn.textContent = 'Unlock';
+        unlockBtn.style.cssText = 'padding:8px 16px;border:none;border-radius:6px;background:#ff4e45;color:#fff;cursor:pointer;font-size:13px;font-weight:600;';
+        actions.appendChild(cancelBtn);
+        actions.appendChild(unlockBtn);
+        card.appendChild(actions);
+        const forgotLink = document.createElement('div');
+        forgotLink.textContent = 'Forgot PIN? (resets all settings)';
+        forgotLink.style.cssText = 'margin-top:12px;font-size:11px;color:#888;cursor:pointer;text-decoration:underline;';
+        card.appendChild(forgotLink);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        input.focus();
+        async function tryUnlock() {
+            const pin = input.value.trim();
+            if (pin.length < 4) { error.textContent = 'PIN must be 4–6 digits'; return; }
+            if (await verifyPin(pin)) {
+                _pinSessionUnlocked = true;
+                overlay.remove();
+                onSuccess();
+            } else {
+                error.textContent = 'Incorrect PIN';
+                input.value = '';
+                input.focus();
+            }
+        }
+        unlockBtn.addEventListener('click', tryUnlock);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+        cancelBtn.addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        forgotLink.addEventListener('click', async () => {
+            if (confirm('This will clear your PIN and reset ALL Astra Deck settings. Continue?')) {
+                await clearPin();
+                try { await chrome.storage.local.remove('ytSuiteSettings'); } catch(_) { /* reason: storage may fail */ }
+                overlay.remove();
+                showToast('PIN cleared and settings reset. Reload to apply.', '#f59e0b', { duration: 6 });
+            }
+        });
+    }
+
+    function _showPinManageDialog() {
+        if (document.getElementById('ytkit-pin-overlay')) return;
+        const overlay = document.createElement('div');
+        overlay.id = 'ytkit-pin-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a2e;border-radius:12px;padding:24px 28px;min-width:280px;text-align:center;color:#e0e0e0;font-family:system-ui,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:16px;';
+        card.appendChild(title);
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.inputMode = 'numeric';
+        input.pattern = '[0-9]*';
+        input.maxLength = 6;
+        input.autocomplete = 'off';
+        input.style.cssText = 'width:120px;padding:10px 12px;font-size:20px;text-align:center;border:2px solid #333;border-radius:8px;background:#0d0d1a;color:#fff;letter-spacing:8px;outline:none;';
+        card.appendChild(input);
+        const status = document.createElement('div');
+        status.style.cssText = 'font-size:13px;margin-top:8px;min-height:20px;';
+        card.appendChild(status);
+        const actions = document.createElement('div');
+        actions.style.cssText = 'margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;';
+        card.appendChild(actions);
+        overlay.appendChild(card);
+        const close = () => overlay.remove();
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        (async () => {
+            const hasPin = await isPinSet();
+            title.textContent = hasPin ? 'Change or Clear PIN' : 'Set a Settings PIN';
+            input.placeholder = hasPin ? 'New PIN' : '4-6 digits';
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = hasPin ? 'Change PIN' : 'Set PIN';
+            saveBtn.style.cssText = 'padding:8px 16px;border:none;border-radius:6px;background:#ff4e45;color:#fff;cursor:pointer;font-size:13px;font-weight:600;';
+            saveBtn.addEventListener('click', async () => {
+                const pin = input.value.trim();
+                if (!/^\d{4,6}$/.test(pin)) { status.textContent = 'Enter 4-6 digits'; status.style.color = '#ef4444'; return; }
+                await setPin(pin);
+                status.textContent = 'PIN saved'; status.style.color = '#22c55e';
+                setTimeout(close, 800);
+            });
+            actions.appendChild(saveBtn);
+            if (hasPin) {
+                const clearBtn = document.createElement('button');
+                clearBtn.textContent = 'Clear PIN';
+                clearBtn.style.cssText = 'padding:8px 16px;border:1px solid #444;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:13px;';
+                clearBtn.addEventListener('click', async () => {
+                    await clearPin();
+                    status.textContent = 'PIN cleared'; status.style.color = '#22c55e';
+                    setTimeout(close, 800);
+                });
+                actions.appendChild(clearBtn);
+            }
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.cssText = 'padding:8px 16px;border:1px solid #444;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:13px;';
+            cancelBtn.addEventListener('click', close);
+            actions.appendChild(cancelBtn);
+            document.body.appendChild(overlay);
+            input.focus();
+        })();
+    }
+
+    async function toggleSettingsPanel(force) {
+        const wantOpen = force ?? !isSettingsPanelOpen();
+        if (wantOpen && !_pinSessionUnlocked && await isPinSet()) {
+            _showPinDialog(() => setSettingsPanelOpen(true));
+            return false;
+        }
+        return setSettingsPanelOpen(wantOpen);
     }
 
     function applyExternalSettingsUpdate({ source = 'storage', nextSettings = null } = {}) {
@@ -5315,6 +5661,21 @@ return response;
                     return false;
                 }
 
+                if (message.type === 'YTKIT_GET_FEATURE_PERF') {
+                    try {
+                        const lifecycle = typeof getLifecycle === 'function' ? getLifecycle() : null;
+                        const snapshot = lifecycle?.snapshot?.() || [];
+                        const entries = snapshot
+                            .filter((s) => typeof s.initMs === 'number' && s.initMs > 0)
+                            .map((s) => ({ id: s.id, initMs: Math.round(s.initMs * 100) / 100, destroyMs: s.destroyMs != null ? Math.round(s.destroyMs * 100) / 100 : null }))
+                            .sort((a, b) => b.initMs - a.initMs);
+                        sendResponse?.({ ok: true, features: entries.slice(0, 20), totalFeatures: entries.length });
+                    } catch (e) {
+                        sendResponse?.({ ok: false, error: String(e?.message || e) });
+                    }
+                    return false;
+                }
+
                 // v4.47.0 NF18: popup-triggered on-demand yt-dlp -U via
                 // the Astra Downloader /update-ytdlp endpoint. The popup
                 // cannot reach 127.0.0.1 directly (CSP + no per-popup
@@ -5475,6 +5836,41 @@ return response;
         hideCommentDislikeButton: 'Removes the no-op dislike control from comment toolbars',
         commentEnhancements: 'Highlights creator replies, shows like heat, collapse toggle',
     };
+
+    // ── Download UI module delegation ──
+    // If the peeled download-ui module loaded before ytkit.js, construct
+    // the factory with deps now. The feature objects below prefer the
+    // module's instances and fall back to the inline literals.
+    const _downloadUI = globalThis.YTKitFeatures?.createDownloadUIFeature?.({
+        appState,
+        extensionFetchJson,
+        extensionFetchText,
+        showToast,
+        DebugManager,
+        DiagnosticLog,
+        storageRead,
+        storageWrite,
+        storageReadJSON: storageReadJSON || ((k, d) => d),
+        storageWriteJSON: storageWriteJSON || (() => {}),
+        getVideoId,
+        isWatchPagePath,
+        addNavigateRule,
+        removeNavigateRule,
+        injectStyle,
+        TrustedHTML,
+        openExternalUrl,
+        openProtocol,
+        triggerDownload,
+        browserCookies,
+        getProfileExportMode,
+        normalizeCookieExpiry,
+        showToast,
+        PageTypes,
+        ICONS: globalThis.YTKitCore?.ICONS,
+        BRAND,
+        t,
+        getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+    }) || null;
 
     const features = [
         // ─── Interface ───
@@ -8808,7 +9204,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._belowCache = document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement;
                 return this._belowCache;
             },
-            _getChatEl()  { return VideoTypeDetector.getChatEl(); },
+            _getChatEl() {
+                const chatEl = VideoTypeDetector.getChatEl();
+                return this._isSplitChatCandidate(chatEl) ? chatEl : null;
+            },
+
+            _isSplitChatCandidate(chatEl) {
+                if (!chatEl || typeof chatEl.hasAttribute !== 'function') return false;
+                if (chatEl.hidden === true || chatEl.hasAttribute('hidden')) return false;
+                if (typeof chatEl.getAttribute === 'function' && chatEl.getAttribute('aria-hidden') === 'true') return false;
+                return true;
+            },
+
+            _hasSplitCommentsSurface(below) {
+                return !!below?.querySelector?.('ytd-comments#comments, ytd-comments, ytd-comments-header-renderer, ytd-comment-thread-renderer');
+            },
+
+            _resolveSplitPanelType(rawType, chatEl, below) {
+                const type = rawType || 'standard';
+                const hasChat = this._isSplitChatCandidate(chatEl);
+                const hasComments = this._hasSplitCommentsSurface(below);
+                const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
+
+                if (type === 'live') return 'live';
+                if (type === 'vod') {
+                    if (hasChat && !chatCollapsed) return 'vod';
+                    return below ? 'standard' : 'vod';
+                }
+                if (type === 'premiere') {
+                    return hasChat && !hasComments && !chatCollapsed ? 'live' : 'standard';
+                }
+                if (type === 'standard' && hasChat && !hasComments && !chatCollapsed) return 'live';
+                return 'standard';
+            },
 
             // Nudge YouTube's player to recalculate control bar layout.
             _triggerPlayerResize() {
@@ -9895,11 +10323,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _handleChatFound(chatEl, options = {}) {
                 if (!chatEl || !this._isActive) return;
-                let detectedType = VideoTypeDetector.refresh();
-                if (detectedType === 'standard') detectedType = 'live';
-                if (detectedType === 'live' || detectedType === 'vod') {
-                    this._videoType = detectedType;
+                const detectedType = VideoTypeDetector.refresh();
+                const below = this._getBelow();
+                const resolvedType = this._resolveSplitPanelType(detectedType, chatEl, below);
+                this._videoType = resolvedType;
+                if (resolvedType === 'live' || resolvedType === 'vod') {
                     this._prepareSecondaryForChat();
+                } else {
+                    DebugManager.log('Theater', `Late chat ignored, using ${resolvedType} comments panel`);
+                    return;
                 }
                 if (!options.position || !this._isSplit) {
                     DebugManager.log('Theater', `Late chat detected, reclassified as ${this._videoType}`);
@@ -10478,10 +10910,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const divider = wrapper.querySelector('#ytkit-split-divider');
                 const below   = this._getBelow();
                 const chatEl  = this._getChatEl();
-                if (chatEl) {
-                    const detectedType = VideoTypeDetector.refresh();
-                    this._videoType = detectedType === 'standard' ? 'live' : detectedType;
-                }
+                const detectedType = chatEl ? VideoTypeDetector.refresh() : this._videoType;
+                this._videoType = this._resolveSplitPanelType(detectedType, chatEl, below);
                 const type    = this._videoType;
                 document.documentElement.classList.toggle('ytkit-split-live', type === 'live');
 
@@ -16819,7 +17249,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
                                     const regex = new RegExp(regexMatch[1], regexMatch[2]);
-                                    if (regex.test(title) || regex.test(channelName)) return true;
+                                    if (regex.test(title.slice(0, 500)) || regex.test(channelName.slice(0, 200))) return true;
                                 }
                             }
                         } catch (e) {
@@ -18858,7 +19288,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _update() {
                 const video = getMainVideoElement();
                 if (!video || !video.duration) { if (this._el) this._el.textContent = ''; return; }
-                const remaining = (video.duration - video.currentTime) / (video.playbackRate || 1);
+                let skipDuration = 0;
+                const sb = getFeatureById?.('sponsorBlock');
+                if (sb?._segments?.length && appState?.settings?.sponsorBlock) {
+                    for (const seg of sb._segments) {
+                        if (!seg.segment || seg.segment.length < 2) continue;
+                        const [start, end] = seg.segment;
+                        if (end > video.currentTime) {
+                            skipDuration += end - Math.max(start, video.currentTime);
+                        }
+                    }
+                }
+                const remaining = (video.duration - video.currentTime - skipDuration) / (video.playbackRate || 1);
                 if (!this._el) {
                     const timeDisplay = document.querySelector('.ytp-time-display');
                     if (!timeDisplay) return;
@@ -19685,9 +20126,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
+            _languageDetector: null,
+            async _initLanguageDetector() {
+                if (this._languageDetector) return;
+                try {
+                    const factory = globalThis.LanguageDetector || globalThis.ai?.languageDetector;
+                    if (factory && typeof factory.create === 'function') {
+                        this._languageDetector = await factory.create();
+                    }
+                } catch { /* reason: LanguageDetector is a progressive enhancement */ }
+            },
+
+            async _isTranslated(text, originalText) {
+                if (!text || !originalText) return text !== originalText;
+                if (text === originalText) return false;
+                if (!this._languageDetector) return text !== originalText;
+                try {
+                    const [detectedDisplay, detectedOriginal] = await Promise.all([
+                        this._languageDetector.detect(text),
+                        this._languageDetector.detect(originalText)
+                    ]);
+                    const displayLang = detectedDisplay?.[0]?.detectedLanguage;
+                    const originalLang = detectedOriginal?.[0]?.detectedLanguage;
+                    if (displayLang && originalLang) return displayLang !== originalLang;
+                } catch { /* reason: LanguageDetector fallback to text comparison */ }
+                return text !== originalText;
+            },
+
             _process() {
-                // YouTube stores original title in data attributes or in the ytInitialData structure
-                // The most reliable method: override title elements that have title attribute with original text
+                this._initLanguageDetector();
                 document.querySelectorAll('#video-title[title]:not([ytkit-antitranslate])').forEach(el => {
                     const original = el.getAttribute('title');
                     const displayed = el.textContent.trim();
@@ -19802,15 +20269,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // v3.23.0 (L23): NewPipe-style sleep timer. One toggle + a numeric
         // input (1-180 min) + a status chip in the player chrome that
         // counts down and pauses playback at zero. Cheap, contained,
-        // never auto-actions outside the scoped pause call.
+        // and limited to the scoped pause call.
         {
             id: 'sleepTimer',
             name: 'Sleep Timer',
-            description: 'Pause playback after a configurable number of minutes. NewPipe-style. The chip in the player chrome counts down + offers a Cancel + a +5 min top-up.',
+            description: 'Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes.',
             group: 'Video Player',
             icon: 'moon',
             pages: [PageTypes.WATCH],
             _chip: null,
+            _popover: null,
             _interval: null,
             _endsAt: 0,
             _injectTimer: null,
@@ -19847,6 +20315,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const span = Math.max(1, Math.min(180, Number(minutes) || 0));
                 this._endsAt = Date.now() + span * 60 * 1000;
                 this._interval = setInterval(() => this._tick(), 1000);
+                this._dismissPopover();
                 this._renderChip();
                 announceA11y(`Sleep timer set for ${span} minutes.`);
             },
@@ -19867,6 +20336,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._chip.remove();
                     this._chip = null;
                 }
+                this._dismissPopover();
             },
             _renderChip() {
                 if (this._chip) this._chip.remove();
@@ -19908,12 +20378,131 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 player.appendChild(chip);
                 this._chip = chip;
             },
+            _dismissPopover() {
+                if (this._popover) {
+                    this._popover.remove();
+                    this._popover = null;
+                }
+            },
+            _startFromInput(input, error) {
+                const raw = String(input?.value || '').trim();
+                const minutes = Number(raw);
+                if (!Number.isFinite(minutes) || minutes < 1 || minutes > 180) {
+                    if (error) error.textContent = 'Enter a value from 1 to 180 minutes.';
+                    input?.focus?.();
+                    return false;
+                }
+                this._start(minutes);
+                return true;
+            },
+            _showTimerPopover(anchor) {
+                this._dismissPopover();
+                const player = document.querySelector('.ytp-chrome-bottom');
+                if (!player) return;
+
+                const popover = document.createElement('div');
+                popover.className = 'ytkit-sleep-popover';
+                popover.setAttribute('role', 'dialog');
+                popover.setAttribute('aria-label', 'Set sleep timer');
+                popover.style.cssText = 'position:absolute;right:12px;bottom:64px;z-index:2147483641;width:min(280px,calc(100vw - 32px));box-sizing:border-box;padding:12px;background:rgba(20,20,28,0.98);color:#f4f6fb;border:1px solid rgba(255,255,255,0.14);border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,0.55);font:12px/1.35 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;gap:10px;';
+
+                const focusRing = '0 0 0 2px rgba(96,165,250,0.75)';
+                const wireFocus = (node, restingBoxShadow = '') => {
+                    node.addEventListener('focus', () => { node.style.boxShadow = focusRing; });
+                    node.addEventListener('blur', () => { node.style.boxShadow = restingBoxShadow; });
+                };
+
+                const title = document.createElement('div');
+                title.textContent = 'Sleep timer';
+                title.style.cssText = 'font-size:13px;font-weight:700;color:#fff;';
+
+                const hint = document.createElement('div');
+                hint.textContent = 'Pause playback after the selected number of minutes.';
+                hint.style.cssText = 'color:rgba(244,246,251,0.72);';
+
+                const label = document.createElement('label');
+                label.textContent = 'Minutes';
+                label.style.cssText = 'display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;color:rgba(244,246,251,0.78);';
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.max = '180';
+                input.step = '1';
+                input.value = '30';
+                input.inputMode = 'numeric';
+                input.style.cssText = 'height:34px;box-sizing:border-box;border-radius:6px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);color:#fff;padding:0 10px;font:600 13px system-ui,Segoe UI,Roboto,Arial,sans-serif;outline:none;';
+                wireFocus(input);
+                label.appendChild(input);
+
+                const error = document.createElement('div');
+                error.setAttribute('role', 'alert');
+                error.setAttribute('aria-live', 'assertive');
+                error.style.cssText = 'min-height:16px;color:#fecaca;font-size:11px;';
+
+                const presets = document.createElement('div');
+                presets.style.cssText = 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;';
+                [15, 30, 45, 60].forEach((minutes) => {
+                    const preset = document.createElement('button');
+                    preset.type = 'button';
+                    preset.textContent = `${minutes}`;
+                    preset.setAttribute('aria-label', `Set sleep timer for ${minutes} minutes`);
+                    preset.style.cssText = 'height:32px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.07);color:#f4f6fb;font:600 12px system-ui;cursor:pointer;';
+                    wireFocus(preset);
+                    preset.addEventListener('click', () => {
+                        input.value = String(minutes);
+                        this._startFromInput(input, error);
+                    });
+                    presets.appendChild(preset);
+                });
+
+                const actions = document.createElement('div');
+                actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
+
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = 'Cancel';
+                cancel.style.cssText = 'height:34px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(244,246,251,0.78);padding:0 12px;font:600 12px system-ui;cursor:pointer;';
+                wireFocus(cancel);
+                cancel.addEventListener('click', () => {
+                    this._dismissPopover();
+                    anchor?.focus?.();
+                });
+
+                const start = document.createElement('button');
+                start.type = 'button';
+                start.textContent = 'Start';
+                start.style.cssText = 'height:34px;border-radius:6px;border:1px solid rgba(34,197,94,0.42);background:rgba(34,197,94,0.18);color:#bbf7d0;padding:0 14px;font:700 12px system-ui;cursor:pointer;';
+                wireFocus(start);
+                start.addEventListener('click', () => this._startFromInput(input, error));
+
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        this._startFromInput(input, error);
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this._dismissPopover();
+                        anchor?.focus?.();
+                    }
+                });
+                popover.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this._dismissPopover();
+                        anchor?.focus?.();
+                    }
+                });
+
+                actions.append(cancel, start);
+                popover.append(title, hint, label, error, presets, actions);
+                player.appendChild(popover);
+                this._popover = popover;
+                setTimeout(() => input.focus(), 0);
+            },
             _inject() {
-                // Surface a "Set sleep timer" launcher button in the YT
-                // settings menu adjacent area — actually, simpler: render
-                // a single button on the right side of the player chrome
-                // when no timer is active. The chip from _renderChip
-                // replaces it when a timer is set.
+                // Surface a single launcher in the player controls while no
+                // timer is active. The countdown chip replaces it after start.
                 if (this._interval) return;
                 const controls = document.querySelector('.ytp-right-controls');
                 if (!controls || controls.querySelector('.ytkit-sleep-launcher')) return;
@@ -19922,16 +20511,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.title = 'Sleep timer';
                 btn.setAttribute('aria-label', 'Set sleep timer');
                 TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>');
-                btn.addEventListener('click', () => {
-                    const raw = prompt('Sleep timer — minutes (1-180):', '30');
-                    if (raw === null) return;
-                    const n = Number(raw);
-                    if (!Number.isFinite(n) || n < 1 || n > 180) {
-                        showToast('Enter 1-180 minutes.', '#ef4444', { duration: 4 });
-                        return;
-                    }
-                    this._start(n);
-                });
+                btn.addEventListener('click', () => this._showTimerPopover(btn));
                 controls.insertBefore(btn, controls.firstChild);
             },
             init() {
@@ -21112,17 +21692,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _activate() {
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) { showToast('No video found', '#ef4444'); return; }
-                // v3.23.0 (L3): Firefox 148 ships `documentPictureInPicture`
-                // behind the `dom.documentpip.enabled` about:config flag
-                // (Beta-only at the time of writing). The capability check
-                // below catches both "Safari, no support at all" and
-                // "Firefox 148 with the flag still off" and falls through
-                // to the legacy `video.requestPictureInPicture()` path. If
-                // BOTH paths are unavailable, surface a Firefox-specific
-                // hint so the user knows the toggle exists.
-                // Refs: https://bugzilla.mozilla.org/show_bug.cgi?id=1858562
+                // Document PiP: Chrome 116+, Firefox 151+ (stable, no flag).
+                // Safari still lacks support — falls through to legacy
+                // video.requestPictureInPicture().
                 const isFirefox = typeof navigator !== 'undefined' && /\bFirefox\/(\d+)/.test(navigator.userAgent || '');
-                // Try Document PiP API first (Chrome 116+, Firefox 148+ with flag)
+                // Try Document PiP API first (Chrome 116+, Firefox 151+)
                 if ('documentPictureInPicture' in window) {
                     try {
                         this._pipWindow = await window.documentPictureInPicture.requestWindow({
@@ -21188,14 +21762,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     video.addEventListener('leavepictureinpicture', () => { RuntimeFlags.setVideoPopped(false); }, { once: true });
                     showToast('Picture-in-Picture active', '#22c55e');
                 } catch(e) {
-                    // v3.23.0 (L3): more helpful failure message for
-                    // Firefox-148 users — Document PiP exists behind
-                    // dom.documentpip.enabled and standard PiP is also
-                    // gated on some Firefox builds. Tell them where to
-                    // flip the flag instead of the opaque generic.
                     if (isFirefox) {
+                        const ffMatch = (navigator.userAgent || '').match(/\bFirefox\/(\d+)/);
+                        const ffVersion = ffMatch ? parseInt(ffMatch[1], 10) : 0;
                         showToast(
-                            'PiP unavailable on Firefox. Enable dom.documentpip.enabled in about:config (Firefox 148+).',
+                            ffVersion >= 151
+                                ? 'PiP failed. Try reloading the page.'
+                                : 'PiP unavailable. Update Firefox to 151+ for Document PiP support.',
                             '#ef4444',
                             { duration: 8 },
                         );
@@ -21704,31 +22277,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!loginPrompt?.textContent?.toLowerCase()?.includes('sign in') && !loginPrompt?.textContent?.toLowerCase()?.includes('age')) return;
 
                 const videoId = getVideoId();
-                if (!videoId) return;
+                if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return;
                 DebugManager.log('AgeBypass', `Attempting bypass for ${videoId}`);
 
                 try {
-                    // Fetch from embed endpoint — doesn't require authentication
                     const { text: html } = await extensionFetchText({
                         url: `https://www.youtube.com/embed/${videoId}`
                     });
-                    // Extract embedded player config
                     const configMatch = html.match(/ytcfg\.set\((\{[^}]+\})\)/);
                     if (!configMatch) { DebugManager.log('AgeBypass', 'No config found in embed'); return; }
 
-                    // Use the embed page to get the video URL and redirect to embedded player
                     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
                     const player = document.querySelector('#player-container, #player');
                     if (player) {
-                        // Replace player with embedded iframe
                         const iframe = document.createElement('iframe');
                         iframe.src = embedUrl;
                         iframe.style.cssText = 'width:100%;height:100%;border:none;';
+                        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
                         iframe.setAttribute('allowfullscreen', '');
                         iframe.setAttribute('allow', 'autoplay; encrypted-media');
                         player.textContent = '';
                         player.appendChild(iframe);
-                        // Hide the error message
                         if (ageGate) ageGate.style.display = 'none';
                         showToast('Age restriction bypassed', '#22c55e');
                     }
@@ -21967,6 +22536,74 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return this._cues.map(c => c.text).join('\n');
             },
 
+            _hasTranslatorApi() {
+                return typeof window.Translator !== 'undefined'
+                    || (typeof window.ai !== 'undefined' && typeof window.ai?.translator !== 'undefined');
+            },
+
+            _translatedCues: null,
+            _showingTranslation: false,
+
+            _renderCueTexts() {
+                const body = this._panel?.querySelector('.ytkit-transcript-body');
+                if (!body) return;
+                const lines = body.querySelectorAll('.ytkit-transcript-line__text');
+                const source = this._showingTranslation && this._translatedCues ? this._translatedCues : this._cues;
+                lines.forEach((el, i) => {
+                    if (source[i]) el.textContent = source[i].text;
+                });
+            },
+
+            async _translateTranscript() {
+                if (!this._hasTranslatorApi()) {
+                    if (typeof showToast === 'function') showToast('Chrome Translator API not available in this browser', '#f59e0b', { tone: 'warn' });
+                    return;
+                }
+                if (this._showingTranslation && this._translatedCues) {
+                    this._showingTranslation = false;
+                    this._renderCueTexts();
+                    const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
+                    if (btn) btn.textContent = 'Translate';
+                    return;
+                }
+                const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
+                if (btn) { btn.textContent = 'Translating…'; btn.disabled = true; }
+                try {
+                    const factory = window.Translator || window.ai?.translator;
+                    const userLang = (navigator.language || 'en').split('-')[0];
+                    const srcText = this._cues.slice(0, 5).map(c => c.text).join(' ');
+                    let sourceLang = 'en';
+                    try {
+                        const detectorFactory = window.LanguageDetector || window.ai?.languageDetector;
+                        if (detectorFactory?.create) {
+                            const detector = await detectorFactory.create();
+                            const results = await detector.detect(srcText);
+                            if (results?.[0]?.detectedLanguage) sourceLang = results[0].detectedLanguage;
+                            detector.destroy?.();
+                        }
+                    } catch (_) { /* reason: detection is best-effort; default to 'en' */ }
+                    const targetLang = sourceLang === userLang ? 'en' : userLang;
+                    const translator = await factory.create({ sourceLanguage: sourceLang, targetLanguage: targetLang });
+                    if (!translator) throw new Error('Translator factory returned no instance');
+                    const translated = [];
+                    for (const cue of this._cues) {
+                        const result = await translator.translate(cue.text);
+                        translated.push({ ...cue, text: String(result || cue.text) });
+                    }
+                    translator.destroy?.();
+                    this._translatedCues = translated;
+                    this._showingTranslation = true;
+                    this._renderCueTexts();
+                    if (btn) { btn.textContent = 'Show Original'; btn.disabled = false; }
+                    if (typeof showToast === 'function') showToast(`Translated to ${targetLang}`, '#22c55e');
+                } catch (e) {
+                    DebugManager.log('TranscriptTranslate', `Translation failed: ${e.message}`);
+                    if (typeof showToast === 'function') showToast(`Translation failed: ${e.message}`, '#ef4444');
+                    if (btn) { btn.textContent = 'Translate'; btn.disabled = false; }
+                }
+            },
+
+
             _buildSrt() {
                 const out = [];
                 for (let i = 0; i < this._cues.length; i++) {
@@ -22087,38 +22724,47 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
                     if (!tracks || tracks.length === 0) {
-                        this._setTranscriptMeta('No Captions', 'This video does not expose a transcript track that Astra Deck can read.', 'warning');
-                        this._renderBodyState(body, 'empty', 'No transcript available', 'Try another video with captions enabled, or reopen this panel after captions finish loading.');
-                        body.setAttribute('aria-busy', 'false');
-                        return;
+                        // No API tracks — try engagement-panel fallback before giving up
+                        const panelCues = _scrapeEngagementPanelTranscript();
+                        if (panelCues && panelCues.length > 0) {
+                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube transcript panel (API captions unavailable).', 'info');
+                            body.textContent = '';
+                            body.classList.remove('is-stateful');
+                            this._cues = panelCues;
+                        } else {
+                            this._setTranscriptMeta('No Captions', 'This video does not expose a transcript track that Astra Deck can read.', 'warning');
+                            this._renderBodyState(body, 'empty', 'No transcript available', 'Try another video with captions enabled, or reopen this panel after captions finish loading.');
+                            body.setAttribute('aria-busy', 'false');
+                            return;
+                        }
                     }
-                    // v4.47.0 NF29: language preference for transcript fetch.
-                    // Precedence: explicit `transcriptPreferredLanguage` setting
-                    // → navigator.language base → 'en' (legacy fallback) → first
-                    // track. 'auto' / empty / undefined skip step 1.
-                    const track = pickTranscriptTrack(tracks);
-                    const trackLabel = this._getTrackLabel(track);
-                    const { response, data } = await extensionFetchJson({
-                        url: track.baseUrl + '&fmt=json3'
-                    });
-                    if (!this._panel || !panel.isConnected) return;
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        this._setTranscriptMeta('Unavailable', 'The transcript could not be fetched from YouTube right now.', 'danger');
-                        this._renderBodyState(body, 'error', 'Transcript unavailable', 'Reload the page or try again in a moment if captions are still processing.');
-                        body.setAttribute('aria-busy', 'false');
-                        return;
+                    let trackLabel = 'Transcript';
+                    if (this._cues.length === 0) {
+                        // Have API tracks — fetch with PO Token fallback
+                        const result = await fetchTranscriptWithFallback(tracks);
+                        if (!this._panel || !panel.isConnected) return;
+                        if (!result.cues || result.cues.length === 0) {
+                            this._setTranscriptMeta('Unavailable', result.error || 'The transcript could not be fetched from YouTube right now.', 'danger');
+                            this._renderBodyState(body, 'error', 'Transcript unavailable', result.error || 'Reload the page or try again in a moment if captions are still processing.');
+                            body.setAttribute('aria-busy', 'false');
+                            return;
+                        }
+                        this._cues = result.cues;
+                        if (result.source === 'panel') {
+                            trackLabel = 'Panel Transcript';
+                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube transcript panel (API required PO Token).', 'info');
+                        } else {
+                            trackLabel = this._getTrackLabel(result.track);
+                        }
+                    } else {
+                        trackLabel = 'Panel Transcript';
                     }
                     body.textContent = '';
                     body.classList.remove('is-stateful');
 
-                    (data.events || []).forEach(ev => {
-                        if (!ev.segs) return;
-                        const text = ev.segs.map(s => s.utf8).join('').trim();
+                    this._cues.forEach(cue => {
+                        const { start: startSec, end: endSec, text } = cue;
                         if (!text) return;
-                        const startSec = (ev.tStartMs || 0) / 1000;
-                        const durSec = (ev.dDurationMs != null) ? ev.dDurationMs / 1000 : null;
-                        const endSec = durSec != null ? startSec + durSec : null;
-                        this._cues.push({ start: startSec, end: endSec, text });
                         const stamp = this._fmtTimestamp(startSec);
 
                         const line = document.createElement('button');
@@ -22227,6 +22873,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     () => this._downloadFile(this._buildSrt(), `${this._videoIdSafe()}.srt`, 'application/x-subrip;charset=utf-8')));
                 exportBar.appendChild(mkBtn('Copy AI Prompt', 'Copy a ready-to-paste summary prompt',
                     () => this._copyToClipboard(this._buildLlmPrompt(), 'LLM prompt')));
+                if (this._hasTranslatorApi()) {
+                    const translateBtn = mkBtn('Translate', 'Translate transcript on-device using Chrome Translator API',
+                        () => this._translateTranscript());
+                    translateBtn.dataset.ytkitTranslateBtn = '1';
+                    exportBar.appendChild(translateBtn);
+                }
 
                 const body = document.createElement('div');
                 body.className = 'ytkit-transcript-body';
@@ -22262,6 +22914,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._createTimer = null;
                 removeNavigateRule('transcriptViewer');
                 this._panel?.remove(); this._panel = null;
+                this._translatedCues = null;
+                this._showingTranslation = false;
             }
         },
         {
@@ -23615,6 +24269,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
         },
         {
+            id: 'zenMode',
+            name: 'Zen Mode',
+            description: 'Dims the page around the video player for a focused viewing experience',
+            group: 'Watch Page',
+            icon: 'moon',
+            pages: [PageTypes.WATCH],
+            _styleEl: null,
+            init() {
+                const css = `
+                    body.ytkit-zen-active::before {
+                        content: '';
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, 0.75);
+                        z-index: 1999;
+                        pointer-events: none;
+                        box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.45);
+                    }
+                    body.ytkit-zen-active #movie_player,
+                    body.ytkit-zen-active ytd-player#ytd-player {
+                        position: relative;
+                        z-index: 2000;
+                    }
+                    body.ytkit-zen-active .ytp-chrome-bottom {
+                        z-index: 2001;
+                    }
+                `;
+                this._styleEl = injectStyle(css, this.id, true);
+                document.body.classList.add('ytkit-zen-active');
+            },
+            destroy() {
+                document.body.classList.remove('ytkit-zen-active');
+                this._styleEl?.remove();
+                this._styleEl = null;
+            }
+        },
+        {
             id: 'thumbnailQualityUpgrade',
             name: 'HD Thumbnails',
             description: 'Upgrades video thumbnails to maximum resolution where available',
@@ -24116,6 +24807,92 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._playlistStyleEl?.remove(); this._playlistStyleEl = null;
                 document.querySelectorAll('.ytkit-playlist-enhance').forEach(b => b.remove());
                 document.querySelectorAll('.ytkit-playlist-duplicate-hidden').forEach((item) => item.classList.remove('ytkit-playlist-duplicate-hidden'));
+            }
+        },
+        {
+            id: 'playlistSearch',
+            name: 'Playlist Search',
+            description: 'Adds a search input above playlist panels to filter items by title',
+            group: 'Watch Page',
+            icon: 'search',
+            pages: [PageTypes.WATCH],
+            _bar: null,
+            _input: null,
+            _applyTimer: null,
+            _getPlaylistItems() {
+                const container = document.querySelector('ytd-playlist-panel-renderer #items, ytd-playlist-panel-video-renderer');
+                if (!container) return [];
+                return Array.from(container.querySelectorAll('ytd-playlist-panel-video-renderer'));
+            },
+            _applyFilter() {
+                const query = (this._input?.value || '').trim().toLowerCase();
+                const items = this._getPlaylistItems();
+                let visible = 0;
+                for (const item of items) {
+                    const title = (item.querySelector('#video-title')?.textContent || '').toLowerCase();
+                    const match = !query || title.includes(query);
+                    if (match) {
+                        item.style.removeProperty('display');
+                        visible++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+                if (this._bar) {
+                    const count = this._bar.querySelector('.ytkit-playlist-search-count');
+                    if (count) {
+                        count.textContent = query
+                            ? `${visible} of ${items.length}`
+                            : `${items.length} item${items.length === 1 ? '' : 's'}`;
+                    }
+                }
+            },
+            _create() {
+                if (this._bar?.isConnected) return;
+                const header = document.querySelector('ytd-playlist-panel-renderer #header-contents, ytd-playlist-panel-renderer .header');
+                if (!header) return;
+                const bar = document.createElement('div');
+                bar.className = 'ytkit-playlist-search-bar';
+                bar.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.08);';
+                const input = document.createElement('input');
+                input.type = 'search';
+                input.placeholder = 'Search playlist…';
+                input.setAttribute('aria-label', 'Search playlist items');
+                input.style.cssText = 'flex:1;min-height:28px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:inherit;font:inherit;font-size:12px;outline:none;';
+                input.addEventListener('input', () => {
+                    if (this._applyTimer) clearTimeout(this._applyTimer);
+                    this._applyTimer = setTimeout(() => { this._applyTimer = null; this._applyFilter(); }, 200);
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { input.value = ''; this._applyFilter(); }
+                });
+                const count = document.createElement('span');
+                count.className = 'ytkit-playlist-search-count';
+                count.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap;';
+                bar.appendChild(input);
+                bar.appendChild(count);
+                header.insertAdjacentElement('afterend', bar);
+                this._bar = bar;
+                this._input = input;
+                this._applyFilter();
+            },
+            init() {
+                this._create();
+                addNavigateRule(this.id, () => {
+                    this._bar?.remove(); this._bar = null; this._input = null;
+                    setTimeout(() => this._create(), 1500);
+                });
+                addMutationRule(this.id, () => {
+                    if (!this._bar?.isConnected) this._create();
+                });
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = null;
+                for (const item of this._getPlaylistItems()) item.style.removeProperty('display');
+                this._bar?.remove(); this._bar = null; this._input = null;
             }
         },
         {
@@ -24717,6 +25494,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._dismissTimer) { clearTimeout(this._dismissTimer); this._dismissTimer = null; }
                 removeMutationRule('autoClosePopups');
                 removeNavigateRule('autoClosePopups');
+            }
+        },
+        {
+            id: 'autoDismissContentWarning',
+            name: 'Auto-Dismiss Content Warnings',
+            description: 'Automatically clicks "I understand and wish to proceed" on videos with content warnings',
+            group: 'Playback',
+            icon: 'shield-off',
+            pages: [PageTypes.WATCH],
+
+            _dismiss() {
+                const btn = document.querySelector('yt-player-error-message-renderer #button button[aria-label="I understand and wish to proceed"]');
+                if (btn && btn.offsetParent !== null) {
+                    btn.click();
+                    DebugManager.log('ContentWarning', 'Auto-dismissed content warning');
+                }
+            },
+
+            init() {
+                addMutationRule('autoDismissContentWarning', () => this._dismiss());
+                addNavigateRule('autoDismissContentWarning', () => this._dismiss());
+                this._dismiss();
+            },
+            destroy() {
+                removeMutationRule('autoDismissContentWarning');
+                removeNavigateRule('autoDismissContentWarning');
             }
         },
         {
@@ -26714,7 +27517,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
 
         // ── SponsorBlock ──
-        {
+        (globalThis.YTKitFeatures?.createSponsorBlockFeature?.({
+            appState,
+            DebugManager,
+            DiagnosticLog,
+            extensionFetchJson,
+            storageReadJSON: storageReadJSON || ((k, d) => d),
+            storageWriteJSON: storageWriteJSON || (() => {}),
+            getVideoId,
+            getMainVideoElement,
+            getMoviePlayerElement,
+            getPlayerProgressBar,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            announceA11y,
+            VIDEO_ID_PATTERN,
+            PageTypes
+        }) || {
             id: 'sponsorBlock',
             name: 'SponsorBlock',
             description: 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data',
@@ -26763,10 +27583,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cache: null,
             _cachePersistTimer: null,
 
+            _getChannelId() {
+                const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                if (link) {
+                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    if (m) return m[1];
+                }
+                const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                if (handleLink) return handleLink.getAttribute('href') || '';
+                return '';
+            },
+
             _getEnabledCategories() {
+                // Global defaults
+                const globalCats = [];
+                for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
+                    if (appState.settings[key]) globalCats.push(apiName);
+                }
+                // Per-channel override check
+                if (!appState.settings.sbPerChannelProfiles) return globalCats;
+                const channelId = this._getChannelId();
+                if (!channelId) return globalCats;
+                const profiles = appState.settings.sbPerChannelProfilesData;
+                if (!profiles || typeof profiles !== 'object') return globalCats;
+                const profile = profiles[channelId];
+                if (!profile || typeof profile.categories !== 'object') return globalCats;
+                // Apply per-channel overrides: if a category is explicitly set,
+                // use that value; otherwise fall through to global default.
                 const cats = [];
                 for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
-                    if (appState.settings[key]) cats.push(apiName);
+                    const channelOverride = profile.categories[apiName];
+                    if (typeof channelOverride === 'boolean') {
+                        if (channelOverride) cats.push(apiName);
+                    } else {
+                        // No per-channel override for this category; use global
+                        if (appState.settings[key]) cats.push(apiName);
+                    }
                 }
                 return cats;
             },
@@ -27080,7 +27932,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearTimeout(self._reloadTimer);
                     self._reloadTimer = setTimeout(() => {
                         self._reloadTimer = null;
-                        self._loadForVideo().then(() => self._scheduleNextSkip());
+                        self._loadForVideo().then(() => self._scheduleNextSkip()).catch(() => { /* reason: segment reload is best-effort */ });
                     }, 800);
                 };
                 addNavigateRule(this._navRuleId, reloadSegments);
@@ -27124,7 +27976,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._segments = [];
                 this._videoId = null;
             }
-        },
+        }),
         // SponsorBlock category sub-features
         { id: 'sbCat_sponsor', name: 'Skip Sponsors', description: 'Paid promotions and sponsorship segments', group: 'Content', icon: 'dollar-sign', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_intro', name: 'Skip Intros', description: 'Intro animations and branding', group: 'Content', icon: 'skip-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
@@ -27136,8 +27988,308 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         { id: 'sbCat_filler', name: 'Skip Filler', description: 'Tangential or filler content', group: 'Content', icon: 'scissors', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_poi_highlight', name: 'Highlight Point of Interest', description: 'Jump to the highlight/point of interest (disabled by default)', group: 'Content', icon: 'star', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
 
-        // ── DeArrow ──
+        // ── SponsorBlock Per-Channel Profiles ──
         {
+            id: 'sbPerChannelProfiles',
+            name: 'SponsorBlock Per-Channel Profiles',
+            description: 'Override which SponsorBlock categories are skipped on a per-channel basis. Adds a chip next to the channel name on the watch page to configure overrides. Overrides persist in sbPerChannelProfilesData with a 500-entry cap.',
+            group: 'Content',
+            icon: 'user-cog',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _panel: null,
+            _navRule: null,
+
+            _CATEGORY_LABELS: {
+                sponsor: 'Sponsors',
+                intro: 'Intros',
+                outro: 'Outros',
+                selfpromo: 'Self-Promo',
+                interaction: 'Interaction',
+                music_offtopic: 'Non-Music',
+                preview: 'Previews',
+                filler: 'Filler',
+                poi_highlight: 'Highlights',
+            },
+
+            _CATEGORY_COLORS: {
+                sponsor: '#00d400',
+                selfpromo: '#ffff00',
+                interaction: '#cc00ff',
+                intro: '#00ffff',
+                outro: '#0202ed',
+                preview: '#008fd6',
+                music_offtopic: '#ff9900',
+                filler: '#7300FF',
+                poi_highlight: '#ff1684',
+            },
+
+            _SB_CATEGORY_MAP: {
+                sbCat_sponsor: 'sponsor',
+                sbCat_intro: 'intro',
+                sbCat_outro: 'outro',
+                sbCat_selfpromo: 'selfpromo',
+                sbCat_interaction: 'interaction',
+                sbCat_music_offtopic: 'music_offtopic',
+                sbCat_preview: 'preview',
+                sbCat_filler: 'filler',
+                sbCat_poi_highlight: 'poi_highlight',
+            },
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-sb-channel-chip{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 8px;border-radius:6px;background:rgba(0,212,0,0.14);color:#a7f3d0;border:1px solid rgba(0,212,0,0.32);font:600 11px/1 system-ui;letter-spacing:.02em;cursor:pointer;position:relative;}
+                    .ytkit-sb-channel-chip:hover{background:rgba(0,212,0,0.24);}
+                    .ytkit-sb-channel-chip[data-has-override="true"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
+                    .ytkit-sb-profile-panel{position:absolute;bottom:calc(100% + 6px);left:0;z-index:90;min-width:220px;padding:8px;border-radius:10px;background:rgba(7,10,16,0.96);border:1px solid rgba(255,255,255,0.1);box-shadow:0 12px 32px rgba(0,0,0,0.5);font:12px/1.4 system-ui;color:#e5e7eb;}
+                    .ytkit-sb-profile-panel-title{font:600 11px/1 system-ui;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px 2px;}
+                    .ytkit-sb-profile-row{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;}
+                    .ytkit-sb-profile-row:hover{background:rgba(255,255,255,0.06);}
+                    .ytkit-sb-profile-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+                    .ytkit-sb-profile-label{flex:1;font-size:11px;color:#d1d5db;}
+                    .ytkit-sb-profile-state{font-size:10px;color:#9ca3af;min-width:40px;text-align:right;}
+                    .ytkit-sb-profile-reset{display:block;margin:6px auto 0;padding:3px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:transparent;color:#9ca3af;font:11px/1.2 system-ui;cursor:pointer;}
+                    .ytkit-sb-profile-reset:hover{background:rgba(255,255,255,0.08);color:#e5e7eb;}
+                `, 'sb-channel-profiles');
+            },
+
+            _currentChannelId() {
+                const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                if (link) {
+                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    if (m) return m[1];
+                }
+                const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                if (handleLink) return handleLink.getAttribute('href') || '';
+                return '';
+            },
+
+            _readProfile(channelId) {
+                const data = appState?.settings?.sbPerChannelProfilesData;
+                if (!data || typeof data !== 'object') return null;
+                const profile = data[channelId];
+                if (!profile || typeof profile.categories !== 'object') return null;
+                return profile;
+            },
+
+            _hasOverride(channelId) {
+                return this._readProfile(channelId) !== null;
+            },
+
+            _getCategoryState(channelId, apiName) {
+                const profile = this._readProfile(channelId);
+                if (profile && typeof profile.categories[apiName] === 'boolean') {
+                    return { source: 'channel', enabled: profile.categories[apiName] };
+                }
+                // Fall back to global setting
+                const globalKey = Object.entries(this._SB_CATEGORY_MAP).find(([, v]) => v === apiName)?.[0];
+                return { source: 'global', enabled: globalKey ? !!appState.settings[globalKey] : false };
+            },
+
+            _writeProfile(channelId, categories) {
+                if (!channelId) return;
+                const data = { ...(appState?.settings?.sbPerChannelProfilesData || {}) };
+                if (categories === null) {
+                    delete data[channelId];
+                } else {
+                    data[channelId] = { categories, updatedAt: Date.now() };
+                }
+                // Cap at 500 entries — evict oldest
+                const entries = Object.entries(data);
+                if (entries.length > 500) {
+                    entries.sort((a, b) => (b[1]?.updatedAt || 0) - (a[1]?.updatedAt || 0));
+                    for (const [key] of entries.slice(500)) delete data[key];
+                }
+                appState.settings.sbPerChannelProfilesData = data;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SBChannelProfile', `Save failed: ${e.message}`); }
+            },
+
+            _toggleCategory(channelId, apiName) {
+                const state = this._getCategoryState(channelId, apiName);
+                const profile = this._readProfile(channelId);
+                const categories = profile ? { ...profile.categories } : {};
+                categories[apiName] = !state.enabled;
+                this._writeProfile(channelId, categories);
+                // Force SponsorBlock to re-evaluate for this video
+                const sb = getFeatureById('sponsorBlock');
+                if (sb?._initialized) {
+                    sb._videoId = null;
+                    sb._segments = [];
+                    sb._clearBarSegments?.();
+                    sb._clearSchedule?.();
+                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.()).catch(() => { /* reason: segment reload is best-effort */ });
+                }
+            },
+
+            _resetChannel(channelId) {
+                this._writeProfile(channelId, null);
+                // Force SponsorBlock to re-evaluate
+                const sb = getFeatureById('sponsorBlock');
+                if (sb?._initialized) {
+                    sb._videoId = null;
+                    sb._segments = [];
+                    sb._clearBarSegments?.();
+                    sb._clearSchedule?.();
+                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.()).catch(() => { /* reason: segment reload is best-effort */ });
+                }
+            },
+
+            _closePanel() {
+                this._panel?.remove();
+                this._panel = null;
+            },
+
+            _openPanel(channelId) {
+                this._closePanel();
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-sb-profile-panel';
+
+                const title = document.createElement('div');
+                title.className = 'ytkit-sb-profile-panel-title';
+                title.textContent = 'SponsorBlock Categories';
+                panel.appendChild(title);
+
+                for (const [apiName, label] of Object.entries(this._CATEGORY_LABELS)) {
+                    const state = this._getCategoryState(channelId, apiName);
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-sb-profile-row';
+                    row.title = `${label}: ${state.enabled ? 'skip' : 'allow'} (${state.source})`;
+
+                    const dot = document.createElement('span');
+                    dot.className = 'ytkit-sb-profile-dot';
+                    dot.style.background = state.enabled
+                        ? (this._CATEGORY_COLORS[apiName] || '#00d400')
+                        : 'rgba(115,115,115,0.5)';
+                    row.appendChild(dot);
+
+                    const labelEl = document.createElement('span');
+                    labelEl.className = 'ytkit-sb-profile-label';
+                    labelEl.textContent = label;
+                    row.appendChild(labelEl);
+
+                    const stateEl = document.createElement('span');
+                    stateEl.className = 'ytkit-sb-profile-state';
+                    stateEl.textContent = state.enabled ? 'skip' : 'allow';
+                    if (state.source === 'channel') stateEl.style.color = '#fed7aa';
+                    row.appendChild(stateEl);
+
+                    row.addEventListener('click', () => {
+                        this._toggleCategory(channelId, apiName);
+                        // Re-render panel
+                        this._openPanel(channelId);
+                        this._updateChipState(channelId);
+                    });
+
+                    panel.appendChild(row);
+                }
+
+                // Reset button
+                if (this._hasOverride(channelId)) {
+                    const resetBtn = document.createElement('button');
+                    resetBtn.type = 'button';
+                    resetBtn.className = 'ytkit-sb-profile-reset';
+                    resetBtn.textContent = 'Reset to global defaults';
+                    resetBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this._resetChannel(channelId);
+                        this._closePanel();
+                        this._updateChipState(channelId);
+                        if (typeof showToast === 'function') showToast('SponsorBlock overrides reset to global defaults for this channel.', '#00d400');
+                    });
+                    panel.appendChild(resetBtn);
+                }
+
+                // Close on outside click
+                const closeHandler = (e) => {
+                    if (!panel.contains(e.target) && !this._btn?.contains(e.target)) {
+                        this._closePanel();
+                        document.removeEventListener('click', closeHandler, true);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closeHandler, true), 0);
+
+                // Attach to the chip's parent
+                if (this._btn?.parentElement) {
+                    this._btn.style.position = 'relative';
+                    this._btn.appendChild(panel);
+                    this._panel = panel;
+                }
+            },
+
+            _updateChipState(channelId) {
+                if (!this._btn) return;
+                const hasOverride = this._hasOverride(channelId);
+                this._btn.dataset.hasOverride = hasOverride ? 'true' : 'false';
+                this._btn.textContent = hasOverride ? 'SB: channel' : 'SB: global';
+            },
+
+            _renderChip() {
+                if (!isWatchPagePath()) return;
+                const channelId = this._currentChannelId();
+                if (!channelId) return;
+                const host = document.querySelector('ytd-video-owner-renderer #upload-info, ytd-video-owner-renderer #container, ytd-channel-name');
+                if (!host || host.querySelector('.ytkit-sb-channel-chip')) {
+                    // Re-render text when channel switches mid-SPA-navigation.
+                    const existing = host?.querySelector('.ytkit-sb-channel-chip');
+                    if (existing) this._updateChipState(channelId);
+                    return;
+                }
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'ytkit-sb-channel-chip';
+                this._btn = chip;
+                this._updateChipState(channelId);
+                chip.title = 'Click to configure SponsorBlock skip categories for this channel';
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = this._currentChannelId();
+                    if (!id) return;
+                    if (this._panel) {
+                        this._closePanel();
+                    } else {
+                        this._openPanel(id);
+                    }
+                });
+                host.appendChild(chip);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { this._closePanel(); setTimeout(() => this._renderChip(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._closePanel();
+                this._btn?.remove();
+                this._btn = null;
+                document.querySelectorAll('.ytkit-sb-channel-chip').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+
+        // ── DeArrow ──
+        (globalThis.YTKitFeatures?.createDeArrowFeature?.({
+            appState,
+            DebugManager,
+            extensionFetchJson,
+            storageReadJSON: storageReadJSON || ((k, d) => d),
+            storageWriteJSON: storageWriteJSON || (() => {}),
+            isWatchPagePath,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            announceA11y,
+            PageTypes
+        }) || {
             id: 'deArrow',
             name: 'DeArrow',
             description: 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database',
@@ -27246,6 +28398,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         timeout: 8000,
                     });
                     data._ts = Date.now();
+                    const existing = this._cache[videoId];
+                    if (existing && existing._ts && existing._ts > data._ts) return existing;
                     this._cache[videoId] = data;
                     this._cacheMeta[videoId] = data._ts;
                     // Evict oldest entries if in-memory cache exceeds 2000
@@ -27331,6 +28485,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 clone.textContent = formatted;
                                 // Show original title on hover if setting enabled
                                 clone.title = appState.settings.daShowOriginalHover ? titleEl.textContent.trim() : formatted;
+                                // Store metadata for voting buttons
+                                clone.setAttribute('data-ytkit-dearrow-original', titleEl.textContent.trim());
+                                if (submission.UUID) clone.setAttribute('data-ytkit-dearrow-uuid', submission.UUID);
                                 titleEl.style.display = 'none';
                                 titleEl.dataset.daProcessed = '1';
                                 titleEl.parentNode.insertBefore(clone, titleEl);
@@ -27403,11 +28560,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     el.classList.remove('da-replaced-thumb');
                 });
             }
-        },
+        }),
         // DeArrow sub-features
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daTitleFormat', name: 'Title Format', description: 'How to format replacement titles', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'sentence',label:'Sentence case'},{value:'title_case',label:'Title Case'},{value:'original',label:'Original'}], init(){}, destroy(){} },
+        { id: 'deArrowCasualMode', name: 'Casual Mode', description: 'Keep descriptive titles unchanged — only replace titles with crowd-submitted DeArrow alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daFallbackFormat', name: 'Format Original Titles', description: 'Format the original title when no crowdsourced submission exists', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daShowOriginalHover', name: 'Show Original on Hover', description: 'Hover over a replaced title to see the original', group: 'Content', icon: 'eye', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daCacheTTL', name: 'Cache Duration', description: 'Hours to cache branding data locally before refreshing', group: 'Content', icon: 'clock', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'0',label:'No cache'},{value:'1',label:'1 hour'},{value:'4',label:'4 hours'},{value:'12',label:'12 hours'},{value:'24',label:'24 hours'},{value:'72',label:'3 days'}], init(){}, destroy(){} },
@@ -27749,6 +28907,157 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._styleEl?.remove(); this._styleEl = null;
                 removeNavigateRule('videoRotation');
+            }
+        },
+
+        // ── Video Flip ──
+        {
+            id: 'videoFlip',
+            name: 'Video Flip',
+            description: 'Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings',
+            group: 'Video Player',
+            icon: 'flip-horizontal',
+            type: 'select',
+            options: [
+                { value: 'none',       label: 'None' },
+                { value: 'horizontal', label: 'Horizontal' },
+                { value: 'vertical',   label: 'Vertical' },
+                { value: 'both',       label: 'Both' },
+            ],
+            settingKey: 'videoFlipMode',
+            _styleEl: null,
+            _apply() {
+                const mode = appState.settings.videoFlipMode || 'none';
+                const SCALE_MAP = { none: null, horizontal: '-1 1', vertical: '1 -1', both: '-1 -1' };
+                const scaleValue = SCALE_MAP[mode] || null;
+                const css = scaleValue
+                    ? `.html5-main-video { scale: ${scaleValue} !important; }`
+                    : `.html5-main-video { scale: 1 1 !important; }`;
+                if (this._styleEl) this._styleEl.textContent = css;
+                else this._styleEl = injectStyle(css, this.id, true);
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('videoFlip', this._navRule);
+            },
+            destroy() {
+                this._styleEl?.remove(); this._styleEl = null;
+                removeNavigateRule('videoFlip');
+            }
+        },
+
+        // ── Mono-to-Stereo Audio ──
+        {
+            id: 'monoToStereo',
+            name: 'Mono to Stereo',
+            description: 'Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones',
+            group: 'Video Player',
+            icon: 'headphones',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-mono-to-stereo', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-mono-to-stereo');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('monoToStereo', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('monoToStereo');
+            }
+        },
+
+        // ── Volume Boost ──
+        {
+            id: 'volumeBoost',
+            name: 'Volume Boost',
+            description: 'Amplify audio beyond 100% via a Web Audio gain node (up to 10x). Useful for quiet recordings. Adjust intensity with volumeBoostLevel.',
+            group: 'Video Player',
+            icon: 'volume-2',
+            _apply() {
+                const level = parseFloat(appState.settings?.volumeBoostLevel) || 2;
+                document.documentElement.setAttribute('data-ytkit-volume-boost', String(Math.max(1, Math.min(10, level))));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-volume-boost', '1');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('volumeBoost', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('volumeBoost');
+            }
+        },
+        {
+            id: 'volumeBoostLevel',
+            name: 'Volume Boost Level',
+            description: 'Gain multiplier for Volume Boost (1.0 = unity, max 10.0)',
+            group: 'Video Player',
+            icon: 'sliders',
+            type: 'range',
+            min: 1, max: 10, step: 0.5,
+            dependsOn: 'volumeBoost',
+            init() {}, destroy() {}
+        },
+
+        // ── Audio Normalization ──
+        {
+            id: 'audioNormalization',
+            name: 'Audio Normalization',
+            description: 'Compress dynamic range so quiet and loud passages play at similar volume. Uses a DynamicsCompressorNode in the MAIN world audio graph.',
+            group: 'Video Player',
+            icon: 'activity',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-audio-normalize', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-audio-normalize');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioNormalization', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioNormalization');
+            }
+        },
+
+        // ── Audio Pan ──
+        {
+            id: 'audioPan',
+            name: 'Audio Pan',
+            description: 'Shift audio balance left or right via a StereoPannerNode in the MAIN world audio graph. Range -1 (full left) to 1 (full right), 0 = center.',
+            group: 'Video Player',
+            icon: 'move-horizontal',
+            type: 'range',
+            min: -1,
+            max: 1,
+            step: 0.1,
+            defaultValue: 0,
+            _apply() {
+                const val = parseFloat(appState.settings.audioPan) || 0;
+                document.documentElement.setAttribute('data-ytkit-audio-pan', String(Math.max(-1, Math.min(1, val))));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-audio-pan', '0');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioPan', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioPan');
             }
         },
 
@@ -28243,34 +29552,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!tracks || !tracks.length) { showToast('No captions available', '#ef4444'); return; }
-                    // v4.47.0 NF29: language preference for transcript fetch.
-                    // Precedence: explicit `transcriptPreferredLanguage` setting
-                    // → navigator.language base → 'en' (legacy fallback) → first
-                    // track. 'auto' / empty / undefined skip step 1.
-                    const track = pickTranscriptTrack(tracks);
                     showToast('Fetching captions…', '#3b82f6');
-                    const { response, data } = await extensionFetchJson({
-                        url: track.baseUrl + '&fmt=json3'
-                    });
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        throw new Error('HTTP ' + response?.status);
+                    // Use PO Token resilient fetch with engagement-panel fallback
+                    const result = await fetchTranscriptWithFallback(tracks || []);
+                    if (!result.cues || result.cues.length === 0) {
+                        throw new Error(result.error || 'No captions available');
                     }
                     const lines = [];
                     let idx = 1;
-                    for (const ev of (data.events || [])) {
-                        if (!ev.segs) continue;
-                        const text = ev.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ').trim();
+                    for (const cue of result.cues) {
+                        const text = (cue.text || '').replace(/\n/g, ' ').trim();
                         if (!text) continue;
-                        const start = ev.tStartMs || 0;
-                        const end = start + (ev.dDurationMs || 2000);
+                        const start = (cue.start || 0) * 1000;
+                        const end = cue.end != null ? cue.end * 1000 : start + 2000;
                         lines.push(`${idx++}\n${this._formatTs(start)} --> ${this._formatTs(end)}\n${text}\n`);
                     }
                     const blob = new Blob([lines.join('\n')], { type: 'text/srt' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     const vid = getVideoId() || 'video';
-                    const lang = track.languageCode || 'en';
+                    const lang = result.track?.languageCode || 'en';
                     a.href = url; a.download = `${vid}_${lang}.srt`;
                     a.click();
                     setTimeout(() => URL.revokeObjectURL(url), 5000);
@@ -28543,8 +29844,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (/\b(\d+)\s+years?\s+ago/.test(t)) return 'ancient';
                 return null;
             },
+            _scrolledToNewest: false,
             _process() {
                 const items = document.querySelectorAll('ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer');
+                let freshest = null;
                 for (const it of items) {
                     if (it.dataset.ytkitAge) continue;
                     const meta = it.querySelector('#metadata-line, .ytd-video-meta-block, ytd-video-meta-block');
@@ -28553,7 +29856,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (cls) {
                         it.dataset.ytkitAge = cls;
                         it.classList.add('ytkit-age-' + cls);
+                        if (cls === 'fresh' && !freshest) freshest = it;
                     }
+                }
+                const isSubs = location.pathname === '/feed/subscriptions';
+                if (isSubs && freshest && !this._scrolledToNewest) {
+                    freshest.classList.add('ytkit-age-newest');
+                    this._scrolledToNewest = true;
+                    try {
+                        freshest.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } catch (_) { /* reason: scrollIntoView best-effort */ }
                 }
             },
             init() {
@@ -28572,6 +29884,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-age-month::before   { border-color: #eab308 !important; }
                     .ytkit-age-year::before    { border-color: #f97316 !important; }
                     .ytkit-age-ancient::before { border-color: #ef4444 !important; opacity: 0.65; }
+                    .ytkit-age-newest::before  { border-color: #22c55e !important; border-width: 4px !important; box-shadow: 0 0 18px rgba(34, 197, 94, 0.7), inset 0 0 8px rgba(34, 197, 94, 0.1) !important; }
                 `, this.id, true);
                 this._process();
                 this._mutRule = () => this._process();
@@ -28580,15 +29893,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer',
                     this._mutRule
                 );
-                addNavigateRule('videoAgeColors', this._mutRule);
+                addNavigateRule('videoAgeColors', () => { this._scrolledToNewest = false; this._mutRule(); });
             },
             destroy() {
                 removeScopedMutationRule('videoAgeColors');
                 removeNavigateRule('videoAgeColors');
                 this._styleEl?.remove(); this._styleEl = null;
+                this._scrolledToNewest = false;
                 document.querySelectorAll('[data-ytkit-age]').forEach(el => {
                     delete el.dataset.ytkitAge;
-                    el.classList.remove('ytkit-age-fresh', 'ytkit-age-week', 'ytkit-age-month', 'ytkit-age-year', 'ytkit-age-ancient');
+                    el.classList.remove('ytkit-age-fresh', 'ytkit-age-week', 'ytkit-age-month', 'ytkit-age-year', 'ytkit-age-ancient', 'ytkit-age-newest');
                 });
             }
         },
@@ -29173,23 +30487,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!tracks?.length) throw new Error('No captions available');
-                    // v4.47.0 NF29: language preference for transcript fetch.
-                    // Precedence: explicit `transcriptPreferredLanguage` setting
-                    // → navigator.language base → 'en' (legacy fallback) → first
-                    // track. 'auto' / empty / undefined skip step 1.
-                    const track = pickTranscriptTrack(tracks);
-                    const { response, data } = await extensionFetchJson({
-                        url: track.baseUrl + '&fmt=json3'
-                    });
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        throw new Error('Caption fetch HTTP ' + response?.status);
+                    // PO Token resilient fetch: tries json3 API, then engagement-panel DOM scrape
+                    const result = await fetchTranscriptWithFallback(tracks || []);
+                    if (result.cues && result.cues.length > 0) {
+                        return result.cues.map(c => c.text).filter(Boolean).join(' ');
                     }
-                    return (data.events || [])
-                        .filter(e => e.segs)
-                        .map(e => e.segs.map(s => s.utf8 || '').join('').trim())
-                        .filter(Boolean)
-                        .join(' ');
+                    throw new Error(result.error || 'No captions available');
                 } catch (e) { throw e; }
             },
             async _callLLM(prompt) {
@@ -30142,8 +31445,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (deny.kind === 'author' && author.includes(deny.value)) return true;
                     if (deny.kind === 'text' && body.includes(deny.value)) return true;
                 }
+                const cappedBody = body.slice(0, 2000);
+                const cappedAuthor = author.slice(0, 200);
                 for (const re of rules.regexes) {
-                    try { if (re.test(body) || re.test(author)) return true; }
+                    try { if (re.test(cappedBody) || re.test(cappedAuthor)) return true; }
                     catch { /* reason: regex evaluation error only invalidates the current rule */ }
                 }
                 return false;
@@ -31023,9 +32328,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // ═══════════════════════════════════════════════════════════════════
-        //  DOWNLOAD HEALTH PANEL — Pills for poTokenProvider, yt-dlp, ffmpeg
+        //  DOWNLOAD FEATURES — delegated to features/download-ui/ peel
         // ═══════════════════════════════════════════════════════════════════
-        {
+
+        _downloadUI?.downloadHealthPanel || {
             id: 'downloadHealthPanel',
             name: 'Downloader Health Pills',
             description: 'Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage.',
@@ -31098,6 +32404,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else {
                     this._container.appendChild(this._renderPill('PO Token', 'unreachable', 'err'));
                 }
+                // SABR support pill — surfaces whether yt-dlp can
+                // download SABR-only YouTube formats natively. Until
+                // yt-dlp PR #13515 merges, SABR support is "limited" and
+                // some videos may fail to download.
+                if (data.sabrSupport) {
+                    const sabrTone = data.sabrSupport === 'native' ? 'ok' : 'warn';
+                    const sabrLabel = data.sabrSupport === 'native' ? 'native' : 'limited';
+                    const sabrPill = this._renderPill('SABR', sabrLabel, sabrTone);
+                    if (data.sabrSupport !== 'native') {
+                        sabrPill.title = 'Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482.';
+                    }
+                    this._container.appendChild(sabrPill);
+                }
                 // Deno runtime pill — only renders when the
                 // bundled yt-dlp.exe is recent enough to need an external
                 // JS runtime (>= 2026.04). Stays quiet on older yt-dlp
@@ -31109,13 +32428,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const deno = data.denoRuntime;
                 if (deno && deno.ytdlpNeedsRuntime) {
                     const tone = deno.installed ? 'ok' : 'warn';
-                    const value = deno.installed
+                    const label = deno.installed
                         ? (deno.version ? `v${deno.version}` : 'installed')
                         : 'missing';
-                    const pill = this._renderPill('Deno', value, tone);
-                    if (!deno.installed && deno.advice) {
-                        pill.title = deno.advice;
-                    } else if (deno.installed && deno.path) {
+                    const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
+                    const pill = this._renderPill('Deno', label + suffix, tone);
+                    if (!deno.installed) {
+                        pill.title = 'Click to auto-provision Deno';
+                        pill.style.cursor = 'pointer';
+                        pill.addEventListener('click', async () => {
+                            pill.textContent = 'Provisioning...';
+                            try {
+                                const resp = await extensionFetchJson(
+                                    `http://127.0.0.1:${data.port}/provision-deno`,
+                                    { method: 'POST', headers: { 'X-MDL-Token': data.token } }
+                                );
+                                if (resp?.ok) {
+                                    showToast('Deno provisioned successfully', '#22c55e');
+                                    this._poll();
+                                } else {
+                                    showToast(resp?.error || 'Deno provision failed', '#ef4444');
+                                    pill.textContent = 'Deno: failed';
+                                }
+                            } catch (e) {
+                                showToast('Deno provision failed: ' + e.message, '#ef4444');
+                                pill.textContent = 'Deno: failed';
+                            }
+                        }, { once: true });
+                    } else if (deno.path) {
                         pill.title = deno.path;
                     }
                     this._container.appendChild(pill);
@@ -31182,7 +32522,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  STREAM LINKS PANEL — Adaptive format URLs (advanced)
         // ═══════════════════════════════════════════════════════════════════
-        {
+        _downloadUI?.downloadStreamLinksPanel || {
             id: 'downloadStreamLinksPanel',
             name: 'Stream Links Panel',
             description: 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off.',
@@ -31356,7 +32696,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  COBALT FALLBACK — GitHub-full profile only, default off
         // ═══════════════════════════════════════════════════════════════════
-        {
+        _downloadUI?.downloadCobaltFallback || {
             id: 'downloadCobaltFallback',
             name: 'Cobalt Fallback (GitHub profile)',
             description: 'When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab.',
@@ -31465,7 +32805,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  DOWNLOAD HISTORY PANEL — Last N completed downloads
         // ═══════════════════════════════════════════════════════════════════
-        {
+        _downloadUI?.downloadHistoryPanel || {
             id: 'downloadHistoryPanel',
             name: 'Download History Panel',
             description: 'Adds a "History" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.',
@@ -31607,7 +32947,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  RETURN YOUTUBE DISLIKE — Cached, rate-limited
         // ═══════════════════════════════════════════════════════════════════
-        {
+        (globalThis.YTKitFeatures?.createReturnDislikeFeature?.({
+            appState,
+            DebugManager,
+            extensionFetchJson,
+            storageReadJSON: storageReadJSON || ((k, d) => d),
+            storageWriteJSON: storageWriteJSON || (() => {}),
+            getVideoId,
+            isWatchPagePath,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            PageTypes
+        }) || {
             id: 'returnDislike',
             name: 'Return YouTube Dislike',
             description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
@@ -31810,7 +33162,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._cache = null;
                 this._budgetWindow = { start: 0, count: 0 };
             }
-        },
+        }),
         // ═══════════════════════════════════════════════════════════════════
         //  ANTI-TRANSLATE AUDIO TRACK — Force original-language audio
         // ═══════════════════════════════════════════════════════════════════
@@ -32238,6 +33590,134 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // ═══════════════════════════════════════════════════════════════════
+        //  DEARROW VOTING — thumbs up/down on replaced titles
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'deArrowVoting',
+            name: 'DeArrow Voting',
+            description: 'Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles on the watch page. Uses a locally generated private userID that never leaves DeArrow requests. Off by default.',
+            group: 'Content',
+            icon: 'thumbs-up',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _navRule: null,
+            _userId: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-da-vote{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle;}
+                    .ytkit-da-vote-btn{appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,0.1);border-radius:6px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font:12px/1 system-ui;padding:3px 7px;cursor:pointer;transition:background 120ms,color 120ms;}
+                    .ytkit-da-vote-btn:hover{background:rgba(255,255,255,0.1);color:#fff;}
+                    .ytkit-da-vote-btn[data-voted="1"]{background:rgba(34,197,94,0.14);color:#86efac;border-color:rgba(34,197,94,0.32);}
+                    .ytkit-da-vote-btn[data-voted="0"]{background:rgba(239,68,68,0.14);color:#fca5a5;border-color:rgba(239,68,68,0.32);}
+                    html:not([dark]) .ytkit-da-vote-btn{background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);border-color:rgba(0,0,0,0.1);}
+                    html:not([dark]) .ytkit-da-vote-btn:hover{background:rgba(0,0,0,0.08);color:#000;}
+                `, 'da-vote');
+            },
+
+            async _getUserId() {
+                if (this._userId) return this._userId;
+                try {
+                    const stored = storageReadJSON('ytkit-da-user-id', null);
+                    if (stored && typeof stored === 'string' && stored.length >= 32) {
+                        this._userId = stored;
+                        return stored;
+                    }
+                } catch { /* reason: storage read may fail */ }
+                const array = new Uint8Array(32);
+                crypto.getRandomValues(array);
+                const newId = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+                this._userId = newId;
+                try { storageWriteJSON('ytkit-da-user-id', newId); } catch { /* reason: storage write may fail */ }
+                return newId;
+            },
+
+            async _vote(uuid, type) {
+                const userId = await this._getUserId();
+                try {
+                    await extensionFetchJson({
+                        method: 'POST',
+                        url: `https://sponsor.ajay.app/api/branding/vote/${type}`,
+                        headers: { 'Content-Type': 'application/json' },
+                        data: JSON.stringify({ UUID: uuid, userID: userId }),
+                        timeout: 8000,
+                    });
+                    return true;
+                } catch (e) {
+                    DebugManager.log('DeArrowVote', `Vote failed: ${e.message}`);
+                    if (typeof showToast === 'function') showToast('DeArrow vote failed. Try again later.', '#ef4444');
+                    return false;
+                }
+            },
+
+            _attachVoteButtons() {
+                if (!isWatchPagePath()) return;
+                const title = document.querySelector(
+                    'ytd-watch-metadata [data-ytkit-dearrow-uuid], ' +
+                    '#title.ytd-watch-metadata [data-ytkit-dearrow-uuid], ' +
+                    '.daCustomTitle[data-ytkit-dearrow-uuid]'
+                );
+                if (!title || title.querySelector('.ytkit-da-vote')) return;
+                const uuid = title.dataset.ytkitDearrowUuid;
+                if (!uuid) return;
+
+                const container = document.createElement('span');
+                container.className = 'ytkit-da-vote';
+
+                const upBtn = document.createElement('button');
+                upBtn.type = 'button';
+                upBtn.className = 'ytkit-da-vote-btn';
+                upBtn.textContent = '\u{1F44D}';
+                upBtn.title = 'Vote: this DeArrow title is good';
+                upBtn.setAttribute('aria-label', 'Vote up on this DeArrow title replacement');
+
+                const downBtn = document.createElement('button');
+                downBtn.type = 'button';
+                downBtn.className = 'ytkit-da-vote-btn';
+                downBtn.textContent = '\u{1F44E}';
+                downBtn.title = 'Vote: this DeArrow title is bad';
+                downBtn.setAttribute('aria-label', 'Vote down on this DeArrow title replacement');
+
+                upBtn.addEventListener('click', async () => {
+                    if (await this._vote(uuid, 1)) {
+                        upBtn.dataset.voted = '1';
+                        downBtn.removeAttribute('data-voted');
+                        if (typeof showToast === 'function') showToast('DeArrow: voted up', '#22c55e');
+                    }
+                });
+
+                downBtn.addEventListener('click', async () => {
+                    if (await this._vote(uuid, 0)) {
+                        downBtn.dataset.voted = '0';
+                        upBtn.removeAttribute('data-voted');
+                        if (typeof showToast === 'function') showToast('DeArrow: voted down', '#f59e0b');
+                    }
+                });
+
+                container.appendChild(upBtn);
+                container.appendChild(downBtn);
+                title.appendChild(container);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._attachVoteButtons(), 2000); };
+                addNavigateRule(this.id, this._navRule);
+                addMutationRule(this.id + '_mut', () => this._attachVoteButtons());
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id + '_mut');
+                this._navRule = null;
+                document.querySelectorAll('.ytkit-da-vote').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
         //  SUBSCRIPTION MANAGER — Local groups + sort + new-since markers
         // ═══════════════════════════════════════════════════════════════════
         {
@@ -32299,7 +33779,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
                     .ytkit-sub-dead-badge{background:#f59e0b;color:#1f1300;}
                     .ytkit-sub-staged-badge{background:#22c55e;color:#022c14;}
-                    .ytkit-sub-hidden-by-group{display:none !important;}
+                    .ytkit-sub-hidden-by-group,.ytkit-sub-hidden-by-type{display:none !important;}
                     .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 system-ui;}
                     .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
                     .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
@@ -32454,6 +33934,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return ids;
             },
 
+            _playGroupAsQueue(groupId) {
+                const MAX_IDS = 50;
+                const groups = this._readGroups();
+                const allowed = this._getGroupChannelIdSet(groupId, groups);
+                if (!allowed?.size) return;
+                const ids = [];
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                for (const card of cards) {
+                    if (card.classList.contains('ytkit-sub-hidden-by-group')) continue;
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId || !allowed.has(channelId)) continue;
+                    const link = card.querySelector('a[href*="/watch?v="], a[href*="/shorts/"]');
+                    if (!link) continue;
+                    const m = link.href.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+                    if (m && !ids.includes(m[1])) ids.push(m[1]);
+                    if (ids.length >= MAX_IDS) break;
+                }
+                if (!ids.length) {
+                    if (typeof showToast === 'function') showToast('No videos visible in this group', '#6b7280', { tone: 'neutral' });
+                    return;
+                }
+                const url = `https://www.youtube.com/watch_videos?video_ids=${ids.join(',')}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+                const groupName = groups[groupId]?.name || groupId;
+                const truncated = ids.length >= MAX_IDS ? ` (capped at ${MAX_IDS})` : '';
+                if (typeof showToast === 'function') showToast(`Playing ${ids.length} videos from ${groupName}${truncated}`, '#22c55e');
+            },
+
             _exportGroups() {
                 const payload = {
                     schemaVersion: 2,
@@ -32471,6 +33979,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (typeof showToast === 'function') showToast('Exported subscription groups', '#22c55e');
             },
 
+            _csvEscape(value) {
+                const s = String(value ?? '');
+                if (/[",\r\n]/.test(s) || s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') || s.startsWith('\t')) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            },
+
+            _exportGroupsCsv() {
+                const groups = this._readGroups();
+                const rows = ['Group,Channel,Handle,URL'];
+                for (const [id, group] of Object.entries(groups)) {
+                    const name = group.name || id;
+                    const channels = Array.isArray(group.channels) ? group.channels : [];
+                    if (channels.length === 0) {
+                        rows.push(this._csvEscape(name) + ',,,');
+                        continue;
+                    }
+                    for (const ch of channels) {
+                        const chName = ch.name || '';
+                        const handle = ch.handle || '';
+                        const url = ch.url || (handle ? `https://www.youtube.com/${handle}` : '');
+                        rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                    }
+                }
+                const csv = rows.join('\r\n') + '\r\n';
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                if (typeof showToast === 'function') showToast('Exported subscription groups as CSV', '#22c55e');
+            },
+
             _importGroups(json) {
                 try {
                     const data = JSON.parse(json);
@@ -32478,7 +34022,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const sanitized = {};
                     const rawParentById = {};
                     for (const [id, raw] of Object.entries(data.groups)) {
-                        if (typeof id !== 'string' || id.length > 64) continue;
+                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) continue;
                         if (!raw || typeof raw !== 'object') continue;
                         const name = String(raw.name || '').slice(0, 80);
                         const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
@@ -32494,7 +34038,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             updatedAt: Date.now()
                         };
                         const parentId = String(raw.parentId || '');
-                        if (parentId && parentId !== id && parentId.length <= 64) rawParentById[id] = parentId;
+                        if (parentId && parentId !== id && parentId.length <= 64 && isSafeObjectKey(parentId)) rawParentById[id] = parentId;
                     }
                     for (const [id, parentId] of Object.entries(rawParentById)) {
                         if (sanitized[id] && sanitized[parentId] && !rawParentById[parentId]) {
@@ -32537,6 +34081,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     else card.classList.remove('ytkit-sub-hidden-by-group');
                 });
                 this._renderGroupEmptyState(allowed);
+            },
+
+            _applyContentTypeFilter() {
+                const filterLive = !!appState?.settings?.subscriptionFilterLive;
+                const filterStreamed = !!appState?.settings?.subscriptionFilterStreamed;
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                cards.forEach(card => {
+                    if (!filterLive && !filterStreamed) {
+                        card.classList.remove('ytkit-sub-hidden-by-type');
+                        return;
+                    }
+                    const isLive = filterLive && !!card.querySelector(
+                        'ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"],' +
+                        'ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"],' +
+                        '.badge-style-type-live-now, [aria-label*="LIVE"]'
+                    );
+                    const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(
+                        card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || ''
+                    );
+                    if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
+                    else card.classList.remove('ytkit-sub-hidden-by-type');
+                });
             },
 
             _applyNewSinceMarkers() {
@@ -33272,6 +34838,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     editBtn.setAttribute('aria-haspopup', 'dialog');
                     editBtn.addEventListener('click', () => this._toggleMembersPanel(activeGroupId));
                     bar.appendChild(editBtn);
+
+                    const playBtn = document.createElement('button');
+                    playBtn.type = 'button';
+                    playBtn.dataset.action = 'play-all';
+                    playBtn.textContent = 'Play All';
+                    playBtn.setAttribute('aria-label', `Play all videos from ${groups[activeGroupId].name || activeGroupId}`);
+                    playBtn.addEventListener('click', () => this._playGroupAsQueue(activeGroupId));
+                    bar.appendChild(playBtn);
                 }
 
                 const sortLabel = document.createElement('span');
@@ -33314,9 +34888,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
                 exportBtn.textContent = 'Export';
-                exportBtn.setAttribute('aria-label', 'Export subscription groups');
+                exportBtn.setAttribute('aria-label', 'Export subscription groups as JSON');
                 exportBtn.addEventListener('click', () => this._exportGroups());
                 bar.appendChild(exportBtn);
+
+                const csvBtn = document.createElement('button');
+                csvBtn.type = 'button';
+                csvBtn.dataset.action = 'export-csv';
+                csvBtn.textContent = 'CSV';
+                csvBtn.setAttribute('aria-label', 'Export subscription groups as CSV');
+                csvBtn.addEventListener('click', () => this._exportGroupsCsv());
+                bar.appendChild(csvBtn);
 
                 const importBtn = document.createElement('button');
                 importBtn.type = 'button';
@@ -33402,6 +34984,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (window.location.pathname !== '/feed/subscriptions') return;
                         this._renderToolbar();
                         this._applyGroupFilter();
+                        this._applyContentTypeFilter();
                         this._applyNewSinceMarkers();
                         this._renderDeadChannelMarkers();
                         this._applySort();
@@ -33435,6 +35018,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._toolbar?.remove();
                 this._toolbar = null;
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
+                document.querySelectorAll('.ytkit-sub-hidden-by-type').forEach(el => el.classList.remove('ytkit-sub-hidden-by-type'));
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                 document.querySelectorAll('.ytkit-sub-dead-badge, .ytkit-sub-staged-badge').forEach(el => el.remove());
                 document.querySelectorAll('[data-ytkit-dead-channel], [data-ytkit-staged-unsubscribe]').forEach(el => {
@@ -33724,6 +35308,201 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove();
                 this._btn = null;
                 document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-btn').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  LOCAL AI TRANSCRIPT Q&A — Chrome Prompt API (Gemini Nano)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'localAiTranscriptQa',
+            name: 'Transcript Q&A (browser built-in)',
+            description: 'Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button.',
+            group: 'Research',
+            icon: 'message-circle',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _navRule: null,
+            _session: null,
+            _transcript: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(59,130,246,0.32);background:rgba(59,130,246,0.12);color:#bfdbfe;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-ai-qa-btn:hover{background:rgba(59,130,246,0.22);}
+                    .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9100;background:rgba(0,0,0,0.5);}
+                    .ytkit-ai-qa-modal__body{max-width:640px;width:90%;max-height:80vh;overflow:auto;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;display:flex;flex-direction:column;gap:12px;}
+                    .ytkit-ai-qa-modal__body h4{margin:0;}
+                    .ytkit-ai-qa-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #3f3f46;background:#1a1a2e;color:#e5e7eb;font:13px/1.4 system-ui;resize:none;}
+                    .ytkit-ai-qa-input:focus{outline:none;border-color:rgba(59,130,246,0.5);}
+                    .ytkit-ai-qa-answer{white-space:pre-wrap;font:13px/1.5 system-ui;padding:10px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);min-height:40px;}
+                    .ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;}
+                    .ytkit-ai-qa-ask{padding:6px 14px;border-radius:6px;border:none;background:rgba(59,130,246,0.8);color:#fff;cursor:pointer;font:600 12px/1 system-ui;}
+                    .ytkit-ai-qa-ask:hover{background:rgba(59,130,246,1);}
+                    .ytkit-ai-qa-ask:disabled{opacity:0.5;cursor:not-allowed;}
+                    .ytkit-ai-qa-close{padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;font:12px/1 system-ui;}
+                `, 'ai-qa');
+            },
+
+            _hasPromptApi() {
+                return typeof window.LanguageModel !== 'undefined'
+                    || (typeof window.ai !== 'undefined' && typeof window.ai.languageModel !== 'undefined');
+            },
+
+            async _fetchTranscript() {
+                const f = getFeatureById('aiVideoSummary');
+                if (f?._fetchTranscriptText) {
+                    try { return await f._fetchTranscriptText(); }
+                    catch (e) { DebugManager.log('TranscriptQA', `Transcript fetch failed: ${e.message}`); }
+                }
+                const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
+                return Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ');
+            },
+
+            async _getSession(transcript) {
+                if (this._session && this._transcript === transcript) return this._session;
+                const factory = window.LanguageModel || window.ai?.languageModel;
+                if (!factory) return null;
+                try {
+                    this._session = await factory.create({
+                        systemPrompt: `You are an assistant that answers questions about YouTube video content. Answer ONLY based on the transcript provided. If the transcript does not contain the answer, say so. Be concise.\n\nTranscript:\n${transcript.slice(0, 6000)}`
+                    });
+                    this._transcript = transcript;
+                    return this._session;
+                } catch (e) {
+                    DebugManager.log('TranscriptQA', `Session creation failed: ${e.message}`);
+                    return null;
+                }
+            },
+
+            _destroySession() {
+                try { this._session?.destroy?.(); } catch (_) { /* reason: session cleanup is best-effort */ }
+                this._session = null;
+                this._transcript = null;
+            },
+
+            _openQaPanel() {
+                if (!this._hasPromptApi()) {
+                    if (typeof showToast === 'function') showToast('Chrome Prompt API not available. Requires Chrome 138+ with Gemini Nano.', '#f59e0b');
+                    return;
+                }
+                document.querySelector('.ytkit-ai-qa-modal')?.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'ytkit-ai-qa-modal';
+
+                const inner = document.createElement('div');
+                inner.className = 'ytkit-ai-qa-modal__body';
+
+                const h = document.createElement('h4');
+                h.textContent = 'Transcript Q&A';
+                inner.appendChild(h);
+
+                const input = document.createElement('textarea');
+                input.className = 'ytkit-ai-qa-input';
+                input.placeholder = 'Ask a question about this video…';
+                input.rows = 2;
+                inner.appendChild(input);
+
+                const answer = document.createElement('div');
+                answer.className = 'ytkit-ai-qa-answer';
+                answer.textContent = 'Ask a question and the on-device model will answer based on the transcript.';
+                inner.appendChild(answer);
+
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-ai-qa-actions';
+
+                const askBtn = document.createElement('button');
+                askBtn.type = 'button';
+                askBtn.className = 'ytkit-ai-qa-ask';
+                askBtn.textContent = 'Ask';
+
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'ytkit-ai-qa-close';
+                closeBtn.textContent = 'Close';
+
+                const self = this;
+                askBtn.addEventListener('click', async () => {
+                    const question = input.value.trim();
+                    if (!question) return;
+                    askBtn.disabled = true;
+                    answer.textContent = 'Thinking…';
+                    try {
+                        if (!self._transcript) {
+                            answer.textContent = 'Loading transcript…';
+                            const text = await self._fetchTranscript();
+                            if (!text || text.length < 50) {
+                                answer.textContent = 'No transcript available for this video.';
+                                askBtn.disabled = false;
+                                return;
+                            }
+                            self._transcript = text;
+                        }
+                        const session = await self._getSession(self._transcript);
+                        if (!session) {
+                            answer.textContent = 'Failed to create Prompt API session. The model may not be downloaded yet.';
+                            askBtn.disabled = false;
+                            return;
+                        }
+                        const result = await session.prompt(question);
+                        answer.textContent = String(result || '(no response)');
+                    } catch (e) {
+                        DebugManager.log('TranscriptQA', `Prompt failed: ${e.message}`);
+                        answer.textContent = `Error: ${e.message}`;
+                    }
+                    askBtn.disabled = false;
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        askBtn.click();
+                    }
+                });
+
+                closeBtn.addEventListener('click', () => overlay.remove());
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+                actions.appendChild(askBtn);
+                actions.appendChild(closeBtn);
+                inner.appendChild(actions);
+                overlay.appendChild(inner);
+                document.body.appendChild(overlay);
+                input.focus();
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-local-ai-btn, .ytkit-ai-summary-btn, .ytp-right-controls .ytkit-player-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-ai-qa-btn')) return;
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-ai-qa-btn';
+                this._btn.textContent = 'Q&A';
+                this._btn.title = this._hasPromptApi()
+                    ? 'Ask questions about this video using on-device AI.'
+                    : 'Chrome Prompt API not detected — requires Chrome 138+ with Gemini Nano.';
+                this._btn.addEventListener('click', () => this._openQaPanel());
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                this._destroySession();
+                document.querySelectorAll('.ytkit-ai-qa-modal, .ytkit-ai-qa-btn').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
             }
@@ -34512,6 +36291,161 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // ═══════════════════════════════════════════════════════════════════
+        //  PRESET PROFILES — curated bundles for onboarding
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'presetPrivacy',
+            name: 'Privacy Preset',
+            description: 'Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'shield',
+            _RECIPE: {
+                cleanShareUrls: true,
+                removeAllShorts: true,
+                redirectShorts: true,
+                disableInfiniteScroll: true,
+                hideNotificationBadge: true,
+                autoClosePopups: true,
+                hideAiSummary: true,
+                hideJumpAheadButton: true,
+                antiTranslate: true,
+                forceDarkEverywhere: true
+            },
+            _BACKUP_KEY: 'ytkit-preset-privacy-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Privacy preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Privacy preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        {
+            id: 'presetResearcher',
+            name: 'Researcher Preset',
+            description: 'Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'book-open',
+            _RECIPE: {
+                transcriptViewer: true,
+                timestampBookmarks: true,
+                watchTimeTracker: true,
+                localAiSummary: true,
+                commentSearch: true,
+                copyVideoTitle: true,
+                autoExpandDescription: true,
+                showPlaylistDuration: true,
+                remainingTimeDisplay: true,
+                researchTranscriptIndex: true
+            },
+            _BACKUP_KEY: 'ytkit-preset-researcher-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Researcher preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Researcher preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        {
+            id: 'presetPowerUser',
+            name: 'Power User Preset',
+            description: 'Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'zap',
+            _RECIPE: {
+                persistentSpeed: true,
+                fineSpeedControl: true,
+                resumePlayback: true,
+                miniPlayerBar: true,
+                playbackStatsOverlay: true,
+                abLoop: true,
+                focusedMode: true,
+                showTimeInTabTitle: true,
+                chapterNavButtons: true,
+                videoLoopButton: true,
+                alwaysShowProgressBar: true,
+                pipButton: true
+            },
+            _BACKUP_KEY: 'ytkit-preset-power-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Power User preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Power User preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        {
+            id: 'presetFocus',
+            name: 'Focus Preset',
+            description: 'Distraction-free viewing: hide Shorts, related videos, infinite scroll, notifications, and autoplay. Enables Zen Mode and Digital Wellbeing tracking. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'eye-off',
+            _RECIPE: {
+                removeAllShorts: true,
+                redirectShorts: true,
+                hideRelatedVideos: true,
+                disableInfiniteScroll: true,
+                disableAutoplayNext: true,
+                hideNotificationBadge: true,
+                hideNotificationButton: true,
+                zenMode: true,
+                digitalWellbeing: true,
+                autoClosePopups: true,
+                focusedMode: true,
+                hideAiSummary: true,
+            },
+            _BACKUP_KEY: 'ytkit-preset-focus-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Focus preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Focus preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        // ═══════════════════════════════════════════════════════════════════
         //  OLED THEME — True black via --yt-sys-* token bridge
         // ═══════════════════════════════════════════════════════════════════
         {
@@ -34716,6 +36650,71 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         padding-bottom: 8px !important;
                     }
                 `, 'new-player-ui-restore');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        {
+            id: 'classicPlayerChrome',
+            name: 'Classic Player Chrome',
+            description: 'One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display. CSS-only, no DOM rebuild.',
+            group: 'Theming',
+            icon: 'play',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    /* Hide Delhi modern overlay and pill actions */
+                    .ytp-delhi-modern,
+                    .ytp-overflow-panel-button,
+                    .ytp-delhi-modern-fullscreen-action,
+                    .ytp-action-pill,
+                    .ytp-actions-container { display: none !important; }
+
+                    /* Opaque control strip background */
+                    .ytp-chrome-bottom {
+                        background: rgba(0, 0, 0, 0.78) !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+                    .ytp-gradient-bottom { opacity: 0 !important; }
+
+                    /* Square progress bar — no border-radius, 3px height, solid red fill */
+                    .ytp-progress-bar-container { height: 3px !important; }
+                    .ytp-progress-bar,
+                    .ytp-play-progress,
+                    .ytp-load-progress,
+                    .ytp-progress-bar-padding { border-radius: 0 !important; }
+                    .ytp-play-progress {
+                        background: #f00 !important;
+                        background-image: none !important;
+                    }
+
+                    /* Classic time display — strip Delhi wrapper background */
+                    div.ytp-time-wrapper.ytp-time-wrapper-delhi {
+                        background-color: transparent !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                        border-radius: 0 !important;
+                    }
+                    .ytp-time-display { color: #ddd !important; }
+
+                    /* Tighten chrome spacing */
+                    .ytp-chrome-bottom .ytp-chrome-controls { padding-bottom: 8px !important; }
+
+                    /* Remove frosted glass from the player overlay */
+                    #movie_player .ytp-chrome-top,
+                    #movie_player .ytp-cards-teaser,
+                    #movie_player .ytp-tooltip {
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+
+                    /* Solid progress tooltip background */
+                    .ytp-tooltip.ytp-preview,
+                    .ytp-tooltip-bg { background: rgba(0, 0, 0, 0.85) !important; border-radius: 2px !important; }
+                `, this.id, true);
             },
             destroy() {
                 this._styleElement?.remove();
@@ -35592,6 +37591,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         panel.setAttribute('aria-modal', 'true');
         panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
         panel.setAttribute('aria-hidden', 'true');
+        const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
+        const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
+        panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
 
         // Header
         const header = document.createElement('header');
@@ -35648,7 +37650,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         closeBtn.appendChild(ICONS.close());
         closeBtn.onclick = () => setSettingsPanelOpen(false);
 
+        const pinBtn = document.createElement('button');
+        pinBtn.className = 'ytkit-close';
+        pinBtn.type = 'button';
+        pinBtn.style.cssText = 'font-size:14px;margin-right:4px;width:auto;padding:4px 8px;';
+        pinBtn.textContent = 'PIN';
+        pinBtn.title = 'PIN lock';
+        (async () => {
+            pinBtn.title = (await isPinSet()) ? 'Change or clear PIN' : 'Set a PIN lock';
+        })();
+        pinBtn.onclick = () => _showPinManageDialog();
         header.appendChild(brand);
+        header.appendChild(pinBtn);
         header.appendChild(closeBtn);
 
         // Body
@@ -37439,6 +39452,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         document.body.appendChild(overlay);
         document.body.appendChild(panel);
+
+        if (panel.dir === 'rtl') {
+            injectStyle(`
+                #ytkit-settings-panel[dir="rtl"] .ytkit-sidebar { border-right: none; border-left: 1px solid rgba(255,255,255,0.08); }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-search-icon { left: auto; right: 14px; }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-search-meta { right: auto; left: 12px; }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-search-input { padding: 12px 40px 12px 84px; }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-feature-card { text-align: right; }
+            `, 'ytkit-rtl-panel', true);
+        }
 
         attachUIEventListeners();
         updateAllToggleStates();
@@ -43368,36 +45391,25 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-dl-popup {
             position: fixed;
-            width: 330px;
+            width: 260px;
             padding: 0;
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
-            background:
-                radial-gradient(90% 60% at 0% 0%, rgba(255,107,74,0.06), transparent 55%),
-                linear-gradient(180deg, rgba(18,22,30,0.98), rgba(10,13,18,0.98));
+            background: rgba(14,17,22,0.97);
             color: rgba(255,255,255,0.94);
-            box-shadow:
-                0 28px 56px rgba(0,0,0,0.45),
-                inset 0 1px 0 rgba(255,255,255,0.045);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.5);
             z-index: 2147483647;
-            animation: ytkit-slide-in 220ms var(--ytkit-ease-out);
+            animation: ytkit-slide-in 180ms var(--ytkit-ease-out);
             overflow: hidden;
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
         }
 
-        .ytkit-dl-popup__header {
+        .ytkit-dl-popup__toolbar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px 0;
-        }
-
-        .ytkit-dl-popup__title {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0;
-            color: rgba(255,255,255,0.96);
+            gap: 6px;
+            padding: 8px 8px 0;
         }
 
         .ytkit-dl-popup__close {
@@ -43406,152 +45418,138 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
             padding: 0;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.64);
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.36);
             cursor: pointer;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out);
+            flex-shrink: 0;
+            font-size: 11px;
+            transition: color 120ms ease, background 120ms ease;
             outline: none;
         }
 
         .ytkit-dl-popup__close:hover {
             background: rgba(255,255,255,0.08);
-            border-color: rgba(255,255,255,0.14);
-            color: #fff;
+            color: rgba(255,255,255,0.8);
         }
 
-        /* Brand-aligned focus ring (was SponsorBlock green). */
         .ytkit-dl-popup__close:focus-visible,
         .ytkit-dl-popup__tab:focus-visible,
         .ytkit-dl-popup__chip:focus-visible,
         .ytkit-dl-popup__dir-btn:focus-visible,
         .ytkit-dl-popup__go:focus-visible {
-            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(255,107,74,0.5);
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 3px rgba(255,107,74,0.45);
         }
 
         .ytkit-dl-popup__tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            padding: 12px 16px 0;
+            display: flex;
+            flex: 1;
+            gap: 2px;
+            padding: 3px;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.04);
         }
 
         .ytkit-dl-popup__tab {
             appearance: none;
             -webkit-appearance: none;
-            min-height: 34px;
-            padding: 7px 0;
-            border-radius: 9px;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.03);
-            color: rgba(255,255,255,0.55);
-            font-size: 12px;
-            font-weight: 650;
-            letter-spacing: 0;
+            flex: 1;
+            height: 26px;
+            padding: 0 10px;
+            border-radius: 5px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.45);
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out);
+            transition: all 140ms ease;
             outline: none;
             touch-action: manipulation;
         }
 
         .ytkit-dl-popup__tab:hover {
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.76);
+            color: rgba(255,255,255,0.7);
         }
 
         .ytkit-dl-popup__tab.is-active,
         .ytkit-dl-popup__tab[aria-selected="true"] {
-            background:
-                linear-gradient(135deg, rgba(255,107,74,0.14), rgba(255,107,74,0.05) 70%),
-                rgba(255,255,255,0.03);
-            border-color: rgba(255,107,74,0.32);
-            color: #ffd8cc;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.95);
         }
 
         .ytkit-dl-popup__body {
-            padding: 14px 16px 8px;
+            padding: 8px 10px 4px;
             display: grid;
-            gap: 14px;
+            gap: 8px;
         }
 
         .ytkit-dl-popup__row {
             display: grid;
-            gap: 7px;
+            gap: 4px;
         }
 
         .ytkit-dl-popup__label {
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 9px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.36);
             line-height: 1;
         }
 
         .ytkit-dl-popup__chips {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 4px;
         }
 
         .ytkit-dl-popup__chip {
             appearance: none;
             -webkit-appearance: none;
-            min-height: 30px;
-            padding: 5px 11px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.08);
+            height: 26px;
+            padding: 0 9px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.07);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.7);
-            font-size: 11.5px;
-            font-weight: 650;
-            letter-spacing: 0;
+            color: rgba(255,255,255,0.58);
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out);
+            transition: all 120ms ease;
             outline: none;
             touch-action: manipulation;
         }
 
         .ytkit-dl-popup__chip:hover {
             background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.9);
-            border-color: rgba(255,255,255,0.14);
+            color: rgba(255,255,255,0.85);
+            border-color: rgba(255,255,255,0.12);
         }
 
         .ytkit-dl-popup__chip.is-active,
         .ytkit-dl-popup__chip[aria-pressed="true"] {
-            background:
-                linear-gradient(135deg, rgba(255,107,74,0.18), rgba(255,107,74,0.06) 70%),
-                rgba(255,255,255,0.03);
-            border-color: rgba(255,107,74,0.36);
-            color: #ffd8cc;
+            background: rgba(255,107,74,0.14);
+            border-color: rgba(255,107,74,0.3);
+            color: #ff9a7e;
         }
 
         .ytkit-dl-popup__dir-wrap {
             display: flex;
             align-items: center;
-            gap: 8px;
-            min-height: 32px;
+            gap: 6px;
+            min-height: 24px;
         }
 
         .ytkit-dl-popup__dir-path {
             flex: 1;
             min-width: 0;
-            font-size: 11.5px;
-            color: rgba(255,255,255,0.62);
+            font-size: 10px;
+            color: rgba(255,255,255,0.42);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -43561,56 +45559,47 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-dl-popup__dir-input {
             flex: 1;
             min-width: 0;
-            padding: 6px 10px;
-            border-radius: 7px;
-            border: 1px solid rgba(255,255,255,0.12);
+            padding: 4px 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.1);
             background: rgba(6,9,13,0.7);
             color: rgba(255,255,255,0.92);
-            font-size: 11.5px;
+            font-size: 10px;
             font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace;
-            box-shadow: inset 0 1px 0 rgba(0,0,0,0.2);
             outline: none;
-            transition: border-color 160ms var(--ytkit-ease-out),
-                        box-shadow 160ms var(--ytkit-ease-out);
+            transition: border-color 120ms ease;
         }
 
         .ytkit-dl-popup__dir-input:focus,
         .ytkit-dl-popup__dir-input:focus-visible {
             border-color: rgba(255,107,74,0.4);
-            box-shadow: inset 0 1px 0 rgba(0,0,0,0.2),
-                        0 0 0 3px rgba(255,107,74,0.14);
         }
 
         .ytkit-dl-popup__dir-btn {
             appearance: none;
             -webkit-appearance: none;
-            min-height: 28px;
-            padding: 4px 11px;
-            border-radius: 7px;
-            border: 1px solid rgba(255,255,255,0.1);
+            height: 24px;
+            padding: 0 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.66);
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            font-weight: 600;
             cursor: pointer;
             flex-shrink: 0;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out);
+            transition: all 120ms ease;
             outline: none;
             touch-action: manipulation;
         }
 
         .ytkit-dl-popup__dir-btn:hover {
             background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.88);
-            border-color: rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.8);
         }
 
         .ytkit-dl-popup__footer {
-            padding: 10px 16px 14px;
+            padding: 6px 10px 10px;
         }
 
         .ytkit-dl-popup__go {
@@ -43618,51 +45607,28 @@ body.ytkit-panel-open #ytkit-settings-panel {
             -webkit-appearance: none;
             position: relative;
             width: 100%;
-            min-height: 36px;
-            padding: 11px 0;
-            border-radius: 11px;
-            border: 1px solid rgba(255,130,100,0.5);
-            background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
-            color: #1a0b06;
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px;
+            border: none;
+            background: #ff6b4a;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
-            box-shadow:
-                0 8px 22px rgba(255, 95, 74, 0.22),
-                inset 0 1px 0 rgba(255, 255, 255, 0.25);
-            transition:
-                box-shadow 200ms var(--ytkit-ease-out),
-                border-color 200ms var(--ytkit-ease-out),
-                transform 140ms var(--ytkit-ease-out);
+            transition: background 140ms ease, transform 100ms ease;
             outline: none;
             touch-action: manipulation;
             overflow: hidden;
         }
 
-        .ytkit-dl-popup__go::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent 55%);
-            pointer-events: none;
-            mix-blend-mode: overlay;
-            opacity: 0.9;
-        }
-
         .ytkit-dl-popup__go:hover {
-            box-shadow:
-                0 10px 26px rgba(255, 95, 74, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            border-color: rgba(255,160,135,0.6);
+            background: #ff7f5e;
         }
 
         .ytkit-dl-popup__go:active {
-            transform: scale(0.99);
-            box-shadow:
-                0 4px 10px rgba(255, 95, 74, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.18);
+            transform: scale(0.98);
+            background: #e85d3f;
         }
 
         #ytkit-subs-load-banner {
@@ -45795,8 +47761,35 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         // ── Lifetime Ad Block Stats Flush ──
 
+        // ── Global crash-loop guard ──
+        // If the content script crashes 3+ times within 30s, auto-enter
+        // safe mode so a corrupted-settings crash loop doesn't brick the
+        // extension. Uses localStorage (synchronous, content-script-accessible)
+        // with namespaced key. Timestamps older than the window are pruned.
+        const _CRASH_SESSION_KEY = '_ytkit_crash_guard';
+        const _CRASH_THRESHOLD = 3;
+        const _CRASH_WINDOW_MS = 30000;
+        let _crashGuardTriggered = false;
+        try {
+            const now = Date.now();
+            const raw = localStorage.getItem(_CRASH_SESSION_KEY);
+            let timestamps = [];
+            if (raw) {
+                try { timestamps = JSON.parse(raw); } catch (_) { /* reason: corrupted — reset */ }
+                if (!Array.isArray(timestamps)) timestamps = [];
+            }
+            timestamps = timestamps.filter(t => typeof t === 'number' && now - t < _CRASH_WINDOW_MS);
+            if (timestamps.length >= _CRASH_THRESHOLD) {
+                _crashGuardTriggered = true;
+                console.warn('[YTKit] Crash-loop guard triggered — entering safe mode automatically.');
+            }
+            timestamps.push(now);
+            localStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(timestamps.slice(-(_CRASH_THRESHOLD + 1))));
+        } catch (_) { /* reason: localStorage unavailable — skip guard */ }
+
         // ── Safe Mode + Diagnostics ──
-        const isSafeMode = getUrlParam('ytkit') === 'safe' ||
+        const isSafeMode = _crashGuardTriggered ||
+                           getUrlParam('ytkit') === 'safe' ||
                            storageRead('ytkit_safe_mode', false);
 
         window.ytkit = {
@@ -46002,6 +47995,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 });
             });
         } // end !isSafeMode
+
+        // Clear crash-loop guard on successful init
+        try {
+            if (!_crashGuardTriggered) localStorage.removeItem(_CRASH_SESSION_KEY);
+        } catch (_) { /* reason: localStorage unavailable */ }
+
+        if (_crashGuardTriggered) {
+            showToast('Astra Deck detected repeated crashes and entered safe mode. Check your settings or reset.', '#f97316', { duration: 15 });
+        }
 
         if (DebugManager._enabled) {
             console.log(`%c[YTKit] v${YTKIT_VERSION} Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');

@@ -108,6 +108,7 @@ INSTANCE_LOCK_PORT = 9753
 # The browser extension probes the same list to discover the running port.
 PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
 MAX_CONCURRENT = 3
+MAX_QUEUED_TOTAL = 200
 # Stall watchdog for the download subprocess. `for line in proc.stdout` blocks
 # forever if yt-dlp wedges on a dead socket — there is no other timeout on the
 # download path, so a hung process permanently consumes one of MAX_CONCURRENT
@@ -133,6 +134,9 @@ ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
 
 YTDLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+DENO_DIR = INSTALL_DIR / 'deno'
+DENO_PATH = DENO_DIR / 'deno.exe'
+DENO_ZIP_URL = "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
 COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
 COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe"
@@ -176,6 +180,7 @@ DEFAULT_CONFIG = {
     "ExtraOutputRoots": [],
     # v1.2.0: last ffmpeg freshness stamp (used for the monthly update nag).
     "LastFfmpegCheck": "",
+    "MaxFileSizeMB": 0,
 }
 
 # v1.2.0: rate-limit for /download. Token-bucket sliding window — tuned so a
@@ -265,6 +270,8 @@ MAX_TEXT_FIELD = 500
 MAX_PATH_FIELD = 2048
 LOG_MAX_BYTES = 1024 * 1024
 _LOG_LOCK = threading.Lock()
+_LOG_RING_MAX = 20
+_log_ring = __import__('collections').deque(maxlen=_LOG_RING_MAX)
 DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
     'url',
     'audioOnly',
@@ -295,6 +302,7 @@ def write_persistent_log(message, path=LOG_PATH):
     try:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with _LOG_LOCK:
             if path.exists() and path.stat().st_size > LOG_MAX_BYTES:
                 backup = path.with_suffix(path.suffix + ".1")
@@ -304,11 +312,16 @@ def write_persistent_log(message, path=LOG_PATH):
                     path.replace(backup)
                 except Exception:
                     pass
-            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with open(path, 'a', encoding='utf-8') as f:
                 f.write(f"{ts} {message}\n")
+            _log_ring.append({'ts': ts, 'msg': message[:MAX_TEXT_FIELD]})
     except Exception:
         pass
+
+
+def get_recent_log_entries():
+    with _LOG_LOCK:
+        return list(_log_ring)
 
 
 def log_crash(context="Unhandled exception"):
@@ -813,20 +826,76 @@ def ytdlp_needs_external_runtime(version_string):
     return parsed >= YTDLP_EXTERNAL_RUNTIME_CUTOFF
 
 
+def provision_deno():
+    """Download Deno into DENO_DIR if not already present.
+
+    Returns the path to the provisioned deno.exe, or None on failure.
+    Follows the same atomic-download pattern as yt-dlp and ffmpeg.
+    """
+    if DENO_PATH.exists():
+        return str(DENO_PATH)
+    DENO_DIR.mkdir(parents=True, exist_ok=True)
+    import zipfile
+    tmp_zip = DENO_DIR / f'.deno.{uuid.uuid4().hex}.zip'
+    try:
+        with http_requests.get(DENO_ZIP_URL, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            total_bytes = 0
+            with open(tmp_zip, 'wb') as f:
+                for chunk in r.iter_content(65536):
+                    if chunk:
+                        f.write(chunk)
+                        total_bytes += len(chunk)
+                        if total_bytes > HELPER_DOWNLOAD_MAX_BYTES:
+                            raise RuntimeError('Deno archive exceeded size limit')
+                f.flush()
+                os.fsync(f.fileno())
+        if tmp_zip.stat().st_size <= 0:
+            raise RuntimeError('Downloaded Deno archive was empty')
+        tmp_exe = DENO_PATH.with_name(f'.deno.{uuid.uuid4().hex}.exe')
+        with zipfile.ZipFile(tmp_zip) as zf:
+            found = False
+            for entry in zf.namelist():
+                if entry.replace('\\', '/').endswith('deno.exe') or entry == 'deno.exe':
+                    with zf.open(entry) as src, open(tmp_exe, 'wb') as dst:
+                        shutil.copyfileobj(src, dst)
+                        dst.flush()
+                        os.fsync(dst.fileno())
+                    if tmp_exe.stat().st_size <= 0:
+                        raise RuntimeError('deno.exe in archive was empty')
+                    os.replace(tmp_exe, DENO_PATH)
+                    found = True
+                    break
+            if not found:
+                raise RuntimeError('deno.exe not found in archive')
+        reset_deno_runtime_cache()
+        return str(DENO_PATH)
+    except Exception as e:
+        write_persistent_log(f"Deno provisioning failed: {e}")
+        return None
+    finally:
+        try:
+            tmp_zip.unlink(missing_ok=True)
+        except OSError:
+            pass
+        # Clean up partial extraction if tmp_exe was created but not moved
+        try:
+            if tmp_exe.exists():
+                tmp_exe.unlink(missing_ok=True)
+        except (OSError, NameError):
+            # reason: NameError if tmp_exe was never assigned (zip download failed)
+            pass
+
+
 def probe_deno_runtime(force=False):
     """Best-effort detection of an installed external JavaScript runtime.
 
     Returns ``{'installed': bool, 'version': str | None, 'path': str | None,
-    'ytdlpNeedsRuntime': bool, 'advice': str}``. Cached for 60 s.
+    'source': 'bundled' | 'system' | None, 'ytdlpNeedsRuntime': bool,
+    'advice': str}``. Cached for 60 s.
 
-    Detection primitive is ``shutil.which('deno')`` — a Python-conventional
-    way to check PATH that doesn't shell out and has no shell-injection
-    surface. Version is captured via ``deno --version`` and parsed
-    permissively. The advice field is an empty string when the runtime
-    isn't needed; otherwise concrete install hints (winget / direct site).
-
-    Future: when yt-dlp adds wider runtime support, we can probe for
-    other runtimes here (Node, Bun) and surface whichever is present.
+    Checks the bundled DENO_DIR first, then falls back to system PATH
+    via ``shutil.which('deno')``.
     """
     with _DENO_RUNTIME_CACHE_LOCK:
         cache = _deno_runtime_cache
@@ -835,12 +904,20 @@ def probe_deno_runtime(force=False):
             return cache['value']
         ytdlp_version = get_ytdlp_version()
         needs_runtime = ytdlp_needs_external_runtime(ytdlp_version or '')
-        deno_path = shutil.which('deno')
+        deno_path = None
+        source = None
+        if DENO_PATH.exists():
+            deno_path = str(DENO_PATH)
+            source = 'bundled'
+        else:
+            system_deno = shutil.which('deno')
+            if system_deno:
+                deno_path = system_deno
+                source = 'system'
         installed = deno_path is not None
         version = None
         if installed:
             output = _run_captured([deno_path, '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
-            # Output is multi-line; the first line is the deno semver.
             if output:
                 first_line = output.strip().splitlines()[0] if output.strip() else ''
                 m = re.search(r'(\d+\.\d+\.\d+)', first_line)
@@ -852,15 +929,14 @@ def probe_deno_runtime(force=False):
         if needs_runtime and not installed:
             advice = (
                 'yt-dlp >= 2026.04 needs an external JavaScript runtime for '
-                'YouTube. Install Deno: winget install DenoLand.Deno OR '
-                'https://deno.com/.'
+                'YouTube. Click Provision Deno in the companion, or install '
+                'manually: winget install DenoLand.Deno.'
             )
-        elif needs_runtime and installed:
-            advice = ''
         result = {
             'installed': installed,
             'version': version,
             'path': deno_path,
+            'source': source,
             'ytdlpNeedsRuntime': needs_runtime,
             'advice': advice,
         }
@@ -898,6 +974,12 @@ def build_youtube_extractor_args(url, po_token_provider=None):
        server is reachable, point the bgutil plugin at it via
        ``youtubepot-bgutilhttp:base_url=...``. If the user has not installed
        the yt-dlp plugin itself, the arg is harmlessly ignored.
+
+    NOTE: do NOT add ``player_client=...`` to the YouTube extractor args.
+    Specifying an explicit player client overrides yt-dlp's default client
+    selection, which handles ended live streams / VOD transitions correctly.
+    Forcing ``web`` or ``ios`` causes "This live event has ended" failures
+    that the default path avoids.
     """
     if not is_youtube_url(url):
         return []
@@ -1276,16 +1358,19 @@ def _safe_update_paths(update_path, target_path=None):
     return update, target
 
 
-def schedule_companion_update_restart(update_path, target_path=None, restart_args=None, pid=None):
+def schedule_companion_update_restart(update_path, target_path=None, restart_args=None, pid=None, expected_sha256=None):
     """Schedule after-exit replacement and relaunch of AstraDownloader.exe.
 
     The running PyInstaller executable cannot be overwritten in-place on
-    Windows. A detached helper waits for this PID to exit, atomically replaces
-    the managed install-dir executable, then starts the new build.
+    Windows. A detached helper waits for this PID to exit, re-verifies the
+    staged binary's SHA-256 against expected_sha256 (closing the TOCTOU window
+    between the caller's verify and the move), then atomically replaces the
+    managed install-dir executable and starts the new build.
     """
     update, target = _safe_update_paths(update_path, target_path)
     restart_args = list(restart_args or ['--start-server'])
     current_pid = int(pid or os.getpid())
+    expected_digest = str(expected_sha256 or '').strip().lower()
     INSTALL_DIR.mkdir(parents=True, exist_ok=True)
 
     if sys.platform == 'win32':
@@ -1295,13 +1380,20 @@ param(
     [int] $ProcessId,
     [string] $SourcePath,
     [string] $TargetPath,
-    [string] $RestartArgs
+    [string] $RestartArgs,
+    [string] $ExpectedSHA256
 )
 $ErrorActionPreference = 'Stop'
 try {
     Wait-Process -Id $ProcessId -Timeout 45
 } catch {
     Start-Sleep -Seconds 2
+}
+if ($ExpectedSHA256 -and $ExpectedSHA256.Length -eq 64) {
+    $hash = (Get-FileHash -Path $SourcePath -Algorithm SHA256).Hash.ToLower()
+    if ($hash -ne $ExpectedSHA256.ToLower()) {
+        throw "SHA-256 mismatch before MoveFileEx: expected $ExpectedSHA256, got $hash — staged binary may have been tampered with"
+    }
 }
 Add-Type -TypeDefinition @'
 using System;
@@ -1329,11 +1421,13 @@ Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction Silent
             '-SourcePath', str(update),
             '-TargetPath', str(target),
             '-RestartArgs', command_line(restart_args),
+            '-ExpectedSHA256', expected_digest,
         ]
         subprocess.Popen(args, creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
     else:
         script = INSTALL_DIR / f".AstraDownloader.apply-update.{uuid.uuid4().hex}.py"
         script.write_text('''\
+import hashlib
 import os
 import subprocess
 import sys
@@ -1342,7 +1436,8 @@ import time
 pid = int(sys.argv[1])
 source = sys.argv[2]
 target = sys.argv[3]
-restart_args = sys.argv[4:]
+expected_sha256 = sys.argv[4] if len(sys.argv) > 4 else ''
+restart_args = sys.argv[5:]
 deadline = time.time() + 45
 while time.time() < deadline:
     try:
@@ -1350,6 +1445,14 @@ while time.time() < deadline:
     except OSError:
         break
     time.sleep(0.25)
+if expected_sha256 and len(expected_sha256) == 64:
+    h = hashlib.sha256()
+    with open(source, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b''):
+            h.update(chunk)
+    actual = h.hexdigest().lower()
+    if actual != expected_sha256.lower():
+        raise SystemExit(f'SHA-256 mismatch before replace: expected {expected_sha256}, got {actual}')
 os.replace(source, target)
 subprocess.Popen([target] + restart_args)
 try:
@@ -1357,7 +1460,7 @@ try:
 except OSError:
     pass
 ''', encoding='utf-8')
-        subprocess.Popen([sys.executable, str(script), str(current_pid), str(update), str(target)] + restart_args)
+        subprocess.Popen([sys.executable, str(script), str(current_pid), str(update), str(target), expected_digest] + restart_args)
     return {'scheduled': True, 'target': str(target), 'source': str(update)}
 
 
@@ -1466,7 +1569,7 @@ def _run_companion_self_update(restart=True):
                 'current_version': current_version,
                 'latest_version': latest_version,
             }
-        schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
+        schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'], expected_sha256=downloaded_digest)
         record_last_installed_update_sha256(downloaded_digest)
         if restart:
             schedule_companion_process_exit()
@@ -1725,6 +1828,7 @@ def sanitize_config(raw):
     data["Proxy"] = normalize_proxy(data.get("Proxy"))
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
     data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
+    data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
     extra = data.get("ExtraOutputRoots")
     if not isinstance(extra, list):
         extra = []
@@ -1756,6 +1860,28 @@ def _sanitize_cookie_field(value, max_len=4096):
     return value
 
 
+ALLOWED_COOKIE_DOMAINS = frozenset({
+    ".youtube.com", "youtube.com",
+    ".www.youtube.com", "www.youtube.com",
+    ".m.youtube.com", "m.youtube.com",
+    ".music.youtube.com", "music.youtube.com",
+    ".youtube-nocookie.com", "youtube-nocookie.com",
+    ".www.youtube-nocookie.com", "www.youtube-nocookie.com",
+    ".youtu.be", "youtu.be",
+    ".google.com", "google.com",
+    ".accounts.google.com", "accounts.google.com",
+})
+
+
+def _is_allowed_cookie_domain(domain):
+    if not domain:
+        return False
+    d = domain.lower().strip()
+    return d in ALLOWED_COOKIE_DOMAINS or any(
+        d.endswith(allowed) for allowed in ALLOWED_COOKIE_DOMAINS if allowed.startswith(".")
+    )
+
+
 def write_cookies_netscape(cookies, target_path):
     """
     Persist browser-supplied cookies in the Netscape cookies.txt format
@@ -1781,7 +1907,7 @@ def write_cookies_netscape(cookies, target_path):
         if not name:
             continue
         domain = _sanitize_cookie_field(entry.get("domain"), 256)
-        if not domain:
+        if not domain or not _is_allowed_cookie_domain(domain):
             continue
         value = _sanitize_cookie_field(entry.get("value"), 4096)
         path_field = _sanitize_cookie_field(entry.get("path"), 512) or "/"
@@ -2308,6 +2434,26 @@ def is_playlist_url(url):
         return False
 
 
+_SUBPROCESS_ENV_ALLOWLIST = (
+    'PATH', 'PATHEXT', 'SYSTEMROOT', 'SYSTEMDRIVE', 'COMSPEC',
+    'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA',
+    'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'WINDIR',
+    'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'OS',
+    'LANG', 'LC_ALL', 'LC_CTYPE',
+)
+
+
+def _build_subprocess_env():
+    env = {}
+    for key in _SUBPROCESS_ENV_ALLOWLIST:
+        val = os.environ.get(key)
+        if val is not None:
+            env[key] = val
+    if DENO_PATH.exists():
+        env['PATH'] = str(DENO_DIR) + os.pathsep + env.get('PATH', '')
+    return env
+
+
 def terminate_process_tree(proc, timeout=3):
     if not proc or proc.poll() is not None:
         return
@@ -2547,6 +2693,9 @@ class DownloadManager(QObject):
         audio_only = coerce_bool(audio_only, False)
 
         with self._lock:
+            total = len(self.downloads)
+            if total >= MAX_QUEUED_TOTAL:
+                return None, "Download queue is full. Wait for some downloads to complete."
             active = sum(1 for d in self.downloads.values()
                          if d.status in DOWNLOAD_ACTIVE_STATES)
             if active >= MAX_CONCURRENT:
@@ -2625,7 +2774,9 @@ class DownloadManager(QObject):
         # line so we can parse robustly when yt-dlp tweaks its human-readable
         # format. We keep the legacy line as a fallback.
         args = [ytdlp, '--newline', '--progress', '--no-colors',
-                '--windows-filenames', '--trim-filenames', '180',
+                '--trim-filenames', '180',
+                '--replace-in-metadata', 'title,playlist_title',
+                '[\":<>|*?/\\\\]', '_',
                 '--ffmpeg-location', ffmpeg_dir, '-o', out_tpl,
                 '--progress-template',
                 'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s',
@@ -2658,6 +2809,9 @@ class DownloadManager(QObject):
         proxy = self.config.get("Proxy", "")
         if proxy and re.match(r'^(socks(?:4a?|5h?)?|https?)://', proxy):
             args += ['--proxy', proxy]
+        max_filesize = int(self.config.get("MaxFileSizeMB", 0) or 0)
+        if max_filesize > 0:
+            args += ['--max-filesize', f'{max_filesize}M']
         if dl.referer:
             args += ['--referer', dl.referer]
         if dl.cookies_file:
@@ -2690,10 +2844,12 @@ class DownloadManager(QObject):
         watchdog_thread = None
         watchdog_killed = {'value': None}
         try:
+            env = _build_subprocess_env()
             proc = subprocess.Popen(
                 args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding='utf-8', errors='replace', bufsize=1,
-                creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+                creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
+                env=env,
             )
             dl.process = proc
             last_lines = []
@@ -2824,6 +2980,142 @@ class DownloadManager(QObject):
                         dl.error = " ".join(last_lines)[-240:]
                     else:
                         dl.error = "Unknown error"
+                    combined = " ".join(last_lines).lower()
+                    if 'live event has ended' in combined and dl.cookies_file:
+                        write_persistent_log(
+                            f"Download {dl.id}: 'live event has ended' with cookies — "
+                            "retrying without cookies"
+                        )
+                        retry_args = [a for i, a in enumerate(args)
+                                      if a != '--cookies' and (i == 0 or args[i - 1] != '--cookies')]
+                        dl.status = "downloading"
+                        dl.error = ""
+                        dl.progress = 0
+                        self.progress_updated.emit()
+                        if stop_watchdog is not None:
+                            stop_watchdog.set()
+                        activity['at'] = time.monotonic()
+                        stop_watchdog = threading.Event()
+                        proc = subprocess.Popen(
+                            retry_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding='utf-8', errors='replace', bufsize=1,
+                            creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
+                            env=env,
+                        )
+                        dl.process = proc
+                        last_lines = []
+                        last_error = None
+
+                        def _retry_watchdog():
+                            while not stop_watchdog.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+                                if dl.status == 'cancelled':
+                                    return
+                                if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
+                                    watchdog_killed['value'] = 'stall'
+                                    try:
+                                        terminate_process_tree(proc)
+                                    except Exception:
+                                        pass
+                                    return
+
+                        watchdog_thread = threading.Thread(
+                            target=_retry_watchdog, name='download-stall-watchdog-retry', daemon=True
+                        )
+                        watchdog_thread.start()
+
+                        for line in proc.stdout:
+                            activity['at'] = time.monotonic()
+                            line = line.strip()
+                            if not line:
+                                continue
+                            last_lines.append(line)
+                            if len(last_lines) > 30:
+                                last_lines = last_lines[-30:]
+                            if 'ERROR' in line.upper():
+                                last_error = line
+                            if line.startswith('MDLP_JSON '):
+                                try:
+                                    payload = json.loads(line[len('MDLP_JSON '):])
+                                    total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
+                                    downloaded_bytes = payload.get('downloaded_bytes') or 0
+                                    if isinstance(total, (int, float)) and total > 0:
+                                        dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
+                                    spd = (payload.get('_speed_str') or '').strip()
+                                    eta = (payload.get('_eta_str') or '').strip()
+                                    if spd and spd not in ('NA', 'Unknown'):
+                                        dl.speed = spd
+                                    if eta and eta not in ('NA', 'Unknown'):
+                                        dl.eta = eta
+                                    self.progress_updated.emit()
+                                    continue
+                                except Exception:
+                                    pass
+                            m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
+                            if m:
+                                dl.progress = float(m.group(1))
+                                spd, eta = m.group(2), m.group(3)
+                                if spd not in ('NA', 'Unknown'):
+                                    dl.speed = spd
+                                if eta not in ('NA', 'Unknown'):
+                                    dl.eta = eta
+                                self.progress_updated.emit()
+                                continue
+                            m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
+                            if m:
+                                dl.progress = float(m.group(1))
+                                m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
+                                if m2:
+                                    dl.speed = m2.group(1)
+                                    dl.eta = m2.group(2)
+                                self.progress_updated.emit()
+                                continue
+                            if '[Merger]' in line or 'Merging formats' in line:
+                                dl.status = "merging"
+                                self.progress_updated.emit()
+                            elif '[ExtractAudio]' in line or '[extract]' in line:
+                                dl.status = "extracting"
+                                self.progress_updated.emit()
+                            m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
+                            if m:
+                                dl.filename = m.group(1)
+                            else:
+                                m = re.search(r'\[download\] Destination: (.+)', line)
+                                if m:
+                                    dl.filename = m.group(1)
+
+                        proc.wait()
+                        if dl.status == 'cancelled':
+                            dl.error = dl.error or "Cancelled by user."
+                        elif watchdog_killed['value'] == 'stall':
+                            dl.status = "failed"
+                            dl.error = (
+                                "Download stalled (no progress for "
+                                f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
+                            )
+                        elif proc.returncode == 0 or dl.progress >= 99:
+                            dl.status = "complete"
+                            dl.progress = 100
+                        else:
+                            dl.status = "failed"
+                            if last_error:
+                                dl.error = last_error[-240:]
+                            elif last_lines:
+                                dl.error = " ".join(last_lines)[-240:]
+                            else:
+                                dl.error = "Unknown error"
+                    elif 'live event has ended' in combined:
+                        dl.error = (
+                            "YouTube reports this live stream has ended. "
+                            "The VOD archive may still be processing — "
+                            "try again in a few minutes."
+                        )
+                    elif ('sabr' in combined or 'no video formats' in combined
+                            or 'requested format is not available' in combined):
+                        dl.error = (
+                            "This video only offers SABR streaming formats that "
+                            "yt-dlp cannot yet download. This is a YouTube platform "
+                            "limitation, not an Astra Deck bug. See yt-dlp issue #12482."
+                        )
 
         except FileNotFoundError:
             if dl.status != "cancelled":
@@ -3092,6 +3384,8 @@ def create_api(config, dl_manager, history):
         vary_tokens = {v.strip() for v in existing_vary.split(",") if v.strip()}
         vary_tokens.add("Cookie")
         resp.headers["Vary"] = ", ".join(sorted(vary_tokens))
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["X-Frame-Options"] = "DENY"
         if extra_headers:
             for k, v in extra_headers.items():
                 resp.headers[k] = v
@@ -3136,10 +3430,20 @@ def create_api(config, dl_manager, history):
             # ``ytdlpNeedsRuntime && !installed``, and stays quiet when
             # the bundled yt-dlp predates the cutoff.
             "denoRuntime": probe_deno_runtime(),
+            # v1.6.0: SABR (Server-Based Adaptive Bitrate) support status.
+            # YouTube's web client now returns SABR-only streaming URLs for
+            # a growing share of videos. yt-dlp PR #13515 adds native SABR
+            # download support but is still in draft. Until it merges, the
+            # companion passes formats=duplicate which surfaces both HTTPS
+            # and SABR entries, but SABR entries cannot be downloaded. The
+            # extension health panel surfaces "SABR: limited" when native
+            # support is absent, so users understand why some downloads fail.
+            "sabrSupport": "limited",
             "rateLimit": {
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
             },
+            "recentErrors": get_recent_log_entries(),
         }
         # v3.15.0: Token disclosure is now gated by the Host check at
         # `guard_request()` — DNS-rebinding attacks send `Host: attacker.com`
@@ -3152,6 +3456,16 @@ def create_api(config, dl_manager, history):
         if request.headers.get("X-MDL-Client") == "MediaDL" and (not origin or is_extension_origin(origin)):
             resp["token"] = token
         return cors_response(resp)
+
+    @api.route('/provision-deno', methods=['POST'])
+    def provision_deno_endpoint():
+        if request.headers.get('X-MDL-Token') != token:
+            return cors_response({"error": "Unauthorized"}, 403)
+        result = provision_deno()
+        if result:
+            runtime = probe_deno_runtime(force=True)
+            return cors_response({"ok": True, "path": result, "denoRuntime": runtime})
+        return cors_response({"ok": False, "error": "Failed to download Deno. Check network connection."}, 500)
 
     @api.route('/download', methods=['POST'])
     def download():
@@ -3594,6 +3908,21 @@ class SetupWorker(QThread):
                         pass
             else:
                 self.log.emit("ffmpeg already installed")
+            self.progress.emit(55)
+
+            # Deno (56-60% — only when yt-dlp needs the external runtime)
+            ytdlp_ver = get_ytdlp_version()
+            if ytdlp_needs_external_runtime(ytdlp_ver or '') and not DENO_PATH.exists():
+                system_deno = shutil.which('deno')
+                if not system_deno:
+                    self.log.emit("Downloading Deno runtime...")
+                    result = provision_deno()
+                    if result:
+                        self.log.emit("  Done")
+                    else:
+                        self.log.emit("  Deno download failed (non-critical)")
+                else:
+                    self.log.emit(f"Deno found on system PATH: {system_deno}")
             self.progress.emit(60)
 
             # Icon

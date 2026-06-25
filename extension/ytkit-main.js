@@ -296,4 +296,159 @@
     applyContextQuality();
 })();
 
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 3+4: Shared audio processing graph
+    // ──────────────────────────────────────────────────────────────────
+    // Single AudioContext for ALL audio features (mono-to-stereo,
+    // volume boost, audio normalization). createMediaElementSource is
+    // one-shot per element — multiple AudioContexts competing for the
+    // same <video> would throw InvalidStateError. The shared graph is:
+    //   source → monoMerge → compressor → boostGain → destination
+    // Each node passes through when its feature is disabled.
+(function() {
+    'use strict';
+    var AC = typeof AudioContext !== 'undefined' ? AudioContext
+           : typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null;
+    if (!AC) return;
+
+    var _monoEnabled = false;
+    var _boostGain = 1.0;
+    var _normalizeEnabled = false;
+    var _panValue = 0;
+    var _ctx = null;
+    var _source = null;
+    var _monoMerge = null;
+    var _compressor = null;
+    var _panNode = null;
+    var _gainNode = null;
+    var _connectedVideo = null;
+
+    function getVideo() {
+        return document.querySelector('.html5-main-video');
+    }
+
+    function isActive() {
+        return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled || Math.abs(_panValue) > 0.001;
+    }
+
+    function connect() {
+        var video = getVideo();
+        if (!video) return;
+        if (_connectedVideo === video && _ctx) {
+            syncGraph();
+            return;
+        }
+        cleanup();
+        try {
+            _ctx = new AC();
+            _source = _ctx.createMediaElementSource(video);
+            _monoMerge = _ctx.createGain();
+            _compressor = _ctx.createDynamicsCompressor();
+            _compressor.threshold.value = -24;
+            _compressor.knee.value = 30;
+            _compressor.ratio.value = 12;
+            _compressor.attack.value = 0.003;
+            _compressor.release.value = 0.25;
+            _panNode = _ctx.createStereoPanner ? _ctx.createStereoPanner() : null;
+            _gainNode = _ctx.createGain();
+            _source.connect(_monoMerge);
+            _monoMerge.connect(_compressor);
+            if (_panNode) {
+                _compressor.connect(_panNode);
+                _panNode.connect(_gainNode);
+            } else {
+                _compressor.connect(_gainNode);
+            }
+            _gainNode.connect(_ctx.destination);
+            syncGraph();
+            _connectedVideo = video;
+        } catch (e) {
+            cleanup();
+        }
+    }
+
+    function syncGraph() {
+        if (_monoMerge) {
+            if (_monoEnabled) {
+                _monoMerge.channelCount = 1;
+                _monoMerge.channelCountMode = 'explicit';
+                _monoMerge.channelInterpretation = 'speakers';
+            } else {
+                _monoMerge.channelCount = 2;
+                _monoMerge.channelCountMode = 'max';
+                _monoMerge.channelInterpretation = 'speakers';
+            }
+        }
+        if (_panNode) _panNode.pan.value = _panValue;
+        if (_gainNode) _gainNode.gain.value = _boostGain;
+        if (_compressor) {
+            if (_normalizeEnabled) {
+                _compressor.threshold.value = -24;
+                _compressor.ratio.value = 12;
+            } else {
+                _compressor.threshold.value = 0;
+                _compressor.ratio.value = 1;
+            }
+        }
+    }
+
+    function cleanup() {
+        if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
+        if (_monoMerge) { try { _monoMerge.disconnect(); } catch (e) { /* reason: already disconnected */ } _monoMerge = null; }
+        if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
+        if (_panNode) { try { _panNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _panNode = null; }
+        if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
+        if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
+        _ctx = null;
+        _connectedVideo = null;
+    }
+
+    _obsRegister(['data-ytkit-mono-to-stereo'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-mono-to-stereo');
+        var next = val === '1';
+        if (next === _monoEnabled) return;
+        _monoEnabled = next;
+        if (isActive()) connect();
+        else cleanup();
+    });
+
+    _obsRegister(['data-ytkit-volume-boost'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-volume-boost');
+        var next = parseFloat(val) || 1.0;
+        if (next < 1) next = 1;
+        if (next > 10) next = 10;
+        _boostGain = next;
+        if (isActive()) connect();
+        else cleanup();
+    });
+
+    _obsRegister(['data-ytkit-audio-normalize'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
+        _normalizeEnabled = val === '1';
+        if (isActive()) connect();
+        else cleanup();
+    });
+
+    _obsRegister(['data-ytkit-audio-pan'], function() {
+        var val = parseFloat(document.documentElement.getAttribute('data-ytkit-audio-pan')) || 0;
+        if (val < -1) val = -1;
+        if (val > 1) val = 1;
+        _panValue = val;
+        if (isActive()) connect();
+        else cleanup();
+    });
+
+    document.addEventListener('loadstart', function(e) {
+        if (!isActive()) return;
+        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+            _connectedVideo = null;
+            connect();
+        }
+    }, true);
+
+    window.addEventListener('yt-navigate-finish', function() {
+        if (isActive()) { _connectedVideo = null; setTimeout(connect, 500); }
+    });
+})();
+
 })();  // outer N9 IIFE closes here

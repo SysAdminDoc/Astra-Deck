@@ -89,6 +89,20 @@ test('DeArrow selectors are resilient to YouTube class-name churn', () => {
         'YouTube rolls these every few weeks. Use custom-element tags or stable IDs instead.');
 });
 
+test('DeArrow Casual Mode gates fallback formatting on the deArrowCasualMode setting', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'dearrow', 'index.js'), 'utf8'
+    );
+    assert.match(src, /casualMode/,
+        'peeled DeArrow module must reference casualMode');
+    assert.match(src, /deArrowCasualMode/,
+        'casual mode must read from appState.settings.deArrowCasualMode');
+    assert.match(src, /fallback && !casualMode/,
+        'fallback formatting path must be gated on !casualMode');
+});
+
 test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision)', () => {
     // The .daCustomTitle / .da-replaced-thumb / [data-da-processed]
     // markers are how we know we've already touched a node. They MUST

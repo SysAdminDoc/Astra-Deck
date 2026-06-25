@@ -147,8 +147,11 @@
                 // YouTube rotates client versions roughly weekly.
                 const clientVersion = this._getClientVersion() || INNERTUBE_CLIENT_VERSION_FALLBACK;
 
+                if (!/^[a-zA-Z0-9_-]{10,}$/.test(apiKey)) {
+                    throw new Error('Innertube API key has unexpected format');
+                }
                 const { response, data } = await extensionFetchJson({
-                    url: `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
+                    url: `https://www.youtube.com/youtubei/v1/player?key=${encodeURIComponent(apiKey)}`,
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     data: JSON.stringify({
