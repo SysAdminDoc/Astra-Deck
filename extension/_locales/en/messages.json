@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "Controls and backups"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "Casual Mode"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "Keep descriptive titles unchanged — only replace titles with crowd-submitted DeArrow alternatives"
   }
 }
