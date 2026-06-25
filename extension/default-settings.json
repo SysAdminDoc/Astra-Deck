@@ -434,6 +434,7 @@
   "presetPrivacy": false,
   "presetResearcher": false,
   "presetPowerUser": false,
+  "presetFocus": false,
   "oledTheme": false,
   "denseMode": false,
   "rectangularizeYouTube": false,

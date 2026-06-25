@@ -4129,6 +4129,7 @@ return response;
             presetPrivacy: false,                      // Preset: privacy-focused settings bundle
             presetResearcher: false,                   // Preset: research/study workflow
             presetPowerUser: false,                    // Preset: max feature density
+            presetFocus: false,                        // Preset: distraction-free viewing
             lowPowerProfileBackup: null,               // Backup of pre-applied flags
             // v3.32.0 — Premium visual system
             oledTheme: false,                          // True OLED black via --yt-sys-* token bridge
@@ -36370,6 +36371,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
                 this._clearBackup(); settingsManager.save(appState.settings);
                 if (typeof showToast === 'function') showToast('Power User preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        {
+            id: 'presetFocus',
+            name: 'Focus Preset',
+            description: 'Distraction-free viewing: hide Shorts, related videos, infinite scroll, notifications, and autoplay. Enables Zen Mode and Digital Wellbeing tracking. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'eye-off',
+            _RECIPE: {
+                removeAllShorts: true,
+                redirectShorts: true,
+                hideRelatedVideos: true,
+                disableInfiniteScroll: true,
+                disableAutoplayNext: true,
+                hideNotificationBadge: true,
+                hideNotificationButton: true,
+                zenMode: true,
+                digitalWellbeing: true,
+                autoClosePopups: true,
+                focusedMode: true,
+                hideAiSummary: true,
+            },
+            _BACKUP_KEY: 'ytkit-preset-focus-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetFocus', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Focus preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Focus preset off. Previous values restored.', '#6b7280', { duration: 4 });
             },
             init() { if (this._readBackup()) return; this._apply(); },
             destroy() { if (this._readBackup()) this._restore(); }

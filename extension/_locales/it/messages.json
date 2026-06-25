@@ -2692,5 +2692,11 @@
   },
   "feature_deArrowCasualMode_desc": {
     "message": "Mantieni i titoli descrittivi invariati — sostituisci solo con alternative DeArrow inviate dalla comunità"
+  },
+  "feature_presetFocus_name": {
+    "message": "Preset concentrazione"
+  },
+  "feature_presetFocus_desc": {
+    "message": "Visione senza distrazioni: nasconde Shorts, video correlati, scroll infinito, notifiche e autoplay. Attiva modalità Zen e tracciamento del benessere digitale."
   }
 }
