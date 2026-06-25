@@ -10916,3 +10916,44 @@ test('v4.47.0 stickyVideo — fullscreen handler hides positioned overlays on li
     assert.match(destroyTail, /this\._fullscreenOverlayStash\s*=\s*null/,
         'destroy/teardown must clear _fullscreenOverlayStash');
 });
+
+// ── Side Panel a11y parity ──
+
+test('sidepanel.html has landmark roles, aria-labelledby, skip-link, and live regions', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.html'), 'utf8'
+    );
+    assert.match(html, /role="banner"/,       'sidepanel must have a banner landmark');
+    assert.match(html, /role="main"/,         'sidepanel must have a main landmark');
+    assert.match(html, /role="contentinfo"/,  'sidepanel must have a contentinfo landmark');
+    assert.match(html, /aria-labelledby=/,    'sections must use aria-labelledby');
+    assert.match(html, /class="sp-skip-link"/, 'sidepanel must have a skip-link');
+    assert.match(html, /aria-live="polite"/,  'dynamic counts must use aria-live');
+    assert.match(html, /role="status"/,       'empty states must use role=status');
+    assert.match(html, /aria-controls="/,     'search input must declare aria-controls');
+    assert.match(html, /aria-label="Refresh/, 'refresh button must have aria-label');
+});
+
+test('sidepanel.js setting rows carry aria-label for screen readers', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8'
+    );
+    assert.match(src, /setAttribute\('aria-label',\s*humanName\)/,
+        'setting rows must carry aria-label derived from the human-readable name');
+    assert.match(src, /setAttribute\('role',\s*'switch'\)/,
+        'setting rows must have role=switch');
+    assert.match(src, /setAttribute\('aria-checked'/,
+        'setting rows must track aria-checked state');
+});
+
+test('sidepanel.css has focus-visible styles for interactive elements', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
+    );
+    assert.match(css, /\.sp-setting-row:focus-visible/,
+        'setting rows must have :focus-visible styling');
+    assert.match(css, /\.sp-refresh-btn:focus-visible/,
+        'refresh button must have :focus-visible styling');
+    assert.match(css, /\.sp-skip-link:focus/,
+        'skip-link must have :focus styling');
+});
