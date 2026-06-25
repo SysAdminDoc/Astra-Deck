@@ -361,8 +361,11 @@
                     }
                 }
                 if (minDelay === Infinity) return; // No upcoming segments
-                // Fire 100ms early for precision, cap at 2s to stay responsive
-                const delay = Math.max(0, Math.min(minDelay - 100, 2000));
+                // Fire 100ms early for precision, cap at 2s to stay responsive.
+                // Add 50-200ms random jitter so skip timing is not frame-exact
+                // — reduces detection fingerprint (SponsorBlock #2290).
+                const jitter = 50 + Math.floor(Math.random() * 150);
+                const delay = Math.max(0, Math.min(minDelay - 100 + jitter, 2000 + jitter));
                 this._skipTimer = setTimeout(() => {
                     this._checkSkip();
                     // If checkSkip didn't skip (edge of segment), reschedule
@@ -406,9 +409,27 @@
                 this._barSegments = [];
             },
 
+            _checkAntiAdblock() {
+                const warning = document.querySelector(
+                    'ytd-enforcement-message-view-model, '
+                    + 'tp-yt-paper-dialog.ytd-enforcement-message-view-model, '
+                    + '[class*="enforcement-message"], '
+                    + 'ytd-popup-container [class*="adblock"]'
+                );
+                if (warning && DiagnosticLog) {
+                    DiagnosticLog.record('sb-anti-adblock', {
+                        detected: true,
+                        selector: warning.tagName.toLowerCase()
+                            + (warning.className ? '.' + warning.className.split(/\s+/)[0] : ''),
+                    });
+                }
+            },
+
             init() {
                 const self = this;
                 this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
+                this._antiAdblockTimer = setInterval(() => self._checkAntiAdblock(), 30000);
+                this._checkAntiAdblock();
                 // Event-driven skip scheduling: reschedule on play/seek/rate changes
                 this._playHandler = () => self._scheduleNextSkip();
                 this._seekHandler = () => self._scheduleNextSkip();
@@ -450,6 +471,8 @@
                 // cannot re-render segments onto the progress bar after the
                 // feature has been disabled.
                 this._generation = (this._generation + 1) | 0;
+                clearInterval(this._antiAdblockTimer);
+                this._antiAdblockTimer = null;
                 clearTimeout(this._reloadTimer);
                 this._reloadTimer = null;
                 this._clearSchedule();
