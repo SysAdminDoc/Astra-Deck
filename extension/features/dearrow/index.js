@@ -208,22 +208,17 @@
                         const titleEl = el.querySelector('#video-title, #video-title-link');
                         if (titleEl) {
                             const submission = branding.titles?.[0];
+                            const casualMode = appState.settings.deArrowCasualMode;
                             if (submission?.title) {
                                 const formatted = this._formatTitle(submission.title, format);
                                 const clone = titleEl.cloneNode(false);
                                 clone.className = 'daCustomTitle ' + titleEl.className;
                                 clone.removeAttribute('id');
                                 clone.textContent = formatted;
-                                // Show original title on hover if setting enabled
                                 clone.title = appState.settings.daShowOriginalHover ? titleEl.textContent.trim() : formatted;
                                 titleEl.style.display = 'none';
                                 titleEl.dataset.daProcessed = '1';
                                 titleEl.parentNode.insertBefore(clone, titleEl);
-                                // v3.23.0 (NX5): announce ONLY the watch-page
-                                // primary-title replacement so the screen-reader
-                                // user knows the title they're about to hear has
-                                // been overridden. Grid-thumbnail replacements
-                                // are skipped to avoid spam.
                                 try {
                                     if (isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')) {
                                         announceA11y(`Title replaced by DeArrow: ${formatted}`);
@@ -231,7 +226,7 @@
                                 } catch (_) {
                                     // reason: a11y announce is best-effort
                                 }
-                            } else if (fallback) {
+                            } else if (fallback && !casualMode) {
                                 const original = titleEl.textContent.trim();
                                 const formatted = this._formatTitle(original, format);
                                 if (formatted !== original) {

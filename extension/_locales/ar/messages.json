@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "عناصر التحكم والنسخ الاحتياطية"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "الوضع العادي"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "الاحتفاظ بالعناوين الوصفية كما هي — استبدال العناوين فقط ببدائل DeArrow المقترحة من المجتمع"
   }
 }

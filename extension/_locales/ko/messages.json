@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "컨트롤 및 백업"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "캐주얼 모드"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "설명적인 제목은 유지 — 커뮤니티가 제출한 DeArrow 대안만 교체"
   }
 }
