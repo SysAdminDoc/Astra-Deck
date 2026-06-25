@@ -2774,7 +2774,9 @@ class DownloadManager(QObject):
         # line so we can parse robustly when yt-dlp tweaks its human-readable
         # format. We keep the legacy line as a fallback.
         args = [ytdlp, '--newline', '--progress', '--no-colors',
-                '--windows-filenames', '--trim-filenames', '180',
+                '--trim-filenames', '180',
+                '--replace-in-metadata', 'title,playlist_title',
+                '[\":<>|*?/\\\\]', '_',
                 '--ffmpeg-location', ffmpeg_dir, '-o', out_tpl,
                 '--progress-template',
                 'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s',
