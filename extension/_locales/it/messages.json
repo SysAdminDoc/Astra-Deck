@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "Visione senza distrazioni: nasconde Shorts, video correlati, scroll infinito, notifiche e autoplay. Attiva modalità Zen e tracciamento del benessere digitale."
+  },
+  "feature_audioPan_name": {
+    "message": "Bilanciamento audio"
+  },
+  "feature_audioPan_desc": {
+    "message": "Sposta il bilanciamento audio a sinistra o destra. Intervallo da -1 (sinistra) a 1 (destra), 0 è il centro."
   }
 }

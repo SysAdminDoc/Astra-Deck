@@ -565,6 +565,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "volumeBoost", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "volumeBoostLevel", category: "playback-audio", type: "number", defaultValue: 2, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "audioNormalization", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
+    Object.freeze({ key: "audioPan", category: "playback-audio", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "frameByFrameButtons", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── research-ai ───

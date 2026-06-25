@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "Visionnage sans distraction : masque Shorts, vidéos similaires, défilement infini, notifications et lecture automatique. Active le mode Zen et le suivi de bien-être numérique."
+  },
+  "feature_audioPan_name": {
+    "message": "Balance audio"
+  },
+  "feature_audioPan_desc": {
+    "message": "Déplacer la balance audio vers la gauche ou la droite. Plage -1 (gauche) à 1 (droite), 0 est le centre."
   }
 }

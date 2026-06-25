@@ -4024,6 +4024,7 @@ return response;
             volumeBoost: false,
             volumeBoostLevel: 2,
             audioNormalization: false,
+            audioPan: 0,
             frameByFrameButtons: false,
             digitalWellbeing: false,
             dwBreakIntervalMin: 30,          // 0 = off
@@ -29027,6 +29028,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._remove();
                 removeNavigateRule('audioNormalization');
+            }
+        },
+
+        // ── Audio Pan ──
+        {
+            id: 'audioPan',
+            name: 'Audio Pan',
+            description: 'Shift audio balance left or right via a StereoPannerNode in the MAIN world audio graph. Range -1 (full left) to 1 (full right), 0 = center.',
+            group: 'Video Player',
+            icon: 'move-horizontal',
+            type: 'range',
+            min: -1,
+            max: 1,
+            step: 0.1,
+            defaultValue: 0,
+            _apply() {
+                const val = parseFloat(appState.settings.audioPan) || 0;
+                document.documentElement.setAttribute('data-ytkit-audio-pan', String(Math.max(-1, Math.min(1, val))));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-audio-pan', '0');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioPan', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioPan');
             }
         },
 

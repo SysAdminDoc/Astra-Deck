@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "Visualização sem distrações: oculta Shorts, vídeos relacionados, rolagem infinita, notificações e reprodução automática. Ativa modo Zen e rastreamento de bem-estar digital."
+  },
+  "feature_audioPan_name": {
+    "message": "Pan de áudio"
+  },
+  "feature_audioPan_desc": {
+    "message": "Deslocar o balanço de áudio para esquerda ou direita. Faixa -1 (esquerda) a 1 (direita), 0 é centro."
   }
 }

@@ -438,7 +438,7 @@
     "reactionSpammer": false,
     "_reactionSpammerAck": false
   },
-  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode", "playlistSearch", "classicPlayerChrome", "sbPerChannelProfiles", "sbPerChannelProfilesData", "presetPrivacy", "presetResearcher", "presetPowerUser", "presetFocus", "localAiTranscriptQa", "deArrowVoting", "autoDismissContentWarning", "volumeBoost", "volumeBoostLevel", "audioNormalization"],
+  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode", "playlistSearch", "classicPlayerChrome", "sbPerChannelProfiles", "sbPerChannelProfilesData", "presetPrivacy", "presetResearcher", "presetPowerUser", "presetFocus", "localAiTranscriptQa", "deArrowVoting", "autoDismissContentWarning", "volumeBoost", "volumeBoostLevel", "audioNormalization", "audioPan"],
   "expectedAbsent": [
     "preferredQuality",
     "useEnhancedBitrate",
