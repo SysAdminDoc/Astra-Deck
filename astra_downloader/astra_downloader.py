@@ -5763,18 +5763,23 @@ def main():
     if is_frozen_app():
         ensure_system_integrations(prefer_installed=True)
 
-    # Single instance check
+    # Single instance check — kill stale instances and take over
     lock = check_single_instance(startup_command)
     if lock is None:
-        write_persistent_log("Launch ignored because another instance is already running.")
-        if is_frozen_app() and not startup_command:
-            _app = QApplication(sys.argv)
-            QMessageBox.information(
-                None, APP_NAME,
-                f"{APP_NAME} is already running.\n"
-                "Check the system tray (bottom-right of your taskbar)."
-            )
-        sys.exit(0)
+        write_persistent_log("Another instance detected — killing it to take over.")
+        current_pid = str(os.getpid())
+        parent_pid = str(os.getppid())
+        subprocess.run(
+            ['taskkill', '/F', '/IM', 'AstraDownloader.exe',
+             '/FI', f'PID ne {current_pid}',
+             '/FI', f'PID ne {parent_pid}'],
+            capture_output=True, creationflags=CREATE_NO_WINDOW,
+        )
+        time.sleep(1)
+        lock = check_single_instance(startup_command)
+        if lock is None:
+            write_persistent_log("Could not acquire single-instance lock after killing stale processes.")
+            sys.exit(1)
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
