@@ -2692,5 +2692,11 @@
   },
   "feature_deArrowCasualMode_desc": {
     "message": "Conserver les titres descriptifs — remplacer uniquement par des alternatives DeArrow soumises par la communauté"
+  },
+  "feature_presetFocus_name": {
+    "message": "Preset concentration"
+  },
+  "feature_presetFocus_desc": {
+    "message": "Visionnage sans distraction : masque Shorts, vidéos similaires, défilement infini, notifications et lecture automatique. Active le mode Zen et le suivi de bien-être numérique."
   }
 }

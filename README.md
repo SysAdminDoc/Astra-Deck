@@ -320,6 +320,17 @@ document_idle
   only YouTube-owned destinations
 - Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented host_permissions (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
 
+### Trust & Transparency
+
+- **Fully open-source** — every line of extension, companion, and build tooling is auditable
+- **No telemetry, no analytics, no tracking** — zero data leaves the browser except to APIs you explicitly enable
+- **SBOM + attestation** on every release build — verifiable software bill of materials
+- **External CRX signing key** — maintainer-only, never in the repo or CI
+- **Credential scrub** on settings export — API keys, tokens, and secrets are automatically stripped
+- **Profile-split permissions** — store-safe builds strip AI, Cobalt, and loopback host grants; GitHub-full builds keep the full catalogue
+- **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
+- **Privacy policy** covers data handling for every API origin the extension contacts
+
 ---
 
 ## Reaction Spammer

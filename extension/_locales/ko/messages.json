@@ -2692,5 +2692,11 @@
   },
   "feature_deArrowCasualMode_desc": {
     "message": "설명적인 제목은 유지 — 커뮤니티가 제출한 DeArrow 대안만 교체"
+  },
+  "feature_presetFocus_name": {
+    "message": "집중 프리셋"
+  },
+  "feature_presetFocus_desc": {
+    "message": "방해 없는 시청: Shorts, 관련 동영상, 무한 스크롤, 알림, 자동 재생 숨김. 젠 모드와 디지털 웰빙 추적 활성화."
   }
 }
