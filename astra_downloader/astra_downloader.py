@@ -2979,7 +2979,129 @@ class DownloadManager(QObject):
                     else:
                         dl.error = "Unknown error"
                     combined = " ".join(last_lines).lower()
-                    if 'live event has ended' in combined:
+                    if 'live event has ended' in combined and dl.cookies_file:
+                        write_persistent_log(
+                            f"Download {dl.id}: 'live event has ended' with cookies — "
+                            "retrying without cookies"
+                        )
+                        retry_args = [a for i, a in enumerate(args)
+                                      if a != '--cookies' and (i == 0 or args[i - 1] != '--cookies')]
+                        dl.status = "downloading"
+                        dl.error = ""
+                        dl.progress = 0
+                        self.progress_updated.emit()
+                        if stop_watchdog is not None:
+                            stop_watchdog.set()
+                        activity['at'] = time.monotonic()
+                        stop_watchdog = threading.Event()
+                        proc = subprocess.Popen(
+                            retry_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding='utf-8', errors='replace', bufsize=1,
+                            creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
+                            env=env,
+                        )
+                        dl.process = proc
+                        last_lines = []
+                        last_error = None
+
+                        def _retry_watchdog():
+                            while not stop_watchdog.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+                                if dl.status == 'cancelled':
+                                    return
+                                if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
+                                    watchdog_killed['value'] = 'stall'
+                                    try:
+                                        terminate_process_tree(proc)
+                                    except Exception:
+                                        pass
+                                    return
+
+                        watchdog_thread = threading.Thread(
+                            target=_retry_watchdog, name='download-stall-watchdog-retry', daemon=True
+                        )
+                        watchdog_thread.start()
+
+                        for line in proc.stdout:
+                            activity['at'] = time.monotonic()
+                            line = line.strip()
+                            if not line:
+                                continue
+                            last_lines.append(line)
+                            if len(last_lines) > 30:
+                                last_lines = last_lines[-30:]
+                            if 'ERROR' in line.upper():
+                                last_error = line
+                            if line.startswith('MDLP_JSON '):
+                                try:
+                                    payload = json.loads(line[len('MDLP_JSON '):])
+                                    total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
+                                    downloaded_bytes = payload.get('downloaded_bytes') or 0
+                                    if isinstance(total, (int, float)) and total > 0:
+                                        dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
+                                    spd = (payload.get('_speed_str') or '').strip()
+                                    eta = (payload.get('_eta_str') or '').strip()
+                                    if spd and spd not in ('NA', 'Unknown'):
+                                        dl.speed = spd
+                                    if eta and eta not in ('NA', 'Unknown'):
+                                        dl.eta = eta
+                                    self.progress_updated.emit()
+                                    continue
+                                except Exception:
+                                    pass
+                            m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
+                            if m:
+                                dl.progress = float(m.group(1))
+                                spd, eta = m.group(2), m.group(3)
+                                if spd not in ('NA', 'Unknown'):
+                                    dl.speed = spd
+                                if eta not in ('NA', 'Unknown'):
+                                    dl.eta = eta
+                                self.progress_updated.emit()
+                                continue
+                            m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
+                            if m:
+                                dl.progress = float(m.group(1))
+                                m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
+                                if m2:
+                                    dl.speed = m2.group(1)
+                                    dl.eta = m2.group(2)
+                                self.progress_updated.emit()
+                                continue
+                            if '[Merger]' in line or 'Merging formats' in line:
+                                dl.status = "merging"
+                                self.progress_updated.emit()
+                            elif '[ExtractAudio]' in line or '[extract]' in line:
+                                dl.status = "extracting"
+                                self.progress_updated.emit()
+                            m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
+                            if m:
+                                dl.filename = m.group(1)
+                            else:
+                                m = re.search(r'\[download\] Destination: (.+)', line)
+                                if m:
+                                    dl.filename = m.group(1)
+
+                        proc.wait()
+                        if dl.status == 'cancelled':
+                            dl.error = dl.error or "Cancelled by user."
+                        elif watchdog_killed['value'] == 'stall':
+                            dl.status = "failed"
+                            dl.error = (
+                                "Download stalled (no progress for "
+                                f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
+                            )
+                        elif proc.returncode == 0 or dl.progress >= 99:
+                            dl.status = "complete"
+                            dl.progress = 100
+                        else:
+                            dl.status = "failed"
+                            if last_error:
+                                dl.error = last_error[-240:]
+                            elif last_lines:
+                                dl.error = " ".join(last_lines)[-240:]
+                            else:
+                                dl.error = "Unknown error"
+                    elif 'live event has ended' in combined:
                         dl.error = (
                             "YouTube reports this live stream has ended. "
                             "The VOD archive may still be processing — "
