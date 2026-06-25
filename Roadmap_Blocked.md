@@ -81,3 +81,26 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: CI captures popup screenshots in Chrome and Firefox; a baseline is committed; regressions fail the build with a diff image.
   Complexity: M
   Blocker: Requires headless Chrome/Firefox with Puppeteer installed to capture baseline screenshots. Browser binaries not available in this environment.
+
+## P2 — Browser-Gated (CSS Adoption)
+
+- [ ] P2 — Customizable `<select>` adoption for settings panel
+  Why: Chrome 135+ supports `appearance: base-select` for styled native dropdowns.
+  Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/early.css`
+  Acceptance: Settings panel `<select>` elements render with dark-theme styling on Chrome 135+. Unsupported browsers fall back to native `<select>`.
+  Complexity: S
+  Blocker: Requires live browser testing on Chrome 135+ to verify progressive enhancement and cross-browser fallback. Cannot verify without a running browser.
+
+- [ ] P2 — `@starting-style` adoption for panel entry animations
+  Why: `@starting-style` (Baseline 2025) would replace JS rAF timing hacks for toast/panel animations with pure CSS.
+  Touches: `extension/ytkit.js`, `extension/popup.css`, `extension/core/toast-dom.js`
+  Acceptance: Panel/toast animations use `@starting-style` with `transition-behavior: allow-discrete`.
+  Complexity: S
+  Blocker: Toast CSS is duplicated in both the monolith and toast-dom.js (userscript parity). Requires live browser verification that the CSS fallback degrades gracefully on older browsers. Cannot verify without a running browser.
+
+- [ ] P2 — Exclusive Accordion for settings categories
+  Why: `<details name="settings">` would create accordion behavior for settings categories.
+  Touches: `extension/ytkit.js` (settings panel DOM construction)
+  Acceptance: Settings categories use `<details name="ytkit-settings">`.
+  Complexity: S
+  Blocker: The settings panel uses a sidebar-tab navigation model, not vertical collapsible sections. Adopting `<details name>` would require restructuring the panel's DOM architecture. Requires live browser verification of the new layout.
