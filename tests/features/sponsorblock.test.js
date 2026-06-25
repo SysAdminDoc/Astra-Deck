@@ -139,3 +139,35 @@ test('sbPerChannelProfiles has reset-to-global-defaults action', () => {
     assert.match(block, /_resetChannel/,
         'Feature must have a _resetChannel method');
 });
+
+// ── Anti-detection monitoring (Research Cycle 5) ──
+
+test('SponsorBlock skip timing includes jitter to reduce detection fingerprint', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8'
+    );
+    assert.match(src, /Math\.random\(\)/,
+        '_scheduleNextSkip must include random jitter in timing');
+    assert.match(src, /jitter/,
+        'skip delay calculation must reference jitter variable');
+});
+
+test('SponsorBlock monitors for YouTube anti-adblock DOM elements', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8'
+    );
+    assert.match(src, /_checkAntiAdblock/,
+        'feature must define _checkAntiAdblock detection method');
+    assert.match(src, /enforcement-message/,
+        'anti-adblock detection must target YouTube enforcement-message selectors');
+    assert.match(src, /DiagnosticLog\.record\('sb-anti-adblock'/,
+        'detection must log to DiagnosticLog with sb-anti-adblock key');
+    assert.match(src, /setInterval.*_checkAntiAdblock/,
+        'init must schedule periodic anti-adblock checks');
+    assert.match(src, /clearInterval.*_antiAdblockTimer/,
+        'destroy must clean up the anti-adblock timer');
+});
