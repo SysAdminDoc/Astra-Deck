@@ -41,20 +41,6 @@
   Acceptance: Video notes runtime extracted. Monolith delegates with inline fallback. Existing tests pass.
   Complexity: S
 
-- [ ] P3 — Trust communication in README and store listings
-  Why: Astra Deck's open-source audit trail, SBOM/attestation, credential scrub, profile-split permissions, and privacy policy are genuine differentiators — especially post-ShadyPanda (4.3M users compromised). These are not communicated in the README's feature list or any prospective store listing.
-  Evidence: LayerX 2026 report (71% extensions lack privacy policies); ShadyPanda incident; Trust Wallet CWS key leak; RYD ad injection.
-  Touches: `README.md` (trust/security section), store listing copy preparation
-  Acceptance: README has a "Trust & Security" section listing: open-source, SBOM, attestation, no telemetry, credential scrub, profile-split permissions, external signing key, 26+ hardening passes. Concise — 5-8 bullet points.
-  Complexity: S
-
-- [ ] P3 — Focus preset for onboarding wizard
-  Why: Unhook's 1M+ users prove "remove distractions" messaging converts far better than feature counts. Astra Deck has equivalent features (removeAllShorts, hideRelatedVideos, disableInfiniteScroll, Focused Mode, Zen Mode, Digital Wellbeing) but bundles them generically. Adding a "Focus" preset to the onboarding wizard would capture this audience.
-  Evidence: Unhook CWS listing (1M+ users); existing presets are Privacy/Researcher/Power User.
-  Touches: `extension/ytkit.js` (onboarding wizard preset definitions), `extension/_locales/*/messages.json`
-  Acceptance: Onboarding wizard offers a 4th "Focus" preset that enables distraction-removal features. i18n keys added for all 11 locales.
-  Complexity: S
-
 
 ## Research-Driven Additions
 
