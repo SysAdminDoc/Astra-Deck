@@ -5766,8 +5766,14 @@ def main():
     # Single instance check
     lock = check_single_instance(startup_command)
     if lock is None:
-        # Already running
         write_persistent_log("Launch ignored because another instance is already running.")
+        if is_frozen_app() and not startup_command:
+            _app = QApplication(sys.argv)
+            QMessageBox.information(
+                None, APP_NAME,
+                f"{APP_NAME} is already running.\n"
+                "Check the system tray (bottom-right of your taskbar)."
+            )
         sys.exit(0)
 
     app = QApplication(sys.argv)
@@ -5812,6 +5818,8 @@ def main():
     sys.exit(app.exec())
 
 if __name__ == '__main__':
+    import multiprocessing
+    multiprocessing.freeze_support()
     try:
         main()
     except Exception:
