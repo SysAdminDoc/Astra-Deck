@@ -237,6 +237,7 @@
     "daReplaceTitles": false,
     "daReplaceThumbs": false,
     "daTitleFormat": "legacy:daTitleFormat",
+    "deArrowCasualMode": false,
     "daFallbackFormat": false,
     "daShowOriginalHover": false,
     "daCacheTTL": "legacy:daCacheTTL",
@@ -258,6 +259,9 @@
     "disableSpaNavigation": true,
     "videoRotation": true,
     "videoRotationAngle": 1,
+    "videoFlip": true,
+    "videoFlipMode": "horizontal",
+    "monoToStereo": true,
     "frameByFrameButtons": true,
     "digitalWellbeing": true,
     "dwBreakIntervalMin": 31,
@@ -349,6 +353,8 @@
         "research"
       ]
     },
+    "subscriptionFilterLive": true,
+    "subscriptionFilterStreamed": true,
     "localAiSummary": true,
     "researchSpacedReview": true,
     "researchTranscriptIndex": true,
@@ -432,7 +438,7 @@
     "reactionSpammer": false,
     "_reactionSpammerAck": false
   },
-  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset"],
+  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode", "playlistSearch", "classicPlayerChrome", "sbPerChannelProfiles", "sbPerChannelProfilesData", "presetPrivacy", "presetResearcher", "presetPowerUser", "presetFocus", "localAiTranscriptQa", "deArrowVoting", "autoDismissContentWarning", "volumeBoost", "volumeBoostLevel", "audioNormalization", "audioPan"],
   "expectedAbsent": [
     "preferredQuality",
     "useEnhancedBitrate",

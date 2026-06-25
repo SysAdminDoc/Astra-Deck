@@ -54,7 +54,7 @@ test('Firefox executeScript audit note records the zero-call-site result', () =>
 test('Firefox web-ext lint gate is pinned and wired into npm run check', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
 
-    assert.equal(pkg.devDependencies['web-ext'], '10.3.0',
+    assert.equal(pkg.devDependencies['web-ext'], '10.4.0',
         'web-ext must stay exact-pinned so AMO lint behavior is reproducible');
     assert.equal(pkg.scripts['check:firefox'], 'node scripts/check-firefox-webext.js');
     assert.match(pkg.scripts.check, /npm run check:firefox/,

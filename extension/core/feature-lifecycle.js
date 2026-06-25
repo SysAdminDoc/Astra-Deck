@@ -116,10 +116,12 @@
             if (record.started) return;
             record.controller = new AbortController();
             record.startedAt = now();
+            const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
             const ctx = buildContext(record, ctxExtra);
             try {
                 record.spec.init(ctx);
                 record.started = true;
+                record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             } catch (e) {
                 record.lastError = e;
                 logger.warn?.(`[lifecycle] init failed for ${id}: ${e?.message || e}`);
@@ -156,6 +158,7 @@
             // before destroy() runs synchronous teardown.
             try { record.controller && record.controller.abort(); }
             catch (_) { /* reason: controller may already be torn down */ }
+            const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
             const ctx = buildContext(record, ctxExtra);
             try {
                 record.spec.destroy(ctx);
@@ -165,6 +168,7 @@
                 // Do not rethrow — destroy must be best-effort so callers
                 // can always tear a feature down even if a sub-step fails.
             }
+            record.destroyMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             record.started = false;
             record.controller = null;
         }
@@ -183,6 +187,8 @@
                     category: record.spec.category || null,
                     started: record.started,
                     startedAt: record.startedAt,
+                    initMs: record.initMs ?? null,
+                    destroyMs: record.destroyMs ?? null,
                     lastError: record.lastError ? String(record.lastError) : null,
                     routeToken: getRouteToken()
                 });

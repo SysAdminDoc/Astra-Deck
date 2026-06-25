@@ -8,7 +8,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sources, extractFeatureBlock } = require('../helpers/source');
+const { sources, config, extractFeatureBlock } = require('../helpers/source');
 
 test('SponsorBlock feature block is reachable via the shared helper', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
@@ -90,4 +90,84 @@ test('SponsorBlock skip detection ignores element visibility', () => {
         '_checkSkip must remain viewport-agnostic — never consult IntersectionObserver / ' +
         'getBoundingClientRect / offsetParent. Adding any of those would re-introduce ' +
         'the scrolled-away segment-skip regression that upstream SB v6.1.5 patched.');
+});
+
+// ── SponsorBlock Per-Channel Skip Profiles ──
+
+test('SponsorBlock per-channel profiles default settings exist', () => {
+    const { defaultSettings } = config;
+    assert.strictEqual(defaultSettings.sbPerChannelProfiles, false,
+        'sbPerChannelProfiles must default to false');
+    assert.deepStrictEqual(defaultSettings.sbPerChannelProfilesData, {},
+        'sbPerChannelProfilesData must default to an empty object');
+});
+
+test('SponsorBlock _getEnabledCategories checks per-channel overrides when sbPerChannelProfiles is on', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
+    assert.match(block, /sbPerChannelProfiles/,
+        '_getEnabledCategories must reference sbPerChannelProfiles setting');
+    assert.match(block, /sbPerChannelProfilesData/,
+        '_getEnabledCategories must read sbPerChannelProfilesData for channel overrides');
+    assert.match(block, /profile\.categories\[apiName\]/,
+        '_getEnabledCategories must look up per-category overrides from the channel profile');
+});
+
+test('sbPerChannelProfiles feature block exists with correct id and category labels', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'sbPerChannelProfiles');
+    assert.ok(block.length > 100,
+        'sbPerChannelProfiles feature block must contain non-trivial source');
+    assert.match(block, /SponsorBlock Per-Channel Profiles/,
+        'Feature must have a descriptive name');
+    assert.match(block, /_CATEGORY_LABELS/,
+        'Feature must carry category labels for the UI');
+    assert.match(block, /ytkit-sb-channel-chip/,
+        'Feature must render a channel chip on the watch page');
+});
+
+test('sbPerChannelProfiles caps storage at 500 entries', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'sbPerChannelProfiles');
+    assert.match(block, /500/,
+        'Per-channel profiles must enforce a 500-entry cap');
+    assert.match(block, /entries\.sort/,
+        'Over-cap pruning must sort by updatedAt before evicting');
+});
+
+test('sbPerChannelProfiles has reset-to-global-defaults action', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'sbPerChannelProfiles');
+    assert.match(block, /Reset to global defaults/,
+        'Panel must include a reset action to clear per-channel overrides');
+    assert.match(block, /_resetChannel/,
+        'Feature must have a _resetChannel method');
+});
+
+// ── Anti-detection monitoring (Research Cycle 5) ──
+
+test('SponsorBlock skip timing includes jitter to reduce detection fingerprint', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8'
+    );
+    assert.match(src, /Math\.random\(\)/,
+        '_scheduleNextSkip must include random jitter in timing');
+    assert.match(src, /jitter/,
+        'skip delay calculation must reference jitter variable');
+});
+
+test('SponsorBlock monitors for YouTube anti-adblock DOM elements', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8'
+    );
+    assert.match(src, /_checkAntiAdblock/,
+        'feature must define _checkAntiAdblock detection method');
+    assert.match(src, /enforcement-message/,
+        'anti-adblock detection must target YouTube enforcement-message selectors');
+    assert.match(src, /DiagnosticLog\.record\('sb-anti-adblock'/,
+        'detection must log to DiagnosticLog with sb-anti-adblock key');
+    assert.match(src, /setInterval.*_checkAntiAdblock/,
+        'init must schedule periodic anti-adblock checks');
+    assert.match(src, /clearInterval.*_antiAdblockTimer/,
+        'destroy must clean up the anti-adblock timer');
 });
