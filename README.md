@@ -203,7 +203,7 @@ curl -fsSL https://deno.land/install.sh | sh
 
 Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
 
-The repo pins `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` in
+The repo pins `yt-dlp==2026.6.9` and `curl_cffi==0.15.0` in
 `astra_downloader/requirements.txt` for CI. The monthly/manual
 `.github/workflows/yt-dlp-smoke.yml` workflow installs those pins and runs a
 bounded media download through `scripts/yt-dlp-smoke.py` against a stable public
@@ -319,6 +319,17 @@ document_idle
 - Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs and accepts
   only YouTube-owned destinations
 - Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented host_permissions (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
+
+### Trust & Transparency
+
+- **Fully open-source** — every line of extension, companion, and build tooling is auditable
+- **No telemetry, no analytics, no tracking** — zero data leaves the browser except to APIs you explicitly enable
+- **SBOM + attestation** on every release build — verifiable software bill of materials
+- **External CRX signing key** — maintainer-only, never in the repo or CI
+- **Credential scrub** on settings export — API keys, tokens, and secrets are automatically stripped
+- **Profile-split permissions** — store-safe builds strip AI, Cobalt, and loopback host grants; GitHub-full builds keep the full catalogue
+- **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
+- **Privacy policy** covers data handling for every API origin the extension contacts
 
 ---
 

@@ -11,7 +11,7 @@
 # Astra Downloader still downloads yt-dlp.exe at runtime, but pinning the
 # Python package gives Dependabot a reviewed version surface and lets CI
 # prove a candidate extractor can still fetch a known stable YouTube video.
-yt-dlp==2026.3.17
+yt-dlp==2026.6.9
 curl_cffi==0.15.0
 PyQt6>=6.6.0,<7
 # v1.4.0 NX11: Flask >=3.1.3 closes CVE-2026-27205 (session cache-control
@@ -19,6 +19,14 @@ PyQt6>=6.6.0,<7
 # sessions, so the CVE is structurally inapplicable — but we pin defensively
 # so a future feature that DOES use sessions doesn't ride on a vulnerable
 # baseline.
+# v4.47.0: floor-pin Flask's transitive deps that have open CVEs.
+# Werkzeug < 3.1.6: CVE-2026-21860 + CVE-2026-27199 — safe_join() Windows
+#   device-name path traversal (CON, NUL, AUX with compound extensions).
+# Jinja2 < 3.1.6: CVE-2025-27516 — sandbox escape via |attr filter.
+#   Structurally inapplicable (no user-controlled templates) but pinned
+#   defensively so a future feature doesn't ride on a vulnerable baseline.
+werkzeug>=3.1.6,<4
+jinja2>=3.1.6,<4
 flask>=3.1.3,<4
 requests>=2.31.0,<3
 waitress>=3.0.0,<4

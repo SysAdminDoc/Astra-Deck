@@ -684,7 +684,7 @@ class CookieThreatModelDocTests(unittest.TestCase):
             "CVE-2023-35934",
             "GHSA-v8mc-9377-rwjj",
             "2023.07.06",
-            "yt-dlp==2026.3.17",
+            "yt-dlp==2026.6.9",
             "ALLOWED_COOKIE_DOMAINS",
             ".youtube.com",
             "write_cookies_netscape()",
@@ -1261,7 +1261,6 @@ class PoTokenProviderTests(unittest.TestCase):
                             ("with-provider", with_provider)):
             with self.subTest(label=label):
                 self.assertIn('youtube:formats=duplicate', args)
-                # Must be paired with --extractor-args so yt-dlp parses it.
                 idx = args.index('youtube:formats=duplicate')
                 self.assertEqual(args[idx - 1], '--extractor-args')
 
@@ -1568,11 +1567,11 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         # these fields. Adding fields is safe (additive); renaming or
         # dropping any of these would break the downloadHealthPanel.
         self.assertEqual(set(result.keys()), {
-            'installed', 'version', 'path', 'ytdlpNeedsRuntime', 'advice'
+            'installed', 'version', 'path', 'source', 'ytdlpNeedsRuntime', 'advice'
         })
         self.assertTrue(result['installed'])
         self.assertEqual(result['version'], '2.4.1')
-        self.assertEqual(result['path'], '/usr/local/bin/deno')
+        self.assertIn(result['source'], ('bundled', 'system'))
         self.assertTrue(result['ytdlpNeedsRuntime'])
         self.assertEqual(result['advice'], '')
 
@@ -1628,6 +1627,50 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         # Only the force=True call should have hit shutil.which; the
         # other two reads should have come from cache.
         self.assertEqual(call_count['n'], 1)
+
+
+class DenoProvisionTests(unittest.TestCase):
+    """provision_deno auto-download and /provision-deno endpoint."""
+
+    def test_provision_deno_returns_none_on_network_failure(self):
+        original_get = ad.http_requests.get
+        ad.http_requests.get = lambda *a, **k: (_ for _ in ()).throw(Exception("offline"))
+        original_path = ad.DENO_PATH
+        ad.DENO_PATH = Path('/nonexistent/deno.exe')
+        try:
+            result = ad.provision_deno()
+            self.assertIsNone(result)
+        finally:
+            ad.http_requests.get = original_get
+            ad.DENO_PATH = original_path
+
+    def test_provision_deno_endpoint_requires_token(self):
+        config = FakeConfig({"ServerToken": "f" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().post("/provision-deno")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_probe_includes_source_field(self):
+        ad.reset_deno_runtime_cache()
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        ad.shutil.which = lambda binary: '/usr/local/bin/deno' if binary == 'deno' else None
+        ad.get_ytdlp_version = lambda force=False: '2026.05.03'
+        ad._run_captured_orig = ad._run_captured
+        ad._run_captured = lambda args, timeout=5: 'deno 2.4.1\n'
+        original_deno_path = ad.DENO_PATH
+        ad.DENO_PATH = Path('/nonexistent/deno.exe')
+        try:
+            result = ad.probe_deno_runtime(force=True)
+            self.assertIn('source', result)
+            self.assertEqual(result['source'], 'system')
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+            ad._run_captured = ad._run_captured_orig
+            ad.DENO_PATH = original_deno_path
+            ad.reset_deno_runtime_cache()
 
 
 class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
@@ -1891,6 +1934,23 @@ class EndToEndDownloadTests(unittest.TestCase):
                     self.assertEqual(leftovers, [],
                         "cookie jar file must be unlinked after the orphan is killed")
                     self.assertEqual(len(history.entries), 0)
+
+
+class Aria2cExternalDownloaderBanTests(unittest.TestCase):
+    """CVE-2026-50574: yt-dlp removed aria2c HLS/DASH support because
+    aria2c manifest downloads allowed arbitrary code execution.  Verify
+    the companion never passes --external-downloader aria2c."""
+
+    def test_source_never_references_aria2c(self):
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertNotIn('aria2', src.lower(),
+            "astra_downloader source must not reference aria2c "
+            "(CVE-2026-50574: RCE via manifest downloads)")
+
+    def test_source_never_passes_external_downloader_flag(self):
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertNotIn('--external-downloader', src,
+            "astra_downloader must not pass --external-downloader to yt-dlp")
 
 
 class DownloadSizeCeilingTests(unittest.TestCase):

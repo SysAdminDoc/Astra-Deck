@@ -3,6 +3,25 @@
 // (export, import, reset, storage stats) previously hosted by the
 // standalone options page.
 
+// ── Settings PIN gate (mirrors ytkit.js PIN logic) ──
+const PIN_STORAGE_KEY = 'ytkit_pin_hash';
+const PIN_SALT = 'ytkit-pin-salt-v1:';
+
+async function _popupHashPin(pin) {
+    const data = new TextEncoder().encode(PIN_SALT + pin);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function popupRequirePin() {
+    const result = await chrome.storage.local.get(PIN_STORAGE_KEY);
+    const stored = result[PIN_STORAGE_KEY];
+    if (!stored) return true;
+    const pin = prompt('Enter your Astra Deck PIN to continue:');
+    if (pin === null) return false;
+    return (await _popupHashPin(pin.trim())) === stored;
+}
+
 const QUICK_TOGGLES = [
     { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts shelves and links' },
     { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'Clear the watch-page side rail' },
@@ -152,7 +171,7 @@ const I18N = { override: null, map: null, ready: false };
 // Bundled locales — must match the directories under extension/_locales/.
 // Keep in sync with the language dropdown options in popup.html.
 const BUNDLED_LOCALES = Object.freeze([
-    'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
+    'ar', 'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
 ]);
 const BUNDLED_LOCALE_SET = new Set(BUNDLED_LOCALES);
 
@@ -201,15 +220,20 @@ async function initI18n() {
 // follow, otherwise screen readers announce localized strings with
 // English pronunciation rules. Locale tags are stored with an
 // underscore (pt_BR) but the lang attribute wants BCP-47 (pt-BR).
+const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur']);
+
 function applyDocumentLanguage() {
     try {
         const resolvedLocale = I18N.override
             || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage())
             || 'en';
         if (resolvedLocale) {
-            document.documentElement.lang = resolvedLocale.replace('_', '-');
+            const bcp47 = resolvedLocale.replace('_', '-');
+            document.documentElement.lang = bcp47;
+            const base = bcp47.split('-')[0].toLowerCase();
+            document.documentElement.dir = RTL_LOCALES.has(base) ? 'rtl' : 'ltr';
         }
-    } catch (_) { /* reason: lang attribute is best-effort a11y metadata */ }
+    } catch (_) { /* reason: lang/dir attributes are best-effort a11y metadata */ }
 }
 
 function t(key, fallback) {
@@ -242,6 +266,7 @@ function initLanguageDropdown() {
             // Map BCP-47 → bundled native label so an Auto user with a
             // German browser sees "Auto — Deutsch" instead of "Auto (de)".
             const NATIVE = {
+                ar: 'العربية',
                 en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français',
                 it: 'Italiano', ja: '日本語', ko: '한국어',
                 'pt-BR': 'Português', 'pt': 'Português',
@@ -1524,31 +1549,43 @@ function render(settings, filter) {
 
             row.appendChild(label);
             row.appendChild(toggleSwitch);
-            row.addEventListener('click', async () => {
-                row.disabled = true;
-                try {
-                    const next = !Boolean(popupState.settings[item.key]);
-                    await writeSetting(item.key, next);
-                    render(popupState.settings, q.value);
-                    // render() rebuilds the list, destroying the button the user
-                    // just activated — restore focus to the freshly-rendered row
-                    // so keyboard users don't get bounced to <body> on every toggle.
-                    const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(item.key)}"]`);
-                    if (refocus) refocus.focus();
-                    void broadcast(item.key, next);
-                    showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
-                } catch (error) {
-                    console.warn('[Astra Deck popup] Failed to toggle setting:', error);
-                    showStatus(formatSettingWriteError(tName, error), 'error', 5200);
-                } finally {
-                    row.disabled = false;
-                }
-            });
             section.appendChild(row);
         }
 
         list.appendChild(section);
     }
+}
+
+// ── Toggle click delegation ──
+// Single listener on #toggles handles all toggle clicks. Replaces
+// per-row addEventListener which leaked detached-DOM listeners on
+// every render() rebuild.
+
+function installToggleClickDelegation() {
+    if (!list) return;
+    list.addEventListener('click', async (e) => {
+        const row = e.target.closest('.toggle[data-key]');
+        if (!row || row.disabled) return;
+        const key = row.dataset.key;
+        const toggle = QUICK_TOGGLES.find((t) => t.key === key);
+        if (!toggle) return;
+        const tName = t(`qt_${toggle.key}_name`, toggle.name);
+        row.disabled = true;
+        try {
+            const next = !Boolean(popupState.settings[key]);
+            await writeSetting(key, next);
+            render(popupState.settings, q.value);
+            const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
+            if (refocus) refocus.focus();
+            void broadcast(key, next);
+            showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
+        } catch (error) {
+            console.warn('[Astra Deck popup] Failed to toggle setting:', error);
+            showStatus(formatSettingWriteError(tName, error), 'error', 5200);
+        } finally {
+            row.disabled = false;
+        }
+    });
 }
 
 // ── Storage stats ──
@@ -1886,7 +1923,9 @@ async function copySelectorHealthReport() {
             // Prepend the active tab URL + the per-ctx counts the formatter
             // doesn't otherwise include. The popup ctx-counts strip already
             // surfaces them, but a bug report should carry them inline.
-            const tabLine = 'activeTab: ' + (tab.url || 'unknown');
+            let safeTabUrl = 'unknown';
+            try { const u = new URL(tab.url || ''); safeTabUrl = u.origin + u.pathname; } catch (_) { /* reason: unparseable URL */ }
+            const tabLine = 'activeTab: ' + safeTabUrl;
             const ctxLines = [];
             const ctx = (response.ctxCounts && typeof response.ctxCounts === 'object') ? response.ctxCounts : {};
             const ordered = Object.entries(ctx).filter(([, v]) => Number(v) > 0).sort((a, b) => b[1] - a[1]);
@@ -1899,10 +1938,12 @@ async function copySelectorHealthReport() {
         } else {
             // Minimal fallback — emit the raw snapshot so the user still has
             // something to file. Should never trigger in production.
+            let safeTabUrlFallback = 'unknown';
+            try { const u = new URL(tab.url || ''); safeTabUrlFallback = u.origin + u.pathname; } catch (_) { /* reason: unparseable URL */ }
             payload = JSON.stringify({
                 productVersion: getVersion(),
                 exportedAt: new Date().toISOString(),
-                activeTab: tab.url || 'unknown',
+                activeTab: safeTabUrlFallback,
                 surfaces: response.surfaces,
                 ctxCounts: response.ctxCounts || {}
             }, null, 2);
@@ -1948,6 +1989,74 @@ async function copySelectorHealthReport() {
 
 if (selectorHealthCopyBtn) {
     selectorHealthCopyBtn.addEventListener('click', () => { void copySelectorHealthReport(); });
+}
+
+// Feature performance dashboard. Queries the active YouTube tab for
+// per-feature init timing via YTKIT_GET_FEATURE_PERF, then renders the
+// slowest features with a visual bar. Threshold: features > 50ms are
+// flagged. The section is hidden when no YT tab is active or the
+// content script doesn't respond.
+const featurePerfSection = $('#feature-perf');
+const featurePerfList = $('#feature-perf-list');
+const featurePerfTotal = $('#feature-perf-total');
+
+async function renderFeaturePerfDashboard() {
+    if (!featurePerfSection || !featurePerfList) return;
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
+            featurePerfSection.hidden = true;
+            return;
+        }
+        const response = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(null), 1500);
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_FEATURE_PERF' }, (msg) => {
+                    clearTimeout(timer);
+                    if (chrome.runtime.lastError) { resolve(null); return; }
+                    resolve(msg);
+                });
+            } catch { clearTimeout(timer); resolve(null); }
+        });
+        if (!response || response.ok === false || !Array.isArray(response.features)) {
+            featurePerfSection.hidden = true;
+            return;
+        }
+        const top = response.features.slice(0, 10);
+        featurePerfList.textContent = '';
+        if (top.length === 0) {
+            const empty = document.createElement('li');
+            empty.className = 'feature-perf-empty';
+            empty.textContent = 'No features initialized yet.';
+            featurePerfList.appendChild(empty);
+        } else {
+            const maxMs = top[0].initMs || 1;
+            for (const feat of top) {
+                const li = document.createElement('li');
+                li.className = 'feature-perf-row';
+                if (feat.initMs > 50) li.classList.add('feature-perf-slow');
+                const name = document.createElement('span');
+                name.className = 'fp-name';
+                name.textContent = feat.id;
+                const bar = document.createElement('span');
+                bar.className = 'fp-bar';
+                bar.style.width = Math.max(2, (feat.initMs / maxMs) * 100) + '%';
+                const ms = document.createElement('span');
+                ms.className = 'fp-ms';
+                ms.textContent = feat.initMs + 'ms';
+                li.appendChild(name);
+                li.appendChild(bar);
+                li.appendChild(ms);
+                featurePerfList.appendChild(li);
+            }
+        }
+        if (featurePerfTotal) {
+            featurePerfTotal.textContent = `${response.totalFeatures} feature${response.totalFeatures === 1 ? '' : 's'} measured`;
+        }
+        featurePerfSection.hidden = false;
+    } catch (_) {
+        featurePerfSection.hidden = true;
+    }
 }
 
 // v4.12.0: data-flow panel. Reads extension/core/data-flow.js's
@@ -3008,29 +3117,46 @@ async function pickWelcomeProfile(profile) {
     if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = true;
     if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = true;
     if (welcomeDismissBtn) welcomeDismissBtn.disabled = true;
-    // Apply profile by writing the gating boolean directly. Reuses
-    // the existing writeSetting path so the policy-profile resolver
-    // sees the change and refreshes the schema overview.
     try {
         if (profile === 'github-full') {
             await writeSetting('githubFullProfile', true);
         } else {
-            // store-safe is the default (githubFullProfile=false). Set
-            // it explicitly anyway so the user's choice is recorded —
-            // matters for the popup overview's profile-badge logic
-            // and for any export+import round-trip downstream.
             await writeSetting('githubFullProfile', false);
         }
-        await dismissWelcomeCard(`profile-${profile}`);
-        // Re-render the overview so any profile-gating badges refresh.
         renderSchemaOverview();
+        transitionToPresetStep();
     } catch (err) {
         showStatus(t('statusWelcomeProfileFail',
             'Could not apply profile') + ': ' + err.message, 'error', 4200);
-        // Re-enable so the user can retry on failure.
         if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = false;
         if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = false;
         if (welcomeDismissBtn) welcomeDismissBtn.disabled = false;
+    } finally {
+        _welcomePickInFlight = false;
+    }
+}
+
+function transitionToPresetStep() {
+    const step1 = document.getElementById('welcome-step-profile');
+    const step2 = document.getElementById('welcome-step-preset');
+    if (step1) step1.hidden = true;
+    if (step2) step2.hidden = false;
+    if (welcomeDismissBtn) welcomeDismissBtn.hidden = true;
+}
+
+async function pickWelcomePreset(presetKey) {
+    if (_welcomePickInFlight) return;
+    _welcomePickInFlight = true;
+    document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = true; });
+    try {
+        if (presetKey) {
+            await writeSetting(presetKey, true);
+        }
+        await dismissWelcomeCard(presetKey ? `preset-${presetKey}` : 'preset-skip');
+        renderSchemaOverview();
+    } catch (err) {
+        showStatus('Could not apply preset: ' + err.message, 'error', 4200);
+        document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = false; });
     } finally {
         _welcomePickInFlight = false;
     }
@@ -3072,6 +3198,13 @@ if (welcomeProfileSafeBtn) {
 }
 if (welcomeProfileFullBtn) {
     welcomeProfileFullBtn.addEventListener('click', () => { void pickWelcomeProfile('github-full'); });
+}
+for (const btn of document.querySelectorAll('.welcome-preset-btn')) {
+    btn.addEventListener('click', () => { void pickWelcomePreset(btn.dataset.preset || null); });
+}
+const welcomePresetSkipBtn = document.getElementById('welcome-preset-skip');
+if (welcomePresetSkipBtn) {
+    welcomePresetSkipBtn.addEventListener('click', () => { void pickWelcomePreset(null); });
 }
 if (whatsNewDismissBtn) {
     whatsNewDismissBtn.addEventListener('click', () => { void dismissWhatsNew(); });
@@ -3786,6 +3919,7 @@ function installWheelScrolling() {
 
     installWheelScrolling();
     installPopupFocusManagement();
+    installToggleClickDelegation();
     renderLoading();
 
     try {
@@ -3800,6 +3934,7 @@ function installWheelScrolling() {
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
     void renderSelectorHealthDashboard();
+    void renderFeaturePerfDashboard();
 
     // v4.47.0 NF21: render the first-run welcome card + What's New
     // banner in parallel with the rest of boot. Both are best-effort —
@@ -3945,13 +4080,30 @@ function installWheelScrolling() {
         }
     });
 
-    exportButton.addEventListener('click', () => { void exportSettings(); });
-    importButton.addEventListener('click', () => { importFileInput.click(); });
+    const openSidePanelBtn = $('#openSidePanel');
+    if (openSidePanelBtn) {
+        if (typeof chrome.sidePanel?.open === 'function') {
+            openSidePanelBtn.addEventListener('click', async () => {
+                try {
+                    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                    await chrome.sidePanel.open({ tabId: tab?.id });
+                    window.close();
+                } catch (err) {
+                    showStatus('Could not open side panel: ' + err.message, 'error', 3000);
+                }
+            });
+        } else {
+            openSidePanelBtn.hidden = true;
+        }
+    }
+
+    exportButton.addEventListener('click', async () => { if (await popupRequirePin()) void exportSettings(); });
+    importButton.addEventListener('click', async () => { if (await popupRequirePin()) importFileInput.click(); });
     importFileInput.addEventListener('change', (event) => {
         const file = event.target.files?.[0];
         if (file) void importSettings(file);
     });
-    resetButton.addEventListener('click', () => { void resetAllData(); });
+    resetButton.addEventListener('click', async () => { if (await popupRequirePin()) void resetAllData(); });
     if (undoResetButton) {
         undoResetButton.addEventListener('click', () => { void undoResetAllData(); });
         // Boot visibility: surface the Undo button if a prior reset's snapshot

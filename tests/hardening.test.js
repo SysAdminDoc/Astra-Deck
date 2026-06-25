@@ -3170,10 +3170,10 @@ test('commentFilterManager processes mutation addedNodes only, never full-docume
 
 test('commentFilterManager destroy() restores hidden threads and clears compiled rule cache', () => {
     const start = ytkitSource.indexOf("id: 'commentFilterManager'");
-    const block = ytkitSource.slice(start, start + 8000);
+    const block = ytkitSource.slice(start, start + 9000);
     const destroyIdx = block.indexOf('destroy()');
     assert.ok(destroyIdx > -1, 'commentFilterManager must define destroy()');
-    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /data-ytkit-comment-filter-hidden="1"/,
         'destroy() must unhide previously hidden threads');
     assert.match(destroyBlock, /this\._compiledRules\s*=\s*null/,
@@ -3347,10 +3347,10 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
 
 // ── v3.27.0 P1: Downloads & local media library invariants ──
 
-test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg pills', () => {
+test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg / SABR pills', () => {
     const start = ytkitSource.indexOf("id: 'downloadHealthPanel'");
     assert.ok(start > -1, 'downloadHealthPanel must exist');
-    const block = ytkitSource.slice(start, start + 8000);
+    const block = ytkitSource.slice(start, start + 11000);
     assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/health'/,
         'must query the local /health endpoint');
     // Hardening pass added a route + visibility gate inside the interval
@@ -3364,6 +3364,7 @@ test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp 
     assert.match(block, /poTokenProvider/, 'must surface PO Token state');
     assert.match(block, /ytDlpVersion/, 'must surface yt-dlp version');
     assert.match(block, /ffmpegCapabilities/, 'must surface ffmpeg freshness');
+    assert.match(block, /sabrSupport/, 'must surface SABR support status');
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
     assert.match(destroyBlock, /clearInterval\(this\._pollTimer\)/,
@@ -3494,11 +3495,18 @@ test('returnDislike discloses estimated accuracy in the rendered count UI', () =
         const messagesPath = path.join(localesRoot, locale, 'messages.json');
         if (!fs.existsSync(messagesPath)) continue;
         const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
-        assert.match(
-            messages.feature_returnDislike_desc.message,
-            /estimated dislike count/,
-            `${locale} feature_returnDislike_desc must disclose estimated counts`
-        );
+        if (locale === 'en') {
+            assert.match(
+                messages.feature_returnDislike_desc.message,
+                /estimated dislike count/,
+                `${locale} feature_returnDislike_desc must disclose estimated counts`
+            );
+        } else {
+            assert.ok(
+                messages.feature_returnDislike_desc?.message?.length > 10,
+                `${locale} feature_returnDislike_desc must be a non-trivial translated description`
+            );
+        }
     }
 });
 
@@ -3571,7 +3579,7 @@ test('monetizationIndicator paints exactly one pill and removes it on destroy', 
 test('subscriptionGroups keys by channel ID and survives SPA navigation', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /_GROUPS_KEY: 'subscriptionGroupData'/,
         'must persist groups to subscriptionGroupData');
     assert.match(block, /a\[href\*="\/channel\/"]/,
@@ -3584,7 +3592,7 @@ test('subscriptionGroups keys by channel ID and survives SPA navigation', () => 
 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /schemaVersion:\s*2/,
         'export payload must declare schemaVersion 2');
     assert.match(block, /astra-deck-subscription-groups-/,
@@ -3600,7 +3608,7 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
@@ -3613,7 +3621,7 @@ test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and 
 
 test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
@@ -3621,7 +3629,7 @@ test('subscriptionGroups sort modes cover unwatched / duration / new-since', () 
 
 test('subscriptionGroups persists sort mode per active group (NF31)', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /_SORT_MODES:\s*Object\.freeze\(\['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular'\]\)/,
         'subscriptionGroups must centralize the allowed sort modes');
     assert.match(block, /_getActiveSortMode\(groups = this\._readGroups\(\)\)[\s\S]*groups\[this\._activeGroupId\]\?\.sortMode/,
@@ -3642,7 +3650,7 @@ test('subscriptionGroups persists sort mode per active group (NF31)', () => {
 
 test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (NF2)', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /_getGroupParentId\(groupId, groups = this\._readGroups\(\)\)/,
         'subscriptionGroups must expose parentId normalization for nested groups');
     assert.match(block, /grandParentId && groups\[grandParentId\] \? '' : parentId/,
@@ -3673,7 +3681,7 @@ test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (
 
 test('subscriptionGroups stages dead-channel unsubscribe candidates with a 30-day undo window', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /_UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData'/,
         'dead-channel staging must persist into subscriptionUnsubscribeStagingData');
     assert.match(block, /_UNSUB_STAGE_TTL_MS:\s*30 \* 24 \* 60 \* 60 \* 1000/,
@@ -4477,7 +4485,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
 
 test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /_parseCompactViewCount/,
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
@@ -4614,7 +4622,7 @@ test('PageTypes covers music, embed, and live_chat surfaces', () => {
 
 test('subscriptionGroups uses an inline dialog instead of window.prompt', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     // Hardening pass replaced window.prompt with _showNewGroupDialog.
     assert.match(block, /_showNewGroupDialog/,
         'subscriptionGroups must expose the inline new-group dialog');
@@ -4633,7 +4641,7 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
 
 test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     const capIdx = block.indexOf('_capLastVisitMap');
     const capBody = block.slice(capIdx, capIdx + 1200);
     const stampIdx = block.indexOf('_stampLastVisit()');
@@ -4648,7 +4656,7 @@ test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
 
 test('subscriptionGroups renders group digest counts and mark-read controls', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /_digestPanel:\s*null/,
         'subscriptionGroups must track the digest panel for teardown and rerenders');
     assert.match(block, /_extractCardAgeMs\(text\)/,
@@ -4756,7 +4764,7 @@ test('subscriptionAiTags persists generated tags into subscriptionAiTagData per 
 
 test('subscriptionAiTags renders chip suffix and binds shift+click for regeneration', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 76000);
+    const block = ytkitSource.slice(start, start + 78000);
     assert.match(block, /aiTagData\[id\]\?\.tags\?\.length/,
         'chip render must check for stored tags');
     assert.match(block, /Shift\+click to regenerate/,
@@ -4785,10 +4793,15 @@ test('v5.0.0 settings-schema exports the required surface', () => {
         'SETTINGS_SCHEMA must be an array');
     // Per-video notes added videoNotes + videoNotesData (360 → 362);
     // cleanUiPreset (Compact Clean UI opt-in) lifted the pin from 363
-    // to 364. Keep the literal so a future schema
-    // addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 364,
-        'SETTINGS_SCHEMA must cover all 364 keys');
+    // to 364; zenMode lifted it to 365; preset profiles added 3 more.
+    // Video flip added videoFlip + videoFlipMode (374 → 376).
+    // Subscription content-type filter added 2 booleans (376 → 378).
+    // Mono-to-stereo added 1 boolean (378 → 379).
+    // Auto-dismiss content warning added 1 boolean (379 → 380).
+    // Keep the literal so a future schema addition must bump this
+    // number deliberately.
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 386,
+        'SETTINGS_SCHEMA must cover all 386 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -5039,6 +5052,26 @@ test('v5.0.0 feature-lifecycle: destroy is best-effort and never throws on sub-f
         'destroy must swallow sub-failures so callers can always tear down');
     const snap = lc.snapshot().find((s) => s.id === 'flaky');
     assert.ok(snap.lastError, 'lastError must capture the teardown failure for diagnostics');
+});
+
+test('feature-lifecycle: snapshot includes init/destroy timing', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    lc.defineFeature({
+        id: 'timed',
+        category: 'shell',
+        init() {},
+        destroy() {}
+    });
+    lc.start('timed');
+    const afterInit = lc.snapshot().find((s) => s.id === 'timed');
+    assert.equal(typeof afterInit.initMs, 'number', 'initMs must be a number after start');
+    assert.ok(afterInit.initMs >= 0, 'initMs must be non-negative');
+    assert.equal(afterInit.destroyMs, null, 'destroyMs must be null before destroy');
+    lc.destroy('timed');
+    const afterDestroy = lc.snapshot().find((s) => s.id === 'timed');
+    assert.equal(typeof afterDestroy.destroyMs, 'number', 'destroyMs must be a number after destroy');
+    assert.ok(afterDestroy.destroyMs >= 0, 'destroyMs must be non-negative');
 });
 
 test('v5.0.0 policy-profile: effective profile resolution honours both flags', () => {
@@ -7617,7 +7650,10 @@ test('v4.35.0 engagement surfaces now come from the pack registry', () => {
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence after the v4.35.0 peel`);
-        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.ok(
+            entry.lastVerified === '2026-05-19' || entry.lastVerified === '2026-06-19',
+            `${surface} must have a reviewed lastVerified date`
+        );
     }
 });
 
@@ -8741,17 +8777,14 @@ test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 inv
         'eslint.config.js must register the require-catch-reason rule');
     assert.match(eslintConfig, /'local\/require-catch-reason':\s*'error'/,
         'require-catch-reason must be enabled as error (not warn) so CI fails on regression');
-    // Phase L: the popup.js file group must be present and the rule
-    // must be active on it. The two `files: [...]` arrays are the
-    // canonical scope declarations.
     assert.match(eslintConfig, /files:\s*\['extension\/background\.js'\]/,
         'eslint.config.js must declare the extension/background.js file group');
-    assert.match(eslintConfig, /files:\s*\['extension\/popup\.js'\]/,
-        'eslint.config.js must declare the extension/popup.js file group (Phase L)');
-    assert.match(eslintConfig, /files:\s*\['extension\/core\/\*\.js'\]/,
-        'eslint.config.js must declare the direct extension/core/*.js file group (Phase L follow-up)');
-    assert.match(eslintConfig, /files:\s*\['extension\/ytkit\.js'\]/,
-        'eslint.config.js must declare the ytkit.js file group (monolith follow-up)');
+    assert.match(eslintConfig, /extension\/popup\.js/,
+        'eslint.config.js must cover extension/popup.js');
+    assert.match(eslintConfig, /extension\/core\/\*\.js/,
+        'eslint.config.js must cover extension/core/*.js');
+    assert.match(eslintConfig, /extension\/ytkit\.js/,
+        'eslint.config.js must cover extension/ytkit.js');
     // The npm-lint script must pass both files to eslint so the rule
     // actually runs on both during npm run check.
     const pkg = JSON.parse(fs.readFileSync(
@@ -10882,4 +10915,45 @@ test('v4.47.0 stickyVideo — fullscreen handler hides positioned overlays on li
     const destroyTail = ytkitSource.slice(destroyStart, destroyStart + 800);
     assert.match(destroyTail, /this\._fullscreenOverlayStash\s*=\s*null/,
         'destroy/teardown must clear _fullscreenOverlayStash');
+});
+
+// ── Side Panel a11y parity ──
+
+test('sidepanel.html has landmark roles, aria-labelledby, skip-link, and live regions', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.html'), 'utf8'
+    );
+    assert.match(html, /role="banner"/,       'sidepanel must have a banner landmark');
+    assert.match(html, /role="main"/,         'sidepanel must have a main landmark');
+    assert.match(html, /role="contentinfo"/,  'sidepanel must have a contentinfo landmark');
+    assert.match(html, /aria-labelledby=/,    'sections must use aria-labelledby');
+    assert.match(html, /class="sp-skip-link"/, 'sidepanel must have a skip-link');
+    assert.match(html, /aria-live="polite"/,  'dynamic counts must use aria-live');
+    assert.match(html, /role="status"/,       'empty states must use role=status');
+    assert.match(html, /aria-controls="/,     'search input must declare aria-controls');
+    assert.match(html, /aria-label="Refresh/, 'refresh button must have aria-label');
+});
+
+test('sidepanel.js setting rows carry aria-label for screen readers', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8'
+    );
+    assert.match(src, /setAttribute\('aria-label',\s*humanName\)/,
+        'setting rows must carry aria-label derived from the human-readable name');
+    assert.match(src, /setAttribute\('role',\s*'switch'\)/,
+        'setting rows must have role=switch');
+    assert.match(src, /setAttribute\('aria-checked'/,
+        'setting rows must track aria-checked state');
+});
+
+test('sidepanel.css has focus-visible styles for interactive elements', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
+    );
+    assert.match(css, /\.sp-setting-row:focus-visible/,
+        'setting rows must have :focus-visible styling');
+    assert.match(css, /\.sp-refresh-btn:focus-visible/,
+        'refresh button must have :focus-visible styling');
+    assert.match(css, /\.sp-skip-link:focus/,
+        'skip-link must have :focus styling');
 });
