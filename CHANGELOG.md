@@ -6,6 +6,53 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: Audio pan control.** New `audioPan` range setting (-1.0 to 1.0)
+  adds a `StereoPannerNode` to the SharedAudio MAIN world audio graph.
+  Default 0 (center). Bridges to MAIN world via `data-ytkit-audio-pan`
+  attribute. i18n keys added across all 11 locales.
+- **Feat: Focus preset for onboarding wizard.** New `presetFocus` preset
+  (4th option alongside Privacy, Researcher, Power User) enables distraction-
+  removal features: hide Shorts, related videos, infinite scroll, notifications,
+  autoplay + Zen Mode, Digital Wellbeing, Focused Mode, auto-close popups.
+  Toggle off restores prior values. Onboarding wizard button added to popup.
+  i18n keys added across all 11 locales.
+- **Docs: Trust & Transparency section in README.** Added 8-point trust
+  summary: open-source, no telemetry, SBOM/attestation, external CRX signing,
+  credential scrub, profile-split permissions, 26+ hardening passes, privacy
+  policy.
+- **Security: Sanitizer API progressive adoption.** `setTrustedHTML()` in
+  `core/trusted-html.js` now feature-detects `Element.prototype.setHTML`
+  (Chrome 146+, Firefox 148+) and uses browser-native sanitization when
+  available. Falls back to the existing DOMParser + TrustedTypes path on
+  older browsers.
+- **Feat: DeArrow Casual Mode.** New `deArrowCasualMode` setting (off by
+  default). When enabled, keeps descriptive original titles unchanged and only
+  replaces titles that have crowd-submitted DeArrow alternatives. Gates the
+  local fallback formatting path so videos without community submissions show
+  their original metadata. i18n keys added across all 11 locales.
+- **i18n: complete Russian locale translation.** Translated 66 placeholder-
+  identical keys to Russian. Coverage jumped from 92.2% to 98.9% (1 remaining
+  placeholder-identical key). All 11 locales now above 97%.
+- **Fix: userscript drift checker — exclude extension-only download-ui module.**
+  Added `EXTENSION_ONLY_FEATURES` allowlist to `check-userscript-drift.js` so
+  `features/download-ui/index.js` (which depends on chrome.downloads) is not
+  flagged as a missing V5_BUNDLE_MODULES entry. Drift check now passes clean.
+- **Security: SponsorBlock anti-detection monitoring.** Skip timing now includes
+  50-200ms random jitter to reduce detection fingerprint (SponsorBlock #2290).
+  Added periodic `_checkAntiAdblock` monitor that detects YouTube enforcement
+  warning DOM elements and records to DiagnosticLog. Timer cleaned up on destroy.
+- **A11y: Side Panel accessibility parity with popup.** Added landmark roles
+  (`banner`, `main`, `contentinfo`), `aria-labelledby` on all sections,
+  `aria-live="polite"` on dynamic counts, `role="status"` on empty states,
+  `aria-controls` on the search input, `aria-label` on every setting toggle
+  row and the refresh button, skip-link to settings, and `:focus-visible`
+  styles on all interactive elements. Static ARIA attributes increased from
+  8 to 21 (plus JS-generated per-row attributes). 3 new hardening tests pin
+  the a11y surface.
+- **Security: pin aria2c external-downloader ban (CVE-2026-50574).** Verified
+  the companion never passes `--external-downloader aria2c` to yt-dlp. Added
+  two source-analysis tests asserting the invariant: no `aria2` references and
+  no `--external-downloader` flag in the download subprocess construction.
 - **Fix: merge all MAIN world audio into single AudioContext.** Mono-to-stereo
   (Feature 3) and volume boost/normalization (Feature 4) each had independent
   AudioContexts calling `createMediaElementSource()` on the same video — a
