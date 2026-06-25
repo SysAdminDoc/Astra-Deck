@@ -888,23 +888,9 @@
             const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
             if (_usePopover) popup.setAttribute('popover', 'auto');
 
-            // ── Header ──
-            const header = document.createElement('div');
-            header.className = 'ytkit-dl-popup__header';
-            const title = document.createElement('span');
-            title.className = 'ytkit-dl-popup__title';
-            title.textContent = t('dlPopupTitle', 'Download options');
-            const closeBtn = document.createElement('button');
-            closeBtn.type = 'button';
-            closeBtn.className = 'ytkit-dl-popup__close';
-            closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
-            closeBtn.textContent = '✕';
-            closeBtn.addEventListener('click', _closeDlPopup);
-            header.appendChild(title);
-            header.appendChild(closeBtn);
-            popup.appendChild(header);
-
-            // ── Mode tabs (Video / Audio) ──
+            // ── Toolbar: tabs + close in one row ──
+            const toolbar = document.createElement('div');
+            toolbar.className = 'ytkit-dl-popup__toolbar';
             const tabs = document.createElement('div');
             tabs.className = 'ytkit-dl-popup__tabs';
             tabs.setAttribute('role', 'tablist');
@@ -920,7 +906,7 @@
             audTab.className = 'ytkit-dl-popup__tab';
             audTab.setAttribute('role', 'tab');
             audTab.setAttribute('aria-selected', 'false');
-            audTab.textContent = t('dlPopupTabAudioOnly', 'Audio only');
+            audTab.textContent = t('dlPopupTabAudioOnly', 'Audio');
 
             const updateTabs = () => {
                 vidTab.classList.toggle('is-active', selectedMode === 'video');
@@ -936,7 +922,15 @@
             audTab.addEventListener('click', () => { selectedMode = 'audio'; updateTabs(); });
             tabs.appendChild(vidTab);
             tabs.appendChild(audTab);
-            popup.appendChild(tabs);
+            toolbar.appendChild(tabs);
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'ytkit-dl-popup__close';
+            closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
+            closeBtn.textContent = '✕';
+            closeBtn.addEventListener('click', _closeDlPopup);
+            toolbar.appendChild(closeBtn);
+            popup.appendChild(toolbar);
 
             // ── Body ──
             const body = document.createElement('div');
