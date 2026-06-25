@@ -66,9 +66,15 @@ for (const entry of (manifest.content_scripts || [])) {
 
 // ── 4. Flag feature modules in manifest not covered by V5_BUNDLE_MODULES ──
 // Feature modules follow the pattern features/*/index.js and must be bundled.
+// Exception: extension-only modules that depend on chrome.* APIs unavailable
+// in the userscript environment are excluded by design.
+const EXTENSION_ONLY_FEATURES = new Set([
+    'features/download-ui/index.js',
+]);
 
 for (const js of manifestJsFiles) {
     if (!js.startsWith('features/')) continue;
+    if (EXTENSION_ONLY_FEATURES.has(js)) continue;
     const relative = 'extension/' + js;
     if (!bundleSet.has(relative)) {
         errors.push(`Manifest content_scripts includes "${js}" but V5_BUNDLE_MODULES does not — add it to sync-userscript.js or document the exclusion`);

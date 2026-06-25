@@ -12,13 +12,13 @@
     "message": "Закрыть"
   },
   "contextNoteAnyTab": {
-    "message": "Quick toggles are saved now and sync when YouTube is open."
+    "message": "Быстрые переключатели сохраняются и синхронизируются при открытии YouTube."
   },
   "contextNoteInlinePanel": {
-    "message": "Open the full workspace on this tab; quick toggles apply immediately."
+    "message": "Откройте полную рабочую область на этой вкладке; быстрые переключатели применяются мгновенно."
   },
   "contextNoteLaunch": {
-    "message": "Open a watchable YouTube tab to use the full in-page workspace."
+    "message": "Откройте вкладку YouTube для доступа к полной рабочей области на странице."
   },
   "contextStateAnyTab": {
     "message": "Любая вкладка"
@@ -39,31 +39,31 @@
     "message": "элемент"
   },
   "dataFlowActive": {
-    "message": "active"
+    "message": "активен"
   },
   "dataFlowCreds": {
-    "message": "creds"
+    "message": "учётные данные"
   },
   "dataFlowDriver": {
-    "message": "driver"
+    "message": "источник"
   },
   "dataFlowInactive": {
-    "message": "idle"
+    "message": "неактивен"
   },
   "dataFlowNote": {
-    "message": "Active origins are highlighted. Disable the driving toggle to mute an origin entirely."
+    "message": "Активные источники выделены. Отключите управляющий переключатель, чтобы полностью отключить источник."
   },
   "dataFlowProfile": {
-    "message": "profile"
+    "message": "профиль"
   },
   "dataFlowRisk": {
-    "message": "risk"
+    "message": "риск"
   },
   "dataFlowSummaryTpl": {
-    "message": "{active}/{total} origins active"
+    "message": "{active}/{total} источников активно"
   },
   "dataFlowTitle": {
-    "message": "Data flow"
+    "message": "Поток данных"
   },
   "dataMgmtAria": {
     "message": "Управление данными"
@@ -81,13 +81,13 @@
     "message": "Скачать аудио"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as …"
+    "message": "Скачать аудио как…"
   },
   "dlPopupCtaVideo": {
     "message": "Скачать видео"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as … at …"
+    "message": "Скачать видео как… в…"
   },
   "dlPopupDefault": {
     "message": "По умолчанию"
@@ -132,10 +132,10 @@
     "message": "Тип загрузки"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% complete. … remaining."
+    "message": "…% завершено. Осталось …."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
+    "message": "…% завершено. Оставайтесь на YouTube, пока Astra Downloader завершает загрузку."
   },
   "dlProgressAriaAudio": {
     "message": "Прогресс загрузки аудио"
@@ -150,7 +150,7 @@
     "message": "Загрузка видео"
   },
   "dlProgressCompleteCopy": {
-    "message": "Astra Downloader finished successfully."
+    "message": "Astra Downloader успешно завершил загрузку."
   },
   "dlProgressConnectAudio": {
     "message": "Подключение к локальному загрузчику аудио."
@@ -162,10 +162,10 @@
     "message": "Закрыть прогресс загрузки"
   },
   "dlProgressEtaPrefix": {
-    "message": "ETA"
+    "message": "Осталось"
   },
   "dlProgressFailureDefault": {
-    "message": "Astra Downloader failed"
+    "message": "Ошибка Astra Downloader"
   },
   "dlProgressInProgress": {
     "message": "В процессе"
@@ -174,13 +174,13 @@
     "message": "Локально"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
+    "message": "Astra Deck потерял связь с Astra Downloader. Нажмите «Восстановить загрузчик» для восстановления."
   },
   "dlProgressLostTitle": {
     "message": "Связь с загрузчиком потеряна"
   },
   "dlProgressLostToast": {
-    "message": "Lost contact with Astra Downloader."
+    "message": "Связь с Astra Downloader потеряна."
   },
   "dlProgressPreparing": {
     "message": "Подготовка загрузки…"
@@ -192,7 +192,7 @@
     "message": "Готово"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
+    "message": "Кратковременный сбой Astra Downloader — повторная попытка автоматически."
   },
   "dlProgressSkippedDefault": {
     "message": "Уже загружено — пропущено."
@@ -237,7 +237,7 @@
     "message": "Завершение"
   },
   "dlRepairAria": {
-    "message": "Open Astra Downloader repair steps"
+    "message": "Открыть инструкции по восстановлению Astra Downloader"
   },
   "dlRepairBtn": {
     "message": "Восстановить загрузчик"
@@ -576,7 +576,7 @@
     "message": "Скрыть сообщения Super Chat"
   },
   "feature_chatHide_superChats_name": {
-    "message": "Super Chats"
+    "message": "Суперчаты"
   },
   "feature_chatHide_support_desc": {
     "message": "Скрыть кнопки поддержки/покупки в чате"
@@ -1698,7 +1698,7 @@
     "message": "Восстановить приблизительное количество дизлайков через публичный API Return YouTube Dislike. Кешируется локально; лимит 100 запросов/мин. Cookie не отправляются. По умолчанию выключено."
   },
   "feature_returnDislike_name": {
-    "message": "Return YouTube Dislike"
+    "message": "Вернуть дизлайки YouTube"
   },
   "feature_reversePlaylist_desc": {
     "message": "Добавляет кнопку «Реверс» в панели плейлистов для воспроизведения сначала самых старых"
@@ -2214,7 +2214,7 @@
     "message": "Фильтр быстрых переключателей"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter — try risk:api or category:downloads"
+    "message": "Фильтр — попробуйте risk:api или category:downloads"
   },
   "groupQuickControls": {
     "message": "Быстрые элементы"
@@ -2253,7 +2253,7 @@
     "message": "Импорт"
   },
   "languageAr": {
-    "message": "العربية (Arabic)"
+    "message": "العربية (Арабский)"
   },
   "languageAuto": {
     "message": "Авто (по умолчанию в браузере)"
@@ -2340,10 +2340,10 @@
     "message": "Скачать видео"
   },
   "playerGearAriaTpl": {
-    "message": "Open … settings"
+    "message": "Открыть настройки …"
   },
   "playerGearTitleTpl": {
-    "message": "… Settings"
+    "message": "Настройки …"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -2460,49 +2460,49 @@
     "message": "Быстрые переключатели"
   },
   "reenableMediadlAria": {
-    "message": "Re-enable Astra Downloader install prompts"
+    "message": "Повторно включить подсказки установки Astra Downloader"
   },
   "reenableMediadlBtn": {
-    "message": "Enable Downloader Prompts"
+    "message": "Включить подсказки загрузчика"
   },
   "resetBtn": {
     "message": "Сбросить"
   },
   "resultsAllAvailableTpl": {
-    "message": "… quick controls are available in this popup"
+    "message": "… быстрых элементов управления доступно во всплывающем окне"
   },
   "resultsMatchTpl": {
-    "message": "… of … … match this filter"
+    "message": "… из … … соответствуют фильтру"
   },
   "resultsMatching": {
     "message": "совпадает"
   },
   "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} settings on across {categories} categories"
+    "message": "{enabled}/{total} настроек включено в {categories} категориях"
   },
   "schemaOverviewEyebrow": {
-    "message": "Settings overview"
+    "message": "Обзор настроек"
   },
   "selectorHealthCopyAria": {
-    "message": "Copy selector-health report to clipboard"
+    "message": "Скопировать отчёт о состоянии селекторов в буфер обмена"
   },
   "selectorHealthCopyBtn": {
-    "message": "Copy report"
+    "message": "Скопировать отчёт"
   },
   "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
+    "message": "Скопировано — вставьте в задачу на GitHub."
   },
   "selectorHealthCopyFail": {
-    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
+    "message": "Запись в буфер обмена заблокирована. Откройте DevTools и вызовите window.__ytkitDiagnostics.download()."
   },
   "selectorHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
+    "message": "Откройте вкладку YouTube для создания отчёта."
   },
   "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
+    "message": "Снимок недоступен — страница может ещё загружаться."
   },
   "selectorHealthCopyPending": {
-    "message": "Building report…"
+    "message": "Создание отчёта…"
   },
   "selectorHealthEmpty": {
     "message": "Поверхности ещё не зафиксированы."
@@ -2514,10 +2514,10 @@
     "message": "Отслеживается поверхностей: {count}"
   },
   "speedBtnAriaTpl": {
-    "message": "Default playback speed …. Click to change."
+    "message": "Скорость воспроизведения по умолчанию …. Нажмите, чтобы изменить."
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: … — applies to every video"
+    "message": "Скорость воспроизведения по умолчанию: … — применяется ко всем видео"
   },
   "speedPopupAria": {
     "message": "Скорость воспроизведения по умолчанию"
@@ -2547,7 +2547,7 @@
     "message": "Все данные очищены."
   },
   "statusAllDataClearedUndo": {
-    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
+    "message": "Все данные очищены. Нажмите «Отменить сброс» для восстановления (до закрытия браузера)."
   },
   "statusBackupExported": {
     "message": "Резервная копия экспортирована."
@@ -2580,10 +2580,10 @@
     "message": "Ошибка импорта"
   },
   "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+    "message": "Не удалось повторно включить подсказки Astra Downloader. Откройте chrome://extensions и перезагрузите."
   },
   "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+    "message": "Подсказки установки Astra Downloader включены — перезагрузите вкладку YouTube, чтобы увидеть их."
   },
   "statusOpenWorkspaceFail": {
     "message": "Не удалось открыть полную рабочую область. Попробуйте ещё раз."
@@ -2595,16 +2595,16 @@
     "message": "Ошибка сброса"
   },
   "statusResetSnapshotFail": {
-    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
+    "message": "Сброс отменён — не удалось создать резервную копию (данные слишком большие). Сначала экспортируйте резервную копию."
   },
   "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
+    "message": "Отмена больше недоступна — резервная копия истекла с сессией браузера."
   },
   "statusResetUndoFail": {
-    "message": "Undo failed"
+    "message": "Не удалось отменить"
   },
   "statusResetUndone": {
-    "message": "Reset undone — all data restored."
+    "message": "Сброс отменён — все данные восстановлены."
   },
   "statusStorageReadFail": {
     "message": "Ошибка чтения хранилища"
@@ -2637,13 +2637,13 @@
     "message": "Загрузка уже идёт."
   },
   "toastDlInstallPrompt": {
-    "message": "Install Astra Downloader to enable downloads."
+    "message": "Установите Astra Downloader для загрузки видео."
   },
   "toastDlReady": {
-    "message": "Astra Downloader is ready."
+    "message": "Astra Downloader готов."
   },
   "toastDlRequestFailed": {
-    "message": "Astra Downloader request failed."
+    "message": "Ошибка запроса к Astra Downloader."
   },
   "toastDlRunning": {
     "message": "Astra Downloader работает!"
@@ -2655,7 +2655,7 @@
     "message": "Запуск Astra Downloader…"
   },
   "toastDlStopped": {
-    "message": "Astra Downloader stopped. Starting it again…"
+    "message": "Astra Downloader остановлен. Запуск повторно…"
   },
   "toggleStateOff": {
     "message": "Отключено"
@@ -2670,21 +2670,21 @@
     "message": "включено"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update …. Try again."
+    "message": "Не удалось обновить …. Попробуйте снова."
   },
   "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
+    "message": "Восстановить данные из последнего сброса"
   },
   "undoResetBtn": {
-    "message": "Undo Reset"
+    "message": "Отменить сброс"
   },
   "workspaceEyebrow": {
     "message": "Рабочая область настроек"
   },
   "workspaceSupport": {
-    "message": "Quick toggles save immediately and sync to YouTube."
+    "message": "Быстрые переключатели сохраняются мгновенно и синхронизируются с YouTube."
   },
   "workspaceTitle": {
-    "message": "Controls and backups"
+    "message": "Управление и резервные копии"
   }
 }
