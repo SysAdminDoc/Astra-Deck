@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "Commandes et sauvegardes"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "Mode décontracté"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "Conserver les titres descriptifs — remplacer uniquement par des alternatives DeArrow soumises par la communauté"
   }
 }

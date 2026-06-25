@@ -237,6 +237,7 @@
     "daReplaceTitles": false,
     "daReplaceThumbs": false,
     "daTitleFormat": "legacy:daTitleFormat",
+    "deArrowCasualMode": false,
     "daFallbackFormat": false,
     "daShowOriginalHover": false,
     "daCacheTTL": "legacy:daCacheTTL",

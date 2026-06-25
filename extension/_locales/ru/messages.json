@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "Управление и резервные копии"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "Обычный режим"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "Сохранять описательные заголовки без изменений — заменять только заголовками DeArrow, предложенными сообществом"
   }
 }

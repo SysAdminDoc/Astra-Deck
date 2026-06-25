@@ -260,6 +260,7 @@
   "daReplaceTitles": true,
   "daReplaceThumbs": true,
   "daTitleFormat": "sentence",
+  "deArrowCasualMode": false,
   "daFallbackFormat": true,
   "daShowOriginalHover": true,
   "daCacheTTL": "4",

@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "控件与本地数据"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "休闲模式"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "保留描述性标题不变 — 仅替换为社区提交的 DeArrow 替代标题"
   }
 }

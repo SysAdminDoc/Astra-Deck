@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "コントロールとバックアップ"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "カジュアルモード"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "説明的なタイトルはそのまま保持 — コミュニティ提出のDeArrow代替タイトルのみ置換"
   }
 }

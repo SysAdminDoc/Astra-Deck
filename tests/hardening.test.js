@@ -4800,8 +4800,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Auto-dismiss content warning added 1 boolean (379 → 380).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 383,
-        'SETTINGS_SCHEMA must cover all 383 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 384,
+        'SETTINGS_SCHEMA must cover all 384 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

@@ -2686,5 +2686,11 @@
   },
   "workspaceTitle": {
     "message": "Steuerungen und Backups"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "Gelassen-Modus"
+  },
+  "feature_deArrowCasualMode_desc": {
+    "message": "Beschreibende Titel unverändert lassen — nur durch von der Community eingereichte DeArrow-Alternativen ersetzen"
   }
 }
