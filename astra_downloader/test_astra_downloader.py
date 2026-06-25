@@ -1936,6 +1936,23 @@ class EndToEndDownloadTests(unittest.TestCase):
                     self.assertEqual(len(history.entries), 0)
 
 
+class Aria2cExternalDownloaderBanTests(unittest.TestCase):
+    """CVE-2026-50574: yt-dlp removed aria2c HLS/DASH support because
+    aria2c manifest downloads allowed arbitrary code execution.  Verify
+    the companion never passes --external-downloader aria2c."""
+
+    def test_source_never_references_aria2c(self):
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertNotIn('aria2', src.lower(),
+            "astra_downloader source must not reference aria2c "
+            "(CVE-2026-50574: RCE via manifest downloads)")
+
+    def test_source_never_passes_external_downloader_flag(self):
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertNotIn('--external-downloader', src,
+            "astra_downloader must not pass --external-downloader to yt-dlp")
+
+
 class DownloadSizeCeilingTests(unittest.TestCase):
     """Audit fix: download_file_atomic must enforce a byte ceiling while
     streaming so a misbehaving CDN can't fill the disk before the SHA-256
