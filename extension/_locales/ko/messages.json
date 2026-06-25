@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "방해 없는 시청: Shorts, 관련 동영상, 무한 스크롤, 알림, 자동 재생 숨김. 젠 모드와 디지털 웰빙 추적 활성화."
+  },
+  "feature_audioPan_name": {
+    "message": "오디오 팬"
+  },
+  "feature_audioPan_desc": {
+    "message": "오디오 밸런스를 좌우로 조절합니다. 범위: -1(왼쪽)~1(오른쪽), 0이 중앙."
   }
 }
