@@ -563,6 +563,18 @@ test('trusted html helper centralizes TrustedTypes policy creation', () => {
     assert.deepEqual(createdPolicies, ['astraDeck']);
 });
 
+test('trusted-html.js feature-detects Sanitizer API setHTML when available', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'trusted-html.js'), 'utf8'
+    );
+    assert.match(src, /Element\.prototype\.setHTML/,
+        'trusted-html.js must feature-detect Element.prototype.setHTML');
+    assert.match(src, /_hasSetHTML/,
+        'trusted-html.js must cache the setHTML detection result');
+    assert.match(src, /element\.setHTML\(/,
+        'setTrustedHTML must call element.setHTML() when available');
+});
+
 test('api limiter serializes same-bucket work and reports queue state', async () => {
     const core = loadFoundation();
     const order = [];
