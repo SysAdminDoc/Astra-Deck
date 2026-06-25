@@ -3235,23 +3235,9 @@ return response;
         const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
         if (_usePopover) popup.setAttribute('popover', 'auto');
 
-        // ── Header ──
-        const header = document.createElement('div');
-        header.className = 'ytkit-dl-popup__header';
-        const title = document.createElement('span');
-        title.className = 'ytkit-dl-popup__title';
-        title.textContent = t('dlPopupTitle', 'Download options');
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'ytkit-dl-popup__close';
-        closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
-        closeBtn.textContent = '\u2715';
-        closeBtn.addEventListener('click', _closeDlPopup);
-        header.appendChild(title);
-        header.appendChild(closeBtn);
-        popup.appendChild(header);
-
-        // ── Mode tabs (Video / Audio) ──
+        // ── Toolbar: tabs + close in one row ──
+        const toolbar = document.createElement('div');
+        toolbar.className = 'ytkit-dl-popup__toolbar';
         const tabs = document.createElement('div');
         tabs.className = 'ytkit-dl-popup__tabs';
         tabs.setAttribute('role', 'tablist');
@@ -3267,7 +3253,7 @@ return response;
         audTab.className = 'ytkit-dl-popup__tab';
         audTab.setAttribute('role', 'tab');
         audTab.setAttribute('aria-selected', 'false');
-        audTab.textContent = t('dlPopupTabAudioOnly', 'Audio only');
+        audTab.textContent = t('dlPopupTabAudioOnly', 'Audio');
 
         const updateTabs = () => {
             vidTab.classList.toggle('is-active', selectedMode === 'video');
@@ -3283,7 +3269,15 @@ return response;
         audTab.addEventListener('click', () => { selectedMode = 'audio'; updateTabs(); });
         tabs.appendChild(vidTab);
         tabs.appendChild(audTab);
-        popup.appendChild(tabs);
+        toolbar.appendChild(tabs);
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'ytkit-dl-popup__close';
+        closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', _closeDlPopup);
+        toolbar.appendChild(closeBtn);
+        popup.appendChild(toolbar);
 
         // ── Body ──
         const body = document.createElement('div');
@@ -45324,36 +45318,25 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-dl-popup {
             position: fixed;
-            width: 330px;
+            width: 260px;
             padding: 0;
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
-            background:
-                radial-gradient(90% 60% at 0% 0%, rgba(255,107,74,0.06), transparent 55%),
-                linear-gradient(180deg, rgba(18,22,30,0.98), rgba(10,13,18,0.98));
+            background: rgba(14,17,22,0.97);
             color: rgba(255,255,255,0.94);
-            box-shadow:
-                0 28px 56px rgba(0,0,0,0.45),
-                inset 0 1px 0 rgba(255,255,255,0.045);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.5);
             z-index: 2147483647;
-            animation: ytkit-slide-in 220ms var(--ytkit-ease-out);
+            animation: ytkit-slide-in 180ms var(--ytkit-ease-out);
             overflow: hidden;
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
         }
 
-        .ytkit-dl-popup__header {
+        .ytkit-dl-popup__toolbar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px 0;
-        }
-
-        .ytkit-dl-popup__title {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0;
-            color: rgba(255,255,255,0.96);
+            gap: 6px;
+            padding: 8px 8px 0;
         }
 
         .ytkit-dl-popup__close {
@@ -45362,152 +45345,138 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
             padding: 0;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.64);
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.36);
             cursor: pointer;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out);
+            flex-shrink: 0;
+            font-size: 11px;
+            transition: color 120ms ease, background 120ms ease;
             outline: none;
         }
 
         .ytkit-dl-popup__close:hover {
             background: rgba(255,255,255,0.08);
-            border-color: rgba(255,255,255,0.14);
-            color: #fff;
+            color: rgba(255,255,255,0.8);
         }
 
-        /* Brand-aligned focus ring (was SponsorBlock green). */
         .ytkit-dl-popup__close:focus-visible,
         .ytkit-dl-popup__tab:focus-visible,
         .ytkit-dl-popup__chip:focus-visible,
         .ytkit-dl-popup__dir-btn:focus-visible,
         .ytkit-dl-popup__go:focus-visible {
-            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(255,107,74,0.5);
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 3px rgba(255,107,74,0.45);
         }
 
         .ytkit-dl-popup__tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            padding: 12px 16px 0;
+            display: flex;
+            flex: 1;
+            gap: 2px;
+            padding: 3px;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.04);
         }
 
         .ytkit-dl-popup__tab {
             appearance: none;
             -webkit-appearance: none;
-            min-height: 34px;
-            padding: 7px 0;
-            border-radius: 9px;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.03);
-            color: rgba(255,255,255,0.55);
-            font-size: 12px;
-            font-weight: 650;
-            letter-spacing: 0;
+            flex: 1;
+            height: 26px;
+            padding: 0 10px;
+            border-radius: 5px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.45);
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out);
+            transition: all 140ms ease;
             outline: none;
             touch-action: manipulation;
         }
 
         .ytkit-dl-popup__tab:hover {
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.76);
+            color: rgba(255,255,255,0.7);
         }
 
         .ytkit-dl-popup__tab.is-active,
         .ytkit-dl-popup__tab[aria-selected="true"] {
-            background:
-                linear-gradient(135deg, rgba(255,107,74,0.14), rgba(255,107,74,0.05) 70%),
-                rgba(255,255,255,0.03);
-            border-color: rgba(255,107,74,0.32);
-            color: #ffd8cc;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.95);
         }
 
         .ytkit-dl-popup__body {
-            padding: 14px 16px 8px;
+            padding: 8px 10px 4px;
             display: grid;
-            gap: 14px;
+            gap: 8px;
         }
 
         .ytkit-dl-popup__row {
             display: grid;
-            gap: 7px;
+            gap: 4px;
         }
 
         .ytkit-dl-popup__label {
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 9px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.36);
             line-height: 1;
         }
 
         .ytkit-dl-popup__chips {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 4px;
         }
 
         .ytkit-dl-popup__chip {
             appearance: none;
             -webkit-appearance: none;
-            min-height: 30px;
-            padding: 5px 11px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.08);
+            height: 26px;
+            padding: 0 9px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.07);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.7);
-            font-size: 11.5px;
-            font-weight: 650;
-            letter-spacing: 0;
+            color: rgba(255,255,255,0.58);
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out);
+            transition: all 120ms ease;
             outline: none;
             touch-action: manipulation;
         }
 
         .ytkit-dl-popup__chip:hover {
             background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.9);
-            border-color: rgba(255,255,255,0.14);
+            color: rgba(255,255,255,0.85);
+            border-color: rgba(255,255,255,0.12);
         }
 
         .ytkit-dl-popup__chip.is-active,
         .ytkit-dl-popup__chip[aria-pressed="true"] {
-            background:
-                linear-gradient(135deg, rgba(255,107,74,0.18), rgba(255,107,74,0.06) 70%),
-                rgba(255,255,255,0.03);
-            border-color: rgba(255,107,74,0.36);
-            color: #ffd8cc;
+            background: rgba(255,107,74,0.14);
+            border-color: rgba(255,107,74,0.3);
+            color: #ff9a7e;
         }
 
         .ytkit-dl-popup__dir-wrap {
             display: flex;
             align-items: center;
-            gap: 8px;
-            min-height: 32px;
+            gap: 6px;
+            min-height: 24px;
         }
 
         .ytkit-dl-popup__dir-path {
             flex: 1;
             min-width: 0;
-            font-size: 11.5px;
-            color: rgba(255,255,255,0.62);
+            font-size: 10px;
+            color: rgba(255,255,255,0.42);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -45517,56 +45486,47 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-dl-popup__dir-input {
             flex: 1;
             min-width: 0;
-            padding: 6px 10px;
-            border-radius: 7px;
-            border: 1px solid rgba(255,255,255,0.12);
+            padding: 4px 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.1);
             background: rgba(6,9,13,0.7);
             color: rgba(255,255,255,0.92);
-            font-size: 11.5px;
+            font-size: 10px;
             font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace;
-            box-shadow: inset 0 1px 0 rgba(0,0,0,0.2);
             outline: none;
-            transition: border-color 160ms var(--ytkit-ease-out),
-                        box-shadow 160ms var(--ytkit-ease-out);
+            transition: border-color 120ms ease;
         }
 
         .ytkit-dl-popup__dir-input:focus,
         .ytkit-dl-popup__dir-input:focus-visible {
             border-color: rgba(255,107,74,0.4);
-            box-shadow: inset 0 1px 0 rgba(0,0,0,0.2),
-                        0 0 0 3px rgba(255,107,74,0.14);
         }
 
         .ytkit-dl-popup__dir-btn {
             appearance: none;
             -webkit-appearance: none;
-            min-height: 28px;
-            padding: 4px 11px;
-            border-radius: 7px;
-            border: 1px solid rgba(255,255,255,0.1);
+            height: 24px;
+            padding: 0 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.66);
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            font-weight: 600;
             cursor: pointer;
             flex-shrink: 0;
-            transition:
-                background-color 160ms var(--ytkit-ease-out),
-                color 160ms var(--ytkit-ease-out),
-                border-color 160ms var(--ytkit-ease-out);
+            transition: all 120ms ease;
             outline: none;
             touch-action: manipulation;
         }
 
         .ytkit-dl-popup__dir-btn:hover {
             background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.88);
-            border-color: rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.8);
         }
 
         .ytkit-dl-popup__footer {
-            padding: 10px 16px 14px;
+            padding: 6px 10px 10px;
         }
 
         .ytkit-dl-popup__go {
@@ -45574,51 +45534,28 @@ body.ytkit-panel-open #ytkit-settings-panel {
             -webkit-appearance: none;
             position: relative;
             width: 100%;
-            min-height: 36px;
-            padding: 11px 0;
-            border-radius: 11px;
-            border: 1px solid rgba(255,130,100,0.5);
-            background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
-            color: #1a0b06;
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px;
+            border: none;
+            background: #ff6b4a;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
-            box-shadow:
-                0 8px 22px rgba(255, 95, 74, 0.22),
-                inset 0 1px 0 rgba(255, 255, 255, 0.25);
-            transition:
-                box-shadow 200ms var(--ytkit-ease-out),
-                border-color 200ms var(--ytkit-ease-out),
-                transform 140ms var(--ytkit-ease-out);
+            transition: background 140ms ease, transform 100ms ease;
             outline: none;
             touch-action: manipulation;
             overflow: hidden;
         }
 
-        .ytkit-dl-popup__go::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent 55%);
-            pointer-events: none;
-            mix-blend-mode: overlay;
-            opacity: 0.9;
-        }
-
         .ytkit-dl-popup__go:hover {
-            box-shadow:
-                0 10px 26px rgba(255, 95, 74, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            border-color: rgba(255,160,135,0.6);
+            background: #ff7f5e;
         }
 
         .ytkit-dl-popup__go:active {
-            transform: scale(0.99);
-            box-shadow:
-                0 4px 10px rgba(255, 95, 74, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.18);
+            transform: scale(0.98);
+            background: #e85d3f;
         }
 
         #ytkit-subs-load-banner {
