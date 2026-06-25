@@ -2692,5 +2692,11 @@
   },
   "feature_deArrowCasualMode_desc": {
     "message": "保留描述性标题不变 — 仅替换为社区提交的 DeArrow 替代标题"
+  },
+  "feature_presetFocus_name": {
+    "message": "专注预设"
+  },
+  "feature_presetFocus_desc": {
+    "message": "无干扰观看：隐藏 Shorts、相关视频、无限滚动、通知和自动播放。启用禅模式和数字健康追踪。"
   }
 }
