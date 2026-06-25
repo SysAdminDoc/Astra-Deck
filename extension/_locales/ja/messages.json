@@ -2692,5 +2692,11 @@
   },
   "feature_deArrowCasualMode_desc": {
     "message": "説明的なタイトルはそのまま保持 — コミュニティ提出のDeArrow代替タイトルのみ置換"
+  },
+  "feature_presetFocus_name": {
+    "message": "フォーカスプリセット"
+  },
+  "feature_presetFocus_desc": {
+    "message": "気が散らない視聴：Shorts、関連動画、無限スクロール、通知、自動再生を非表示。Zenモードとデジタルウェルビーイングトラッキングを有効化。"
   }
 }

@@ -2692,5 +2692,11 @@
   },
   "feature_deArrowCasualMode_desc": {
     "message": "Beschreibende Titel unverändert lassen — nur durch von der Community eingereichte DeArrow-Alternativen ersetzen"
+  },
+  "feature_presetFocus_name": {
+    "message": "Fokus-Voreinstellung"
+  },
+  "feature_presetFocus_desc": {
+    "message": "Ablenkungsfreies Ansehen: Shorts, verwandte Videos, endloses Scrollen, Benachrichtigungen und Autoplay ausblenden. Aktiviert Zen-Modus und Digital-Wellbeing-Tracking."
   }
 }
