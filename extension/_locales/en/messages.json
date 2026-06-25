@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "Distraction-free viewing: hide Shorts, related videos, infinite scroll, notifications, and autoplay. Enables Zen Mode and Digital Wellbeing tracking."
+  },
+  "feature_audioPan_name": {
+    "message": "Audio Pan"
+  },
+  "feature_audioPan_desc": {
+    "message": "Shift audio balance left or right. Range -1 (full left) to 1 (full right), 0 is center."
   }
 }

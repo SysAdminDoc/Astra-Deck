@@ -2698,5 +2698,11 @@
   },
   "feature_presetFocus_desc": {
     "message": "无干扰观看：隐藏 Shorts、相关视频、无限滚动、通知和自动播放。启用禅模式和数字健康追踪。"
+  },
+  "feature_audioPan_name": {
+    "message": "音频平衡"
+  },
+  "feature_audioPan_desc": {
+    "message": "向左或向右移动音频平衡。范围：-1（全左）到 1（全右），0 为居中。"
   }
 }
