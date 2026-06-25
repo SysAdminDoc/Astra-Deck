@@ -15,6 +15,30 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+.sp-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 100;
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+.sp-skip-link:focus {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
@@ -196,7 +220,8 @@ body {
   margin-bottom: 8px;
   outline: none;
 }
-.sp-search:focus { border-color: var(--accent); }
+.sp-search:focus { border-color: var(--accent); outline: none; }
+.sp-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .sp-search::placeholder { color: var(--text-subtle); }
 
 .sp-settings-list {
@@ -218,6 +243,7 @@ body {
   user-select: none;
 }
 .sp-setting-row:hover { background: rgba(255,255,255,0.04); }
+.sp-setting-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .sp-setting-name {
   font-size: 11px;

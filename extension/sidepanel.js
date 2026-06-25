@@ -63,6 +63,7 @@ async function renderPerf(tab) {
     for (const feat of top) {
         const li = document.createElement('li');
         li.className = 'sp-perf-row';
+        li.setAttribute('aria-label', `${feat.id}: ${feat.initMs}ms`);
         if (feat.initMs > 50) li.classList.add('sp-perf-slow');
         const name = document.createElement('span');
         name.className = 'fp-name';
@@ -205,16 +206,18 @@ function renderSettings(filter) {
 
     for (const entry of visible) {
         const on = Boolean(_settingsState[entry.key] ?? entry.defaultValue);
+        const humanName = entry.key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim();
         const row = document.createElement('div');
         row.className = 'sp-setting-row';
         row.setAttribute('role', 'switch');
         row.setAttribute('aria-checked', String(on));
+        row.setAttribute('aria-label', humanName);
         row.setAttribute('tabindex', '0');
         row.title = `${entry.key} (${entry.category || 'general'})`;
 
         const name = document.createElement('span');
         name.className = 'sp-setting-name';
-        name.textContent = entry.key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim();
+        name.textContent = humanName;
 
         const sw = document.createElement('span');
         sw.className = 'sp-setting-switch';

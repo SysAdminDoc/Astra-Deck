@@ -8,41 +8,44 @@
   <title>Astra Deck — Dashboard</title>
   <link rel="stylesheet" href="sidepanel.css">
 </head>
-<body>
-  <header class="sp-header">
-    <strong class="sp-title">Astra Deck Dashboard</strong>
-    <span class="sp-version" id="sp-version"></span>
+<body role="application" aria-label="Astra Deck Dashboard">
+  <a class="sp-skip-link" href="#sp-settings-search">Skip to settings</a>
+  <header class="sp-header" role="banner">
+    <strong class="sp-title" id="sp-title">Astra Deck Dashboard</strong>
+    <span class="sp-version" id="sp-version" aria-label="Extension version"></span>
   </header>
 
-  <section class="sp-section" id="sp-perf" aria-label="Feature performance">
-    <h2 class="sp-section-title">Feature Init Timing</h2>
-    <span class="sp-section-meta" id="sp-perf-total"></span>
-    <ul class="sp-perf-list" id="sp-perf-list" role="list"></ul>
-    <p class="sp-empty" id="sp-perf-empty" hidden>No YouTube tab active.</p>
+  <main role="main" aria-labelledby="sp-title">
+  <section class="sp-section" id="sp-perf" aria-labelledby="sp-perf-heading">
+    <h2 class="sp-section-title" id="sp-perf-heading">Feature Init Timing</h2>
+    <span class="sp-section-meta" id="sp-perf-total" aria-live="polite"></span>
+    <ul class="sp-perf-list" id="sp-perf-list" role="list" aria-label="Feature init timing list"></ul>
+    <p class="sp-empty" id="sp-perf-empty" hidden role="status">No YouTube tab active.</p>
   </section>
 
-  <section class="sp-section" id="sp-selector" aria-label="Selector health">
-    <h2 class="sp-section-title">Selector Health</h2>
-    <span class="sp-section-meta" id="sp-selector-total"></span>
-    <ul class="sp-selector-list" id="sp-selector-list" role="list"></ul>
-    <p class="sp-empty" id="sp-selector-empty" hidden>No YouTube tab active.</p>
+  <section class="sp-section" id="sp-selector" aria-labelledby="sp-selector-heading">
+    <h2 class="sp-section-title" id="sp-selector-heading">Selector Health</h2>
+    <span class="sp-section-meta" id="sp-selector-total" aria-live="polite"></span>
+    <ul class="sp-selector-list" id="sp-selector-list" role="list" aria-label="Selector health list"></ul>
+    <p class="sp-empty" id="sp-selector-empty" hidden role="status">No YouTube tab active.</p>
   </section>
 
-  <section class="sp-section" id="sp-storage" aria-label="Storage stats">
-    <h2 class="sp-section-title">Storage</h2>
-    <div class="sp-storage-stats" id="sp-storage-stats"></div>
+  <section class="sp-section" id="sp-storage" aria-labelledby="sp-storage-heading">
+    <h2 class="sp-section-title" id="sp-storage-heading">Storage</h2>
+    <div class="sp-storage-stats" id="sp-storage-stats" role="group" aria-label="Storage statistics"></div>
   </section>
 
-  <section class="sp-section" id="sp-settings" aria-label="Quick settings">
-    <h2 class="sp-section-title">Quick Settings</h2>
-    <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings…" autocomplete="off" spellcheck="false" aria-label="Filter settings">
-    <div class="sp-settings-list" id="sp-settings-list" role="list"></div>
-    <p class="sp-empty" id="sp-settings-empty" hidden>No settings match.</p>
-    <p class="sp-settings-count" id="sp-settings-count"></p>
+  <section class="sp-section" id="sp-settings" aria-labelledby="sp-settings-heading">
+    <h2 class="sp-section-title" id="sp-settings-heading">Quick Settings</h2>
+    <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings…" autocomplete="off" spellcheck="false" aria-label="Filter settings" aria-controls="sp-settings-list">
+    <div class="sp-settings-list" id="sp-settings-list" role="list" aria-label="Settings toggles"></div>
+    <p class="sp-empty" id="sp-settings-empty" hidden role="status">No settings match.</p>
+    <p class="sp-settings-count" id="sp-settings-count" aria-live="polite"></p>
   </section>
+  </main>
 
-  <footer class="sp-footer">
-    <button type="button" class="sp-refresh-btn" id="sp-refresh">Refresh</button>
+  <footer class="sp-footer" role="contentinfo">
+    <button type="button" class="sp-refresh-btn" id="sp-refresh" aria-label="Refresh all dashboard sections">Refresh</button>
   </footer>
 
   <script src="core/settings-schema.js"></script>
