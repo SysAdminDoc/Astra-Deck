@@ -974,6 +974,12 @@ def build_youtube_extractor_args(url, po_token_provider=None):
        server is reachable, point the bgutil plugin at it via
        ``youtubepot-bgutilhttp:base_url=...``. If the user has not installed
        the yt-dlp plugin itself, the arg is harmlessly ignored.
+
+    NOTE: do NOT add ``player_client=...`` to the YouTube extractor args.
+    Specifying an explicit player client overrides yt-dlp's default client
+    selection, which handles ended live streams / VOD transitions correctly.
+    Forcing ``web`` or ``ios`` causes "This live event has ended" failures
+    that the default path avoids.
     """
     if not is_youtube_url(url):
         return []
@@ -2972,11 +2978,14 @@ class DownloadManager(QObject):
                         dl.error = " ".join(last_lines)[-240:]
                     else:
                         dl.error = "Unknown error"
-                    # SABR diagnostic: detect when yt-dlp fails because
-                    # all available formats were SABR-only (no downloadable
-                    # HTTPS streams). Surface a clear user-facing message.
                     combined = " ".join(last_lines).lower()
-                    if ('sabr' in combined or 'no video formats' in combined
+                    if 'live event has ended' in combined:
+                        dl.error = (
+                            "YouTube reports this live stream has ended. "
+                            "The VOD archive may still be processing — "
+                            "try again in a few minutes."
+                        )
+                    elif ('sabr' in combined or 'no video formats' in combined
                             or 'requested format is not available' in combined):
                         dl.error = (
                             "This video only offers SABR streaming formats that "
