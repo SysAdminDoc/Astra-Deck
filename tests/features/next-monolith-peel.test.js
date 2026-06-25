@@ -119,3 +119,135 @@ test('Next-2 peel modules load before ytkit.js in content scripts', () => {
         }
     }
 });
+
+// ── Download UI peel ──
+
+test('downloadUI module exports the download UI factory', () => {
+    const { mod, exported } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+
+    assert.equal(typeof mod.createDownloadUIFeature, 'function');
+    assert.equal(typeof exported, 'function');
+});
+
+test('downloadUI factory returns all required exports', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const result = mod.createDownloadUIFeature();
+
+    assert.equal(typeof result.showDownloadPopup, 'function');
+    assert.equal(typeof result.ytKitDownload, 'function');
+    assert.ok(result.MediaDLManager, 'factory must return MediaDLManager');
+    assert.equal(typeof result.MediaDLManager.check, 'function');
+    assert.equal(typeof result.MediaDLManager.tryAutoStart, 'function');
+    assert.equal(typeof result.MediaDLManager.resetAutoStart, 'function');
+    assert.equal(typeof result.MediaDLManager.showInstallPrompt, 'function');
+    assert.equal(typeof result.MediaDLManager.updateYtdlp, 'function');
+    assert.equal(typeof result.MediaDLManager.updateCompanion, 'function');
+    assert.equal(typeof result.MediaDLManager.baseUrl, 'function');
+    assert.equal(typeof result.showDownloadProgress, 'function');
+    assert.equal(typeof result._closeDlPopup, 'function');
+    assert.equal(typeof result._mediaDLSendDownload, 'function');
+    assert.equal(typeof result._fetchServerConfig, 'function');
+});
+
+test('downloadUI factory returns all four feature objects', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const result = mod.createDownloadUIFeature();
+
+    for (const featureId of [
+        'downloadHealthPanel',
+        'downloadStreamLinksPanel',
+        'downloadCobaltFallback',
+        'downloadHistoryPanel'
+    ]) {
+        const feature = result[featureId];
+        assert.ok(feature, `factory must return ${featureId}`);
+        assert.equal(feature.id, featureId, `${featureId} must have correct id`);
+        assert.equal(typeof feature.init, 'function', `${featureId} must have init()`);
+        assert.equal(typeof feature.destroy, 'function', `${featureId} must have destroy()`);
+        assert.equal(feature.group, 'Downloads', `${featureId} must be in Downloads group`);
+    }
+});
+
+test('downloadUI module loads before ytkit.js in content scripts', () => {
+    for (const scriptGroup of config.manifest.content_scripts) {
+        const scripts = scriptGroup.js || [];
+        const ytkitIndex = scripts.indexOf('ytkit.js');
+        if (ytkitIndex === -1) continue;
+        const modulePath = 'features/download-ui/index.js';
+        const moduleIndex = scripts.indexOf(modulePath);
+        assert.ok(moduleIndex > -1, 'manifest content script must include ' + modulePath);
+        assert.ok(moduleIndex < ytkitIndex, modulePath + ' must load before ytkit.js');
+    }
+});
+
+test('downloadUI monolith delegates feature objects through the module factory', () => {
+    // Verify the monolith constructs _downloadUI from the module factory
+    const factoryNeedle = 'globalThis.YTKitFeatures?.createDownloadUIFeature?.({';
+    const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
+    assert.ok(factoryIndex > -1, 'ytkit.js must construct _downloadUI through the module factory');
+
+    // Verify the dependency bag includes key deps
+    const bagEnd = sources.ytkit.indexOf('}) || null;', factoryIndex);
+    assert.ok(bagEnd > factoryIndex, 'factory construction must fall back to null');
+    const dependencyBag = sources.ytkit.slice(factoryIndex, bagEnd);
+    for (const dep of [
+        'appState',
+        'extensionFetchJson',
+        'showToast',
+        'DebugManager',
+        'DiagnosticLog',
+        'storageRead',
+        'storageWrite',
+        'getVideoId',
+        'isWatchPagePath',
+        'addNavigateRule',
+        'removeNavigateRule',
+        'injectStyle',
+        'openExternalUrl',
+        'openProtocol',
+        'triggerDownload',
+        'browserCookies',
+        'getProfileExportMode',
+        'normalizeCookieExpiry',
+        'BRAND',
+        't',
+    ]) {
+        assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
+    }
+
+    // Verify each feature object delegates through _downloadUI with inline fallback
+    for (const featureId of [
+        'downloadHealthPanel',
+        'downloadStreamLinksPanel',
+        'downloadCobaltFallback',
+        'downloadHistoryPanel'
+    ]) {
+        // Accept both parenthesized and bare delegation forms
+        const delegateNeedle = `_downloadUI?.${featureId} || {`;
+        const delegateNeedleAlt = `(_downloadUI?.${featureId} || {`;
+        const hasDelegation = sources.ytkit.includes(delegateNeedle) || sources.ytkit.includes(delegateNeedleAlt);
+        assert.ok(
+            hasDelegation,
+            `ytkit.js must delegate ${featureId} through _downloadUI with inline fallback`
+        );
+        const fallbackNeedle = `id: '${featureId}'`;
+        const delegateIndex = Math.max(
+            sources.ytkit.indexOf(delegateNeedle),
+            sources.ytkit.indexOf(delegateNeedleAlt)
+        );
+        const fallbackIndex = sources.ytkit.indexOf(fallbackNeedle, delegateIndex);
+        assert.ok(
+            fallbackIndex > delegateIndex,
+            `ytkit.js must retain inline ${featureId} fallback after the delegation`
+        );
+    }
+});

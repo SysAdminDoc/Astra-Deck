@@ -46,17 +46,41 @@
                 data-i18n-attr-aria-label="welcomeDismissAria" aria-label="Dismiss welcome card"
                 data-i18n="welcomeDismiss">Skip</button>
       </header>
-      <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
-      <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
-        <button type="button" class="welcome-profile-btn is-recommended" id="welcome-profile-safe" data-profile="store-safe" aria-describedby="welcome-profile-safe-rec">
-          <span class="welcome-profile-rec" id="welcome-profile-safe-rec" data-i18n="welcomeProfileRecommended">Recommended</span>
-          <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
-          <span class="welcome-profile-desc" data-i18n="welcomeProfileSafeDesc">Everything that ships on extension stores. No download companion, no BYO AI keys.</span>
-        </button>
-        <button type="button" class="welcome-profile-btn" id="welcome-profile-full" data-profile="github-full">
-          <strong class="welcome-profile-title" data-i18n="welcomeProfileFullTitle">GitHub-Full</strong>
-          <span class="welcome-profile-desc" data-i18n="welcomeProfileFullDesc">Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers.</span>
-        </button>
+      <div class="welcome-step" id="welcome-step-profile">
+        <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
+        <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
+          <button type="button" class="welcome-profile-btn is-recommended" id="welcome-profile-safe" data-profile="store-safe" aria-describedby="welcome-profile-safe-rec">
+            <span class="welcome-profile-rec" id="welcome-profile-safe-rec" data-i18n="welcomeProfileRecommended">Recommended</span>
+            <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
+            <span class="welcome-profile-desc" data-i18n="welcomeProfileSafeDesc">Everything that ships on extension stores. No download companion, no BYO AI keys.</span>
+          </button>
+          <button type="button" class="welcome-profile-btn" id="welcome-profile-full" data-profile="github-full">
+            <strong class="welcome-profile-title" data-i18n="welcomeProfileFullTitle">GitHub-Full</strong>
+            <span class="welcome-profile-desc" data-i18n="welcomeProfileFullDesc">Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers.</span>
+          </button>
+        </div>
+      </div>
+      <div class="welcome-step" id="welcome-step-preset" hidden>
+        <p class="welcome-body">How will you use YouTube? Pick a preset or skip to configure manually.</p>
+        <div class="welcome-preset-row" role="group" aria-label="Pick a usage preset">
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-privacy" data-preset="presetPrivacy">
+            <strong class="welcome-preset-title">Privacy</strong>
+            <span class="welcome-preset-desc">Clean URLs, hide Shorts, block infinite scroll, no AI summary.</span>
+          </button>
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-researcher" data-preset="presetResearcher">
+            <strong class="welcome-preset-title">Researcher</strong>
+            <span class="welcome-preset-desc">Transcripts, bookmarks, watch time, AI summary, comment search.</span>
+          </button>
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-power" data-preset="presetPowerUser">
+            <strong class="welcome-preset-title">Power User</strong>
+            <span class="welcome-preset-desc">Persistent speed, A-B loop, stats overlay, PiP, focused mode.</span>
+          </button>
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-focus" data-preset="presetFocus">
+            <strong class="welcome-preset-title">Focus</strong>
+            <span class="welcome-preset-desc">Hide Shorts, related, infinite scroll, autoplay. Zen Mode and Digital Wellbeing.</span>
+          </button>
+        </div>
+        <button type="button" class="welcome-preset-skip" id="welcome-preset-skip">Skip — configure manually</button>
       </div>
     </section>
 
@@ -98,6 +122,7 @@
       </div>
       <div class="main-action">
         <button id="openPanel" class="cta-button" type="button" data-i18n="openFullSettings">Open Full Settings</button>
+        <button id="openSidePanel" class="cta-button cta-secondary" type="button">Dashboard</button>
       </div>
     </section>
 
@@ -169,6 +194,14 @@
       <div class="selector-health-copy-status" id="selector-health-copy-status" aria-live="polite"></div>
     </section>
 
+    <section class="feature-perf" id="feature-perf" aria-label="Feature performance" hidden>
+      <header class="feature-perf-head">
+        <strong class="feature-perf-title">Feature init timing</strong>
+        <span class="feature-perf-total" id="feature-perf-total" aria-live="polite"></span>
+      </header>
+      <ul class="feature-perf-list" id="feature-perf-list" role="list"></ul>
+    </section>
+
     <aside class="health-banner" id="health-banner" role="status" aria-live="polite" hidden>
       <span class="health-icon" aria-hidden="true">!</span>
       <span class="health-copy">
@@ -203,6 +236,7 @@
           <span class="sr-only" data-i18n="languageSelectLabel">Display language</span>
           <select id="languageSelect" name="language" data-i18n-attr-title="languageTitle" title="Display language">
             <option value="auto" data-i18n="languageAuto">Auto (browser default)</option>
+            <option value="ar" data-i18n="languageAr">العربية (Arabic)</option>
             <option value="en" data-i18n="languageEn">English</option>
             <option value="de" data-i18n="languageDe">Deutsch (German)</option>
             <option value="es" data-i18n="languageEs">Español (Spanish)</option>

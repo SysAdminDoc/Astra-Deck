@@ -12,13 +12,13 @@
     "message": "Chiudi"
   },
   "contextNoteAnyTab": {
-    "message": "Quick toggles are saved now and sync when YouTube is open."
+    "message": "Gli interruttori rapidi vengono salvati subito e sincronizzati quando YouTube e aperto."
   },
   "contextNoteInlinePanel": {
-    "message": "Open the full workspace on this tab; quick toggles apply immediately."
+    "message": "Apri l'area di lavoro completa in questa scheda; gli interruttori rapidi si applicano immediatamente."
   },
   "contextNoteLaunch": {
-    "message": "Open a watchable YouTube tab to use the full in-page workspace."
+    "message": "Apri una scheda YouTube per usare l'area di lavoro completa nella pagina."
   },
   "contextStateAnyTab": {
     "message": "Qualsiasi scheda"
@@ -38,6 +38,33 @@
   "controlSingular": {
     "message": "controllo"
   },
+  "dataFlowActive": {
+    "message": "attivo"
+  },
+  "dataFlowCreds": {
+    "message": "credenziali"
+  },
+  "dataFlowDriver": {
+    "message": "driver"
+  },
+  "dataFlowInactive": {
+    "message": "inattivo"
+  },
+  "dataFlowNote": {
+    "message": "Le origini attive sono evidenziate. Disattiva l'interruttore principale per silenziare completamente un'origine."
+  },
+  "dataFlowProfile": {
+    "message": "profilo"
+  },
+  "dataFlowRisk": {
+    "message": "rischio"
+  },
+  "dataFlowSummaryTpl": {
+    "message": "{active}/{total} origini attive"
+  },
+  "dataFlowTitle": {
+    "message": "Flusso dati"
+  },
   "dataMgmtAria": {
     "message": "Gestione dati"
   },
@@ -54,13 +81,13 @@
     "message": "Scarica audio"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as …"
+    "message": "Scarica audio come ..."
   },
   "dlPopupCtaVideo": {
     "message": "Scarica video"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as … at …"
+    "message": "Scarica video come ... a ..."
   },
   "dlPopupDefault": {
     "message": "Predefinito"
@@ -72,16 +99,16 @@
     "message": "Formato"
   },
   "dlPopupLoading": {
-    "message": "Caricamento…"
+    "message": "Caricamento..."
   },
   "dlPopupPickerUnavailable": {
     "message": "Selettore cartella non disponibile"
   },
   "dlPopupPicking": {
-    "message": "Selezione…"
+    "message": "Selezione..."
   },
   "dlPopupQuality": {
-    "message": "Qualità"
+    "message": "Qualita"
   },
   "dlPopupReset": {
     "message": "Reimposta"
@@ -105,10 +132,10 @@
     "message": "Tipo di download"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% complete. … remaining."
+    "message": "...% completato. ... rimanente."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+    "message": "...% completato. Resta su YouTube mentre Astra Downloader termina."
   },
   "dlProgressAriaAudio": {
     "message": "Avanzamento download audio"
@@ -123,7 +150,7 @@
     "message": "Download video"
   },
   "dlProgressCompleteCopy": {
-    "message": "Il downloader locale ha terminato con successo."
+    "message": "Astra Downloader completato con successo."
   },
   "dlProgressConnectAudio": {
     "message": "Connessione al downloader audio locale."
@@ -138,7 +165,7 @@
     "message": "ETA"
   },
   "dlProgressFailureDefault": {
-    "message": "Downloader locale fallito"
+    "message": "Astra Downloader fallito"
   },
   "dlProgressInProgress": {
     "message": "In corso"
@@ -147,16 +174,16 @@
     "message": "Locale"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck ha perso il contatto con il downloader locale. Scegli «Ripara downloader» per ripristinare."
+    "message": "Astra Deck ha perso il contatto con Astra Downloader. Scegli Ripara downloader per recuperare."
   },
   "dlProgressLostTitle": {
     "message": "Connessione al downloader persa"
   },
   "dlProgressLostToast": {
-    "message": "Contatto con il downloader locale perso."
+    "message": "Contatto con Astra Downloader perso."
   },
   "dlProgressPreparing": {
-    "message": "Preparazione download…"
+    "message": "Preparazione download..."
   },
   "dlProgressQueue": {
     "message": "Coda"
@@ -165,13 +192,13 @@
     "message": "Pronto"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Problema momentaneo con il downloader locale — nuovo tentativo automatico."
+    "message": "Breve interruzione con Astra Downloader -- nuovo tentativo automatico."
   },
   "dlProgressSkippedDefault": {
-    "message": "Già scaricato — saltato."
+    "message": "Gia scaricato -- saltato."
   },
   "dlProgressStateAlreadyDownloaded": {
-    "message": "Già scaricato"
+    "message": "Gia scaricato"
   },
   "dlProgressStateComplete": {
     "message": "Completato"
@@ -210,7 +237,7 @@
     "message": "Completamento"
   },
   "dlRepairAria": {
-    "message": "Apri i passaggi di riparazione del downloader locale"
+    "message": "Apri i passaggi di riparazione di Astra Downloader"
   },
   "dlRepairBtn": {
     "message": "Ripara downloader"
@@ -245,11 +272,1949 @@
     "message": "Astra Deck",
     "description": "The extension name displayed in the browser UI."
   },
+  "feature_abHide_ask_desc": {
+    "message": "Nascondi il pulsante Chiedi o AI sotto i video"
+  },
+  "feature_abHide_ask_name": {
+    "message": "Pulsante Chiedi/AI"
+  },
+  "feature_abHide_clip_desc": {
+    "message": "Nascondi il pulsante clip sotto i video"
+  },
+  "feature_abHide_clip_name": {
+    "message": "Pulsante Clip"
+  },
+  "feature_abHide_like_desc": {
+    "message": "Nascondi il pulsante mi piace sotto i video"
+  },
+  "feature_abHide_like_name": {
+    "message": "Pulsante Mi piace"
+  },
+  "feature_abHide_moreActions_desc": {
+    "message": "Nascondi il pulsante altre azioni sotto i video"
+  },
+  "feature_abHide_moreActions_name": {
+    "message": "Altre azioni (...)"
+  },
+  "feature_abHide_save_desc": {
+    "message": "Nascondi il pulsante salva sotto i video"
+  },
+  "feature_abHide_save_name": {
+    "message": "Pulsante Salva"
+  },
+  "feature_abHide_share_desc": {
+    "message": "Nascondi il pulsante condividi sotto i video"
+  },
+  "feature_abHide_share_name": {
+    "message": "Pulsante Condividi"
+  },
+  "feature_abHide_sponsor_desc": {
+    "message": "Nascondi il pulsante iscriviti/sponsor sotto i video"
+  },
+  "feature_abHide_sponsor_name": {
+    "message": "Pulsante Iscriviti/Sponsor"
+  },
+  "feature_abHide_thanks_desc": {
+    "message": "Nascondi il pulsante ringraziamenti sotto i video"
+  },
+  "feature_abHide_thanks_name": {
+    "message": "Pulsante Ringraziamenti"
+  },
+  "feature_abLoop_desc": {
+    "message": "Imposta due punti sulla timeline del video e ripeti il ciclo tra di essi. Indicatori visivi sulla barra di avanzamento."
+  },
+  "feature_abLoop_name": {
+    "message": "Ciclo A-B"
+  },
+  "feature_adaptiveLiveLayout_desc": {
+    "message": "Regola automaticamente il layout per la chat delle dirette affiancata"
+  },
+  "feature_adaptiveLiveLayout_name": {
+    "message": "Layout adattivo per le dirette"
+  },
+  "feature_ageRestrictionBypass_desc": {
+    "message": "Aggira la verifica dell'eta recuperando i dati video dall'endpoint embed di YouTube. Nessun accesso richiesto."
+  },
+  "feature_ageRestrictionBypass_name": {
+    "message": "Bypass restrizione per eta"
+  },
+  "feature_aiVideoSummary_desc": {
+    "message": "Riepilogo LLM con chiave personale della trascrizione del video corrente (OpenAI/Anthropic/Gemini/Ollama)"
+  },
+  "feature_aiVideoSummary_name": {
+    "message": "Riepilogo video AI"
+  },
+  "feature_alwaysShowProgressBar_desc": {
+    "message": "Mantieni la barra di avanzamento video sempre visibile invece di nasconderla in assenza di attivita"
+  },
+  "feature_alwaysShowProgressBar_name": {
+    "message": "Mostra sempre la barra di avanzamento"
+  },
+  "feature_antiTranslateAudioTrack_desc": {
+    "message": "Quando YouTube serve una traccia audio doppiata automaticamente, tenta di tornare all'originale. Approssimativo -- funziona tramite movie_player getAvailableAudioTracks() / setAudioTrack() quando presente."
+  },
+  "feature_antiTranslateAudioTrack_name": {
+    "message": "Anti-traduzione traccia audio"
+  },
+  "feature_antiTranslateTranscript_desc": {
+    "message": "Rimuove i parametri della traccia di traduzione dall'URL della trascrizione nel pannello engagement, cosi YouTube serve i sottotitoli nella lingua originale. Approssimativo; funziona quando la traccia nella lingua originale e disponibile."
+  },
+  "feature_antiTranslateTranscript_name": {
+    "message": "Anti-traduzione trascrizione"
+  },
+  "feature_antiTranslate_desc": {
+    "message": "Impedisci a YouTube di tradurre automaticamente titoli E descrizioni dei video nella tua lingua. Ripristina il testo nella lingua originale sulle miniature e sulla pagina di visione."
+  },
+  "feature_antiTranslate_name": {
+    "message": "Anti-traduzione (titoli + descrizioni originali)"
+  },
+  "feature_astraContextMenu_desc": {
+    "message": "Clic destro sul player o su una scheda feed per accedere alle azioni Astra: Nascondi canale, Copia URL video, Copia link con timestamp, Apri trascrizione. Disattivato per impostazione predefinita -- aggiunge un listener per il menu contestuale; non blocca mai il clic destro nativo di YouTube."
+  },
+  "feature_astraContextMenu_name": {
+    "message": "Menu contestuale Astra"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "Comprime la gamma dinamica in modo che i passaggi silenziosi e forti vengano riprodotti a un volume simile."
+  },
+  "feature_audioNormalization_name": {
+    "message": "Normalizzazione audio"
+  },
+  "feature_audioTrackLanguage_desc": {
+    "message": "Memorizza la lingua audio preferita senza aprire automaticamente le impostazioni di YouTube. YouTube riavvia la riproduzione quando gli script cambiano le tracce audio tramite il menu nativo."
+  },
+  "feature_audioTrackLanguage_name": {
+    "message": "Lingua traccia audio preferita"
+  },
+  "feature_autoClosePopups_desc": {
+    "message": "Chiude automaticamente il consenso dei cookie, i sondaggi e altri popup di YouTube"
+  },
+  "feature_autoClosePopups_name": {
+    "message": "Chiusura automatica popup"
+  },
+  "feature_autoDismissContentWarning_desc": {
+    "message": "Clicca automaticamente \"Comprendo e desidero procedere\" sui video con avvisi sul contenuto"
+  },
+  "feature_autoDismissContentWarning_name": {
+    "message": "Ignora automaticamente avvisi sul contenuto"
+  },
+  "feature_autoDismissStillWatching_desc": {
+    "message": "Clicca automaticamente il pulsante \"Continua a guardare\" quando YouTube mette in pausa la riproduzione per inattivita"
+  },
+  "feature_autoDismissStillWatching_name": {
+    "message": "Ignora automaticamente \"Stai ancora guardando?\""
+  },
+  "feature_autoDownloadOnVisit_desc": {
+    "message": "Avvia automaticamente il download quando visiti una pagina video"
+  },
+  "feature_autoDownloadOnVisit_name": {
+    "message": "Download automatico video"
+  },
+  "feature_autoExpandComments_desc": {
+    "message": "Espandi automaticamente i commenti troncati cosi il testo completo e sempre visibile"
+  },
+  "feature_autoExpandComments_name": {
+    "message": "Espansione automatica commenti"
+  },
+  "feature_autoExpandDescription_desc": {
+    "message": "Espandi automaticamente la descrizione del video cosi non devi mai cliccare \"Mostra altro\""
+  },
+  "feature_autoExpandDescription_name": {
+    "message": "Espansione automatica descrizione"
+  },
+  "feature_autoLikeSubscribed_desc": {
+    "message": "Metti automaticamente mi piace ai video dei canali a cui sei iscritto dopo 30 secondi di visione"
+  },
+  "feature_autoLikeSubscribed_name": {
+    "message": "Mi piace automatico canali iscritti"
+  },
+  "feature_autoMaxResolution_desc": {
+    "message": "Forza lo stream alla massima qualita disponibile su ogni video (1080p Premium quando disponibile)"
+  },
+  "feature_autoMaxResolution_name": {
+    "message": "Sempre la migliore qualita"
+  },
+  "feature_autoOpenChapters_desc": {
+    "message": "Apri automaticamente il pannello dei capitoli quando disponibile"
+  },
+  "feature_autoOpenChapters_name": {
+    "message": "Apertura automatica capitoli"
+  },
+  "feature_autoOpenTranscript_desc": {
+    "message": "Apri automaticamente il pannello della trascrizione quando disponibile"
+  },
+  "feature_autoOpenTranscript_name": {
+    "message": "Apertura automatica trascrizione"
+  },
+  "feature_autoPauseOnSwitch_desc": {
+    "message": "Metti in pausa la riproduzione quando passi a un'altra scheda, riprendi quando torni"
+  },
+  "feature_autoPauseOnSwitch_name": {
+    "message": "Pausa automatica al cambio scheda"
+  },
+  "feature_autoSkipChapters_desc": {
+    "message": "Salta automaticamente i capitoli corrispondenti a pattern (intro, outro, riepilogo, sponsor). Separati da virgola."
+  },
+  "feature_autoSkipChapters_name": {
+    "message": "Salto automatico capitoli"
+  },
+  "feature_autoSubtitles_desc": {
+    "message": "Attiva automaticamente i sottotitoli quando un video inizia la riproduzione"
+  },
+  "feature_autoSubtitles_name": {
+    "message": "Attivazione automatica sottotitoli"
+  },
+  "feature_autoTheaterMode_desc": {
+    "message": "Entra automaticamente nella modalita Theater (ampia) quando apri un video"
+  },
+  "feature_autoTheaterMode_name": {
+    "message": "Auto Teatro"
+  },
+  "feature_blueLightFilter_desc": {
+    "message": "Applica una tonalita calda per ridurre l'emissione di luce blu. Intensita configurabile."
+  },
+  "feature_blueLightFilter_name": {
+    "message": "Filtro luce blu"
+  },
+  "feature_bulkCardActions_desc": {
+    "message": "Attiva la modalita selezione per selezionare piu schede del feed, poi nascondi, consenti o copia gli URL in blocco. Una barra azioni mobile appare durante la selezione."
+  },
+  "feature_bulkCardActions_name": {
+    "message": "Azioni in blocco sulle schede"
+  },
+  "feature_bypassPlaylistMode_desc": {
+    "message": "Rimuovi il parametro &list= dalle miniature cliccate cosi non resti bloccato nella Playlist di qualcun altro"
+  },
+  "feature_bypassPlaylistMode_name": {
+    "message": "Ignora modalita Playlist al clic"
+  },
+  "feature_channelAgeDisplay_desc": {
+    "message": "Mostra l'eta di un video (es. \"2 anni, 3 mesi fa\") accanto alla data di caricamento"
+  },
+  "feature_channelAgeDisplay_name": {
+    "message": "Indicazione eta video"
+  },
+  "feature_channelSubCount_desc": {
+    "message": "Mostra il conteggio degli iscritti del canale in modo piu evidente sotto i video"
+  },
+  "feature_channelSubCount_name": {
+    "message": "Info canale migliorate"
+  },
+  "feature_chapterJumpButtons_desc": {
+    "message": "Pulsanti capitolo precedente/successivo nei controlli destri del player -- salta al capitolo precedente o successivo"
+  },
+  "feature_chapterJumpButtons_name": {
+    "message": "Pulsanti salto capitolo"
+  },
+  "feature_chapterNavButtons_desc": {
+    "message": "Aggiungi i pulsanti capitolo precedente/successivo ai controlli del Player video"
+  },
+  "feature_chapterNavButtons_name": {
+    "message": "Navigazione capitoli"
+  },
+  "feature_chatHide_banner_desc": {
+    "message": "Nascondi i banner della chat"
+  },
+  "feature_chatHide_banner_name": {
+    "message": "Banner chat"
+  },
+  "feature_chatHide_bots_desc": {
+    "message": "Filtra i messaggi dei bot conosciuti"
+  },
+  "feature_chatHide_bots_name": {
+    "message": "Messaggi bot"
+  },
+  "feature_chatHide_emoji_desc": {
+    "message": "Nascondi il pulsante del selettore emoji"
+  },
+  "feature_chatHide_emoji_name": {
+    "message": "Pulsante emoji"
+  },
+  "feature_chatHide_header_desc": {
+    "message": "Nascondi la barra intestazione della chat live"
+  },
+  "feature_chatHide_header_name": {
+    "message": "Intestazione chat"
+  },
+  "feature_chatHide_leaderboard_desc": {
+    "message": "Nascondi la classifica della chat"
+  },
+  "feature_chatHide_leaderboard_name": {
+    "message": "Classifica"
+  },
+  "feature_chatHide_levelUp_desc": {
+    "message": "Nascondi i messaggi di aumento livello"
+  },
+  "feature_chatHide_levelUp_name": {
+    "message": "Messaggi aumento livello"
+  },
+  "feature_chatHide_menu_desc": {
+    "message": "Nascondi il menu extra della chat"
+  },
+  "feature_chatHide_menu_name": {
+    "message": "Menu chat (...)"
+  },
+  "feature_chatHide_polls_desc": {
+    "message": "Nascondi i sondaggi nella chat live"
+  },
+  "feature_chatHide_polls_name": {
+    "message": "Sondaggi e banner sondaggi"
+  },
+  "feature_chatHide_popout_desc": {
+    "message": "Nascondi il pulsante chat esterna"
+  },
+  "feature_chatHide_popout_name": {
+    "message": "Pulsante chat esterna"
+  },
+  "feature_chatHide_reactions_desc": {
+    "message": "Nascondi il pannello reazioni della chat"
+  },
+  "feature_chatHide_reactions_name": {
+    "message": "Reazioni"
+  },
+  "feature_chatHide_superChats_desc": {
+    "message": "Nascondi i messaggi Super Chat"
+  },
+  "feature_chatHide_superChats_name": {
+    "message": "Super Chat"
+  },
+  "feature_chatHide_support_desc": {
+    "message": "Nascondi i pulsanti supporto/acquista nella chat"
+  },
+  "feature_chatHide_support_name": {
+    "message": "Pulsanti supporto"
+  },
+  "feature_chatHide_ticker_desc": {
+    "message": "Nascondi il ticker delle Super Chat"
+  },
+  "feature_chatHide_ticker_name": {
+    "message": "Ticker Super Chat"
+  },
+  "feature_chatHide_timestamps_desc": {
+    "message": "Nascondi i timestamp della chat"
+  },
+  "feature_chatHide_timestamps_name": {
+    "message": "Timestamp"
+  },
+  "feature_chatHide_topFan_desc": {
+    "message": "Nascondi i Badge fan/membri"
+  },
+  "feature_chatHide_topFan_name": {
+    "message": "Badge fan"
+  },
+  "feature_chatKeywordFilter_desc": {
+    "message": "Nascondi i messaggi della chat che contengono queste parole (separate da virgola)"
+  },
+  "feature_chatKeywordFilter_name": {
+    "message": "Filtro parole chiave chat"
+  },
+  "feature_chatStyleComments_desc": {
+    "message": "Layout commenti premium che conserva i commenti fissati, i cuori del creatore, le risposte e le azioni native"
+  },
+  "feature_chatStyleComments_name": {
+    "message": "Commenti studio"
+  },
+  "feature_chronologicalNotifications_desc": {
+    "message": "Ordina le notifiche in ordine cronologico (piu recenti prima)"
+  },
+  "feature_chronologicalNotifications_name": {
+    "message": "Ordina notifiche"
+  },
+  "feature_cinemaAmbientGlow_desc": {
+    "message": "Proietta i colori dominanti del video come un bagliore soffuso dietro il player per un'esperienza cinema immersiva"
+  },
+  "feature_cinemaAmbientGlow_name": {
+    "message": "Bagliore ambientale cinema"
+  },
+  "feature_classicLayoutProfile_desc": {
+    "message": "Scegli un profilo di layout. Moderno mantiene il layout YouTube 2025. Classico 2020 ripristina spaziatura ridotta e il masthead piu piccolo. Classico 2016 ripristina le proporzioni precedenti della pagina di visione."
+  },
+  "feature_classicLayoutProfile_name": {
+    "message": "Profilo layout"
+  },
+  "feature_classicPlayerChrome_desc": {
+    "message": "Ripristino con un solo toggle dell'aspetto Player pre-Delhi/Liquid Glass: controlli quadrati opachi, barra di avanzamento classica, visualizzazione tempo originale"
+  },
+  "feature_classicPlayerChrome_name": {
+    "message": "Aspetto Player classico"
+  },
+  "feature_cleanShareUrls_desc": {
+    "message": "Rimuovi i parametri di tracciamento (si, pp, feature) dai link YouTube copiati/condivisi"
+  },
+  "feature_cleanShareUrls_name": {
+    "message": "URL di condivisione puliti"
+  },
+  "feature_cleanUiPreset_desc": {
+    "message": "Preset proprietario: nasconde il branding del pannello, la ricerca e le intestazioni delle categorie, comprime la navigazione, silenzia le notifiche toast e nasconde il banner di ripresa delle iscrizioni. Disattivato per impostazione predefinita."
+  },
+  "feature_cleanUiPreset_name": {
+    "message": "UI compatta e pulita"
+  },
+  "feature_codecSelector_desc": {
+    "message": "Scegli quale codec video preferire: Auto, H.264 (basso consumo CPU), VP9 o AV1 (migliore qualita). Condivide il motore codec con Forza H.264."
+  },
+  "feature_codecSelector_name": {
+    "message": "Selettore codec"
+  },
+  "feature_colorThemeManager_desc": {
+    "message": "Applica una palette di colori a YouTube (solo modalita scura)"
+  },
+  "feature_colorThemeManager_name": {
+    "message": "Tema colore"
+  },
+  "feature_commentEnhancements_desc": {
+    "message": "Evidenzia le risposte del creatore/OP, mostra indicatori di popolarita dei mi piace e aggiungi un toggle per comprimere tutte le risposte per thread"
+  },
+  "feature_commentEnhancements_name": {
+    "message": "Miglioramenti commenti"
+  },
+  "feature_commentFilterManager_desc": {
+    "message": "Nascondi i thread di commenti il cui autore o testo corrisponde a una regola. Parole chiave separate da virgola, !parola per la lista consentiti, o /pattern/flag per regex (protetto da ReDoS)."
+  },
+  "feature_commentFilterManager_name": {
+    "message": "Filtro commenti"
+  },
+  "feature_commentFilterRules_desc": {
+    "message": "Una regola per riga o separate da virgola. parola nasconde le corrispondenze, !parola consente sempre, @autore filtra per autore, /pattern/i esegue una regex (protetta da ReDoS)."
+  },
+  "feature_commentFilterRules_name": {
+    "message": "Regole filtro commenti"
+  },
+  "feature_commentNavigator_desc": {
+    "message": "Navigatore thread mobile con conteggi live dei commenti visibili e risultati filtrati"
+  },
+  "feature_commentNavigator_name": {
+    "message": "Navigatore commenti"
+  },
+  "feature_commentSearch_desc": {
+    "message": "Aggiunge una barra di ricerca sopra i commenti per filtrare e trovare commenti specifici"
+  },
+  "feature_commentSearch_name": {
+    "message": "Ricerca commenti"
+  },
+  "feature_compactLayout_desc": {
+    "message": "Riduci spaziatura e padding per un'interfaccia piu densa"
+  },
+  "feature_compactLayout_name": {
+    "message": "Layout compatto"
+  },
+  "feature_compactUnfixedHeader_desc": {
+    "message": "Riduci l'altezza dell'intestazione e lasciala scorrere via invece di tenerla fissa"
+  },
+  "feature_compactUnfixedHeader_name": {
+    "message": "Intestazione compatta / non fissa"
+  },
+  "feature_condenseComments_desc": {
+    "message": "Riduci la spaziatura tra i commenti per un layout piu compatto"
+  },
+  "feature_condenseComments_name": {
+    "message": "Commenti condensati"
+  },
+  "feature_copyChapterMarkdown_desc": {
+    "message": "Copia tutti i capitoli del video come elenco di timestamp in markdown -- pulsante nei controlli del player"
+  },
+  "feature_copyChapterMarkdown_name": {
+    "message": "Copia capitoli come Markdown"
+  },
+  "feature_copyVideoTitle_desc": {
+    "message": "Aggiunge un pulsante copia accanto al titolo del video per copiare il titolo con un clic"
+  },
+  "feature_copyVideoTitle_name": {
+    "message": "Pulsante copia titolo video"
+  },
+  "feature_creatorCommentHighlight_desc": {
+    "message": "Rende i commenti con Badge creatore e cuori del creatore piu visibili con un trattamento visivo piu forte"
+  },
+  "feature_creatorCommentHighlight_name": {
+    "message": "Evidenzia commenti del creatore"
+  },
+  "feature_customCssInjection_desc": {
+    "message": "Inietta le tue regole CSS personalizzate nelle pagine YouTube"
+  },
+  "feature_customCssInjection_name": {
+    "message": "CSS personalizzato"
+  },
+  "feature_customProgressBarColor_desc": {
+    "message": "Cambia la barra di avanzamento rossa con qualsiasi colore"
+  },
+  "feature_customProgressBarColor_name": {
+    "message": "Colore barra di avanzamento personalizzato"
+  },
+  "feature_customSelectionColor_desc": {
+    "message": "Sostituisci lo sfondo predefinito della selezione testo con il colore che preferisci"
+  },
+  "feature_customSelectionColor_name": {
+    "message": "Colore selezione testo personalizzato"
+  },
+  "feature_customSpeedButtons_desc": {
+    "message": "Aggiunge pulsanti di velocita rapida sotto il Player video con preset da 0.5x a 3x"
+  },
+  "feature_customSpeedButtons_name": {
+    "message": "Pulsanti preset velocita"
+  },
+  "feature_daCacheTTL_desc": {
+    "message": "Ore di Cache dei dati di branding in locale prima dell'aggiornamento"
+  },
+  "feature_daCacheTTL_name": {
+    "message": "Durata Cache"
+  },
+  "feature_daFallbackFormat_desc": {
+    "message": "Formatta il titolo originale quando non esiste un invio dalla community"
+  },
+  "feature_daFallbackFormat_name": {
+    "message": "Formatta titoli originali"
+  },
+  "feature_daReplaceThumbs_desc": {
+    "message": "Sostituisci le Thumbnail acchiappa-clic con screenshot del video"
+  },
+  "feature_daReplaceThumbs_name": {
+    "message": "Sostituisci Thumbnail"
+  },
+  "feature_daReplaceTitles_desc": {
+    "message": "Sostituisci i titoli acchiappa-clic con alternative dalla community"
+  },
+  "feature_daReplaceTitles_name": {
+    "message": "Sostituisci titoli"
+  },
+  "feature_daShowOriginalHover_desc": {
+    "message": "Passa il mouse su un titolo sostituito per vedere l'originale"
+  },
+  "feature_daShowOriginalHover_name": {
+    "message": "Mostra originale al passaggio mouse"
+  },
+  "feature_daTitleFormat_desc": {
+    "message": "Come formattare i titoli sostitutivi"
+  },
+  "feature_daTitleFormat_name": {
+    "message": "Formato titolo"
+  },
+  "feature_deArrowChannelOverridesPanel_desc": {
+    "message": "Aggiunge un piccolo chip modalita DeArrow accanto al nome del canale nella pagina di visione. Alterna tra DeArrow -> Originale -> Disattivato -> DeArrow per ogni clic. Le impostazioni persistono in deArrowChannelOverrides per ID canale."
+  },
+  "feature_deArrowChannelOverridesPanel_name": {
+    "message": "Override DeArrow per canale"
+  },
+  "feature_deArrowVoting_desc": {
+    "message": "Vota le sostituzioni dei titoli DeArrow. Aggiunge pulsanti su/giu accanto ai titoli sostituiti. Usa un userID privato locale. Disattivato per impostazione predefinita."
+  },
+  "feature_deArrowVoting_name": {
+    "message": "Votazione DeArrow"
+  },
+  "feature_deArrow_desc": {
+    "message": "Sostituisci titoli e Thumbnail acchiappa-clic con alternative dalla community tramite il database DeArrow"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "Tieni premuto Alt per rivelare temporaneamente i titoli originali di YouTube (annulla DeArrow/titoli personalizzati mentre premuto)"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "Pulsante anteprima DeArrow"
+  },
+  "feature_debugMode_desc": {
+    "message": "Attiva la registrazione diagnostica dettagliata nella console"
+  },
+  "feature_debugMode_name": {
+    "message": "Modalita debug"
+  },
+  "feature_denseMode_desc": {
+    "message": "Riduce la spaziatura tra le righe, il padding e le metriche dei font sulle superfici iniettate da Astra. Non modifica il layout nativo di YouTube -- solo i nostri pannelli, chip, pill e barre strumenti."
+  },
+  "feature_denseMode_name": {
+    "message": "Modalita densa"
+  },
+  "feature_diagnosticLog_desc": {
+    "message": "Cattura un registro rotativo degli errori YTKit ed esporta come JSON per le segnalazioni bug"
+  },
+  "feature_diagnosticLog_name": {
+    "message": "Registro errori diagnostici"
+  },
+  "feature_digitalWellbeing_desc": {
+    "message": "Promemoria di pausa ogni N minuti di riproduzione attiva + limite giornaliero opzionale del tempo di visione. I timer persistono nella navigazione SPA."
+  },
+  "feature_digitalWellbeing_name": {
+    "message": "Benessere digitale"
+  },
+  "feature_disableAutoplayNext_desc": {
+    "message": "Impedisci la riproduzione automatica del video successivo al termine di quello corrente"
+  },
+  "feature_disableAutoplayNext_name": {
+    "message": "Disattiva riproduzione automatica successiva"
+  },
+  "feature_disableInfiniteScroll_desc": {
+    "message": "Sostituisci lo scorrimento infinito con un pulsante \"Carica altro\" nelle pagine home, ricerca e iscrizioni"
+  },
+  "feature_disableInfiniteScroll_name": {
+    "message": "Disattiva scorrimento infinito"
+  },
+  "feature_disableLoudnessNormalization_desc": {
+    "message": "Impedisci a YouTube di comprimere la gamma dinamica dei video appena caricati. Approssimativo -- YouTube regola il guadagno tramite API movie_player non supportate ufficialmente."
+  },
+  "feature_disableLoudnessNormalization_name": {
+    "message": "Disattiva normalizzazione volume"
+  },
+  "feature_disableMiniPlayer_desc": {
+    "message": "Impedisci la comparsa del mini player quando navighi altrove"
+  },
+  "feature_disableMiniPlayer_name": {
+    "message": "Disattiva mini Player"
+  },
+  "feature_disablePlayOnHover_desc": {
+    "message": "Impedisci la riproduzione dei video al passaggio del mouse sulle miniature"
+  },
+  "feature_disablePlayOnHover_name": {
+    "message": "Disattiva anteprima al passaggio mouse"
+  },
+  "feature_disableSpaNavigation_desc": {
+    "message": "Forza il caricamento completo della pagina invece delle transizioni fluide di YouTube (corregge problemi di dimensione del player)"
+  },
+  "feature_disableSpaNavigation_name": {
+    "message": "Disattiva navigazione SPA"
+  },
+  "feature_downloadAudioFormat_desc": {
+    "message": "Formato predefinito per i download solo audio"
+  },
+  "feature_downloadAudioFormat_name": {
+    "message": "Formato audio"
+  },
+  "feature_downloadCobaltFallback_desc": {
+    "message": "Quando Astra Downloader non e raggiungibile, utilizza un'istanza cobalt.tools configurabile. Attivo solo nel profilo GitHub/completo e solo quando Astra Downloader e offline. Invia l'URL del video corrente all'istanza configurata e apre l'URL del media restituito in una nuova scheda."
+  },
+  "feature_downloadCobaltFallback_name": {
+    "message": "Fallback Cobalt (profilo GitHub)"
+  },
+  "feature_downloadHealthPanel_desc": {
+    "message": "Mostra indicatori per la versione yt-dlp di Astra Downloader, l'aggiornamento di ffmpeg e lo stato del provider PO Token accanto al pulsante download. Legge /health ogni 30 s; nessuna archiviazione aggiuntiva."
+  },
+  "feature_downloadHealthPanel_name": {
+    "message": "Indicatori salute Downloader"
+  },
+  "feature_downloadHistoryPanel_desc": {
+    "message": "Aggiunge un pulsante \"Cronologia\" accanto al pulsante download nelle pagine di visione. Elenca gli ultimi 50 download registrati da Astra Downloader. Solo locale -- recuperato dall'endpoint /history locale per sessione."
+  },
+  "feature_downloadHistoryPanel_name": {
+    "message": "Pannello cronologia Download"
+  },
+  "feature_downloadQuality_desc": {
+    "message": "Qualita video preferita per i download"
+  },
+  "feature_downloadQuality_name": {
+    "message": "Qualita Download"
+  },
+  "feature_downloadScreenshotFormat_desc": {
+    "message": "Formato di output per il pulsante screenshot del player. PNG e senza perdita e copia negli appunti; JPEG/WebP sono file piu piccoli ma solo download."
+  },
+  "feature_downloadScreenshotFormat_name": {
+    "message": "Formato screenshot"
+  },
+  "feature_downloadStreamLinksPanel_desc": {
+    "message": "Avanzato: esponi gli URL grezzi degli stream adattivi video/audio (mp4/webm) analizzati da ytInitialPlayerResponse. Solo locale -- nessuna telemetria. Utile per trasferimento a yt-dlp / VLC. Disattivato per impostazione predefinita."
+  },
+  "feature_downloadStreamLinksPanel_name": {
+    "message": "Pannello link Stream"
+  },
+  "feature_downloadSubtitlesWithScreenshot_desc": {
+    "message": "Incorpora la riga di sottotitoli attualmente visualizzata nella banda inferiore dello screenshot. Disattivato per impostazione predefinita. Richiede Screenshot video."
+  },
+  "feature_downloadSubtitlesWithScreenshot_name": {
+    "message": "Includi sottotitoli nello screenshot"
+  },
+  "feature_downloadThumbnail_desc": {
+    "message": "Aggiunge un pulsante sotto il video per scaricare la Thumbnail del video corrente alla massima risoluzione"
+  },
+  "feature_downloadThumbnail_name": {
+    "message": "Pulsante Download Thumbnail"
+  },
+  "feature_downloadVideoFormat_desc": {
+    "message": "Formato contenitore predefinito per i download video"
+  },
+  "feature_downloadVideoFormat_name": {
+    "message": "Formato video"
+  },
+  "feature_enableCPU_Tamer_desc": {
+    "message": "Riduci l'utilizzo CPU limitando i timer in background tramite il gating requestAnimationFrame"
+  },
+  "feature_enableCPU_Tamer_name": {
+    "message": "CPU Tamer"
+  },
+  "feature_enableHandleRevealer_desc": {
+    "message": "Mostra il nome originale del canale accanto all'@handle nei commenti"
+  },
+  "feature_enableHandleRevealer_name": {
+    "message": "Rivelatore handle nei commenti"
+  },
+  "feature_expandVideoWidth_desc": {
+    "message": "Espandi il video per riempire lo spazio quando la barra laterale e nascosta"
+  },
+  "feature_expandVideoWidth_name": {
+    "message": "Espandi larghezza video"
+  },
+  "feature_feedTriageProfile_desc": {
+    "message": "Attiva una ricetta di messa a fuoco curata: nasconde Shorts, dirette, anteprime in arrivo, mix, video visti e riepilogo AI. La disattivazione ripristina i valori precedenti."
+  },
+  "feature_feedTriageProfile_name": {
+    "message": "Profilo selezione feed"
+  },
+  "feature_fineSpeedControl_desc": {
+    "message": "Estendi l'intervallo di velocita a 0.1x-16x con incrementi di 0.05x. Scorri sul Badge velocita per regolare."
+  },
+  "feature_fineSpeedControl_name": {
+    "message": "Controllo velocita fine"
+  },
+  "feature_fitPlayerToWindow_desc": {
+    "message": "Fai in modo che il Player video riempia l'intera finestra del browser"
+  },
+  "feature_fitPlayerToWindow_name": {
+    "message": "Adatta Player alla finestra"
+  },
+  "feature_floatingLogoOnWatch_desc": {
+    "message": "Sostituisci i controlli destri nativi del player con link rapidi Astra, strumenti locali e impostazioni"
+  },
+  "feature_floatingLogoOnWatch_name": {
+    "message": "Dock Astra nel Player"
+  },
+  "feature_focusedMode_desc": {
+    "message": "Nasconde tutto tranne il Player video e i commenti per un'esperienza senza distrazioni"
+  },
+  "feature_focusedMode_name": {
+    "message": "Modalita concentrazione"
+  },
+  "feature_forceDarkEverywhere_desc": {
+    "message": "Applica il tema scuro alle pagine YouTube che potrebbero non rispettare la modalita scura (impostazioni, informazioni, ecc.)"
+  },
+  "feature_forceDarkEverywhere_name": {
+    "message": "Forza tema scuro su tutte le pagine YouTube"
+  },
+  "feature_forceH264_desc": {
+    "message": "Preferisci H.264 (AVC) rispetto a VP9/AV1 per un minor consumo CPU su hardware meno recente. Potrebbe ridurre la qualita massima. Usa il bridge codec nel mondo MAIN."
+  },
+  "feature_forceH264_name": {
+    "message": "Forza codec H.264"
+  },
+  "feature_forceStandardFps_desc": {
+    "message": "Attenua le voci HFR nel menu qualita. Per un affidabile 30fps, attiva Forza H.264 che limita a 1080p30."
+  },
+  "feature_forceStandardFps_name": {
+    "message": "Forza frame rate standard"
+  },
+  "feature_forcedColorsSupport_desc": {
+    "message": "Sempre attivo: quando il sistema operativo segnala colori forzati (Contrasto elevato Windows, colori forzati GTK), i controlli iniettati da Astra usano automaticamente i colori di sistema cosi il testo resta leggibile e gli anelli di focus sono visibili. La media query stessa e il gate; questo toggle e mantenuto per compatibilita delle impostazioni e non ha effetti aggiuntivi."
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "Supporto colori forzati / contrasto elevato"
+  },
+  "feature_frameByFrameButtons_desc": {
+    "message": "Aggiungi pulsanti visibili per tornare indietro (,) e avanzare (.) di un fotogramma nei controlli del player per una navigazione precisa"
+  },
+  "feature_frameByFrameButtons_name": {
+    "message": "Pulsanti fotogramma per fotogramma"
+  },
+  "feature_fullTitles_desc": {
+    "message": "Rimuovi il limite a 2 righe sui titoli delle miniature cosi i titoli lunghi sono mostrati per intero"
+  },
+  "feature_fullTitles_name": {
+    "message": "Mostra titoli video completi"
+  },
+  "feature_fullWidthSubscriptions_desc": {
+    "message": "Espandi la griglia delle iscrizioni per riempire la pagina"
+  },
+  "feature_fullWidthSubscriptions_name": {
+    "message": "Iscrizioni a larghezza piena"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "Doppio clic ovunque sul video per attivare/disattivare lo schermo intero (sostituisce il comportamento di ricerca predefinito)"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "Schermo intero con doppio clic"
+  },
+  "feature_globalAriaLiveRegion_desc": {
+    "message": "Monta un singolo contenitore nascosto role=status / aria-live=polite sotto il body del documento. Gli screen reader annunciano qualsiasi testo che Astra scrive al suo interno (corpi dei toast, esiti dei filtri, cambiamenti di stato del download)."
+  },
+  "feature_globalAriaLiveRegion_name": {
+    "message": "Regione live per i toast"
+  },
+  "feature_grayscaleThumbnails_desc": {
+    "message": "Mostra le miniature in scala di grigi per ridurre la distrazione visiva -- il colore si ripristina al passaggio del mouse"
+  },
+  "feature_grayscaleThumbnails_name": {
+    "message": "Miniature in scala di grigi"
+  },
+  "feature_hiddenActionButtonsManager_desc": {
+    "message": "Scegli quali pulsanti azione nascondere sotto i video"
+  },
+  "feature_hiddenActionButtonsManager_name": {
+    "message": "Nascondi pulsanti azione"
+  },
+  "feature_hiddenChatElementsManager_desc": {
+    "message": "Scegli quali elementi della chat live nascondere"
+  },
+  "feature_hiddenChatElementsManager_name": {
+    "message": "Nascondi elementi chat"
+  },
+  "feature_hiddenPlayerControlsManager_desc": {
+    "message": "Scegli quali pulsanti di controllo del player nascondere"
+  },
+  "feature_hiddenPlayerControlsManager_name": {
+    "message": "Nascondi controlli Player"
+  },
+  "feature_hiddenWatchElementsManager_desc": {
+    "message": "Scegli quali elementi nascondere sotto i video"
+  },
+  "feature_hiddenWatchElementsManager_name": {
+    "message": "Nascondi elementi pagina di visione"
+  },
+  "feature_hideAiSummary_desc": {
+    "message": "Rimuovi i riepiloghi generati dall'AI e i pulsanti Chiedi all'AI"
+  },
+  "feature_hideAiSummary_name": {
+    "message": "Nascondi riepilogo AI"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "Rimuovi l'icona Airplay dai controlli del player"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "Nascondi pulsante Airplay"
+  },
+  "feature_hideAutoplayToggle_desc": {
+    "message": "Rimuovi l'interruttore di riproduzione automatica dai controlli del player"
+  },
+  "feature_hideAutoplayToggle_name": {
+    "message": "Nascondi Toggle riproduzione automatica"
+  },
+  "feature_hideChannelJoinButton_desc": {
+    "message": "Rimuovi il pulsante Iscriviti/abbonamento nelle pagine canale"
+  },
+  "feature_hideChannelJoinButton_name": {
+    "message": "Nascondi pulsante iscrizione canale"
+  },
+  "feature_hideCollaborations_desc": {
+    "message": "Nascondi i video dai canali a cui non sei iscritto nel feed delle iscrizioni"
+  },
+  "feature_hideCollaborations_name": {
+    "message": "Nascondi collaborazioni"
+  },
+  "feature_hideCommentActionMenu_desc": {
+    "message": "Rimuovi il menu azioni dai singoli commenti"
+  },
+  "feature_hideCommentActionMenu_name": {
+    "message": "Nascondi azioni commenti"
+  },
+  "feature_hideCommentDislikeButton_desc": {
+    "message": "Rimuovi il pulsante non mi piace dalle azioni dei commenti poiche non aggiunge feedback utile"
+  },
+  "feature_hideCommentDislikeButton_name": {
+    "message": "Nascondi non mi piace commenti"
+  },
+  "feature_hideCommentTeaser_desc": {
+    "message": "Rimuovi il suggerimento \"Scorri per i commenti\" nelle pagine di visione"
+  },
+  "feature_hideCommentTeaser_name": {
+    "message": "Nascondi anteprima commenti"
+  },
+  "feature_hideCreateButton_desc": {
+    "message": "Rimuovi il pulsante \"Crea\" dalla barra degli strumenti dell'intestazione"
+  },
+  "feature_hideCreateButton_name": {
+    "message": "Nascondi pulsante Crea"
+  },
+  "feature_hideDescriptionExtras_desc": {
+    "message": "Rimuovi gli elementi aggiuntivi nell'area della descrizione"
+  },
+  "feature_hideDescriptionExtras_name": {
+    "message": "Nascondi extra descrizione"
+  },
+  "feature_hideDescriptionRow_desc": {
+    "message": "Rimuovi il pannello descrizione video sotto il player"
+  },
+  "feature_hideDescriptionRow_name": {
+    "message": "Nascondi descrizione"
+  },
+  "feature_hideEndCards_desc": {
+    "message": "Rimuovi le schede finali/annotazioni cliccabili che si sovrappongono al video negli ultimi secondi. Coperto anche da Nascondi contenuto fine video."
+  },
+  "feature_hideEndCards_name": {
+    "message": "Nascondi schede schermata finale"
+  },
+  "feature_hideFundraiser_desc": {
+    "message": "Rimuovi Badge di raccolta fondi e donazioni"
+  },
+  "feature_hideFundraiser_name": {
+    "message": "Nascondi raccolte fondi"
+  },
+  "feature_hideHashtags_desc": {
+    "message": "Rimuovi i link hashtag sopra i titoli dei video"
+  },
+  "feature_hideHashtags_name": {
+    "message": "Nascondi hashtag"
+  },
+  "feature_hideInfoCards_desc": {
+    "message": "Rimuovi le anteprime e i popup delle schede informative \"i\" che appaiono durante la riproduzione video"
+  },
+  "feature_hideInfoCards_name": {
+    "message": "Nascondi schede informative"
+  },
+  "feature_hideInfoPanels_desc": {
+    "message": "Rimuovi i riquadri informativi Wikipedia/contesto che appaiono sotto i video (FEMA, COVID, ecc.)"
+  },
+  "feature_hideInfoPanels_name": {
+    "message": "Nascondi pannelli informativi"
+  },
+  "feature_hideJumpAheadButton_desc": {
+    "message": "Rimuovi il suggerimento Salta avanti che appare dopo aver saltato sui video idonei."
+  },
+  "feature_hideJumpAheadButton_name": {
+    "message": "Nascondi Salta avanti"
+  },
+  "feature_hideLatestPosts_desc": {
+    "message": "Nascondi i post della community e le sezioni aggiornamenti dai feed"
+  },
+  "feature_hideLatestPosts_name": {
+    "message": "Nascondi ultimi post"
+  },
+  "feature_hideLiveChatEngagement_desc": {
+    "message": "Rimuovi i suggerimenti di interazione nella chat live"
+  },
+  "feature_hideLiveChatEngagement_name": {
+    "message": "Nascondi interazioni chat"
+  },
+  "feature_hideMembersOnly_desc": {
+    "message": "Nascondi le schede del feed riservate ai membri nella Home e nelle Iscrizioni"
+  },
+  "feature_hideMembersOnly_name": {
+    "message": "Nascondi solo membri"
+  },
+  "feature_hideMerchShelf_desc": {
+    "message": "Rimuovi le promozioni merchandise sotto i video"
+  },
+  "feature_hideMerchShelf_name": {
+    "message": "Nascondi sezione merchandise"
+  },
+  "feature_hideNewsHome_desc": {
+    "message": "Nascondi le sezioni notizie dalla homepage"
+  },
+  "feature_hideNewsHome_name": {
+    "message": "Nascondi sezione notizie"
+  },
+  "feature_hideNotificationBadge_desc": {
+    "message": "Rimuovi il Badge rosso del conteggio notifiche dall'icona campanella"
+  },
+  "feature_hideNotificationBadge_name": {
+    "message": "Nascondi Badge notifiche"
+  },
+  "feature_hideNotificationButton_desc": {
+    "message": "Rimuovi l'icona della campanella notifiche dall'intestazione"
+  },
+  "feature_hideNotificationButton_name": {
+    "message": "Nascondi campanella notifiche"
+  },
+  "feature_hidePaidContentOverlay_desc": {
+    "message": "Rimuovi le sovrapposizioni \"Include promozione a pagamento\" su miniature e pagine di visione"
+  },
+  "feature_hidePaidContentOverlay_name": {
+    "message": "Nascondi Badge promozione"
+  },
+  "feature_hidePaidPromotionWatch_desc": {
+    "message": "Rimuovi le etichette \"promozione a pagamento\" nelle pagine di visione"
+  },
+  "feature_hidePaidPromotionWatch_name": {
+    "message": "Nascondi promozione a pagamento"
+  },
+  "feature_hidePinnedComments_desc": {
+    "message": "Rimuovi i commenti fissati dalla sezione commenti"
+  },
+  "feature_hidePinnedComments_name": {
+    "message": "Nascondi commenti fissati"
+  },
+  "feature_hidePlayables_desc": {
+    "message": "Nascondi i contenuti di gioco YouTube Playables dai feed"
+  },
+  "feature_hidePlayables_name": {
+    "message": "Nascondi Playables"
+  },
+  "feature_hidePlaylistsHome_desc": {
+    "message": "Nascondi le sezioni Playlist dalla homepage"
+  },
+  "feature_hidePlaylistsHome_name": {
+    "message": "Nascondi sezioni Playlist"
+  },
+  "feature_hideQueueOnThumbnails_desc": {
+    "message": "Rimuovi il pulsante in sovrapposizione \"Aggiungi alla coda\" che appare al passaggio del mouse sulle miniature"
+  },
+  "feature_hideQueueOnThumbnails_name": {
+    "message": "Nascondi \"Aggiungi alla coda\" sulle miniature"
+  },
+  "feature_hideRelatedVideos_desc": {
+    "message": "Rimuovi il pannello dei video correlati nelle pagine di visione"
+  },
+  "feature_hideRelatedVideos_name": {
+    "message": "Nascondi video correlati"
+  },
+  "feature_hideSidebar_desc": {
+    "message": "Rimuovi completamente la barra di navigazione sinistra"
+  },
+  "feature_hideSidebar_name": {
+    "message": "Nascondi barra laterale"
+  },
+  "feature_hideSubscriptionOptions_desc": {
+    "message": "Rimuovi l'intestazione \"Piu recenti\" e i toggle di visualizzazione nelle iscrizioni"
+  },
+  "feature_hideSubscriptionOptions_name": {
+    "message": "Nascondi opzioni layout"
+  },
+  "feature_hideVideoEndContent_desc": {
+    "message": "Rimuovi schede finali, schermata finale, annotazioni e griglia video al termine dei video. Superset di Nascondi schede schermata finale."
+  },
+  "feature_hideVideoEndContent_name": {
+    "message": "Nascondi contenuto fine video"
+  },
+  "feature_hideVideosFromHome_desc": {
+    "message": "Nascondi video/canali dai feed. Include filtro parole chiave, filtro durata e blocco canali."
+  },
+  "feature_hideVideosFromHome_name": {
+    "message": "Nascondivideo"
+  },
+  "feature_hideVoiceSearch_desc": {
+    "message": "Rimuovi l'icona del microfono dalla barra di ricerca"
+  },
+  "feature_hideVoiceSearch_name": {
+    "message": "Nascondi ricerca vocale"
+  },
+  "feature_hideWatchedVideos_desc": {
+    "message": "Attenua o nascondi i video con barra di avanzamento rossa (gia visti) dai feed"
+  },
+  "feature_hideWatchedVideos_name": {
+    "message": "Nascondi video visti"
+  },
+  "feature_homepageGridAlign_desc": {
+    "message": "Forza una griglia miniature uniforme nella homepage -- previene righe disallineate causate da altezze variabili di titoli/metadati"
+  },
+  "feature_homepageGridAlign_name": {
+    "message": "Allineamento griglia homepage"
+  },
+  "feature_initialPlayerStateBackground_desc": {
+    "message": "Quando apri una pagina di visione in una scheda in background, riproduci o metti in pausa indipendentemente dall'impostazione predefinita di YouTube. Utile per accodare piu schede."
+  },
+  "feature_initialPlayerStateBackground_name": {
+    "message": "Stato iniziale Player (background)"
+  },
+  "feature_initialPlayerStateForeground_desc": {
+    "message": "Quando apri una pagina di visione in primo piano, riproduci o metti in pausa indipendentemente dalla scelta di riproduzione automatica della sessione precedente. \"Eredita\" lascia il comportamento nativo di YouTube invariato."
+  },
+  "feature_initialPlayerStateForeground_name": {
+    "message": "Stato iniziale Player (primo piano)"
+  },
+  "feature_keyMoments_desc": {
+    "message": "Evidenzia i marcatori dei capitoli sulla barra di avanzamento con segmenti colorati per una navigazione visiva rapida"
+  },
+  "feature_keyMoments_name": {
+    "message": "Evidenziazione momenti chiave"
+  },
+  "feature_likeViewRatio_desc": {
+    "message": "Mostra la percentuale mi piace/visualizzazioni accanto al conteggio visualizzazioni nelle pagine di visione"
+  },
+  "feature_likeViewRatio_name": {
+    "message": "Rapporto mi piace/visualizzazioni"
+  },
+  "feature_localAiSummary_desc": {
+    "message": "Usa l'API Summarizer integrata di Chrome quando disponibile. Ritorna un chiaro messaggio \"non disponibile\" -- non instrada mai in silenzio verso un provider remoto. Aggiunge un pulsante \"Riepilogo locale\" accanto al pulsante Riepilogo AI esistente."
+  },
+  "feature_localAiSummary_name": {
+    "message": "Riepilogo AI locale (integrato nel browser)"
+  },
+  "feature_localAiTranscriptQa_desc": {
+    "message": "Fai domande sulla trascrizione del video corrente usando Chrome Prompt API (Gemini Nano). Eseguito sul dispositivo, nessuna chiave API necessaria."
+  },
+  "feature_localAiTranscriptQa_name": {
+    "message": "Domande e risposte trascrizione (integrato nel browser)"
+  },
+  "feature_logoToSubscriptions_desc": {
+    "message": "Reindirizza il logo YouTube nativo al tuo feed iscrizioni"
+  },
+  "feature_logoToSubscriptions_name": {
+    "message": "Clic logo -> Iscrizioni"
+  },
+  "feature_lowPowerProfile_desc": {
+    "message": "Quando attivo, disabilita le funzionalita pesanti per la CPU (bagliore ambientale cinema, filtri visivi, Overlay statistiche riproduzione, indicatore monetizzazione, indice trascrizioni, visualizzatore trascrizioni, filtro luce blu) e aumenta la cadenza di pulizia LRU dello storage. Disattiva per ripristinare i valori precedenti dallo snapshot di backup."
+  },
+  "feature_lowPowerProfile_name": {
+    "message": "Profilo basso consumo"
+  },
+  "feature_miniPlayerBar_desc": {
+    "message": "Mostra una barra mini-player mobile in basso quando scorri oltre il video"
+  },
+  "feature_miniPlayerBar_name": {
+    "message": "Barra mini Player"
+  },
+  "feature_monetizationIndicator_desc": {
+    "message": "Aggiunge un indicatore sotto il titolo che mostra se il video e monetizzato (ha pubblicita / sovrapposizione sponsor) o meno. Euristico -- usa la sovrapposizione promozione a pagamento, la scheda sponsorizzazione e i dati delle categorie SponsorBlock quando disponibili."
+  },
+  "feature_monetizationIndicator_name": {
+    "message": "Indicatore di monetizzazione"
+  },
+  "feature_monoToStereo_desc": {
+    "message": "Centra l'audio mono equamente in entrambe le orecchie -- corregge registrazioni unilaterali, lezioni e contenuti vecchi che suonano sbilanciati in cuffia"
+  },
+  "feature_monoToStereo_name": {
+    "message": "Da mono a stereo"
+  },
+  "feature_musicVideoSpeedLock_desc": {
+    "message": "Quando la velocita di riproduzione persistente e attiva, mantieni i video musicali a 1x cosi le canzoni non vengono accelerate"
+  },
+  "feature_musicVideoSpeedLock_name": {
+    "message": "Blocca velocita 1x sui video musicali"
+  },
+  "feature_newPlayerUiRestore_desc": {
+    "message": "Nasconde gli elementi del nuovo aspetto Player di YouTube (pannello overflow moderno Delhi, superfici azioni pill). Ripristina una barra di avanzamento piu compatta e controlli in stile originale."
+  },
+  "feature_newPlayerUiRestore_name": {
+    "message": "Ripristina aspetto Player classico"
+  },
+  "feature_noAmbientMode_desc": {
+    "message": "Disattiva l'effetto di sfondo luminoso che segue i colori del video"
+  },
+  "feature_noAmbientMode_name": {
+    "message": "Disattiva modalita ambiente"
+  },
+  "feature_noFrostedGlass_desc": {
+    "message": "Rimuovi gli effetti sfocatura dagli elementi dell'interfaccia"
+  },
+  "feature_noFrostedGlass_name": {
+    "message": "Disattiva vetro smerigliato"
+  },
+  "feature_notInterestedButton_desc": {
+    "message": "Aggiungi un pulsante X sulle miniature dei video per eliminare rapidamente i video tramite l'API di feedback di YouTube"
+  },
+  "feature_notInterestedButton_name": {
+    "message": "\"Non mi interessa\" sulle miniature"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "Mostra un toast una tantum quando YouTube seleziona automaticamente una traccia audio doppiata dall'AI (es. un video coreano doppiato in inglese). Puoi passare manualmente alla traccia originale nelle impostazioni del player."
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "Notifica audio doppiato dall'AI"
+  },
+  "feature_nyanCatProgressBar_desc": {
+    "message": "Sostituisci la barra di avanzamento video con un'animazione Nyan Cat"
+  },
+  "feature_nyanCatProgressBar_name": {
+    "message": "Barra di avanzamento Nyan Cat"
+  },
+  "feature_oledTheme_desc": {
+    "message": "Sfondi nero puro OLED (#000) tramite i token --yt-sys-color-baseline. Sopravvive ai cambi tema nativi di YouTube perche modifichiamo i token stessi, non le classi delle superfici."
+  },
+  "feature_oledTheme_name": {
+    "message": "Tema OLED"
+  },
+  "feature_openInAlternativeFrontend_desc": {
+    "message": "Aggiunge un pulsante accanto al player per aprire il video corrente nel frontend alternativo configurato (Invidious / Piped / FreeTube). L'istanza predefinita e yewtu.be; cambiala tramite l'impostazione alternativeFrontendInstance."
+  },
+  "feature_openInAlternativeFrontend_name": {
+    "message": "Apri nel frontend alternativo"
+  },
+  "feature_openInNewTab_desc": {
+    "message": "Apri i link video nella pagina home/iscrizioni in una nuova scheda invece di navigare via"
+  },
+  "feature_openInNewTab_name": {
+    "message": "Apri video in una nuova scheda"
+  },
+  "feature_pauseOtherTabs_desc": {
+    "message": "Quando un video inizia la riproduzione, metti in pausa YouTube in tutte le altre schede"
+  },
+  "feature_pauseOtherTabs_name": {
+    "message": "Pausa altre schede alla riproduzione"
+  },
+  "feature_pcHide_autoplay_desc": {
+    "message": "Nascondi il toggle riproduzione automatica dal player"
+  },
+  "feature_pcHide_autoplay_name": {
+    "message": "Toggle riproduzione automatica"
+  },
+  "feature_pcHide_captions_desc": {
+    "message": "Nascondi la sovrapposizione sottotitoli sul video"
+  },
+  "feature_pcHide_captions_name": {
+    "message": "Visualizzazione sottotitoli"
+  },
+  "feature_pcHide_fullscreen_desc": {
+    "message": "Nascondi il pulsante schermo intero dal player"
+  },
+  "feature_pcHide_fullscreen_name": {
+    "message": "Pulsante schermo intero"
+  },
+  "feature_pcHide_miniplayer_desc": {
+    "message": "Nascondi il pulsante miniplayer dal player"
+  },
+  "feature_pcHide_miniplayer_name": {
+    "message": "Pulsante miniplayer"
+  },
+  "feature_pcHide_next_desc": {
+    "message": "Nascondi il pulsante video successivo dal player"
+  },
+  "feature_pcHide_next_name": {
+    "message": "Pulsante video successivo"
+  },
+  "feature_pcHide_pip_desc": {
+    "message": "Nascondi il pulsante PiP dal player"
+  },
+  "feature_pcHide_pip_name": {
+    "message": "Picture-in-Picture"
+  },
+  "feature_pcHide_settings_desc": {
+    "message": "Nascondi l'ingranaggio impostazioni dai controlli del player"
+  },
+  "feature_pcHide_settings_name": {
+    "message": "Ingranaggio impostazioni"
+  },
+  "feature_pcHide_subtitles_desc": {
+    "message": "Nascondi il pulsante sottotitoli dal player"
+  },
+  "feature_pcHide_subtitles_name": {
+    "message": "Pulsante sottotitoli"
+  },
+  "feature_pcHide_theater_desc": {
+    "message": "Nascondi il pulsante modalita Theater dal player"
+  },
+  "feature_pcHide_theater_name": {
+    "message": "Pulsante modalita Theater"
+  },
+  "feature_pcHide_ytLogo_desc": {
+    "message": "Nascondi il pulsante brand nativo dai controlli del player"
+  },
+  "feature_pcHide_ytLogo_name": {
+    "message": "Pulsante brand nativo"
+  },
+  "feature_perChannelIntroOutro_desc": {
+    "message": "Salta i primi N e gli ultimi M secondi di ogni video su un dato canale. Imposta gli offset per canale dalla pagina di visione (Strumenti -> Imposta Intro/Outro). Memorizzato in perChannelIntroOutroData."
+  },
+  "feature_perChannelIntroOutro_name": {
+    "message": "Salto intro/outro per canale"
+  },
+  "feature_perChannelSpeed_desc": {
+    "message": "Ricorda e applica automaticamente la velocita di riproduzione preferita per ogni canale"
+  },
+  "feature_perChannelSpeed_name": {
+    "message": "Memoria velocita per canale"
+  },
+  "feature_persistentSpeed_desc": {
+    "message": "Ricorda la velocita di riproduzione preferita globalmente e applicala automaticamente a ogni video"
+  },
+  "feature_persistentSpeed_name": {
+    "message": "Velocita di riproduzione persistente"
+  },
+  "feature_pipButton_desc": {
+    "message": "Aggiunge un pulsante PiP con un clic ai controlli del player per il Picture-in-Picture nativo del browser"
+  },
+  "feature_pipButton_name": {
+    "message": "Pulsante Picture-in-Picture"
+  },
+  "feature_playbackSpeedOSD_desc": {
+    "message": "Mostra la sovrapposizione velocita sul Player video (come VLC) invece del toast nell'angolo"
+  },
+  "feature_playbackSpeedOSD_name": {
+    "message": "OSD cambio velocita"
+  },
+  "feature_playbackStatsOverlay_desc": {
+    "message": "Mostra codec video, risoluzione, bitrate e conteggio frame persi come Overlay attivabile"
+  },
+  "feature_playbackStatsOverlay_name": {
+    "message": "Overlay statistiche riproduzione"
+  },
+  "feature_playlistEnhancer_desc": {
+    "message": "Aggiunge strumenti per mescolare, copiare e nascondere duplicati nei pannelli Playlist"
+  },
+  "feature_playlistEnhancer_name": {
+    "message": "Potenziatore Playlist"
+  },
+  "feature_playlistQuickRemove_desc": {
+    "message": "Mostra un'icona cestino su ogni elemento delle Playlist che possiedi per la rimozione con un clic"
+  },
+  "feature_playlistQuickRemove_name": {
+    "message": "Overlay rimozione rapida Playlist"
+  },
+  "feature_playlistSearch_desc": {
+    "message": "Aggiunge un campo di ricerca sopra i pannelli Playlist per filtrare gli elementi per titolo"
+  },
+  "feature_playlistSearch_name": {
+    "message": "Ricerca Playlist"
+  },
+  "feature_popOutPlayer_desc": {
+    "message": "Stacca il video in una finestra Picture-in-Picture mobile ridimensionabile con controlli di trasporto"
+  },
+  "feature_popOutPlayer_name": {
+    "message": "Player esterno"
+  },
+  "feature_preciseViewCounts_desc": {
+    "message": "Mostra i conteggi visualizzazioni completi (1.234.567) invece di troncati (1,2 Mln)"
+  },
+  "feature_preciseViewCounts_name": {
+    "message": "Conteggi visualizzazioni precisi"
+  },
+  "feature_preloadComments_desc": {
+    "message": "Carica in anticipo la sezione commenti cosi e pronta quando scorri in basso"
+  },
+  "feature_preloadComments_name": {
+    "message": "Precaricamento commenti"
+  },
+  "feature_premiumLiveChat_desc": {
+    "message": "Migliora la chat live con un'intestazione raffinata, righe messaggi elevate e un compositore premium."
+  },
+  "feature_premiumLiveChat_name": {
+    "message": "Chat live premium"
+  },
+  "feature_presetPowerUser_desc": {
+    "message": "Massima densita di funzionalita: statistiche riproduzione, velocita persistente, controllo velocita fine, ripresa riproduzione, barra mini player, modalita concentrazione, ciclo A-B. Disattiva per ripristinare i valori precedenti."
+  },
+  "feature_presetPowerUser_name": {
+    "message": "Preset utente avanzato"
+  },
+  "feature_presetPrivacy_desc": {
+    "message": "Pacchetto incentrato sulla privacy: URL di condivisione puliti, nascondi chip tracciamento, blocca scorrimento infinito, disattiva navigazione SPA. Disattiva per ripristinare i valori precedenti."
+  },
+  "feature_presetPrivacy_name": {
+    "message": "Preset privacy"
+  },
+  "feature_presetResearcher_desc": {
+    "message": "Pacchetto ricerca/studio: visualizzatore trascrizioni, segnalibri con timestamp, tracker tempo di visione, riepilogo AI, ricerca commenti. Disattiva per ripristinare i valori precedenti."
+  },
+  "feature_presetResearcher_name": {
+    "message": "Preset ricercatore"
+  },
+  "feature_preventAutoplay_desc": {
+    "message": "Impedisci la riproduzione automatica dei video al caricamento della pagina"
+  },
+  "feature_preventAutoplay_name": {
+    "message": "Impedisci riproduzione automatica"
+  },
+  "feature_qualityProfileMatrix_desc": {
+    "message": "Imposta qualita predefinite diverse per i contesti normale / Theater / schermo intero / background / incorporato. Il mondo ISOLATED rileva il contesto e scrive data-ytkit-quality-context su <html>; il bridge del mondo MAIN riapplica la qualita corrispondente tramite movie_player.setPlaybackQualityRange()."
+  },
+  "feature_qualityProfileMatrix_name": {
+    "message": "Qualita per contesto"
+  },
+  "feature_quickLinkEditor_desc": {
+    "message": "Personalizza il menu del launcher Astra. Un link per riga: Etichetta | URL"
+  },
+  "feature_quickLinkEditor_name": {
+    "message": "Modifica link launcher"
+  },
+  "feature_quickLinkMenu_desc": {
+    "message": "Aggiunge un menu compatto di link rapidi nel masthead con link personalizzabili"
+  },
+  "feature_quickLinkMenu_name": {
+    "message": "Link rapidi"
+  },
+  "feature_reactionSpammer_desc": {
+    "message": "Seleziona le reazioni della chat live e inviale in un ciclo randomizzato."
+  },
+  "feature_reactionSpammer_name": {
+    "message": "Spammer reazioni"
+  },
+  "feature_rectangularizeYouTube_desc": {
+    "message": "Rimuove gli sfondi pill / stadio / completamente arrotondati di YouTube. Qualsiasi sfondo con border-radius > 12px viene limitato a 8px. Avatar e anelli di avanzamento restano circolari."
+  },
+  "feature_rectangularizeYouTube_name": {
+    "message": "Rettangolarizza interfaccia"
+  },
+  "feature_redditComments_desc": {
+    "message": "Trova le discussioni Reddit che menzionano il video corrente (pulsante nella barra laterale secondaria)"
+  },
+  "feature_redditComments_name": {
+    "message": "Commenti Reddit"
+  },
+  "feature_redirectHomeToSubs_desc": {
+    "message": "Reindirizza automaticamente la homepage di YouTube al tuo feed iscrizioni"
+  },
+  "feature_redirectHomeToSubs_name": {
+    "message": "Reindirizza home alle iscrizioni"
+  },
+  "feature_redirectShorts_desc": {
+    "message": "Apri gli Shorts nel Player video standard"
+  },
+  "feature_redirectShorts_name": {
+    "message": "Reindirizza Shorts"
+  },
+  "feature_redirectToVideosTab_desc": {
+    "message": "Apri le pagine canale direttamente sulla scheda Video"
+  },
+  "feature_redirectToVideosTab_name": {
+    "message": "Canali -> scheda Video"
+  },
+  "feature_reducedMotion_desc": {
+    "message": "Forza ogni animazione, transizione e comportamento di scorrimento iniettato da Astra a essere quasi istantaneo. Rispetta automaticamente l'impostazione prefers-reduced-motion del sistema operativo; questo toggle aggiunge un override incondizionato."
+  },
+  "feature_reducedMotion_name": {
+    "message": "Movimento ridotto (forte)"
+  },
+  "feature_remainingTimeDisplay_desc": {
+    "message": "Mostra il tempo rimanente accanto al tempo corrente nel player, regolato per la velocita di riproduzione"
+  },
+  "feature_remainingTimeDisplay_name": {
+    "message": "Visualizzazione tempo rimanente"
+  },
+  "feature_rememberVolume_desc": {
+    "message": "Mantieni il livello del volume tra video e sessioni"
+  },
+  "feature_rememberVolume_name": {
+    "message": "Ricorda volume"
+  },
+  "feature_removeAllShorts_desc": {
+    "message": "Nascondi tutti i video Shorts dai feed e dai suggerimenti"
+  },
+  "feature_removeAllShorts_name": {
+    "message": "Rimuovi Shorts"
+  },
+  "feature_researchSpacedReview_desc": {
+    "message": "Esporta i dati della modalita studio/lavoro in Markdown o CSV: totali tempo di visione, stato modalita concentrazione, stato benessere digitale e segnalibri con timestamp con link profondi."
+  },
+  "feature_researchSpacedReview_name": {
+    "message": "Esportazione studio/lavoro"
+  },
+  "feature_researchTranscriptIndex_desc": {
+    "message": "Indicizza la trascrizione di ogni video che apri in un IndexedDB locale. Aggiunge un pannello globale \"Cerca trascrizioni\" accessibile dal popup o tramite window.__ytkitSearchTranscripts(query). L'indice puo essere cancellato dalle impostazioni; nessuna telemetria."
+  },
+  "feature_researchTranscriptIndex_name": {
+    "message": "Indice di ricerca trascrizioni"
+  },
+  "feature_researchTranscriptSearchPanel_desc": {
+    "message": "Aggiunge un pulsante \"Cerca trascrizioni\" nella pagina di visione che apre un'interfaccia di ricerca sull'indice IndexedDB locale delle trascrizioni. Richiede l'attivazione dell'indice di ricerca trascrizioni. Disattivato per impostazione predefinita."
+  },
+  "feature_researchTranscriptSearchPanel_name": {
+    "message": "Pannello ricerca trascrizioni"
+  },
+  "feature_restoreNativeYouTubeUi_desc": {
+    "message": "Mostra gli avatar canale/commenti e le sezioni del feed home che Astra Deck nasconde per impostazione predefinita."
+  },
+  "feature_restoreNativeYouTubeUi_name": {
+    "message": "Ripristina interfaccia nativa YouTube"
+  },
+  "feature_resumePlayback_desc": {
+    "message": "Ricorda dove hai interrotto la visione e riprendi automaticamente da quel punto"
+  },
+  "feature_resumePlayback_name": {
+    "message": "Riprendi posizione di riproduzione"
+  },
+  "feature_returnDislike_desc": {
+    "message": "Ripristina un conteggio stimato dei non mi piace tramite l'API pubblica Return YouTube Dislike. Salvato localmente in Cache; rispetta un budget di 100 richieste/min. Nessun cookie inviato. Disattivato per impostazione predefinita."
+  },
+  "feature_returnDislike_name": {
+    "message": "Return YouTube Dislike"
+  },
+  "feature_reversePlaylist_desc": {
+    "message": "Aggiunge un pulsante \"Inverti\" ai pannelli Playlist per riprodurre dal piu vecchio"
+  },
+  "feature_reversePlaylist_name": {
+    "message": "Pulsante inverti Playlist"
+  },
+  "feature_rssFeedLink_desc": {
+    "message": "Mostra un link al feed RSS nelle pagine canale per iscriversi tramite lettori RSS"
+  },
+  "feature_rssFeedLink_name": {
+    "message": "Link feed RSS"
+  },
+  "feature_sbCat_filler_desc": {
+    "message": "Contenuti tangenziali o di riempimento"
+  },
+  "feature_sbCat_filler_name": {
+    "message": "Salta riempimenti"
+  },
+  "feature_sbCat_interaction_desc": {
+    "message": "Promemoria \"Mi piace, iscriviti, commenta\""
+  },
+  "feature_sbCat_interaction_name": {
+    "message": "Salta promemoria interazione"
+  },
+  "feature_sbCat_intro_desc": {
+    "message": "Animazioni di introduzione e branding"
+  },
+  "feature_sbCat_intro_name": {
+    "message": "Salta introduzioni"
+  },
+  "feature_sbCat_music_offtopic_desc": {
+    "message": "Sezioni non musicali nei video musicali"
+  },
+  "feature_sbCat_music_offtopic_name": {
+    "message": "Salta non musicale"
+  },
+  "feature_sbCat_outro_desc": {
+    "message": "Schede finali e sequenze di chiusura"
+  },
+  "feature_sbCat_outro_name": {
+    "message": "Salta chiusure"
+  },
+  "feature_sbCat_poi_highlight_desc": {
+    "message": "Salta al momento saliente/punto di interesse (disattivato per impostazione predefinita)"
+  },
+  "feature_sbCat_poi_highlight_name": {
+    "message": "Evidenzia punto di interesse"
+  },
+  "feature_sbCat_preview_desc": {
+    "message": "Anteprima o riepilogo del contenuto in arrivo"
+  },
+  "feature_sbCat_preview_name": {
+    "message": "Salta anteprime"
+  },
+  "feature_sbCat_selfpromo_desc": {
+    "message": "Creatore che promuove i propri prodotti o canali"
+  },
+  "feature_sbCat_selfpromo_name": {
+    "message": "Salta autopromozione"
+  },
+  "feature_sbCat_sponsor_desc": {
+    "message": "Promozioni a pagamento e segmenti di sponsorizzazione"
+  },
+  "feature_sbCat_sponsor_name": {
+    "message": "Salta sponsor"
+  },
+  "feature_sbPerChannelProfiles_desc": {
+    "message": "Sovrascrivi quali categorie SponsorBlock vengono saltate per ogni singolo canale"
+  },
+  "feature_sbPerChannelProfiles_name": {
+    "message": "Profili SponsorBlock per canale"
+  },
+  "feature_scrollToPlayer_desc": {
+    "message": "Scorri automaticamente all'inizio della pagina quando navighi verso un nuovo video"
+  },
+  "feature_scrollToPlayer_name": {
+    "message": "Scorri al Player alla navigazione"
+  },
+  "feature_scrollWheelSpeed_desc": {
+    "message": "Regola la velocita di riproduzione scorrendo la rotellina del mouse sul Player video"
+  },
+  "feature_scrollWheelSpeed_name": {
+    "message": "Velocita con rotellina"
+  },
+  "feature_searchFilterDefaults_desc": {
+    "message": "Applica automaticamente un ordine predefinito (data di caricamento, numero visualizzazioni o valutazione) ai risultati di ricerca YouTube"
+  },
+  "feature_searchFilterDefaults_name": {
+    "message": "Filtri ricerca predefiniti"
+  },
+  "feature_selectorHealthPanel_desc": {
+    "message": "Verifica i segnali di deriva dei selettori in tempo reale ed esporta un rapporto di salute JSON per aggiornare le fixture."
+  },
+  "feature_selectorHealthPanel_name": {
+    "message": "Salute selettori"
+  },
+  "feature_settingsProfiles_desc": {
+    "message": "Salva, carica, cambia, importa ed esporta configurazioni di impostazioni con nome (es. Gaming / Lavoro / Musica). I controlli appaiono in cima al pannello impostazioni quando attivato."
+  },
+  "feature_settingsProfiles_name": {
+    "message": "Profili impostazioni"
+  },
+  "feature_shareMenuCleaner_desc": {
+    "message": "Rimuovi i pulsanti social media dalla finestra di condivisione, lasciando solo l'opzione copia URL"
+  },
+  "feature_shareMenuCleaner_name": {
+    "message": "Menu condivisione pulito"
+  },
+  "feature_shortsAsRegularVideo_desc": {
+    "message": "Aggiungi controlli di riproduzione nativi del browser e scorrimento agli Shorts di YouTube"
+  },
+  "feature_shortsAsRegularVideo_name": {
+    "message": "Controlli Player Shorts"
+  },
+  "feature_showChannelVideoCount_desc": {
+    "message": "Mostra il conteggio totale dei video caricati accanto al nome del canale nelle pagine di visione"
+  },
+  "feature_showChannelVideoCount_name": {
+    "message": "Mostra conteggio video canale"
+  },
+  "feature_showLocalDownloadButton_desc": {
+    "message": "Aggiunge un pulsante opzioni download yt-dlp nelle pagine di visione"
+  },
+  "feature_showLocalDownloadButton_name": {
+    "message": "Pulsante Download"
+  },
+  "feature_showPlaylistDuration_desc": {
+    "message": "Mostra la durata totale della Playlist e la stima regolata per la velocita accanto all'intestazione della Playlist"
+  },
+  "feature_showPlaylistDuration_name": {
+    "message": "Mostra durata Playlist"
+  },
+  "feature_showStatisticsDashboard_desc": {
+    "message": "Monitora i video visti, il tempo su YouTube e i video nascosti"
+  },
+  "feature_showStatisticsDashboard_name": {
+    "message": "Pannello statistiche"
+  },
+  "feature_showTimeInTabTitle_desc": {
+    "message": "Aggiungi il tempo di riproduzione corrente [5:23] al titolo della scheda del browser"
+  },
+  "feature_showTimeInTabTitle_name": {
+    "message": "Mostra tempo nel titolo scheda"
+  },
+  "feature_sleepTimer_desc": {
+    "message": "Metti in pausa la riproduzione dopo un numero scelto di minuti. Il chip conto alla rovescia del player ti permette di annullare o aggiungere 5 minuti."
+  },
+  "feature_sleepTimer_name": {
+    "message": "Timer spegnimento"
+  },
+  "feature_sortCommentsNewest_desc": {
+    "message": "Cambia automaticamente l'ordinamento dei commenti a \"Piu recenti\" su ogni video"
+  },
+  "feature_sortCommentsNewest_name": {
+    "message": "Ordina commenti per piu recenti"
+  },
+  "feature_speedIndicatorOverlay_desc": {
+    "message": "Mostra la velocita di riproduzione corrente come piccola sovrapposizione sul video quando non e a 1x"
+  },
+  "feature_speedIndicatorOverlay_name": {
+    "message": "Overlay indicatore velocita"
+  },
+  "feature_speedStep_desc": {
+    "message": "Di quanto cambiare la velocita per ogni scatto della rotellina"
+  },
+  "feature_speedStep_name": {
+    "message": "Incremento velocita"
+  },
+  "feature_sponsorBlock_desc": {
+    "message": "Salta automaticamente i segmenti sponsorizzati, le introduzioni, le chiusure e altre sezioni non relative al contenuto usando dati crowdsourced"
+  },
+  "feature_sponsorBlock_name": {
+    "message": "SponsorBlock"
+  },
+  "feature_squareAvatars_desc": {
+    "message": "Rendi gli avatar dei canali quadrati invece che rotondi"
+  },
+  "feature_squareAvatars_name": {
+    "message": "Avatar quadrati"
+  },
+  "feature_squareSearchBar_desc": {
+    "message": "Rimuovi gli angoli arrotondati dalla barra di ricerca"
+  },
+  "feature_squareSearchBar_name": {
+    "message": "Barra di ricerca quadrata"
+  },
+  "feature_stickyChat_desc": {
+    "message": "Mantieni il pannello della chat live fissato in cima alla barra laterale durante lo scorrimento"
+  },
+  "feature_stickyChat_name": {
+    "message": "Chat live fissa"
+  },
+  "feature_stickyVideo_desc": {
+    "message": "Video a schermo intero nelle pagine di visione. Scorri in basso per visualizzare i commenti affiancati. Scorri di nuovo in alto per tornare a schermo intero."
+  },
+  "feature_stickyVideo_name": {
+    "message": "Theater Split"
+  },
+  "feature_storageQuotaLRU_desc": {
+    "message": "Limita con LRU le impostazioni in crescita (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) per prevenire l'esaurimento della quota"
+  },
+  "feature_storageQuotaLRU_name": {
+    "message": "Gestione quota archiviazione"
+  },
+  "feature_styledFilterChips_desc": {
+    "message": "Chip filtro compatti e dall'aspetto nativo nella home e nelle iscrizioni"
+  },
+  "feature_styledFilterChips_name": {
+    "message": "Chip filtro stilizzati"
+  },
+  "feature_subscriptionGroups_desc": {
+    "message": "Gruppi locali tipo PocketTube per il feed iscrizioni. Crea gruppi con nome, trascina i canali, ordina per data/durata/non visti/nuovi dall'ultima visita. I dati dei gruppi risiedono in subscriptionGroupData (solo locale); usa Esporta per fare il backup."
+  },
+  "feature_subscriptionGroups_name": {
+    "message": "Gruppi iscrizioni"
+  },
+  "feature_subscriptionsGrid_desc": {
+    "message": "Usa un layout a griglia piu denso nella pagina iscrizioni"
+  },
+  "feature_subscriptionsGrid_name": {
+    "message": "Griglia iscrizioni"
+  },
+  "feature_subtitleDownload_desc": {
+    "message": "Download SRT con un clic della traccia sottotitoli attiva -- pulsante autonomo nel player, nessuna barra laterale richiesta"
+  },
+  "feature_subtitleDownload_name": {
+    "message": "Download sottotitoli (SRT)"
+  },
+  "feature_subtitleStyling_desc": {
+    "message": "Sovrascrivi l'aspetto dei sottotitoli YouTube -- dimensione/famiglia/colore font, sfondo, posizione, ombra"
+  },
+  "feature_subtitleStyling_name": {
+    "message": "Stile sottotitoli"
+  },
+  "feature_theaterAutoScroll_desc": {
+    "message": "Scorri il video completamente in vista quando si attiva la modalita Theater"
+  },
+  "feature_theaterAutoScroll_name": {
+    "message": "Scorrimento automatico Theater"
+  },
+  "feature_themeAccentColor_desc": {
+    "message": "Colore di accento personalizzato per evidenziazioni, barra di avanzamento e elementi interfaccia attivi"
+  },
+  "feature_themeAccentColor_name": {
+    "message": "Colore di accento"
+  },
+  "feature_thinScrollbar_desc": {
+    "message": "Usa una barra di scorrimento sottile e discreta"
+  },
+  "feature_thinScrollbar_name": {
+    "message": "Barra di scorrimento sottile"
+  },
+  "feature_thumbnailPreviewSize_desc": {
+    "message": "Aumenta la dimensione delle anteprime Thumbnail al passaggio del mouse per una visualizzazione piu facile su schermi grandi"
+  },
+  "feature_thumbnailPreviewSize_name": {
+    "message": "Anteprime Thumbnail grandi"
+  },
+  "feature_thumbnailQualityUpgrade_desc": {
+    "message": "Aggiorna le Thumbnail dei video alla massima risoluzione quando disponibile"
+  },
+  "feature_thumbnailQualityUpgrade_name": {
+    "message": "Thumbnail HD"
+  },
+  "feature_timestampBookmarks_desc": {
+    "message": "Segna i momenti nei video con note personalizzate. Clicca un segnalibro per saltare al punto. Persistente tra le sessioni."
+  },
+  "feature_timestampBookmarks_name": {
+    "message": "Segnalibri con timestamp"
+  },
+  "feature_titleCaseTransform_desc": {
+    "message": "Sostituisci i titoli MAIUSCOLI acchiappa-clic di YouTube con uno stile di capitalizzazione a tua scelta"
+  },
+  "feature_titleCaseTransform_name": {
+    "message": "Trasforma maiuscole/minuscole titolo video"
+  },
+  "feature_titleNormalization_desc": {
+    "message": "Converti i titoli TUTTO MAIUSCOLO in Stile Titolo. Riduce il clickbait senza cambiare il significato."
+  },
+  "feature_titleNormalization_name": {
+    "message": "Normalizza titoli clickbait"
+  },
+  "feature_tokenThemeBridge_desc": {
+    "message": "Trasferisce il themeAccentColor dell'utente nei token nativi --yt-sys-color-* di YouTube cosi Badge nativi, stati hover e pulsanti primari seguono l'accento Astra senza ridisegnare ogni superficie."
+  },
+  "feature_tokenThemeBridge_name": {
+    "message": "Bridge tema token nativi"
+  },
+  "feature_transcriptAiHandoff_desc": {
+    "message": "Aggiunge un pulsante nel player che copia la trascrizione e apre lo strumento AI scelto con un prompt di riepilogo precompilato"
+  },
+  "feature_transcriptAiHandoff_name": {
+    "message": "Trascrizione -> AI con un clic"
+  },
+  "feature_transcriptViewer_desc": {
+    "message": "Aggiunge un pannello trascrizione cliccabile nella barra laterale con navigazione per timestamp ed esportazione (txt/srt/appunti/prompt LLM)"
+  },
+  "feature_transcriptViewer_name": {
+    "message": "Barra laterale trascrizione"
+  },
+  "feature_uiStyleManager_desc": {
+    "message": "Scegli elementi interfaccia arrotondati o quadrati"
+  },
+  "feature_uiStyleManager_name": {
+    "message": "Stile interfaccia"
+  },
+  "feature_videoAgeColors_desc": {
+    "message": "Bordi Thumbnail con codice colore per eta di caricamento -- fresco (verde), settimana (blu), mese (giallo), anno (arancione), antico (rosso)"
+  },
+  "feature_videoAgeColors_name": {
+    "message": "Codifica colore eta video"
+  },
+  "feature_videoContextMenu_desc": {
+    "message": "Clic destro sul Player video per le azioni download yt-dlp"
+  },
+  "feature_videoContextMenu_name": {
+    "message": "Menu download Player"
+  },
+  "feature_videoFlip_desc": {
+    "message": "Specchia il video orizzontalmente o verticalmente -- utile per tutorial di danza speculari, leggibilita del testo o registrazioni capovolte"
+  },
+  "feature_videoFlip_name": {
+    "message": "Capovolgi video"
+  },
+  "feature_videoLoopButton_desc": {
+    "message": "Aggiungi un pulsante toggle loop ai controlli del player per la ripetizione video con un clic"
+  },
+  "feature_videoLoopButton_name": {
+    "message": "Pulsante loop video"
+  },
+  "feature_videoNotes_desc": {
+    "message": "Mantieni una nota locale per il video corrente, esporta l'archivio delle note e limita il deposito ai 1000 video modificati piu di recente."
+  },
+  "feature_videoNotes_name": {
+    "message": "Note per video"
+  },
+  "feature_videoResolutionBadge_desc": {
+    "message": "Mostra un Badge 4K, HD o SD sulle miniature dei video in base alla qualita disponibile"
+  },
+  "feature_videoResolutionBadge_name": {
+    "message": "Badge risoluzione sulle miniature"
+  },
+  "feature_videoRotation_desc": {
+    "message": "Ruota il video di 90/180/270 gradi tramite trasformazione CSS -- utile per registrazioni da telefono girate di lato"
+  },
+  "feature_videoRotation_name": {
+    "message": "Rotazione video"
+  },
+  "feature_videoScreenshot_desc": {
+    "message": "Cattura il fotogramma video corrente come immagine PNG -- copia negli appunti e scarica"
+  },
+  "feature_videoScreenshot_name": {
+    "message": "Screenshot video"
+  },
+  "feature_videoVisualFilters_desc": {
+    "message": "Regola luminosita / contrasto / saturazione / tonalita / scala di grigi / seppia tramite filtro CSS sull'elemento video"
+  },
+  "feature_videoVisualFilters_name": {
+    "message": "Filtri visivi video"
+  },
+  "feature_videoZoom_desc": {
+    "message": "Tieni premuto Ctrl e scorri sul video per ingrandire, poi trascina per spostarti"
+  },
+  "feature_videoZoom_name": {
+    "message": "Zoom e panoramica video"
+  },
+  "feature_videosPerRow_desc": {
+    "message": "Imposta quante miniature video per riga (0 = dinamico in base alla larghezza della finestra)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "Video per riga"
+  },
+  "feature_vlcMpvHandoff_desc": {
+    "message": "Solo profilo GitHub completo. Aggiunge pulsanti accanto al player che attivano URL di protocollo ytvlc:// o ytmpv://. Il gestore di protocollo deve essere registrato sul tuo sistema operativo -- Astra Deck non esegue mai binari direttamente. Disattivato per impostazione predefinita."
+  },
+  "feature_vlcMpvHandoff_name": {
+    "message": "Trasferimento Stream VLC / MPV"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "Moltiplicatore di guadagno per lamplificazione del volume (1.0 = unita, max 10.0)"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "Livello di amplificazione volume"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "Amplifica laudio oltre il 100% tramite un nodo di guadagno Web Audio (fino a 10x). Utile per registrazioni silenziose."
+  },
+  "feature_volumeBoost_name": {
+    "message": "Amplificazione volume"
+  },
+  "feature_volumeWheelMode_desc": {
+    "message": "Scorri la rotellina del mouse sul player per cambiare il volume in passi del 5%. Un chip indicatore mobile mostra il nuovo livello per 1,2 s; nessuna scorciatoia da tastiera aggiunta."
+  },
+  "feature_volumeWheelMode_name": {
+    "message": "Rotellina volume"
+  },
+  "feature_watchHistoryAnalytics_desc": {
+    "message": "Pannello modale che visualizza il tempo di visione YouTube degli ultimi 30 giorni come grafico a barre CSS (richiede Tracker tempo di visione)"
+  },
+  "feature_watchHistoryAnalytics_name": {
+    "message": "Analisi cronologia visione"
+  },
+  "feature_watchLaterCleanup_desc": {
+    "message": "Aggiunge un pulsante \"Rimuovi visti\" all'intestazione della Playlist Guarda dopo per la pulizia in blocco"
+  },
+  "feature_watchLaterCleanup_name": {
+    "message": "Pulsante pulizia Guarda dopo"
+  },
+  "feature_watchLaterQuickAdd_desc": {
+    "message": "Aggiunge un'icona orologio su ogni miniatura per salvare in Guarda dopo con un clic"
+  },
+  "feature_watchLaterQuickAdd_name": {
+    "message": "Pulsante rapido Guarda dopo"
+  },
+  "feature_watchPageRestyle_desc": {
+    "message": "Layout premium della pagina di visione per titolo, descrizione e metadati senza nascondere i controlli nativi"
+  },
+  "feature_watchPageRestyle_name": {
+    "message": "Restyle pagina di visione"
+  },
+  "feature_watchPageTabs_desc": {
+    "message": "Barra di schede orizzontale sopra l'area commenti/descrizione per cambiare rapidamente vista nella pagina di visione"
+  },
+  "feature_watchPageTabs_name": {
+    "message": "Schede pagina di visione"
+  },
+  "feature_watchProgress_desc": {
+    "message": "Mostra barre di avanzamento colorate sulle miniature dei video in base alla cronologia di visione (salvata localmente)"
+  },
+  "feature_watchProgress_name": {
+    "message": "Indicatori avanzamento visione"
+  },
+  "feature_watchTimeTracker_desc": {
+    "message": "Monitora il tempo di visione YouTube giornaliero/settimanale con un Widget statistiche nel pannello impostazioni"
+  },
+  "feature_watchTimeTracker_name": {
+    "message": "Tracker tempo di visione"
+  },
+  "feature_wheelSeek_desc": {
+    "message": "Scorri la rotellina del mouse sulla barra di avanzamento per cercare. Il passo predefinito e 5 s (configurabile tramite wheelSeekStepSec). Scorrere altrove sul player attiva comunque la rotellina volume se attiva; le due funzionalita non sono in conflitto."
+  },
+  "feature_wheelSeek_name": {
+    "message": "Ricerca con rotellina"
+  },
+  "feature_widenSearchBar_desc": {
+    "message": "Espandi la barra di ricerca per usare piu spazio disponibile"
+  },
+  "feature_widenSearchBar_name": {
+    "message": "Allarga barra di ricerca"
+  },
+  "feature_wpHide_askAISection_desc": {
+    "message": "Nascondi la sezione AI nella descrizione"
+  },
+  "feature_wpHide_askAISection_name": {
+    "message": "Sezione Chiedi all'AI"
+  },
+  "feature_wpHide_askButton_desc": {
+    "message": "Nascondi il pulsante Chiedi all'AI"
+  },
+  "feature_wpHide_askButton_name": {
+    "message": "Pulsante Chiedi"
+  },
+  "feature_wpHide_channelInfoCards_desc": {
+    "message": "Nascondi le schede info canale nella descrizione"
+  },
+  "feature_wpHide_channelInfoCards_name": {
+    "message": "Schede info canale"
+  },
+  "feature_wpHide_joinButton_desc": {
+    "message": "Nascondi il pulsante iscriviti/abbonamento"
+  },
+  "feature_wpHide_joinButton_name": {
+    "message": "Pulsante Iscriviti"
+  },
+  "feature_wpHide_moreActions_desc": {
+    "message": "Nascondi il pulsante menu altre azioni"
+  },
+  "feature_wpHide_moreActions_name": {
+    "message": "Altre azioni (...)"
+  },
+  "feature_wpHide_podcastSection_desc": {
+    "message": "Nascondi la sezione podcast/corso nella descrizione"
+  },
+  "feature_wpHide_podcastSection_name": {
+    "message": "Sezione podcast/corso"
+  },
+  "feature_wpHide_saveButton_desc": {
+    "message": "Nascondi il pulsante salva nella Playlist"
+  },
+  "feature_wpHide_saveButton_name": {
+    "message": "Pulsante Salva"
+  },
+  "feature_wpHide_transcriptSection_desc": {
+    "message": "Nascondi la sezione trascrizione nella descrizione"
+  },
+  "feature_wpHide_transcriptSection_name": {
+    "message": "Sezione trascrizione"
+  },
+  "feature_youtubeMusicCompat_desc": {
+    "message": "Applica il tema Astra Deck + OLED + funzionalita di densita su music.youtube.com. Le funzionalita specifiche del Player (download, RYD, SponsorBlock) mantengono il gating per pagina esistente."
+  },
+  "feature_youtubeMusicCompat_name": {
+    "message": "Compatibilita YouTube Music"
+  },
+  "feature_zenMode_desc": {
+    "message": "Attenua la pagina attorno al Player video per un'esperienza di visione concentrata"
+  },
+  "feature_zenMode_name": {
+    "message": "Modalita Zen"
+  },
   "filterTogglesLabel": {
     "message": "Filtra interruttori rapidi"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter — try risk:api or category:downloads"
+    "message": "Filtra -- prova risk:api o category:downloads"
   },
   "groupQuickControls": {
     "message": "Controlli rapidi"
@@ -260,71 +2225,11 @@
   "healthClearBtn": {
     "message": "Pulisci"
   },
-  "storageBannerTitle": {
-    "message": "Utilizzo archivio elevato"
-  },
-  "storageBannerSoftTpl": {
-    "message": "Archivio a {size} — ti avvicini al limite."
-  },
-  "storageBannerHardTpl": {
-    "message": "Archivio a {size} — considera Ripristina."
-  },
-  "storageBannerCorruptionTpl": {
-    "message": "Dati di archivio corrotti — Ripristina per recuperare."
-  },
-  "selectorHealthTitle": {
-    "message": "Salute selettori"
-  },
-  "selectorHealthTotalTpl": {
-    "message": "{count} superfici monitorate"
-  },
-  "selectorHealthEmpty": {
-    "message": "Nessuna superficie ancora campionata."
-  },
-  "selectorHealthCopyBtn": {
-    "message": "Copy report"
-  },
-  "selectorHealthCopyAria": {
-    "message": "Copy selector-health report to clipboard"
-  },
-  "selectorHealthCopyPending": {
-    "message": "Building report…"
-  },
-  "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
-  },
-  "selectorHealthCopyFail": {
-    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
-  },
-  "selectorHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
-  },
-  "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
-  },
-  "storageBannerReset": {
-    "message": "Reimposta"
-  },
-  "storageBannerResetAria": {
-    "message": "Ripristina tutti i dati locali"
-  },
   "healthCopyAria": {
     "message": "Copia dettagli diagnostici"
   },
   "healthCopyBtn": {
     "message": "Copia"
-  },
-  "healthSaveAria": {
-    "message": "Salva il registro diagnostico come JSON"
-  },
-  "healthSaveBtn": {
-    "message": "Salva"
-  },
-  "statusDiagSaved": {
-    "message": "Registro diagnostico salvato."
-  },
-  "statusDiagSaveFail": {
-    "message": "Impossibile salvare il registro"
   },
   "healthEventPlural": {
     "message": "eventi"
@@ -335,11 +2240,20 @@
   "healthFallbackPrefix": {
     "message": "Fallback TrustedTypes attivo"
   },
+  "healthSaveAria": {
+    "message": "Salva il registro diagnostico come JSON"
+  },
+  "healthSaveBtn": {
+    "message": "Salva"
+  },
   "healthTitle": {
     "message": "Diagnostica"
   },
   "importBtn": {
     "message": "Importa"
+  },
+  "languageAr": {
+    "message": "العربية (Arabo)"
   },
   "languageAuto": {
     "message": "Auto (predefinito del browser)"
@@ -351,10 +2265,10 @@
     "message": "Inglese"
   },
   "languageEs": {
-    "message": "Español (Spagnolo)"
+    "message": "Espanol (Spagnolo)"
   },
   "languageFr": {
-    "message": "Français (Francese)"
+    "message": "Francais (Francese)"
   },
   "languageIt": {
     "message": "Italiano"
@@ -366,7 +2280,7 @@
     "message": "한국어 (Coreano)"
   },
   "languagePtBr": {
-    "message": "Português (Portoghese brasiliano)"
+    "message": "Portugues (Portoghese brasiliano)"
   },
   "languageRu": {
     "message": "Русский (Russo)"
@@ -411,7 +2325,7 @@
     "message": "Pulisci ricerca"
   },
   "panelSearchPlaceholder": {
-    "message": "Cerca impostazioni…"
+    "message": "Cerca impostazioni..."
   },
   "panelSidebarAria": {
     "message": "Categorie impostazioni"
@@ -426,10 +2340,10 @@
     "message": "Scarica video"
   },
   "playerGearAriaTpl": {
-    "message": "Open … settings"
+    "message": "Apri impostazioni ..."
   },
   "playerGearTitleTpl": {
-    "message": "… Settings"
+    "message": "Impostazioni ..."
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -444,100 +2358,100 @@
     "message": "Riproduzione"
   },
   "qtGroup_Utilities": {
-    "message": "Utilità"
+    "message": "Utilita"
   },
   "qtGroup_Watch_Flow": {
     "message": "Flusso visione"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "Apri video nella vista Theater"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Auto teatro"
+    "message": "Auto Teatro"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "Riscalda il player per la visione notturna"
   },
   "qt_blueLightFilter_name": {
     "message": "Filtro luce blu"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "Rimuovi il tracciamento dai link condivisi"
   },
   "qt_cleanShareUrls_name": {
     "message": "URL puliti"
   },
   "qt_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "Filtra i commenti della pagina di visione inline"
   },
   "qt_commentSearch_name": {
     "message": "Ricerca commenti"
   },
   "qt_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "Sostituisci titoli e Thumbnail acchiappa-clic"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "Registra diagnostica locale dettagliata"
   },
   "qt_debugMode_name": {
-    "message": "Modalità debug"
+    "message": "Modalita debug"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "Monitora pause e visione giornaliera"
   },
   "qt_digitalWellbeing_name": {
     "message": "Benessere digitale"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "Impedisci l'avvio del video successivo"
   },
   "qt_disableAutoplayNext_name": {
     "message": "No riproduzione automatica"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "Ferma il caricamento infinito del feed"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "Limita scorrimento"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "Pulisci la barra laterale della pagina di visione"
   },
   "qt_hideRelatedVideos_name": {
     "message": "Nascondi correlati"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "Mantieni i controlli visibili durante lo scorrimento"
   },
   "qt_miniPlayerBar_name": {
-    "message": "Barra mini player"
+    "message": "Barra mini Player"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "Mantieni la velocita di riproduzione costante"
   },
   "qt_persistentSpeed_name": {
-    "message": "Velocità persistente"
+    "message": "Velocita persistente"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "Rimuovi le sezioni e i link Shorts"
   },
   "qt_removeAllShorts_name": {
     "message": "Nascondi Shorts"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "Salta i segmenti sponsor segnalati dalla community"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "Leggi, naviga ed esporta i sottotitoli"
   },
   "qt_transcriptViewer_name": {
-    "message": "Barra trascrizione"
+    "message": "Barra laterale trascrizione"
   },
   "quickTogglesAria": {
     "message": "Interruttori rapidi"
@@ -545,29 +2459,71 @@
   "quickTogglesEyebrow": {
     "message": "Interruttori rapidi"
   },
+  "reenableMediadlAria": {
+    "message": "Riattiva le richieste di installazione di Astra Downloader"
+  },
+  "reenableMediadlBtn": {
+    "message": "Attiva richieste Downloader"
+  },
   "resetBtn": {
     "message": "Reimposta"
   },
   "resultsAllAvailableTpl": {
-    "message": "… quick controls are available in this popup"
+    "message": "... controlli rapidi sono disponibili in questo popup"
   },
   "resultsMatchTpl": {
-    "message": "… of … … match this filter"
+    "message": "... di ... ... corrispondono a questo filtro"
   },
   "resultsMatching": {
     "message": "corrispondenti"
   },
+  "schemaOverviewCountTpl": {
+    "message": "{enabled}/{total} impostazioni attive in {categories} categorie"
+  },
+  "schemaOverviewEyebrow": {
+    "message": "Panoramica impostazioni"
+  },
+  "selectorHealthCopyAria": {
+    "message": "Copia il rapporto salute selettori negli appunti"
+  },
+  "selectorHealthCopyBtn": {
+    "message": "Copia rapporto"
+  },
+  "selectorHealthCopyDone": {
+    "message": "Copiato -- incolla in un issue GitHub."
+  },
+  "selectorHealthCopyFail": {
+    "message": "Scrittura appunti bloccata. Apri DevTools e chiama window.__ytkitDiagnostics.download()."
+  },
+  "selectorHealthCopyNeedYt": {
+    "message": "Apri una scheda YouTube per generare il rapporto."
+  },
+  "selectorHealthCopyNoSnap": {
+    "message": "Nessuno snapshot disponibile -- la pagina potrebbe essere ancora in caricamento."
+  },
+  "selectorHealthCopyPending": {
+    "message": "Generazione rapporto..."
+  },
+  "selectorHealthEmpty": {
+    "message": "Nessuna superficie ancora campionata."
+  },
+  "selectorHealthTitle": {
+    "message": "Salute selettori"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} superfici monitorate"
+  },
   "speedBtnAriaTpl": {
-    "message": "Default playback speed …. Click to change."
+    "message": "Velocita di riproduzione predefinita .... Clicca per cambiare."
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: … — applies to every video"
+    "message": "Velocita di riproduzione predefinita: ... -- si applica a ogni video"
   },
   "speedPopupAria": {
-    "message": "Velocità di riproduzione predefinita"
+    "message": "Velocita di riproduzione predefinita"
   },
   "speedPopupHeader": {
-    "message": "Velocità predefinita"
+    "message": "Velocita predefinita"
   },
   "speedPopupSub": {
     "message": "Si applica a tutti i video fino alla modifica."
@@ -591,37 +2547,7 @@
     "message": "Tutti i dati puliti."
   },
   "statusAllDataClearedUndo": {
-    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
-  },
-  "statusResetUndone": {
-    "message": "Reset undone — all data restored."
-  },
-  "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
-  },
-  "statusResetSnapshotFail": {
-    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
-  },
-  "statusResetUndoFail": {
-    "message": "Undo failed"
-  },
-  "undoResetBtn": {
-    "message": "Undo Reset"
-  },
-  "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
-  },
-  "reenableMediadlBtn": {
-    "message": "Enable Downloader Prompts"
-  },
-  "reenableMediadlAria": {
-    "message": "Re-enable Astra Downloader install prompts"
-  },
-  "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
-  },
-  "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+    "message": "Tutti i dati cancellati. Clicca Annulla ripristino per recuperare (fino alla chiusura del browser)."
   },
   "statusBackupExported": {
     "message": "Backup esportato."
@@ -630,7 +2556,7 @@
     "message": "Backup importato."
   },
   "statusClipboardUnavailable": {
-    "message": "Appunti non disponibili — vedi la console del browser."
+    "message": "Appunti non disponibili -- vedi la console del browser."
   },
   "statusDiagClearFail": {
     "message": "Impossibile pulire il registro"
@@ -641,11 +2567,23 @@
   "statusDiagCopied": {
     "message": "Diagnostica copiata negli appunti."
   },
+  "statusDiagSaveFail": {
+    "message": "Impossibile salvare il registro"
+  },
+  "statusDiagSaved": {
+    "message": "Registro diagnostico salvato."
+  },
   "statusExportFail": {
     "message": "Esportazione fallita"
   },
   "statusImportFail": {
     "message": "Importazione fallita"
+  },
+  "statusMediadlReenableFail": {
+    "message": "Impossibile riattivare le richieste Astra Downloader. Apri chrome://extensions e ricarica."
+  },
+  "statusMediadlReenabled": {
+    "message": "Richieste di installazione Astra Downloader riattivate -- ricarica una scheda YouTube per vederle."
   },
   "statusOpenWorkspaceFail": {
     "message": "Impossibile aprire l'area di lavoro completa. Riprova."
@@ -654,10 +2592,40 @@
     "message": "Impossibile caricare i controlli rapidi. Prova a riaprire il popup."
   },
   "statusResetFail": {
-    "message": "Reset fallito"
+    "message": "Ripristino fallito"
+  },
+  "statusResetSnapshotFail": {
+    "message": "Ripristino annullato -- impossibile creare uno snapshot di annullamento (dati troppo grandi per un ripristino recuperabile). Esporta prima un backup."
+  },
+  "statusResetUndoExpired": {
+    "message": "Annullamento non piu disponibile -- lo snapshot e scaduto con la sessione del browser."
+  },
+  "statusResetUndoFail": {
+    "message": "Annullamento fallito"
+  },
+  "statusResetUndone": {
+    "message": "Ripristino annullato -- tutti i dati recuperati."
   },
   "statusStorageReadFail": {
     "message": "Lettura archiviazione fallita"
+  },
+  "storageBannerCorruptionTpl": {
+    "message": "Dati di archivio corrotti -- Ripristina per recuperare."
+  },
+  "storageBannerHardTpl": {
+    "message": "Archivio a {size} -- considera Ripristina."
+  },
+  "storageBannerReset": {
+    "message": "Reimposta"
+  },
+  "storageBannerResetAria": {
+    "message": "Ripristina tutti i dati locali"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Archivio a {size} -- ti avvicini al limite."
+  },
+  "storageBannerTitle": {
+    "message": "Utilizzo archivio elevato"
   },
   "storageStatsAriaLabel": {
     "message": "Statistiche di archiviazione"
@@ -666,28 +2634,28 @@
     "message": "Comando di installazione di riserva copiato. Usalo solo se non puoi eseguire il file di setup scaricato."
   },
   "toastDlInProgress": {
-    "message": "Un download è già in corso."
+    "message": "Un download e gia in corso."
   },
   "toastDlInstallPrompt": {
-    "message": "Installa il downloader locale per abilitare i download."
+    "message": "Installa Astra Downloader per attivare i download."
   },
   "toastDlReady": {
-    "message": "Il downloader locale è pronto."
+    "message": "Astra Downloader e pronto."
   },
   "toastDlRequestFailed": {
-    "message": "Richiesta al downloader locale fallita."
+    "message": "Richiesta Astra Downloader fallita."
   },
   "toastDlRunning": {
-    "message": "Astra Downloader è in esecuzione!"
+    "message": "Astra Downloader e in esecuzione!"
   },
   "toastDlStarted": {
     "message": "Astra Downloader avviato!"
   },
   "toastDlStarting": {
-    "message": "Avvio di Astra Downloader…"
+    "message": "Avvio di Astra Downloader..."
   },
   "toastDlStopped": {
-    "message": "Downloader locale fermato. Riavvio…"
+    "message": "Astra Downloader si e fermato. Riavvio in corso..."
   },
   "toggleStateOff": {
     "message": "Disattivato"
@@ -702,1896 +2670,39 @@
     "message": "attivati"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update …. Try again."
+    "message": "Impossibile aggiornare .... Riprova."
+  },
+  "undoResetAria": {
+    "message": "Ripristina i dati dall'ultimo reset"
+  },
+  "undoResetBtn": {
+    "message": "Annulla ripristino"
   },
   "workspaceEyebrow": {
     "message": "Area impostazioni"
   },
   "workspaceSupport": {
-    "message": "Quick toggles save immediately and sync to YouTube."
+    "message": "Gli interruttori rapidi vengono salvati immediatamente e sincronizzati con YouTube."
   },
   "workspaceTitle": {
-    "message": "Controls and backups"
+    "message": "Controlli e backup"
   },
-  "dataFlowTitle": {
-    "message": "Data flow"
+  "feature_deArrowCasualMode_name": {
+    "message": "Modalità casual"
   },
-  "dataFlowNote": {
-    "message": "Active origins are highlighted. Disable the driving toggle to mute an origin entirely."
+  "feature_deArrowCasualMode_desc": {
+    "message": "Mantieni i titoli descrittivi invariati — sostituisci solo con alternative DeArrow inviate dalla comunità"
   },
-  "dataFlowSummaryTpl": {
-    "message": "{active}/{total} origins active"
+  "feature_presetFocus_name": {
+    "message": "Preset concentrazione"
   },
-  "dataFlowActive": {
-    "message": "active"
+  "feature_presetFocus_desc": {
+    "message": "Visione senza distrazioni: nasconde Shorts, video correlati, scroll infinito, notifiche e autoplay. Attiva modalità Zen e tracciamento del benessere digitale."
   },
-  "dataFlowInactive": {
-    "message": "idle"
+  "feature_audioPan_name": {
+    "message": "Bilanciamento audio"
   },
-  "dataFlowProfile": {
-    "message": "profile"
-  },
-  "dataFlowCreds": {
-    "message": "creds"
-  },
-  "dataFlowRisk": {
-    "message": "risk"
-  },
-  "dataFlowDriver": {
-    "message": "driver"
-  },
-  "schemaOverviewEyebrow": {
-    "message": "Settings overview"
-  },
-  "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} settings on across {categories} categories"
-  },
-  "feature_hideCreateButton_name": {
-    "message": "Hide Create Button"
-  },
-  "feature_hideCreateButton_desc": {
-    "message": "Remove the \"Create\" button from the header toolbar"
-  },
-  "feature_hideVoiceSearch_name": {
-    "message": "Hide Voice Search"
-  },
-  "feature_hideVoiceSearch_desc": {
-    "message": "Remove the microphone icon from the search bar"
-  },
-  "feature_logoToSubscriptions_name": {
-    "message": "Logo Click → Subscriptions"
-  },
-  "feature_logoToSubscriptions_desc": {
-    "message": "Point the native YouTube home mark to your subscriptions feed"
-  },
-  "feature_widenSearchBar_name": {
-    "message": "Widen Search Bar"
-  },
-  "feature_widenSearchBar_desc": {
-    "message": "Expand the search bar to use more available space"
-  },
-  "feature_subscriptionsGrid_name": {
-    "message": "Subscriptions Grid"
-  },
-  "feature_subscriptionsGrid_desc": {
-    "message": "Use a denser grid layout on the subscriptions page"
-  },
-  "feature_homepageGridAlign_name": {
-    "message": "Homepage Grid Align"
-  },
-  "feature_homepageGridAlign_desc": {
-    "message": "Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights"
-  },
-  "feature_styledFilterChips_name": {
-    "message": "Styled Filter Chips"
-  },
-  "feature_styledFilterChips_desc": {
-    "message": "Compact, native-feeling filter chips on home and subscriptions"
-  },
-  "feature_hideSidebar_name": {
-    "message": "Hide Sidebar"
-  },
-  "feature_hideSidebar_desc": {
-    "message": "Remove the left navigation sidebar completely"
-  },
-  "feature_uiStyleManager_name": {
-    "message": "UI Style"
-  },
-  "feature_uiStyleManager_desc": {
-    "message": "Choose rounded or square UI elements"
-  },
-  "feature_colorThemeManager_name": {
-    "message": "Color Theme"
-  },
-  "feature_colorThemeManager_desc": {
-    "message": "Apply a color palette across YouTube (dark mode only)"
-  },
-  "feature_noAmbientMode_name": {
-    "message": "Disable Ambient Mode"
-  },
-  "feature_noAmbientMode_desc": {
-    "message": "Turn off the glowing background effect that matches video colors"
-  },
-  "feature_compactLayout_name": {
-    "message": "Compact Layout"
-  },
-  "feature_compactLayout_desc": {
-    "message": "Reduce spacing and padding for a denser interface"
-  },
-  "feature_thinScrollbar_name": {
-    "message": "Thin Scrollbar"
-  },
-  "feature_thinScrollbar_desc": {
-    "message": "Use a slim, unobtrusive scrollbar"
-  },
-  "feature_watchPageRestyle_name": {
-    "message": "Watch Page Restyle"
-  },
-  "feature_watchPageRestyle_desc": {
-    "message": "Premium watch-page layout for title, description, and metadata without hiding native controls"
-  },
-  "feature_chatStyleComments_name": {
-    "message": "Studio Comments"
-  },
-  "feature_chatStyleComments_desc": {
-    "message": "Premium comment layout that preserves pinned comments, creator hearts, replies, and native actions"
-  },
-  "feature_removeAllShorts_name": {
-    "message": "Nascondi Shorts"
-  },
-  "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
-  },
-  "feature_redirectShorts_name": {
-    "message": "Redirect Shorts"
-  },
-  "feature_redirectShorts_desc": {
-    "message": "Open Shorts in the standard video player"
-  },
-  "feature_disablePlayOnHover_name": {
-    "message": "Disable Hover Preview"
-  },
-  "feature_disablePlayOnHover_desc": {
-    "message": "Stop videos from playing when hovering over thumbnails"
-  },
-  "feature_fullWidthSubscriptions_name": {
-    "message": "Full-Width Subscriptions"
-  },
-  "feature_fullWidthSubscriptions_desc": {
-    "message": "Expand the subscription grid to fill the page"
-  },
-  "feature_hideSubscriptionOptions_name": {
-    "message": "Hide Layout Options"
-  },
-  "feature_hideSubscriptionOptions_desc": {
-    "message": "Remove the \"Latest\" header and view toggles on subscriptions"
-  },
-  "feature_videosPerRow_name": {
-    "message": "Videos Per Row"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
-  },
-  "feature_hidePaidContentOverlay_name": {
-    "message": "Hide Promotion Badges"
-  },
-  "feature_hidePaidContentOverlay_desc": {
-    "message": "Remove \"Includes paid promotion\" overlays on thumbnails and watch pages"
-  },
-  "feature_hideInfoPanels_name": {
-    "message": "Hide Info Panels"
-  },
-  "feature_hideInfoPanels_desc": {
-    "message": "Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)"
-  },
-  "feature_redirectToVideosTab_name": {
-    "message": "Channels → Videos Tab"
-  },
-  "feature_redirectToVideosTab_desc": {
-    "message": "Open channel pages directly on the Videos tab"
-  },
-  "feature_hidePlayables_name": {
-    "message": "Hide Playables"
-  },
-  "feature_hidePlayables_desc": {
-    "message": "Hide YouTube Playables gaming content from feeds"
-  },
-  "feature_hideMembersOnly_name": {
-    "message": "Hide Members Only"
-  },
-  "feature_hideMembersOnly_desc": {
-    "message": "Hide members-only feed cards on Home and Subscriptions"
-  },
-  "feature_hideNewsHome_name": {
-    "message": "Hide News Section"
-  },
-  "feature_hideNewsHome_desc": {
-    "message": "Hide news sections from the homepage"
-  },
-  "feature_hidePlaylistsHome_name": {
-    "message": "Hide Playlist Shelves"
-  },
-  "feature_hidePlaylistsHome_desc": {
-    "message": "Hide playlist sections from the homepage"
-  },
-  "feature_hiddenWatchElementsManager_name": {
-    "message": "Hide Watch Page Elements"
-  },
-  "feature_hiddenWatchElementsManager_desc": {
-    "message": "Choose which elements to hide below videos"
-  },
-  "feature_cleanShareUrls_name": {
-    "message": "URL puliti"
-  },
-  "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
-  },
-  "feature_hideRelatedVideos_name": {
-    "message": "Nascondi correlati"
-  },
-  "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
-  },
-  "feature_expandVideoWidth_name": {
-    "message": "Expand Video Width"
-  },
-  "feature_expandVideoWidth_desc": {
-    "message": "Stretch the video to fill the space when sidebar is hidden"
-  },
-  "feature_hideDescriptionRow_name": {
-    "message": "Hide Description"
-  },
-  "feature_hideDescriptionRow_desc": {
-    "message": "Remove the video description panel below the player"
-  },
-  "feature_autoMaxResolution_name": {
-    "message": "Always Best Quality"
-  },
-  "feature_autoMaxResolution_desc": {
-    "message": "Force the highest available stream on every video (1080p Premium when offered)"
-  },
-  "feature_hideMerchShelf_name": {
-    "message": "Hide Merch Shelf"
-  },
-  "feature_hideMerchShelf_desc": {
-    "message": "Remove merchandise promotions below videos"
-  },
-  "feature_hideAiSummary_name": {
-    "message": "Hide AI Summary"
-  },
-  "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
-  },
-  "feature_hideDescriptionExtras_name": {
-    "message": "Hide Description Extras"
-  },
-  "feature_hideDescriptionExtras_desc": {
-    "message": "Remove extra elements in the description area"
-  },
-  "feature_hideHashtags_name": {
-    "message": "Hide Hashtags"
-  },
-  "feature_hideHashtags_desc": {
-    "message": "Remove hashtag links above video titles"
-  },
-  "feature_hidePinnedComments_name": {
-    "message": "Hide Pinned Comments"
-  },
-  "feature_hidePinnedComments_desc": {
-    "message": "Remove pinned comments from the comments section"
-  },
-  "feature_hideCommentDislikeButton_name": {
-    "message": "Hide Comment Dislike"
-  },
-  "feature_hideCommentDislikeButton_desc": {
-    "message": "Remove the dislike button from comment actions since it adds no useful feedback"
-  },
-  "feature_hideCommentActionMenu_name": {
-    "message": "Hide Comment Actions"
-  },
-  "feature_hideCommentActionMenu_desc": {
-    "message": "Remove action menu from individual comments"
-  },
-  "feature_condenseComments_name": {
-    "message": "Condense Comments"
-  },
-  "feature_condenseComments_desc": {
-    "message": "Reduce spacing between comments for a tighter layout"
-  },
-  "feature_hideCommentTeaser_name": {
-    "message": "Hide Comment Teaser"
-  },
-  "feature_hideCommentTeaser_desc": {
-    "message": "Remove the \"Scroll for comments\" prompt on watch pages"
-  },
-  "feature_autoExpandComments_name": {
-    "message": "Auto-Expand Comments"
-  },
-  "feature_autoExpandComments_desc": {
-    "message": "Automatically expand truncated comments so full text is always visible"
-  },
-  "feature_commentEnhancements_name": {
-    "message": "Comment Enhancements"
-  },
-  "feature_commentEnhancements_desc": {
-    "message": "Highlight creator/OP replies, show like heat indicators, and add collapse-all-replies toggle per thread"
-  },
-  "feature_hideLiveChatEngagement_name": {
-    "message": "Hide Chat Engagement"
-  },
-  "feature_hideLiveChatEngagement_desc": {
-    "message": "Remove engagement prompts in live chat"
-  },
-  "feature_premiumLiveChat_name": {
-    "message": "Premium Live Chat"
-  },
-  "feature_premiumLiveChat_desc": {
-    "message": "Refine live chat with a polished header, elevated message rows, and a premium composer."
-  },
-  "feature_hidePaidPromotionWatch_name": {
-    "message": "Hide Paid Promotion"
-  },
-  "feature_hidePaidPromotionWatch_desc": {
-    "message": "Remove \"paid promotion\" labels on watch pages"
-  },
-  "feature_hideChannelJoinButton_name": {
-    "message": "Hide Channel Join Button"
-  },
-  "feature_hideChannelJoinButton_desc": {
-    "message": "Remove the Join/membership button on channel pages"
-  },
-  "feature_hideVideoEndContent_name": {
-    "message": "Hide Video End Content"
-  },
-  "feature_hideVideoEndContent_desc": {
-    "message": "Remove end cards, end screen, annotations, and video grid when videos finish. Superset of Hide End Screen Cards."
-  },
-  "feature_hideJumpAheadButton_name": {
-    "message": "Hide Jump Ahead"
-  },
-  "feature_hideJumpAheadButton_desc": {
-    "message": "Remove the Jump Ahead prompt that appears after skipping on eligible videos."
-  },
-  "feature_hideFundraiser_name": {
-    "message": "Hide Fundraisers"
-  },
-  "feature_hideFundraiser_desc": {
-    "message": "Remove fundraiser and donation badges"
-  },
-  "feature_hiddenChatElementsManager_name": {
-    "message": "Hide Chat Elements"
-  },
-  "feature_hiddenChatElementsManager_desc": {
-    "message": "Choose which live chat elements to hide"
-  },
-  "feature_reactionSpammer_name": {
-    "message": "Reaction Spammer"
-  },
-  "feature_reactionSpammer_desc": {
-    "message": "Select live chat reactions and send them in a randomized loop."
-  },
-  "feature_chatKeywordFilter_name": {
-    "message": "Chat Keyword Filter"
-  },
-  "feature_chatKeywordFilter_desc": {
-    "message": "Hide chat messages containing these words (comma-separated)"
-  },
-  "feature_hiddenActionButtonsManager_name": {
-    "message": "Hide Action Buttons"
-  },
-  "feature_hiddenActionButtonsManager_desc": {
-    "message": "Choose which action buttons to hide below videos"
-  },
-  "feature_hiddenPlayerControlsManager_name": {
-    "message": "Hide Player Controls"
-  },
-  "feature_hiddenPlayerControlsManager_desc": {
-    "message": "Choose which player control buttons to hide"
-  },
-  "feature_hideCollaborations_name": {
-    "message": "Hide Collaborations"
-  },
-  "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you're not subscribed to in your subscriptions feed"
-  },
-  "feature_showLocalDownloadButton_name": {
-    "message": "Download Button"
-  },
-  "feature_showLocalDownloadButton_desc": {
-    "message": "Add a yt-dlp download options button on watch pages"
-  },
-  "feature_videoContextMenu_name": {
-    "message": "Player Download Menu"
-  },
-  "feature_videoContextMenu_desc": {
-    "message": "Right-click on the video player for yt-dlp download actions"
-  },
-  "feature_quickLinkMenu_name": {
-    "message": "Quick Links"
-  },
-  "feature_quickLinkMenu_desc": {
-    "message": "Adds a compact quick-links menu in the masthead with customizable links"
-  },
-  "feature_quickLinkEditor_name": {
-    "message": "Edit Launcher Links"
-  },
-  "feature_quickLinkEditor_desc": {
-    "message": "Customize the Astra launcher menu. One link per line: Label | URL"
-  },
-  "feature_forceH264_name": {
-    "message": "Force H.264 Codec"
-  },
-  "feature_forceH264_desc": {
-    "message": "Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge."
-  },
-  "feature_titleNormalization_name": {
-    "message": "Normalize Clickbait Titles"
-  },
-  "feature_titleNormalization_desc": {
-    "message": "Convert ALL CAPS titles to Title Case. Reduces clickbait without changing meaning."
-  },
-  "feature_watchProgress_name": {
-    "message": "Watch Progress Indicators"
-  },
-  "feature_watchProgress_desc": {
-    "message": "Show colored progress bars on video thumbnails based on your watch history (saved locally)"
-  },
-  "feature_autoDismissStillWatching_name": {
-    "message": "Auto-Dismiss \"Still Watching?\""
-  },
-  "feature_autoDismissStillWatching_desc": {
-    "message": "Automatically clicks the \"Continue Watching\" button when YouTube pauses playback for inactivity"
-  },
-  "feature_remainingTimeDisplay_name": {
-    "message": "Remaining Time Display"
-  },
-  "feature_remainingTimeDisplay_desc": {
-    "message": "Show time remaining next to current time in the player, adjusted for playback speed"
-  },
-  "feature_showPlaylistDuration_name": {
-    "message": "Show Playlist Duration"
-  },
-  "feature_showPlaylistDuration_desc": {
-    "message": "Display total playlist runtime and speed-adjusted estimate next to the playlist header"
-  },
-  "feature_showTimeInTabTitle_name": {
-    "message": "Show Time in Tab Title"
-  },
-  "feature_showTimeInTabTitle_desc": {
-    "message": "Prepend current playback time [5:23] to the browser tab title"
-  },
-  "feature_customProgressBarColor_name": {
-    "message": "Custom Progress Bar Color"
-  },
-  "feature_customProgressBarColor_desc": {
-    "message": "Change the red progress bar to any color"
-  },
-  "feature_compactUnfixedHeader_name": {
-    "message": "Compact / Unfixed Header"
-  },
-  "feature_compactUnfixedHeader_desc": {
-    "message": "Reduce header height and let it scroll away instead of staying fixed"
-  },
-  "feature_reversePlaylist_name": {
-    "message": "Reverse Playlist Button"
-  },
-  "feature_reversePlaylist_desc": {
-    "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
-  },
-  "feature_rssFeedLink_name": {
-    "message": "RSS Feed Link"
-  },
-  "feature_rssFeedLink_desc": {
-    "message": "Show an RSS feed link on channel pages for subscribing via RSS readers"
-  },
-  "feature_preciseViewCounts_name": {
-    "message": "Precise View Counts"
-  },
-  "feature_preciseViewCounts_desc": {
-    "message": "Show full view counts (1,234,567) instead of truncated (1.2M)"
-  },
-  "feature_videoScreenshot_name": {
-    "message": "Video Screenshot"
-  },
-  "feature_videoScreenshot_desc": {
-    "message": "Capture the current video frame as a PNG image — copies to clipboard and downloads"
-  },
-  "feature_perChannelSpeed_name": {
-    "message": "Per-Channel Speed Memory"
-  },
-  "feature_perChannelSpeed_desc": {
-    "message": "Remember and auto-apply preferred playback speed for each channel"
-  },
-  "feature_hideWatchedVideos_name": {
-    "message": "Hide Watched Videos"
-  },
-  "feature_hideWatchedVideos_desc": {
-    "message": "Dim or hide videos with a red progress bar (already watched) from feeds"
-  },
-  "feature_antiTranslate_name": {
-    "message": "Anti-Translate (Original Titles + Descriptions)"
-  },
-  "feature_antiTranslate_desc": {
-    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
-  },
-  "feature_pauseOtherTabs_name": {
-    "message": "Pause Other Tabs on Play"
-  },
-  "feature_pauseOtherTabs_desc": {
-    "message": "When a video starts playing, pause YouTube in all other tabs"
-  },
-  "feature_sleepTimer_name": {
-    "message": "Sleep Timer"
-  },
-  "feature_sleepTimer_desc": {
-    "message": "Pause playback after a configurable number of minutes. NewPipe-style. The chip in the player chrome counts down + offers a Cancel + a +5 min top-up."
-  },
-  "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restore Native YouTube UI"
-  },
-  "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
-  },
-  "feature_cleanUiPreset_name": {
-    "message": "Compact Clean UI"
-  },
-  "feature_cleanUiPreset_desc": {
-    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
-  },
-  "feature_abLoop_name": {
-    "message": "A-B Loop"
-  },
-  "feature_abLoop_desc": {
-    "message": "Set two points on the video timeline and loop between them. Visual markers on the progress bar."
-  },
-  "feature_fineSpeedControl_name": {
-    "message": "Fine Speed Control"
-  },
-  "feature_fineSpeedControl_desc": {
-    "message": "Extend speed range to 0.1x-16x with 0.05x increments. Scroll on the speed badge to adjust."
-  },
-  "feature_showChannelVideoCount_name": {
-    "message": "Show Channel Video Count"
-  },
-  "feature_showChannelVideoCount_desc": {
-    "message": "Display total uploaded video count next to the channel name on watch pages"
-  },
-  "feature_redirectHomeToSubs_name": {
-    "message": "Redirect Home to Subscriptions"
-  },
-  "feature_redirectHomeToSubs_desc": {
-    "message": "Automatically redirect the YouTube homepage to your subscriptions feed"
-  },
-  "feature_notInterestedButton_name": {
-    "message": "\"Not Interested\" on Thumbnails"
-  },
-  "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
-  },
-  "feature_timestampBookmarks_name": {
-    "message": "Timestamp Bookmarks"
-  },
-  "feature_timestampBookmarks_desc": {
-    "message": "Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions."
-  },
-  "feature_videoNotes_name": {
-    "message": "Per-Video Notes"
-  },
-  "feature_videoNotes_desc": {
-    "message": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos."
-  },
-  "feature_blueLightFilter_name": {
-    "message": "Filtro luce blu"
-  },
-  "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
-  },
-  "feature_disableInfiniteScroll_name": {
-    "message": "Limita scorrimento"
-  },
-  "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
-  },
-  "feature_popOutPlayer_name": {
-    "message": "Pop-Out Player"
-  },
-  "feature_popOutPlayer_desc": {
-    "message": "Detach the video into a resizable floating Picture-in-Picture window with transport controls"
-  },
-  "feature_watchTimeTracker_name": {
-    "message": "Watch Time Tracker"
-  },
-  "feature_watchTimeTracker_desc": {
-    "message": "Track your daily/weekly YouTube watch time with a stats widget in the settings panel"
-  },
-  "feature_alwaysShowProgressBar_name": {
-    "message": "Always Show Progress Bar"
-  },
-  "feature_alwaysShowProgressBar_desc": {
-    "message": "Keep the video progress bar visible at all times instead of hiding on idle"
-  },
-  "feature_sortCommentsNewest_name": {
-    "message": "Sort Comments Newest First"
-  },
-  "feature_sortCommentsNewest_desc": {
-    "message": "Automatically switch the comment sort order to \"Newest first\" on every video"
-  },
-  "feature_autoSkipChapters_name": {
-    "message": "Auto-Skip Chapters"
-  },
-  "feature_autoSkipChapters_desc": {
-    "message": "Automatically skip chapters matching patterns (intro, outro, recap, sponsor). Comma-separated."
-  },
-  "feature_chapterNavButtons_name": {
-    "message": "Chapter Navigation"
-  },
-  "feature_chapterNavButtons_desc": {
-    "message": "Add Previous/Next Chapter buttons to the video player controls"
-  },
-  "feature_videoLoopButton_name": {
-    "message": "Video Loop Button"
-  },
-  "feature_videoLoopButton_desc": {
-    "message": "Add a loop toggle button to the player controls for one-click video looping"
-  },
-  "feature_persistentSpeed_name": {
-    "message": "Velocità persistente"
-  },
-  "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
-  },
-  "feature_codecSelector_name": {
-    "message": "Codec Selector"
-  },
-  "feature_codecSelector_desc": {
-    "message": "Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
-  },
-  "feature_ageRestrictionBypass_name": {
-    "message": "Age Restriction Bypass"
-  },
-  "feature_ageRestrictionBypass_desc": {
-    "message": "Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required."
-  },
-  "feature_autoLikeSubscribed_name": {
-    "message": "Auto-Like Subscribed Channels"
-  },
-  "feature_autoLikeSubscribed_desc": {
-    "message": "Automatically like videos from channels you're subscribed to after watching for 30 seconds"
-  },
-  "feature_thumbnailPreviewSize_name": {
-    "message": "Large Thumbnail Previews"
-  },
-  "feature_thumbnailPreviewSize_desc": {
-    "message": "Increase the size of thumbnail hover previews for easier viewing on large screens"
-  },
-  "feature_cinemaAmbientGlow_name": {
-    "message": "Cinema Ambient Glow"
-  },
-  "feature_cinemaAmbientGlow_desc": {
-    "message": "Projects dominant video colors as a soft glow behind the player for an immersive cinema feel"
-  },
-  "feature_transcriptViewer_name": {
-    "message": "Barra trascrizione"
-  },
-  "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
-  },
-  "feature_searchFilterDefaults_name": {
-    "message": "Search Filter Defaults"
-  },
-  "feature_searchFilterDefaults_desc": {
-    "message": "Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results"
-  },
-  "feature_forceStandardFps_name": {
-    "message": "Force Standard Frame Rate"
-  },
-  "feature_forceStandardFps_desc": {
-    "message": "Dims HFR entries in the quality menu. For reliable 30fps, enable Force H.264 which caps at 1080p30."
-  },
-  "feature_stickyChat_name": {
-    "message": "Sticky Live Chat"
-  },
-  "feature_stickyChat_desc": {
-    "message": "Keeps the live chat panel pinned at the top of the sidebar when scrolling"
-  },
-  "feature_autoExpandDescription_name": {
-    "message": "Auto-Expand Description"
-  },
-  "feature_autoExpandDescription_desc": {
-    "message": "Automatically expands the video description so you never need to click \"Show more\""
-  },
-  "feature_scrollToPlayer_name": {
-    "message": "Scroll to Player on Navigate"
-  },
-  "feature_scrollToPlayer_desc": {
-    "message": "Automatically scrolls to the top of the page when navigating to a new video"
-  },
-  "feature_hideEndCards_name": {
-    "message": "Hide End Screen Cards"
-  },
-  "feature_hideEndCards_desc": {
-    "message": "Removes the clickable end screen cards/annotations that overlay the video in the last seconds. Also covered by Hide Video End Content."
-  },
-  "feature_hideInfoCards_name": {
-    "message": "Hide Info Cards"
-  },
-  "feature_hideInfoCards_desc": {
-    "message": "Removes the \"i\" info card teasers and popups that appear during video playback"
-  },
-  "feature_keyMoments_name": {
-    "message": "Key Moments Highlights"
-  },
-  "feature_keyMoments_desc": {
-    "message": "Highlights chapter markers on the progress bar with colored segments for quick visual navigation"
-  },
-  "feature_autoTheaterMode_name": {
-    "message": "Auto teatro"
-  },
-  "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
-  },
-  "feature_resumePlayback_name": {
-    "message": "Resume Playback Position"
-  },
-  "feature_resumePlayback_desc": {
-    "message": "Remember where you stopped watching and automatically resume from that point"
-  },
-  "feature_miniPlayerBar_name": {
-    "message": "Barra mini player"
-  },
-  "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
-  },
-  "feature_playbackStatsOverlay_name": {
-    "message": "Playback Stats Overlay"
-  },
-  "feature_playbackStatsOverlay_desc": {
-    "message": "Shows video codec, resolution, bitrate, and dropped frame count as a togglable overlay"
-  },
-  "feature_hideNotificationBadge_name": {
-    "message": "Hide Notification Badge"
-  },
-  "feature_hideNotificationBadge_desc": {
-    "message": "Removes the red notification count badge from the bell icon"
-  },
-  "feature_autoPauseOnSwitch_name": {
-    "message": "Auto-Pause on Tab Switch"
-  },
-  "feature_autoPauseOnSwitch_desc": {
-    "message": "Pauses playback when you switch to another tab, resumes when you return"
-  },
-  "feature_creatorCommentHighlight_name": {
-    "message": "Highlight Creator Comments"
-  },
-  "feature_creatorCommentHighlight_desc": {
-    "message": "Makes creator-badged and creator-hearted comments stand out with a stronger visual treatment"
-  },
-  "feature_copyVideoTitle_name": {
-    "message": "Copy Video Title Button"
-  },
-  "feature_copyVideoTitle_desc": {
-    "message": "Adds a copy button next to the video title for one-click title copying"
-  },
-  "feature_channelAgeDisplay_name": {
-    "message": "Video Age Display"
-  },
-  "feature_channelAgeDisplay_desc": {
-    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date"
-  },
-  "feature_speedIndicatorOverlay_name": {
-    "message": "Speed Indicator Overlay"
-  },
-  "feature_speedIndicatorOverlay_desc": {
-    "message": "Shows the current playback speed as a small overlay on the video when not at 1x"
-  },
-  "feature_hideAutoplayToggle_name": {
-    "message": "Hide Autoplay Toggle"
-  },
-  "feature_hideAutoplayToggle_desc": {
-    "message": "Removes the autoplay toggle switch from the player controls"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "Double-Click Fullscreen"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
-  },
-  "feature_rememberVolume_name": {
-    "message": "Remember Volume"
-  },
-  "feature_rememberVolume_desc": {
-    "message": "Persist your volume level across videos and sessions"
-  },
-  "feature_pipButton_name": {
-    "message": "Picture-in-Picture Button"
-  },
-  "feature_pipButton_desc": {
-    "message": "Adds a one-click PiP button to the player controls for native browser Picture-in-Picture"
-  },
-  "feature_autoSubtitles_name": {
-    "message": "Auto-Enable Subtitles"
-  },
-  "feature_autoSubtitles_desc": {
-    "message": "Automatically turns on closed captions when a video starts playing"
-  },
-  "feature_focusedMode_name": {
-    "message": "Focused Mode"
-  },
-  "feature_focusedMode_desc": {
-    "message": "Hides everything except the video player and comments for a distraction-free experience"
-  },
-  "feature_thumbnailQualityUpgrade_name": {
-    "message": "HD Thumbnails"
-  },
-  "feature_thumbnailQualityUpgrade_desc": {
-    "message": "Upgrades video thumbnails to maximum resolution where available"
-  },
-  "feature_watchLaterQuickAdd_name": {
-    "message": "Watch Later Quick Button"
-  },
-  "feature_watchLaterQuickAdd_desc": {
-    "message": "Adds a clock icon on every thumbnail for one-click Watch Later saving"
-  },
-  "feature_playlistEnhancer_name": {
-    "message": "Playlist Enhancer"
-  },
-  "feature_playlistEnhancer_desc": {
-    "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
-  },
-  "feature_commentSearch_name": {
-    "message": "Ricerca commenti"
-  },
-  "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
-  },
-  "feature_videoZoom_name": {
-    "message": "Video Zoom & Pan"
-  },
-  "feature_videoZoom_desc": {
-    "message": "Hold Ctrl and scroll on the video to zoom in, then drag to pan around"
-  },
-  "feature_forceDarkEverywhere_name": {
-    "message": "Force Dark on All YouTube Pages"
-  },
-  "feature_forceDarkEverywhere_desc": {
-    "message": "Applies dark theme to YouTube pages that may not respect dark mode (settings, about, etc.)"
-  },
-  "feature_customCssInjection_name": {
-    "message": "Custom CSS"
-  },
-  "feature_customCssInjection_desc": {
-    "message": "Inject your own custom CSS rules into YouTube pages"
-  },
-  "feature_shareMenuCleaner_name": {
-    "message": "Clean Share Menu"
-  },
-  "feature_shareMenuCleaner_desc": {
-    "message": "Removes social media buttons from the share dialog, leaving only the URL copy option"
-  },
-  "feature_autoClosePopups_name": {
-    "message": "Auto-Close Popups"
-  },
-  "feature_autoClosePopups_desc": {
-    "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
-  },
-  "feature_videoResolutionBadge_name": {
-    "message": "Resolution Badge on Thumbnails"
-  },
-  "feature_videoResolutionBadge_desc": {
-    "message": "Shows a 4K, HD, or SD badge on video thumbnails based on available quality"
-  },
-  "feature_likeViewRatio_name": {
-    "message": "Like-to-View Ratio"
-  },
-  "feature_likeViewRatio_desc": {
-    "message": "Shows the like-to-view percentage next to the view count on watch pages"
-  },
-  "feature_downloadThumbnail_name": {
-    "message": "Download Thumbnail Button"
-  },
-  "feature_downloadThumbnail_desc": {
-    "message": "Adds a button below the video to download the current video thumbnail in max resolution"
-  },
-  "feature_grayscaleThumbnails_name": {
-    "message": "Grayscale Thumbnails"
-  },
-  "feature_grayscaleThumbnails_desc": {
-    "message": "Shows thumbnails in grayscale to reduce visual distraction — color restores on hover"
-  },
-  "feature_disableAutoplayNext_name": {
-    "message": "No riproduzione automatica"
-  },
-  "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
-  },
-  "feature_channelSubCount_name": {
-    "message": "Enhanced Channel Info"
-  },
-  "feature_channelSubCount_desc": {
-    "message": "Shows the channel subscriber count more prominently below videos"
-  },
-  "feature_customSpeedButtons_name": {
-    "message": "Speed Preset Buttons"
-  },
-  "feature_customSpeedButtons_desc": {
-    "message": "Adds quick speed buttons below the video player with presets from 0.5x to 3x"
-  },
-  "feature_openInNewTab_name": {
-    "message": "Open Videos in New Tab"
-  },
-  "feature_openInNewTab_desc": {
-    "message": "Makes video links on the home/subscriptions page open in a new tab instead of navigating away"
-  },
-  "feature_hideNotificationButton_name": {
-    "message": "Hide Notification Bell"
-  },
-  "feature_hideNotificationButton_desc": {
-    "message": "Remove the notification bell icon from the header"
-  },
-  "feature_noFrostedGlass_name": {
-    "message": "Disable Frosted Glass"
-  },
-  "feature_noFrostedGlass_desc": {
-    "message": "Remove blur effects from UI elements"
-  },
-  "feature_hideLatestPosts_name": {
-    "message": "Hide Latest Posts"
-  },
-  "feature_hideLatestPosts_desc": {
-    "message": "Hide community posts and updates sections from feeds"
-  },
-  "feature_disableMiniPlayer_name": {
-    "message": "Disable Mini Player"
-  },
-  "feature_disableMiniPlayer_desc": {
-    "message": "Prevent the mini player from appearing when navigating away"
-  },
-  "feature_nyanCatProgressBar_name": {
-    "message": "Nyan Cat Progress Bar"
-  },
-  "feature_nyanCatProgressBar_desc": {
-    "message": "Replace the video progress bar with a Nyan Cat animation"
-  },
-  "feature_preventAutoplay_name": {
-    "message": "Prevent Autoplay"
-  },
-  "feature_preventAutoplay_desc": {
-    "message": "Stop videos from automatically playing on page load"
-  },
-  "feature_autoOpenChapters_name": {
-    "message": "Auto-Open Chapters"
-  },
-  "feature_autoOpenChapters_desc": {
-    "message": "Automatically open the chapters panel when available"
-  },
-  "feature_autoOpenTranscript_name": {
-    "message": "Auto-Open Transcript"
-  },
-  "feature_autoOpenTranscript_desc": {
-    "message": "Automatically open the transcript panel when available"
-  },
-  "feature_chronologicalNotifications_name": {
-    "message": "Sort Notifications"
-  },
-  "feature_chronologicalNotifications_desc": {
-    "message": "Sort notifications chronologically (newest first)"
-  },
-  "feature_preloadComments_name": {
-    "message": "Preload Comments"
-  },
-  "feature_preloadComments_desc": {
-    "message": "Eagerly load the comment section so it is ready when you scroll down"
-  },
-  "feature_adaptiveLiveLayout_name": {
-    "message": "Adaptive Live Layout"
-  },
-  "feature_adaptiveLiveLayout_desc": {
-    "message": "Automatically adjust layout for live stream chat side-by-side"
-  },
-  "feature_commentNavigator_name": {
-    "message": "Comment Navigator"
-  },
-  "feature_commentNavigator_desc": {
-    "message": "Floating thread navigator with live counts for visible comments and filtered results"
-  },
-  "feature_shortsAsRegularVideo_name": {
-    "message": "Shorts Player Controls"
-  },
-  "feature_shortsAsRegularVideo_desc": {
-    "message": "Add native browser playback controls and scrubbing to YouTube Shorts"
-  },
-  "feature_themeAccentColor_name": {
-    "message": "Accent Color"
-  },
-  "feature_themeAccentColor_desc": {
-    "message": "Custom accent color for highlights, progress bar, and active UI elements"
-  },
-  "feature_theaterAutoScroll_name": {
-    "message": "Theater Auto-Scroll"
-  },
-  "feature_theaterAutoScroll_desc": {
-    "message": "Scroll video into full view when theater mode activates"
-  },
-  "feature_scrollWheelSpeed_name": {
-    "message": "Scroll Wheel Speed"
-  },
-  "feature_scrollWheelSpeed_desc": {
-    "message": "Adjust playback speed by scrolling the mouse wheel over the video player"
-  },
-  "feature_speedStep_name": {
-    "message": "Speed Step Amount"
-  },
-  "feature_speedStep_desc": {
-    "message": "How much to change speed per scroll tick"
-  },
-  "feature_playbackSpeedOSD_name": {
-    "message": "Speed Change OSD"
-  },
-  "feature_playbackSpeedOSD_desc": {
-    "message": "Show speed overlay on the video player (like VLC) instead of corner toast"
-  },
-  "feature_enableCPU_Tamer_name": {
-    "message": "CPU Tamer"
-  },
-  "feature_enableCPU_Tamer_desc": {
-    "message": "Reduce CPU usage by throttling background timers via requestAnimationFrame gating"
-  },
-  "feature_enableHandleRevealer_name": {
-    "message": "Comment Handle Revealer"
-  },
-  "feature_enableHandleRevealer_desc": {
-    "message": "Show the original channel name next to @handle in comments"
-  },
-  "feature_autoDownloadOnVisit_name": {
-    "message": "Auto-Download Videos"
-  },
-  "feature_autoDownloadOnVisit_desc": {
-    "message": "Automatically start download when visiting a video page"
-  },
-  "feature_downloadQuality_name": {
-    "message": "Download Quality"
-  },
-  "feature_downloadQuality_desc": {
-    "message": "Preferred video quality for downloads"
-  },
-  "feature_downloadVideoFormat_name": {
-    "message": "Video Format"
-  },
-  "feature_downloadVideoFormat_desc": {
-    "message": "Default container format for video downloads"
-  },
-  "feature_downloadAudioFormat_name": {
-    "message": "Audio Format"
-  },
-  "feature_downloadAudioFormat_desc": {
-    "message": "Default format for audio-only downloads"
-  },
-  "feature_sponsorBlock_name": {
-    "message": "SponsorBlock"
-  },
-  "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
-  },
-  "feature_sbCat_sponsor_name": {
-    "message": "Skip Sponsors"
-  },
-  "feature_sbCat_sponsor_desc": {
-    "message": "Paid promotions and sponsorship segments"
-  },
-  "feature_sbCat_intro_name": {
-    "message": "Skip Intros"
-  },
-  "feature_sbCat_intro_desc": {
-    "message": "Intro animations and branding"
-  },
-  "feature_sbCat_outro_name": {
-    "message": "Skip Outros"
-  },
-  "feature_sbCat_outro_desc": {
-    "message": "Endcards and outro sequences"
-  },
-  "feature_sbCat_selfpromo_name": {
-    "message": "Skip Self-Promotion"
-  },
-  "feature_sbCat_selfpromo_desc": {
-    "message": "Creator promoting their own products or channels"
-  },
-  "feature_sbCat_interaction_name": {
-    "message": "Skip Interaction Reminders"
-  },
-  "feature_sbCat_interaction_desc": {
-    "message": "\"Like, subscribe, comment\" reminders"
-  },
-  "feature_sbCat_music_offtopic_name": {
-    "message": "Skip Non-Music"
-  },
-  "feature_sbCat_music_offtopic_desc": {
-    "message": "Non-music sections in music videos"
-  },
-  "feature_sbCat_preview_name": {
-    "message": "Skip Previews"
-  },
-  "feature_sbCat_preview_desc": {
-    "message": "Preview or recap of upcoming content"
-  },
-  "feature_sbCat_filler_name": {
-    "message": "Skip Filler"
-  },
-  "feature_sbCat_filler_desc": {
-    "message": "Tangential or filler content"
-  },
-  "feature_sbCat_poi_highlight_name": {
-    "message": "Highlight Point of Interest"
-  },
-  "feature_sbCat_poi_highlight_desc": {
-    "message": "Jump to the highlight/point of interest (disabled by default)"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
-  "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
-  },
-  "feature_daReplaceTitles_name": {
-    "message": "Replace Titles"
-  },
-  "feature_daReplaceTitles_desc": {
-    "message": "Replace clickbait titles with crowdsourced alternatives"
-  },
-  "feature_daReplaceThumbs_name": {
-    "message": "Replace Thumbnails"
-  },
-  "feature_daReplaceThumbs_desc": {
-    "message": "Replace clickbait thumbnails with video screenshots"
-  },
-  "feature_daTitleFormat_name": {
-    "message": "Title Format"
-  },
-  "feature_daTitleFormat_desc": {
-    "message": "How to format replacement titles"
-  },
-  "feature_daFallbackFormat_name": {
-    "message": "Format Original Titles"
-  },
-  "feature_daFallbackFormat_desc": {
-    "message": "Format the original title when no crowdsourced submission exists"
-  },
-  "feature_daShowOriginalHover_name": {
-    "message": "Show Original on Hover"
-  },
-  "feature_daShowOriginalHover_desc": {
-    "message": "Hover over a replaced title to see the original"
-  },
-  "feature_daCacheTTL_name": {
-    "message": "Cache Duration"
-  },
-  "feature_daCacheTTL_desc": {
-    "message": "Hours to cache branding data locally before refreshing"
-  },
-  "feature_showStatisticsDashboard_name": {
-    "message": "Statistics Dashboard"
-  },
-  "feature_showStatisticsDashboard_desc": {
-    "message": "Track videos watched, time on YouTube, and videos hidden"
-  },
-  "feature_settingsProfiles_name": {
-    "message": "Settings Profiles"
-  },
-  "feature_settingsProfiles_desc": {
-    "message": "Save, load, switch, import, and export named setting configurations (e.g. Gaming / Work / Music). Controls appear at the top of the settings panel when enabled."
-  },
-  "feature_debugMode_name": {
-    "message": "Modalità debug"
-  },
-  "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
-  },
-  "feature_squareSearchBar_name": {
-    "message": "Square Search Bar"
-  },
-  "feature_squareSearchBar_desc": {
-    "message": "Remove rounded corners from the search bar"
-  },
-  "feature_squareAvatars_name": {
-    "message": "Square Avatars"
-  },
-  "feature_squareAvatars_desc": {
-    "message": "Make channel avatars square instead of round"
-  },
-  "feature_fitPlayerToWindow_name": {
-    "message": "Fit Player to Window"
-  },
-  "feature_fitPlayerToWindow_desc": {
-    "message": "Make the video player fill the entire browser window"
-  },
-  "feature_disableSpaNavigation_name": {
-    "message": "Disable SPA Navigation"
-  },
-  "feature_disableSpaNavigation_desc": {
-    "message": "Force full page loads instead of YouTube's smooth transitions (fixes player sizing issues)"
-  },
-  "feature_videoRotation_name": {
-    "message": "Video Rotation"
-  },
-  "feature_videoRotation_desc": {
-    "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
-  },
-  "feature_frameByFrameButtons_name": {
-    "message": "Frame-by-Frame Buttons"
-  },
-  "feature_frameByFrameButtons_desc": {
-    "message": "Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation"
-  },
-  "feature_digitalWellbeing_name": {
-    "message": "Benessere digitale"
-  },
-  "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
-  },
-  "feature_subtitleDownload_name": {
-    "message": "Subtitle Download (SRT)"
-  },
-  "feature_subtitleDownload_desc": {
-    "message": "One-click SRT download of the active caption track — standalone player button, no sidebar required"
-  },
-  "feature_videoVisualFilters_name": {
-    "message": "Video Visual Filters"
-  },
-  "feature_videoVisualFilters_desc": {
-    "message": "Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "DeArrow Peek Button"
-  },
-  "feature_dearrowPeekButton_desc": {
-    "message": "Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)"
-  },
-  "feature_videoAgeColors_name": {
-    "message": "Video Age Color Coding"
-  },
-  "feature_videoAgeColors_desc": {
-    "message": "Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
-  },
-  "feature_watchPageTabs_name": {
-    "message": "Watch Page Tabs"
-  },
-  "feature_watchPageTabs_desc": {
-    "message": "Horizontal tab bar above the comments/description area to quickly switch views on the watch page"
-  },
-  "feature_redditComments_name": {
-    "message": "Reddit Comments"
-  },
-  "feature_redditComments_desc": {
-    "message": "Find Reddit discussions mentioning the current video (button in secondary sidebar)"
-  },
-  "feature_diagnosticLog_name": {
-    "message": "Diagnostic Error Log"
-  },
-  "feature_diagnosticLog_desc": {
-    "message": "Capture a rolling log of YTKit errors and export as JSON for bug reports"
-  },
-  "feature_selectorHealthPanel_name": {
-    "message": "Selector Health"
-  },
-  "feature_selectorHealthPanel_desc": {
-    "message": "Review live selector drift signals and export a JSON health report for fixture refreshes."
-  },
-  "feature_storageQuotaLRU_name": {
-    "message": "Storage Quota Management"
-  },
-  "feature_storageQuotaLRU_desc": {
-    "message": "LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
-  },
-  "feature_watchHistoryAnalytics_name": {
-    "message": "Watch History Analytics"
-  },
-  "feature_watchHistoryAnalytics_desc": {
-    "message": "Modal dashboard visualizing your 30-day YouTube watch time as a CSS bar chart (requires Watch Time Tracker)"
-  },
-  "feature_subtitleStyling_name": {
-    "message": "Subtitle Styling"
-  },
-  "feature_subtitleStyling_desc": {
-    "message": "Override YouTube caption appearance — font size/family/color, background, position, shadow"
-  },
-  "feature_aiVideoSummary_name": {
-    "message": "AI Video Summary"
-  },
-  "feature_aiVideoSummary_desc": {
-    "message": "Bring-your-own-key LLM summary of the current video transcript (OpenAI/Anthropic/Gemini/Ollama)"
-  },
-  "feature_copyChapterMarkdown_name": {
-    "message": "Copy Chapters as Markdown"
-  },
-  "feature_copyChapterMarkdown_desc": {
-    "message": "Copy all video chapters as a markdown timestamp list — button in player controls"
-  },
-  "feature_chapterJumpButtons_name": {
-    "message": "Chapter Jump Buttons"
-  },
-  "feature_chapterJumpButtons_desc": {
-    "message": "Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "Hide Airplay Button"
-  },
-  "feature_hideAirplayButton_desc": {
-    "message": "Remove the Airplay icon from the player controls"
-  },
-  "feature_hideQueueOnThumbnails_name": {
-    "message": "Hide \"Add to Queue\" on Thumbnails"
-  },
-  "feature_hideQueueOnThumbnails_desc": {
-    "message": "Remove the \"Add to queue\" overlay button that appears on thumbnail hover"
-  },
-  "feature_fullTitles_name": {
-    "message": "Show Full Video Titles"
-  },
-  "feature_fullTitles_desc": {
-    "message": "Remove the 2-line clamp on thumbnail titles so long titles show in full"
-  },
-  "feature_titleCaseTransform_name": {
-    "message": "Transform Video Title Case"
-  },
-  "feature_titleCaseTransform_desc": {
-    "message": "Override YouTube's clickbait UPPERCASE titles with a casing style of your choice"
-  },
-  "feature_customSelectionColor_name": {
-    "message": "Custom Text Selection Color"
-  },
-  "feature_customSelectionColor_desc": {
-    "message": "Override the default text-selection background with your chosen color"
-  },
-  "feature_bypassPlaylistMode_name": {
-    "message": "Bypass Playlist Mode on Clicks"
-  },
-  "feature_bypassPlaylistMode_desc": {
-    "message": "Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist"
-  },
-  "feature_musicVideoSpeedLock_name": {
-    "message": "Lock 1× Speed on Music Videos"
-  },
-  "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up"
-  },
-  "feature_playlistQuickRemove_name": {
-    "message": "Playlist Quick-Remove Overlay"
-  },
-  "feature_playlistQuickRemove_desc": {
-    "message": "Show a trash icon on each item in playlists you own for one-click removal"
-  },
-  "feature_watchLaterCleanup_name": {
-    "message": "Watch Later Cleanup Button"
-  },
-  "feature_watchLaterCleanup_desc": {
-    "message": "Adds a \"Remove Watched\" button to the Watch Later playlist header for batch cleanup"
-  },
-  "feature_transcriptAiHandoff_name": {
-    "message": "Transcript → AI One-Click Handoff"
-  },
-  "feature_transcriptAiHandoff_desc": {
-    "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notify on AI-dubbed audio"
-  },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
-  },
-  "feature_audioTrackLanguage_name": {
-    "message": "Preferred Audio Track Language"
-  },
-  "feature_audioTrackLanguage_desc": {
-    "message": "Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu."
-  },
-  "feature_commentFilterManager_name": {
-    "message": "Comment Filter"
-  },
-  "feature_commentFilterManager_desc": {
-    "message": "Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded)."
-  },
-  "feature_commentFilterRules_name": {
-    "message": "Comment Filter Rules"
-  },
-  "feature_commentFilterRules_desc": {
-    "message": "One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded)."
-  },
-  "feature_bulkCardActions_name": {
-    "message": "Bulk Card Actions"
-  },
-  "feature_bulkCardActions_desc": {
-    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
-  },
-  "feature_feedTriageProfile_name": {
-    "message": "Feed Triage Profile"
-  },
-  "feature_feedTriageProfile_desc": {
-    "message": "Flip on a curated focus recipe: hides Shorts, live streams, upcoming premieres, mixes, watched videos, and AI Summary. Toggling off restores prior values."
-  },
-  "feature_downloadScreenshotFormat_name": {
-    "message": "Screenshot Format"
-  },
-  "feature_downloadScreenshotFormat_desc": {
-    "message": "Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only."
-  },
-  "feature_downloadSubtitlesWithScreenshot_name": {
-    "message": "Include Subtitles In Screenshot"
-  },
-  "feature_downloadSubtitlesWithScreenshot_desc": {
-    "message": "Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot."
-  },
-  "feature_volumeWheelMode_name": {
-    "message": "Volume Wheel"
-  },
-  "feature_volumeWheelMode_desc": {
-    "message": "Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added."
-  },
-  "feature_wheelSeek_name": {
-    "message": "Wheel Seek"
-  },
-  "feature_wheelSeek_desc": {
-    "message": "Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict."
-  },
-  "feature_disableLoudnessNormalization_name": {
-    "message": "Disable Loudness Normalization"
-  },
-  "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren’t officially supported."
-  },
-  "feature_initialPlayerStateForeground_name": {
-    "message": "Initial Player State (Foreground)"
-  },
-  "feature_initialPlayerStateForeground_desc": {
-    "message": "When opening a watch page in the foreground, play or pause regardless of the previous session’s autoplay choice. “Inherit” leaves YouTube’s native behavior alone."
-  },
-  "feature_initialPlayerStateBackground_name": {
-    "message": "Initial Player State (Background)"
-  },
-  "feature_initialPlayerStateBackground_desc": {
-    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube’s default. Useful for queueing-up multiple tabs."
-  },
-  "feature_perChannelIntroOutro_name": {
-    "message": "Per-Channel Intro/Outro Skip"
-  },
-  "feature_perChannelIntroOutro_desc": {
-    "message": "Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools → Set Intro/Outro). Stored under perChannelIntroOutroData."
-  },
-  "feature_downloadHealthPanel_name": {
-    "message": "Downloader Health Pills"
-  },
-  "feature_downloadHealthPanel_desc": {
-    "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."
-  },
-  "feature_downloadStreamLinksPanel_name": {
-    "message": "Stream Links Panel"
-  },
-  "feature_downloadStreamLinksPanel_desc": {
-    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off."
-  },
-  "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt Fallback (GitHub profile)"
-  },
-  "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab."
-  },
-  "feature_downloadHistoryPanel_name": {
-    "message": "Download History Panel"
-  },
-  "feature_downloadHistoryPanel_desc": {
-    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session."
-  },
-  "feature_returnDislike_name": {
-    "message": "Return YouTube Dislike"
-  },
-  "feature_returnDislike_desc": {
-    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
-  },
-  "feature_antiTranslateAudioTrack_name": {
-    "message": "Anti-Translate Audio Track"
-  },
-  "feature_antiTranslateAudioTrack_desc": {
-    "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
-  },
-  "feature_antiTranslateTranscript_name": {
-    "message": "Anti-Translate Transcript"
-  },
-  "feature_antiTranslateTranscript_desc": {
-    "message": "Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available."
-  },
-  "feature_monetizationIndicator_name": {
-    "message": "Monetization Indicator"
-  },
-  "feature_monetizationIndicator_desc": {
-    "message": "Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available."
-  },
-  "feature_qualityProfileMatrix_name": {
-    "message": "Per-Context Quality"
-  },
-  "feature_qualityProfileMatrix_desc": {
-    "message": "Set different default qualities for normal / theater / fullscreen / background / embed contexts. ISOLATED-world detects the context and writes data-ytkit-quality-context on <html>; the MAIN-world bridge re-applies the matching quality via movie_player.setPlaybackQualityRange()."
-  },
-  "feature_deArrowChannelOverridesPanel_name": {
-    "message": "DeArrow Per-Channel Overrides"
-  },
-  "feature_deArrowChannelOverridesPanel_desc": {
-    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
-  },
-  "feature_subscriptionGroups_name": {
-    "message": "Subscription Groups"
-  },
-  "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up."
-  },
-  "feature_localAiSummary_name": {
-    "message": "Local AI Summary (browser built-in)"
-  },
-  "feature_localAiSummary_desc": {
-    "message": "Use Chrome’s built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
-  },
-  "feature_researchSpacedReview_name": {
-    "message": "Study / Work Export"
-  },
-  "feature_researchSpacedReview_desc": {
-    "message": "Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links."
-  },
-  "feature_researchTranscriptIndex_name": {
-    "message": "Transcript Search Index"
-  },
-  "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes the transcript of every video you open into a local IndexedDB. Adds a global \"Search Transcripts\" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry."
-  },
-  "feature_researchTranscriptSearchPanel_name": {
-    "message": "Transcript Search Panel"
-  },
-  "feature_researchTranscriptSearchPanel_desc": {
-    "message": "Adds a \"Search transcripts\" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off."
-  },
-  "feature_reducedMotion_name": {
-    "message": "Reduced Motion (strong)"
-  },
-  "feature_reducedMotion_desc": {
-    "message": "Forces every Astra-injected animation, transition, and scroll behavior to be near-instant. Respects the OS prefers-reduced-motion setting automatically; this toggle adds an unconditional override on top."
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "Forced Colors / High Contrast Support"
-  },
-  "feature_forcedColorsSupport_desc": {
-    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
-  },
-  "feature_globalAriaLiveRegion_name": {
-    "message": "Live Region For Toasts"
-  },
-  "feature_globalAriaLiveRegion_desc": {
-    "message": "Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes)."
-  },
-  "feature_lowPowerProfile_name": {
-    "message": "Low Power Profile"
-  },
-  "feature_lowPowerProfile_desc": {
-    "message": "When on, disables CPU-heavy features (cinema ambient glow, visual filters, playback stats overlay, monetization indicator, transcript index, transcript viewer, blue light filter) and bumps storage LRU sweep cadence. Toggle off to restore previous values from the backup snapshot."
-  },
-  "feature_oledTheme_name": {
-    "message": "OLED Theme"
-  },
-  "feature_oledTheme_desc": {
-    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes."
-  },
-  "feature_denseMode_name": {
-    "message": "Dense Mode"
-  },
-  "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars."
-  },
-  "feature_rectangularizeYouTube_name": {
-    "message": "Rectangularize UI"
-  },
-  "feature_rectangularizeYouTube_desc": {
-    "message": "Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
-  },
-  "feature_classicLayoutProfile_name": {
-    "message": "Layout Profile"
-  },
-  "feature_classicLayoutProfile_desc": {
-    "message": "Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
-  },
-  "feature_newPlayerUiRestore_name": {
-    "message": "Restore Classic Player Chrome"
-  },
-  "feature_newPlayerUiRestore_desc": {
-    "message": "Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
-  },
-  "feature_tokenThemeBridge_name": {
-    "message": "Native Token Theme Bridge"
-  },
-  "feature_tokenThemeBridge_desc": {
-    "message": "Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
-  },
-  "feature_openInAlternativeFrontend_name": {
-    "message": "Open In Alternative Frontend"
-  },
-  "feature_openInAlternativeFrontend_desc": {
-    "message": "Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting."
-  },
-  "feature_vlcMpvHandoff_name": {
-    "message": "VLC / MPV Stream Handoff"
-  },
-  "feature_vlcMpvHandoff_desc": {
-    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
-  },
-  "feature_astraContextMenu_name": {
-    "message": "Astra Context Menu"
-  },
-  "feature_astraContextMenu_desc": {
-    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
-  },
-  "feature_wpHide_joinButton_name": {
-    "message": "Join Button"
-  },
-  "feature_wpHide_joinButton_desc": {
-    "message": "Hide join/membership button"
-  },
-  "feature_wpHide_askButton_name": {
-    "message": "Ask Button"
-  },
-  "feature_wpHide_askButton_desc": {
-    "message": "Hide Ask AI button"
-  },
-  "feature_wpHide_saveButton_name": {
-    "message": "Save Button"
-  },
-  "feature_wpHide_saveButton_desc": {
-    "message": "Hide save to playlist button"
-  },
-  "feature_wpHide_moreActions_name": {
-    "message": "More Actions (...)"
-  },
-  "feature_wpHide_moreActions_desc": {
-    "message": "Hide more actions menu button"
-  },
-  "feature_wpHide_askAISection_name": {
-    "message": "Ask AI Section"
-  },
-  "feature_wpHide_askAISection_desc": {
-    "message": "Hide AI section in description"
-  },
-  "feature_wpHide_podcastSection_name": {
-    "message": "Podcast/Course Section"
-  },
-  "feature_wpHide_podcastSection_desc": {
-    "message": "Hide podcast/course section in description"
-  },
-  "feature_wpHide_transcriptSection_name": {
-    "message": "Transcript Section"
-  },
-  "feature_wpHide_transcriptSection_desc": {
-    "message": "Hide transcript section in description"
-  },
-  "feature_wpHide_channelInfoCards_name": {
-    "message": "Channel Info Cards"
-  },
-  "feature_wpHide_channelInfoCards_desc": {
-    "message": "Hide channel info cards in description"
-  },
-  "feature_floatingLogoOnWatch_name": {
-    "message": "Astra Player Dock"
-  },
-  "feature_floatingLogoOnWatch_desc": {
-    "message": "Replace native player right-controls with Astra quick links, local tools, and settings"
-  },
-  "feature_stickyVideo_name": {
-    "message": "Theater Split"
-  },
-  "feature_stickyVideo_desc": {
-    "message": "Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen."
-  },
-  "feature_chatHide_header_name": {
-    "message": "Chat Header"
-  },
-  "feature_chatHide_header_desc": {
-    "message": "Hide the live chat header bar"
-  },
-  "feature_chatHide_menu_name": {
-    "message": "Chat Menu (...)"
-  },
-  "feature_chatHide_menu_desc": {
-    "message": "Hide the chat overflow menu"
-  },
-  "feature_chatHide_popout_name": {
-    "message": "Popout Button"
-  },
-  "feature_chatHide_popout_desc": {
-    "message": "Hide the popout chat button"
-  },
-  "feature_chatHide_reactions_name": {
-    "message": "Reactions"
-  },
-  "feature_chatHide_reactions_desc": {
-    "message": "Hide chat reactions panel"
-  },
-  "feature_chatHide_timestamps_name": {
-    "message": "Timestamps"
-  },
-  "feature_chatHide_timestamps_desc": {
-    "message": "Hide chat timestamps"
-  },
-  "feature_chatHide_polls_name": {
-    "message": "Polls & Poll Banner"
-  },
-  "feature_chatHide_polls_desc": {
-    "message": "Hide polls in live chat"
-  },
-  "feature_chatHide_ticker_name": {
-    "message": "Super Chat Ticker"
-  },
-  "feature_chatHide_ticker_desc": {
-    "message": "Hide the super chat ticker"
-  },
-  "feature_chatHide_leaderboard_name": {
-    "message": "Leaderboard"
-  },
-  "feature_chatHide_leaderboard_desc": {
-    "message": "Hide chat leaderboard"
-  },
-  "feature_chatHide_support_name": {
-    "message": "Support Buttons"
-  },
-  "feature_chatHide_support_desc": {
-    "message": "Hide support/buy buttons in chat"
-  },
-  "feature_chatHide_banner_name": {
-    "message": "Chat Banner"
-  },
-  "feature_chatHide_banner_desc": {
-    "message": "Hide chat banners"
-  },
-  "feature_chatHide_emoji_name": {
-    "message": "Emoji Button"
-  },
-  "feature_chatHide_emoji_desc": {
-    "message": "Hide emoji picker button"
-  },
-  "feature_chatHide_topFan_name": {
-    "message": "Fan Badges"
-  },
-  "feature_chatHide_topFan_desc": {
-    "message": "Hide fan/member badges"
-  },
-  "feature_chatHide_superChats_name": {
-    "message": "Super Chats"
-  },
-  "feature_chatHide_superChats_desc": {
-    "message": "Hide super chat messages"
-  },
-  "feature_chatHide_levelUp_name": {
-    "message": "Level Up Messages"
-  },
-  "feature_chatHide_levelUp_desc": {
-    "message": "Hide level up messages"
-  },
-  "feature_chatHide_bots_name": {
-    "message": "Bot Messages"
-  },
-  "feature_chatHide_bots_desc": {
-    "message": "Filter out known bot messages"
-  },
-  "feature_abHide_like_name": {
-    "message": "Like Button"
-  },
-  "feature_abHide_like_desc": {
-    "message": "Hide like button below videos"
-  },
-  "feature_abHide_share_name": {
-    "message": "Share Button"
-  },
-  "feature_abHide_share_desc": {
-    "message": "Hide share button below videos"
-  },
-  "feature_abHide_ask_name": {
-    "message": "Ask/AI Button"
-  },
-  "feature_abHide_ask_desc": {
-    "message": "Hide Ask or AI button below videos"
-  },
-  "feature_abHide_clip_name": {
-    "message": "Clip Button"
-  },
-  "feature_abHide_clip_desc": {
-    "message": "Hide clip button below videos"
-  },
-  "feature_abHide_thanks_name": {
-    "message": "Thanks Button"
-  },
-  "feature_abHide_thanks_desc": {
-    "message": "Hide thanks button below videos"
-  },
-  "feature_abHide_save_name": {
-    "message": "Save Button"
-  },
-  "feature_abHide_save_desc": {
-    "message": "Hide save button below videos"
-  },
-  "feature_abHide_sponsor_name": {
-    "message": "Join/Sponsor Button"
-  },
-  "feature_abHide_sponsor_desc": {
-    "message": "Hide join/sponsor button below videos"
-  },
-  "feature_abHide_moreActions_name": {
-    "message": "More Actions (...)"
-  },
-  "feature_abHide_moreActions_desc": {
-    "message": "Hide more actions button below videos"
-  },
-  "feature_pcHide_ytLogo_name": {
-    "message": "Native Brand Button"
-  },
-  "feature_pcHide_ytLogo_desc": {
-    "message": "Hide the native brand button from player controls"
-  },
-  "feature_pcHide_settings_name": {
-    "message": "Settings Gear"
-  },
-  "feature_pcHide_settings_desc": {
-    "message": "Hide settings gear from player controls"
-  },
-  "feature_pcHide_next_name": {
-    "message": "Next Video Button"
-  },
-  "feature_pcHide_next_desc": {
-    "message": "Hide next video button from player"
-  },
-  "feature_pcHide_autoplay_name": {
-    "message": "Autoplay Toggle"
-  },
-  "feature_pcHide_autoplay_desc": {
-    "message": "Hide autoplay toggle from player"
-  },
-  "feature_pcHide_subtitles_name": {
-    "message": "Subtitles Button"
-  },
-  "feature_pcHide_subtitles_desc": {
-    "message": "Hide subtitles button from player"
-  },
-  "feature_pcHide_captions_name": {
-    "message": "Captions Display"
-  },
-  "feature_pcHide_captions_desc": {
-    "message": "Hide captions overlay on video"
-  },
-  "feature_pcHide_miniplayer_name": {
-    "message": "Miniplayer Button"
-  },
-  "feature_pcHide_miniplayer_desc": {
-    "message": "Hide miniplayer button from player"
-  },
-  "feature_pcHide_pip_name": {
-    "message": "Picture-in-Picture"
-  },
-  "feature_pcHide_pip_desc": {
-    "message": "Hide PiP button from player"
-  },
-  "feature_pcHide_theater_name": {
-    "message": "Theater Mode Button"
-  },
-  "feature_pcHide_theater_desc": {
-    "message": "Hide theater mode button from player"
-  },
-  "feature_pcHide_fullscreen_name": {
-    "message": "Fullscreen Button"
-  },
-  "feature_pcHide_fullscreen_desc": {
-    "message": "Hide fullscreen button from player"
-  },
-  "feature_hideVideosFromHome_name": {
-    "message": "Video Hider"
-  },
-  "feature_hideVideosFromHome_desc": {
-    "message": "Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking."
-  },
-  "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music Compatibility"
-  },
-  "feature_youtubeMusicCompat_desc": {
-    "message": "Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating."
+  "feature_audioPan_desc": {
+    "message": "Sposta il bilanciamento audio a sinistra o destra. Intervallo da -1 (sinistra) a 1 (destra), 0 è il centro."
   }
 }

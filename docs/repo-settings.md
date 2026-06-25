@@ -24,24 +24,22 @@ Required check contexts:
 Keep these names synchronized with `.github/workflows/validate.yml` job names.
 If a job is renamed, update branch protection in the same change window.
 
-Current non-required context:
+Non-required context that runs on PRs only:
 
 - `Dependency review`
 
-`Dependency review` is skipped on direct pushes because it only runs for pull
-requests. Add it to required checks after a throwaway PR confirms the exact
-required-check behavior for PR-only dependency-review runs.
+`Dependency review` is enforced: the job has no `continue-on-error`, so a
+moderate-or-higher vulnerability finding fails the workflow run. It only runs on
+`pull_request` events; direct pushes to `main` skip it because the action needs
+a base/head comparison. Add `Dependency review` to the required-check list in
+branch protection to prevent bypassing the check entirely by merging outside a
+PR.
 
-Source-tree guard from 2026-06-06:
+Enforcement history:
 
-- `.github/workflows/validate.yml` keeps `Dependency review` PR-only and
-  advisory until repository variable `DEPENDENCY_REVIEW_REQUIRED` is exactly
-  `true`.
-- This avoids failing dependency-maintenance PRs on repository setup text while
-  dependency graph / Dependabot hosted settings remain open.
-- After dependency graph is enabled and a PR run proves the check context, set
-  `DEPENDENCY_REVIEW_REQUIRED=true` and then decide whether the PR-only
-  `Dependency review` context should become a required check.
+- 2026-06-06: added as advisory with `DEPENDENCY_REVIEW_REQUIRED` gate.
+- 2026-06-15: removed `continue-on-error`; the job now always fails the run on
+  moderate-or-higher vulnerabilities.
 
 Current policy:
 

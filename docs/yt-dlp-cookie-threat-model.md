@@ -36,7 +36,7 @@ downloads. It is the store-review and maintainer-facing explanation for the
    sweep removes stale `.cookies.*.txt` files older than 300 seconds after a
    crash or forced process kill.
 
-The CI package surface also pins `yt-dlp==2026.3.17` in
+The CI package surface also pins `yt-dlp==2026.6.9` in
 `astra_downloader/requirements.txt`, far newer than the 2023.07.06 patched
 baseline for CVE-2023-35934.
 

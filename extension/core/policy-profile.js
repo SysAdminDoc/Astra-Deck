@@ -135,6 +135,8 @@
             // the broad coverage doesn't cause false positives.
             /^auth/i,
             /[a-z]Auth/,
+            /pinHash/i,
+            /^ytkit-da-user-id$/,
         ]);
 
         function shouldScrubKey(key) {

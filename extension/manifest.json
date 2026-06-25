@@ -26,8 +26,13 @@
     "storage",
     "unlimitedStorage",
     "cookies",
-    "downloads"
+    "downloads",
+    "nativeMessaging",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "host_permissions": [
     "https://*.youtube.com/*",
     "https://*.youtube-nocookie.com/*",
@@ -163,6 +168,10 @@
         "features/video-hider/index.js",
         "features/player-dock/index.js",
         "features/youtube-music-compat/index.js",
+        "features/return-dislike/index.js",
+        "features/sponsorblock/index.js",
+        "features/dearrow/index.js",
+        "features/download-ui/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -242,6 +251,10 @@
         "features/video-hider/index.js",
         "features/player-dock/index.js",
         "features/youtube-music-compat/index.js",
+        "features/return-dislike/index.js",
+        "features/sponsorblock/index.js",
+        "features/dearrow/index.js",
+        "features/download-ui/index.js",
         "ytkit.js"
       ],
       "all_frames": true,

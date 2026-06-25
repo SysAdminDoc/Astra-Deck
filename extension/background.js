@@ -617,14 +617,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
+        let responded = false;
+
         const startFetch = () => {
             const validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
             const normalizedMethod = String(method || 'GET').toUpperCase();
             const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
 
             const controller = new AbortController();
-            // Default to 30 s when the caller does not pass a timeout so unauthenticated
-            // or hung upstream fetches cannot stall the service worker indefinitely.
             const DEFAULT_FETCH_TIMEOUT_MS = 30000;
             const MIN_FETCH_TIMEOUT_MS = 1000;
             const requestedTimeout = Number.isFinite(timeout) && timeout > 0
@@ -632,7 +632,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 : DEFAULT_FETCH_TIMEOUT_MS;
             const clampedTimeout = Math.max(MIN_FETCH_TIMEOUT_MS, Math.min(requestedTimeout, MAX_FETCH_TIMEOUT_MS));
             let timer = null;
-            let responded = false;
 
             timer = setTimeout(() => {
                 if (responded) return;
@@ -790,7 +789,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (timer) { clearTimeout(timer); timer = null; }
             const responseHeaders = [...resp.headers.entries()]
                 .filter(([k]) => !BLOCKED_RESPONSE_HEADERS.has(k.toLowerCase()))
-                .map(([k, v]) => `${k}: ${v}`)
+                .map(([k, v]) => `${k}: ${String(v).replace(/[\r\n]/g, ' ')}`)
                 .join('\r\n');
 
             sendResponse({
@@ -811,6 +810,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         requireRuntimeOptionalHostGrant(url).then(() => {
             startFetch();
         }).catch((err) => {
+            if (responded) return;
+            responded = true;
             sendResponse({ error: err.message || 'Runtime host permission check failed.' });
         });
 
@@ -901,6 +902,48 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 sendResponse({ entries, error: null });
             } catch (err) {
                 sendResponse({ entries: [], error: err?.message || String(err) });
+            }
+        })();
+        return true;
+    }
+
+    if (msg.type === 'NATIVE_MSG_GET_TOKEN') {
+        (async () => {
+            let responded = false;
+            const respond = (payload) => {
+                if (responded) return;
+                responded = true;
+                try { sendResponse(payload); } catch (_) {
+                    // reason: sender may have disconnected
+                }
+            };
+            try {
+                if (!chrome.runtime?.connectNative) {
+                    respond({ token: null, error: 'Native messaging unavailable' });
+                    return;
+                }
+                const port = chrome.runtime.connectNative('com.astra.deck.downloader');
+                const timeout = setTimeout(() => {
+                    try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
+                    respond({ token: null, error: 'Native messaging timeout' });
+                }, 5000);
+                port.onMessage.addListener((response) => {
+                    clearTimeout(timeout);
+                    try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
+                    if (response && response.ok && response.token) {
+                        respond({ token: response.token, error: null });
+                    } else {
+                        respond({ token: null, error: response?.error || 'Token not available' });
+                    }
+                });
+                port.onDisconnect.addListener(() => {
+                    clearTimeout(timeout);
+                    const lastError = chrome.runtime.lastError?.message || '';
+                    respond({ token: null, error: lastError || 'Native host disconnected' });
+                });
+                port.postMessage({ type: 'get-token' });
+            } catch (err) {
+                respond({ token: null, error: err?.message || 'Native messaging failed' });
             }
         })();
         return true;

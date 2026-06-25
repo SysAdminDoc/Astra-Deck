@@ -1,6 +1,6 @@
 'use strict';
 
-// Flat config — requires eslint ≥ 8.57 (ships with ESLint 9 by default).
+// Flat config — requires eslint ≥ 10 (pinned in package.json).
 //
 // Two custom rules are enforced here:
 //   • no-post-await-addlistener — chrome.*.addListener() must run at the
@@ -8,13 +8,8 @@
 //     applies to background.js (the MV3 service worker entry point).
 //   • require-catch-reason (v4.47.0) — empty catch blocks must carry a
 //     `// reason:` comment, pinning the v3.14.0 hardening invariant.
-//     background.js was the initial scope; popup.js joined in v4.47.0
-//     after a per-file audit confirmed 100 % compliance (8 empty
-//     catches total, 7 already documented, 1 annotated in the same
-//     commit). The v4.47.0 core pass extends the invariant to direct
-//     extension/core/*.js modules after annotating the remaining silent
-//     catches. The v4.47.0 monolith pass extends the invariant to
-//     ytkit.js after annotating its silent catch surface.
+//     Enforced on background.js, popup.js, extension/core/*.js, and
+//     ytkit.js after per-file audits confirmed full compliance.
 
 const noPostAwaitAddListener = require('./scripts/eslint-rules/no-post-await-addlistener.js');
 const requireCatchReason = require('./scripts/eslint-rules/require-catch-reason.js');
@@ -53,92 +48,39 @@ const sharedBrowserGlobals = {
     structuredClone: 'readonly',
 };
 
+const localPlugin = {
+    rules: {
+        'no-post-await-addlistener': noPostAwaitAddListener,
+        'require-catch-reason': requireCatchReason,
+    },
+};
+
+const sharedLanguageOptions = {
+    ecmaVersion: 2022,
+    sourceType: 'script',
+    globals: sharedBrowserGlobals,
+};
+
 module.exports = [
     {
         files: ['extension/background.js'],
-        plugins: {
-            local: {
-                rules: {
-                    'no-post-await-addlistener': noPostAwaitAddListener,
-                    'require-catch-reason': requireCatchReason,
-                },
-            },
-        },
+        plugins: { local: localPlugin },
         rules: {
             'local/no-post-await-addlistener': 'error',
             'local/require-catch-reason': 'error',
         },
-        languageOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'script',
-            globals: sharedBrowserGlobals,
-        },
+        languageOptions: sharedLanguageOptions,
     },
     {
-        // v4.47.0 Phase L: require-catch-reason now also enforced on
-        // popup.js. The popup carries 8 empty catches total, 7 already
-        // carried explanatory comments and the 8th was annotated in
-        // the same commit that landed this rule extension. The
-        // no-post-await-addlistener rule does not apply to the popup
-        // (no chrome.*.addListener calls).
-        files: ['extension/popup.js'],
-        plugins: {
-            local: {
-                rules: {
-                    'require-catch-reason': requireCatchReason,
-                },
-            },
-        },
+        files: [
+            'extension/popup.js',
+            'extension/core/*.js',
+            'extension/ytkit.js',
+        ],
+        plugins: { local: localPlugin },
         rules: {
             'local/require-catch-reason': 'error',
         },
-        languageOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'script',
-            globals: sharedBrowserGlobals,
-        },
-    },
-    {
-        // v4.47.0 Phase L follow-up: direct core modules now enforce the
-        // same silent-catch invariant. Selector-pack files are generated-like
-        // data modules with no catch surface and are intentionally outside
-        // this glob; the roadmap item is extension/core/*.js.
-        files: ['extension/core/*.js'],
-        plugins: {
-            local: {
-                rules: {
-                    'require-catch-reason': requireCatchReason,
-                },
-            },
-        },
-        rules: {
-            'local/require-catch-reason': 'error',
-        },
-        languageOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'script',
-            globals: sharedBrowserGlobals,
-        },
-    },
-    {
-        // v4.47.0 monolith pass: ytkit.js now enforces the same
-        // silent-catch invariant after every intentional swallow in the
-        // monolith was annotated with a `reason:` comment.
-        files: ['extension/ytkit.js'],
-        plugins: {
-            local: {
-                rules: {
-                    'require-catch-reason': requireCatchReason,
-                },
-            },
-        },
-        rules: {
-            'local/require-catch-reason': 'error',
-        },
-        languageOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'script',
-            globals: sharedBrowserGlobals,
-        },
+        languageOptions: sharedLanguageOptions,
     },
 ];

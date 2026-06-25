@@ -6,6 +6,433 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: Audio pan control.** New `audioPan` range setting (-1.0 to 1.0)
+  adds a `StereoPannerNode` to the SharedAudio MAIN world audio graph.
+  Default 0 (center). Bridges to MAIN world via `data-ytkit-audio-pan`
+  attribute. i18n keys added across all 11 locales.
+- **Feat: Focus preset for onboarding wizard.** New `presetFocus` preset
+  (4th option alongside Privacy, Researcher, Power User) enables distraction-
+  removal features: hide Shorts, related videos, infinite scroll, notifications,
+  autoplay + Zen Mode, Digital Wellbeing, Focused Mode, auto-close popups.
+  Toggle off restores prior values. Onboarding wizard button added to popup.
+  i18n keys added across all 11 locales.
+- **Docs: Trust & Transparency section in README.** Added 8-point trust
+  summary: open-source, no telemetry, SBOM/attestation, external CRX signing,
+  credential scrub, profile-split permissions, 26+ hardening passes, privacy
+  policy.
+- **Security: Sanitizer API progressive adoption.** `setTrustedHTML()` in
+  `core/trusted-html.js` now feature-detects `Element.prototype.setHTML`
+  (Chrome 146+, Firefox 148+) and uses browser-native sanitization when
+  available. Falls back to the existing DOMParser + TrustedTypes path on
+  older browsers.
+- **Feat: DeArrow Casual Mode.** New `deArrowCasualMode` setting (off by
+  default). When enabled, keeps descriptive original titles unchanged and only
+  replaces titles that have crowd-submitted DeArrow alternatives. Gates the
+  local fallback formatting path so videos without community submissions show
+  their original metadata. i18n keys added across all 11 locales.
+- **i18n: complete Russian locale translation.** Translated 66 placeholder-
+  identical keys to Russian. Coverage jumped from 92.2% to 98.9% (1 remaining
+  placeholder-identical key). All 11 locales now above 97%.
+- **Fix: userscript drift checker — exclude extension-only download-ui module.**
+  Added `EXTENSION_ONLY_FEATURES` allowlist to `check-userscript-drift.js` so
+  `features/download-ui/index.js` (which depends on chrome.downloads) is not
+  flagged as a missing V5_BUNDLE_MODULES entry. Drift check now passes clean.
+- **Security: SponsorBlock anti-detection monitoring.** Skip timing now includes
+  50-200ms random jitter to reduce detection fingerprint (SponsorBlock #2290).
+  Added periodic `_checkAntiAdblock` monitor that detects YouTube enforcement
+  warning DOM elements and records to DiagnosticLog. Timer cleaned up on destroy.
+- **A11y: Side Panel accessibility parity with popup.** Added landmark roles
+  (`banner`, `main`, `contentinfo`), `aria-labelledby` on all sections,
+  `aria-live="polite"` on dynamic counts, `role="status"` on empty states,
+  `aria-controls` on the search input, `aria-label` on every setting toggle
+  row and the refresh button, skip-link to settings, and `:focus-visible`
+  styles on all interactive elements. Static ARIA attributes increased from
+  8 to 21 (plus JS-generated per-row attributes). 3 new hardening tests pin
+  the a11y surface.
+- **Security: pin aria2c external-downloader ban (CVE-2026-50574).** Verified
+  the companion never passes `--external-downloader aria2c` to yt-dlp. Added
+  two source-analysis tests asserting the invariant: no `aria2` references and
+  no `--external-downloader` flag in the download subprocess construction.
+- **Fix: merge all MAIN world audio into single AudioContext.** Mono-to-stereo
+  (Feature 3) and volume boost/normalization (Feature 4) each had independent
+  AudioContexts calling `createMediaElementSource()` on the same video — a
+  Web Audio API spec violation that causes `InvalidStateError`. Consolidated
+  into a single shared graph: source -> monoMerge -> compressor -> gain ->
+  destination. Each node passes through when its feature is disabled.
+- **Fix: native messaging double-sendResponse race.** The `NATIVE_MSG_GET_TOKEN`
+  handler's timeout, onMessage, and onDisconnect callbacks all called
+  `sendResponse`. Added a `responded` guard so only the first path through
+  delivers the response.
+- **Fix: download-ui health panel `_poll()` undefined.** The Deno provisioning
+  success callback called `this._poll()` which doesn't exist. Changed to
+  `this._render()`. Also added `_destroyed` guard to the 30s poll interval.
+- **Fix: download popup missing aria-expanded.** Speed popup correctly set
+  `aria-expanded` on its anchor but download popup didn't. Added consistent
+  aria-expanded management to the download popup.
+- **Fix: sidepanel setting names.** Toggle labels now convert camelCase keys
+  to human-readable form (`hideCreateButton` → `Hide Create Button`).
+- **SharedAudio: volume boost + audio normalization.** New MAIN world audio
+  features via `ytkit-main.js`: `volumeBoost` amplifies audio beyond 100%
+  via a GainNode (1-10x, configurable via `volumeBoostLevel` range setting);
+  `audioNormalization` compresses dynamic range via a DynamicsCompressorNode
+  so quiet and loud passages play at similar volume. Both share a single
+  AudioContext and audio graph (source -> compressor -> gain -> destination).
+  Off by default; i18n keys added across all 11 locales.
+- **Native messaging token bootstrap.** Extension-side `NATIVE_MSG_GET_TOKEN`
+  handler in background.js uses `chrome.runtime.connectNative()` to request
+  the companion token via a browser-pinned stdio pipe. Falls back to HTTP
+  `/health` when native messaging is unavailable or the host manifest is
+  not registered. `nativeMessaging` permission added to manifest; rationale
+  doc updated. Companion-side handlers were already scaffolded.
+- **Monolith decomposition: Download UI peel.** Extracted 1,626 lines of
+  download UI code into `extension/features/download-ui/index.js`:
+  MediaDLManager singleton, ytKitDownload orchestrator, showDownloadPopup,
+  showDownloadProgress, downloadHealthPanel, downloadStreamLinksPanel,
+  downloadCobaltFallback, downloadHistoryPanel. Monolith delegates through
+  the factory with inline fallback. 826 tests pass (5 new).
+- **Companion module split.** Split `astra_downloader.py` into focused
+  re-export modules: `config.py`, `download.py`, `health.py`, `routes.py`,
+  `gui.py`. Each module is independently importable for testing. The main
+  entry point and test import path unchanged. All 146 Python tests pass.
+- **Userscript: subscription groups.** Ported group CRUD, chip filtering,
+  6 sort modes, digest panel, channel membership editor, CSV/JSON
+  export/import, content-type filter, and new-since-last-visit markers
+  to the userscript. Omits AI tags (Chrome API) and queue playback.
+- **Chrome Side Panel: settings panel.** The Side Panel diagnostic dashboard
+  now includes a full schema-driven settings panel with search filter,
+  toggle switches, and live sync to YouTube tabs. Persists across SPA
+  navigation (unlike the in-page panel). Loads `settings-schema.js` for
+  the full 380-entry schema. Firefox falls back to the in-page panel.
+- **Userscript: SponsorBlock integration.** The userscript now fetches
+  crowdsourced skip segments via the SponsorBlock hash-prefix privacy API,
+  auto-skips enabled categories during playback, and renders colored
+  segment bars on the progress bar. Same 9 category toggles as the
+  extension (sponsor, intro, outro, selfpromo, interaction, music_offtopic,
+  preview, filler, poi_highlight). Uses GM_xmlhttpRequest for cross-origin
+  API access. Cached locally with 12-hour TTL and 500-entry LRU cap.
+- **Popover API adoption for player popup menus.** Speed popup and
+  download popup now use `popover="auto"` with `showPopover()` /
+  `hidePopover()` when the Popover API is available (Chrome 114+,
+  Firefox 125+, Safari 17.4+). Provides native dismiss-on-outside-click
+  and Escape handling via the platform. Manual click/keydown listener
+  fallback retained for browsers without support.
+- **i18n: batch-translate feature definitions across all 10 locales.**
+  All `feature_*_name` and `feature_*_desc` keys translated from English
+  to Arabic, German, Spanish, French, Italian, Japanese, Korean, Brazilian
+  Portuguese, Russian, and Simplified Chinese. Coverage jumped from
+  21–27% to 92–99% across all non-EN locales (889 EN keys). Unblocks
+  credible CWS/AMO multi-language submission claims.
+- **Security: cap regex input length for user-supplied filter patterns.**
+  `hideVideosFromHome` regex tests now cap title at 500 chars, channel at 200.
+  `commentFilterManager` regex tests cap body at 2,000 chars, author at 200.
+  Bounds worst-case backtracking time regardless of pattern complexity.
+- **Perf: popup toggle click delegation.** Replaced per-row
+  `addEventListener('click')` in `render()` with a single delegated click
+  handler on `#toggles`. Eliminates detached-DOM listener accumulation
+  when the toggle list is rebuilt on every setting change.
+- **Fix: DeArrow cache timestamp gate.** `_doFetch()` now checks whether
+  the existing cache entry has a newer `_ts` before overwriting, preventing
+  a staler concurrent response from replacing fresher data.
+- **Security: companion subprocess env whitelist.** yt-dlp subprocesses now
+  receive a minimal whitelisted environment (`PATH`, `SYSTEMROOT`, `TEMP`, etc.)
+  instead of the full `os.environ.copy()`. Prevents a compromised `PYTHONPATH`
+  or `LD_LIBRARY_PATH` from hijacking yt-dlp execution.
+- **Security: companion download size cap.** New `MaxFileSizeMB` config key
+  (default 0 = unlimited) passes `--max-filesize` to yt-dlp when set. Prevents
+  disk exhaustion from queueing extremely large videos.
+- **Security: companion queue size cap.** Download queue hard-capped at 200
+  total entries (`MAX_QUEUED_TOTAL`). Prevents memory exhaustion from a
+  compromised extension flooding `/download` with requests.
+- **Security: fix double-sendResponse race in EXT_FETCH.** The `responded`
+  guard was scoped inside `startFetch()` but the permission-check `.catch()`
+  path was outside that scope. If `startFetch()` threw synchronously after
+  the timeout timer was armed, both the `.catch()` and the timeout could
+  call `sendResponse`. Hoisted `responded` to the outer scope and added
+  a guard on the `.catch()` path.
+- **Security: harden response header reconstruction.** Strip `\r\n` from
+  response header values before joining into the CRLF-delimited string
+  returned to the content script. The Fetch API normalizes headers in
+  practice, but the explicit strip prevents injection via any edge case.
+- **Security: add sandbox attribute to age-restriction bypass iframe.**
+  The embedded YouTube player iframe now carries
+  `sandbox="allow-scripts allow-same-origin allow-presentation"` and
+  validates the videoId format before constructing the embed URL.
+- **Security: reject unsafe object keys in subscription group imports.**
+  `_importGroups()` now checks `isSafeObjectKey()` on both group IDs and
+  parent IDs, preventing `__proto__`/`constructor` prototype pollution
+  from malicious JSON payloads.
+- **Security: validate Innertube API key format in transcript service.**
+  `_method2_InnertubeAPI()` now validates the extracted API key matches
+  `^[a-zA-Z0-9_-]{10,}$` and uses `encodeURIComponent()` in the URL,
+  preventing parameter injection from a crafted page.
+- **Security: add cookie domain allowlist to companion downloader.**
+  `write_cookies_netscape()` now rejects cookies whose domain is not in
+  `ALLOWED_COOKIE_DOMAINS` (YouTube, Google auth). Prevents a compromised
+  extension from injecting cookies for arbitrary domains into the yt-dlp
+  cookie jar.
+- **Security: add X-Content-Type-Options and X-Frame-Options headers to
+  companion Flask responses.** Defense-in-depth for the local REST API.
+- **Fix: mono-to-stereo AudioContext leak on disable.** Disabling the
+  feature previously called `syncMerge()` (adjusting channel count) but
+  left the AudioContext, source node, and gain node alive. Now calls
+  `cleanup()` to properly close the AudioContext and disconnect all nodes.
+- **Fix: data-flow origin matching logic error.** `originMatchesManifest()`
+  used a bidirectional `startsWith` check that incorrectly matched
+  `https://youtube.com` against `https://www.youtube.com/*`. Replaced
+  with proper URL parsing and hostname comparison.
+- **Privacy: strip query/fragment from tab URL in selector-health reports.**
+  The copy-to-clipboard and bug-report export now include only the origin
+  and pathname, preventing accidental disclosure of private playlists or
+  video IDs in pasted issue reports.
+- **Chrome Side Panel dashboard:** new `sidepanel.html` provides a persistent,
+  resizable diagnostic dashboard with feature init timing, selector health, and
+  storage stats. Opens via the "Dashboard" button in the popup. Chrome-only
+  progressive enhancement (Firefox hides the button; the `sidePanel` permission
+  and `side_panel` manifest entry are stripped from Firefox builds by
+  `manifest-patch.js`). The side panel runs in the extension context — no
+  Trusted Types concerns. Permission rationale doc updated.
+- **Mono-to-stereo audio conversion:** new `monoToStereo` feature uses the MAIN
+  world Web Audio API bridge to force mono downmix via a channelCount=1 gain node,
+  then the browser's built-in mono-to-stereo upmix centers the signal equally in
+  both ears. Fixes one-sided recordings, lectures, and old content that sounds
+  unbalanced on headphones. Off by default; the audio graph stays passthrough
+  when disabled so stereo content is unaffected.
+- **Onboarding wizard:** the first-run welcome card now has a second step after
+  profile selection (Store-Safe / GitHub-Full). Step 2 offers three preset
+  profiles — Privacy, Researcher, Power User — or a "Skip" option for manual
+  configuration. Selecting a preset applies it via the existing recipe-toggle
+  system with backup snapshots for safe toggle-off.
+- **Structured companion error log:** `write_persistent_log` now records entries
+  to a 20-entry in-memory ring buffer alongside the disk log. The `/health`
+  endpoint includes a `recentErrors` array with the latest log entries, making
+  companion-side diagnostics accessible from the extension's diagnostic download.
+- **Crash-loop auto-recovery:** if the content script crashes 3+ times within
+  30 seconds (tracked via localStorage timestamps), Astra Deck auto-enters safe
+  mode and shows a 15-second toast explaining what happened. The counter is
+  cleared on successful init. This protects against corrupted-settings crash
+  loops that would otherwise require the user to know about `?ytkit=safe`.
+- **Feature performance dashboard:** new popup section showing the slowest
+  feature init times with visual bars. Queries the content script via
+  `YTKIT_GET_FEATURE_PERF` for lifecycle timing data. Features > 50ms are
+  flagged in red. Hidden when no YouTube tab is active.
+- **Subscription content-type filter:** `subscriptionFilterLive` and
+  `subscriptionFilterStreamed` toggles hide live/upcoming and previously-streamed
+  cards from the subscription feed. Uses CSS class filtering alongside the
+  existing group filter.
+- **Video Flip:** new `videoFlip` feature with `videoFlipMode` select
+  (none/horizontal/vertical/both). Mirrors the video via CSS `scale` property,
+  composing cleanly with existing `videoRotation` transforms. Useful for mirrored
+  dance tutorials, text readability, and flipped recordings.
+- **Security: pin Werkzeug >= 3.1.6 and Jinja2 >= 3.1.6 in requirements.txt.**
+  Flask 3.1.3 did not constrain these transitive dependencies. CVE-2026-21860
+  and CVE-2026-27199 (Werkzeug path traversal via Windows device names in
+  `safe_join()`) and CVE-2025-27516 (Jinja2 sandbox escape) are now floor-pinned
+  so fresh installs and CI cannot resolve to vulnerable versions.
+- **Feature module test coverage:** added dedicated test files for 9 peeled
+  feature modules that lacked unit coverage: return-dislike, player-dock,
+  youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
+  video-filters, wave-8-css, theme-css. All 14 peeled modules now have
+  test files in `tests/features/`. Total test count: 821 (up from 800).
+- **Reliability: companion Deno provisioning error logging + temp cleanup.**
+  `provision_deno()` silently swallowed all exceptions via bare
+  `except Exception: return None`. Now logs errors to the persistent log.
+  Also cleans up partial `tmp_exe` extraction artifacts in the `finally`
+  block to prevent orphaned temp files on permission errors.
+- **Reliability: add catch handlers to SponsorBlock segment reload promises.**
+  Three `_loadForVideo().then(...)` calls in the SponsorBlock peeled module
+  and monolith fallback lacked `.catch()` handlers, risking unhandled
+  promise rejections on network errors or unexpected runtime exceptions.
+  Added `.catch(() => {})` with `reason:` comments.
+- **Security: scrub DeArrow private userID from settings exports.**
+  The `ytkit-da-user-id` storage key (locally generated DeArrow voting
+  identity) was not covered by the `ALWAYS_SCRUB_KEY_PATTERNS` in
+  `core/policy-profile.js`. Settings exports would include the raw user
+  ID, allowing cross-device identity correlation. Fixed: added explicit
+  pattern `^ytkit-da-user-id$` to the scrub list.
+- **Audit: fix 4 bugs from PO Token resilience refactor:**
+  - Transcript viewer: `trackLabel` variable was scoped inside an `else`
+    block but referenced outside it, causing `undefined` in the metadata
+    bar. Fixed: `trackLabel` now declared at correct scope.
+  - Subtitle download: `track.languageCode` referenced an undeclared
+    variable after refactor to `fetchTranscriptWithFallback`. Fixed: uses
+    `result.track?.languageCode` now.
+  - AI summary: redundant engagement-panel fallback after
+    `fetchTranscriptWithFallback` already covers it. Fixed: removed dead
+    code path.
+  - Transcript fetch helper: added guard for missing/corrupt `baseUrl`
+    on caption tracks to prevent fetching `undefined&fmt=json3`.
+  - Fixed curly/smart apostrophes (`'`) in string literals that caused
+    JavaScript syntax errors breaking the content script parser.
+- **Transcript PO Token resilience:** all transcript fetch paths (transcript
+  viewer, subtitle download, AI video summary, local AI summary, transcript
+  Q&A, transcript index) now fall back to engagement-panel HTML scraping when
+  YouTube's timedtext API returns empty or errors due to Proof-of-Origin
+  Token requirements. Failures are logged to the diagnostic log under the
+  `transcript-po-token` category. New shared `fetchTranscriptWithFallback()`
+  and `_scrapeEngagementPanelTranscript()` helpers replace direct
+  `captionTrack.baseUrl + '&fmt=json3'` fetches.
+- **DeArrow voting:** new `deArrowVoting` feature adds thumbs up/down vote
+  buttons on watch-page titles replaced by DeArrow. Votes use a locally
+  generated private userID that never leaves DeArrow requests and is
+  excluded from settings exports. The DeArrow `_processPage` now stamps
+  replaced titles with `data-ytkit-dearrow-original` and
+  `data-ytkit-dearrow-uuid` attributes. Off by default; extension-only.
+- **Threaded comment DOM adaptation:** updated `core/selector-packs/comments.js`
+  with threaded reply container selectors (`#more-replies-sub-thread`,
+  `#expanded-threads`, `#expander-contents`) for YouTube's 3-level nested
+  comment threading (Jan–March 2026 rollout). Verified that `commentSearch`,
+  `commentNavigator`, `sortCommentsNewest`, and `commentEnhancements` all
+  handle nested replies correctly through existing `textContent` and
+  thread-level traversal patterns.
+- **CSS Anchor Positioning for popups:** the speed popup and download popup
+  now use CSS Anchor Positioning (Baseline 2026: Chrome 125+, Firefox 147+)
+  when available. Popups are anchored to their trigger buttons with automatic
+  flip-block fallback. JS `getBoundingClientRect` positioning is kept as a
+  fallback for browsers that don't support `anchor-name`. No visual change
+  on supported browsers — positioning is identical but now handled by CSS.
+- **Transcript Q&A (Chrome Prompt API / Gemini Nano):** new
+  `localAiTranscriptQa` feature adds a "Q&A" button next to the AI summary
+  controls. When Chrome 138+'s Prompt API is available, users can ask
+  questions about the current video's transcript and get on-device answers
+  from Gemini Nano. No API keys needed; runs entirely locally. Graceful
+  fallback when the API is unavailable. Off by default. Added `promptApi`
+  capability probe to detect API availability.
+
+- **DeArrow monolith peel:** the DeArrow feature (API fetch, branding cache,
+  title formatting, thumbnail replacement) is now in
+  `features/dearrow/index.js`. The monolith delegates to the factory via
+  `YTKitFeatures.createDeArrowFeature(deps)` with the inline implementation
+  as a compatibility fallback.
+- **SponsorBlock monolith peel:** the ~480-line SponsorBlock feature
+  (hash-prefix API fetch, segment cache, skip scheduling, progress bar
+  painting) is now in `features/sponsorblock/index.js`. The monolith
+  delegates to the factory via
+  `YTKitFeatures.createSponsorBlockFeature(deps)` with the inline
+  implementation as a compatibility fallback.
+- **Chrome Language Detector API for antiTranslate:** when Chrome 138+
+  Language Detector API is available, the antiTranslate feature uses it to
+  detect whether a video title/description has been auto-translated by
+  YouTube. Falls back to the existing text-comparison heuristic when the
+  API is unavailable. Added `languageDetector` capability probe.
+- **Return YouTube Dislike feature peel:** the ~200-line RYD feature
+  (API fetch, cache, dislike pill, ratio badge) is now in
+  `features/return-dislike/index.js`. The monolith delegates to the factory
+  via `YTKitFeatures.createReturnDislikeFeature(deps)` with the inline
+  implementation as a compatibility fallback.
+- **Download outcome telemetry:** download completion, failure, skip, and
+  cancellation now record entries in the diagnostic log under the
+  `download-outcome` category. The diagnostic download JSON includes
+  these entries for troubleshooting download complaints.
+- **SponsorBlock-adjusted remaining time:** when both `remainingTimeDisplay`
+  and `sponsorBlock` are enabled, the remaining time display now subtracts
+  the total duration of auto-skip segments ahead of the current playback
+  position. Matches YouTube Alchemy's adjusted-remaining-time behavior.
+- **SABR download failure diagnostic:** when yt-dlp fails because all available
+  formats were SABR-only, the download progress panel now shows a clear error
+  message explaining the limitation instead of a generic failure. The download
+  health panel surfaces a new "SABR: limited" warn pill so users understand why
+  some videos may not download. Companion `/health` now includes `sabrSupport`
+  field.
+- **i18n coverage CI gate:** `scripts/i18n-coverage.js` gains `--fail-above <n>`
+  flag that exits non-zero when any non-English locale exceeds n
+  placeholder-identical keys. Wired into `npm run check` at threshold 670
+  (just above the current worst-case locale, ratchets down as translations
+  land). Prevents locale coverage regression.
+- **View Transitions on SPA navigation:** `core/navigation.js` now wraps
+  navigate-rule execution in `document.startViewTransition()` when available
+  (Baseline 2025, all major browsers). Feature UI teardown/rebuild animates
+  smoothly on YouTube SPA navigation. Falls back to direct execution on
+  browsers without support.
+- **Companion auto-provisions Deno:** when yt-dlp >= 2026.04 needs an
+  external JS runtime and no Deno is found on PATH, the companion
+  auto-downloads Deno into `%LOCALAPPDATA%\AstraDownloader\deno\` during
+  setup. New `/provision-deno` POST endpoint lets the extension trigger
+  on-demand provisioning. The health panel Deno pill is now clickable when
+  Deno is missing — one click triggers auto-provision. `probe_deno_runtime`
+  now returns a `source` field (`bundled` or `system`). The yt-dlp
+  subprocess PATH is prepended with the bundled Deno directory when present.
+- **Subscription group CSV export:** new CSV button alongside the existing
+  JSON export on the subscription groups toolbar. RFC 4180 compliant with
+  formula-injection neutralization. Columns: Group, Channel, Handle, URL.
+- **Onboarding preset profiles:** three curated settings bundles — Privacy
+  (clean URLs, no Shorts, no AI Summary), Researcher (transcript viewer,
+  bookmarks, watch time, AI summary), and Power User (speed, stats, A-B
+  loop, focused mode). Each follows the existing recipe-toggle pattern with
+  backup snapshot for safe toggle-off. All off by default.
+- **Settings PIN protection:** optional 4-6 digit PIN gates the in-page
+  settings panel and popup management actions (export/import/reset). PIN
+  stored as SHA-256 hash in `chrome.storage.local` (standalone key,
+  separate from settings export). Set/change/clear via the PIN button in
+  the settings panel header. "Forgot PIN?" recovery clears all settings.
+  Credential scrub pattern added to `policy-profile.js`.
+- **Document PiP cross-browser:** updated `popOutPlayer` for Firefox 151+
+  stable Document PiP support (no about:config flag needed). Added
+  `documentPip` capability probe so the popup can surface availability.
+  Firefox fallback message now version-aware — 151+ gets a generic retry
+  hint, older Firefox gets an upgrade suggestion.
+- **Per-feature performance timing:** `initFeatureLifecycle` and
+  `destroyFeatureLifecycle` now capture `performance.now()` elapsed time.
+  `initMs`/`destroyMs` fields are stored in the registry health snapshot
+  and the lifecycle snapshot, surfaced in the diagnostic download JSON.
+- **yt-dlp pin bump 2026.3.17 → 2026.6.9:** closes three CVEs (cookie leak
+  with curl, dangerous file type creation, aria2c manifest vulnerability) and
+  picks up YouTube extractor improvements. The companion does not use `--exec`
+  or aria2c, so the yt-dlp 2026.06.09 breaking changes are non-impacting.
+- **SponsorBlock per-channel profiles:** added an opt-in watch-page channel
+  chip for overriding SponsorBlock skip categories per channel, with profile
+  data capped at 500 entries and wired through schema/defaults/export guards.
+- **Theater Split premiered-video comments:** hidden/collapsed live-chat
+  placeholders no longer switch the right panel into chat mode when the watch
+  page has a normal comments surface. Premiered videos now keep comments
+  visible instead of reserving a blank chat band in `#ytkit-split-right`.
+- **Dependency review enforcement:** removed the `DEPENDENCY_REVIEW_REQUIRED`
+  advisory gate; the dependency-review CI job now always fails the workflow run
+  on moderate-or-higher vulnerabilities without `continue-on-error`.
+- **Arabic locale + RTL support:** added `extension/_locales/ar/` with 865
+  translated keys. Popup and settings panel dynamically set `dir="rtl"` for RTL
+  locales (Arabic, Hebrew, Farsi, Urdu). RTL CSS overrides handle search icons,
+  switch toggles, sidebar borders, and language selector layout.
+- **Zen Mode:** new `zenMode` watch-page feature that dims the page around the
+  video player using a static CSS `::before` overlay. It avoids
+  `backdrop-filter` so the focus effect stays cheap on long YouTube sessions.
+- **Sleep Timer polish:** replaced the blocking browser prompt with an inline
+  player popover, quick minute presets, validation feedback, and cleanup on
+  cancel/start/destroy. Settings copy now describes the workflow directly.
+- **Userscript overlay hardening:** removed blur filters from injected chips,
+  dropdowns, miniplayer chrome, and page-modal overlays so long sessions avoid
+  expensive live backdrop effects.
+- **Dependency hardening:** updated the Firefox tooling chain to `web-ext`
+  10.4.0, clearing vulnerable dev transitive packages including `shell-quote`,
+  `tmp`, and `undici`.
+- **Play subscription group as queue:** "Play All" button on the subscription
+  group toolbar collects visible video IDs and opens `/watch_videos` (capped at
+  50 IDs) in a new tab.
+- **Companion update TOCTOU fix:** the PowerShell/Python update helper now
+  re-verifies the staged EXE's SHA-256 digest before `MoveFileEx`, closing the
+  time-of-check-to-time-of-use window.
+- **ESLint 10 config consolidation:** deduplicated four config blocks into two
+  using shared plugin and languageOptions objects; confirmed no deprecation
+  warnings on ESLint 10.2.1.
+- **crx3 supply chain audit:** verified all 6 transitive deps are MIT/BSD,
+  `protocol-buffers-schema` is post-advisory, `npm audit` clean.
+- **Playlist search:** new `playlistSearch` feature adds a debounced search
+  input above playlist panels; filters items by title with Escape-to-clear.
+- **Chrome Translator API:** transcript viewer shows a "Translate" button when
+  Chrome's built-in Translator API is available (138+). Translates cue text
+  on-device with auto-detected source language; "Show Original" toggles back.
+  Graceful degradation when API unavailable.
+- **Classic Player Chrome:** new `classicPlayerChrome` toggle restores the
+  pre-Delhi/Liquid Glass player look in one click — opaque square controls,
+  solid red 3px progress bar, transparent time wrapper, no frosted glass on
+  player overlays. CSS-only, no DOM rebuild.
+- **Video age newest highlight:** `videoAgeColors` now highlights the freshest
+  video on the subscriptions page with a stronger green glow and auto-scrolls
+  to it on first load. Navigate resets the scroll target.
+- **Userscript drift guard:** new `scripts/check-userscript-drift.js` (wired
+  into `npm run check`) enforces the V5_BUNDLE_MODULES ↔ manifest feature
+  module parity contract. New peeled features that land in the manifest without
+  a matching bundle entry fail CI.
+
 ## [4.46.3] - 2026-06-10
 
 Deep engineering + product-quality audit pass across the extension, userscript,

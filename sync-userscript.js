@@ -70,6 +70,9 @@ const V5_BUNDLE_MODULES = [
     'extension/features/video-hider/index.js',
     'extension/features/player-dock/index.js',
     'extension/features/youtube-music-compat/index.js',
+    'extension/features/return-dislike/index.js',
+    'extension/features/sponsorblock/index.js',
+    'extension/features/dearrow/index.js',
     'extension/core/lifecycle-route-bridge.js'
 ];
 
