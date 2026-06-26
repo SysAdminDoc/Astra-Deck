@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Refactor: digital wellbeing monolith peel.** The break-reminder,
+  daily-cap, and day-rollover timer runtime now lives in
+  `extension/features/digital-wellbeing/index.js` with inline fallback,
+  manifest/userscript bundle wiring, and focused peel coverage.
 - **Refactor: subscription groups monolith peel.** The subscription-groups
   runtime now lives in `extension/features/subscription-groups/index.js` with
   an inline `ytkit.js` fallback, manifest/userscript bundle wiring, and peel
