@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="script-src 'self'; object-src 'self';">
+  <title>Astra Deck — Firefox Sidebar</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body role="application" aria-label="Astra Deck Firefox Sidebar">
+  <a class="sp-skip-link" href="#sp-settings-search">Skip to settings</a>
+  <header class="sp-header" role="banner">
+    <strong class="sp-title" id="sp-title">Astra Deck Sidebar</strong>
+    <span class="sp-version" id="sp-version" aria-label="Extension version"></span>
+  </header>
+
+  <main role="main" aria-labelledby="sp-title">
+  <section class="sp-section" id="sp-perf" aria-labelledby="sp-perf-heading">
+    <h2 class="sp-section-title" id="sp-perf-heading">Feature Init Timing</h2>
+    <span class="sp-section-meta" id="sp-perf-total" aria-live="polite"></span>
+    <ul class="sp-perf-list" id="sp-perf-list" role="list" aria-label="Feature init timing list"></ul>
+    <p class="sp-empty" id="sp-perf-empty" hidden role="status">No YouTube tab active.</p>
+  </section>
+
+  <section class="sp-section" id="sp-selector" aria-labelledby="sp-selector-heading">
+    <h2 class="sp-section-title" id="sp-selector-heading">Selector Health</h2>
+    <span class="sp-section-meta" id="sp-selector-total" aria-live="polite"></span>
+    <ul class="sp-selector-list" id="sp-selector-list" role="list" aria-label="Selector health list"></ul>
+    <p class="sp-empty" id="sp-selector-empty" hidden role="status">No YouTube tab active.</p>
+  </section>
+
+  <section class="sp-section" id="sp-external" aria-labelledby="sp-external-heading">
+    <h2 class="sp-section-title" id="sp-external-heading">External API Health</h2>
+    <span class="sp-section-meta" id="sp-external-total" aria-live="polite"></span>
+    <ul class="sp-external-list" id="sp-external-list" role="list" aria-label="External API health list"></ul>
+    <p class="sp-empty" id="sp-external-empty" hidden role="status">No YouTube tab active.</p>
+  </section>
+
+  <section class="sp-section" id="sp-storage" aria-labelledby="sp-storage-heading">
+    <h2 class="sp-section-title" id="sp-storage-heading">Storage</h2>
+    <div class="sp-storage-stats" id="sp-storage-stats" role="group" aria-label="Storage statistics"></div>
+  </section>
+
+  <section class="sp-section" id="sp-settings" aria-labelledby="sp-settings-heading">
+    <h2 class="sp-section-title" id="sp-settings-heading">Quick Settings</h2>
+    <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings..." autocomplete="off" spellcheck="false" aria-label="Filter settings" aria-controls="sp-settings-list">
+    <div class="sp-settings-list" id="sp-settings-list" role="list" aria-label="Settings toggles"></div>
+    <p class="sp-empty" id="sp-settings-empty" hidden role="status">No settings match.</p>
+    <p class="sp-settings-count" id="sp-settings-count" aria-live="polite"></p>
+  </section>
+  </main>
+
+  <footer class="sp-footer" role="contentinfo">
+    <button type="button" class="sp-refresh-btn" id="sp-refresh" aria-label="Refresh all dashboard sections">Refresh</button>
+  </footer>
+
+  <script src="core/settings-schema.js"></script>
+  <script src="sidepanel.js"></script>
+  <script src="sidebar.js"></script>
+</body>
+</html>
