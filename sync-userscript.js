@@ -69,6 +69,7 @@ const V5_BUNDLE_MODULES = [
     'extension/features/chat-style-comments/index.js',
     'extension/features/sticky-video/index.js',
     'extension/features/video-hider/index.js',
+    'extension/features/video-notes/index.js',
     'extension/features/subscription-groups/index.js',
     'extension/features/digital-wellbeing/index.js',
     'extension/features/settings-panel/index.js',
