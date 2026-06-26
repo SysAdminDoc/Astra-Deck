@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Refactor: subscription groups monolith peel.** The subscription-groups
+  runtime now lives in `extension/features/subscription-groups/index.js` with
+  an inline `ytkit.js` fallback, manifest/userscript bundle wiring, and peel
+  coverage for factory export, runtime surface, load order, and delegation.
 - **Feat: transcript study batch export.** Study / Work Export can now queue
   visible watch, playlist, and channel videos for local transcript fetches,
   show per-video pending/success/failure state, and export paired Markdown
