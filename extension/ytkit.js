@@ -33821,7 +33821,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  SUBSCRIPTION MANAGER — Local groups + sort + new-since markers
         // ═══════════════════════════════════════════════════════════════════
-        {
+        (globalThis.YTKitFeatures?.subscriptionGroups?.createSubscriptionGroupsFeature?.({
+            PageTypes,
+            appState,
+            injectStyle,
+            settingsManager,
+            DebugManager,
+            showToast,
+            getVideoId,
+            getUrlParam,
+            storageReadJSON,
+            storageWriteJSON,
+            addNavigateRule,
+            removeNavigateRule,
+            addMutationRule,
+            removeMutationRule,
+            handleFileExport
+        }) || {
             id: 'subscriptionGroups',
             name: 'Subscription Groups',
             description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up.',
@@ -35286,7 +35302,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     showToast(included ? 'Channel added to group' : 'Channel removed from group', '#7c3aed', { duration: 2 });
                 }
             },
-        },
+        }),
         // ═══════════════════════════════════════════════════════════════════
         //  LOCAL AI SUMMARY — Chrome built-in ai.summarizer when available
         // ═══════════════════════════════════════════════════════════════════
