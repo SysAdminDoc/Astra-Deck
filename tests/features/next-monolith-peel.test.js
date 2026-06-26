@@ -472,3 +472,126 @@ test('digitalWellbeing monolith prefers the module runtime factory before inline
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
 });
+
+// ── Settings Panel peel ──
+
+test('settingsPanel module exports the runtime factory', () => {
+    const { mod, exported } = loadFeatureModule(
+        '../../extension/features/settings-panel/index.js',
+        'settingsPanel'
+    );
+
+    assert.equal(typeof mod.createSettingsPanelRuntime, 'function');
+    assert.equal(typeof exported.createSettingsPanelRuntime, 'function');
+});
+
+test('settingsPanel factory returns the panel runtime surface', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/settings-panel/index.js',
+        'settingsPanel'
+    );
+    const runtime = mod.createSettingsPanelRuntime();
+
+    for (const method of [
+        'isSettingsPanelOpen',
+        'setSettingsPanelOpen',
+        'toggleSettingsPanel',
+        'countEnabledToggleFeatures',
+        'buildSettingsPanel',
+        'buildFeatureCard',
+        'updateAllToggleStates',
+        'attachUIEventListeners'
+    ]) {
+        assert.equal(typeof runtime[method], 'function', 'factory runtime must expose ' + method);
+    }
+});
+
+test('settingsPanel module loads before ytkit.js in content scripts', () => {
+    for (const scriptGroup of config.manifest.content_scripts) {
+        const scripts = scriptGroup.js || [];
+        const ytkitIndex = scripts.indexOf('ytkit.js');
+        if (ytkitIndex === -1) continue;
+        const modulePath = 'features/settings-panel/index.js';
+        const moduleIndex = scripts.indexOf(modulePath);
+        assert.ok(moduleIndex > -1, 'manifest content script must include ' + modulePath);
+        assert.ok(moduleIndex < ytkitIndex, modulePath + ' must load before ytkit.js');
+    }
+});
+
+test('settingsPanel monolith prefers the module runtime before inline fallback', () => {
+    const factoryNeedle = 'globalThis.YTKitFeatures?.settingsPanel?.createSettingsPanelRuntime';
+    const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
+    assert.ok(factoryIndex > -1, 'ytkit.js must resolve settingsPanel through the module factory');
+    const factoryCallIndex = sources.ytkit.indexOf('_settingsPanelRuntime = factory({', factoryIndex);
+    assert.ok(factoryCallIndex > factoryIndex, 'ytkit.js must construct the settingsPanel runtime through the factory');
+    const fallbackIndex = sources.ytkit.indexOf('function buildSettingsPanel()', factoryCallIndex);
+    assert.ok(fallbackIndex > factoryCallIndex, 'ytkit.js must retain the inline buildSettingsPanel fallback after the factory call');
+    const dependencyBag = sources.ytkit.slice(factoryCallIndex, fallbackIndex);
+
+    for (const dep of [
+        'BRAND',
+        'CATEGORY_CONFIG',
+        'CATEGORY_META',
+        'CONFLICT_MAP',
+        'DebugManager',
+        'FEATURE_PREVIEWS',
+        'ICONS',
+        'LEGACY_STORAGE_KEYS',
+        'MediaDLManager',
+        'PANEL_OPEN_CLASS',
+        'STORAGE_KEYS',
+        'StorageManager',
+        'YTKIT_VERSION',
+        '_i18n',
+        '_showPinDialog',
+        '_showPinManageDialog',
+        'appState',
+        'createBrandImage',
+        'createToast',
+        'destroyFeatureLifecycle',
+        'formatPageLabel',
+        'getFeatureById',
+        'getFeatureDescription',
+        'getFeatureName',
+        'getFocusableUiElements',
+        'handleExternalStorageChanges',
+        'handleFileExport',
+        'handleFileImport',
+        'initFeatureLifecycle',
+        'injectStyle',
+        'isBooleanFeature',
+        'isPinSet',
+        'liveFeatureList',
+        'normalizeSelectOptions',
+        'openExternalUrl',
+        'safeDestroyFeature',
+        'safeInitFeature',
+        'settingsManager',
+        'shouldBuildPrimaryUI',
+        'showToast',
+        'storageRead',
+        'storageReadJSON',
+        'storageWrite',
+        't',
+        'trapFocusWithin',
+        'getPinSessionUnlocked',
+        'getPageModalOpen',
+        'getFeatureCrashCounts',
+        'persistCrashCounts'
+    ]) {
+        assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
+    }
+
+    for (const method of [
+        'isSettingsPanelOpen',
+        'setSettingsPanelOpen',
+        'toggleSettingsPanel',
+        'countEnabledToggleFeatures',
+        'buildSettingsPanel',
+        'buildFeatureCard',
+        'updateAllToggleStates',
+        'attachUIEventListeners'
+    ]) {
+        assert.ok(sources.ytkit.includes(`runtime?.${method}`), 'ytkit.js must delegate ' + method + ' through the settingsPanel runtime');
+    }
+});
