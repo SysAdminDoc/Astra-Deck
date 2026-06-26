@@ -318,3 +318,85 @@ test('downloadUI monolith delegates feature objects through the module factory',
         );
     }
 });
+
+// ── Subscription Groups peel ──
+
+test('subscriptionGroups module exports the runtime factory', () => {
+    const { mod, exported } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+
+    assert.equal(typeof mod.createSubscriptionGroupsFeature, 'function');
+    assert.equal(typeof exported.createSubscriptionGroupsFeature, 'function');
+});
+
+test('subscriptionGroups factory returns the group management runtime surface', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const feature = mod.createSubscriptionGroupsFeature();
+
+    assert.equal(feature.id, 'subscriptionGroups');
+    assert.equal(feature.name, 'Subscription Groups');
+    assert.equal(feature.group, 'Subscriptions');
+    assert.equal(feature._GROUPS_KEY, 'subscriptionGroupData');
+    assert.deepEqual(feature._SORT_MODES, Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']));
+    for (const method of [
+        'init',
+        'destroy',
+        '_renderToolbar',
+        '_applyGroupFilter',
+        '_exportGroups',
+        '_importGroups',
+        '_toggleMembersPanel',
+        '_playGroupAsQueue',
+        '_generateAiTagsForGroup'
+    ]) {
+        assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+});
+
+test('subscriptionGroups module loads before ytkit.js in content scripts', () => {
+    for (const scriptGroup of config.manifest.content_scripts) {
+        const scripts = scriptGroup.js || [];
+        const ytkitIndex = scripts.indexOf('ytkit.js');
+        if (ytkitIndex === -1) continue;
+        const modulePath = 'features/subscription-groups/index.js';
+        const moduleIndex = scripts.indexOf(modulePath);
+        assert.ok(moduleIndex > -1, 'manifest content script must include ' + modulePath);
+        assert.ok(moduleIndex < ytkitIndex, modulePath + ' must load before ytkit.js');
+    }
+});
+
+test('subscriptionGroups monolith prefers the module runtime factory before inline fallback', () => {
+    const factoryNeedle = 'globalThis.YTKitFeatures?.subscriptionGroups?.createSubscriptionGroupsFeature?.({';
+    const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
+    assert.ok(factoryIndex > -1, 'ytkit.js must construct subscriptionGroups through the module factory');
+    const fallbackIndex = sources.ytkit.indexOf("id: 'subscriptionGroups'", factoryIndex);
+    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline subscriptionGroups fallback after the factory call');
+    const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
+    assert.ok(dependencyBag.includes('}) || {'),
+        'module factory path must fall back to the inline feature object');
+
+    for (const dep of [
+        'PageTypes',
+        'appState',
+        'injectStyle',
+        'settingsManager',
+        'DebugManager',
+        'showToast',
+        'getVideoId',
+        'getUrlParam',
+        'storageReadJSON',
+        'storageWriteJSON',
+        'addNavigateRule',
+        'removeNavigateRule',
+        'addMutationRule',
+        'removeMutationRule',
+        'handleFileExport'
+    ]) {
+        assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
+    }
+});
