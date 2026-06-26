@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Refactor: video notes monolith peel.** The per-video local notes runtime
+  now lives in `extension/features/video-notes/index.js` with inline fallback,
+  manifest/userscript bundle wiring, raw-CSS userscript parity, and focused
+  peel coverage.
 - **Feat: Firefox diagnostic sidebar fallback.** Firefox builds now get a
   `sidebar_action` entry pointing at a sidebar version of the existing
   diagnostic dashboard, while Chrome keeps the `side_panel` manifest path.

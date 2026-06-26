@@ -21386,7 +21386,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-bookmarks-container').forEach(el => el.remove());
             }
         },
-        {
+        (globalThis.YTKitFeatures?.videoNotes?.createVideoNotesFeature?.({
+            PageTypes,
+            appState,
+            DebugManager,
+            injectStyle,
+            getVideoId,
+            isWatchPagePath,
+            settingsManager,
+            showToast,
+            handleFileExport,
+            addNavigateRule,
+            removeNavigateRule
+        }) || {
             id: 'videoNotes',
             name: 'Per-Video Notes',
             description: 'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.',
@@ -21424,7 +21436,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible{border-color:rgba(59,130,246,0.55);box-shadow:0 0 0 2px rgba(59,130,246,0.16);}
                     .ytkit-video-notes-footer{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:rgba(255,255,255,0.48);font:11px/1.3 system-ui;}
                     .ytkit-video-notes-count{font-variant-numeric:tabular-nums;}
-                `, 'video-notes');
+                `, 'video-notes', true);
             },
 
             _enforceNotesCap(notes) {
@@ -21701,7 +21713,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl?.remove();
                 this._styleEl = null;
             }
-        },
+        }),
         {
             id: 'blueLightFilter',
             name: 'Blue Light Filter',
