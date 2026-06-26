@@ -400,3 +400,75 @@ test('subscriptionGroups monolith prefers the module runtime factory before inli
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
 });
+
+// ── Digital Wellbeing peel ──
+
+test('digitalWellbeing module exports the runtime factory', () => {
+    const { mod, exported } = loadFeatureModule(
+        '../../extension/features/digital-wellbeing/index.js',
+        'digitalWellbeing'
+    );
+
+    assert.equal(typeof mod.createDigitalWellbeingFeature, 'function');
+    assert.equal(typeof exported.createDigitalWellbeingFeature, 'function');
+});
+
+test('digitalWellbeing factory returns the timer and overlay runtime surface', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/digital-wellbeing/index.js',
+        'digitalWellbeing'
+    );
+    const feature = mod.createDigitalWellbeingFeature();
+
+    assert.equal(feature.id, 'digitalWellbeing');
+    assert.equal(feature.name, 'Digital Wellbeing');
+    assert.equal(feature.group, 'Advanced');
+    assert.equal(feature._capDismissKey, 'ytkit_dw_cap_dismissed_date');
+    assert.equal(feature._lastTodayKey, null);
+    for (const method of [
+        'init',
+        'destroy',
+        '_tick',
+        '_showOverlay',
+        '_loadToday',
+        '_saveToday',
+        '_getCapDismissDate',
+        '_setCapDismissDate'
+    ]) {
+        assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+});
+
+test('digitalWellbeing module loads before ytkit.js in content scripts', () => {
+    for (const scriptGroup of config.manifest.content_scripts) {
+        const scripts = scriptGroup.js || [];
+        const ytkitIndex = scripts.indexOf('ytkit.js');
+        if (ytkitIndex === -1) continue;
+        const modulePath = 'features/digital-wellbeing/index.js';
+        const moduleIndex = scripts.indexOf(modulePath);
+        assert.ok(moduleIndex > -1, 'manifest content script must include ' + modulePath);
+        assert.ok(moduleIndex < ytkitIndex, modulePath + ' must load before ytkit.js');
+    }
+});
+
+test('digitalWellbeing monolith prefers the module runtime factory before inline fallback', () => {
+    const factoryNeedle = 'globalThis.YTKitFeatures?.digitalWellbeing?.createDigitalWellbeingFeature?.({';
+    const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
+    assert.ok(factoryIndex > -1, 'ytkit.js must construct digitalWellbeing through the module factory');
+    const fallbackIndex = sources.ytkit.indexOf("id: 'digitalWellbeing'", factoryIndex);
+    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline digitalWellbeing fallback after the factory call');
+    const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
+    assert.ok(dependencyBag.includes('}) || {'),
+        'module factory path must fall back to the inline feature object');
+
+    for (const dep of [
+        'appState',
+        'StorageManager',
+        'settingsManager',
+        'DebugManager',
+        'injectStyle',
+        'trapFocusWithin'
+    ]) {
+        assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
+    }
+});
