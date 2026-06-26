@@ -179,6 +179,52 @@ body {
 .sp-selector-list .sh-errors { color: #ff8585; }
 .sp-selector-list .sh-drifts { color: #ffb84d; }
 
+/* External API health list */
+.sp-external-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-external-list li {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 3px 8px;
+  padding: 4px 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sp-external-list li:first-child { border-top: 0; }
+
+.sp-external-list .eh-name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-external-list .eh-state {
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.sp-external-list .eh-detail {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.sp-external-list .eh-state[data-tone="ok"] { color: #6fe0bc; }
+.sp-external-list .eh-state[data-tone="degraded"],
+.sp-external-list .eh-state[data-tone="rate-limited"] { color: #ffb84d; }
+.sp-external-list .eh-state[data-tone="error"] { color: #ff8585; }
+.sp-external-list .eh-state[data-tone="unknown"] { color: var(--text-muted); }
+
 /* ── Storage stats ── */
 .sp-storage-stats {
   display: grid;

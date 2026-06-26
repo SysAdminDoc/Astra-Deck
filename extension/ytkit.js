@@ -516,6 +516,19 @@
         return api;
     })();
 
+    const ExternalApiHealth = (function () {
+        const factory = globalThis.YTKitCore && globalThis.YTKitCore.createExternalApiHealth;
+        if (typeof factory === 'function') {
+            return factory({ DiagnosticLog });
+        }
+        return {
+            recordSuccess() {},
+            recordFailure() {},
+            recordCacheFallback() {},
+            snapshot() { return []; }
+        };
+    })();
+
     window.addEventListener('ytkit-selector-miss', (event) => {
         const detail = event?.detail || {};
         const surface = String(detail.surface || 'unknown').slice(0, 80);
@@ -5729,6 +5742,18 @@ return response;
                             .map((s) => ({ id: s.id, initMs: Math.round(s.initMs * 100) / 100, destroyMs: s.destroyMs != null ? Math.round(s.destroyMs * 100) / 100 : null }))
                             .sort((a, b) => b.initMs - a.initMs);
                         sendResponse?.({ ok: true, features: entries.slice(0, 20), totalFeatures: entries.length });
+                    } catch (e) {
+                        sendResponse?.({ ok: false, error: String(e?.message || e) });
+                    }
+                    return false;
+                }
+
+                if (message.type === 'YTKIT_GET_EXTERNAL_API_HEALTH') {
+                    try {
+                        const services = (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
+                            ? ExternalApiHealth.snapshot()
+                            : [];
+                        sendResponse?.({ ok: true, services, totalServices: services.length });
                     } catch (e) {
                         sendResponse?.({ ok: false, error: String(e?.message || e) });
                     }
@@ -27581,6 +27606,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             appState,
             DebugManager,
             DiagnosticLog,
+            ExternalApiHealth,
             extensionFetchJson,
             storageReadJSON: storageReadJSON || ((k, d) => d),
             storageWriteJSON: storageWriteJSON || (() => {}),
@@ -28340,6 +28366,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         (globalThis.YTKitFeatures?.createDeArrowFeature?.({
             appState,
             DebugManager,
+            DiagnosticLog,
+            ExternalApiHealth,
             extensionFetchJson,
             storageReadJSON: storageReadJSON || ((k, d) => d),
             storageWriteJSON: storageWriteJSON || (() => {}),
@@ -33021,6 +33049,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         (globalThis.YTKitFeatures?.createReturnDislikeFeature?.({
             appState,
             DebugManager,
+            DiagnosticLog,
+            ExternalApiHealth,
             extensionFetchJson,
             storageReadJSON: storageReadJSON || ((k, d) => d),
             storageWriteJSON: storageWriteJSON || (() => {}),
