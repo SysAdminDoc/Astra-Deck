@@ -155,6 +155,72 @@ test('downloadUI factory returns all required exports', () => {
     assert.equal(typeof result._fetchServerConfig, 'function');
 });
 
+test('downloadUI MediaDLManager prefers native messaging token over /health token echo', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: 'native-token' }),
+        extensionFetchJson: async (details) => {
+            calls.push(details);
+            return {
+                data: {
+                    service: 'astra-downloader',
+                    token_required: true,
+                    port: 9751,
+                    version: '1.5.1',
+                    downloads: 0,
+                },
+            };
+        },
+        DebugManager: { log() {} },
+    });
+
+    const status = await result.MediaDLManager.check(true);
+
+    assert.equal(status.ok, true);
+    assert.equal(status.token, 'native-token');
+    assert.equal(status.tokenSource, 'native');
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].headers['X-MDL-Token-Source'], 'native');
+});
+
+test('downloadUI MediaDLManager falls back to legacy /health token when native messaging is unavailable', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'host missing' }),
+        extensionFetchJson: async (details) => {
+            calls.push(details);
+            return {
+                data: {
+                    service: 'astra-downloader',
+                    token_required: true,
+                    token: 'legacy-token',
+                    port: 9751,
+                    version: '1.5.1',
+                    downloads: 0,
+                },
+            };
+        },
+        DebugManager: { log() {} },
+    });
+
+    const status = await result.MediaDLManager.check(true);
+
+    assert.equal(status.ok, true);
+    assert.equal(status.token, 'legacy-token');
+    assert.equal(status.tokenSource, 'legacy-health');
+    assert.equal(status.nativeTokenError, 'host missing');
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
+});
+
 test('downloadUI factory returns all four feature objects', () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',
@@ -215,6 +281,7 @@ test('downloadUI monolith delegates feature objects through the module factory',
         'openExternalUrl',
         'openProtocol',
         'triggerDownload',
+        'requestNativeDownloaderToken',
         'browserCookies',
         'getProfileExportMode',
         'normalizeCookieExpiry',

@@ -620,6 +620,19 @@ return response;
 });
 };
 
+    async function requestNativeDownloaderToken() {
+        if (!hasExtensionContext()) {
+            return { token: null, error: 'Extension context unavailable' };
+        }
+        try {
+            const response = await sendRuntimeMessage({ type: 'NATIVE_MSG_GET_TOKEN' });
+            if (response && response.token) return { token: response.token, error: null };
+            return { token: null, error: response?.error || 'Native messaging token unavailable' };
+        } catch (error) {
+            return { token: null, error: error?.message || 'Native messaging token failed' };
+        }
+    }
+
     installStorageChangeListener();
     installStorageFlushGuards();
     await preloadExtensionState();
@@ -2454,6 +2467,8 @@ return response;
     const MediaDLManager = {
         _status: null, // null = unknown, 'running', 'not-installed'
         _token: null,
+        _tokenSource: null,
+        _nativeTokenError: null,
         _lastCheck: 0,
         _serverVersion: null,
         _autoStartAttempted: false,
@@ -2476,11 +2491,29 @@ return response;
         baseUrl() { return 'http://127.0.0.1:' + this._port; },
 
         _isAstraDownloaderHealth(data) {
-            if (!data || !data.token) return false;
+            if (!data) return false;
             if (data.service === this._SERVICE_ID) return true;
             // Backward-compatible acceptance for hardened builds that predate
             // the explicit service id but still expose the Astra-only health schema.
             return data.token_required === true && Number.isInteger(data.port);
+        },
+
+        _headers(extra = {}) {
+            const headers = { ...extra };
+            if (this._tokenSource) headers['X-MDL-Token-Source'] = this._tokenSource;
+            return headers;
+        },
+
+        async _requestNativeToken() {
+            try {
+                const result = await requestNativeDownloaderToken();
+                if (result && result.token) {
+                    return { token: result.token, error: null };
+                }
+                return { token: null, error: result?.error || 'Native messaging token unavailable' };
+            } catch (e) {
+                return { token: null, error: e?.message || 'Native messaging token failed' };
+            }
         },
 
         // Quick health check — returns { ok, token, version, port } or { ok: false }.
@@ -2488,7 +2521,14 @@ return response;
         async check(force) {
             const now = Date.now();
             if (!force && this._status === 'running' && this._token && (now - this._lastCheck < this._CHECK_INTERVAL)) {
-                return { ok: true, token: this._token, version: this._serverVersion, port: this._port };
+                return {
+                    ok: true,
+                    token: this._token,
+                    tokenSource: this._tokenSource || 'legacy-health',
+                    nativeTokenError: this._nativeTokenError,
+                    version: this._serverVersion,
+                    port: this._port
+                };
             }
             if (this._checkPromise) return this._checkPromise;
             this._checkPromise = this._checkImpl(force).finally(() => { this._checkPromise = null; });
@@ -2497,12 +2537,15 @@ return response;
 
         async _checkImpl(force) {
             const now = Date.now();
+            const nativeToken = await this._requestNativeToken();
             const tryPort = async (port) => {
                 try {
+                    const headers = { 'X-MDL-Client': 'MediaDL' };
+                    if (nativeToken.token) headers['X-MDL-Token-Source'] = 'native';
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: 'http://127.0.0.1:' + port + '/health',
-                        headers: { 'X-MDL-Client': 'MediaDL' },
+                        headers,
                         timeout: 1500
                     });
                     if (this._isAstraDownloaderHealth(data)) return data;
@@ -2520,18 +2563,34 @@ return response;
             for (const port of order) {
                 const data = await tryPort(port);
                 if (data) {
+                    const token = nativeToken.token || data.token || null;
+                    if (!token) {
+                        DebugManager.log('MediaDL', `Astra Downloader on port ${port} did not provide an auth token`);
+                        continue;
+                    }
                     this._port = port;
                     this._status = 'running';
-                    this._token = data.token;
+                    this._token = token;
+                    this._tokenSource = nativeToken.token ? 'native' : 'legacy-health';
+                    this._nativeTokenError = nativeToken.token ? null : nativeToken.error;
                     this._serverVersion = data.version || null;
                     this._lastCheck = now;
-                    DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, ${data.downloads || 0} active)`);
-                    return { ok: true, token: data.token, version: this._serverVersion, port };
+                    DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, auth=${this._tokenSource}, ${data.downloads || 0} active)`);
+                    return {
+                        ok: true,
+                        token,
+                        tokenSource: this._tokenSource,
+                        nativeTokenError: this._nativeTokenError,
+                        version: this._serverVersion,
+                        port
+                    };
                 }
             }
 
             this._status = 'not-installed';
             this._token = null;
+            this._tokenSource = null;
+            this._nativeTokenError = nativeToken.error;
             return { ok: false };
         },
 
@@ -5861,6 +5920,7 @@ return response;
         openExternalUrl,
         openProtocol,
         triggerDownload,
+        requestNativeDownloaderToken,
         browserCookies,
         getProfileExportMode,
         normalizeCookieExpiry,
@@ -32362,9 +32422,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: MediaDLManager.baseUrl() + '/health',
-                        headers: { 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') }
+                        headers: MediaDLManager._headers({ 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') })
                     });
-                    return data || null;
+                    return data ? { ...data, token: status.token, tokenSource: status.tokenSource } : null;
                 } catch (e) {
                     DebugManager.log('DownloadHealth', `Fetch failed: ${e.message}`);
                     return null;
@@ -32387,6 +32447,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!data) {
                     this._container.appendChild(this._renderPill('Downloader', 'offline', 'warn'));
                     return;
+                }
+                if (data.tokenSource) {
+                    const authTone = data.tokenSource === 'native' ? 'ok' : 'warn';
+                    const authLabel = data.tokenSource === 'native' ? 'native' : 'legacy';
+                    const authPill = this._renderPill('Auth', authLabel, authTone);
+                    authPill.title = data.tokenSource === 'native'
+                        ? 'Token received over browser native messaging; /health token echo suppressed.'
+                        : 'Using legacy /health token bootstrap because native messaging is unavailable.';
+                    this._container.appendChild(authPill);
                 }
                 if (data.ytDlpVersion) {
                     this._container.appendChild(this._renderPill('yt-dlp', String(data.ytDlpVersion), 'ok'));
@@ -32439,13 +32508,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         pill.addEventListener('click', async () => {
                             pill.textContent = 'Provisioning...';
                             try {
-                                const resp = await extensionFetchJson(
-                                    `http://127.0.0.1:${data.port}/provision-deno`,
-                                    { method: 'POST', headers: { 'X-MDL-Token': data.token } }
-                                );
+                                const { data: resp } = await extensionFetchJson({
+                                    method: 'POST',
+                                    url: `http://127.0.0.1:${data.port}/provision-deno`,
+                                    headers: MediaDLManager._headers({ 'X-MDL-Token': data.token })
+                                });
                                 if (resp?.ok) {
                                     showToast('Deno provisioned successfully', '#22c55e');
-                                    this._poll();
+                                    this._render();
                                 } else {
                                     showToast(resp?.error || 'Deno provision failed', '#ef4444');
                                     pill.textContent = 'Deno: failed';
@@ -32500,6 +32570,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // foreground state — wasteful local-network chatter and an
                 // unnecessary keepalive for the MV3 service worker.
                 this._pollTimer = setInterval(() => {
+                    if (this._destroyed) return;
                     if (typeof isWatchPagePath === 'function' && !isWatchPagePath()) return;
                     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
                     this._render();
@@ -32839,7 +32910,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: MediaDLManager.baseUrl() + '/history?limit=50',
-                        headers: { 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') }
+                        headers: MediaDLManager._headers({ 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') })
                     });
                     return data?.history || [];
                 } catch (e) {

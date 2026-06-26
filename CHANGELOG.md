@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Security: native-messaging token bootstrap cutover.** Astra Downloader now
+  registers Chrome/Firefox native host manifests for configured extension IDs,
+  the extension prefers the browser-pinned native token before `/health`, and
+  `/health` suppresses token echo once native bootstrap succeeds.
 - **Feat: Audio pan control.** New `audioPan` range setting (-1.0 to 1.0)
   adds a `StereoPannerNode` to the SharedAudio MAIN world audio graph.
   Default 0 (center). Bridges to MAIN world via `data-ytkit-audio-pan`
