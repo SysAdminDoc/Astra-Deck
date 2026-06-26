@@ -136,6 +136,8 @@ YTDLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.ex
 FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
 DENO_DIR = INSTALL_DIR / 'deno'
 DENO_PATH = DENO_DIR / 'deno.exe'
+NATIVE_HOST_DIR = INSTALL_DIR / 'native-hosts'
+DEFAULT_FIREFOX_EXTENSION_IDS = ("ytkit@sysadmindoc.github.io",)
 DENO_ZIP_URL = "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
 COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
@@ -181,6 +183,14 @@ DEFAULT_CONFIG = {
     # v1.2.0: last ffmpeg freshness stamp (used for the monthly update nag).
     "LastFfmpegCheck": "",
     "MaxFileSizeMB": 0,
+    # Comma/semicolon/newline-separated extension IDs allowed to launch the
+    # native-messaging token bootstrap host. Chrome IDs are empty until a store
+    # ID or release key ID is known; Firefox can use the fixed Gecko ID.
+    "NativeChromeExtensionIds": os.environ.get("ASTRA_NATIVE_CHROME_EXTENSION_IDS", ""),
+    "NativeFirefoxExtensionIds": os.environ.get(
+        "ASTRA_NATIVE_FIREFOX_EXTENSION_IDS",
+        ",".join(DEFAULT_FIREFOX_EXTENSION_IDS),
+    ),
 }
 
 # v1.2.0: rate-limit for /download. Token-bucket sliding window — tuned so a
@@ -1829,6 +1839,8 @@ def sanitize_config(raw):
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
     data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
     data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
+    data["NativeChromeExtensionIds"] = clean_text(data.get("NativeChromeExtensionIds"), "", 2048)
+    data["NativeFirefoxExtensionIds"] = clean_text(data.get("NativeFirefoxExtensionIds"), "", 2048)
     extra = data.get("ExtraOutputRoots")
     if not isinstance(extra, list):
         extra = []
@@ -2133,6 +2145,70 @@ def register_uninstall_entry(target, base_args):
         write_persistent_log(f"Uninstall registration failed: {e}")
 
 
+def parse_native_extension_ids(value, fallback=()):
+    if isinstance(value, (list, tuple)):
+        raw = value
+    elif isinstance(value, str):
+        raw = re.split(r'[\s,;]+', value)
+    else:
+        raw = []
+    out = []
+    for item in raw:
+        text = str(item or '').strip()
+        if text and text not in out:
+            out.append(text)
+    if out:
+        return out
+    for item in fallback or ():
+        text = str(item or '').strip()
+        if text and text not in out:
+            out.append(text)
+    return out
+
+
+def register_native_host_registry_value(key_path, manifest_path):
+    import winreg
+    key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE)
+    try:
+        winreg.SetValueEx(key, '', 0, winreg.REG_SZ, str(manifest_path))
+    finally:
+        winreg.CloseKey(key)
+
+
+def register_native_messaging_hosts(target, base_args, config):
+    if sys.platform != 'win32':
+        return
+    if base_args:
+        write_persistent_log("Native messaging host registration skipped: source runs need an executable wrapper.")
+        return
+    chrome_ids = parse_native_extension_ids(config.get("NativeChromeExtensionIds", ""))
+    firefox_ids = parse_native_extension_ids(
+        config.get("NativeFirefoxExtensionIds", ""),
+        DEFAULT_FIREFOX_EXTENSION_IDS,
+    )
+    if not chrome_ids and not firefox_ids:
+        write_persistent_log("Native messaging host registration skipped: no extension IDs configured.")
+        return
+    try:
+        NATIVE_HOST_DIR.mkdir(parents=True, exist_ok=True)
+        if chrome_ids:
+            chrome_manifest = NATIVE_HOST_DIR / f"{NATIVE_HOST_NAME}.chrome.json"
+            atomic_write_json(chrome_manifest, build_native_host_manifest(target, chrome_ids, browser="chrome"))
+            register_native_host_registry_value(
+                f"Software\\Google\\Chrome\\NativeMessagingHosts\\{NATIVE_HOST_NAME}",
+                chrome_manifest,
+            )
+        if firefox_ids:
+            firefox_manifest = NATIVE_HOST_DIR / f"{NATIVE_HOST_NAME}.firefox.json"
+            atomic_write_json(firefox_manifest, build_native_host_manifest(target, firefox_ids, browser="firefox"))
+            register_native_host_registry_value(
+                f"Software\\Mozilla\\NativeMessagingHosts\\{NATIVE_HOST_NAME}",
+                firefox_manifest,
+            )
+    except Exception as e:
+        write_persistent_log(f"Native messaging host registration failed: {e}")
+
+
 def ensure_system_integrations(prefer_installed=True, force=False):
     """Register shortcut / startup task / protocol handlers / uninstall entry.
 
@@ -2143,11 +2219,13 @@ def ensure_system_integrations(prefer_installed=True, force=False):
     """
     target, base_args = launch_command_parts(prefer_installed=prefer_installed)
     if not force and _get_integrations_stamp() == APP_VERSION:
+        register_native_messaging_hosts(target, base_args, Config())
         return target, base_args
     register_desktop_shortcut(target, base_args)
     register_startup_task(target, base_args)
     register_protocol_handlers(target, base_args)
     register_uninstall_entry(target, base_args)
+    register_native_messaging_hosts(target, base_args, Config())
     _set_integrations_stamp()
     return target, base_args
 
@@ -3453,7 +3531,14 @@ def create_api(config, dl_manager, history):
         # (no Origin). Keeping both paths so local dev tooling (curl, the
         # downloader GUI's own self-test) can still probe the service.
         origin = request.headers.get("Origin", "")
-        if request.headers.get("X-MDL-Client") == "MediaDL" and (not origin or is_extension_origin(origin)):
+        token_source = clean_text(request.headers.get("X-MDL-Token-Source", ""), "", 32)
+        if token_source:
+            resp["tokenSource"] = token_source
+        if (
+            token_source != "native"
+            and request.headers.get("X-MDL-Client") == "MediaDL"
+            and (not origin or is_extension_origin(origin))
+        ):
             resp["token"] = token
         return cors_response(resp)
 
@@ -4026,6 +4111,8 @@ def run_uninstall():
             'Software\\Classes\\ytdl',
             'Software\\Classes\\mediadl',
             'Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\AstraDownloader',
+            f'Software\\Google\\Chrome\\NativeMessagingHosts\\{NATIVE_HOST_NAME}',
+            f'Software\\Mozilla\\NativeMessagingHosts\\{NATIVE_HOST_NAME}',
         ]:
             try:
                 winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path + '\\shell\\open\\command')
@@ -4045,6 +4132,9 @@ def run_uninstall():
                 pass
     except Exception:
         pass
+
+    if NATIVE_HOST_DIR.exists():
+        shutil.rmtree(NATIVE_HOST_DIR, ignore_errors=True)
 
     # Remove desktop shortcut
     lnk = Path.home() / "Desktop" / "Astra Downloader.lnk"
@@ -5725,20 +5815,25 @@ def argv_requests_native_host(argv):
     )
 
 
-def build_native_host_manifest(exe_path, extension_ids):
-    """Build the Chrome native-messaging host manifest.
+def build_native_host_manifest(exe_path, extension_ids, browser="chrome"):
+    """Build a browser native-messaging host manifest.
 
-    `allowed_origins` is the security boundary HTTP /health lacks: only the
-    listed extension IDs may launch and talk to this host.
+    Chrome uses `allowed_origins` with chrome-extension:// IDs. Firefox uses
+    `allowed_extensions` with Gecko IDs. Both are the browser-pinned security
+    boundary HTTP /health lacks.
     """
     ids = [e for e in (extension_ids or []) if isinstance(e, str) and e]
-    return {
+    manifest = {
         "name": NATIVE_HOST_NAME,
         "description": "Astra Downloader token bootstrap",
         "path": str(exe_path),
         "type": "stdio",
-        "allowed_origins": ["chrome-extension://%s/" % eid for eid in ids],
     }
+    if browser == "firefox":
+        manifest["allowed_extensions"] = ids
+    else:
+        manifest["allowed_origins"] = ["chrome-extension://%s/" % eid for eid in ids]
+    return manifest
 
 
 def main():
