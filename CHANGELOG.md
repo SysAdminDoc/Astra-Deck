@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: transcript study batch export.** Study / Work Export can now queue
+  visible watch, playlist, and channel videos for local transcript fetches,
+  show per-video pending/success/failure state, and export paired Markdown
+  plus JSONL study packs with capped queue size, capped retries, timestamps,
+  language metadata, and failure reasons.
 - **Feat: external API health dashboard.** SponsorBlock, DeArrow, and Return
   YouTube Dislike now report last success, error class, cache/fallback state,
   and request budget into popup/sidepanel diagnostics and saved bug-report
