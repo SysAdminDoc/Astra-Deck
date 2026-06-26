@@ -5279,7 +5279,78 @@ return response;
         });
     }
 
+    let _settingsPanelRuntime = null;
+    let _settingsPanelRuntimeInitialized = false;
+    let _settingsPanelRuntimeReady = false;
+
+    function getSettingsPanelRuntime() {
+        if (!_settingsPanelRuntimeReady) return null;
+        if (_settingsPanelRuntimeInitialized) return _settingsPanelRuntime;
+        _settingsPanelRuntimeInitialized = true;
+        const factory = globalThis.YTKitFeatures?.settingsPanel?.createSettingsPanelRuntime;
+        if (typeof factory !== 'function') return null;
+        try {
+            _settingsPanelRuntime = factory({
+                BRAND,
+                CATEGORY_CONFIG,
+                CATEGORY_META,
+                CONFLICT_MAP,
+                DebugManager,
+                FEATURE_PREVIEWS,
+                ICONS,
+                LEGACY_STORAGE_KEYS,
+                MediaDLManager,
+                PANEL_OPEN_CLASS,
+                STORAGE_KEYS,
+                StorageManager,
+                YTKIT_VERSION,
+                _i18n,
+                _showPinDialog,
+                _showPinManageDialog,
+                appState,
+                createBrandImage,
+                createToast,
+                destroyFeatureLifecycle,
+                formatPageLabel,
+                getFeatureById,
+                getFeatureDescription,
+                getFeatureName,
+                getFocusableUiElements,
+                handleExternalStorageChanges,
+                handleFileExport,
+                handleFileImport,
+                initFeatureLifecycle,
+                injectStyle,
+                isBooleanFeature,
+                isPinSet,
+                liveFeatureList,
+                normalizeSelectOptions,
+                openExternalUrl,
+                safeDestroyFeature,
+                safeInitFeature,
+                settingsManager,
+                shouldBuildPrimaryUI,
+                showToast,
+                storageRead,
+                storageReadJSON,
+                storageWrite,
+                t,
+                trapFocusWithin,
+                getPinSessionUnlocked: () => _pinSessionUnlocked,
+                getPageModalOpen: () => _pageModalOpen,
+                getFeatureCrashCounts: () => _featureCrashCounts,
+                persistCrashCounts: () => _persistCrashCounts()
+            });
+        } catch (error) {
+            console.warn('[YTKit] Settings panel module unavailable; using inline fallback.', error);
+            _settingsPanelRuntime = null;
+        }
+        return _settingsPanelRuntime;
+    }
+
     function isSettingsPanelOpen() {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.isSettingsPanelOpen) return runtime.isSettingsPanelOpen();
         return !!document.body?.classList.contains(PANEL_OPEN_CLASS);
     }
 
@@ -5329,6 +5400,8 @@ return response;
     let _pageModalNavCleanup = null;
 
     function setSettingsPanelOpen(open) {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.setSettingsPanelOpen) return runtime.setSettingsPanelOpen(open);
         if (!document.body || !shouldBuildPrimaryUI()) return false;
         const wasOpen = isSettingsPanelOpen();
         if (open && !document.getElementById('ytkit-settings-panel')) buildSettingsPanel();
@@ -5531,6 +5604,8 @@ return response;
     }
 
     async function toggleSettingsPanel(force) {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.toggleSettingsPanel) return runtime.toggleSettingsPanel(force);
         const wantOpen = force ?? !isSettingsPanelOpen();
         if (wantOpen && !_pinSessionUnlocked && await isPinSet()) {
             _showPinDialog(() => setSettingsPanelOpen(true));
@@ -38027,6 +38102,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Reserve this space for diagnostics, edge-case behavior, and features that benefit from a careful hand.'
         }
     };
+    _settingsPanelRuntimeReady = true;
 
     function formatPageLabel(page) {
         const labels = {
@@ -38050,6 +38126,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     }
 
     function countEnabledToggleFeatures(features) {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.countEnabledToggleFeatures) return runtime.countEnabledToggleFeatures(features);
         return (features || []).filter((feature) => isBooleanFeature(feature) && appState.settings[feature.id]).length;
     }
 
@@ -38104,6 +38182,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     }
 
     function buildSettingsPanel() {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.buildSettingsPanel) return runtime.buildSettingsPanel();
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
 
@@ -40160,6 +40240,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     }
 
     function buildFeatureCard(f, accentColor, isSubFeature = false) {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.buildFeatureCard) return runtime.buildFeatureCard(f, accentColor, isSubFeature);
         const card = document.createElement('div');
         const featureType = f.type || 'toggle';
         const featureName = getFeatureName(f);
@@ -40389,6 +40471,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     }
 
     function updateAllToggleStates() {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.updateAllToggleStates) return runtime.updateAllToggleStates();
         document.querySelectorAll('.ytkit-toggle-all-cb').forEach(cb => {
             const catId = cb.dataset.category;
             const pane = document.getElementById(`ytkit-pane-${catId}`);
@@ -40479,6 +40563,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     let _panelSearchUpdater = null;
 
     function attachUIEventListeners() {
+        const runtime = getSettingsPanelRuntime();
+        if (runtime?.attachUIEventListeners) return runtime.attachUIEventListeners();
         const doc = document;
 
         const clearPanelSearch = (focusInput = false) => {

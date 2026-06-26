@@ -71,6 +71,7 @@ const V5_BUNDLE_MODULES = [
     'extension/features/video-hider/index.js',
     'extension/features/subscription-groups/index.js',
     'extension/features/digital-wellbeing/index.js',
+    'extension/features/settings-panel/index.js',
     'extension/features/player-dock/index.js',
     'extension/features/youtube-music-compat/index.js',
     'extension/features/return-dislike/index.js',
