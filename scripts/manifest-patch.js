@@ -11,6 +11,16 @@ const FIREFOX_DATA_COLLECTION_REQUIRED = Object.freeze([
     'websiteActivity',
     'authenticationInfo'
 ]);
+const FIREFOX_SIDEBAR_ACTION = Object.freeze({
+    default_title: '__MSG_extName__',
+    default_panel: 'sidebar.html',
+    default_icon: Object.freeze({
+        '16': 'icons/16.png',
+        '32': 'icons/32.png',
+        '48': 'icons/48.png',
+        '128': 'icons/128.png'
+    })
+});
 
 // Mutates and returns `ffManifest`. Caller is responsible for writing
 // the result back to disk.
@@ -42,6 +52,10 @@ function patchManifestForFirefox(ffManifest) {
     if (Array.isArray(ffManifest.permissions)) {
         ffManifest.permissions = ffManifest.permissions.filter(p => p !== 'sidePanel');
     }
+    ffManifest.sidebar_action = {
+        ...FIREFOX_SIDEBAR_ACTION,
+        default_icon: { ...FIREFOX_SIDEBAR_ACTION.default_icon }
+    };
 
     return ffManifest;
 }
@@ -49,5 +63,6 @@ function patchManifestForFirefox(ffManifest) {
 module.exports = {
     patchManifestForFirefox,
     FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
-    FIREFOX_DATA_COLLECTION_REQUIRED
+    FIREFOX_DATA_COLLECTION_REQUIRED,
+    FIREFOX_SIDEBAR_ACTION
 };

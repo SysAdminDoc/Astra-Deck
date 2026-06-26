@@ -1192,7 +1192,8 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     const {
         patchManifestForFirefox,
         FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
-        FIREFOX_DATA_COLLECTION_REQUIRED
+        FIREFOX_DATA_COLLECTION_REQUIRED,
+        FIREFOX_SIDEBAR_ACTION
     } = require('../scripts/manifest-patch');
     const ffManifest = JSON.parse(JSON.stringify(manifest));
     patchManifestForFirefox(ffManifest);
@@ -1223,10 +1224,27 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         Array.isArray(ffManifest.background?.scripts) && ffManifest.background.scripts.length > 0,
         'Firefox background must be a scripts[] array, not a service_worker entry'
     );
+    assert.equal(
+        ffManifest.side_panel,
+        undefined,
+        'Firefox-patched manifest must strip Chrome-only side_panel'
+    );
+    assert.equal(
+        ffManifest.permissions.includes('sidePanel'),
+        false,
+        'Firefox-patched manifest must strip the Chrome-only sidePanel permission'
+    );
+    assert.deepEqual(
+        ffManifest.sidebar_action,
+        FIREFOX_SIDEBAR_ACTION,
+        'Firefox-patched manifest must expose the diagnostic dashboard through sidebar_action'
+    );
 
     // Running the patch twice must stay idempotent.
     patchManifestForFirefox(ffManifest);
     assert.equal(ffManifest.commands, undefined, 'Patch must remain idempotent across re-runs');
+    assert.deepEqual(ffManifest.sidebar_action, FIREFOX_SIDEBAR_ACTION,
+        'sidebar_action patch must remain idempotent across re-runs');
 });
 
 test('manifest PNG icons are square at declared sizes for AMO lint', () => {
@@ -10979,6 +10997,27 @@ test('sidepanel.html has landmark roles, aria-labelledby, skip-link, and live re
     assert.match(html, /role="status"/,       'empty states must use role=status');
     assert.match(html, /aria-controls="/,     'search input must declare aria-controls');
     assert.match(html, /aria-label="Refresh/, 'refresh button must have aria-label');
+});
+
+test('Firefox sidebar fallback reuses the diagnostic dashboard surface', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidebar.html'), 'utf8'
+    );
+    const js = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidebar.js'), 'utf8'
+    );
+    for (const id of ['sp-perf', 'sp-selector', 'sp-external', 'sp-storage', 'sp-settings']) {
+        assert.match(html, new RegExp(`id="${id}"`),
+            'sidebar must expose dashboard section ' + id);
+    }
+    assert.match(html, /href="sidepanel\.css"/,
+        'sidebar must reuse the sidepanel dashboard stylesheet');
+    assert.match(html, /src="sidepanel\.js"/,
+        'sidebar must reuse the sidepanel dashboard renderer');
+    assert.match(html, /src="sidebar\.js"/,
+        'sidebar must load its Firefox-specific entry marker');
+    assert.match(js, /firefox-sidebar/,
+        'sidebar entry script must mark the Firefox sidebar surface');
 });
 
 test('sidepanel.js setting rows carry aria-label for screen readers', () => {
