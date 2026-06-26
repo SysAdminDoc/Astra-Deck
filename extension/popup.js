@@ -514,6 +514,13 @@ const selectorHealthCtx = $('#selector-health-ctx');
 const selectorHealthCopyBtn = $('#selector-health-copy-btn');
 const selectorHealthCopyStatus = $('#selector-health-copy-status');
 
+// External API health dashboard refs.
+const externalHealthSection = $('#external-health');
+const externalHealthTotal = $('#external-health-total');
+const externalHealthList = $('#external-health-list');
+const externalHealthCopyBtn = $('#external-health-copy-btn');
+const externalHealthCopyStatus = $('#external-health-copy-status');
+
 // v4.12.0: data-flow panel refs.
 const dataFlowSection = $('#data-flow');
 const dataFlowSummary = $('#data-flow-summary');
@@ -1991,6 +1998,186 @@ if (selectorHealthCopyBtn) {
     selectorHealthCopyBtn.addEventListener('click', () => { void copySelectorHealthReport(); });
 }
 
+function formatExternalHealthAge(ts) {
+    const n = Number(ts);
+    if (!Number.isFinite(n) || n <= 0) return 'never';
+    const seconds = Math.max(0, Math.round((Date.now() - n) / 1000));
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 48) return `${hours}h ago`;
+    return `${Math.round(hours / 24)}d ago`;
+}
+
+function externalHealthTone(state) {
+    if (state === 'ok') return 'ok';
+    if (state === 'degraded') return 'degraded';
+    if (state === 'rate-limited') return 'rate-limited';
+    if (state === 'error') return 'error';
+    return 'unknown';
+}
+
+function formatExternalHealthBudget(budget) {
+    if (!budget || typeof budget !== 'object') return '';
+    const used = Number.isFinite(Number(budget.used)) ? Number(budget.used) : null;
+    const limit = Number.isFinite(Number(budget.limit)) ? Number(budget.limit) : null;
+    if (used === null || limit === null) return '';
+    const resetMs = Number(budget.resetMs);
+    const reset = Number.isFinite(resetMs) && resetMs > 0
+        ? `, reset ${Math.ceil(resetMs / 1000)}s`
+        : '';
+    return `budget ${used}/${limit}${reset}`;
+}
+
+function formatExternalHealthDetail(service) {
+    const parts = [];
+    if (service.lastSuccessTs) parts.push(`success ${formatExternalHealthAge(service.lastSuccessTs)}`);
+    if (service.lastErrorClass) parts.push(`last error ${service.lastErrorClass}`);
+    if (service.cacheState && service.cacheState !== 'unknown') parts.push(`cache ${service.cacheState}`);
+    if (service.fallbackState) parts.push(`fallback ${service.fallbackState}`);
+    const budget = formatExternalHealthBudget(service.requestBudget);
+    if (budget) parts.push(budget);
+    if (service.lastErrorMessage) parts.push(String(service.lastErrorMessage).slice(0, 90));
+    return parts.join(' | ') || 'No requests observed in this tab yet.';
+}
+
+async function requestExternalApiHealthSnapshot(timeoutMs = 1500) {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) return null;
+    const response = await new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(null), timeoutMs);
+        try {
+            chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_EXTERNAL_API_HEALTH' }, (msg) => {
+                clearTimeout(timer);
+                if (chrome.runtime.lastError) { resolve(null); return; }
+                resolve(msg);
+            });
+        } catch (_) {
+            clearTimeout(timer);
+            resolve(null);
+        }
+    });
+    if (!response || response.ok === false || !Array.isArray(response.services)) return null;
+    return { tab, services: response.services, totalServices: response.totalServices || response.services.length };
+}
+
+function renderExternalHealthRows(services) {
+    if (!externalHealthList) return;
+    externalHealthList.textContent = '';
+    if (!services.length) {
+        const empty = document.createElement('li');
+        empty.className = 'external-health-empty';
+        empty.textContent = 'No external API services tracked yet.';
+        externalHealthList.appendChild(empty);
+        return;
+    }
+    for (const service of services) {
+        const li = document.createElement('li');
+        const name = document.createElement('span');
+        name.className = 'external-health-name';
+        name.textContent = service.label || service.id;
+        const state = document.createElement('span');
+        state.className = 'external-health-state';
+        const tone = externalHealthTone(service.state);
+        state.dataset.tone = tone;
+        state.textContent = service.state || 'unknown';
+        const detail = document.createElement('span');
+        detail.className = 'external-health-detail';
+        detail.textContent = formatExternalHealthDetail(service);
+        li.appendChild(name);
+        li.appendChild(state);
+        li.appendChild(detail);
+        externalHealthList.appendChild(li);
+    }
+}
+
+async function renderExternalApiHealthDashboard() {
+    if (!externalHealthSection || !externalHealthList) return;
+    try {
+        const snapshot = await requestExternalApiHealthSnapshot();
+        if (!snapshot) {
+            externalHealthSection.hidden = true;
+            return;
+        }
+        renderExternalHealthRows(snapshot.services);
+        if (externalHealthTotal) externalHealthTotal.textContent = `${snapshot.totalServices} services`;
+        externalHealthSection.hidden = false;
+    } catch (_) {
+        externalHealthSection.hidden = true;
+    }
+}
+
+function formatExternalApiHealthReport(services, meta = {}) {
+    const lines = [
+        'Astra Deck external API health report',
+        `exportedAt: ${meta.exportedAt || new Date().toISOString()}`,
+        `extensionVersion: ${meta.extensionVersion || getVersion()}`,
+        `activeTab: ${meta.activeTab || 'unknown'}`,
+        ''
+    ];
+    for (const service of services || []) {
+        lines.push(`${service.label || service.id}: ${service.state || 'unknown'}`);
+        lines.push(`  origin: ${service.origin || 'unknown'}`);
+        lines.push(`  lastSuccess: ${formatExternalHealthAge(service.lastSuccessTs)}`);
+        lines.push(`  lastError: ${service.lastErrorClass || 'none'}`);
+        if (service.lastErrorMessage) lines.push(`  message: ${service.lastErrorMessage}`);
+        lines.push(`  cache: ${service.cacheState || 'unknown'}`);
+        lines.push(`  fallback: ${service.fallbackState || 'none'}`);
+        const budget = formatExternalHealthBudget(service.requestBudget);
+        if (budget) lines.push(`  ${budget}`);
+    }
+    return lines.join('\n');
+}
+
+let _externalHealthCopyInFlight = false;
+async function copyExternalApiHealthReport() {
+    if (_externalHealthCopyInFlight || !externalHealthCopyBtn) return;
+    const setStatus = (msg) => { if (externalHealthCopyStatus) externalHealthCopyStatus.textContent = msg; };
+    _externalHealthCopyInFlight = true;
+    externalHealthCopyBtn.disabled = true;
+    setStatus('Building report...');
+    try {
+        const snapshot = await requestExternalApiHealthSnapshot();
+        if (!snapshot) {
+            setStatus('Open a YouTube tab to build the report.');
+            return;
+        }
+        let safeTabUrl = 'unknown';
+        try { const u = new URL(snapshot.tab.url || ''); safeTabUrl = u.origin + u.pathname; } catch (_) { /* reason: unparseable URL */ }
+        const payload = formatExternalApiHealthReport(snapshot.services, {
+            exportedAt: new Date().toISOString(),
+            extensionVersion: getVersion(),
+            activeTab: safeTabUrl
+        });
+        try {
+            await navigator.clipboard.writeText(payload);
+            setStatus('Copied.');
+        } catch (_) {
+            const ta = document.createElement('textarea');
+            ta.value = payload;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+            ta.remove();
+            setStatus(ok ? 'Copied.' : 'Could not copy.');
+        }
+    } catch (_) {
+        setStatus('Could not copy.');
+    } finally {
+        _externalHealthCopyInFlight = false;
+        if (externalHealthCopyBtn) externalHealthCopyBtn.disabled = false;
+    }
+}
+
+if (externalHealthCopyBtn) {
+    externalHealthCopyBtn.addEventListener('click', () => { void copyExternalApiHealthReport(); });
+}
+
 // Feature performance dashboard. Queries the active YouTube tab for
 // per-feature init timing via YTKIT_GET_FEATURE_PERF, then renders the
 // slowest features with a visual bar. Threshold: features > 50ms are
@@ -2939,6 +3126,13 @@ if (healthSaveBtn) {
             } catch (_) {
                 // reason: SW lifecycle ring is supplemental; bundle ships without it on failure
             }
+            let externalApiHealth = null;
+            try {
+                const snapshot = await requestExternalApiHealthSnapshot(1200);
+                if (snapshot && Array.isArray(snapshot.services)) externalApiHealth = snapshot.services;
+            } catch (_) {
+                // reason: active-tab API health is supplemental; bundle ships without it on failure
+            }
             const payload = {
                 astraDeckBugReport: true,
                 schemaVersion: 2,
@@ -2947,6 +3141,7 @@ if (healthSaveBtn) {
                 userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
                 capabilities,
                 swLifecycle,
+                externalApiHealth,
                 settings: sanitized,
                 errors,
             };
@@ -3934,6 +4129,7 @@ function installWheelScrolling() {
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
     void renderSelectorHealthDashboard();
+    void renderExternalApiHealthDashboard();
     void renderFeaturePerfDashboard();
 
     // v4.47.0 NF21: render the first-run welcome card + What's New

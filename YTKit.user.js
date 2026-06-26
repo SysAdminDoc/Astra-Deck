@@ -284,6 +284,17 @@
         // value-level concern, not a toggle-level one, so this capability
         // is reserved for future Ollama-only features.
         'ollama',
+        // Document Picture-in-Picture API (Chrome 116+, Firefox 151+).
+        // Used by popOutPlayer to open a rich PiP window with custom
+        // controls. Falls back to standard video.requestPictureInPicture()
+        // where unsupported (Safari, older Firefox).
+        'documentPip',
+        // Chrome 138+ Language Detector API. Used by antiTranslate to detect
+        // whether a video title/description has been auto-translated by YouTube.
+        'languageDetector',
+        // Chrome 138+ Prompt API (Gemini Nano on-device). Used by
+        // localAiTranscriptQa for on-device transcript Q&A.
+        'promptApi',
     ]);
 
     const SETTINGS_SCHEMA = Object.freeze([
@@ -346,7 +357,7 @@
         Object.freeze({ key: "cleanShareUrls", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
         // ─── feed ───
-        Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, min: 0, max: 8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── nav ───
         Object.freeze({ key: "quickLinkMenu", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -381,7 +392,7 @@
         // floor to 1000+ ms to stay further from YouTube's automated-
         // behavior heuristics. Cannot be lowered below 500 — that would
         // defeat the safety guarantee documented in v3.23.0 N3.
-        Object.freeze({ key: "reactionSpammerMinIntervalMs", category: "live-chat", type: "number", defaultValue: 500, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "reactionSpammerMinIntervalMs", category: "live-chat", type: "number", defaultValue: 500, min: 500, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "_reactionSpammerAck", category: "live-chat", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
 
         // ─── watch-player ───
@@ -426,8 +437,10 @@
         // Default 0.8 lets a feed where 20% of cards survive the filter
         // continue to paginate normally instead of locking after one
         // unlucky batch streak. Invalid values fall back to 0.8 at the
-        // call site; range is documented as (0, 1].
-        Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+        // call site; range is documented as (0, 1]. min is 0.05 (not 0):
+        // every consumer treats raw <= 0 as invalid and silently falls back
+        // to 0.8, so a schema-legal 0 would never actually behave as 0.
+        Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, min: 0.05, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "hideVideosRemoveHiddenCards", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosShowQuickHideButton", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosAllowChannelBlock", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -446,7 +459,7 @@
         Object.freeze({ key: "hideVideosHidePlaylists", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosHideMovies", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosHideAutoDubbed", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "hideVideosWatchedRatio", category: "content-filter", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "hideVideosWatchedRatio", category: "content-filter", type: "number", defaultValue: 0, min: 0, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── feed ───
         Object.freeze({ key: "hideInfoPanels", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -508,7 +521,7 @@
         Object.freeze({ key: "videoNotes", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "videoNotesData", category: "watch-player", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "blueLightFilter", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "blueLightIntensity", category: "playback-audio", type: "number", defaultValue: 30, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "blueLightIntensity", category: "playback-audio", type: "number", defaultValue: 30, min: 10, max: 80, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── feed ───
         Object.freeze({ key: "disableInfiniteScroll", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -611,6 +624,8 @@
 
         // ─── watch-player ───
         Object.freeze({ key: "focusedMode", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "zenMode", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "playlistSearch", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
 
         // ─── shell ───
         Object.freeze({ key: "thumbnailQualityUpgrade", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -635,6 +650,7 @@
 
         // ─── playback-audio ───
         Object.freeze({ key: "autoClosePopups", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "autoDismissContentWarning", category: "playback-audio", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
 
         // ─── watch-player ───
         Object.freeze({ key: "videoResolutionBadge", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -716,6 +732,7 @@
         Object.freeze({ key: "daReplaceTitles", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "daReplaceThumbs", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "daTitleFormat", category: "enrichment", type: "string", defaultValue: "sentence", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "deArrowCasualMode", category: "enrichment", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "daFallbackFormat", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "daShowOriginalHover", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "daCacheTTL", category: "enrichment", type: "string", defaultValue: "4", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
@@ -729,6 +746,8 @@
         Object.freeze({ key: "sbCat_preview", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "sbCat_filler", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "sbCat_poi_highlight", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "sbPerChannelProfiles", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "sbPerChannelProfilesData", category: "enrichment", type: "object", defaultValue: {}, risk: "api", profile: "both", scope: "player", vehicle: 'extension', immediateApply: false, destroyRequired: false, internal: false, since: "4.47.0" }),
 
         // ─── watch-player ───
         Object.freeze({ key: "showStatisticsDashboard", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -750,7 +769,14 @@
 
         // ─── playback-audio ───
         Object.freeze({ key: "videoRotation", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "videoRotationAngle", category: "playback-audio", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "videoRotationAngle", category: "playback-audio", type: "number", defaultValue: 0, enum: [0, 90, 180, 270], risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "videoFlip", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "videoFlipMode", category: "playback-audio", type: "string", defaultValue: "none", enum: ["none", "horizontal", "vertical", "both"], risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "monoToStereo", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "volumeBoost", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
+        Object.freeze({ key: "volumeBoostLevel", category: "playback-audio", type: "number", defaultValue: 2, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.48.0" }),
+        Object.freeze({ key: "audioNormalization", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
+        Object.freeze({ key: "audioPan", category: "playback-audio", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "frameByFrameButtons", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
         // ─── research-ai ───
@@ -766,7 +792,7 @@
         Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "githubFullProfile", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "syncSafePrefs", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowQuickHideButton","hideVideosAllowChannelBlock","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowQuickHideButton","hideVideosAllowChannelBlock","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── content-filter ───
         Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -804,10 +830,11 @@
         // ─── enrichment ───
         Object.freeze({ key: "returnDislike", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "returnDislikeOnCards", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "returnDislikeCacheHours", category: "enrichment", type: "number", defaultValue: 24, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "returnDislikeCacheHours", category: "enrichment", type: "number", defaultValue: 24, min: 1, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "returnDislikeShowRatio", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "deArrowChannelOverrides", category: "enrichment", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "deArrowChannelOverridesPanel", category: "enrichment", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "deArrowVoting", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
         // ─── quality-codec ───
         Object.freeze({ key: "qualityProfileMatrix", category: "quality-codec", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -833,9 +860,12 @@
         Object.freeze({ key: "subscriptionUnsubscribeStagingData", category: "subscriptions", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "subscriptionAiTags", category: "subscriptions", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
         Object.freeze({ key: "subscriptionAiTagData", category: "subscriptions", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "subscriptionFilterLive", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+        Object.freeze({ key: "subscriptionFilterStreamed", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
         // ─── research-ai ───
         Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
+        Object.freeze({ key: "localAiTranscriptQa", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["promptApi"]) }),
         Object.freeze({ key: "researchSpacedReview", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "researchTranscriptIndex", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "researchTranscriptSearchPanel", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -846,6 +876,10 @@
         Object.freeze({ key: "globalAriaLiveRegion", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "lowPowerProfile", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "lowPowerProfileBackup", category: "a11y-perf", type: "null", defaultValue: null, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "presetPrivacy", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "presetResearcher", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "presetPowerUser", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "presetFocus", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
 
         // ─── shell ───
         Object.freeze({ key: "oledTheme", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -853,6 +887,7 @@
         Object.freeze({ key: "rectangularizeYouTube", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "classicLayoutProfile", category: "shell", type: "string", defaultValue: "modern", risk: "experimental", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "newPlayerUiRestore", category: "shell", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "classicPlayerChrome", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "tokenThemeBridge", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
         // ─── nav ───
@@ -948,6 +983,8 @@
         Object.freeze({ key: "preferredAudioLang", category: "playback-audio", type: "string", defaultValue: "en", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "notifyAutoDubbedAudio", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "sleepTimer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
+        Object.freeze({ key: "cleanUiPreset", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.3" }),
     ]);
 
     // Build a {key: defaultValue} map for chrome.storage.local seeding +
@@ -1177,10 +1214,12 @@
                 if (record.started) return;
                 record.controller = new AbortController();
                 record.startedAt = now();
+                const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
                 const ctx = buildContext(record, ctxExtra);
                 try {
                     record.spec.init(ctx);
                     record.started = true;
+                    record.initMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
                 } catch (e) {
                     record.lastError = e;
                     logger.warn?.(`[lifecycle] init failed for ${id}: ${e?.message || e}`);
@@ -1217,6 +1256,7 @@
                 // before destroy() runs synchronous teardown.
                 try { record.controller && record.controller.abort(); }
                 catch (_) { /* reason: controller may already be torn down */ }
+                const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
                 const ctx = buildContext(record, ctxExtra);
                 try {
                     record.spec.destroy(ctx);
@@ -1226,6 +1266,7 @@
                     // Do not rethrow — destroy must be best-effort so callers
                     // can always tear a feature down even if a sub-step fails.
                 }
+                record.destroyMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
                 record.started = false;
                 record.controller = null;
             }
@@ -1244,6 +1285,8 @@
                         category: record.spec.category || null,
                         started: record.started,
                         startedAt: record.startedAt,
+                        initMs: record.initMs ?? null,
+                        destroyMs: record.destroyMs ?? null,
                         lastError: record.lastError ? String(record.lastError) : null,
                         routeToken: getRouteToken()
                     });
@@ -1420,6 +1463,8 @@
                 // the broad coverage doesn't cause false positives.
                 /^auth/i,
                 /[a-z]Auth/,
+                /pinHash/i,
+                /^ytkit-da-user-id$/,
             ]);
 
             function shouldScrubKey(key) {
@@ -1441,10 +1486,36 @@
                 case 'object':
                     return isPlainObject(value);
                 case 'null':
-                    return value === null;
+                    // Nullable-complex settings (e.g. `sidebarOrder` holds an array,
+                    // `lowPowerProfileBackup` holds an object) default to null but are
+                    // populated with an array/object at runtime once the user customizes
+                    // them. The schema models them as `type: "null"` because the default
+                    // IS null (check-settings enforces type==defaultValue runtime type),
+                    // so the validator must accept the populated runtime shapes — otherwise
+                    // export/import hard-fails for anyone who reordered their sidebar.
+                    return value === null || Array.isArray(value) || isPlainObject(value);
                 default:
                     return false;
                 }
+            }
+
+            // Narrow an already-type-valid value to its schema constraints. We
+            // CLAMP numbers into [min, max] and COERCE an unrecognized enum value
+            // back to the schema default rather than rejecting — a corrupted or
+            // hostile import (e.g. videosPerRow: 9999, videoRotationAngle: 47)
+            // is sanitized into a safe value instead of breaking the whole import
+            // (validateSettingsSnapshot rejects the entire snapshot on any error).
+            function clampSettingValue(value, entry) {
+                if (Array.isArray(entry.enum) && entry.enum.length) {
+                    return entry.enum.includes(value) ? value : entry.defaultValue;
+                }
+                if (entry.type === 'number' && typeof value === 'number' && Number.isFinite(value)) {
+                    let v = value;
+                    if (typeof entry.min === 'number' && v < entry.min) v = entry.min;
+                    if (typeof entry.max === 'number' && v > entry.max) v = entry.max;
+                    return v;
+                }
+                return value;
             }
 
             function validateSettingsSnapshot(settings = {}, options = {}) {
@@ -1481,7 +1552,7 @@
                         continue;
                     }
 
-                    out[key] = value;
+                    out[key] = clampSettingValue(value, entry);
                 }
 
                 return {
@@ -1544,6 +1615,7 @@
                 filterSettingsForProfile,
                 shouldScrubKey,
                 isSettingValueValid,
+                clampSettingValue,
                 validateSettingsSnapshot,
                 buildExportSnapshot,
                 countByProfile
@@ -1555,6 +1627,164 @@
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = { createPolicyProfile };
         }
+    })();
+
+    // ── bundled module: extension/core/external-api-health.js ──
+    (() => {
+        'use strict';
+
+        const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+        if (core.createExternalApiHealth) return;
+
+        const SERVICE_META = Object.freeze({
+            sponsorBlock: {
+                label: 'SponsorBlock',
+                origin: 'https://sponsor.ajay.app',
+                feature: 'sponsorBlock'
+            },
+            deArrow: {
+                label: 'DeArrow',
+                origin: 'https://sponsor.ajay.app',
+                feature: 'deArrow'
+            },
+            returnDislike: {
+                label: 'Return YouTube Dislike',
+                origin: 'https://returnyoutubedislikeapi.com',
+                feature: 'returnDislike'
+            }
+        });
+
+        const MSG_MAX_LEN = 220;
+
+        function cleanText(value, fallback = '') {
+            const text = String(value ?? fallback).trim();
+            return text.slice(0, MSG_MAX_LEN);
+        }
+
+        function getStatus(error, detail = {}) {
+            return Number(error?.response?.status ?? error?.status ?? detail.status ?? 0) || 0;
+        }
+
+        function classifyFailure(error, detail = {}) {
+            if (detail.errorClass) return cleanText(detail.errorClass, 'unknown-error');
+            const status = getStatus(error, detail);
+            if (status === 429) return 'rate-limited';
+            if (status >= 500) return 'server-error';
+            if (status >= 400) return 'client-error';
+            const message = cleanText(error?.message || detail.message || '').toLowerCase();
+            if (/invalid|json|payload|schema/.test(message)) return 'invalid-payload';
+            if (/timeout|network|offline|fetch|failed/.test(message)) return 'network-error';
+            return 'unknown-error';
+        }
+
+        function normalizeBudget(budget) {
+            if (!budget || typeof budget !== 'object') return null;
+            const limit = Number(budget.limit);
+            const used = Number(budget.used);
+            const resetMs = Number(budget.resetMs);
+            return {
+                limit: Number.isFinite(limit) && limit >= 0 ? Math.round(limit) : null,
+                used: Number.isFinite(used) && used >= 0 ? Math.round(used) : null,
+                resetMs: Number.isFinite(resetMs) && resetMs >= 0 ? Math.round(resetMs) : null
+            };
+        }
+
+        function createRecord(id) {
+            const meta = SERVICE_META[id] || { label: id, origin: '', feature: id };
+            return {
+                id,
+                label: meta.label,
+                origin: meta.origin,
+                feature: meta.feature,
+                state: 'unknown',
+                lastSuccessTs: 0,
+                lastSuccessSource: '',
+                lastErrorTs: 0,
+                lastErrorClass: '',
+                lastErrorMessage: '',
+                cacheState: 'unknown',
+                fallbackState: '',
+                requestBudget: null
+            };
+        }
+
+        function createExternalApiHealth(options = {}) {
+            const now = typeof options.now === 'function' ? options.now : () => Date.now();
+            const diagnosticLog = options.DiagnosticLog || options.diagnosticLog || null;
+            const records = Object.create(null);
+
+            function ensure(id) {
+                const key = cleanText(id, 'unknown') || 'unknown';
+                if (!records[key]) records[key] = createRecord(key);
+                return records[key];
+            }
+
+            function recordSuccess(id, detail = {}) {
+                const rec = ensure(id);
+                const ts = Number(detail.ts);
+                rec.state = 'ok';
+                rec.lastSuccessTs = Number.isFinite(ts) && ts > 0 ? ts : now();
+                rec.lastSuccessSource = cleanText(detail.source || 'network');
+                rec.cacheState = cleanText(detail.cacheState || (detail.source === 'cache' ? 'fresh' : 'refreshed'), 'unknown');
+                rec.fallbackState = cleanText(detail.fallbackState || '');
+                rec.requestBudget = normalizeBudget(detail.requestBudget);
+                return rec;
+            }
+
+            function recordFailure(id, error, detail = {}) {
+                const rec = ensure(id);
+                const errorClass = classifyFailure(error, detail);
+                const status = getStatus(error, detail);
+                const message = cleanText(
+                    detail.message || error?.message || (status ? `HTTP ${status}` : 'request failed'),
+                    'request failed'
+                );
+                rec.state = errorClass === 'rate-limited' ? 'rate-limited' : 'error';
+                rec.lastErrorTs = now();
+                rec.lastErrorClass = errorClass;
+                rec.lastErrorMessage = message;
+                rec.cacheState = cleanText(detail.cacheState || rec.cacheState || 'none', 'none');
+                rec.fallbackState = cleanText(detail.fallbackState || '');
+                rec.requestBudget = normalizeBudget(detail.requestBudget);
+                try {
+                    diagnosticLog?.record?.('external-api-health', `${rec.id} ${errorClass}: ${message}`);
+                } catch (_) {
+                    // reason: diagnostics must never break a feature fetch path
+                }
+                return rec;
+            }
+
+            function recordCacheFallback(id, error, detail = {}) {
+                const rec = recordFailure(id, error, {
+                    ...detail,
+                    cacheState: detail.cacheState || 'stale',
+                    fallbackState: detail.fallbackState || 'stale-cache'
+                });
+                rec.state = 'degraded';
+                rec.cacheState = cleanText(detail.cacheState || 'stale');
+                rec.fallbackState = cleanText(detail.fallbackState || 'stale-cache');
+                rec.lastCacheFallbackTs = now();
+                return rec;
+            }
+
+            function snapshot() {
+                const ids = new Set([...Object.keys(SERVICE_META), ...Object.keys(records)]);
+                return [...ids].map((id) => ({ ...ensure(id) }));
+            }
+
+            return {
+                recordSuccess,
+                recordFailure,
+                recordCacheFallback,
+                snapshot,
+                classifyFailure
+            };
+        }
+
+        Object.assign(core, {
+            EXTERNAL_API_HEALTH_SERVICES: SERVICE_META,
+            createExternalApiHealth
+        });
     })();
 
     // ── bundled module: extension/core/selector-health.js ──
@@ -1993,9 +2223,12 @@
             sbCat_preview: 'sponsorBlock',
             sbCat_filler: 'sponsorBlock',
             sbCat_poi_highlight: 'sponsorBlock',
+            sbPerChannelProfiles: 'sponsorBlock',
+            sbPerChannelProfilesData: 'sponsorBlock',
             // DeArrow shape/format sub-toggles
             daReplaceTitles: 'deArrow',
             daReplaceThumbs: 'deArrow',
+            deArrowVoting: 'deArrow',
             // Astra Downloader sub-knobs
             downloadQuality: 'showLocalDownloadButton',
             downloadVideoFormat: 'showLocalDownloadButton',
@@ -2015,11 +2248,22 @@
         function originMatchesManifest(origin, hostPermissions) {
             if (!Array.isArray(hostPermissions)) return null;
             for (const perm of hostPermissions) {
-                // host_permissions look like 'https://*.youtube.com/*' or
-                // 'http://127.0.0.1:9751/*'; trim the trailing /* for the
-                // panel display.
                 const trimmed = perm.replace(/\/\*$/, '');
-                if (origin.startsWith(trimmed) || trimmed.startsWith(origin)) return perm;
+                try {
+                    const permUrl = new URL(trimmed.endsWith('/') ? trimmed : trimmed + '/');
+                    const originUrl = new URL(origin.endsWith('/') ? origin : origin + '/');
+                    if (permUrl.protocol !== originUrl.protocol) continue;
+                    const ph = permUrl.hostname;
+                    const oh = originUrl.hostname;
+                    if (ph.startsWith('*.')) {
+                        const base = ph.slice(2);
+                        if (oh === base || oh.endsWith('.' + base)) return perm;
+                    } else if (ph === oh) {
+                        if (!permUrl.port || permUrl.port === originUrl.port) return perm;
+                    }
+                } catch (_) {
+                    if (origin.startsWith(trimmed)) return perm;
+                }
             }
             return null;
         }
@@ -2585,12 +2829,38 @@
             return fetchWithTimeout(`http://127.0.0.1:${OLLAMA_PORT}/api/version`, PROBE_TIMEOUT_MS);
         }
 
+        function hasDocumentPip() {
+            return Boolean(
+                typeof globalThis !== 'undefined'
+                && globalThis.documentPictureInPicture
+            );
+        }
+
+        function hasLanguageDetector() {
+            return Boolean(
+                typeof globalThis !== 'undefined'
+                && ((globalThis.LanguageDetector) ||
+                    (globalThis.ai && typeof globalThis.ai.languageDetector === 'object'))
+            );
+        }
+
+        function hasPromptApi() {
+            return Boolean(
+                typeof globalThis !== 'undefined'
+                && ((globalThis.LanguageModel) ||
+                    (globalThis.ai && typeof globalThis.ai.languageModel !== 'undefined'))
+            );
+        }
+
         // Probe table — keys MUST match the CAPABILITIES enum exported
         // by settings-schema.js. The hardening test pins that.
         const PROBES = Object.freeze({
-            summarizerApi: { async: false, run: hasSummarizerApi },
-            mediaDL:       { async: true,  run: hasMediaDL },
-            ollama:        { async: true,  run: hasOllama },
+            summarizerApi:    { async: false, run: hasSummarizerApi },
+            documentPip:      { async: false, run: hasDocumentPip },
+            languageDetector: { async: false, run: hasLanguageDetector },
+            promptApi:        { async: false, run: hasPromptApi },
+            mediaDL:          { async: true,  run: hasMediaDL },
+            ollama:           { async: true,  run: hasOllama },
         });
 
         function probe(name) {
@@ -4772,11 +5042,13 @@
             const removeRule = typeof options.removeMutationRule === 'function' ? options.removeMutationRule : null;
             const featureId = options.featureId || 'chatStyleComments';
             let processScheduled = false;
+            let destroyed = false;
             const runtime = {
                 _commentSelectionSelectStartHandler: null,
                 _mutationHandler: null,
                 init() {
                     if (!doc || !win || !addRule) return;
+                    destroyed = false;
                     this._commentSelectionSelectStartHandler = (e) => {
                         if (!isCommentTextSelectionTarget(e.target)) return;
                         e.stopPropagation();
@@ -4785,16 +5057,21 @@
                     win.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
                     processAllComments(doc);
                     this._mutationHandler = () => {
-                        if (processScheduled) return;
+                        if (destroyed || processScheduled) return;
                         processScheduled = true;
                         raf(() => {
                             processScheduled = false;
+                            // A rAF queued just before destroy() fires after it —
+                            // without this guard it would re-tag the DOM that
+                            // cleanupRuntimeDom() just stripped.
+                            if (destroyed) return;
                             processAllComments(doc);
                         });
                     };
                     addRule(featureId, this._mutationHandler);
                 },
                 destroy() {
+                    destroyed = true;
                     processScheduled = false;
                     if (this._commentSelectionSelectStartHandler && win) {
                         win.removeEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
@@ -7588,6 +7865,8 @@
                 _videoType: 'standard',        // 'live' | 'vod' | 'standard'
                 _positionedEls: [],            // elements we CSS-positioned over right panel
                 _scrollTarget: null,           // which element receives scroll/wheel handlers
+                _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
+                _destroyed: false,             // blocks zombie mounts after teardown
 
                 _getPlayer()  { return document.querySelector('#player-container'); },
                 _belowCache: null,
@@ -9665,7 +9944,10 @@
                     this._videoType = VideoTypeDetector.refresh();
 
                     const doMount = () => {
-                        if (this._isActive) return;
+                        // _destroyed guard: the waitForElement chains below can
+                        // fire several seconds later — after teardown they must
+                        // not resurrect an overlay with no styles and no teardown.
+                        if (this._destroyed || this._isActive) return;
                         // Apply class right before mount — prevents broken half-state
                         // where masthead is hidden but overlay hasn’t mounted yet
                         document.documentElement.classList.add('ytkit-split-active');
@@ -9680,15 +9962,27 @@
                     if (player && hasContent) {
                         doMount();
                     } else {
-                        waitForElement('#player-container', () => {
-                            waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                        this._cancelPendingWaits();
+                        this._pendingWaits.push(waitForElement('#player-container', () => {
+                            if (this._destroyed) return;
+                            this._pendingWaits.push(waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                                if (this._destroyed) return;
                                 if (window.location.pathname.startsWith('/watch')) doMount();
-                            });
-                        });
+                            }));
+                        }));
                     }
                 },
 
+                _cancelPendingWaits() {
+                    for (const cancel of this._pendingWaits) {
+                        try { if (typeof cancel === 'function') cancel(); }
+                        catch { /* reason: wait cancellation is best-effort teardown */ }
+                    }
+                    this._pendingWaits = [];
+                },
+
                 init() {
+                    this._destroyed = false;
                     const css = buildSplitShellCss();
                     this._styleEl = injectStyle(stripCommentRestyleCss(css), this.id, true);
                     this._splitMetaStyleEl?.remove();
@@ -9702,6 +9996,8 @@
                 },
 
                 destroy() {
+                    this._destroyed = true;
+                    this._cancelPendingWaits();
                     this._unmount();
                     this._restoreSplitActionDock();
                     this._stopChatObserver();
@@ -10388,9 +10684,11 @@
                     const suffix = match[2]?.toLowerCase();
                     let numeric = match[1];
                     if (suffix) {
+                        // Suffixed counts ("1.2M", "1,2M") carry a single decimal separator.
                         if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
                         else numeric = numeric.replace(/,/g, '');
                     } else {
+                        // Plain integers ("1,234", "12,345,678") are comma-grouped \u2014 strip the grouping.
                         numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
                         if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
                         else numeric = numeric.replace(/,/g, '');
@@ -11910,6 +12208,1170 @@
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = api;
+        }
+    })();
+
+    // ── bundled module: extension/features/return-dislike/index.js ──
+    (() => {
+        'use strict';
+
+        // extension/features/return-dislike/index.js
+        //
+        // Monolith peel for Return YouTube Dislike. The module owns the primary
+        // returnDislike runtime/state object; ytkit.js keeps the inline object
+        // as a compatibility fallback and delegates to the factory when present.
+
+        function createReturnDislikeFeature(deps = {}) {
+            const {
+                appState = { settings: {} },
+                DebugManager = { log() {} },
+                DiagnosticLog = null,
+                ExternalApiHealth = null,
+                extensionFetchJson = async () => ({ data: null }),
+                storageReadJSON = (_key, fallback) => fallback,
+                storageWriteJSON = () => {},
+                getVideoId = () => null,
+                isWatchPagePath = () => false,
+                addNavigateRule = () => {},
+                removeNavigateRule = () => {},
+                injectStyle = () => null,
+                PageTypes = { WATCH: 'watch' }
+            } = deps;
+
+            let _cache = null;
+            const _budgetWindow = { start: 0, count: 0 };
+            const _BUDGET_PER_MIN = 100;
+            let _styleElement = null;
+            let _pillEl = null;
+            let _estimateEl = null;
+            let _navRule = null;
+
+            function _ensureStyles() {
+                if (_styleElement) return;
+                _styleElement = injectStyle(`
+                    .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 system-ui;font-variant-numeric:tabular-nums;}
+                    .ytkit-ryd-pill[data-tone="cached"]{color:rgba(255,255,255,0.55);}
+                    .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
+                    .ytkit-ryd-estimate{margin-left:4px;font:500 10px/1 system-ui;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
+                    .ytkit-ryd-ratio{margin-left:8px;font:500 11px/1 system-ui;color:rgba(255,255,255,0.55);}
+                    html:not([dark]) .ytkit-ryd-pill{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.05));color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-ryd-pill[data-tone="cached"]{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-ryd-pill[data-tone="offline"]{color:#b45309;}
+                    html:not([dark]) .ytkit-ryd-estimate{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-ryd-ratio{color:var(--yt-spec-text-secondary,#606060);}
+                `, 'ryd-pill');
+            }
+
+            function _estimateDisclosureText() {
+                return 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.';
+            }
+
+            function _readCache(videoId) {
+                if (!_cache) {
+                    try { _cache = storageReadJSON('ytkit-ryd-cache', {}) || {}; }
+                    catch { _cache = {}; }
+                }
+                const entry = _cache[videoId];
+                if (!entry) return null;
+                const ttlMs = (Math.max(1, Number(appState?.settings?.returnDislikeCacheHours) || 24)) * 3600 * 1000;
+                if (Date.now() - (entry.ts || 0) > ttlMs) return null;
+                return entry;
+            }
+
+            function _writeCache(videoId, data) {
+                if (!_cache) _cache = {};
+                _cache[videoId] = { ts: Date.now(), ...data };
+                const keys = Object.keys(_cache);
+                if (keys.length > 500) {
+                    keys.sort((a, b) => (_cache[a].ts || 0) - (_cache[b].ts || 0));
+                    for (const k of keys.slice(0, keys.length - 500)) delete _cache[k];
+                }
+                try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+            }
+
+            function _allowFetch() {
+                const now = Date.now();
+                if (now - _budgetWindow.start > 60000) {
+                    _budgetWindow.start = now;
+                    _budgetWindow.count = 0;
+                }
+                if (_budgetWindow.count >= _BUDGET_PER_MIN) return false;
+                _budgetWindow.count++;
+                return true;
+            }
+
+            function _getBudgetSnapshot() {
+                const now = Date.now();
+                const age = now - _budgetWindow.start;
+                return {
+                    used: _budgetWindow.count,
+                    limit: _BUDGET_PER_MIN,
+                    resetMs: _budgetWindow.start > 0 && age < 60000 ? 60000 - age : 0
+                };
+            }
+
+            async function _fetch(videoId) {
+                const cached = _readCache(videoId);
+                if (cached) {
+                    ExternalApiHealth?.recordSuccess?.('returnDislike', {
+                        source: 'cache',
+                        cacheState: 'fresh',
+                        endpoint: 'votes',
+                        ts: cached.ts,
+                        requestBudget: _getBudgetSnapshot()
+                    });
+                    return { ...cached, fromCache: true };
+                }
+                if (!_allowFetch()) {
+                    const budgetError = new Error('Return YouTube Dislike request budget exhausted');
+                    ExternalApiHealth?.recordFailure?.('returnDislike', budgetError, {
+                        errorClass: 'rate-limited',
+                        endpoint: 'votes',
+                        cacheState: 'miss',
+                        requestBudget: _getBudgetSnapshot()
+                    });
+                    DiagnosticLog?.record?.('returnDislike', `rate-limited at ${_budgetWindow.count}/${_BUDGET_PER_MIN}/min`);
+                    return null;
+                }
+                try {
+                    const { data } = await extensionFetchJson({
+                        method: 'GET',
+                        url: `https://returnyoutubedislikeapi.com/votes?videoId=${encodeURIComponent(videoId)}`,
+                        headers: { Accept: 'application/json' },
+                        credentials: 'omit'
+                    });
+                    if (!data || typeof data.dislikes !== 'number') {
+                        const payloadError = new Error('invalid Return YouTube Dislike votes payload');
+                        ExternalApiHealth?.recordFailure?.('returnDislike', payloadError, {
+                            errorClass: 'invalid-payload',
+                            endpoint: 'votes',
+                            cacheState: 'miss',
+                            requestBudget: _getBudgetSnapshot()
+                        });
+                        DiagnosticLog?.record?.('returnDislike', `votes payload invalid for ${videoId}`);
+                        return null;
+                    }
+                    const record = {
+                        likes: Number(data.likes) || 0,
+                        dislikes: Number(data.dislikes) || 0,
+                        viewCount: Number(data.viewCount) || 0,
+                        rating: Number(data.rating) || 0
+                    };
+                    _writeCache(videoId, record);
+                    ExternalApiHealth?.recordSuccess?.('returnDislike', {
+                        source: 'network',
+                        cacheState: 'refreshed',
+                        endpoint: 'votes',
+                        requestBudget: _getBudgetSnapshot()
+                    });
+                    return { ...record, fromCache: false };
+                } catch (e) {
+                    ExternalApiHealth?.recordFailure?.('returnDislike', e, {
+                        endpoint: 'votes',
+                        cacheState: 'miss',
+                        requestBudget: _getBudgetSnapshot()
+                    });
+                    DiagnosticLog?.record?.('returnDislike', `votes fetch failed for ${videoId}: ${e?.message || 'unknown error'}`);
+                    DebugManager.log('RYD', `Fetch failed: ${e.message}`);
+                    return null;
+                }
+            }
+
+            function _formatCount(n) {
+                if (!Number.isFinite(n)) return '—';
+                if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+                if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+                return String(Math.round(n));
+            }
+
+            async function _render() {
+                if (!isWatchPagePath()) return;
+                const videoId = getVideoId?.();
+                if (!videoId) return;
+                const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
+                if (!dislikeButton) return;
+                const data = await _fetch(videoId);
+                _pillEl?.remove();
+                _estimateEl?.remove();
+                document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
+                if (!data) {
+                    const offline = document.createElement('span');
+                    offline.className = 'ytkit-ryd-pill';
+                    offline.dataset.tone = 'offline';
+                    const now = Date.now();
+                    const windowAge = now - _budgetWindow.start;
+                    const rateLimited = _budgetWindow.count >= _BUDGET_PER_MIN
+                        && windowAge < 60000;
+                    if (rateLimited) {
+                        const remainingSec = Math.max(1, Math.ceil((60000 - windowAge) / 1000));
+                        offline.textContent = 'RYD paused';
+                        offline.title = `Return YouTube Dislike paused — rate-limited (${_budgetWindow.count}/${_BUDGET_PER_MIN}/min). Resumes in ${remainingSec}s.`;
+                    } else {
+                        offline.textContent = 'RYD off';
+                        offline.title = 'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.';
+                    }
+                    dislikeButton.appendChild(offline);
+                    _pillEl = offline;
+                    _estimateEl = null;
+                    return;
+                }
+                const pill = document.createElement('span');
+                pill.className = 'ytkit-ryd-pill';
+                pill.dataset.tone = data.fromCache ? 'cached' : 'fresh';
+                pill.textContent = _formatCount(data.dislikes);
+                const countLabel = _formatCount(data.dislikes);
+                const estimateCopy = _estimateDisclosureText();
+                if (data.fromCache) {
+                    const ageMs = Date.now() - (_cache?.[videoId]?.ts || Date.now());
+                    const ageH = Math.floor(ageMs / 3600000);
+                    const cacheTitle = ageH >= 1
+                        ? `Cached dislike count from Return YouTube Dislike (${ageH}h old).`
+                        : `Cached dislike count from Return YouTube Dislike (<1h old).`;
+                    pill.title = `${cacheTitle} ${estimateCopy}`;
+                } else {
+                    pill.title = `Live dislike count from Return YouTube Dislike (${_budgetWindow.count}/${_BUDGET_PER_MIN}/min used). ${estimateCopy}`;
+                }
+                pill.setAttribute('aria-label', `${countLabel} estimated dislikes. ${estimateCopy}`);
+                dislikeButton.appendChild(pill);
+                _pillEl = pill;
+
+                const estimateEl = document.createElement('span');
+                estimateEl.className = 'ytkit-ryd-estimate';
+                estimateEl.textContent = 'est.';
+                estimateEl.title = estimateCopy;
+                estimateEl.setAttribute('aria-label', estimateCopy);
+                dislikeButton.appendChild(estimateEl);
+                _estimateEl = estimateEl;
+
+                if (appState?.settings?.returnDislikeShowRatio) {
+                    const total = (data.likes || 0) + (data.dislikes || 0);
+                    if (total > 0) {
+                        const ratio = Math.round(((data.likes || 0) / total) * 100);
+                        const ratioEl = document.createElement('span');
+                        ratioEl.className = 'ytkit-ryd-ratio';
+                        ratioEl.textContent = `${ratio}% liked`;
+                        ratioEl.title = `Like ratio uses estimated Return YouTube Dislike counts. ${estimateCopy}`;
+                        dislikeButton.appendChild(ratioEl);
+                    }
+                }
+            }
+
+            return {
+                id: 'returnDislike',
+                name: 'Return YouTube Dislike',
+                description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
+                group: 'Ratings',
+                icon: 'thumbs-down',
+                pages: [PageTypes.WATCH],
+
+                init() {
+                    _ensureStyles();
+                    _navRule = () => { setTimeout(() => _render(), 1500); };
+                    addNavigateRule('returnDislike', _navRule);
+                    _navRule();
+                },
+
+                destroy() {
+                    removeNavigateRule('returnDislike');
+                    _navRule = null;
+                    _pillEl?.remove();
+                    _pillEl = null;
+                    _estimateEl?.remove();
+                    _estimateEl = null;
+                    document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
+                    _styleElement?.remove();
+                    _styleElement = null;
+                    _cache = null;
+                    _budgetWindow.start = 0;
+                    _budgetWindow.count = 0;
+                },
+
+                // Exposed for cross-feature queries (e.g. card badges).
+                _fetch,
+                _formatCount,
+                _readCache,
+                _getBudgetSnapshot
+            };
+        }
+
+        const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
+        ns.createReturnDislikeFeature = createReturnDislikeFeature;
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = { createReturnDislikeFeature };
+        }
+    })();
+
+    // ── bundled module: extension/features/sponsorblock/index.js ──
+    (() => {
+        'use strict';
+
+        // extension/features/sponsorblock/index.js
+        //
+        // Monolith peel for SponsorBlock. The module owns the primary
+        // sponsorBlock runtime/state object; ytkit.js keeps the inline object
+        // as a compatibility fallback and delegates to the factory when present.
+
+        function createSponsorBlockFeature(deps = {}) {
+            const {
+                appState = { settings: {} },
+                DebugManager = { log() {} },
+                DiagnosticLog = null,
+                ExternalApiHealth = null,
+                extensionFetchJson = async () => ({ data: null }),
+                storageReadJSON = (_key, fallback) => fallback,
+                storageWriteJSON = () => {},
+                getVideoId = () => null,
+                getMainVideoElement = () => null,
+                getMoviePlayerElement = () => null,
+                getPlayerProgressBar = () => null,
+                addNavigateRule = () => {},
+                removeNavigateRule = () => {},
+                injectStyle = () => null,
+                announceA11y = () => {},
+                VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
+                PageTypes = { WATCH: 'watch' }
+            } = deps;
+
+            return {
+                id: 'sponsorBlock',
+                name: 'SponsorBlock',
+                description: 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data',
+                group: 'Content',
+                icon: 'skip-forward',
+                isParent: true,
+                pages: [PageTypes.WATCH],
+                _segments: [],
+                _videoId: null,
+                _skipHandler: null,
+                _navRuleId: 'sponsorBlockNav',
+                _styleEl: null,
+                _barSegments: [],
+                _barObserver: null,
+                _reloadTimer: null,
+                // Bumped on destroy() so any in-flight _fetchSegments cannot
+                // repopulate _segments/DOM after the feature was torn down.
+                _generation: 0,
+
+                _CATEGORY_MAP: {
+                    sbCat_sponsor: 'sponsor',
+                    sbCat_intro: 'intro',
+                    sbCat_outro: 'outro',
+                    sbCat_selfpromo: 'selfpromo',
+                    sbCat_interaction: 'interaction',
+                    sbCat_music_offtopic: 'music_offtopic',
+                    sbCat_preview: 'preview',
+                    sbCat_filler: 'filler',
+                    sbCat_poi_highlight: 'poi_highlight',
+                },
+                _CATEGORY_COLORS: {
+                    sponsor: '#00d400',
+                    selfpromo: '#ffff00',
+                    interaction: '#cc00ff',
+                    intro: '#00ffff',
+                    outro: '#0202ed',
+                    preview: '#008fd6',
+                    music_offtopic: '#ff9900',
+                    filler: '#7300FF',
+                    poi_highlight: '#ff1684',
+                },
+                _CACHE_KEY: 'sb_segments_cache',
+                _CACHE_TTL_MS: 12 * 60 * 60 * 1000,
+                _CACHE_STALE_MAX_MS: 7 * 24 * 60 * 60 * 1000,
+                _CACHE_MAX_ENTRIES: 500,
+                _cache: null,
+                _cachePersistTimer: null,
+
+                _getChannelId() {
+                    const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                    if (link) {
+                        const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
+                        if (m) return m[1];
+                    }
+                    const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                    if (handleLink) return handleLink.getAttribute('href') || '';
+                    return '';
+                },
+
+                _getEnabledCategories() {
+                    // Global defaults
+                    const globalCats = [];
+                    for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
+                        if (appState.settings[key]) globalCats.push(apiName);
+                    }
+                    // Per-channel override check
+                    if (!appState.settings.sbPerChannelProfiles) return globalCats;
+                    const channelId = this._getChannelId();
+                    if (!channelId) return globalCats;
+                    const profiles = appState.settings.sbPerChannelProfilesData;
+                    if (!profiles || typeof profiles !== 'object') return globalCats;
+                    const profile = profiles[channelId];
+                    if (!profile || typeof profile.categories !== 'object') return globalCats;
+                    // Apply per-channel overrides: if a category is explicitly set,
+                    // use that value; otherwise fall through to global default.
+                    const cats = [];
+                    for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
+                        const channelOverride = profile.categories[apiName];
+                        if (typeof channelOverride === 'boolean') {
+                            if (channelOverride) cats.push(apiName);
+                        } else {
+                            // No per-channel override for this category; use global
+                            if (appState.settings[key]) cats.push(apiName);
+                        }
+                    }
+                    return cats;
+                },
+
+                _getCategoryKey(categories) {
+                    return [...new Set(categories)].sort().join(',');
+                },
+
+                _getCache() {
+                    if (this._cache && typeof this._cache === 'object' && !Array.isArray(this._cache)) return this._cache;
+                    const stored = storageReadJSON(this._CACHE_KEY, {});
+                    this._cache = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
+                    return this._cache;
+                },
+
+                _normalizeSegments(segments) {
+                    if (!Array.isArray(segments)) return [];
+                    return segments.filter(s =>
+                        s && typeof s === 'object'
+                        && Array.isArray(s.segment) && s.segment.length === 2
+                        && Number.isFinite(s.segment[0]) && Number.isFinite(s.segment[1])
+                        && s.segment[0] >= 0 && s.segment[1] > s.segment[0]
+                        && typeof s.category === 'string'
+                    ).map(s => ({
+                        segment: [s.segment[0], s.segment[1]],
+                        category: s.category,
+                        actionType: s.actionType,
+                        UUID: s.UUID,
+                        videoDuration: s.videoDuration
+                    }));
+                },
+
+                _cacheCoversCategories(entry, categories) {
+                    const entryKey = typeof entry?.categoryKey === 'string'
+                        ? entry.categoryKey
+                        : this._getCategoryKey(Array.isArray(entry?.categories) ? entry.categories : []);
+                    const entryCats = new Set(entryKey.split(',').filter(Boolean));
+                    return categories.every(category => entryCats.has(category));
+                },
+
+                _getCachedSegments(videoId, categories, { allowStale = false } = {}) {
+                    const cache = this._getCache();
+                    const entry = cache[videoId];
+                    if (!entry || typeof entry !== 'object' || !Array.isArray(entry.segments)) return null;
+                    if (!this._cacheCoversCategories(entry, categories)) return null;
+                    const cachedAt = Number(entry.ts);
+                    if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null;
+                    const age = Date.now() - cachedAt;
+                    const maxAge = allowStale ? this._CACHE_STALE_MAX_MS : this._CACHE_TTL_MS;
+                    if (age < 0 || age > maxAge) return null;
+                    return entry;
+                },
+
+                _markCachedSegments(segments, cachedAt, source) {
+                    return this._normalizeSegments(segments).map(segment => ({
+                        ...segment,
+                        _ytkitCacheSource: source,
+                        _ytkitCachedAt: cachedAt
+                    }));
+                },
+
+                _rememberSegments(videoId, categories, segments) {
+                    const normalized = this._normalizeSegments(segments);
+                    const cache = this._getCache();
+                    cache[videoId] = {
+                        ts: Date.now(),
+                        categoryKey: this._getCategoryKey(categories),
+                        segments: normalized
+                    };
+                    this._pruneCache();
+                    this._scheduleCachePersist();
+                },
+
+                _pruneCache() {
+                    const cache = this._getCache();
+                    const now = Date.now();
+                    for (const [videoId, entry] of Object.entries(cache)) {
+                        const cachedAt = Number(entry && entry.ts);
+                        if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(cachedAt) || now - cachedAt > this._CACHE_STALE_MAX_MS) {
+                            delete cache[videoId];
+                        }
+                    }
+                    const entries = Object.entries(cache);
+                    if (entries.length > this._CACHE_MAX_ENTRIES) {
+                        entries.sort((a, b) => (Number(b[1] && b[1].ts) || 0) - (Number(a[1] && a[1].ts) || 0));
+                        for (const [videoId] of entries.slice(this._CACHE_MAX_ENTRIES)) delete cache[videoId];
+                    }
+                },
+
+                _scheduleCachePersist() {
+                    clearTimeout(this._cachePersistTimer);
+                    this._cachePersistTimer = setTimeout(() => {
+                        this._cachePersistTimer = null;
+                        this._pruneCache();
+                        storageWriteJSON(this._CACHE_KEY, this._getCache());
+                    }, 1000);
+                },
+
+                _flushCachePersist() {
+                    if (!this._cachePersistTimer) return;
+                    clearTimeout(this._cachePersistTimer);
+                    this._cachePersistTimer = null;
+                    this._pruneCache();
+                    storageWriteJSON(this._CACHE_KEY, this._getCache());
+                },
+
+                _formatCacheTimestamp(timestamp) {
+                    const date = new Date(timestamp);
+                    if (!Number.isFinite(date.getTime())) return 'unknown time';
+                    return date.toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                },
+
+                async _fetchSegments(videoId) {
+                    const cats = this._getEnabledCategories();
+                    if (!cats.length) return [];
+                    const cached = this._getCachedSegments(videoId, cats);
+                    if (cached) {
+                        ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                            source: 'cache',
+                            cacheState: 'fresh',
+                            endpoint: 'skipSegments',
+                            ts: cached.ts
+                        });
+                        return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
+                    }
+                    try {
+                        // Privacy-preserving hash-prefix lookup: only send the first
+                        // 4 chars of the SHA-256 hash so the server never sees the
+                        // full video ID.  Client-side filter for the exact match.
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(videoId));
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        const prefix = hashHex.substring(0, 4);
+                        const { data } = await extensionFetchJson({
+                            method: 'GET',
+                            url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
+                            timeout: 8000,
+                        });
+                        if (!Array.isArray(data)) {
+                            const payloadError = new Error('invalid SponsorBlock skipSegments payload');
+                            const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                            if (stale) {
+                                ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', payloadError, {
+                                    errorClass: 'invalid-payload',
+                                    endpoint: 'skipSegments',
+                                    cacheState: 'stale',
+                                    fallbackState: 'stale-cache'
+                                });
+                                return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                            }
+                            ExternalApiHealth?.recordFailure?.('sponsorBlock', payloadError, {
+                                errorClass: 'invalid-payload',
+                                endpoint: 'skipSegments',
+                                cacheState: 'miss'
+                            });
+                            return [];
+                        }
+                        // Filter for exact video ID match from hash-prefix results
+                        const match = data.find(entry => entry.videoID === videoId);
+                        const segments = match && Array.isArray(match.segments)
+                            ? this._normalizeSegments(match.segments)
+                            : [];
+                        this._rememberSegments(videoId, cats, segments);
+                        ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                            source: 'network',
+                            cacheState: 'refreshed',
+                            endpoint: 'skipSegments',
+                            itemCount: segments.length
+                        });
+                        return segments;
+                    } catch (error) {
+                        const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                        if (stale) {
+                            ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', error, {
+                                endpoint: 'skipSegments',
+                                cacheState: 'stale',
+                                fallbackState: 'stale-cache'
+                            });
+                            DiagnosticLog?.record?.('sponsorBlock', `stale cache fallback for ${videoId}: ${error?.message || 'fetch failed'}`);
+                            return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                        }
+                        ExternalApiHealth?.recordFailure?.('sponsorBlock', error, {
+                            endpoint: 'skipSegments',
+                            cacheState: 'miss'
+                        });
+                        DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                        return [];
+                    }
+                },
+
+                async _loadForVideo() {
+                    const videoId = getVideoId();
+                    if (!videoId || videoId === this._videoId) return;
+                    this._videoId = videoId;
+                    this._segments = [];
+                    this._clearBarSegments();
+                    const gen = this._generation;
+                    const fetched = await this._fetchSegments(videoId);
+                    // Guard: bail if destroy() fired while awaiting (generation
+                    // bumped) OR the user navigated to a different video — otherwise
+                    // we paint this video's segment bars onto the new one and
+                    // _scheduleNextSkip auto-skips it using the wrong timestamps.
+                    if (gen !== this._generation || getVideoId() !== videoId) return;
+                    this._segments = fetched;
+                    if (this._segments.length) {
+                        DebugManager.log('SponsorBlock', `Loaded ${this._segments.length} segments for ${videoId}`);
+                        this._renderBarSegments();
+                    }
+                },
+
+                _checkSkip() {
+                    if (!this._segments.length) return;
+                    const video = getMainVideoElement();
+                    if (!video || video.paused) return;
+                    const currentTime = video.currentTime;
+                    const enabledCats = this._getEnabledCategories();
+                    for (const seg of this._segments) {
+                        if (!enabledCats.includes(seg.category)) continue;
+                        // v3.20.1: poi_highlight is a jump-to marker per the
+                        // SponsorBlock API spec, not a skip segment. Render it
+                        // on the progress bar (handled by _renderBarSegments),
+                        // but never auto-advance past it.
+                        if (seg.category === 'poi_highlight') continue;
+                        const [start, end] = seg.segment;
+                        if (currentTime >= start && currentTime < end - 0.3) {
+                            video.currentTime = end;
+                            DebugManager.log('SponsorBlock', `Skipped ${seg.category}: ${start.toFixed(1)}s -> ${end.toFixed(1)}s`);
+                            // Skip notification removed — toasts over the video are distracting.
+                            // v3.23.0 (NX5): announce via aria-live so screen-reader
+                            // users know a skip happened without a visible toast.
+                            // The polite live region queues the message; categories
+                            // are human-friendly via the SB label map but fall back
+                            // to the raw category id.
+                            try {
+                                const labels = {
+                                    sponsor: 'sponsor',
+                                    selfpromo: 'self promotion',
+                                    interaction: 'interaction reminder',
+                                    intro: 'intro',
+                                    outro: 'outro',
+                                    preview: 'preview or recap',
+                                    music_offtopic: 'non-music section',
+                                    filler: 'filler tangent',
+                                };
+                                const label = labels[seg.category] || seg.category.replace(/_/g, ' ');
+                                announceA11y(`Skipped ${label} segment.`);
+                            } catch (_) {
+                                // reason: announcement is best-effort
+                            }
+                            // Reschedule after skip to handle next segment
+                            this._scheduleNextSkip();
+                            return;
+                        }
+                    }
+                },
+
+                // Scheduled skip: instead of 500ms polling, compute the delay to the
+                // next segment boundary and schedule a precise setTimeout.  Falls back
+                // to a 2s ceiling so we never wait forever if currentTime drifts.
+                _scheduleNextSkip() {
+                    this._clearSchedule();
+                    const video = getMainVideoElement();
+                    if (!video || video.paused || !this._segments.length) return;
+                    const currentTime = video.currentTime;
+                    const rate = video.playbackRate || 1;
+                    const enabledCats = this._getEnabledCategories();
+                    let minDelay = Infinity;
+                    for (const seg of this._segments) {
+                        if (!enabledCats.includes(seg.category)) continue;
+                        // v3.20.1: poi_highlight is a marker, never an auto-skip
+                        // target. Excluding here mirrors _checkSkip so we don't
+                        // schedule timers that get immediately rejected.
+                        if (seg.category === 'poi_highlight') continue;
+                        const [start, end] = seg.segment;
+                        if (currentTime >= start && currentTime < end - 0.3) {
+                            // Already inside a segment — skip immediately
+                            minDelay = 0;
+                            break;
+                        }
+                        if (start > currentTime) {
+                            const wallMs = ((start - currentTime) / rate) * 1000;
+                            if (wallMs < minDelay) minDelay = wallMs;
+                        }
+                    }
+                    if (minDelay === Infinity) return; // No upcoming segments
+                    // Fire 100ms early for precision, cap at 2s to stay responsive.
+                    // Add 50-200ms random jitter so skip timing is not frame-exact
+                    // — reduces detection fingerprint (SponsorBlock #2290).
+                    const jitter = 50 + Math.floor(Math.random() * 150);
+                    const delay = Math.max(0, Math.min(minDelay - 100 + jitter, 2000 + jitter));
+                    this._skipTimer = setTimeout(() => {
+                        this._checkSkip();
+                        // If checkSkip didn't skip (edge of segment), reschedule
+                        if (!video.paused) this._scheduleNextSkip();
+                    }, delay);
+                },
+
+                _clearSchedule() {
+                    if (this._skipTimer) { clearTimeout(this._skipTimer); this._skipTimer = null; }
+                },
+
+                _renderBarSegments() {
+                    this._clearBarSegments();
+                    const video = getMainVideoElement();
+                    const progressBar = getPlayerProgressBar();
+                    if (!video || !progressBar || !video.duration) return;
+                    const duration = video.duration;
+                    const enabledCats = this._getEnabledCategories();
+                    for (const seg of this._segments) {
+                        if (!enabledCats.includes(seg.category)) continue;
+                        const [start, end] = seg.segment;
+                        const left = (start / duration) * 100;
+                        const width = ((end - start) / duration) * 100;
+                        const bar = document.createElement('div');
+                        bar.className = 'ytkit-sb-segment';
+                        bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;width:${width}%;background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:0.7;pointer-events:none;z-index:35;`;
+                        const label = seg.category.replace(/_/g, ' ');
+                        if (seg._ytkitCacheSource === 'stale') {
+                            bar.dataset.ytkitCacheSource = 'stale';
+                            bar.title = `${label} (cached at ${this._formatCacheTimestamp(seg._ytkitCachedAt)})`;
+                        } else {
+                            bar.title = label;
+                        }
+                        progressBar.appendChild(bar);
+                        this._barSegments.push(bar);
+                    }
+                },
+
+                _clearBarSegments() {
+                    this._barSegments.forEach(el => el.remove());
+                    this._barSegments = [];
+                },
+
+                _checkAntiAdblock() {
+                    const warning = document.querySelector(
+                        'ytd-enforcement-message-view-model, '
+                        + 'tp-yt-paper-dialog.ytd-enforcement-message-view-model, '
+                        + '[class*="enforcement-message"], '
+                        + 'ytd-popup-container [class*="adblock"]'
+                    );
+                    if (warning && DiagnosticLog) {
+                        DiagnosticLog.record('sb-anti-adblock', {
+                            detected: true,
+                            selector: warning.tagName.toLowerCase()
+                                + (warning.className ? '.' + warning.className.split(/\s+/)[0] : ''),
+                        });
+                    }
+                },
+
+                init() {
+                    const self = this;
+                    this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
+                    this._antiAdblockTimer = setInterval(() => self._checkAntiAdblock(), 30000);
+                    this._checkAntiAdblock();
+                    // Event-driven skip scheduling: reschedule on play/seek/rate changes
+                    this._playHandler = () => self._scheduleNextSkip();
+                    this._seekHandler = () => self._scheduleNextSkip();
+                    this._pauseHandler = () => self._clearSchedule();
+                    document.addEventListener('playing', this._playHandler, true);
+                    document.addEventListener('seeked', this._seekHandler, true);
+                    document.addEventListener('ratechange', this._seekHandler, true);
+                    document.addEventListener('pause', this._pauseHandler, true);
+                    const reloadSegments = () => {
+                        self._videoId = null;
+                        self._segments = [];
+                        self._clearBarSegments();
+                        self._clearSchedule();
+                        clearTimeout(self._reloadTimer);
+                        self._reloadTimer = setTimeout(() => {
+                            self._reloadTimer = null;
+                            self._loadForVideo().then(() => self._scheduleNextSkip()).catch(() => { /* reason: segment reload is best-effort */ });
+                        }, 800);
+                    };
+                    addNavigateRule(this._navRuleId, reloadSegments);
+                    // Re-render bar segments when video duration changes (live streams, late loadedmetadata)
+                    this._durationHandler = () => {
+                        if (this._segments.length) this._renderBarSegments();
+                    };
+                    document.addEventListener('durationchange', this._durationHandler, true);
+                    // Also watch for video duration becoming available (for bar rendering)
+                    this._barObserver = new MutationObserver(() => {
+                        const video = getMainVideoElement();
+                        if (video?.duration && this._segments.length && !this._barSegments.length) {
+                            this._renderBarSegments();
+                        }
+                    });
+                    const player = getMoviePlayerElement();
+                    if (player) this._barObserver.observe(player, { childList: true, subtree: true });
+                },
+
+                destroy() {
+                    // Invalidate any in-flight _loadForVideo so late fetches
+                    // cannot re-render segments onto the progress bar after the
+                    // feature has been disabled.
+                    this._generation = (this._generation + 1) | 0;
+                    clearInterval(this._antiAdblockTimer);
+                    this._antiAdblockTimer = null;
+                    clearTimeout(this._reloadTimer);
+                    this._reloadTimer = null;
+                    this._clearSchedule();
+                    if (this._playHandler) document.removeEventListener('playing', this._playHandler, true);
+                    if (this._seekHandler) {
+                        document.removeEventListener('seeked', this._seekHandler, true);
+                        document.removeEventListener('ratechange', this._seekHandler, true);
+                    }
+                    if (this._pauseHandler) document.removeEventListener('pause', this._pauseHandler, true);
+                    if (this._durationHandler) document.removeEventListener('durationchange', this._durationHandler, true);
+                    removeNavigateRule(this._navRuleId);
+                    this._barObserver?.disconnect();
+                    this._clearBarSegments();
+                    this._styleEl?.remove();
+                    this._flushCachePersist();
+                    this._cache = null;
+                    this._segments = [];
+                    this._videoId = null;
+                }
+            };
+        }
+
+        const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
+        ns.createSponsorBlockFeature = createSponsorBlockFeature;
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = { createSponsorBlockFeature };
+        }
+    })();
+
+    // ── bundled module: extension/features/dearrow/index.js ──
+    (() => {
+        'use strict';
+
+        // extension/features/dearrow/index.js
+        //
+        // Monolith peel for DeArrow. The module owns the primary
+        // deArrow runtime/state object; ytkit.js keeps the inline object
+        // as a compatibility fallback and delegates to the factory when present.
+
+        function createDeArrowFeature(deps = {}) {
+            const {
+                appState = { settings: {} },
+                DebugManager = { log() {} },
+                DiagnosticLog = null,
+                ExternalApiHealth = null,
+                extensionFetchJson = async () => ({ data: null }),
+                storageReadJSON = (_key, fallback) => fallback,
+                storageWriteJSON = () => {},
+                isWatchPagePath = () => false,
+                addNavigateRule = () => {},
+                removeNavigateRule = () => {},
+                injectStyle = () => null,
+                announceA11y = () => {},
+                PageTypes = { WATCH: 'watch' }
+            } = deps;
+
+            return {
+                id: 'deArrow',
+                name: 'DeArrow',
+                description: 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database',
+                group: 'Content',
+                icon: 'type',
+                isParent: true,
+                _cache: {},
+                _cacheMeta: {},
+                _pending: {},
+                _observer: null,
+                _navRuleId: 'deArrowNav',
+                _generation: 0,
+                _processTimer: null,
+                _resetTimer: null,
+                _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
+                _WATCH_TITLE_SELECTORS: 'ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string, ytd-watch-metadata h1 yt-formatted-string',
+                _persistTimer: null,
+                init() {
+                    const self = this;
+                    // Load persistent cache
+                    const cached = storageReadJSON('da_branding_cache', null);
+                    if (cached) {
+                        const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
+                        const maxAge = ttl > 0 ? ttl * 6 : 0;
+                        const now = Date.now();
+                        for (const [k, v] of Object.entries(cached)) {
+                            if (v._ts && (now - v._ts) < maxAge) {
+                                self._cache[k] = v;
+                                self._cacheMeta[k] = v._ts;
+                            }
+                        }
+                    }
+                    // v4.47.0 EI-NEW4: warn power users when the cache is
+                    // disabled (daCacheTTL=0). With no cache, every visible
+                    // card hits the DeArrow API. The 100k+ subs.ajay.app
+                    // call cap is real; expect rate limits.
+                    const _ttlRaw = parseInt(appState.settings.daCacheTTL || '4', 10);
+                    if (_ttlRaw === 0) {
+                        DebugManager.log('DeArrow',
+                            'Cache disabled (daCacheTTL=0); every card hit fires an API request. Expect rate limits.');
+                    }
+                    const css = `
+                        .daCustomTitle { display: block !important; }
+                        .daCustomTitle + [id="video-title"], .daCustomTitle + a#video-title-link { display: none !important; }
+                        /* v4.47.0 EI-NEW4: locally-formatted fallback titles
+                           (sentence/title-case applied when DeArrow has no
+                           submission) dim slightly so power users see the
+                           distinction from real DeArrow data. */
+                        .daCustomTitle[data-da-fallback="1"] { opacity: 0.78 !important; }
+                    `;
+                    this._styleEl = injectStyle(css, this.id, true);
+                    const resetAndProcess = () => {
+                        self._generation++;
+                        clearTimeout(self._processTimer);
+                        clearTimeout(self._resetTimer);
+                        document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
+                        document.querySelectorAll('[data-da-processed]').forEach(el => {
+                            delete el.dataset.daProcessed;
+                            el.style.display = '';
+                        });
+                        document.querySelectorAll('.da-replaced-thumb').forEach(el => {
+                            if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
+                            el.classList.remove('da-replaced-thumb');
+                        });
+                        if (!isWatchPagePath()) {
+                            self._resetTimer = setTimeout(() => {
+                                self._resetTimer = null;
+                                self._processPage();
+                            }, 1000);
+                        }
+                    };
+                    addNavigateRule(this._navRuleId, resetAndProcess);
+                    this._observer = new MutationObserver(() => {
+                        if (isWatchPagePath()) return;
+                        clearTimeout(self._processTimer);
+                        self._processTimer = setTimeout(() => self._processPage(), 300);
+                    });
+                    this._observer.observe(document.body, { childList: true, subtree: true });
+                },
+                async _fetchBranding(videoId) {
+                    // Check cache with TTL enforcement
+                    if (this._cache[videoId]) {
+                        const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
+                        if (ttl > 0 && (Date.now() - (this._cache[videoId]._ts || 0)) < ttl) {
+                            ExternalApiHealth?.recordSuccess?.('deArrow', {
+                                source: 'cache',
+                                cacheState: 'fresh',
+                                endpoint: 'branding',
+                                ts: this._cache[videoId]._ts || Date.now()
+                            });
+                            return this._cache[videoId];
+                        } else if (ttl === 0) {
+                            // TTL=0 means no cache — evict stale entry
+                            delete this._cache[videoId];
+                            delete this._cacheMeta[videoId];
+                        } else if ((Date.now() - (this._cache[videoId]._ts || 0)) >= ttl) {
+                            delete this._cache[videoId];
+                            delete this._cacheMeta[videoId];
+                        }
+                    }
+                    // Deduplicate in-flight fetches for the same videoId
+                    if (this._pending[videoId]) return this._pending[videoId];
+                    const promise = this._doFetch(videoId);
+                    this._pending[videoId] = promise;
+                    try { return await promise; } finally { delete this._pending[videoId]; }
+                },
+                async _doFetch(videoId) {
+                    try {
+                        const { data } = await extensionFetchJson({
+                            method: 'GET',
+                            url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
+                            timeout: 8000,
+                        });
+                        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                            const payloadError = new Error('invalid DeArrow branding payload');
+                            ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
+                                errorClass: 'invalid-payload',
+                                endpoint: 'branding',
+                                cacheState: 'miss'
+                            });
+                            DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
+                            return null;
+                        }
+                        data._ts = Date.now();
+                        this._cache[videoId] = data;
+                        this._cacheMeta[videoId] = data._ts;
+                        // Evict oldest entries if in-memory cache exceeds 2000
+                        const cacheKeys = Object.keys(this._cache);
+                        if (cacheKeys.length > 2000) {
+                            cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
+                                .slice(0, cacheKeys.length - 1500)
+                                .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
+                        }
+                        this._schedulePersist();
+                        ExternalApiHealth?.recordSuccess?.('deArrow', {
+                            source: 'network',
+                            cacheState: 'refreshed',
+                            endpoint: 'branding'
+                        });
+                        return data;
+                    } catch (error) {
+                        ExternalApiHealth?.recordFailure?.('deArrow', error, {
+                            endpoint: 'branding',
+                            cacheState: 'miss'
+                        });
+                        DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                        return null;
+                    }
+                },
+                _schedulePersist() {
+                    clearTimeout(this._persistTimer);
+                    this._persistTimer = setTimeout(() => {
+                        const entries = Object.entries(this._cache).sort((a, b) => (b[1]._ts || 0) - (a[1]._ts || 0)).slice(0, 2000);
+                        storageWriteJSON('da_branding_cache', Object.fromEntries(entries));
+                    }, 5000);
+                },
+                _formatTitle(title, format) {
+                    if (!title) return title;
+                    title = title.replace(/^>\s*/, '');
+                    if (format === 'sentence') {
+                        // Lowercase everything, then capitalize only the first character
+                        return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
+                    }
+                    if (format === 'title_case') {
+                        const lower = new Set(['a','an','the','and','but','or','for','nor','on','at','to','by','in','of','up','as','is','it']);
+                        return title.split(' ').map((w, i) => i === 0 || !lower.has(w.toLowerCase()) ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()).join(' ');
+                    }
+                    return title;
+                },
+                _channelOverrideMode(el) {
+                    const overrides = appState?.settings?.deArrowChannelOverrides;
+                    if (!overrides || typeof overrides !== 'object') return null;
+                    const link = el?.querySelector?.('a[href*="/channel/"], a[href*="/@"]');
+                    if (!link) return null;
+                    const href = link.getAttribute('href') || '';
+                    const idMatch = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    const channelId = idMatch ? idMatch[1] : (href.match(/^\/@([A-Za-z0-9._-]+)/)?.[0] || '');
+                    if (!channelId) return null;
+                    const entry = overrides[channelId];
+                    return entry && typeof entry === 'object' ? entry.mode || null : null;
+                },
+                async _processPage() {
+                    const gen = this._generation;
+                    const replaceTitles = appState.settings.daReplaceTitles;
+                    const replaceThumbs = appState.settings.daReplaceThumbs;
+                    const format = appState.settings.daTitleFormat || 'sentence';
+                    const fallback = appState.settings.daFallbackFormat;
+                    const renderers = document.querySelectorAll('ytd-rich-item-renderer:not([data-da-processed]), ytd-video-renderer:not([data-da-processed]), ytd-compact-video-renderer:not([data-da-processed]), ytd-grid-video-renderer:not([data-da-processed])');
+                    for (const el of renderers) {
+                        if (gen !== this._generation) return;
+                        el.dataset.daProcessed = '1';
+                        const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
+                        if (!link) continue;
+                        const url = new URL(link.href, location.origin);
+                        const videoId = url.searchParams.get('v');
+                        if (!videoId) continue;
+                        // v3.28 deferred → v4.0+: honor per-channel override.
+                        // 'off'      → skip title + thumb replacement entirely for this card
+                        // 'original' → also skip (channel author wants original metadata)
+                        // 'dearrow'  → fall through to normal DeArrow path
+                        const overrideMode = this._channelOverrideMode(el);
+                        if (overrideMode === 'off' || overrideMode === 'original') {
+                            el.dataset.daOverride = overrideMode;
+                            continue;
+                        }
+                        const branding = await this._fetchBranding(videoId);
+                        if (!branding || gen !== this._generation) continue;
+                        if (replaceTitles) {
+                            const titleEl = el.querySelector('#video-title, #video-title-link');
+                            if (titleEl) {
+                                const submission = branding.titles?.[0];
+                                const casualMode = appState.settings.deArrowCasualMode;
+                                if (submission?.title) {
+                                    const formatted = this._formatTitle(submission.title, format);
+                                    const clone = titleEl.cloneNode(false);
+                                    clone.className = 'daCustomTitle ' + titleEl.className;
+                                    clone.removeAttribute('id');
+                                    clone.textContent = formatted;
+                                    clone.title = appState.settings.daShowOriginalHover ? titleEl.textContent.trim() : formatted;
+                                    titleEl.style.display = 'none';
+                                    titleEl.dataset.daProcessed = '1';
+                                    titleEl.parentNode.insertBefore(clone, titleEl);
+                                    try {
+                                        if (isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')) {
+                                            announceA11y(`Title replaced by DeArrow: ${formatted}`);
+                                        }
+                                    } catch (_) {
+                                        // reason: a11y announce is best-effort
+                                    }
+                                } else if (fallback && !casualMode) {
+                                    const original = titleEl.textContent.trim();
+                                    const formatted = this._formatTitle(original, format);
+                                    if (formatted !== original) {
+                                        const clone = titleEl.cloneNode(false);
+                                        clone.className = 'daCustomTitle da-formatted-title ' + titleEl.className;
+                                        clone.removeAttribute('id');
+                                        clone.textContent = formatted;
+                                        clone.title = formatted;
+                                        // v4.47.0 EI-NEW4: mark locally-formatted
+                                        // fallbacks distinct from real DeArrow
+                                        // submissions; the CSS rule at init time
+                                        // dims these slightly so power users can
+                                        // tell the difference at a glance.
+                                        clone.dataset.daFallback = '1';
+                                        titleEl.style.display = 'none';
+                                        titleEl.dataset.daProcessed = '1';
+                                        titleEl.parentNode.insertBefore(clone, titleEl);
+                                    }
+                                }
+                            }
+                        }
+                        if (replaceThumbs) {
+                            const thumb = branding.thumbnails?.[0];
+                            if (thumb?.timestamp !== undefined) {
+                                const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
+                                if (img && !img.classList.contains('da-replaced-thumb')) {
+                                    img.dataset.daOrigSrc = img.src;
+                                    img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${videoId}&time=${thumb.timestamp}`;
+                                    img.classList.add('da-replaced-thumb');
+                                    img.onerror = () => { if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc; };
+                                }
+                            }
+                        }
+                    }
+                },
+                destroy() {
+                    this._generation++;
+                    clearTimeout(this._processTimer);
+                    this._processTimer = null;
+                    clearTimeout(this._resetTimer);
+                    this._resetTimer = null;
+                    clearTimeout(this._persistTimer);
+                    this._persistTimer = null;
+                    this._cache = {};
+                    this._cacheMeta = {};
+                    this._pending = {};
+                    removeNavigateRule(this._navRuleId);
+                    this._observer?.disconnect();
+                    this._styleEl?.remove();
+                    document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
+                    document.querySelectorAll('[data-da-processed]').forEach(el => { delete el.dataset.daProcessed; el.style.display = ''; });
+                    document.querySelectorAll('.da-replaced-thumb').forEach(el => {
+                        if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
+                        el.classList.remove('da-replaced-thumb');
+                    });
+                }
+            };
+        }
+
+        const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
+        ns.createDeArrowFeature = createDeArrowFeature;
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = { createDeArrowFeature };
         }
     })();
 

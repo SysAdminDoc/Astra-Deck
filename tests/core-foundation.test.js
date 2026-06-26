@@ -45,6 +45,7 @@ const coreSources = [
     'trusted-html.js',
     'api-limiter.js',
     'diagnostic-log.js',
+    'external-api-health.js',
     'predicate-sandbox.js',
     'video-type.js'
 ].map((fileName) => ({
@@ -709,6 +710,68 @@ test('createDiagnosticLog resyncs counters from a pre-populated ring', () => {
         JSON.parse(JSON.stringify(log.countsByCtx())),
         { tt: 2, selectors: 1 }
     );
+});
+
+// ── ExternalApiHealth factory ──
+
+test('createExternalApiHealth records success, fallback, and request budget state', () => {
+    const core = loadFoundation();
+    const logEntries = [];
+    const health = core.createExternalApiHealth({
+        now: () => 1000,
+        DiagnosticLog: { record: (ctx, msg) => logEntries.push([ctx, msg]) }
+    });
+
+    health.recordSuccess('returnDislike', {
+        source: 'network',
+        cacheState: 'refreshed',
+        requestBudget: { used: 12, limit: 100, resetMs: 32000 }
+    });
+    health.recordCacheFallback('sponsorBlock', new Error('network offline'), {
+        cacheState: 'stale',
+        fallbackState: 'stale-cache'
+    });
+
+    const snapshot = JSON.parse(JSON.stringify(health.snapshot()));
+    const ryd = snapshot.find((entry) => entry.id === 'returnDislike');
+    const sb = snapshot.find((entry) => entry.id === 'sponsorBlock');
+
+    assert.equal(ryd.state, 'ok');
+    assert.equal(ryd.lastSuccessTs, 1000);
+    assert.deepEqual(ryd.requestBudget, { used: 12, limit: 100, resetMs: 32000 });
+    assert.equal(sb.state, 'degraded');
+    assert.equal(sb.cacheState, 'stale');
+    assert.equal(sb.fallbackState, 'stale-cache');
+    assert.equal(sb.lastErrorClass, 'network-error');
+    assert.equal(logEntries[0][0], 'external-api-health');
+});
+
+test('createExternalApiHealth classifies 429, 5xx, network, and invalid payload failures', () => {
+    const core = loadFoundation();
+    const health = core.createExternalApiHealth({ now: () => 2000 });
+
+    const rateLimited = new Error('HTTP 429');
+    rateLimited.response = { status: 429 };
+    const serverError = new Error('HTTP 503');
+    serverError.response = { status: 503 };
+    const networkError = new Error('fetch failed');
+    const invalidPayload = new Error('Invalid JSON response from API');
+
+    health.recordFailure('returnDislike', rateLimited, { requestBudget: { used: 100, limit: 100, resetMs: 50000 } });
+    health.recordFailure('sponsorBlock', serverError);
+    health.recordFailure('deArrow', networkError);
+    health.recordFailure('deArrow', invalidPayload);
+
+    const snapshot = JSON.parse(JSON.stringify(health.snapshot()));
+    const ryd = snapshot.find((entry) => entry.id === 'returnDislike');
+    const sb = snapshot.find((entry) => entry.id === 'sponsorBlock');
+    const da = snapshot.find((entry) => entry.id === 'deArrow');
+
+    assert.equal(ryd.state, 'rate-limited');
+    assert.equal(ryd.lastErrorClass, 'rate-limited');
+    assert.equal(sb.lastErrorClass, 'server-error');
+    assert.equal(health.classifyFailure(networkError), 'network-error');
+    assert.equal(da.lastErrorClass, 'invalid-payload');
 });
 
 // ── PredicateSandbox factory ──

@@ -6566,6 +6566,10 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'features/video-hider/index.js':        'function createHideVideosFromHomeFeature',
         'features/player-dock/index.js':        'function createFloatingLogoOnWatchFeature',
         'features/youtube-music-compat/index.js': 'function createYoutubeMusicCompatFeature',
+        'core/external-api-health.js':          'function createExternalApiHealth(options',
+        'features/return-dislike/index.js':     'function createReturnDislikeFeature',
+        'features/sponsorblock/index.js':       'function createSponsorBlockFeature',
+        'features/dearrow/index.js':            'function createDeArrowFeature',
         'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
     };
     for (const [mod, fingerprint] of Object.entries(fingerprints)) {
@@ -6593,6 +6597,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
+        'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',
@@ -6610,6 +6615,9 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/video-hider/index.js',
         'extension/features/player-dock/index.js',
         'extension/features/youtube-music-compat/index.js',
+        'extension/features/return-dislike/index.js',
+        'extension/features/sponsorblock/index.js',
+        'extension/features/dearrow/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     assert.deepEqual(bundleOrder, expectedOrder,
@@ -10787,7 +10795,7 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
     // can grep for.
     const saveStart = popupSource.indexOf('healthSaveBtn.addEventListener');
     assert.ok(saveStart > -1, 'popup.js must wire healthSaveBtn');
-    const saveBlock = popupSource.slice(saveStart, saveStart + 2500);
+    const saveBlock = popupSource.slice(saveStart, saveStart + 3800);
     assert.match(saveBlock, /astraDeckBugReport:\s*true/,
         'healthSave payload must carry the astraDeckBugReport: true marker');
     // schemaVersion currently 2 after the NEW-7 SW lifecycle ring
@@ -10804,6 +10812,8 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
         'healthSave must read the capability map from popupState._capabilities');
     assert.match(saveBlock, /\n\s+capabilities,/,
         'healthSave payload must include the capabilities map (shorthand property)');
+    assert.match(saveBlock, /\n\s+externalApiHealth,/,
+        'healthSave payload must include external API health when available');
     assert.match(saveBlock, /settings:\s*sanitized/,
         'healthSave payload must include sanitized settings');
     assert.match(saveBlock, /redactBugReportSettings\(settings\)/,

@@ -12,6 +12,7 @@
             appState = { settings: {} },
             DebugManager = { log() {} },
             DiagnosticLog = null,
+            ExternalApiHealth = null,
             extensionFetchJson = async () => ({ data: null }),
             storageReadJSON = (_key, fallback) => fallback,
             storageWriteJSON = () => {},
@@ -233,7 +234,15 @@
                 const cats = this._getEnabledCategories();
                 if (!cats.length) return [];
                 const cached = this._getCachedSegments(videoId, cats);
-                if (cached) return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
+                if (cached) {
+                    ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                        source: 'cache',
+                        cacheState: 'fresh',
+                        endpoint: 'skipSegments',
+                        ts: cached.ts
+                    });
+                    return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
+                }
                 try {
                     // Privacy-preserving hash-prefix lookup: only send the first
                     // 4 chars of the SHA-256 hash so the server never sees the
@@ -247,20 +256,53 @@
                         url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
                         timeout: 8000,
                     });
-                    if (!Array.isArray(data)) return [];
+                    if (!Array.isArray(data)) {
+                        const payloadError = new Error('invalid SponsorBlock skipSegments payload');
+                        const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                        if (stale) {
+                            ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', payloadError, {
+                                errorClass: 'invalid-payload',
+                                endpoint: 'skipSegments',
+                                cacheState: 'stale',
+                                fallbackState: 'stale-cache'
+                            });
+                            return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                        }
+                        ExternalApiHealth?.recordFailure?.('sponsorBlock', payloadError, {
+                            errorClass: 'invalid-payload',
+                            endpoint: 'skipSegments',
+                            cacheState: 'miss'
+                        });
+                        return [];
+                    }
                     // Filter for exact video ID match from hash-prefix results
                     const match = data.find(entry => entry.videoID === videoId);
                     const segments = match && Array.isArray(match.segments)
                         ? this._normalizeSegments(match.segments)
                         : [];
                     this._rememberSegments(videoId, cats, segments);
+                    ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                        source: 'network',
+                        cacheState: 'refreshed',
+                        endpoint: 'skipSegments',
+                        itemCount: segments.length
+                    });
                     return segments;
                 } catch (error) {
                     const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
                     if (stale) {
+                        ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', error, {
+                            endpoint: 'skipSegments',
+                            cacheState: 'stale',
+                            fallbackState: 'stale-cache'
+                        });
                         DiagnosticLog?.record?.('sponsorBlock', `stale cache fallback for ${videoId}: ${error?.message || 'fetch failed'}`);
                         return this._markCachedSegments(stale.segments, stale.ts, 'stale');
                     }
+                    ExternalApiHealth?.recordFailure?.('sponsorBlock', error, {
+                        endpoint: 'skipSegments',
+                        cacheState: 'miss'
+                    });
                     DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
                     return [];
                 }

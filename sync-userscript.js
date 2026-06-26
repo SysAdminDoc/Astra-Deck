@@ -53,6 +53,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/settings-schema.js',
     'extension/core/feature-lifecycle.js',
     'extension/core/policy-profile.js',
+    'extension/core/external-api-health.js',
     'extension/core/selector-health.js',
     'extension/core/data-flow.js',
     'extension/core/toast.js',
