@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Refactor: settings panel monolith peel.** The in-page settings panel
+  controller, renderer, search/filter state, delegated UI listeners, and toggle
+  refresh path now live in `extension/features/settings-panel/index.js` with
+  inline fallback, manifest/userscript bundle wiring, and focused peel coverage.
 - **Refactor: digital wellbeing monolith peel.** The break-reminder,
   daily-cap, and day-rollover timer runtime now lives in
   `extension/features/digital-wellbeing/index.js` with inline fallback,
