@@ -1,5 +1,6 @@
 import hashlib
 import io
+import json
 import socket
 import struct
 import subprocess
@@ -226,6 +227,14 @@ class ApiSecurityTests(unittest.TestCase):
 
         background_resp = client.get("/health", headers={"X-MDL-Client": "MediaDL"})
         self.assertEqual(background_resp.get_json()["token"], "a" * 32)
+
+        native_resp = client.get("/health", headers={
+            "X-MDL-Client": "MediaDL",
+            "X-MDL-Token-Source": "native",
+        })
+        native_body = native_resp.get_json()
+        self.assertEqual(native_body["tokenSource"], "native")
+        self.assertNotIn("token", native_body)
 
     def test_download_rejects_non_object_json_body(self):
         token = "c" * 32
@@ -2753,14 +2762,61 @@ class NativeMessagingBootstrapTests(unittest.TestCase):
         for normal in (["-Background"], ["--uninstall"], [], ["start"]):
             self.assertFalse(ad.argv_requests_native_host(normal))
 
+    def test_parse_native_extension_ids_dedupes_comma_semicolon_and_lines(self):
+        self.assertEqual(
+            ad.parse_native_extension_ids(" aaa,bbb; aaa\nccc "),
+            ["aaa", "bbb", "ccc"],
+        )
+        self.assertEqual(ad.parse_native_extension_ids("", fallback=("fallback",)), ["fallback"])
+
     def test_host_manifest_pins_allowed_extension_origins(self):
-        m = ad.build_native_host_manifest("C:/x/AstraDownloader.exe", ["aaa", "bbb"])
+        m = ad.build_native_host_manifest("C:/x/AstraDownloader.exe", ["aaa", "bbb"], browser="chrome")
         self.assertEqual(m["name"], ad.NATIVE_HOST_NAME)
         self.assertEqual(m["type"], "stdio")
         self.assertEqual(
             m["allowed_origins"],
             ["chrome-extension://aaa/", "chrome-extension://bbb/"],
         )
+        self.assertNotIn("allowed_extensions", m)
+
+    def test_firefox_host_manifest_pins_allowed_extension_ids(self):
+        m = ad.build_native_host_manifest(
+            "C:/x/AstraDownloader.exe",
+            ["ytkit@sysadmindoc.github.io"],
+            browser="firefox",
+        )
+        self.assertEqual(m["name"], ad.NATIVE_HOST_NAME)
+        self.assertEqual(m["type"], "stdio")
+        self.assertEqual(m["allowed_extensions"], ["ytkit@sysadmindoc.github.io"])
+        self.assertNotIn("allowed_origins", m)
+
+    def test_register_native_messaging_hosts_writes_browser_manifests(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, "NATIVE_HOST_DIR", Path(tmp)), \
+             mock.patch.object(ad.sys, "platform", "win32"), \
+             mock.patch.object(ad, "register_native_host_registry_value") as reg:
+            config = FakeConfig({
+                "NativeChromeExtensionIds": "chromeaaa",
+                "NativeFirefoxExtensionIds": "ytkit@sysadmindoc.github.io",
+            })
+
+            ad.register_native_messaging_hosts("C:/AstraDownloader.exe", [], config)
+
+            chrome_manifest = Path(tmp) / f"{ad.NATIVE_HOST_NAME}.chrome.json"
+            firefox_manifest = Path(tmp) / f"{ad.NATIVE_HOST_NAME}.firefox.json"
+            self.assertTrue(chrome_manifest.exists())
+            self.assertTrue(firefox_manifest.exists())
+            self.assertEqual(
+                json.loads(chrome_manifest.read_text(encoding="utf-8"))["allowed_origins"],
+                ["chrome-extension://chromeaaa/"],
+            )
+            self.assertEqual(
+                json.loads(firefox_manifest.read_text(encoding="utf-8"))["allowed_extensions"],
+                ["ytkit@sysadmindoc.github.io"],
+            )
+            registry_keys = [call.args[0] for call in reg.call_args_list]
+            self.assertIn(f"Software\\Google\\Chrome\\NativeMessagingHosts\\{ad.NATIVE_HOST_NAME}", registry_keys)
+            self.assertIn(f"Software\\Mozilla\\NativeMessagingHosts\\{ad.NATIVE_HOST_NAME}", registry_keys)
 
 
 if __name__ == "__main__":
