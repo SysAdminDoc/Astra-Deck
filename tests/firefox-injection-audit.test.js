@@ -94,6 +94,28 @@ test('Firefox web-ext lint stages both profile manifests with Gecko patches', ()
                 { scripts: ['background.js'] },
                 `${profile} staged manifest must convert MV3 service_worker to Firefox scripts[]`
             );
+            assert.deepEqual(
+                manifest.sidebar_action,
+                {
+                    default_title: '__MSG_extName__',
+                    default_panel: 'sidebar.html',
+                    default_icon: {
+                        '16': 'icons/16.png',
+                        '32': 'icons/32.png',
+                        '48': 'icons/48.png',
+                        '128': 'icons/128.png'
+                    }
+                },
+                `${profile} staged manifest must expose the diagnostic dashboard through Firefox sidebar_action`
+            );
+            assert.equal(manifest.side_panel, undefined,
+                `${profile} staged manifest must strip Chrome side_panel`);
+            assert.equal(manifest.permissions.includes('sidePanel'), false,
+                `${profile} staged manifest must strip Chrome sidePanel permission`);
+            assert.equal(fs.existsSync(path.join(stageDir, 'sidebar.html')), true,
+                `${profile} staged source must include sidebar.html`);
+            assert.equal(fs.existsSync(path.join(stageDir, 'sidebar.js')), true,
+                `${profile} staged source must include sidebar.js`);
         }
     } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
