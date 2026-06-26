@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: Firefox diagnostic sidebar fallback.** Firefox builds now get a
+  `sidebar_action` entry pointing at a sidebar version of the existing
+  diagnostic dashboard, while Chrome keeps the `side_panel` manifest path.
 - **Refactor: settings panel monolith peel.** The in-page settings panel
   controller, renderer, search/filter state, delegated UI listeners, and toggle
   refresh path now live in `extension/features/settings-panel/index.js` with
