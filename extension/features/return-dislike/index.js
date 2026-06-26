@@ -11,6 +11,8 @@
         const {
             appState = { settings: {} },
             DebugManager = { log() {} },
+            DiagnosticLog = null,
+            ExternalApiHealth = null,
             extensionFetchJson = async () => ({ data: null }),
             storageReadJSON = (_key, fallback) => fallback,
             storageWriteJSON = () => {},
@@ -84,10 +86,39 @@
             return true;
         }
 
+        function _getBudgetSnapshot() {
+            const now = Date.now();
+            const age = now - _budgetWindow.start;
+            return {
+                used: _budgetWindow.count,
+                limit: _BUDGET_PER_MIN,
+                resetMs: _budgetWindow.start > 0 && age < 60000 ? 60000 - age : 0
+            };
+        }
+
         async function _fetch(videoId) {
             const cached = _readCache(videoId);
-            if (cached) return { ...cached, fromCache: true };
-            if (!_allowFetch()) return null;
+            if (cached) {
+                ExternalApiHealth?.recordSuccess?.('returnDislike', {
+                    source: 'cache',
+                    cacheState: 'fresh',
+                    endpoint: 'votes',
+                    ts: cached.ts,
+                    requestBudget: _getBudgetSnapshot()
+                });
+                return { ...cached, fromCache: true };
+            }
+            if (!_allowFetch()) {
+                const budgetError = new Error('Return YouTube Dislike request budget exhausted');
+                ExternalApiHealth?.recordFailure?.('returnDislike', budgetError, {
+                    errorClass: 'rate-limited',
+                    endpoint: 'votes',
+                    cacheState: 'miss',
+                    requestBudget: _getBudgetSnapshot()
+                });
+                DiagnosticLog?.record?.('returnDislike', `rate-limited at ${_budgetWindow.count}/${_BUDGET_PER_MIN}/min`);
+                return null;
+            }
             try {
                 const { data } = await extensionFetchJson({
                     method: 'GET',
@@ -95,7 +126,17 @@
                     headers: { Accept: 'application/json' },
                     credentials: 'omit'
                 });
-                if (!data || typeof data.dislikes !== 'number') return null;
+                if (!data || typeof data.dislikes !== 'number') {
+                    const payloadError = new Error('invalid Return YouTube Dislike votes payload');
+                    ExternalApiHealth?.recordFailure?.('returnDislike', payloadError, {
+                        errorClass: 'invalid-payload',
+                        endpoint: 'votes',
+                        cacheState: 'miss',
+                        requestBudget: _getBudgetSnapshot()
+                    });
+                    DiagnosticLog?.record?.('returnDislike', `votes payload invalid for ${videoId}`);
+                    return null;
+                }
                 const record = {
                     likes: Number(data.likes) || 0,
                     dislikes: Number(data.dislikes) || 0,
@@ -103,8 +144,20 @@
                     rating: Number(data.rating) || 0
                 };
                 _writeCache(videoId, record);
+                ExternalApiHealth?.recordSuccess?.('returnDislike', {
+                    source: 'network',
+                    cacheState: 'refreshed',
+                    endpoint: 'votes',
+                    requestBudget: _getBudgetSnapshot()
+                });
                 return { ...record, fromCache: false };
             } catch (e) {
+                ExternalApiHealth?.recordFailure?.('returnDislike', e, {
+                    endpoint: 'votes',
+                    cacheState: 'miss',
+                    requestBudget: _getBudgetSnapshot()
+                });
+                DiagnosticLog?.record?.('returnDislike', `votes fetch failed for ${videoId}: ${e?.message || 'unknown error'}`);
                 DebugManager.log('RYD', `Fetch failed: ${e.message}`);
                 return null;
             }
@@ -222,7 +275,8 @@
             // Exposed for cross-feature queries (e.g. card badges).
             _fetch,
             _formatCount,
-            _readCache
+            _readCache,
+            _getBudgetSnapshot
         };
     }
 
