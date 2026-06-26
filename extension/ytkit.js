@@ -29220,7 +29220,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
 
         // ── Digital Wellbeing (Break Reminders + Daily Cap) ──
-        {
+        (globalThis.YTKitFeatures?.digitalWellbeing?.createDigitalWellbeingFeature?.({
+            appState,
+            StorageManager,
+            settingsManager,
+            DebugManager,
+            injectStyle,
+            trapFocusWithin
+        }) || {
             id: 'digitalWellbeing',
             name: 'Digital Wellbeing',
             description: 'Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.',
@@ -29600,7 +29607,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._sessionStart = 0;
                 this._lastTodayKey = null;
             }
-        },
+        }),
 
         // ═══════════════════════════════════════════════════════════════════
         // v3.9.0 — New Feature Wave
