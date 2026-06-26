@@ -6565,6 +6565,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/features/chat-style-comments/index.js',
         'extension/features/sticky-video/index.js',
         'extension/features/video-hider/index.js',
+        'extension/features/video-notes/index.js',
         'extension/features/player-dock/index.js',
         'extension/features/youtube-music-compat/index.js',
         'extension/core/lifecycle-route-bridge.js'
@@ -6613,6 +6614,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
         'features/sticky-video/index.js':       'function buildSplitShellCss()',
         'features/video-hider/index.js':        'function createHideVideosFromHomeFeature',
+        'features/video-notes/index.js':        'function createVideoNotesFeature',
         'features/subscription-groups/index.js': 'function createSubscriptionGroupsFeature',
         'features/digital-wellbeing/index.js':  'function createDigitalWellbeingFeature',
         'features/settings-panel/index.js':     'function createSettingsPanelRuntime',
@@ -6665,6 +6667,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/chat-style-comments/index.js',
         'extension/features/sticky-video/index.js',
         'extension/features/video-hider/index.js',
+        'extension/features/video-notes/index.js',
         'extension/features/subscription-groups/index.js',
         'extension/features/digital-wellbeing/index.js',
         'extension/features/settings-panel/index.js',

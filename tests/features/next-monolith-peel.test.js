@@ -595,3 +595,83 @@ test('settingsPanel monolith prefers the module runtime before inline fallback',
         assert.ok(sources.ytkit.includes(`runtime?.${method}`), 'ytkit.js must delegate ' + method + ' through the settingsPanel runtime');
     }
 });
+
+// ── Video Notes peel ──
+
+test('videoNotes module exports the runtime factory', () => {
+    const { mod, exported } = loadFeatureModule(
+        '../../extension/features/video-notes/index.js',
+        'videoNotes'
+    );
+
+    assert.equal(typeof mod.createVideoNotesFeature, 'function');
+    assert.equal(typeof exported.createVideoNotesFeature, 'function');
+});
+
+test('videoNotes factory returns the per-video notes runtime surface', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/video-notes/index.js',
+        'videoNotes'
+    );
+    const feature = mod.createVideoNotesFeature();
+
+    assert.equal(feature.id, 'videoNotes');
+    assert.equal(feature.name, 'Per-Video Notes');
+    assert.equal(feature.group, 'Watch Page');
+    assert.equal(feature._DATA_KEY, 'videoNotesData');
+    assert.equal(feature._MAX_NOTES, 1000);
+    for (const method of [
+        'init',
+        'destroy',
+        '_enforceNotesCap',
+        '_readNotes',
+        '_writeNotes',
+        '_scheduleSave',
+        '_flushPendingSave',
+        '_deleteCurrentNote',
+        '_exportNotes',
+        '_renderPanel',
+        '_attach'
+    ]) {
+        assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+});
+
+test('videoNotes module loads before ytkit.js in content scripts', () => {
+    for (const scriptGroup of config.manifest.content_scripts) {
+        const scripts = scriptGroup.js || [];
+        const ytkitIndex = scripts.indexOf('ytkit.js');
+        if (ytkitIndex === -1) continue;
+        const modulePath = 'features/video-notes/index.js';
+        const moduleIndex = scripts.indexOf(modulePath);
+        assert.ok(moduleIndex > -1, 'manifest content script must include ' + modulePath);
+        assert.ok(moduleIndex < ytkitIndex, modulePath + ' must load before ytkit.js');
+    }
+});
+
+test('videoNotes monolith prefers the module runtime factory before inline fallback', () => {
+    const factoryNeedle = 'globalThis.YTKitFeatures?.videoNotes?.createVideoNotesFeature?.({';
+    const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
+    assert.ok(factoryIndex > -1, 'ytkit.js must construct videoNotes through the module factory');
+    const fallbackIndex = sources.ytkit.indexOf("id: 'videoNotes'", factoryIndex);
+    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline videoNotes fallback after the factory call');
+    const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
+    assert.ok(dependencyBag.includes('}) || {'),
+        'module factory path must fall back to the inline feature object');
+
+    for (const dep of [
+        'PageTypes',
+        'appState',
+        'DebugManager',
+        'injectStyle',
+        'getVideoId',
+        'isWatchPagePath',
+        'settingsManager',
+        'showToast',
+        'handleFileExport',
+        'addNavigateRule',
+        'removeNavigateRule'
+    ]) {
+        assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
+    }
+});
