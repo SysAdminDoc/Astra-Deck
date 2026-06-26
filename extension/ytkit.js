@@ -35614,12 +35614,94 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'researchSpacedReview',
             name: 'Study / Work Export',
-            description: 'Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links.',
+            description: 'Export study/work-mode data to Markdown or CSV, or build a bounded local transcript study pack from visible videos.',
             group: 'Research',
             icon: 'graduation-cap',
-            pages: [PageTypes.WATCH],
+            pages: [PageTypes.WATCH, PageTypes.PLAYLIST, PageTypes.CHANNEL],
             _btn: null,
             _navRule: null,
+            _styleEl: null,
+            _batchPanel: null,
+            _batchRunning: false,
+            _BATCH_MAX: 20,
+            _BATCH_RETRY_LIMIT: 1,
+
+            _isSupportedPage() {
+                const path = window.location?.pathname || '';
+                return isWatchPagePath()
+                    || path.startsWith('/playlist')
+                    || /^\/(@|channel\/|c\/|user\/)/.test(path);
+            },
+
+            _ensureStyles() {
+                if (this._styleEl || !document.head) return;
+                this._styleEl = document.createElement('style');
+                this._styleEl.textContent = `
+                    .ytkit-study-work-export {
+                        display: inline-flex !important;
+                        gap: 6px !important;
+                        margin-left: 8px !important;
+                        vertical-align: middle !important;
+                        flex-wrap: wrap !important;
+                        align-items: center !important;
+                    }
+                    .ytkit-transcript-batch-panel {
+                        margin: 10px 0 !important;
+                        padding: 10px !important;
+                        border: 1px solid rgba(255,255,255,0.14) !important;
+                        border-radius: 6px !important;
+                        background: rgba(15,23,42,0.82) !important;
+                        color: rgba(255,255,255,0.92) !important;
+                        font: 12px/1.45 Roboto, Arial, sans-serif !important;
+                        max-width: 760px !important;
+                    }
+                    .ytkit-transcript-batch-panel[hidden] { display: none !important; }
+                    .ytkit-transcript-batch-head {
+                        display: flex !important;
+                        justify-content: space-between !important;
+                        gap: 12px !important;
+                        margin-bottom: 8px !important;
+                    }
+                    .ytkit-transcript-batch-title { font-weight: 700 !important; }
+                    .ytkit-transcript-batch-summary { opacity: 0.76 !important; text-align: right !important; }
+                    .ytkit-transcript-batch-list {
+                        list-style: none !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        display: grid !important;
+                        gap: 6px !important;
+                        max-height: 300px !important;
+                        overflow: auto !important;
+                    }
+                    .ytkit-transcript-batch-row {
+                        display: grid !important;
+                        grid-template-columns: minmax(0, 1fr) auto !important;
+                        gap: 8px !important;
+                        align-items: start !important;
+                        padding: 6px 0 !important;
+                        border-top: 1px solid rgba(255,255,255,0.08) !important;
+                    }
+                    .ytkit-transcript-batch-row:first-child { border-top: 0 !important; }
+                    .ytkit-transcript-batch-video { min-width: 0 !important; }
+                    .ytkit-transcript-batch-name {
+                        display: block !important;
+                        white-space: nowrap !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        color: rgba(255,255,255,0.94) !important;
+                    }
+                    .ytkit-transcript-batch-meta { display: block !important; color: rgba(255,255,255,0.58) !important; }
+                    .ytkit-transcript-batch-status {
+                        min-width: 68px !important;
+                        text-align: right !important;
+                        font-weight: 700 !important;
+                    }
+                    .ytkit-transcript-batch-status[data-state="success"] { color: #22c55e !important; }
+                    .ytkit-transcript-batch-status[data-state="failed"] { color: #f87171 !important; }
+                    .ytkit-transcript-batch-status[data-state="running"] { color: #60a5fa !important; }
+                `;
+                document.head.appendChild(this._styleEl);
+            },
 
             _readBookmarks() {
                 try {
@@ -35789,6 +35871,342 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return rows.map(row => row.map(value => this._csvEscape(value)).join(',')).join('\r\n');
             },
 
+            _extractVideoIdFromUrl(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return '';
+                try {
+                    const url = new URL(raw, window.location.origin);
+                    if (url.hostname === 'youtu.be' || url.hostname === 'www.youtu.be') {
+                        const id = url.pathname.split('/').filter(Boolean)[0] || '';
+                        return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+                    }
+                    const id = url.searchParams.get('v') || '';
+                    return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+                } catch (_) {
+                    const match = raw.match(/[?&]v=([a-zA-Z0-9_-]{11})|youtu\.be\/([a-zA-Z0-9_-]{11})/);
+                    return match ? (match[1] || match[2] || '') : '';
+                }
+            },
+
+            _titleFromVideoLink(link, videoId) {
+                const card = link?.closest?.('ytd-playlist-panel-video-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-reel-item-renderer');
+                const candidates = [
+                    card?.querySelector?.('#video-title'),
+                    card?.querySelector?.('a#video-title'),
+                    card?.querySelector?.('yt-formatted-string#video-title'),
+                    card?.querySelector?.('h3'),
+                    link
+                ];
+                for (const el of candidates) {
+                    const text = (el?.getAttribute?.('title') || el?.getAttribute?.('aria-label') || el?.textContent || '').trim();
+                    if (text) return text.replace(/\s+/g, ' ').slice(0, 180);
+                }
+                return this._currentVideoTitle(videoId) || videoId;
+            },
+
+            _contextFromVideoLink(link) {
+                if (link?.closest?.('ytd-playlist-panel-video-renderer, ytd-playlist-video-renderer')) return 'playlist';
+                if (link?.closest?.('ytd-rich-grid-renderer, ytd-browse, ytd-grid-renderer')) return 'channel';
+                if (link?.closest?.('ytd-compact-video-renderer')) return 'related';
+                return isWatchPagePath() ? 'watch' : 'visible';
+            },
+
+            _isVisibleBatchLink(link) {
+                const rect = link?.getBoundingClientRect?.();
+                if (!rect) return true;
+                const viewportH = window.innerHeight || document.documentElement?.clientHeight || 0;
+                const viewportW = window.innerWidth || document.documentElement?.clientWidth || 0;
+                return rect.width > 0
+                    && rect.height > 0
+                    && rect.bottom >= -160
+                    && rect.right >= -80
+                    && rect.top <= viewportH + 600
+                    && rect.left <= viewportW + 160;
+            },
+
+            _collectVisibleTranscriptBatchItems() {
+                const items = [];
+                const seen = new Set();
+                const addItem = (videoId, title, url, source) => {
+                    if (!videoId || seen.has(videoId) || items.length >= this._BATCH_MAX) return;
+                    seen.add(videoId);
+                    items.push({
+                        videoId,
+                        title: String(title || videoId).trim().slice(0, 180) || videoId,
+                        url: url || `https://www.youtube.com/watch?v=${videoId}`,
+                        source: source || 'visible'
+                    });
+                };
+
+                const currentVideoId = isWatchPagePath() ? getVideoId() : '';
+                if (currentVideoId) {
+                    addItem(
+                        currentVideoId,
+                        this._currentVideoTitle(currentVideoId) || document.title.replace(/\s+-\s+YouTube\s*$/i, ''),
+                        `https://www.youtube.com/watch?v=${currentVideoId}`,
+                        'current'
+                    );
+                }
+
+                const links = Array.from(document.querySelectorAll('a[href*="/watch"], a[href*="youtu.be/"]'));
+                for (const link of links) {
+                    if (items.length >= this._BATCH_MAX) break;
+                    if (!this._isVisibleBatchLink(link)) continue;
+                    const href = link.href || link.getAttribute('href') || '';
+                    const videoId = this._extractVideoIdFromUrl(href);
+                    if (!videoId) continue;
+                    addItem(
+                        videoId,
+                        this._titleFromVideoLink(link, videoId),
+                        `https://www.youtube.com/watch?v=${videoId}`,
+                        this._contextFromVideoLink(link)
+                    );
+                }
+
+                return items;
+            },
+
+            _ensureBatchPanel(anchor) {
+                if (this._batchPanel?.isConnected) return this._batchPanel;
+                const panel = document.createElement('section');
+                panel.className = 'ytkit-transcript-batch-panel';
+                panel.hidden = true;
+                panel.setAttribute('aria-live', 'polite');
+
+                const head = document.createElement('div');
+                head.className = 'ytkit-transcript-batch-head';
+                const title = document.createElement('div');
+                title.className = 'ytkit-transcript-batch-title';
+                title.textContent = 'Transcript study pack';
+                const summary = document.createElement('div');
+                summary.className = 'ytkit-transcript-batch-summary';
+                summary.textContent = `Queue cap ${this._BATCH_MAX}, retry cap ${this._BATCH_RETRY_LIMIT}`;
+                head.append(title, summary);
+
+                const list = document.createElement('ol');
+                list.className = 'ytkit-transcript-batch-list';
+                panel.append(head, list);
+
+                const host = isWatchPagePath()
+                    ? document.querySelector('ytd-watch-metadata')
+                    : anchor?.closest?.('ytd-browse, ytd-playlist-header-renderer, ytd-page-header-renderer') || anchor?.parentElement;
+                (host || anchor?.parentElement || document.body).appendChild(panel);
+                this._batchPanel = panel;
+                return panel;
+            },
+
+            _setBatchSummary(text) {
+                const summary = this._batchPanel?.querySelector?.('.ytkit-transcript-batch-summary');
+                if (summary) summary.textContent = text;
+            },
+
+            _renderBatchQueue(items, anchor) {
+                const panel = this._ensureBatchPanel(anchor);
+                const list = panel.querySelector('.ytkit-transcript-batch-list');
+                list.replaceChildren();
+                for (const item of items) {
+                    const row = document.createElement('li');
+                    row.className = 'ytkit-transcript-batch-row';
+                    row.dataset.videoId = item.videoId;
+
+                    const video = document.createElement('div');
+                    video.className = 'ytkit-transcript-batch-video';
+                    const name = document.createElement('span');
+                    name.className = 'ytkit-transcript-batch-name';
+                    name.textContent = item.title || item.videoId;
+                    const meta = document.createElement('span');
+                    meta.className = 'ytkit-transcript-batch-meta';
+                    meta.textContent = `${item.source} - ${item.videoId}`;
+                    video.append(name, meta);
+
+                    const status = document.createElement('span');
+                    status.className = 'ytkit-transcript-batch-status';
+                    status.dataset.state = 'pending';
+                    status.textContent = 'pending';
+                    row.append(video, status);
+                    list.appendChild(row);
+                }
+                panel.hidden = false;
+                this._setBatchSummary(`${items.length}/${this._BATCH_MAX} queued; retry cap ${this._BATCH_RETRY_LIMIT}`);
+            },
+
+            _setBatchRow(videoId, state, detail = '') {
+                const rows = Array.from(this._batchPanel?.querySelectorAll?.('.ytkit-transcript-batch-row') || []);
+                const row = rows.find(el => el.dataset.videoId === videoId);
+                const status = row?.querySelector?.('.ytkit-transcript-batch-status');
+                if (!status) return;
+                status.dataset.state = state;
+                status.textContent = detail ? `${state}: ${detail}` : state;
+                status.title = detail || state;
+            },
+
+            _getTrackName(track) {
+                const name = track?.name?.simpleText || track?.name?.runs?.[0]?.text || track?.name || '';
+                return String(name || track?.languageCode || '').trim();
+            },
+
+            _formatTranscriptCue(segment) {
+                const startMs = Math.max(0, Math.floor(Number(segment?.startMs) || 0));
+                const endMs = Math.max(startMs, Math.floor(Number(segment?.endMs) || startMs));
+                const startSeconds = Math.floor(startMs / 1000);
+                return {
+                    startMs,
+                    endMs,
+                    time: this._formatTime(startSeconds),
+                    seconds: startSeconds,
+                    text: String(segment?.text || '').replace(/\s+/g, ' ').trim()
+                };
+            },
+
+            async _fetchTranscriptForBatchItem(item) {
+                let lastError = 'Unknown transcript error';
+                for (let attempt = 0; attempt <= this._BATCH_RETRY_LIMIT; attempt++) {
+                    try {
+                        const trackData = await TranscriptService._getCaptionTracks(item.videoId);
+                        if (!trackData?.tracks?.length) throw new Error('No captions available');
+                        const track = TranscriptService._selectBestTrack(trackData.tracks);
+                        if (!track?.baseUrl) throw new Error('Selected caption track has no URL');
+                        const segments = await TranscriptService._fetchTranscriptContent(track.baseUrl);
+                        if (!Array.isArray(segments) || !segments.length) throw new Error('Transcript parsed with no segments');
+                        return {
+                            status: 'success',
+                            attempts: attempt + 1,
+                            videoId: item.videoId,
+                            title: trackData.videoTitle || item.title || item.videoId,
+                            url: item.url,
+                            source: item.source,
+                            language: track.languageCode || '',
+                            trackName: this._getTrackName(track),
+                            autoGenerated: track.kind === 'asr',
+                            segmentCount: segments.length,
+                            transcript: segments.map(segment => this._formatTranscriptCue(segment)).filter(cue => cue.text)
+                        };
+                    } catch (error) {
+                        lastError = error?.message || String(error);
+                        DebugManager.log('StudyWorkExport', `Transcript batch ${item.videoId} attempt ${attempt + 1} failed: ${lastError}`);
+                    }
+                }
+                return {
+                    status: 'failed',
+                    attempts: this._BATCH_RETRY_LIMIT + 1,
+                    videoId: item.videoId,
+                    title: item.title || item.videoId,
+                    url: item.url,
+                    source: item.source,
+                    language: '',
+                    trackName: '',
+                    autoGenerated: false,
+                    segmentCount: 0,
+                    failureReason: lastError,
+                    transcript: []
+                };
+            },
+
+            _buildTranscriptBatchMarkdown(results, exportedAt) {
+                const successCount = results.filter(row => row.status === 'success').length;
+                const failedCount = results.length - successCount;
+                const lines = [
+                    '# Astra Deck Transcript Study Pack',
+                    '',
+                    `Generated: ${exportedAt}`,
+                    `Queue size: ${results.length} (cap ${this._BATCH_MAX})`,
+                    `Retry cap: ${this._BATCH_RETRY_LIMIT}`,
+                    `Succeeded: ${successCount}`,
+                    `Failed: ${failedCount}`,
+                    '',
+                    '## Videos'
+                ];
+
+                for (const row of results) {
+                    lines.push('', `### ${row.title || row.videoId}`);
+                    lines.push(`- Video ID: ${row.videoId}`);
+                    lines.push(`- URL: ${row.url || `https://www.youtube.com/watch?v=${row.videoId}`}`);
+                    lines.push(`- Source: ${row.source || 'visible'}`);
+                    lines.push(`- Status: ${row.status}`);
+                    lines.push(`- Attempts: ${row.attempts}`);
+                    if (row.status !== 'success') {
+                        lines.push(`- Failure reason: ${row.failureReason || 'Unknown failure'}`);
+                        continue;
+                    }
+                    lines.push(`- Transcript language: ${row.language || 'unknown'}`);
+                    lines.push(`- Track: ${row.trackName || 'unknown'}${row.autoGenerated ? ' (auto-generated)' : ''}`);
+                    lines.push(`- Segments: ${row.segmentCount}`);
+                    lines.push('', '#### Transcript');
+                    for (const cue of row.transcript) {
+                        const link = `${row.url || `https://www.youtube.com/watch?v=${row.videoId}`}&t=${cue.seconds}`;
+                        lines.push(`- [${cue.time}](${link}) ${cue.text}`);
+                    }
+                }
+
+                return lines.join('\n');
+            },
+
+            _buildTranscriptBatchJsonl(results, exportedAt) {
+                return results.map(row => JSON.stringify({
+                    exportedAt,
+                    videoId: row.videoId,
+                    title: row.title,
+                    url: row.url || `https://www.youtube.com/watch?v=${row.videoId}`,
+                    source: row.source || 'visible',
+                    status: row.status,
+                    attempts: row.attempts,
+                    failureReason: row.failureReason || '',
+                    language: row.language || '',
+                    trackName: row.trackName || '',
+                    autoGenerated: !!row.autoGenerated,
+                    segmentCount: row.segmentCount || 0,
+                    transcript: row.transcript || []
+                })).join('\n') + '\n';
+            },
+
+            async _exportTranscriptStudyBatch(anchor = this._btn) {
+                if (this._batchRunning) {
+                    showToast?.('Transcript batch already running', '#f59e0b', { duration: 3 });
+                    return;
+                }
+                const items = this._collectVisibleTranscriptBatchItems();
+                if (!items.length) {
+                    showToast?.('No visible videos found for transcript batch', '#ef4444', { duration: 4 });
+                    return;
+                }
+
+                this._batchRunning = true;
+                this._renderBatchQueue(items, anchor);
+                const results = [];
+                try {
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i];
+                        this._setBatchSummary(`Fetching ${i + 1}/${items.length}; retry cap ${this._BATCH_RETRY_LIMIT}`);
+                        this._setBatchRow(item.videoId, 'running');
+                        const result = await this._fetchTranscriptForBatchItem(item);
+                        results.push(result);
+                        if (result.status === 'success') {
+                            this._setBatchRow(item.videoId, 'success', `${result.segmentCount} cues`);
+                        } else {
+                            this._setBatchRow(item.videoId, 'failed', result.failureReason);
+                        }
+                    }
+
+                    const exportedAt = new Date().toISOString();
+                    const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, '-');
+                    handleFileExport(
+                        `astra-deck-transcript-study-pack-${stamp}.md`,
+                        this._buildTranscriptBatchMarkdown(results, exportedAt),
+                        'text/markdown;charset=utf-8'
+                    );
+                    handleFileExport(
+                        `astra-deck-transcript-study-pack-${stamp}.jsonl`,
+                        this._buildTranscriptBatchJsonl(results, exportedAt),
+                        'application/x-ndjson;charset=utf-8'
+                    );
+                    const successCount = results.filter(row => row.status === 'success').length;
+                    this._setBatchSummary(`Exported ${successCount}/${results.length}; failures are included in JSONL`);
+                    showToast?.(`Exported transcript study pack (${successCount}/${results.length} succeeded)`, '#22c55e', { duration: 4 });
+                } finally {
+                    this._batchRunning = false;
+                }
+            },
+
             _exportStudyWork(format = 'markdown') {
                 const data = this._collectStudyWorkData();
                 const today = new Date().toISOString().slice(0, 10);
@@ -35813,28 +36231,40 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _attach() {
-                if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('ytd-watch-metadata #title, ytd-watch-metadata h1');
-                if (!anchor || anchor.querySelector('.ytkit-study-work-export')) return;
+                if (!this._isSupportedPage()) return;
+                this._ensureStyles();
+                const anchor = document.querySelector(
+                    'ytd-watch-metadata #title, ytd-watch-metadata h1, ytd-playlist-header-renderer #title, ytd-page-header-renderer, ytd-browse #header'
+                );
+                if (!anchor || document.querySelector('.ytkit-study-work-export')) {
+                    if (anchor && this._batchPanel && !this._batchPanel.isConnected) this._ensureBatchPanel(anchor);
+                    return;
+                }
                 this._btn = document.createElement('span');
                 this._btn.className = 'ytkit-study-work-export';
-                this._btn.style.cssText = 'display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle;flex-wrap:wrap;';
                 const makeButton = (label, format) => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'ytkit-spaced-export-btn ytkit-local-ai-btn';
                     btn.textContent = label;
-                    btn.addEventListener('click', () => this._exportStudyWork(format));
+                    if (format === 'transcript-batch') {
+                        btn.addEventListener('click', () => this._exportTranscriptStudyBatch(anchor));
+                    } else {
+                        btn.addEventListener('click', () => this._exportStudyWork(format));
+                    }
                     return btn;
                 };
                 this._btn.append(
                     makeButton('Export study MD', 'markdown'),
-                    makeButton('Export study CSV', 'csv')
+                    makeButton('Export study CSV', 'csv'),
+                    makeButton('Transcript pack', 'transcript-batch')
                 );
                 anchor.appendChild(this._btn);
+                this._ensureBatchPanel(anchor);
             },
 
             init() {
+                this._ensureStyles();
                 this._navRule = () => { setTimeout(() => this._attach(), 1800); };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
@@ -35845,7 +36275,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._navRule = null;
                 this._btn?.remove();
                 this._btn = null;
-                document.querySelectorAll('.ytkit-study-work-export, .ytkit-spaced-export-btn').forEach(el => el.remove());
+                this._batchPanel?.remove();
+                this._batchPanel = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
+                this._batchRunning = false;
+                document.querySelectorAll('.ytkit-study-work-export, .ytkit-spaced-export-btn, .ytkit-transcript-batch-panel').forEach(el => el.remove());
             }
         },
         // ═══════════════════════════════════════════════════════════════════

@@ -3841,9 +3841,13 @@ test('localAiSummary checks for Chrome built-in Summarizer and never falls throu
 test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
     const start = ytkitSource.indexOf("id: 'researchSpacedReview'");
     assert.ok(start > -1, 'researchSpacedReview must exist');
-    const block = ytkitSource.slice(start, start + 18000);
+    const end = ytkitSource.indexOf("id: 'researchTranscriptIndex'", start);
+    assert.ok(end > start, 'researchSpacedReview block must end before researchTranscriptIndex');
+    const block = ytkitSource.slice(start, end);
     assert.match(block, /name: 'Study \/ Work Export'/,
         'feature label must reflect the broader study/work export surface');
+    assert.match(block, /pages: \[PageTypes\.WATCH, PageTypes\.PLAYLIST, PageTypes\.CHANNEL\]/,
+        'batch transcript exports must be available on watch, playlist, and channel surfaces');
     assert.match(block, /_collectStudyWorkData\(\)/,
         'must gather watch time, focused mode, digital wellbeing, and bookmarks before export');
     assert.match(block, /_buildStudyMarkdown\(data = this\._collectStudyWorkData\(\)\)/,
@@ -3876,6 +3880,33 @@ test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
         'watch-page UI must expose a Markdown export action');
     assert.match(block, /Export study CSV/,
         'watch-page UI must expose a CSV export action');
+    assert.match(block, /_BATCH_MAX:\s*20/,
+        'transcript batch queue must have a bounded size cap');
+    assert.match(block, /_BATCH_RETRY_LIMIT:\s*1/,
+        'transcript batch fetches must have a bounded retry cap');
+    assert.match(block, /_collectVisibleTranscriptBatchItems\(\)/,
+        'must gather visible video links into the batch queue');
+    assert.match(block, /items\.length >= this\._BATCH_MAX/,
+        'batch collector must stop at the queue cap');
+    assert.match(block, /TranscriptService\._getCaptionTracks\(item\.videoId\)/,
+        'batch export must reuse the local transcript service caption discovery');
+    assert.match(block, /TranscriptService\._fetchTranscriptContent\(track\.baseUrl\)/,
+        'batch export must reuse the local transcript service parser');
+    assert.match(block, /_buildTranscriptBatchMarkdown\(results, exportedAt\)/,
+        'must build the Markdown study pack');
+    assert.match(block, /_buildTranscriptBatchJsonl\(results, exportedAt\)/,
+        'must build the JSONL study pack');
+    assert.match(block, /application\/x-ndjson;charset=utf-8/,
+        'JSONL export must use an NDJSON MIME type');
+    assert.match(block, /failureReason/,
+        'batch exports must preserve per-video failure reasons');
+    assert.match(block, /Transcript pack/,
+        'UI must expose the transcript batch export action');
+    const batchStart = block.indexOf('async _exportTranscriptStudyBatch');
+    assert.ok(batchStart > -1, 'batch export handler must exist');
+    const batchBlock = block.slice(batchStart, batchStart + 8000);
+    assert.doesNotMatch(batchBlock, /api\.openai|anthropic|generativelanguage|claude\.ai|gemini\.google|perplexity/i,
+        'transcript batch export must not add a remote AI provider path');
     const exportIdx = ytkitSource.indexOf('function handleFileExport');
     const exportBlock = ytkitSource.slice(exportIdx, exportIdx + 500);
     assert.match(exportBlock, /type = 'application\/json'/,
