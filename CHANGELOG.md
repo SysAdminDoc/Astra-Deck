@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: external API health dashboard.** SponsorBlock, DeArrow, and Return
+  YouTube Dislike now report last success, error class, cache/fallback state,
+  and request budget into popup/sidepanel diagnostics and saved bug-report
+  bundles.
 - **Security: native-messaging token bootstrap cutover.** Astra Downloader now
   registers Chrome/Firefox native host manifests for configured extension IDs,
   the extension prefers the browser-pinned native token before `/health`, and

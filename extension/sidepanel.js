@@ -9,6 +9,9 @@ const perfEmpty = $('#sp-perf-empty');
 const selectorList = $('#sp-selector-list');
 const selectorTotal = $('#sp-selector-total');
 const selectorEmpty = $('#sp-selector-empty');
+const externalList = $('#sp-external-list');
+const externalTotal = $('#sp-external-total');
+const externalEmpty = $('#sp-external-empty');
 const storageStats = $('#sp-storage-stats');
 const refreshBtn = $('#sp-refresh');
 
@@ -116,6 +119,72 @@ async function renderSelectorHealth(tab) {
         li.appendChild(name);
         li.appendChild(stats);
         selectorList.appendChild(li);
+    }
+}
+
+function externalTone(state) {
+    if (state === 'ok') return 'ok';
+    if (state === 'degraded') return 'degraded';
+    if (state === 'rate-limited') return 'rate-limited';
+    if (state === 'error') return 'error';
+    return 'unknown';
+}
+
+function externalAge(ts) {
+    const n = Number(ts);
+    if (!Number.isFinite(n) || n <= 0) return 'never';
+    const sec = Math.max(0, Math.round((Date.now() - n) / 1000));
+    if (sec < 60) return `${sec}s`;
+    const min = Math.round(sec / 60);
+    if (min < 60) return `${min}m`;
+    return `${Math.round(min / 60)}h`;
+}
+
+function externalDetail(service) {
+    const parts = [];
+    if (service.lastSuccessTs) parts.push(`ok ${externalAge(service.lastSuccessTs)} ago`);
+    if (service.lastErrorClass) parts.push(service.lastErrorClass);
+    if (service.cacheState && service.cacheState !== 'unknown') parts.push(`cache ${service.cacheState}`);
+    if (service.fallbackState) parts.push(`fallback ${service.fallbackState}`);
+    const budget = service.requestBudget;
+    if (budget && Number.isFinite(Number(budget.used)) && Number.isFinite(Number(budget.limit))) {
+        parts.push(`budget ${budget.used}/${budget.limit}`);
+    }
+    return parts.join(' | ') || 'No requests observed yet.';
+}
+
+async function renderExternalHealth(tab) {
+    if (!externalList) return;
+    externalList.textContent = '';
+    if (!tab) { if (externalEmpty) externalEmpty.hidden = false; return; }
+    if (externalEmpty) externalEmpty.hidden = true;
+
+    const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_EXTERNAL_API_HEALTH' });
+    if (!resp || !resp.ok || !Array.isArray(resp.services)) {
+        if (externalEmpty) { externalEmpty.hidden = false; externalEmpty.textContent = 'Content script not responding.'; }
+        return;
+    }
+    if (externalTotal) externalTotal.textContent = `${resp.totalServices || resp.services.length} services`;
+    if (!resp.services.length) {
+        if (externalEmpty) { externalEmpty.hidden = false; externalEmpty.textContent = 'No services tracked yet.'; }
+        return;
+    }
+    for (const service of resp.services) {
+        const li = document.createElement('li');
+        const name = document.createElement('span');
+        name.className = 'eh-name';
+        name.textContent = service.label || service.id;
+        const state = document.createElement('span');
+        state.className = 'eh-state';
+        state.dataset.tone = externalTone(service.state);
+        state.textContent = service.state || 'unknown';
+        const detail = document.createElement('span');
+        detail.className = 'eh-detail';
+        detail.textContent = externalDetail(service);
+        li.appendChild(name);
+        li.appendChild(state);
+        li.appendChild(detail);
+        externalList.appendChild(li);
     }
 }
 
@@ -258,7 +327,7 @@ chrome.storage.onChanged.addListener((changes) => {
 
 async function refresh() {
     const tab = await getActiveYouTubeTab();
-    await Promise.all([renderPerf(tab), renderSelectorHealth(tab), renderStorage()]);
+    await Promise.all([renderPerf(tab), renderSelectorHealth(tab), renderExternalHealth(tab), renderStorage()]);
     await loadSettings();
     renderSettings(settingsSearch?.value || '');
 }

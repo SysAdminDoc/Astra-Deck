@@ -1055,6 +1055,97 @@ body {
   font-style: italic;
 }
 
+/* External API health dashboard */
+.external-health {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.external-health[hidden] { display: none; }
+.external-health-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.external-health-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.external-health-total {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.external-health-copy-btn {
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  font: 700 10px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.external-health-copy-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.external-health-copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.external-health-copy-btn[disabled] { opacity: 0.55; cursor: progress; }
+.external-health-copy-status {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.external-health-copy-status:empty { display: none; }
+.external-health-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.external-health-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 4px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.external-health-list li:first-child { border-top: 0; }
+.external-health-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.external-health-detail {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.external-health-state {
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.external-health-state[data-tone="ok"] { color: #6fe0bc; }
+.external-health-state[data-tone="degraded"],
+.external-health-state[data-tone="rate-limited"] { color: #ffb84d; }
+.external-health-state[data-tone="error"] { color: #ff8585; }
+.external-health-state[data-tone="unknown"] { color: var(--text-muted); }
+
 /* ── Feature performance dashboard ──────────────────────────────── */
 .feature-perf {
   margin-top: 8px;

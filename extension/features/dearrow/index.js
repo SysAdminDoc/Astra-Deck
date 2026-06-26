@@ -11,6 +11,8 @@
         const {
             appState = { settings: {} },
             DebugManager = { log() {} },
+            DiagnosticLog = null,
+            ExternalApiHealth = null,
             extensionFetchJson = async () => ({ data: null }),
             storageReadJSON = (_key, fallback) => fallback,
             storageWriteJSON = () => {},
@@ -107,6 +109,12 @@
                 if (this._cache[videoId]) {
                     const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
                     if (ttl > 0 && (Date.now() - (this._cache[videoId]._ts || 0)) < ttl) {
+                        ExternalApiHealth?.recordSuccess?.('deArrow', {
+                            source: 'cache',
+                            cacheState: 'fresh',
+                            endpoint: 'branding',
+                            ts: this._cache[videoId]._ts || Date.now()
+                        });
                         return this._cache[videoId];
                     } else if (ttl === 0) {
                         // TTL=0 means no cache — evict stale entry
@@ -130,6 +138,16 @@
                         url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
                         timeout: 8000,
                     });
+                    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                        const payloadError = new Error('invalid DeArrow branding payload');
+                        ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
+                            errorClass: 'invalid-payload',
+                            endpoint: 'branding',
+                            cacheState: 'miss'
+                        });
+                        DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
+                        return null;
+                    }
                     data._ts = Date.now();
                     this._cache[videoId] = data;
                     this._cacheMeta[videoId] = data._ts;
@@ -141,8 +159,18 @@
                             .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
                     }
                     this._schedulePersist();
+                    ExternalApiHealth?.recordSuccess?.('deArrow', {
+                        source: 'network',
+                        cacheState: 'refreshed',
+                        endpoint: 'branding'
+                    });
                     return data;
-                } catch (_) {
+                } catch (error) {
+                    ExternalApiHealth?.recordFailure?.('deArrow', error, {
+                        endpoint: 'branding',
+                        cacheState: 'miss'
+                    });
+                    DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
                     return null;
                 }
             },
