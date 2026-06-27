@@ -94,6 +94,8 @@
   --fs-xl: 18px;
 
   --font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'SF Pro Text', 'Inter', sans-serif;
+  --popup-shell-width: min(420px, 100vw);
+  --popup-shell-height: min(600px, 100vh);
 }
 
 * { box-sizing: border-box; }
@@ -101,14 +103,14 @@
 /* Chrome popups size to intrinsic content; lock a deterministic
    surface so the layout doesn't reflow while data loads. */
 html {
-  width: 420px;
-  height: 600px;
+  width: var(--popup-shell-width);
+  height: var(--popup-shell-height);
 }
 
 body {
   margin: 0;
-  width: 420px;
-  height: 600px;
+  width: var(--popup-shell-width);
+  height: var(--popup-shell-height);
   font-family: var(--font);
   color: var(--text-primary);
   background:
@@ -193,6 +195,10 @@ body {
   display: inline-flex;
   align-items: center;
   min-height: 18px;
+}
+
+.brand-version[hidden] {
+  display: none;
 }
 
 .app-status {
@@ -2693,6 +2699,55 @@ textarea:focus-visible {
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -20% 0; }
+}
+
+@media (max-width: 400px) {
+  .page-shell {
+    padding: 10px 10px 0;
+  }
+
+  .app-bar,
+  .workspace-command,
+  .actions-row {
+    gap: 8px;
+  }
+
+  .app-status {
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .workspace-command {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main-action,
+  .main-action .cta-button {
+    width: 100%;
+  }
+
+  .storage-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .actions-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions-end {
+    margin-left: 0;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .button-row,
+  #languageSelect {
+    width: 100%;
+    max-width: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -28,11 +28,16 @@ const SETTINGS_KEY = 'ytSuiteSettings';
 
 try {
     const manifest = chrome.runtime.getManifest();
-    if (versionEl) versionEl.textContent = 'v' + (manifest.version || '');
+    setText(versionEl, manifest.version ? 'v' + manifest.version : '');
 } catch (_) { /* reason: manifest unavailable */ }
 
 function setText(el, text) {
-    if (el) el.textContent = text;
+    if (!el) return;
+    const value = text == null ? '' : String(text);
+    el.textContent = value;
+    if (el.classList?.contains('sp-section-meta') || el.classList?.contains('sp-version')) {
+        el.hidden = value.trim().length === 0;
+    }
 }
 
 function setContextState(label, state = 'idle') {
@@ -46,11 +51,55 @@ function setRefreshStatus(label, state = 'idle') {
     if (refreshStatus) refreshStatus.dataset.state = state;
 }
 
-function showEmpty(el, message, state = 'idle') {
+function emptyTitleForState(state) {
+    if (state === 'error') return 'Needs a refresh';
+    if (state === 'success') return 'All clear';
+    return 'Waiting for signal';
+}
+
+function hasChromeTabsCreate() {
+    return typeof chrome !== 'undefined'
+        && chrome?.tabs
+        && typeof chrome.tabs.create === 'function';
+}
+
+function openYouTubeTab() {
+    if (!hasChromeTabsCreate()) return;
+    try { chrome.tabs.create({ url: 'https://www.youtube.com/' }); } catch (_) { /* reason: optional in static preview */ }
+}
+
+function showEmpty(el, message, state = 'idle', options = {}) {
     if (!el) return;
     el.hidden = false;
-    el.textContent = message;
     el.dataset.state = state;
+    el.textContent = '';
+
+    const icon = document.createElement('span');
+    icon.className = 'sp-empty-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = state === 'error' ? '!' : 'i';
+
+    const copy = document.createElement('span');
+    copy.className = 'sp-empty-copy';
+    const title = document.createElement('strong');
+    title.className = 'sp-empty-title';
+    title.textContent = options.title || emptyTitleForState(state);
+    const detail = document.createElement('span');
+    detail.className = 'sp-empty-detail';
+    detail.textContent = message;
+    copy.appendChild(title);
+    copy.appendChild(detail);
+
+    el.appendChild(icon);
+    el.appendChild(copy);
+    if (options.actionLabel && typeof options.action === 'function') {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'sp-empty-action';
+        action.textContent = options.actionLabel;
+        action.addEventListener('click', options.action);
+        el.appendChild(action);
+    }
 }
 
 function hideEmpty(el) {
@@ -134,20 +183,28 @@ async function renderPerf(tab) {
     perfList.textContent = '';
     setText(perfTotal, '');
     if (!tab) {
-        showEmpty(perfEmpty, 'Open YouTube in the active tab, then refresh to measure startup timing.');
+        showEmpty(perfEmpty, 'Open YouTube in the active tab, then refresh to measure startup timing.', 'idle', {
+            title: 'Open YouTube to measure startup',
+            actionLabel: hasChromeTabsCreate() ? 'Open YouTube' : '',
+            action: openYouTubeTab
+        });
         return;
     }
     hideEmpty(perfEmpty);
 
     const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_FEATURE_PERF' });
     if (!resp || !resp.ok || !Array.isArray(resp.features)) {
-        showEmpty(perfEmpty, 'Content script not responding. Reload the YouTube tab and refresh.', 'error');
+        showEmpty(perfEmpty, 'Content script is not responding. Reload the YouTube tab, then refresh diagnostics.', 'error', {
+            title: 'Reconnect the active tab'
+        });
         return;
     }
     setText(perfTotal, `${resp.totalFeatures} measured`);
     const top = resp.features.slice(0, 20);
     if (!top.length) {
-        showEmpty(perfEmpty, 'No features have initialized yet. Start playback or navigate once, then refresh.');
+        showEmpty(perfEmpty, 'Start playback or navigate once, then refresh to capture feature timing.', 'idle', {
+            title: 'No startup timings yet'
+        });
         return;
     }
     const maxMs = top[0].initMs || 1;
@@ -177,20 +234,28 @@ async function renderSelectorHealth(tab) {
     selectorList.textContent = '';
     setText(selectorTotal, '');
     if (!tab) {
-        showEmpty(selectorEmpty, 'Selector health needs an active YouTube tab.');
+        showEmpty(selectorEmpty, 'Open YouTube in the active tab to check whether page selectors still fit.', 'idle', {
+            title: 'Open YouTube to check page fit',
+            actionLabel: hasChromeTabsCreate() ? 'Open YouTube' : '',
+            action: openYouTubeTab
+        });
         return;
     }
     hideEmpty(selectorEmpty);
 
     const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_SELECTOR_HEALTH' });
     if (!resp || !resp.ok || !Array.isArray(resp.surfaces)) {
-        showEmpty(selectorEmpty, 'Content script not responding. Reload YouTube and refresh diagnostics.', 'error');
+        showEmpty(selectorEmpty, 'Content script is not responding. Reload YouTube, then refresh diagnostics.', 'error', {
+            title: 'Reconnect selector health'
+        });
         return;
     }
     setText(selectorTotal, `${resp.totalSurfaces} surfaces`);
     const top = resp.surfaces.slice(0, 12);
     if (!top.length) {
-        showEmpty(selectorEmpty, 'No surfaces sampled yet. Navigate YouTube once, then refresh.');
+        showEmpty(selectorEmpty, 'Navigate YouTube once, then refresh to sample the surfaces this dashboard tracks.', 'idle', {
+            title: 'No surfaces sampled yet'
+        });
         return;
     }
     for (const surface of top) {
@@ -251,19 +316,27 @@ async function renderExternalHealth(tab) {
     externalList.textContent = '';
     setText(externalTotal, '');
     if (!tab) {
-        showEmpty(externalEmpty, 'External health needs an active YouTube tab.');
+        showEmpty(externalEmpty, 'Open YouTube to see SponsorBlock, DeArrow, and RYD request health.', 'idle', {
+            title: 'Open YouTube to check integrations',
+            actionLabel: hasChromeTabsCreate() ? 'Open YouTube' : '',
+            action: openYouTubeTab
+        });
         return;
     }
     hideEmpty(externalEmpty);
 
     const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_EXTERNAL_API_HEALTH' });
     if (!resp || !resp.ok || !Array.isArray(resp.services)) {
-        showEmpty(externalEmpty, 'Content script not responding. Reload YouTube and refresh external API health.', 'error');
+        showEmpty(externalEmpty, 'Content script is not responding. Reload YouTube, then refresh external API health.', 'error', {
+            title: 'Reconnect integration health'
+        });
         return;
     }
     setText(externalTotal, `${resp.totalServices || resp.services.length} services`);
     if (!resp.services.length) {
-        showEmpty(externalEmpty, 'No external services have been used in this session.');
+        showEmpty(externalEmpty, 'No external services have been used in this session. Play or navigate once to collect request health.', 'idle', {
+            title: 'No requests observed yet'
+        });
         return;
     }
     for (const service of resp.services) {
@@ -316,7 +389,18 @@ async function renderStorage() {
     } catch (_) {
         const div = document.createElement('div');
         div.className = 'sp-stat';
-        div.textContent = 'Storage unavailable';
+        const label = document.createElement('span');
+        label.className = 'sp-stat-label';
+        label.textContent = 'Storage';
+        const value = document.createElement('strong');
+        value.className = 'sp-stat-value';
+        value.textContent = 'Unavailable';
+        const detail = document.createElement('span');
+        detail.className = 'sp-stat-detail';
+        detail.textContent = 'Reload the extension context to read local data.';
+        div.appendChild(label);
+        div.appendChild(value);
+        div.appendChild(detail);
         storageStats.appendChild(div);
     }
 }

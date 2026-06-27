@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Polish: v4.46.9 dashboard and popup degraded states.** Side-panel
+  diagnostics now hide empty metric chips, render structured recovery states,
+  and explain unavailable storage; the toolbar popup now treats missing
+  extension storage as preview mode instead of corruption, adapts to narrow
+  public preview containers, and hides unavailable version badges.
 - **Fix: v4.46.8 live Theater Split title containment.** Live split headers now
   remove the title line clamp, grow to the full wrapped title height, and cap
   misreported native action-control widths so live titles no longer clip or
