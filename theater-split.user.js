@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.9
+// @name         Theater Split v1.0.10
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.9
+// @version      1.0.10
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -21,6 +21,8 @@
 //                    the same scroll gesture.
 //   @version 1.0.9 - Live header title wrapping: grow the live-chat offset so
 //                    long stream titles wrap inside the right pane.
+//   @version 1.0.10 - Live title containment: remove live-title line clamps and
+//                     bound native metadata so full titles fit the split pane.
 
 (function() {
     'use strict';
@@ -90,6 +92,10 @@
         }
         body.ts-split #below[style*="position"] {
             color-scheme: dark !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: clip !important;
         }
         body.ts-split ytd-popup-container,
         body.ts-split tp-yt-iron-dropdown,
@@ -100,6 +106,14 @@
         body.ts-split #below[style*="position"] ytd-watch-metadata {
             margin: 0 0 14px !important;
             padding: 0 0 14px !important;
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            inline-size: 100% !important;
+            max-inline-size: 100% !important;
+            box-sizing: border-box !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
             overflow: visible !important;
         }
@@ -109,6 +123,8 @@
             width: 100% !important;
             max-width: none !important;
             min-width: 0 !important;
+            inline-size: 100% !important;
+            max-inline-size: 100% !important;
             justify-self: stretch !important;
             box-sizing: border-box !important;
             gap: 14px !important;
@@ -132,8 +148,45 @@
                 linear-gradient(180deg, rgba(255, 255, 255, 0.050), rgba(255, 255, 255, 0.018)),
                 rgba(11, 15, 23, 0.76) !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.034), 0 12px 24px rgba(2, 6, 12, 0.18) !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            inline-size: 100% !important;
+            max-inline-size: 100% !important;
             box-sizing: border-box !important;
             overflow: visible !important;
+        }
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1 *,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string *,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-attributed-string,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            inline-size: 100% !important;
+            max-inline-size: 100% !important;
+            box-sizing: border-box !important;
+            overflow: visible !important;
+            white-space: normal !important;
+            text-overflow: clip !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+        }
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1 *,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string *,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-attributed-string,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string,
+        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
+            display: block !important;
+            max-height: none !important;
+            -webkit-line-clamp: unset !important;
+            -webkit-box-orient: initial !important;
         }
         body.ts-split #below[style*="position"] ytd-watch-metadata #title:has(#ytkit-po-logo-wrap.ytkit-ql-open) {
             z-index: 2147483646 !important;
@@ -2006,9 +2059,14 @@
             'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
             'position:relative',
             'display:grid',
+            'min-width:0',
+            'width:100%',
+            'max-width:100%',
+            'inline-size:100%',
+            'max-inline-size:100%',
             'grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))',
             'grid-template-areas:"channel actions" "meta meta" "title title"',
-            'align-content:center',
+            'align-content:start',
             'align-items:stretch',
             'gap:5px',
             'padding:12px 15px 11px',
@@ -2058,10 +2116,11 @@
             'font:800 16px/1.22 Arial,sans-serif',
             'letter-spacing:0',
             'color:rgba(245,247,250,0.98)',
-            'display:-webkit-box',
-            '-webkit-line-clamp:3',
-            '-webkit-box-orient:vertical',
-            'overflow:hidden',
+            'display:block',
+            'max-height:none',
+            '-webkit-line-clamp:unset',
+            '-webkit-box-orient:initial',
+            'overflow:visible',
             'text-overflow:clip',
             'white-space:normal',
             'overflow-wrap:anywhere',
@@ -2069,10 +2128,10 @@
         ].join(';');
         card.appendChild(title);
 
-        const actions = document.createElement('div');
-        actions.className = 'ytkit-split-live-actions';
-        actions.setAttribute('aria-label', 'Live video actions');
-        actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;max-width:100%;overflow:visible;';
+    const actions = document.createElement('div');
+    actions.className = 'ytkit-split-live-actions';
+    actions.setAttribute('aria-label', 'Live video actions');
+        actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;';
         card.appendChild(actions);
 
         header.appendChild(card);
@@ -2088,7 +2147,7 @@
         const headerWidth = Math.max(0, Math.round(window.innerWidth * rightPct / 100));
         const compact = headerWidth > 0 && headerWidth < 760;
         const baseHeaderHeight = compact ? 172 : LIVE_HEADER_HEIGHT;
-        const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.38)));
+        const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)));
         splitLiveHeader.dataset.ytkitLiveCompact = compact ? '1' : '0';
         splitLiveHeader.style.width = `calc(${rightPct}% - 2px)`;
         splitLiveHeader.style.minHeight = `${baseHeaderHeight}px`;
@@ -2114,7 +2173,9 @@
         if (titleEl) {
             titleEl.textContent = title;
             titleEl.hidden = !title;
-            titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3');
+            titleEl.style.setProperty('-webkit-line-clamp', 'unset');
+            titleEl.style.setProperty('-webkit-box-orient', 'initial');
+            titleEl.style.setProperty('max-height', 'none');
             if (title) titleEl.title = title;
             else titleEl.removeAttribute('title');
         }
@@ -2371,20 +2432,23 @@
         const gap = 8;
         const metrics = controls.map(control => {
             const rect = control.getBoundingClientRect();
+            const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));
             return {
                 control,
-                width: Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96)),
+                width: Math.min(180, naturalWidth),
                 height: Math.max(32, Math.ceil(rect.height || control.offsetHeight || 32))
             };
         });
         const totalWidth = metrics.reduce((sum, item) => sum + item.width, 0) + gap * Math.max(0, metrics.length - 1);
         actions.hidden = false;
-        actions.style.width = `${totalWidth}px`;
-        actions.style.minWidth = `${totalWidth}px`;
+        actions.style.width = '100%';
+        actions.style.minWidth = '0';
+        actions.style.maxWidth = '100%';
 
         const box = actions.getBoundingClientRect();
         const topBase = box.top + Math.max(0, (box.height - 32) / 2);
-        let left = box.right - totalWidth;
+        const clampedWidth = Math.min(totalWidth, Math.max(32, box.width || actions.clientWidth || totalWidth));
+        let left = Math.max(box.left, box.right - clampedWidth);
         const isFullscreen = !!document.fullscreenElement || !!document.querySelector('ytd-watch-flexy')?.hasAttribute('fullscreen');
 
         metrics.forEach(({ control, width, height }) => {
@@ -2397,7 +2461,10 @@
             control.style.setProperty('pointer-events', 'auto', 'important');
             control.style.setProperty('visibility', isFullscreen ? 'hidden' : 'visible', 'important');
             control.style.setProperty('transform', 'none', 'important');
-            control.style.setProperty('max-width', 'none', 'important');
+            control.style.setProperty('width', `${width}px`, 'important');
+            control.style.setProperty('min-width', '0', 'important');
+            control.style.setProperty('max-width', `${width}px`, 'important');
+            control.style.setProperty('overflow', 'hidden', 'important');
             left += width + gap;
         });
     }

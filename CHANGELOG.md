@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.8 live Theater Split title containment.** Live split headers now
+  remove the title line clamp, grow to the full wrapped title height, and cap
+  misreported native action-control widths so live titles no longer clip or
+  trail off the right pane on narrow chat layouts.
 - **Fix: v4.46.7 live Theater Split title wrapping.** Live split headers now
   bound the native action column, wrap long stream titles inside the right
   pane, grow the measured header height, and offset live chat below the title
