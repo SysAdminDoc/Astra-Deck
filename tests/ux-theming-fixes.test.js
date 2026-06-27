@@ -164,12 +164,63 @@ test('settings panel exposes persistent live status feedback for save/import/exp
 
 test('settings panel search copy matches the expanded filter behavior', () => {
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
-    assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, categories...');
+    assert.equal(en.panelSearchPlaceholder.message, 'Search settings...');
     assert.equal(en.panelSearchAria.message, 'Search settings by name, category, page, type, or description');
     for (const source of [settingsPanelModuleSource, ytkitSource, userscriptSource]) {
         assert.ok(source.includes('Search by name, category, page, type, or description.'),
             'settings panel search hint must describe every indexed field');
     }
+});
+
+test('settings panel header actions use a dedicated PIN button pattern', () => {
+    for (const [label, source] of [
+        ['module', settingsPanelModuleSource],
+        ['monolith', ytkitSource]
+    ]) {
+        assert.ok(source.includes("headerActions.className = 'ytkit-header-actions'"),
+            `${label} settings header must group utility actions`);
+        assert.ok(source.includes("pinBtn.className = 'ytkit-pin-btn'"),
+            `${label} settings PIN control must not reuse the close-button class`);
+        assert.doesNotMatch(source, /pinBtn\.style\.cssText/,
+            `${label} settings PIN control must not rely on inline layout styles`);
+        assert.ok(source.includes("pinBtn.setAttribute('aria-label', 'Manage settings PIN lock')"),
+            `${label} settings PIN control must have an accessible name`);
+    }
+    assert.ok(userscriptSource.includes("pinBtn.className = 'ytkit-pin-btn'"),
+        'userscript bundled settings module must carry the dedicated PIN control');
+});
+
+test('settings close tooltip avoids shortcut copy in every locale', () => {
+    for (const locale of LOCALES) {
+        const messages = JSON.parse(read('extension', '_locales', locale, 'messages.json'));
+        assert.ok(messages.panelCloseTitle?.message,
+            `${locale} must define panelCloseTitle`);
+        assert.doesNotMatch(messages.panelCloseTitle.message, /\(Esc\)/,
+            `${locale} close tooltip must not advertise a keyboard shortcut`);
+    }
+});
+
+test('settings modal premium refresh locks the desktop shell and row controls', () => {
+    assert.ok(ytkitSource.includes('Settings modal premium refresh'),
+        'settings modal must carry the later premium-refresh override layer');
+    assert.ok(userscriptSource.includes('Settings modal premium refresh'),
+        'userscript settings modal must carry the same premium-refresh intent');
+    assert.ok(ytkitSource.includes('grid-template-columns: clamp(320px, 28vw, 360px) minmax(0, 1fr) !important;'),
+        'desktop settings body must stay a composed sidebar/content grid');
+    assert.ok(ytkitSource.includes('z-index: 2147483646 !important;'),
+        'settings panel must sit above YouTube player chrome and ad overlays');
+    assert.ok(ytkitSource.includes('grid-template-columns: minmax(0, 1fr) minmax(280px, 36%) !important;'),
+        'select/range/color rows must keep controls aligned in a right column on desktop');
+    assert.match(ytkitSource, /\.ytkit-search-input \{[\s\S]*?padding:\s*0 68px 0 40px !important;/,
+        'search input must reserve exact space for icon and compact status chip');
+    assert.match(ytkitSource, /\.ytkit-select-shell::after \{[\s\S]*?border-right:\s*2px solid/,
+        'select shells must render a custom chevron instead of raw browser chrome');
+    assert.match(ytkitSource, /\.ytkit-select-shell-chrome \{[\s\S]*?display:\s*none !important;/,
+        'the decorative select chrome span must be hidden by the refresh layer');
+    assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-pin-btn'),
+        'new settings controls must have a light-theme override path');
+    assert.ok(ytkitSource.includes('@media (max-width: 1320px) and (min-width: 901px)'),
+        'tablet-width desktop should retain the composed settings shell before mobile stacking');
 });
 
 test('every dark-only inline widget family has a light-theme override block', () => {
