@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.8
+// @name         Theater Split v1.0.9
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.8
+// @version      1.0.9
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -19,6 +19,8 @@
 //   @version 1.0.8 - YTKit coexistence guard: stand down when YTKit's built-in
 //                    stickyVideo split is detected, instead of fighting it for
 //                    the same scroll gesture.
+//   @version 1.0.9 - Live header title wrapping: grow the live-chat offset so
+//                    long stream titles wrap inside the right pane.
 
 (function() {
     'use strict';
@@ -1307,7 +1309,7 @@
     // ── Constants ──────────────────────────────────────────────────────────
     const SPLIT_RATIO_KEY = 'ts_split_ratio';
     const TRANSITION = '0.35s cubic-bezier(0.4,0,0.2,1)';
-    const LIVE_HEADER_HEIGHT = 132;
+    const LIVE_HEADER_HEIGHT = 154;
 
     // ── State ──────────────────────────────────────────────────────────────
     let isActive = false;
@@ -1981,7 +1983,8 @@
             'position:fixed',
             'top:0',
             'right:0',
-            `height:${LIVE_HEADER_HEIGHT}px`,
+            'height:auto',
+            `min-height:${LIVE_HEADER_HEIGHT}px`,
             'z-index:10003',
             'padding:10px 12px',
             'box-sizing:border-box',
@@ -1996,21 +1999,21 @@
         const card = document.createElement('div');
         card.className = 'ytkit-split-live-card';
         card.style.cssText = [
-            'height:100%',
+            'min-height:100%',
             'border-radius:16px',
             'border:1px solid rgba(255,255,255,0.10)',
             'background:rgba(18,23,32,0.88)',
             'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
             'position:relative',
             'display:grid',
-            'grid-template-columns:minmax(0,1fr) auto',
+            'grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))',
             'grid-template-areas:"channel actions" "meta meta" "title title"',
             'align-content:center',
             'align-items:stretch',
             'gap:5px',
             'padding:12px 15px 11px',
             'box-sizing:border-box',
-            'overflow:visible'
+            'overflow:hidden'
         ].join(';');
 
         const channel = document.createElement('div');
@@ -2047,21 +2050,29 @@
         title.style.cssText = [
             'grid-area:title',
             'margin:0',
+            'min-width:0',
+            'width:100%',
+            'max-width:100%',
+            'justify-self:stretch',
+            'box-sizing:border-box',
             'font:800 16px/1.22 Arial,sans-serif',
             'letter-spacing:0',
             'color:rgba(245,247,250,0.98)',
             'display:-webkit-box',
-            '-webkit-line-clamp:2',
+            '-webkit-line-clamp:3',
             '-webkit-box-orient:vertical',
             'overflow:hidden',
-            'overflow-wrap:anywhere'
+            'text-overflow:clip',
+            'white-space:normal',
+            'overflow-wrap:anywhere',
+            'word-break:break-word'
         ].join(';');
         card.appendChild(title);
 
         const actions = document.createElement('div');
         actions.className = 'ytkit-split-live-actions';
         actions.setAttribute('aria-label', 'Live video actions');
-        actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:max-content;max-width:330px;overflow:visible;';
+        actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;max-width:100%;overflow:visible;';
         card.appendChild(actions);
 
         header.appendChild(card);
@@ -2076,10 +2087,12 @@
 
         const headerWidth = Math.max(0, Math.round(window.innerWidth * rightPct / 100));
         const compact = headerWidth > 0 && headerWidth < 760;
-        const liveHeaderHeight = compact ? 146 : LIVE_HEADER_HEIGHT;
+        const baseHeaderHeight = compact ? 172 : LIVE_HEADER_HEIGHT;
+        const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.38)));
         splitLiveHeader.dataset.ytkitLiveCompact = compact ? '1' : '0';
         splitLiveHeader.style.width = `calc(${rightPct}% - 2px)`;
-        splitLiveHeader.style.height = `${liveHeaderHeight}px`;
+        splitLiveHeader.style.minHeight = `${baseHeaderHeight}px`;
+        splitLiveHeader.style.height = `${baseHeaderHeight}px`;
         const titleEl = splitLiveHeader.querySelector('.ytkit-split-live-title');
         const channelEl = splitLiveHeader.querySelector('.ytkit-split-live-channel');
         const metaEl = splitLiveHeader.querySelector('.ytkit-split-live-meta');
@@ -2101,7 +2114,7 @@
         if (titleEl) {
             titleEl.textContent = title;
             titleEl.hidden = !title;
-            titleEl.style.setProperty('-webkit-line-clamp', compact ? '2' : '1');
+            titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3');
             if (title) titleEl.title = title;
             else titleEl.removeAttribute('title');
         }
@@ -2121,6 +2134,10 @@
         }
         splitLiveHeader.setAttribute('aria-label', ['Live video', channel, viewText, title].filter(Boolean).join(' | '));
         dockSplitLiveHeaderActions();
+        const card = splitLiveHeader.querySelector('.ytkit-split-live-card');
+        const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);
+        const liveHeaderHeight = Math.min(maxHeaderHeight, Math.max(baseHeaderHeight, measuredHeaderHeight));
+        splitLiveHeader.style.height = `${liveHeaderHeight}px`;
         return liveHeaderHeight;
     }
 
