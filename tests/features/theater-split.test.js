@@ -154,6 +154,10 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
             `${label} must override YouTube title nowrap/truncation in the split pane`);
         assert.ok(contents.includes('overflow-wrap: anywhere !important;'),
             `${label} must keep long title tokens inside the right pane`);
+        assert.ok(contents.includes('max-inline-size: 100% !important;'),
+            `${label} must constrain modern YouTube title hosts to the pane inline size`);
+        assert.ok(contents.includes('yt-core-attributed-string--white-space-pre-wrap'),
+            `${label} must cover YouTube attributed-string title children`);
         assert.ok(contents.includes('-webkit-line-clamp: unset !important;'),
             `${label} must remove native watch-title clamping in the split pane`);
     }
@@ -166,14 +170,21 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
             `${label} must reserve enough compact height for wrapped live titles`);
         assert.ok(contents.includes('grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))'),
             `${label} must bound the native action column so the title cannot measure wider than the pane`);
-        assert.ok(contents.includes('min-width:0;max-width:100%;overflow:visible;'),
-            `${label} must let the action dock shrink instead of forcing max-content width`);
+        assert.ok(contents.includes('min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;'),
+            `${label} must contain the action dock instead of letting native controls force hidden overflow`);
+        assert.ok(contents.includes('const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));')
+            && contents.includes('width: Math.min(180, naturalWidth)')
+            && contents.includes("actions.style.width = '100%'")
+            && contents.includes("control.style.setProperty('max-width', `${width}px`, 'important');"),
+            `${label} must cap misreported native action widths before positioning pinned controls`);
         assert.ok(contents.includes("'width:100%'"),
             `${label} must stretch the live title within the bounded card`);
-        assert.ok(contents.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.38)))'),
-            `${label} must cap live header growth against viewport height`);
-        assert.ok(contents.includes("titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3')"),
-            `${label} must allow more than one visible live-title line`);
+        assert.ok(contents.includes("'display:block'") && contents.includes("'-webkit-line-clamp:unset'"),
+            `${label} must render live titles as full block text instead of a clamped webkit box`);
+        assert.ok(contents.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)))'),
+            `${label} must leave enough measured height for the full wrapped live title`);
+        assert.ok(contents.includes("titleEl.style.setProperty('-webkit-line-clamp', 'unset')"),
+            `${label} must not reintroduce runtime live-title clamping`);
         assert.ok(contents.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
             `${label} must measure the wrapped title before offsetting chat`);
         assert.ok(contents.includes('return liveHeaderHeight;'),

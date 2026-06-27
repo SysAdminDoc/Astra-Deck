@@ -727,7 +727,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.7';
+    const YTKIT_VERSION = '4.46.8';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -9923,9 +9923,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
                     'position:relative',
                     'display:grid',
+                    'min-width:0',
+                    'width:100%',
+                    'max-width:100%',
+                    'inline-size:100%',
+                    'max-inline-size:100%',
                     'grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))',
                     'grid-template-areas:"channel actions" "meta meta" "title title"',
-                    'align-content:center',
+                    'align-content:start',
                     'align-items:stretch',
                     'gap:5px',
                     'padding:12px 15px 11px',
@@ -9975,10 +9980,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     'font:800 16px/1.22 Arial,sans-serif',
                     'letter-spacing:0',
                     'color:rgba(245,247,250,0.98)',
-                    'display:-webkit-box',
-                    '-webkit-line-clamp:3',
-                    '-webkit-box-orient:vertical',
-                    'overflow:hidden',
+                    'display:block',
+                    'max-height:none',
+                    '-webkit-line-clamp:unset',
+                    '-webkit-box-orient:initial',
+                    'overflow:visible',
                     'text-overflow:clip',
                     'white-space:normal',
                     'overflow-wrap:anywhere',
@@ -9989,7 +9995,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const actions = document.createElement('div');
                 actions.className = 'ytkit-split-live-actions';
                 actions.setAttribute('aria-label', 'Live video actions');
-                actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;max-width:100%;overflow:visible;';
+                actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;';
                 card.appendChild(actions);
 
                 header.appendChild(card);
@@ -10007,7 +10013,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const headerWidth = Math.max(0, Math.round(window.innerWidth * rightPct / 100));
                 const compact = headerWidth > 0 && headerWidth < 760;
                 const baseHeaderHeight = compact ? 172 : this._liveHeaderHeight;
-                const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.38)));
+                const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)));
                 header.dataset.ytkitLiveCompact = compact ? '1' : '0';
                 header.style.width = `calc(${rightPct}% - 2px)`;
                 header.style.minHeight = `${baseHeaderHeight}px`;
@@ -10033,7 +10039,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (titleEl) {
                     titleEl.textContent = title;
                     titleEl.hidden = !title;
-                    titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3');
+                    titleEl.style.setProperty('-webkit-line-clamp', 'unset');
+                    titleEl.style.setProperty('-webkit-box-orient', 'initial');
+                    titleEl.style.setProperty('max-height', 'none');
                     if (title) titleEl.title = title;
                     else titleEl.removeAttribute('title');
                 }
@@ -10294,20 +10302,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const gap = 8;
                 const metrics = controls.map(control => {
                     const rect = control.getBoundingClientRect();
+                    const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));
                     return {
                         control,
-                        width: Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96)),
+                        width: Math.min(180, naturalWidth),
                         height: Math.max(32, Math.ceil(rect.height || control.offsetHeight || 32))
                     };
                 });
                 const totalWidth = metrics.reduce((sum, item) => sum + item.width, 0) + gap * Math.max(0, metrics.length - 1);
                 actions.hidden = false;
-                actions.style.width = `${totalWidth}px`;
-                actions.style.minWidth = `${totalWidth}px`;
+                actions.style.width = '100%';
+                actions.style.minWidth = '0';
+                actions.style.maxWidth = '100%';
 
                 const box = actions.getBoundingClientRect();
                 const topBase = box.top + Math.max(0, (box.height - 32) / 2);
-                let left = box.right - totalWidth;
+                const clampedWidth = Math.min(totalWidth, Math.max(32, box.width || actions.clientWidth || totalWidth));
+                let left = Math.max(box.left, box.right - clampedWidth);
 
                 metrics.forEach(({ control, width, height }) => {
                     const top = topBase + Math.max(0, (32 - height) / 2);
@@ -10319,7 +10330,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     control.style.setProperty('pointer-events', 'auto', 'important');
                     control.style.setProperty('visibility', this._fullscreenHidden ? 'hidden' : 'visible', 'important');
                     control.style.setProperty('transform', 'none', 'important');
-                    control.style.setProperty('max-width', 'none', 'important');
+                    control.style.setProperty('width', `${width}px`, 'important');
+                    control.style.setProperty('min-width', '0', 'important');
+                    control.style.setProperty('max-width', `${width}px`, 'important');
+                    control.style.setProperty('overflow', 'hidden', 'important');
                     left += width + gap;
                 });
             },
@@ -11525,11 +11539,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         z-index: 2147483647 !important;
                     }
 
+                    html.ytkit-split-active #below[style*="position"] {
+                        min-width: 0 !important;
+                        max-width: 100% !important;
+                        box-sizing: border-box !important;
+                        overflow-x: clip !important;
+                    }
+
                     html.ytkit-split-active #below[style*="position"] ytd-watch-metadata {
                         margin: 0 !important;
                         padding: 0 !important;
                         display: grid !important;
                         grid-template-columns: minmax(0, 1fr) !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        inline-size: 100% !important;
+                        max-inline-size: 100% !important;
                         row-gap: 8px !important;
                         align-content: start !important;
                     }
@@ -11547,10 +11572,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #above-the-fold,
                     html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title,
                     html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title h1,
-                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string {
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title h1 *,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string *,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-attributed-string,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
                         min-width: 0 !important;
                         width: 100% !important;
                         max-width: 100% !important;
+                        inline-size: 100% !important;
+                        max-inline-size: 100% !important;
                         box-sizing: border-box !important;
                         overflow: visible !important;
                         white-space: normal !important;
@@ -11560,7 +11592,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title h1,
-                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string {
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title h1 *,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string *,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-attributed-string,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
                         display: block !important;
                         max-height: none !important;
                         -webkit-line-clamp: unset !important;
