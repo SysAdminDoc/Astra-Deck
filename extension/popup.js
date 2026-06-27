@@ -14,8 +14,21 @@ async function _popupHashPin(pin) {
 }
 
 async function popupRequirePin() {
-    const result = await chrome.storage.local.get(PIN_STORAGE_KEY);
-    const stored = result[PIN_STORAGE_KEY];
+    if (!hasChromeStorageLocal('get')) {
+        showStatus(getStorageUnavailableMessage(), 'info', 4200);
+        return false;
+    }
+    let stored = null;
+    try {
+        const result = await chrome.storage.local.get(PIN_STORAGE_KEY);
+        stored = result[PIN_STORAGE_KEY];
+    } catch (error) {
+        if (isExtensionStorageUnavailable(error)) {
+            showStatus(getStorageUnavailableMessage(), 'info', 4200);
+            return false;
+        }
+        throw error;
+    }
     if (!stored) return true;
     const pin = prompt('Enter your Astra Deck PIN to continue:');
     if (pin === null) return false;
@@ -587,16 +600,39 @@ const manifestVersion = getVersion();
 // popup bootstrap at this top-level line. Audit pass: degrade gracefully
 // so the rest of the popup still functions even if the badge slot is gone.
 if (versionEl) {
-    versionEl.textContent = 'v' + manifestVersion;
-    versionEl.title = manifestVersion === '—'
-        ? `${BRAND_NAME} version unavailable`
-        : `${BRAND_NAME} v${manifestVersion}`;
+    const hasManifestVersion = manifestVersion && manifestVersion !== '—';
+    versionEl.hidden = !hasManifestVersion;
+    versionEl.textContent = hasManifestVersion ? 'v' + manifestVersion : '';
+    versionEl.title = hasManifestVersion
+        ? `${BRAND_NAME} v${manifestVersion}`
+        : `${BRAND_NAME} version unavailable`;
 }
 
 // ── Storage wrappers ──
 
+function hasChromeStorageLocal(method) {
+    return typeof chrome !== 'undefined'
+        && !!chrome.storage
+        && !!chrome.storage.local
+        && (!method || typeof chrome.storage.local[method] === 'function');
+}
+
+function isExtensionStorageUnavailable(error) {
+    if (!hasChromeStorageLocal('get')) return true;
+    const message = String(error?.message || error || '');
+    return /Extension storage is unavailable|Cannot read properties of undefined \(reading 'local'\)|chrome\.storage\.local/i.test(message);
+}
+
+function getStorageUnavailableMessage() {
+    return 'Preview mode: extension storage is unavailable here. Reload the installed extension to use saved controls.';
+}
+
 function storageGet(keys) {
     return new Promise((resolve, reject) => {
+        if (!hasChromeStorageLocal('get')) {
+            reject(new Error('Extension storage is unavailable in this context'));
+            return;
+        }
         chrome.storage.local.get(keys, (items) => {
             const error = chrome.runtime.lastError;
             if (error) { reject(new Error(error.message)); return; }
@@ -607,6 +643,10 @@ function storageGet(keys) {
 
 function storageSet(entries) {
     return new Promise((resolve, reject) => {
+        if (!hasChromeStorageLocal('set')) {
+            reject(new Error('Extension storage is unavailable in this context'));
+            return;
+        }
         chrome.storage.local.set(entries, () => {
             const error = chrome.runtime.lastError;
             if (error) { reject(new Error(error.message)); return; }
@@ -617,6 +657,10 @@ function storageSet(entries) {
 
 function storageRemove(keys) {
     return new Promise((resolve, reject) => {
+        if (!hasChromeStorageLocal('remove')) {
+            reject(new Error('Extension storage is unavailable in this context'));
+            return;
+        }
         chrome.storage.local.remove(keys, () => {
             const error = chrome.runtime.lastError;
             if (error) { reject(new Error(error.message)); return; }
@@ -627,6 +671,10 @@ function storageRemove(keys) {
 
 function storageClear() {
     return new Promise((resolve, reject) => {
+        if (!hasChromeStorageLocal('clear')) {
+            reject(new Error('Extension storage is unavailable in this context'));
+            return;
+        }
         chrome.storage.local.clear(() => {
             const error = chrome.runtime.lastError;
             if (error) { reject(new Error(error.message)); return; }
@@ -840,6 +888,10 @@ function normalizeStoredSettings(items) {
 }
 
 async function loadSettings() {
+    if (!hasChromeStorageLocal('get')) {
+        popupState.settings = {};
+        return popupState.settings;
+    }
     const items = await storageGet([SETTINGS_STORAGE_KEY, ...QUICK_TOGGLE_KEYS]);
     const normalized = normalizeStoredSettings(items);
 
@@ -1701,12 +1753,21 @@ async function renderStorageInfo() {
             renderStorageWarningBanner(summary.sizeBytes, summary.hiddenVideos, summary.blockedChannels, summary.bookmarks);
         }
     } catch (error) {
-        statKeys.textContent = '0';
-        statSize.textContent = '0 B';
-        statHidden.textContent = '0';
-        statBlocked.textContent = '0';
-        statBookmarks.textContent = '0';
+        const storageUnavailable = isExtensionStorageUnavailable(error);
+        statKeys.textContent = storageUnavailable ? '—' : '0';
+        statSize.textContent = storageUnavailable ? '—' : '0 B';
+        statHidden.textContent = storageUnavailable ? '—' : '0';
+        statBlocked.textContent = storageUnavailable ? '—' : '0';
+        statBookmarks.textContent = storageUnavailable ? '—' : '0';
         renderHealthBanner(null);
+        if (storageUnavailable) {
+            if (storageBanner) {
+                storageBanner.hidden = true;
+                delete storageBanner.dataset.tier;
+            }
+            showStatus(getStorageUnavailableMessage(), 'info', 0);
+            return;
+        }
         // a thrown error from chrome.storage.local.get(null) is
         // itself a corruption signal (profile-level read failure). Surface
         // it through the same banner so the user has a single recovery

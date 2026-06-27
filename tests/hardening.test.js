@@ -4182,6 +4182,41 @@ test('popup ships a storage-quota warning banner with two-tier thresholds', () =
         'storage-banner Reset must call resetAllData() for guarded confirmation');
 });
 
+test('popup treats unavailable extension storage as preview mode, not corruption', () => {
+    assert.match(popupSource, /function hasChromeStorageLocal/,
+        'popup.js must centralize chrome.storage.local capability detection');
+    assert.match(popupSource, /function isExtensionStorageUnavailable/,
+        'popup.js must distinguish missing extension APIs from malformed user data');
+    assert.match(popupSource, /Preview mode: extension storage is unavailable here/,
+        'static preview must get calm, actionable degraded-state copy');
+    assert.match(popupSource, /if\s*\(\s*storageUnavailable\s*\)\s*\{[\s\S]*?storageBanner\.hidden\s*=\s*true[\s\S]*?showStatus\(getStorageUnavailableMessage\(\),\s*'info'/,
+        'storage-unavailable reads must hide the reset banner and surface an info status');
+    assert.match(popupSource, /popupRequirePin\(\)\s*\{[\s\S]*?hasChromeStorageLocal\('get'\)/,
+        'PIN-gated actions must not throw when the popup is rendered outside an extension context');
+});
+
+test('popup CSS adapts to narrow public preview containers without horizontal overflow', () => {
+    assert.match(popupCssSource, /--popup-shell-width:\s*min\(420px,\s*100vw\)/,
+        'popup shell width must fit constrained preview/browser containers');
+    assert.match(popupCssSource, /--popup-shell-height:\s*min\(600px,\s*100vh\)/,
+        'popup shell height must fit constrained preview/browser containers');
+    assert.match(popupCssSource, /@media \(max-width:\s*400px\)/,
+        'popup CSS must carry a narrow-container layout');
+    assert.match(popupCssSource, /\.storage-overview\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+        'storage stats must reduce columns before labels clip');
+    assert.match(popupCssSource, /\.actions-row\s*\{[\s\S]*?flex-direction:\s*column/,
+        'data actions must stack before controls overflow horizontally');
+});
+
+test('popup hides unavailable version badge in public preview contexts', () => {
+    assert.match(popupSource, /const hasManifestVersion = manifestVersion && manifestVersion !== '—'/,
+        'popup.js must distinguish a real manifest version from the unavailable placeholder');
+    assert.match(popupSource, /versionEl\.hidden\s*=\s*!hasManifestVersion/,
+        'popup version badge must hide when chrome.runtime.getManifest is unavailable');
+    assert.match(popupCssSource, /\.brand-version\[hidden\]\s*\{[\s\S]*?display:\s*none/,
+        'hidden version badge must not leave an empty chip in the app bar');
+});
+
 test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered handlers', () => {
     // Audit pass: three separate MutationObservers all watched the same
     // documentElement for different attributes. Every documentElement
@@ -10960,6 +10995,33 @@ test('sidepanel.js setting rows carry aria-label for screen readers', () => {
         'setting rows must have role=switch');
     assert.match(src, /setAttribute\('aria-checked'/,
         'setting rows must track aria-checked state');
+});
+
+test('sidepanel dashboard empty and unavailable states are structured', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8'
+    );
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
+    );
+    assert.match(src, /className\s*=\s*'sp-empty-icon'/,
+        'empty states must render an icon lane instead of plain centered text');
+    assert.match(src, /className\s*=\s*'sp-empty-action'/,
+        'empty states must support an action CTA for recoverable states');
+    assert.match(src, /hasChromeTabsCreate/,
+        'Open YouTube actions must be capability-gated for static preview and Firefox surfaces');
+    assert.match(src, /classList\?\.contains\('sp-section-meta'\)/,
+        'empty section metadata pills must be hidden by the shared text helper');
+    assert.match(src, /className\s*=\s*'sp-stat-detail'/,
+        'storage-unavailable fallback must render explanatory detail, not raw card text');
+    assert.match(css, /\.sp-section-meta:empty/,
+        'empty section metadata slots must not render blank pills');
+    assert.match(css, /\.sp-empty-title/,
+        'empty states must have a scannable title hierarchy');
+    assert.match(css, /\.sp-empty-action:focus-visible/,
+        'empty-state action buttons must retain keyboard focus styling');
+    assert.match(css, /\.sp-stat-detail/,
+        'storage fallback detail must have a dedicated readable style');
 });
 
 test('sidepanel quick settings are grouped, searchable, and failure-aware', () => {
