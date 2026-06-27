@@ -11,6 +11,7 @@ const FULL_SHA_RE = /^[0-9a-f]{40}$/;
 const VERSION_COMMENT_RE = /^v[0-9]+(?:\.[0-9]+)*/;
 
 function workflowFiles(workflowDir = WORKFLOW_DIR) {
+    if (!fs.existsSync(workflowDir)) return [];
     return fs.readdirSync(workflowDir)
         .filter((file) => /\.ya?ml$/i.test(file))
         .sort()

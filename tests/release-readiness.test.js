@@ -109,14 +109,11 @@ test('release readiness helpers parse checksums and CLI options strictly', () =>
     assert.throws(() => parseArgs(['--bogus']), /unknown argument/);
 });
 
-test('release readiness command is wired into package scripts and release workflow', () => {
+test('release readiness command is wired into local package scripts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    const workflow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'build.yml'), 'utf8');
-    const manifestIndex = workflow.indexOf('npm run release:manifest');
-    const readinessIndex = workflow.indexOf('npm run release:readiness -- --require-pass');
 
     assert.match(pkg.scripts['release:readiness'] || '', /scripts\/generate-release-readiness\.js/);
-    assert.notEqual(manifestIndex, -1, 'release workflow must generate the release manifest');
-    assert.notEqual(readinessIndex, -1, 'release workflow must require release readiness before upload');
-    assert.ok(readinessIndex > manifestIndex, 'readiness must run after release-manifest generation');
+    assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/);
+    assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'build.yml')), false,
+        'release readiness must stay local-only; no build workflow should exist');
 });

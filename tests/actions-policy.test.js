@@ -29,13 +29,14 @@ test('actions policy payload generator is exposed and emits selected-actions set
     assert.deepEqual(policy.selected_actions, {
         github_owned_allowed: true,
         verified_allowed: false,
-        patterns_allowed: [SETUP_FIREFOX_REF],
+        patterns_allowed: [],
     });
-    assert.ok(policy.inventory.external_action_count >= 18,
-        'expected to inventory every workflow action reference');
-    assert.ok(policy.inventory.github_owned_actions.some((entry) =>
-        entry.startsWith('actions/checkout@')), 'GitHub-owned actions must stay inventoried');
-    assert.deepEqual(policy.inventory.non_github_owned_actions, [SETUP_FIREFOX_REF]);
+    assert.equal(policy.inventory.workflow_count, 0,
+        'repository policy is local builds only, so workflow inventory must stay empty');
+    assert.equal(policy.inventory.external_action_count, 0,
+        'no GitHub Actions may be inventoried while workflows are retired');
+    assert.deepEqual(policy.inventory.github_owned_actions, []);
+    assert.deepEqual(policy.inventory.non_github_owned_actions, []);
 });
 
 test('actions policy inventory parses workflow uses lines without broad owner trust', () => {
@@ -74,7 +75,6 @@ test('actions policy inventory rejects mutable refs and missing version comments
 
 test('actions policy inventory sees only tracked workflow YAML files', () => {
     const entries = collectWorkflowActions(path.join(repoRoot, '.github', 'workflows'));
-    assert.ok(entries.length >= 18);
-    assert.equal(entries.some((entry) => entry.file.includes('node_modules')), false);
-    assert.equal(entries.filter((entry) => !entry.local && !entry.githubOwned).length, 1);
+    assert.deepEqual(entries, [],
+        'local-build policy requires no tracked workflow YAML files');
 });
