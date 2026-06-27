@@ -227,24 +227,29 @@ function buildSettingsPanel() {
         const closeBtn = document.createElement('button');
         closeBtn.className = 'ytkit-close';
         closeBtn.type = 'button';
-        closeBtn.title = t('panelCloseTitle', 'Close (Esc)');
+        closeBtn.title = t('panelCloseTitle', 'Close settings');
         closeBtn.setAttribute('aria-label', t('panelCloseAria', 'Close settings'));
         closeBtn.appendChild(ICONS.close());
         closeBtn.onclick = () => setSettingsPanelOpen(false);
 
         const pinBtn = document.createElement('button');
-        pinBtn.className = 'ytkit-close';
+        pinBtn.className = 'ytkit-pin-btn';
         pinBtn.type = 'button';
-        pinBtn.style.cssText = 'font-size:14px;margin-right:4px;width:auto;padding:4px 8px;';
         pinBtn.textContent = 'PIN';
         pinBtn.title = 'PIN lock';
+        pinBtn.setAttribute('aria-label', 'Manage settings PIN lock');
         (async () => {
             pinBtn.title = (await isPinSet()) ? 'Change or clear PIN' : 'Set a PIN lock';
         })();
         pinBtn.onclick = () => _showPinManageDialog();
+
+        const headerActions = document.createElement('div');
+        headerActions.className = 'ytkit-header-actions';
+        headerActions.appendChild(pinBtn);
+        headerActions.appendChild(closeBtn);
+
         header.appendChild(brand);
-        header.appendChild(pinBtn);
-        header.appendChild(closeBtn);
+        header.appendChild(headerActions);
 
         // Body
         const body = document.createElement('div');
@@ -269,7 +274,7 @@ function buildSettingsPanel() {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, categories...');
+        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings...');
         searchInput.id = 'ytkit-search';
         searchInput.name = 'settingsSearch';
         searchInput.autocomplete = 'off';
@@ -292,7 +297,7 @@ function buildSettingsPanel() {
         const searchMeta = document.createElement('span');
         searchMeta.className = 'ytkit-search-meta';
         searchMeta.id = 'ytkit-search-count';
-        searchMeta.textContent = 'All settings';
+        searchMeta.textContent = 'All';
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
         searchActions.appendChild(searchClearBtn);
@@ -2459,7 +2464,7 @@ function attachUIEventListeners() {
             if (searchClearBtn) searchClearBtn.hidden = !query;
 
             if (!query) {
-                if (searchMeta) searchMeta.textContent = 'All settings';
+                if (searchMeta) searchMeta.textContent = 'All';
                 if (searchState) {
                     searchState.hidden = true;
                     searchState.classList.remove('is-empty');

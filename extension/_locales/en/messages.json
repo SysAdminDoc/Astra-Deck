@@ -2307,7 +2307,7 @@
     "message": "Close settings"
   },
   "panelCloseTitle": {
-    "message": "Close (Esc)"
+    "message": "Close settings"
   },
   "panelIntro": {
     "message": "Search, tune, and apply YouTube controls live without leaving the page."
@@ -2325,7 +2325,7 @@
     "message": "Clear search"
   },
   "panelSearchPlaceholder": {
-    "message": "Search settings, pages, categories..."
+    "message": "Search settings..."
   },
   "panelSidebarAria": {
     "message": "Settings categories"
