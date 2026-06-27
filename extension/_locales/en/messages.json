@@ -2316,7 +2316,7 @@
     "message": "Live apply"
   },
   "panelSearchAria": {
-    "message": "Search settings"
+    "message": "Search settings by name, category, page, type, or description"
   },
   "panelSearchClearAria": {
     "message": "Clear settings search"
@@ -2325,7 +2325,7 @@
     "message": "Clear search"
   },
   "panelSearchPlaceholder": {
-    "message": "Search settings…"
+    "message": "Search settings, pages, categories..."
   },
   "panelSidebarAria": {
     "message": "Settings categories"

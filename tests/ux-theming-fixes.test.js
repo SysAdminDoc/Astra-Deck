@@ -24,6 +24,8 @@ const read = (...p) => fs.readFileSync(path.join(repoRoot, ...p), 'utf8');
 
 const earlyCss = read('extension', 'early.css');
 const ytkitSource = read('extension', 'ytkit.js');
+const settingsPanelModuleSource = read('extension', 'features', 'settings-panel', 'index.js');
+const userscriptSource = read('YTKit.user.js');
 const defaultSettings = JSON.parse(read('extension', 'default-settings.json'));
 const schemaModule = require('../extension/core/settings-schema.js');
 
@@ -121,6 +123,54 @@ test('masthead trigger focus ring alpha raised to 0.8', () => {
 });
 
 // ── 3. Light-theme overrides per widget family ──
+
+test('settings panel search indexes metadata beyond visible name and description', () => {
+    for (const [label, source] of [
+        ['module', settingsPanelModuleSource],
+        ['monolith', ytkitSource],
+        ['userscript', userscriptSource]
+    ]) {
+        assert.ok(source.includes('card.dataset.searchText = ['),
+            `${label} settings panel must build a searchable metadata index`);
+        assert.ok(source.includes('f.group'),
+            `${label} settings panel search must include category/group terms`);
+        assert.ok(source.includes('f.type'),
+            `${label} settings panel search must include control type terms`);
+        assert.match(source, /const haystack = card\.dataset\.searchText \|\| `\$\{name\} \$\{desc\}`/,
+            `${label} settings search must filter against the metadata index`);
+    }
+});
+
+test('settings panel exposes persistent live status feedback for save/import/export/reset', () => {
+    for (const [label, source] of [
+        ['module', settingsPanelModuleSource],
+        ['monolith', ytkitSource],
+        ['userscript', userscriptSource]
+    ]) {
+        assert.ok(source.includes("footerStatus.id = 'ytkit-panel-status'"),
+            `${label} settings panel must render the footer status live region`);
+        assert.ok(source.includes("footerStatus.setAttribute('role', 'status')"),
+            `${label} footer status must announce changes to assistive tech`);
+        assert.ok(source.includes("setPanelStatus('Settings exported. The download is ready.', 'success')"),
+            `${label} export path must update the live status`);
+        assert.ok(source.includes('reset to defaults. Undo is available in the toast.'),
+            `${label} reset path must explain the undo recovery state`);
+    }
+    assert.match(ytkitSource, /\.ytkit-panel-status\[data-tone="success"\]/,
+        'monolith CSS must style successful footer status');
+    assert.match(userscriptSource, /\.ytkit-panel-status\[data-tone="success"\]/,
+        'userscript CSS must style successful footer status');
+});
+
+test('settings panel search copy matches the expanded filter behavior', () => {
+    const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
+    assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, categories...');
+    assert.equal(en.panelSearchAria.message, 'Search settings by name, category, page, type, or description');
+    for (const source of [settingsPanelModuleSource, ytkitSource, userscriptSource]) {
+        assert.ok(source.includes('Search by name, category, page, type, or description.'),
+            'settings panel search hint must describe every indexed field');
+    }
+});
 
 test('every dark-only inline widget family has a light-theme override block', () => {
     const families = [
