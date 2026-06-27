@@ -16,17 +16,18 @@ test('downloader requirements carry exact yt-dlp smoke pins', () => {
         'requirements.txt must pin curl_cffi exactly for the yt-dlp smoke environment');
 });
 
-test('yt-dlp smoke workflow is scheduled and manually runnable', () => {
-    const workflow = fs.readFileSync(
-        path.join(repoRoot, '.github', 'workflows', 'yt-dlp-smoke.yml'), 'utf8');
-    assert.match(workflow, /workflow_dispatch:/,
-        'yt-dlp smoke workflow must be manually runnable');
-    assert.match(workflow, /schedule:[\s\S]*cron:\s*["']18 10 1 \* \*["']/,
-        'yt-dlp smoke workflow must run monthly');
-    assert.match(workflow, /pip install -r astra_downloader\/requirements\.txt/,
-        'workflow must install the pinned downloader requirements');
-    assert.match(workflow, /python scripts\/yt-dlp-smoke\.py/,
-        'workflow must run the dedicated smoke script');
+test('yt-dlp smoke stays local-only with no scheduled workflow', () => {
+    assert.equal(
+        fs.existsSync(path.join(repoRoot, '.github', 'workflows', 'yt-dlp-smoke.yml')),
+        false,
+        'yt-dlp smoke must be run locally, not through GitHub Actions'
+    );
+    const script = fs.readFileSync(
+        path.join(repoRoot, 'scripts', 'yt-dlp-smoke.py'), 'utf8');
+    assert.match(script, /def main\(\) -> int:/,
+        'local smoke script must remain directly runnable by operators');
+    assert.match(script, /ASTRA_YTDLP_SMOKE_URL/,
+        'operators must be able to override the local smoke URL without editing source');
 });
 
 test('yt-dlp smoke script performs a bounded real media download', () => {
