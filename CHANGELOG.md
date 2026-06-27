@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Polish: settings and diagnostic dashboard experience.** Reworked the
+  side-panel/sidebar dashboard into a premium grouped diagnostics surface,
+  upgraded Quick Settings search/filter states, added visible status feedback
+  to in-page settings save/import/export/reset flows, and tightened side-panel
+  hidden/focus accessibility contracts.
 - **Refactor: video notes monolith peel.** The per-video local notes runtime
   now lives in `extension/features/video-notes/index.js` with inline fallback,
   manifest/userscript bundle wiring, raw-CSS userscript parity, and focused
