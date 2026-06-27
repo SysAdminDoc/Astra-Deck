@@ -6,34 +6,27 @@ const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
-const validateWorkflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'validate.yml'),
-    'utf8'
-);
 
-function dependencyReviewJobSource() {
-    const match = validateWorkflow.match(/\n  dependency-review:[\s\S]*?\n\n  [a-z][a-z0-9_-]+:/);
-    assert.ok(match, 'dependency-review job must stay present in validate.yml');
-    return match[0];
-}
+test('dependency review stays local-only with no validate workflow', () => {
+    assert.equal(
+        fs.existsSync(path.join(repoRoot, '.github', 'workflows', 'validate.yml')),
+        false,
+        'GitHub validation workflows must stay absent under the local-build policy'
+    );
 
-test('Dependency review is PR-only and enforced (no continue-on-error)', () => {
-    const job = dependencyReviewJobSource();
-    assert.match(job, /if:\s*github\.event_name == 'pull_request'/,
-        'dependency review should remain PR-only');
-    assert.doesNotMatch(job, /continue-on-error/,
-        'dependency review must not use continue-on-error — failures must block the PR');
-    assert.match(job, /contents:\s*read/);
-    assert.match(job, /pull-requests:\s*read/);
+    const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+    assert.match(pkg.scripts.check, /npm run audit:deps/,
+        'local check script must include dependency auditing');
+    assert.equal(pkg.scripts['audit:deps'], 'npm audit --omit=dev --audit-level=moderate',
+        'local dependency audit must keep the moderate vulnerability floor');
 });
 
-test('Dependency review keeps the pinned action and moderate vulnerability floor', () => {
-    const job = dependencyReviewJobSource();
-    assert.match(job,
-        /actions\/dependency-review-action@[0-9a-f]{40}\s+#\s+v5\.0\.0/,
-        'dependency review action must stay pinned to the resolved v5.0.0 release commit');
-    assert.match(job, /fail-on-severity:\s*moderate/,
-        'dependency review should keep the moderate vulnerability floor when enforcement is enabled');
-    assert.match(job, /vulnerability-check:\s*true/);
-    assert.match(job, /license-check:\s*false/);
+test('requirements stay pinned for local companion dependency review', () => {
+    const requirements = fs.readFileSync(
+        path.join(repoRoot, 'astra_downloader', 'requirements.txt'), 'utf8'
+    );
+    assert.match(requirements, /^yt-dlp==\d{4}\.\d+\.\d+$/m,
+        'yt-dlp must remain exactly pinned for reviewed local updates');
+    assert.match(requirements, /^curl_cffi==\d+\.\d+\.\d+$/m,
+        'curl_cffi must remain exactly pinned for reviewed local updates');
 });

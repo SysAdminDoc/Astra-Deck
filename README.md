@@ -62,11 +62,11 @@ Astra Deck and Astra Downloader are separate installs. The browser extension can
 be installed from the release ZIP/XPI or userscript path above; video and audio
 downloads need the local Astra Downloader companion running on this device.
 
-Current public release state: latest release `v4.46.0` does **not** include
-`AstraDownloader.exe` or `AstraDownloader.exe.sha256`. The in-page setup prompt,
-toolbar recovery action, and companion update button are already wired to the
-future release asset path, but the public download cannot complete until a
-release attaches both the EXE and hash sidecar.
+Current public release state: latest release `v4.46.4` includes
+`AstraDownloader.exe` but does **not** include `AstraDownloader.exe.sha256`.
+The in-page setup prompt, toolbar recovery action, and companion update button
+are already wired to the release asset path, but the public download cannot
+complete until a release attaches the hash sidecar next to the EXE.
 
 For current source-checkout testing on Windows:
 
@@ -204,10 +204,9 @@ curl -fsSL https://deno.land/install.sh | sh
 Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
 
 The repo pins `yt-dlp==2026.6.9` and `curl_cffi==0.15.0` in
-`astra_downloader/requirements.txt` for CI. The monthly/manual
-`.github/workflows/yt-dlp-smoke.yml` workflow installs those pins and runs a
-bounded media download through `scripts/yt-dlp-smoke.py` against a stable public
-YouTube fixture before Dependabot bumps are accepted.
+`astra_downloader/requirements.txt` for local validation. Run the bounded media
+smoke locally with `py -3.12 scripts/yt-dlp-smoke.py` against the stable public
+YouTube fixture before accepting extractor dependency bumps.
 
 ### Comments
 
@@ -431,8 +430,9 @@ Outputs in `build/`:
 
 Companion release assets are intentionally separate from the default extension
 build output. Only a companion release/staging pass should add
-`AstraDownloader.exe` and `AstraDownloader.exe.sha256` to `build/`, and the
-current latest release `v4.46.0` does not include those files.
+`AstraDownloader.exe` and `AstraDownloader.exe.sha256` to `build/`. The current
+latest release `v4.46.4` includes the EXE but still needs the `.sha256`
+sidecar attached.
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
 

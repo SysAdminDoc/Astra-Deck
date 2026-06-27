@@ -128,11 +128,6 @@ test('Firefox clean-profile smoke command is exposed for AMO pre-submission runs
         path.join(REPO_ROOT, 'scripts', 'smoke-firefox-webext.js'),
         'utf8'
     );
-    const buildWorkflow = fs.readFileSync(
-        path.join(REPO_ROOT, '.github', 'workflows', 'build.yml'),
-        'utf8'
-    );
-
     assert.equal(pkg.scripts['smoke:firefox'], 'node scripts/smoke-firefox-webext.js');
     assert.equal(DEFAULT_START_URL, 'https://www.youtube.com/watch?v=jNQXAC9IVRw');
     assert.deepEqual(
@@ -160,10 +155,8 @@ test('Firefox clean-profile smoke command is exposed for AMO pre-submission runs
         'smoke must run Firefox headless for CI/operator reproducibility');
     assert.match(smokeScript, /--manual-optional-hosts/,
         'smoke must expose a headed manual optional-host prompt harness');
-    assert.match(buildWorkflow, /browser-actions\/setup-firefox@[0-9a-f]{40}\s+#\s+v1\.7\.2/,
-        'release workflow must install Firefox through a pinned setup-firefox action');
-    assert.match(buildWorkflow, /npm run smoke:firefox -- --firefox "\$\{\{ steps\.setup-firefox\.outputs\.firefox-path \}\}"/,
-        'release workflow must run the clean-profile store-safe Firefox smoke');
+    assert.equal(fs.existsSync(path.join(REPO_ROOT, '.github', 'workflows', 'build.yml')), false,
+        'Firefox smoke must remain local-only; no release workflow should run it remotely');
     assert.equal(hasStartupFailure('WebExtError: boom'), true);
     assert.equal(hasStartupFailure('Use --verbose or open about:debugging for details'), false);
 });
