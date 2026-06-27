@@ -5,53 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
         content="script-src 'self'; object-src 'self';">
-  <title>Astra Deck — Dashboard</title>
+  <title>Astra Deck - Dashboard</title>
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body role="application" aria-label="Astra Deck Dashboard">
   <a class="sp-skip-link" href="#sp-settings-search">Skip to settings</a>
+
   <header class="sp-header" role="banner">
-    <strong class="sp-title" id="sp-title">Astra Deck Dashboard</strong>
-    <span class="sp-version" id="sp-version" aria-label="Extension version"></span>
+    <div class="sp-brand">
+      <span class="sp-mark" aria-hidden="true">
+        <img src="icons/32.png" alt="" width="20" height="20">
+      </span>
+      <span class="sp-brand-copy">
+        <strong class="sp-title" id="sp-title">Astra Deck</strong>
+        <span class="sp-subtitle">Diagnostic dashboard</span>
+      </span>
+    </div>
+    <div class="sp-header-meta">
+      <span class="sp-context-chip" id="sp-context-chip" data-state="idle" role="status" aria-live="polite">Checking tab</span>
+      <span class="sp-version" id="sp-version" aria-label="Extension version"></span>
+    </div>
   </header>
 
-  <main role="main" aria-labelledby="sp-title">
-  <section class="sp-section" id="sp-perf" aria-labelledby="sp-perf-heading">
-    <h2 class="sp-section-title" id="sp-perf-heading">Feature Init Timing</h2>
-    <span class="sp-section-meta" id="sp-perf-total" aria-live="polite"></span>
-    <ul class="sp-perf-list" id="sp-perf-list" role="list" aria-label="Feature init timing list"></ul>
-    <p class="sp-empty" id="sp-perf-empty" hidden role="status">No YouTube tab active.</p>
-  </section>
+  <main class="sp-main" role="main" aria-labelledby="sp-title">
+    <section class="sp-section sp-section--hero" id="sp-overview" aria-labelledby="sp-overview-heading">
+      <header class="sp-section-head">
+        <div>
+          <p class="sp-section-kicker">Live workspace</p>
+          <h2 class="sp-section-title" id="sp-overview-heading">Control health at a glance</h2>
+          <p class="sp-section-copy">Open a YouTube tab to stream live diagnostics, then use Quick Settings for fast recoveries.</p>
+        </div>
+      </header>
+      <div class="sp-overview-grid" id="sp-overview-grid" role="group" aria-label="Dashboard summary">
+        <div class="sp-overview-card">
+          <span class="sp-overview-label">Context</span>
+          <strong class="sp-overview-value" id="sp-overview-context">Local</strong>
+        </div>
+        <div class="sp-overview-card">
+          <span class="sp-overview-label">Settings</span>
+          <strong class="sp-overview-value" id="sp-overview-settings">-</strong>
+        </div>
+        <div class="sp-overview-card">
+          <span class="sp-overview-label">Enabled</span>
+          <strong class="sp-overview-value" id="sp-overview-enabled">-</strong>
+        </div>
+      </div>
+    </section>
 
-  <section class="sp-section" id="sp-selector" aria-labelledby="sp-selector-heading">
-    <h2 class="sp-section-title" id="sp-selector-heading">Selector Health</h2>
-    <span class="sp-section-meta" id="sp-selector-total" aria-live="polite"></span>
-    <ul class="sp-selector-list" id="sp-selector-list" role="list" aria-label="Selector health list"></ul>
-    <p class="sp-empty" id="sp-selector-empty" hidden role="status">No YouTube tab active.</p>
-  </section>
+    <section class="sp-section" id="sp-perf" aria-labelledby="sp-perf-heading">
+      <header class="sp-section-head">
+        <div>
+          <p class="sp-section-kicker">Runtime</p>
+          <h2 class="sp-section-title" id="sp-perf-heading">Feature Init Timing</h2>
+          <p class="sp-section-copy">Highlights slow-starting features from the active YouTube tab.</p>
+        </div>
+        <span class="sp-section-meta" id="sp-perf-total" aria-live="polite"></span>
+      </header>
+      <ul class="sp-perf-list" id="sp-perf-list" role="list" aria-label="Feature init timing list"></ul>
+      <p class="sp-empty" id="sp-perf-empty" hidden role="status">No YouTube tab active.</p>
+    </section>
 
-  <section class="sp-section" id="sp-external" aria-labelledby="sp-external-heading">
-    <h2 class="sp-section-title" id="sp-external-heading">External API Health</h2>
-    <span class="sp-section-meta" id="sp-external-total" aria-live="polite"></span>
-    <ul class="sp-external-list" id="sp-external-list" role="list" aria-label="External API health list"></ul>
-    <p class="sp-empty" id="sp-external-empty" hidden role="status">No YouTube tab active.</p>
-  </section>
+    <section class="sp-section" id="sp-selector" aria-labelledby="sp-selector-heading">
+      <header class="sp-section-head">
+        <div>
+          <p class="sp-section-kicker">Page fit</p>
+          <h2 class="sp-section-title" id="sp-selector-heading">Selector Health</h2>
+          <p class="sp-section-copy">Surfaces DOM drift before it becomes a broken control.</p>
+        </div>
+        <span class="sp-section-meta" id="sp-selector-total" aria-live="polite"></span>
+      </header>
+      <ul class="sp-selector-list" id="sp-selector-list" role="list" aria-label="Selector health list"></ul>
+      <p class="sp-empty" id="sp-selector-empty" hidden role="status">No YouTube tab active.</p>
+    </section>
 
-  <section class="sp-section" id="sp-storage" aria-labelledby="sp-storage-heading">
-    <h2 class="sp-section-title" id="sp-storage-heading">Storage</h2>
-    <div class="sp-storage-stats" id="sp-storage-stats" role="group" aria-label="Storage statistics"></div>
-  </section>
+    <section class="sp-section" id="sp-external" aria-labelledby="sp-external-heading">
+      <header class="sp-section-head">
+        <div>
+          <p class="sp-section-kicker">Integrations</p>
+          <h2 class="sp-section-title" id="sp-external-heading">External API Health</h2>
+          <p class="sp-section-copy">Tracks SponsorBlock, DeArrow, and RYD request health.</p>
+        </div>
+        <span class="sp-section-meta" id="sp-external-total" aria-live="polite"></span>
+      </header>
+      <ul class="sp-external-list" id="sp-external-list" role="list" aria-label="External API health list"></ul>
+      <p class="sp-empty" id="sp-external-empty" hidden role="status">No YouTube tab active.</p>
+    </section>
 
-  <section class="sp-section" id="sp-settings" aria-labelledby="sp-settings-heading">
-    <h2 class="sp-section-title" id="sp-settings-heading">Quick Settings</h2>
-    <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings…" autocomplete="off" spellcheck="false" aria-label="Filter settings" aria-controls="sp-settings-list">
-    <div class="sp-settings-list" id="sp-settings-list" role="list" aria-label="Settings toggles"></div>
-    <p class="sp-empty" id="sp-settings-empty" hidden role="status">No settings match.</p>
-    <p class="sp-settings-count" id="sp-settings-count" aria-live="polite"></p>
-  </section>
+    <section class="sp-section" id="sp-storage" aria-labelledby="sp-storage-heading">
+      <header class="sp-section-head">
+        <div>
+          <p class="sp-section-kicker">Local only</p>
+          <h2 class="sp-section-title" id="sp-storage-heading">Storage</h2>
+          <p class="sp-section-copy">Counts local settings, hidden videos, blocked channels, and saved notes.</p>
+        </div>
+      </header>
+      <div class="sp-storage-stats" id="sp-storage-stats" role="group" aria-label="Storage statistics"></div>
+    </section>
+
+    <section class="sp-section" id="sp-settings" aria-labelledby="sp-settings-heading">
+      <header class="sp-section-head">
+        <div>
+          <p class="sp-section-kicker">Live apply</p>
+          <h2 class="sp-section-title" id="sp-settings-heading">Quick Settings</h2>
+          <p class="sp-section-copy">Grouped toggles save immediately and sync to open YouTube tabs.</p>
+        </div>
+        <span class="sp-section-meta" id="sp-settings-count" aria-live="polite"></span>
+      </header>
+      <div class="sp-search-wrap">
+        <svg class="sp-search-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings, risk, scope, or category" autocomplete="off" spellcheck="false" aria-label="Filter settings" aria-controls="sp-settings-list">
+        <button type="button" class="sp-search-clear" id="sp-settings-clear" aria-label="Clear settings filter" hidden>Clear</button>
+      </div>
+      <div class="sp-settings-list" id="sp-settings-list" role="list" aria-label="Settings toggles"></div>
+      <p class="sp-empty" id="sp-settings-empty" hidden role="status">No settings match.</p>
+    </section>
   </main>
 
   <footer class="sp-footer" role="contentinfo">
+    <span class="sp-refresh-status" id="sp-refresh-status" role="status" aria-live="polite">Ready</span>
     <button type="button" class="sp-refresh-btn" id="sp-refresh" aria-label="Refresh all dashboard sections">Refresh</button>
   </footer>
 

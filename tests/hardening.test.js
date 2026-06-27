@@ -1765,10 +1765,7 @@ test('CRX signing key custody stays outside the repository worktree', () => {
         path.join(__dirname, '..', 'build-extension.js'),
         'utf8'
     );
-    const workflow = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'workflows', 'build.yml'),
-        'utf8'
-    );
+    const workflowPath = path.join(__dirname, '..', '.github', 'workflows', 'build.yml');
     const signingPolicy = fs.readFileSync(
         path.join(__dirname, '..', 'docs', 'signing-keys.md'),
         'utf8'
@@ -1785,8 +1782,8 @@ test('CRX signing key custody stays outside the repository worktree', () => {
         'CI validation builds must opt into ephemeral CRX keys explicitly');
     assert.match(buildSource, /--crx-key/,
         'maintainers must have a CLI override for the external key path');
-    assert.match(workflow, /ASTRA_CRX_KEY_MODE:\s*ephemeral/,
-        'CI build artifacts must declare validation-only ephemeral signing');
+    assert.equal(fs.existsSync(workflowPath), false,
+        'GitHub build workflow must stay absent under the local-build policy');
     assert.match(signingPolicy, /ASTRA_CRX_KEY_PATH/,
         'signing docs must document the external key path contract');
     assert.match(signingPolicy, /AppData\\Local\\Astra-Deck\\keys\\ytkit\.pem/,
@@ -1885,9 +1882,7 @@ test('repository files do not ship Google API key literals', () => {
 
 test('release manifest generation pins checksums, SBOM, attestations, and local signing policy', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    const workflow = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'workflows', 'build.yml'), 'utf8'
-    );
+    const workflowPath = path.join(__dirname, '..', '.github', 'workflows', 'build.yml');
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'generate-release-manifest.js'), 'utf8'
     );
@@ -1904,16 +1899,8 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'package.json must expose release:manifest for the local release recipe');
     assert.match(pkg.scripts['release:stage-companion'] || '', /scripts\/stage-companion-release\.js/,
         'package.json must expose a companion staging script for local release packaging');
-    assert.match(workflow, /npm sbom --omit=dev --sbom-format cyclonedx > build\/astra-deck-npm-sbom\.cdx\.json/,
-        'build.yml must emit a release SBOM into build/');
-    assert.match(workflow, /npm run release:manifest/,
-        'build.yml must generate SHA256SUMS and release-manifest.json');
-    assert.match(workflow, /actions\/attest-build-provenance@[0-9a-f]{40}\s+#\s+v4/,
-        'tag builds must create build-provenance attestations from a pinned v4 commit');
-    assert.match(workflow, /actions\/attest-sbom@[0-9a-f]{40}\s+#\s+v4/,
-        'tag builds must create SBOM attestations from a pinned v4 commit');
-    assert.doesNotMatch(workflow, /gh release create/,
-        'CI must not publish GitHub Releases because ytkit.pem stays local');
+    assert.equal(fs.existsSync(workflowPath), false,
+        'GitHub build workflow must stay absent because releases are built and uploaded locally');
     assert.match(scriptSource, /SHA256SUMS_NAME = 'SHA256SUMS'/,
         'release manifest script must write SHA256SUMS');
     assert.match(scriptSource, /MANIFEST_NAME = 'release-manifest\.json'/,
@@ -1981,8 +1968,8 @@ test('README documents Astra Downloader companion setup and pending release asse
 
     assert.match(readme, /### Astra Downloader Companion Setup/,
         'README must give the companion its own setup section');
-    assert.match(readme, /latest release `v4\.46\.0` does \*\*not\*\* include\s+`AstraDownloader\.exe` or `AstraDownloader\.exe\.sha256`/,
-        'README must not promise a companion EXE before the live release carries it');
+    assert.match(readme, /latest release `v4\.46\.4` includes\s+`AstraDownloader\.exe` but does \*\*not\*\* include `AstraDownloader\.exe\.sha256`/,
+        'README must disclose the current companion EXE and missing hash sidecar state');
     assert.match(readme, /py -3\.12 -m pip install -r astra_downloader\/requirements\.txt/,
         'README must document the current source-checkout companion path');
     assert.match(readme, /py -3\.12 astra_downloader\/astra_downloader\.py/,
@@ -1997,72 +1984,20 @@ test('README documents Astra Downloader companion setup and pending release asse
         'release checklist must not collapse portable companion proof into signed installer work');
 });
 
-test('GitHub workflows pin external actions to full-length SHAs with version comments', () => {
+test('GitHub workflow files stay absent under local-build policy', () => {
     const workflowDir = path.join(__dirname, '..', '.github', 'workflows');
-    const combined = ['build.yml', 'validate.yml', 'yt-dlp-smoke.yml', 'codeql.yml']
-        .map((file) => `# ${file}\n${fs.readFileSync(path.join(workflowDir, file), 'utf8')}`)
-        .join('\n');
-
-    assert.doesNotMatch(combined, /uses:\s*[^#\s]+@(v[0-9]+(?:\.[0-9]+)*|main|master)(?:\s|$)/,
-        'workflow actions must not use mutable tag or branch refs after the SHA-pinning pass');
-
-    const useLines = combined.split(/\r?\n/)
-        .filter((line) => /^\s*(?:-\s*)?uses:\s*/.test(line));
-    assert.ok(useLines.length >= 18, 'expected to audit every workflow uses: line');
-    for (const line of useLines) {
-        assert.match(
-            line,
-            /uses:\s*[^#\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+(?:\.[0-9]+)*/,
-            `workflow action line must carry a full SHA plus version comment: ${line.trim()}`
-        );
-    }
-
-    for (const [action, sha] of Object.entries({
-        'actions/checkout': 'df4cb1c069e1874edd31b4311f1884172cec0e10',
-        'actions/setup-node': '48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e',
-        'actions/setup-python': 'a309ff8b426b58ec0e2a45f0f869d46889d02405',
-        'actions/upload-artifact': '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
-        'actions/dependency-review-action': 'a1d282b36b6f3519aa1f3fc636f609c47dddb294',
-        'actions/attest-build-provenance': 'a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32',
-        'actions/attest-sbom': 'c604332985a26aa8cf1bdc465b92731239ec6b9e',
-        'browser-actions/setup-firefox': '0bc507ddf224827e3b1af68e014d5e42ab93e795',
-        'github/codeql-action/init': '8aad20d150bbac5944a9f9d289da16a4b0d87c1e',
-        'github/codeql-action/analyze': '8aad20d150bbac5944a9f9d289da16a4b0d87c1e'
-    })) {
-        assert.match(
-            combined,
-            new RegExp(escapeRegExp(action) + '@' + sha),
-            `${action} must stay pinned to its resolved upstream tag commit`
-        );
-    }
+    assert.equal(fs.existsSync(workflowDir), false,
+        'GitHub Actions workflows must stay absent; builds and tests run locally');
 });
 
-test('CodeQL scans JavaScript and Python with security-extended queries', () => {
-    const workflow = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'workflows', 'codeql.yml'), 'utf8'
-    );
-    const config = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'codeql.yml'), 'utf8'
-    );
-
-    assert.match(workflow, /name:\s*CodeQL/, 'workflow must keep the expected name');
-    assert.match(workflow, /security-events:\s*write/, 'CodeQL upload needs security-events: write');
-    assert.match(workflow, /github\/codeql-action\/init@[0-9a-f]{40}\s+#\s+v4/,
-        'CodeQL init should use the supported v4 commit pin');
-    assert.match(workflow, /github\/codeql-action\/analyze@[0-9a-f]{40}\s+#\s+v4/,
-        'CodeQL analyze should use the supported v4 commit pin');
-    assert.match(workflow, /language:\s*javascript-typescript/, 'JavaScript/TypeScript must be scanned');
-    assert.match(workflow, /language:\s*python/, 'Python companion code must be scanned');
-    assert.match(workflow, /build-mode:\s*none/, 'interpreted languages should use build-mode none');
-    assert.match(workflow, /config-file:\s*\.\/\.github\/codeql\.yml/, 'workflow must load the shared CodeQL config');
-    assert.match(config, /uses:\s*security-extended/, 'CodeQL config must use the security-extended query suite');
-    for (const ignoredPath of ['node_modules/**', 'build/**', 'mhtml/**', 'archive/**', 'docs/archive/**']) {
-        assert.match(
-            config,
-            new RegExp(escapeRegExp(ignoredPath)),
-            `${ignoredPath} should stay out of the CodeQL source set`
-        );
-    }
+test('local static security gates replace remote CodeQL workflow', () => {
+    assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'codeql.yml')), false,
+        'CodeQL workflow must stay absent under the local-build policy');
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    assert.match(pkg.scripts.check, /scripts\/check-no-eval\.js/,
+        'local check gate must keep the no-eval source security scan');
+    assert.match(pkg.scripts.check, /npm run audit:deps/,
+        'local check gate must keep dependency auditing');
 });
 
 test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
@@ -8462,53 +8397,26 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
-test('v4.46.0 validate workflow provisions Qt offscreen runtime for downloader tests', () => {
-    // GitHub's Ubuntu runners do not ship the PyQt6 runtime libraries
-    // Astra Downloader needs at module import time. Keep the workflow
-    // explicitly provisioning those packages so the Python job fails with
-    // an actionable preflight message instead of a collection-time
-    // ImportError such as "libEGL.so.1: cannot open shared object file".
-    const workflow = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
-    );
-    assert.match(workflow, /QT_QPA_PLATFORM:\s*offscreen/,
-        'validate.yml Python job must run Qt under the offscreen platform');
-    assert.match(workflow, /ASTRA_DOWNLOADER_NO_BOOTSTRAP:\s*["']1["']/,
-        'validate.yml must disable runtime bootstrap during CI dependency checks');
-    assert.match(workflow, /sudo apt-get install[\s\S]*libegl1/,
-        'validate.yml must install libegl1 so PyQt6 can load libEGL.so.1');
-    assert.match(workflow, /sudo apt-get install[\s\S]*libxcb-cursor0/,
-        'validate.yml must install Qt xcb support libraries for PyQt6 wheels');
-    assert.match(workflow, /python -m pip install pytest pytest-asyncio pytest-qt/,
-        'validate.yml must install pytest plugins that own pytest.ini config keys');
-    assert.match(workflow, /Verify PyQt Runtime[\s\S]*PyQt6 runtime unavailable/,
-        'validate.yml must run a clear PyQt runtime preflight before pytest');
-    assert.match(workflow, /python -m pytest astra_downloader/,
-        'validate.yml must still run the full downloader pytest suite');
+test('v4.46.0 downloader validation is local-only and pytest configuration is explicit', () => {
+    assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'validate.yml')), false,
+        'validate workflow must stay absent under the local-build policy');
+    const pytestIni = fs.readFileSync(path.join(__dirname, '..', 'pytest.ini'), 'utf8');
+    assert.match(pytestIni, /asyncio_default_fixture_loop_scope\s*=\s*function/,
+        'pytest.ini must keep the asyncio fixture scope explicit for local runs');
+    const requirements = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'requirements.txt'), 'utf8');
+    assert.match(requirements, /^PyQt6>=6\.6\.0,<7$/m,
+        'local downloader tests must keep the PyQt runtime dependency bounded');
 });
 
-test('v4.46.0 validate workflow audits Python dependencies and PR dependency changes', () => {
-    const workflow = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
-    );
-    assert.match(workflow, /name:\s*Dependency review[\s\S]*github\.event_name == 'pull_request'/,
-        'validate.yml must run dependency review only for pull requests');
-    assert.match(workflow, /actions\/dependency-review-action@[0-9a-f]{40}\s+#\s+v5\.0\.0/,
-        'validate.yml must use the current dependency-review action from a pinned v5.0.0 commit');
-    assert.match(workflow, /fail-on-severity:\s*moderate/,
-        'dependency review must fail moderate-or-higher vulnerable dependency changes');
-    assert.match(workflow, /vulnerability-check:\s*true/,
-        'dependency review must keep vulnerability checks enabled');
-    assert.match(workflow, /license-check:\s*false/,
-        'dependency review must not introduce a license policy without a maintainer decision');
-    assert.match(workflow, /name:\s*Python dependency audit[\s\S]*python-version:\s*'3\.12'/,
-        'validate.yml must run a Python 3.12 dependency audit job');
-    assert.match(workflow, /python -m pip install pip-audit/,
-        'validate.yml must install pip-audit for the companion dependency gate');
-    assert.match(workflow, /python -m pip_audit -r astra_downloader\/requirements\.txt --format json --progress-spinner off --output pip-audit\.json/,
-        'validate.yml must audit astra_downloader/requirements.txt and capture JSON output');
-    assert.match(workflow, /name:\s*astra-downloader-pip-audit[\s\S]*path:\s*pip-audit\.json/,
-        'validate.yml must upload the Python audit JSON artifact for release review');
+test('v4.46.0 dependency auditing is enforced by local scripts', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    assert.match(pkg.scripts.check, /npm run audit:deps/,
+        'npm run check must keep the local npm dependency audit');
+    assert.equal(pkg.scripts['audit:deps'], 'npm audit --omit=dev --audit-level=moderate',
+        'local npm audit must fail moderate-or-higher production vulnerabilities');
+    const requirements = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'requirements.txt'), 'utf8');
+    assert.match(requirements, /^yt-dlp==/m,
+        'companion Python dependencies must remain exactly pinned for local audit review');
 });
 
 test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
@@ -9346,14 +9254,11 @@ test('v4.47.0 NF20 — check-no-eval gate is wired and rejects eval / Function /
     assert.match(src, /\/\/ allow-eval/,
         'check-no-eval must honor the // allow-eval same-line escape hatch');
 
-    // 3. The validate.yml CI workflow emits an SBOM artifact.
-    const ciSrc = fs.readFileSync(
-        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
-    );
-    assert.match(ciSrc, /npm ls --omit=dev --json > sbom\.json/,
-        'validate.yml must emit an npm SBOM via npm ls --omit=dev');
-    assert.match(ciSrc, /name: astra-deck-sbom/,
-        'validate.yml must upload the SBOM as a named artifact');
+    // 3. Remote validation is retired; the local check gate owns this scan.
+    assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'validate.yml')), false,
+        'validate workflow must stay absent under the local-build policy');
+    assert.match(pkg.scripts.check, /scripts\/check-no-eval\.js/,
+        'npm run check must keep no-eval wired locally');
 });
 
 test('v4.47.0 NF10 — capability-probe module covers every CAPABILITIES enum entry', () => {
@@ -11002,6 +10907,28 @@ test('sidepanel.html has landmark roles, aria-labelledby, skip-link, and live re
     assert.match(html, /aria-label="Refresh/, 'refresh button must have aria-label');
 });
 
+test('sidepanel dashboard exposes premium overview, status, and filter affordances', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.html'), 'utf8'
+    );
+    for (const requiredId of [
+        'sp-overview',
+        'sp-context-chip',
+        'sp-overview-context',
+        'sp-overview-settings',
+        'sp-overview-enabled',
+        'sp-refresh-status',
+        'sp-settings-clear'
+    ]) {
+        assert.match(html, new RegExp(`id="${requiredId}"`),
+            'sidepanel must expose dashboard affordance ' + requiredId);
+    }
+    assert.match(html, /class="sp-section-copy"/,
+        'sidepanel sections must include explanatory microcopy');
+    assert.match(html, /placeholder="Filter settings, risk, scope, or category"/,
+        'settings search must explain every searchable field');
+});
+
 test('Firefox sidebar fallback reuses the diagnostic dashboard surface', () => {
     const html = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'sidebar.html'), 'utf8'
@@ -11035,14 +10962,54 @@ test('sidepanel.js setting rows carry aria-label for screen readers', () => {
         'setting rows must track aria-checked state');
 });
 
+test('sidepanel quick settings are grouped, searchable, and failure-aware', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8'
+    );
+    assert.match(src, /className\s*=\s*'sp-settings-group'/,
+        'settings must render in category groups');
+    assert.match(src, /settingsClear\.addEventListener\('click'/,
+        'settings filter must expose a clear action');
+    assert.match(src, /setAttribute\('aria-description',\s*rowLabel/,
+        'setting rows must expose state, category, risk, and scope to assistive tech');
+    assert.match(src, /row\.dataset\.saving\s*=\s*'true'/,
+        'setting rows must carry an in-flight saving state');
+    assert.match(src, /row\.dataset\.error\s*=\s*'true'/,
+        'setting rows must expose failed-save state');
+    assert.match(src, /Could not save setting/,
+        'failed saves must produce a human-readable status update');
+});
+
 test('sidepanel.css has focus-visible styles for interactive elements', () => {
     const css = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
     );
     assert.match(css, /\.sp-setting-row:focus-visible/,
         'setting rows must have :focus-visible styling');
+    assert.match(css, /\.sp-setting-row:focus,/,
+        'custom setting rows must retain a visible :focus fallback');
     assert.match(css, /\.sp-refresh-btn:focus-visible/,
         'refresh button must have :focus-visible styling');
     assert.match(css, /\.sp-skip-link:focus/,
         'skip-link must have :focus styling');
+});
+
+test('sidepanel.css carries motion, contrast, and system accessibility contracts', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
+    );
+    assert.match(css, /--focus-ring:/,
+        'dashboard must use a shared focus ring token');
+    assert.match(css, /\.sp-search-clear:focus-visible/,
+        'filter clear button must have a keyboard focus style');
+    assert.match(css, /\.sp-setting-row\[data-saving="true"\]/,
+        'settings rows must style saving state');
+    assert.match(css, /\.sp-setting-row\[data-error="true"\]/,
+        'settings rows must style failed-save state');
+    assert.match(css, /\[hidden\]\s*\{[\s\S]*display:\s*none\s*!important/,
+        'dashboard hidden states must not peek through component display rules');
+    assert.match(css, /@media \(prefers-reduced-motion: reduce\)/,
+        'dashboard motion must respect reduced motion');
+    assert.match(css, /@media \(forced-colors: active\)/,
+        'dashboard must expose forced-colors accessibility support');
 });
