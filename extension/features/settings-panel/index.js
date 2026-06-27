@@ -119,6 +119,13 @@ function countEnabledToggleFeatures(features) {
         return (features || []).filter((feature) => isBooleanFeature(feature) && appState.settings[feature.id]).length;
     }
 
+function setPanelStatus(message, tone = 'idle') {
+        const status = document.getElementById('ytkit-panel-status');
+        if (!status) return;
+        status.textContent = message;
+        status.dataset.tone = tone;
+    }
+
 function buildSettingsPanel() {
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
@@ -262,7 +269,7 @@ function buildSettingsPanel() {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings…');
+        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, categories...');
         searchInput.id = 'ytkit-search';
         searchInput.name = 'settingsSearch';
         searchInput.autocomplete = 'off';
@@ -295,7 +302,7 @@ function buildSettingsPanel() {
 
         const searchHint = document.createElement('p');
         searchHint.className = 'ytkit-search-hint';
-        searchHint.textContent = 'Search by feature name or description.';
+        searchHint.textContent = 'Search by name, category, page, type, or description.';
         sidebarTop.appendChild(searchHint);
         sidebar.appendChild(sidebarTop);
 
@@ -1706,6 +1713,7 @@ function buildSettingsPanel() {
                 });
                 settingsManager.save(appState.settings);
                 updateAllToggleStates();
+                setPanelStatus(`${cat} reset to defaults. Undo is available in the toast.`, 'warn');
                 // Update UI
                 categoryFeatures.forEach(f => {
                     const toggle = document.getElementById(`ytkit-toggle-${f.id}`);
@@ -1731,6 +1739,7 @@ function buildSettingsPanel() {
                     });
                     settingsManager.save(appState.settings);
                     updateAllToggleStates();
+                    setPanelStatus(`${cat} restored.`, 'success');
                     categoryFeatures.forEach(f => {
                         const t = document.getElementById(`ytkit-toggle-${f.id}`);
                         if (t) { t.checked = appState.settings[f.id]; const s = t.closest('.ytkit-switch'); if (s) s.classList.toggle('active', t.checked); }
@@ -1992,6 +2001,14 @@ function buildSettingsPanel() {
         footerLeft.appendChild(ytToolsLink);
         footerLeft.appendChild(versionSpan);
 
+        const footerStatus = document.createElement('span');
+        footerStatus.className = 'ytkit-panel-status';
+        footerStatus.id = 'ytkit-panel-status';
+        footerStatus.setAttribute('role', 'status');
+        footerStatus.setAttribute('aria-live', 'polite');
+        footerStatus.dataset.tone = 'idle';
+        footerStatus.textContent = 'Ready. Changes save automatically.';
+
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
 
@@ -2019,6 +2036,7 @@ function buildSettingsPanel() {
         footerRight.appendChild(exportBtn);
 
         footer.appendChild(footerLeft);
+        footer.appendChild(footerStatus);
         footer.appendChild(footerRight);
 
         panel.appendChild(header);
@@ -2057,6 +2075,15 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             + (f.type === 'color' ? ' ytkit-color-card' : '');
         card.dataset.featureId = f.id;
         card.dataset.featureType = featureType;
+        card.dataset.searchText = [
+            featureName,
+            featureDescription,
+            f.id,
+            f.group,
+            f.type,
+            f.parentId,
+            ...(Array.isArray(f.pages) ? f.pages.map(formatPageLabel) : [])
+        ].filter(Boolean).join(' ').toLowerCase();
         card.setAttribute('role', 'group');
         card.setAttribute('aria-label', featureName);
         if (accentColor) card.style.setProperty('--cat-color', accentColor);
@@ -2396,6 +2423,7 @@ function attachUIEventListeners() {
                 const configString = settingsManager.exportAllSettings();
                 handleFileExport('astra_deck_settings.json', configString);
                 createToast('Settings exported successfully', 'success');
+                setPanelStatus('Settings exported. The download is ready.', 'success');
                 return;
             }
             if (e.target.closest('#ytkit-import')) {
@@ -2410,8 +2438,10 @@ function attachUIEventListeners() {
                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                         }, 'import', { forceApplyLocal: true });
                         createToast('Settings imported. Changes applied live.', 'success');
+                        setPanelStatus('Settings imported. Changes applied live.', 'success');
                     } else {
                         createToast('Import failed. Invalid file format.', 'error');
+                        setPanelStatus('Import failed. Choose a valid Astra Deck settings export.', 'error');
                     }
                 });
             }
@@ -2534,7 +2564,8 @@ function attachUIEventListeners() {
                 const descEl = card.querySelector('.ytkit-feature-desc');
                 const name = (nameEl?._originalText || nameEl?.textContent || '').toLowerCase();
                 const desc = (descEl?._originalText || descEl?.textContent || '').toLowerCase();
-                const matches = name.includes(query) || desc.includes(query);
+                const haystack = card.dataset.searchText || `${name} ${desc}`;
+                const matches = haystack.includes(query);
                 card.style.display = matches ? '' : 'none';
                 if (matches) {
                     matchCount++;
@@ -2697,6 +2728,7 @@ function attachUIEventListeners() {
                 }
 
                 updateAllToggleStates();
+                setPanelStatus(`${getFeatureName(feature) || featureId} ${isEnabled ? 'enabled' : 'disabled'}.`, 'success');
             }
 
             // Toggle all
@@ -2718,6 +2750,7 @@ function attachUIEventListeners() {
                             cb.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     });
+                    setPanelStatus(`${isEnabled ? 'Enabled' : 'Disabled'} all settings in this section.`, 'success');
                 }
             }
         });
@@ -2735,6 +2768,7 @@ function attachUIEventListeners() {
                 const key = feature?.settingKey || featureId;
                 appState.settings[key] = e.target.value;
                 settingsManager.save(appState.settings);
+                setPanelStatus(`${getFeatureName(feature) || 'Text setting'} saved.`, 'success');
                 if (feature) {
                     if (_textareaReinitTimer) clearTimeout(_textareaReinitTimer);
                     _textareaReinitTimer = setTimeout(() => {
@@ -2774,6 +2808,7 @@ function attachUIEventListeners() {
 
                 const selectedText = e.target.options[e.target.selectedIndex].text;
                 createToast(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}`, 'success');
+                setPanelStatus(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}.`, 'success');
             }
             // Range slider — debounce reinit to avoid destroy/init churn during drag
             if (e.target.matches('.ytkit-range')) {
@@ -2785,6 +2820,7 @@ function attachUIEventListeners() {
                 const val = parseFloat(e.target.value);
                 appState.settings[settingKey] = val;
                 settingsManager.save(appState.settings);
+                setPanelStatus(`${getFeatureName(feature) || 'Range setting'} saved.`, 'success');
                 if (feature) {
                     if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
                     _rangeReinitTimer = setTimeout(() => {
@@ -2807,6 +2843,7 @@ function attachUIEventListeners() {
                 const settingKey = feature?.settingKey || featureId;
                 appState.settings[settingKey] = e.target.value;
                 settingsManager.save(appState.settings);
+                setPanelStatus(`${getFeatureName(feature) || 'Color setting'} updated.`, 'success');
                 if (feature) {
                     try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
                         DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
