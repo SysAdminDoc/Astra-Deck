@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.7 live Theater Split title wrapping.** Live split headers now
+  bound the native action column, wrap long stream titles inside the right
+  pane, grow the measured header height, and offset live chat below the title
+  area in the Chrome extension and standalone Theater Split userscript.
 - **Polish: v4.46.6 settings modal refresh.** Reworked the in-page settings
   shell with a dedicated PIN/header action group, tighter search/sidebar copy,
   bounded desktop layout, aligned feature rows, custom select chrome, stronger

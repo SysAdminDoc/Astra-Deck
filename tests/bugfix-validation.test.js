@@ -739,7 +739,7 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         && source.includes('_getSplitLiveInfoText(viewText = \'\')')
         && source.includes('const dateInfo = [supplementalInfo, dateText].filter(Boolean).join(\' | \');'),
         'extension live header should split stream status from viewer count and preserve upload date when space allows');
-    assert.ok(source.includes('_liveHeaderHeight: 132'),
+    assert.ok(source.includes('_liveHeaderHeight: 154'),
         'extension live header should reserve space for channel, live metadata, and title');
     assert.ok(source.includes("channel.className = 'ytkit-split-live-channel';")
         && source.includes("date.className = 'ytkit-split-live-date';")
@@ -750,8 +750,9 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         'extension live header should remove duplicated live markers from the visible title');
     assert.ok(source.includes('grid-template-areas:"channel actions" "meta meta" "title title"')
         && source.includes('const compact = headerWidth > 0 && headerWidth < 760')
-        && source.includes("titleEl.style.setProperty('-webkit-line-clamp', compact ? '2' : '1')"),
-        'extension live header should adapt channel, metadata, and title density for condensed widths');
+        && source.includes("titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3')")
+        && source.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
+        'extension live header should adapt channel, metadata, and wrapped title height for condensed widths');
     assert.ok(source.includes('grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px'),
         'extension live header should give pinned native actions a stable top-row grid measurement box');
     assert.ok(source.includes('_findSplitSubscribeControl()'),
@@ -792,7 +793,7 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         && theaterSplit.includes('function getSplitLiveInfoText(viewText = \'\')')
         && theaterSplit.includes('const dateInfo = [supplementalInfo, dateText].filter(Boolean).join(\' | \');'),
         'standalone live header should split stream status from viewer count and preserve upload date when space allows');
-    assert.ok(theaterSplit.includes('const LIVE_HEADER_HEIGHT = 132;'),
+    assert.ok(theaterSplit.includes('const LIVE_HEADER_HEIGHT = 154;'),
         'standalone live header should reserve space for channel, live metadata, and title');
     assert.ok(theaterSplit.includes("channel.className = 'ytkit-split-live-channel';")
         && theaterSplit.includes("date.className = 'ytkit-split-live-date';")
@@ -803,8 +804,9 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         'standalone live header should remove duplicated live markers from the visible title');
     assert.ok(theaterSplit.includes('grid-template-areas:"channel actions" "meta meta" "title title"')
         && theaterSplit.includes('const compact = headerWidth > 0 && headerWidth < 760')
-        && theaterSplit.includes("titleEl.style.setProperty('-webkit-line-clamp', compact ? '2' : '1')"),
-        'standalone live header should adapt channel, metadata, and title density for condensed widths');
+        && theaterSplit.includes("titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3')")
+        && theaterSplit.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
+        'standalone live header should adapt channel, metadata, and wrapped title height for condensed widths');
     assert.ok(theaterSplit.includes('grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px'),
         'standalone live header should give pinned native actions a stable top-row grid measurement box');
     assert.ok(theaterSplit.includes('function findSubscribeControl()'),
