@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Release: v4.46.5 Chrome reload build.** Product version surfaces now
+  agree at 4.46.5, and fresh Chrome/Firefox validation artifacts plus the
+  userscript copy were rebuilt from the polished settings/dashboard code.
 - **Polish: settings and diagnostic dashboard experience.** Reworked the
   side-panel/sidebar dashboard into a premium grouped diagnostics surface,
   upgraded Quick Settings search/filter states, added visible status feedback
