@@ -140,6 +140,47 @@ test('stickyVideo style builders preserve the monolith fallback CSS', () => {
     assert.equal(mod.buildSplitCommentsCss(), extractTemplate(block, 'splitCommentsCss'));
 });
 
+test('stickyVideo wraps split-pane titles and grows live header height from rendered content', () => {
+    const { mod } = loadModule();
+    const css = mod.buildSplitMetaCss();
+    const userscriptPath = path.join(config.repoRoot, 'theater-split.user.js');
+    const theaterSplit = fs.readFileSync(userscriptPath, 'utf8');
+
+    for (const [contents, label] of [
+        [css, 'extension metadata CSS'],
+        [sources.ytkit, 'extension fallback CSS'],
+    ]) {
+        assert.ok(contents.includes('white-space: normal !important;'),
+            `${label} must override YouTube title nowrap/truncation in the split pane`);
+        assert.ok(contents.includes('overflow-wrap: anywhere !important;'),
+            `${label} must keep long title tokens inside the right pane`);
+        assert.ok(contents.includes('-webkit-line-clamp: unset !important;'),
+            `${label} must remove native watch-title clamping in the split pane`);
+    }
+
+    for (const [contents, label] of [
+        [sources.ytkit, 'extension live header'],
+        [theaterSplit, 'standalone live header'],
+    ]) {
+        assert.ok(contents.includes('baseHeaderHeight = compact ? 172'),
+            `${label} must reserve enough compact height for wrapped live titles`);
+        assert.ok(contents.includes('grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))'),
+            `${label} must bound the native action column so the title cannot measure wider than the pane`);
+        assert.ok(contents.includes('min-width:0;max-width:100%;overflow:visible;'),
+            `${label} must let the action dock shrink instead of forcing max-content width`);
+        assert.ok(contents.includes("'width:100%'"),
+            `${label} must stretch the live title within the bounded card`);
+        assert.ok(contents.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.38)))'),
+            `${label} must cap live header growth against viewport height`);
+        assert.ok(contents.includes("titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3')"),
+            `${label} must allow more than one visible live-title line`);
+        assert.ok(contents.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
+            `${label} must measure the wrapped title before offsetting chat`);
+        assert.ok(contents.includes('return liveHeaderHeight;'),
+            `${label} must return the measured height so live chat starts below the title area`);
+    }
+});
+
 test('stickyVideo monolith delegates style payloads through the feature module', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
     assert.match(block, /globalThis\.YTKitFeatures && globalThis\.YTKitFeatures\.stickyVideo/,

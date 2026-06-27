@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.46.6
+// @name         YTKit v4.46.7
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.46.6
+// @version      4.46.7
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -5185,6 +5185,30 @@
                             padding: 0 !important;
                         }
 
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata,
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #above-the-fold,
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title,
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title h1,
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string {
+                            min-width: 0 !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            box-sizing: border-box !important;
+                            overflow: visible !important;
+                            white-space: normal !important;
+                            text-overflow: clip !important;
+                            overflow-wrap: anywhere !important;
+                            word-break: break-word !important;
+                        }
+
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title h1,
+                        html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title yt-formatted-string {
+                            display: block !important;
+                            max-height: none !important;
+                            -webkit-line-clamp: unset !important;
+                            -webkit-box-orient: initial !important;
+                        }
+
                         html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title,
                         html.ytkit-split-active #below[style*="position"] ytd-watch-metadata h1.style-scope.ytd-watch-metadata,
                         html.ytkit-split-active #below[style*="position"] ytd-watch-metadata h1.ytd-watch-metadata {
@@ -7861,7 +7885,7 @@
                 _splitHeaderMovedLogo: null,
                 _splitLiveHeader: null,
                 _splitLiveActionPinned: null,
-                _liveHeaderHeight: 132,
+                _liveHeaderHeight: 154,
                 _videoType: 'standard',        // 'live' | 'vod' | 'standard'
                 _positionedEls: [],            // elements we CSS-positioned over right panel
                 _scrollTarget: null,           // which element receives scroll/wheel handlers
@@ -8413,7 +8437,8 @@
                         'position:fixed',
                         'top:0',
                         'right:0',
-                        `height:${this._liveHeaderHeight}px`,
+                        'height:auto',
+                        `min-height:${this._liveHeaderHeight}px`,
                         'z-index:10003',
                         'padding:10px 12px',
                         'box-sizing:border-box',
@@ -8428,21 +8453,21 @@
                     const card = document.createElement('div');
                     card.className = 'ytkit-split-live-card';
                     card.style.cssText = [
-                        'height:100%',
+                        'min-height:100%',
                         'border-radius: 12px',
                         'border:1px solid rgba(255,255,255,0.10)',
                         'background:rgba(18,23,32,0.88)',
                         'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
                         'position:relative',
                         'display:grid',
-                        'grid-template-columns:minmax(0,1fr) auto',
+                        'grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))',
                         'grid-template-areas:"channel actions" "meta meta" "title title"',
                         'align-content:center',
                         'align-items:stretch',
                         'gap:5px',
                         'padding:12px 15px 11px',
                         'box-sizing:border-box',
-                        'overflow:visible'
+                        'overflow:hidden'
                     ].join(';');
 
                     const channel = document.createElement('div');
@@ -8479,21 +8504,29 @@
                     title.style.cssText = [
                         'grid-area:title',
                         'margin:0',
+                        'min-width:0',
+                        'width:100%',
+                        'max-width:100%',
+                        'justify-self:stretch',
+                        'box-sizing:border-box',
                         'font:800 16px/1.22 Arial,sans-serif',
                         'letter-spacing:0',
                         'color:rgba(245,247,250,0.98)',
                         'display:-webkit-box',
-                        '-webkit-line-clamp:2',
+                        '-webkit-line-clamp:3',
                         '-webkit-box-orient:vertical',
                         'overflow:hidden',
-                        'overflow-wrap:anywhere'
+                        'text-overflow:clip',
+                        'white-space:normal',
+                        'overflow-wrap:anywhere',
+                        'word-break:break-word'
                     ].join(';');
                     card.appendChild(title);
 
                     const actions = document.createElement('div');
                     actions.className = 'ytkit-split-live-actions';
                     actions.setAttribute('aria-label', 'Live video actions');
-                    actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:max-content;max-width:330px;overflow:visible;';
+                    actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;max-width:100%;overflow:visible;';
                     card.appendChild(actions);
 
                     header.appendChild(card);
@@ -8510,10 +8543,12 @@
 
                     const headerWidth = Math.max(0, Math.round(window.innerWidth * rightPct / 100));
                     const compact = headerWidth > 0 && headerWidth < 760;
-                    const liveHeaderHeight = compact ? 146 : this._liveHeaderHeight;
+                    const baseHeaderHeight = compact ? 172 : this._liveHeaderHeight;
+                    const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.38)));
                     header.dataset.ytkitLiveCompact = compact ? '1' : '0';
                     header.style.width = `calc(${rightPct}% - 2px)`;
-                    header.style.height = `${liveHeaderHeight}px`;
+                    header.style.minHeight = `${baseHeaderHeight}px`;
+                    header.style.height = `${baseHeaderHeight}px`;
                     const titleEl = header.querySelector('.ytkit-split-live-title');
                     const channelEl = header.querySelector('.ytkit-split-live-channel');
                     const metaEl = header.querySelector('.ytkit-split-live-meta');
@@ -8535,7 +8570,7 @@
                     if (titleEl) {
                         titleEl.textContent = title;
                         titleEl.hidden = !title;
-                        titleEl.style.setProperty('-webkit-line-clamp', compact ? '2' : '1');
+                        titleEl.style.setProperty('-webkit-line-clamp', compact ? '4' : '3');
                         if (title) titleEl.title = title;
                         else titleEl.removeAttribute('title');
                     }
@@ -8555,6 +8590,10 @@
                     }
                     header.setAttribute('aria-label', ['Live video', channel, viewText, title].filter(Boolean).join(' | '));
                     this._dockSplitLiveHeaderActions();
+                    const card = header.querySelector('.ytkit-split-live-card');
+                    const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);
+                    const liveHeaderHeight = Math.min(maxHeaderHeight, Math.max(baseHeaderHeight, measuredHeaderHeight));
+                    header.style.height = `${liveHeaderHeight}px`;
                     return liveHeaderHeight;
                 },
 
@@ -18678,7 +18717,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.6';
+    const YTKIT_VERSION = '4.46.7';
 
     // ── Z-Index Hierarchy ──
     const Z = {
