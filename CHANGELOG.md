@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Polish: v4.46.6 settings modal refresh.** Reworked the in-page settings
+  shell with a dedicated PIN/header action group, tighter search/sidebar copy,
+  bounded desktop layout, aligned feature rows, custom select chrome, stronger
+  player-overlay z-index, and refreshed Chrome reload artifacts.
 - **Release: v4.46.5 Chrome reload build.** Product version surfaces now
   agree at 4.46.5, and fresh Chrome/Firefox validation artifacts plus the
   userscript copy were rebuilt from the polished settings/dashboard code.

@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.46.5
+// @name         YTKit v4.46.6
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.46.5
+// @version      4.46.6
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -14075,24 +14075,29 @@
             const closeBtn = document.createElement('button');
             closeBtn.className = 'ytkit-close';
             closeBtn.type = 'button';
-            closeBtn.title = t('panelCloseTitle', 'Close (Esc)');
+            closeBtn.title = t('panelCloseTitle', 'Close settings');
             closeBtn.setAttribute('aria-label', t('panelCloseAria', 'Close settings'));
             closeBtn.appendChild(ICONS.close());
             closeBtn.onclick = () => setSettingsPanelOpen(false);
 
             const pinBtn = document.createElement('button');
-            pinBtn.className = 'ytkit-close';
+            pinBtn.className = 'ytkit-pin-btn';
             pinBtn.type = 'button';
-            pinBtn.style.cssText = 'font-size:14px;margin-right:4px;width:auto;padding:4px 8px;';
             pinBtn.textContent = 'PIN';
             pinBtn.title = 'PIN lock';
+            pinBtn.setAttribute('aria-label', 'Manage settings PIN lock');
             (async () => {
                 pinBtn.title = (await isPinSet()) ? 'Change or clear PIN' : 'Set a PIN lock';
             })();
             pinBtn.onclick = () => _showPinManageDialog();
+
+            const headerActions = document.createElement('div');
+            headerActions.className = 'ytkit-header-actions';
+            headerActions.appendChild(pinBtn);
+            headerActions.appendChild(closeBtn);
+
             header.appendChild(brand);
-            header.appendChild(pinBtn);
-            header.appendChild(closeBtn);
+            header.appendChild(headerActions);
 
             // Body
             const body = document.createElement('div');
@@ -14117,7 +14122,7 @@
             const searchInput = document.createElement('input');
             searchInput.type = 'search';
             searchInput.className = 'ytkit-search-input';
-            searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, categories...');
+            searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings...');
             searchInput.id = 'ytkit-search';
             searchInput.name = 'settingsSearch';
             searchInput.autocomplete = 'off';
@@ -14140,7 +14145,7 @@
             const searchMeta = document.createElement('span');
             searchMeta.className = 'ytkit-search-meta';
             searchMeta.id = 'ytkit-search-count';
-            searchMeta.textContent = 'All settings';
+            searchMeta.textContent = 'All';
             searchContainer.appendChild(searchIcon);
             searchContainer.appendChild(searchInput);
             searchActions.appendChild(searchClearBtn);
@@ -16307,7 +16312,7 @@
                 if (searchClearBtn) searchClearBtn.hidden = !query;
 
                 if (!query) {
-                    if (searchMeta) searchMeta.textContent = 'All settings';
+                    if (searchMeta) searchMeta.textContent = 'All';
                     if (searchState) {
                         searchState.hidden = true;
                         searchState.classList.remove('is-empty');
@@ -18673,7 +18678,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.5';
+    const YTKIT_VERSION = '4.46.6';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -32891,7 +32896,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'ytkit-close';
-        closeBtn.title = 'Close (Esc)';
+        closeBtn.title = 'Close settings';
         closeBtn.appendChild(ICONS.close());
         closeBtn.onclick = () => document.body.classList.remove('ytkit-panel-open');
 
@@ -32912,7 +32917,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = 'Search settings, pages, categories...';
+        searchInput.placeholder = 'Search settings...';
         searchInput.id = 'ytkit-search';
         searchInput.setAttribute('aria-label', 'Search settings by name, category, page, type, or description');
         const searchIcon = ICONS.search();
@@ -34494,6 +34499,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 .ytkit-panel-status[data-tone="warn"]{color:#facc15;}
 .ytkit-panel-status[data-tone="error"]{color:#fca5a5;}
 @media (max-width:640px){.ytkit-panel-status{order:3;flex-basis:100%;text-align:left;}}
+`);
+        GM_addStyle(`
+/* Settings modal premium refresh */
+#ytkit-settings-panel{z-index:2147483646!important;width:min(1220px,calc(100vw - 64px))!important;height:min(86vh,820px)!important;max-height:min(86vh,820px)!important;border-radius:10px!important;border-color:rgba(255,255,255,.1)!important;background:radial-gradient(circle at 10% 0%,rgba(255,128,92,.12),transparent 28%),radial-gradient(circle at 92% 8%,rgba(118,154,255,.1),transparent 26%),linear-gradient(180deg,rgba(18,22,30,.98),rgba(7,10,15,.98))!important;box-shadow:0 32px 90px rgba(0,0,0,.62),0 1px 0 rgba(255,255,255,.06) inset!important;}#ytkit-overlay{z-index:2147483645!important;}
+.ytkit-header{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center!important;min-height:72px;padding:14px 18px!important;border-bottom-color:rgba(255,255,255,.08)!important;background:linear-gradient(90deg,rgba(255,118,86,.1),rgba(10,14,20,.72) 42%,rgba(18,25,34,.88))!important;}
+.ytkit-brand{min-width:0;gap:10px!important}.ytkit-title{font-size:20px!important;line-height:1.1!important;letter-spacing:0!important}.ytkit-badge{border-radius:6px!important;padding:4px 8px!important;background:rgba(255,255,255,.055)!important;border:1px solid rgba(255,255,255,.09)!important;color:rgba(239,243,249,.72)!important;font-size:9px!important;box-shadow:none!important}.ytkit-close{width:38px!important;height:38px!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.11)!important;background:rgba(255,255,255,.045)!important;color:rgba(241,245,249,.86)!important;box-shadow:none!important}.ytkit-close:hover{border-color:rgba(255,255,255,.18)!important;background:rgba(255,255,255,.09)!important;color:#fff!important}
+.ytkit-body{display:grid!important;grid-template-columns:clamp(320px,28vw,360px) minmax(0,1fr)!important;min-height:0;background:rgba(5,8,12,.66)!important}.ytkit-sidebar{width:auto!important;min-width:0;padding:14px 12px 14px 14px!important;gap:10px!important;border-right:1px solid rgba(255,255,255,.08)!important;border-bottom:none!important;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)),rgba(6,9,13,.9)!important;overflow:hidden!important}.ytkit-search-container{position:sticky!important;top:0!important;z-index:5!important;margin:0!important;padding:0 0 8px!important;background:linear-gradient(180deg,rgba(6,9,13,.99),rgba(6,9,13,.88) 76%,rgba(6,9,13,0))!important}.ytkit-search-input{box-sizing:border-box!important;width:100%!important;min-height:44px!important;padding:0 14px 0 40px!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.1)!important;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),rgba(8,12,18,.92)!important;color:rgba(248,250,252,.94)!important;font-size:12px!important;line-height:44px!important}.ytkit-search-input:focus{border-color:rgba(255,78,69,.42)!important;box-shadow:0 0 0 2px rgba(8,11,16,.94),0 0 0 4px rgba(255,78,69,.42)!important}.ytkit-search-icon{left:14px!important;width:15px!important;height:15px!important;color:rgba(226,232,240,.58)!important}.ytkit-search-hint{margin:0 2px 2px!important;color:rgba(226,232,240,.56)!important;font-size:11px!important;line-height:1.4!important}
+.ytkit-nav-btn{display:grid!important;grid-template-columns:36px minmax(0,1fr) auto!important;min-height:58px!important;gap:11px!important;padding:10px!important;border-radius:8px!important;border:1px solid transparent!important;background:transparent!important}.ytkit-nav-btn:hover{border-color:rgba(255,255,255,.08)!important;background:rgba(255,255,255,.035)!important;transform:none!important}.ytkit-nav-btn.active{border-color:rgba(255,126,92,.24)!important;background:linear-gradient(90deg,rgba(255,126,92,.14),rgba(255,255,255,.03) 64%),rgba(255,255,255,.025)!important;box-shadow:inset 3px 0 0 rgba(255,126,92,.82)!important}.ytkit-nav-icon{width:36px!important;height:36px!important;border-radius:7px!important}.ytkit-nav-icon svg{width:17px!important;height:17px!important}.ytkit-nav-label{font-size:13px!important;font-weight:760!important;line-height:1.15!important}.ytkit-nav-count{align-self:center!important;min-width:42px!important;padding:5px 7px!important;border-radius:7px!important;border:1px solid rgba(255,255,255,.08)!important;background:rgba(255,255,255,.04)!important;color:rgba(248,250,252,.82)!important;font-size:10px!important}
+.ytkit-content{min-width:0;padding:18px 20px 16px!important;background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,0)),rgba(8,11,16,.76)!important}.ytkit-features-grid{grid-template-columns:1fr!important;gap:10px!important}.ytkit-feature-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:14px 18px!important;min-height:74px!important;padding:14px 16px!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.075)!important;background:linear-gradient(180deg,rgba(255,255,255,.032),rgba(255,255,255,.012)),rgba(10,14,20,.82)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important}.ytkit-feature-card:hover{border-color:rgba(255,255,255,.12)!important;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018)),rgba(12,17,24,.92)!important;transform:translateY(-1px)!important}.ytkit-feature-name{font-size:14px!important;font-weight:780!important;line-height:1.22!important}.ytkit-feature-desc{font-size:12px!important;line-height:1.42!important;color:rgba(226,232,240,.64)!important}
+.ytkit-footer{display:grid!important;grid-template-columns:auto minmax(180px,1fr) auto!important;min-height:58px;gap:12px!important;padding:10px 18px!important;border-top-color:rgba(255,255,255,.08)!important;background:rgba(8,11,16,.92)!important}.ytkit-panel-status{justify-self:stretch;min-height:36px!important;padding:0 12px!important;border-radius:8px!important;background:rgba(255,255,255,.035)!important;color:rgba(226,232,240,.68)!important;font-size:11px!important}.ytkit-btn{min-height:38px!important;border-radius:8px!important;padding:0 14px!important;font-size:12px!important;font-weight:780!important}
+@media (max-width:900px){#ytkit-settings-panel{width:calc(100vw - 16px)!important;height:calc(100vh - 16px)!important;max-height:calc(100vh - 16px)!important}.ytkit-body{grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr)!important}.ytkit-sidebar{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.08)!important;overflow:visible!important;padding:10px 12px!important}.ytkit-search-hint{display:none!important}.ytkit-footer{grid-template-columns:1fr!important}.ytkit-footer-left,.ytkit-footer-right{width:100%!important;justify-content:stretch!important}.ytkit-btn{flex:1 1 0!important;justify-content:center!important}}
 `);
     }
 
