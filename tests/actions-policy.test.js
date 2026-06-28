@@ -78,3 +78,13 @@ test('actions policy inventory sees only tracked workflow YAML files', () => {
     assert.deepEqual(entries, [],
         'local-build policy requires no tracked workflow YAML files');
 });
+
+test('repo settings document the local-build policy without workflow inventory drift', () => {
+    const docs = fs.readFileSync(path.join(repoRoot, 'docs', 'repo-settings.md'), 'utf8');
+    assert.match(docs, /Hosted workflow files are intentionally absent/,
+        'repo-settings.md must state the local-build policy');
+    assert.match(docs, /npm run policy:actions` must report zero workflow files/,
+        'repo-settings.md must keep the workflow inventory expectation aligned with tests');
+    assert.doesNotMatch(docs, /\.github\/workflows\/[A-Za-z0-9_.\/-]+/,
+        'repo-settings.md must not cite retired hosted workflow paths as active infrastructure');
+});

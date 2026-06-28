@@ -1,6 +1,6 @@
 # Astra Deck — Architecture Map
 
-This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.0+), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.46.0. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions; [RESEARCH_REPORT.md](../RESEARCH_REPORT.md) links the archived feature-plan sources.
+This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.14), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.46.14. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the current research-backed rationale. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
 
 ## The four moving parts
 
@@ -124,7 +124,7 @@ User opens the popup:
 | Build pipeline | `build-extension.js` + `sync-userscript.js` + `scripts/manifest-patch.js` | Emits Chrome ZIP + CRX3, Firefox ZIP + XPI, userscript copy. Release CRX3 signing requires `ASTRA_CRX_KEY_PATH` / the default local key store outside the repo; validation builds use ephemeral CRX signing without retaining key material. Firefox manifest auto-patched. |
 | Astra Downloader companion | `astra_downloader/astra_downloader.py` (single file, ~4500 lines) | Flask API + PyQt6 GUI + yt-dlp + ffmpeg. Single-file PyInstaller .exe at `%LOCALAPPDATA%\AstraDownloader\`. |
 | Test suites | `tests/*.test.js` (528 JS tests, `node --test`) + `astra_downloader/test_astra_downloader.py` (88 Python tests, pytest) | Hardening regressions, parity gates, selector regression, settings migration round-trip. |
-| CI | `.github/workflows/build.yml` | `npm ci` -> `npm test` + `npm run check` -> tag check -> `ASTRA_CRX_KEY_MODE=ephemeral npm run build:userscript` -> SBOM + `release-manifest.json` / `SHA256SUMS` -> `release-readiness` JSON/Markdown -> upload `build/*` as workflow artifacts -> tag-only build/SBOM attestations. CI does not receive the maintainer CRX key and does not create GitHub Releases; public release publication stays maintainer-local per [signing-keys.md](signing-keys.md). |
+| Local release gates | `package.json` scripts + `build-extension.js` + release scripts | `npm test` -> `npm run check` -> `py -3.12 -m pytest astra_downloader/test_astra_downloader.py` -> `ASTRA_CRX_KEY_MODE=ephemeral node build-extension.js --bump patch --with-userscript` for validation artifacts -> optional maintainer-key rebuild for public CRX artifacts -> `npm sbom`, `npm run release:manifest`, and `npm run release:readiness`. GitHub Actions workflows are intentionally absent; public release publication stays maintainer-local per [signing-keys.md](signing-keys.md). |
 
 ## Trust boundaries (and what each is allowed to touch)
 

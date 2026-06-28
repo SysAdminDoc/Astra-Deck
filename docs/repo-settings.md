@@ -1,45 +1,27 @@
 # Astra Deck Repository Settings
 
-Last updated: 2026-06-06
+Last updated: 2026-06-28
 
 This file records repository settings that are intentionally managed outside the
 source tree.
 
-See [hosted-policy-closure.md](hosted-policy-closure.md) for the post-merge
-closure order before changing dependency graph, CODEOWNERS, selected Actions,
-SHA-pinning, or companion release-asset state.
+The source tree currently uses local builds, local tests, and local release
+artifact publication. Hosted workflow files are intentionally absent; do not add
+or rely on hosted CI/CD without first reopening that policy decision in
+`ROADMAP.md`.
 
 ## `main` Branch Protection
 
-`main` uses classic branch protection. Required status checks are enabled with
-strict branch updates so a protected update must be based on the latest `main`
-and have the latest successful `Validate` checks.
+`main` accepts maintainer pushes after local verification. Required hosted
+status checks should stay disabled while the repository has no hosted workflow
+files.
 
-Required check contexts:
+Local verification before pushing:
 
-- `JS tests + check gate`
-- `Python dependency audit`
-- `Python downloader tests`
-
-Keep these names synchronized with `.github/workflows/validate.yml` job names.
-If a job is renamed, update branch protection in the same change window.
-
-Non-required context that runs on PRs only:
-
-- `Dependency review`
-
-`Dependency review` is enforced: the job has no `continue-on-error`, so a
-moderate-or-higher vulnerability finding fails the workflow run. It only runs on
-`pull_request` events; direct pushes to `main` skip it because the action needs
-a base/head comparison. Add `Dependency review` to the required-check list in
-branch protection to prevent bypassing the check entirely by merging outside a
-PR.
-
-Enforcement history:
-
-- 2026-06-06: added as advisory with `DEPENDENCY_REVIEW_REQUIRED` gate.
-- 2026-06-15: removed `continue-on-error`; the job now always fails the run on
-  moderate-or-higher vulnerabilities.
+- `npm test`
+- `npm run check`
+- `py -3.12 -m pytest astra_downloader/test_astra_downloader.py -q`
+- `ASTRA_CRX_KEY_MODE=ephemeral node build-extension.js --bump patch --with-userscript`
 
 Current policy:
 
@@ -49,58 +31,25 @@ Current policy:
 - Keep required conversation resolution enabled.
 - Keep repository rulesets empty unless replacing this classic branch-protection
   rule with an equivalent active ruleset.
+- Keep local verification evidence in commits, release artifacts, and
+  `CHANGELOG.md`, not hosted check contexts.
 
-## GitHub Actions Permissions
+## GitHub Actions / Hosted CI Policy
 
-Current repository snapshot from 2026-06-04:
+Current source-tree status:
 
-- Actions enabled: yes.
-- Allowed actions policy: `all`.
-- Full-length SHA pinning required: no.
-- Default `GITHUB_TOKEN` workflow permissions: read.
-- Workflow-created PR approvals: disabled.
+- No hosted workflow YAML is tracked.
+- `npm run policy:actions` must report zero workflow files and zero external
+  actions while the local-build policy is active.
+- Release ZIP/CRX/XPI/userscript artifacts are built locally with
+  `build-extension.js`.
+- Dependency, lint, accessibility, overlay, contrast, version, settings, i18n,
+  userscript-drift, Firefox-manifest, and Python gates run through local scripts.
 
-Read-only refresh from 2026-06-06:
-
-- Actions enabled: yes.
-- Allowed actions policy: `all`.
-- Full-length SHA pinning required: no.
-- Selected-actions URL: none.
-- Default `GITHUB_TOKEN` workflow permissions: read.
-- Workflow-created PR approvals: disabled.
-
-Source-tree status from 2026-06-05:
-
-- `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
-  `.github/workflows/yt-dlp-smoke.yml`, and `.github/workflows/codeql.yml`
-  reference external actions by full 40-character commit SHA with same-line
-  version comments.
-- `actions/dependency-review-action` is pinned to the upstream `v5.0.0` release
-  commit because no upstream `v5` tag exists.
-- `tests/hardening.test.js` rejects mutable tag/branch action refs and pins the
-  resolved action commits.
-- `npm run policy:actions` emits the hosted selected-actions payload from the
-  current workflow inventory and currently allows only
-  `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
-  outside GitHub-owned actions.
-
-Target hosted policy after the SHA-clean workflow branch lands and hosted
-workflow runs pass:
-
-- Change allowed actions to `selected`.
-- Allow GitHub-owned actions.
-- Keep broad verified-creator allowance disabled.
-- Add explicit `patterns_allowed` entries only for deliberate non-GitHub-owned
-  actions or reusable workflows. Current deliberate non-GitHub-owned action:
-  `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
-  (`# v1.7.2`). Generate this list with `npm run policy:actions`; do not copy it
-  by hand from workflow files.
-- Require full-length SHA pinning for actions.
-
-Do not enable the hosted SHA-pinning policy until this branch has landed on the
-default branch and a fresh hosted `Validate`, `Build & Release` dry-run or tag
-run, `yt-dlp Smoke`, and `CodeQL` run have proved the pinned refs execute under
-the repository's selected-actions policy.
+Hosted Actions settings may remain enabled at the repository level, but the
+source tree must not depend on them. If hosted workflows are reintroduced later,
+add an active roadmap item first, define the exact trust boundary, and update
+this file in the same commit.
 
 ## Private Vulnerability Reporting
 
@@ -123,37 +72,20 @@ Policy:
 
 ## Code Scanning
 
-Current snapshot from 2026-06-05:
+Current source-tree policy:
 
-- GitHub code-scanning default setup: `not-configured`.
-- Detected languages from the default-setup API: `actions`, `javascript`,
-  `javascript-typescript`, `python`, `typescript`.
-- Advanced setup workflow: `.github/workflows/codeql.yml`.
-- CodeQL config: `.github/codeql.yml`.
-- Scanned languages: `javascript-typescript` and `python`.
-- Query suite: `security-extended`.
-- Code-scanning alerts API: `0` open alerts after the first hosted baseline.
-- Hosted baseline:
-  - Push run `27002182993`: `CodeQL (javascript-typescript)` and
-    `CodeQL (python)` both succeeded on branch
-    `the working feature branch`.
-  - Pull-request run `27002184466`: both language jobs also succeeded on the
-    same head SHA.
-- Default setup remains `not-configured` because this repository now uses
-  advanced setup.
+- Hosted CodeQL workflow files are absent.
+- Static security coverage runs locally through `npm run check`.
+- `scripts/check-no-eval.js`, ESLint, dependency audit, policy-profile tests,
+  background-proxy tests, and downloader pytest coverage are the active gates.
 
 Policy:
 
-- Keep advanced CodeQL setup enabled for `javascript-typescript` and `python`.
-- Keep `security-extended` for the first baseline; document any move to
-  `security-and-quality` after runtime and false-positive volume are known.
 - Keep generated outputs, `node_modules`, `build`, `mhtml`, and archived
-  research/release artifacts out of the scan target.
-- Leave CodeQL advisory-only for now. Add exact CodeQL check contexts to branch
-  protection only after the workflow has also succeeded on `main` or after the
-  next PR confirms the required-check names in the protected-branch UI.
-- Treat future CodeQL findings like security bugs: fix true positives, document
-  dismissals with a reason, and avoid blanket suppressions.
+  research/release artifacts out of local static scans unless a targeted audit
+  explicitly includes them.
+- Treat future static-analysis findings like security bugs: fix true positives,
+  document dismissals with a reason, and avoid blanket suppressions.
 
 ## Secret Scanning
 
@@ -226,8 +158,8 @@ Read-only refresh from 2026-06-06:
 
 Target policy:
 
-- Keep `.github/CODEOWNERS` covering security-sensitive workflow, release,
-  signing, security-policy, extension-permission, background-proxy, data-flow,
+- Keep `.github/CODEOWNERS` covering security-sensitive release, signing,
+  security-policy, extension-permission, background-proxy, data-flow,
   trusted-DOM, and companion-loopback paths.
 - Use only users or teams with write access.
 - Re-check `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq
