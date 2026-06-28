@@ -54,3 +54,7 @@ TODO.md
 NOTES.md
 AUDIT*.md
 SESSION*.md
+
+# AI config
+.ai/
+PROJECT_CONTEXT.md
