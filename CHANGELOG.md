@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.15 storage-denied hardening.** `pauseOtherTabs` now degrades
+  cleanly when `BroadcastChannel` is blocked, and the crash-loop guard keeps
+  a storage-backed or in-memory safe-mode path when browser privacy settings
+  deny `localStorage`.
 - **Chore: release readiness artifact build.** `npm run build:userscript`
   now emits the CycloneDX production SBOM, release manifest, and SHA256SUMS,
   and `npm run release:prepare` builds those artifacts before enforcing the
