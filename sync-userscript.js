@@ -48,6 +48,8 @@ userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
 // globalThis.YTKitFeatures — safe to concatenate in this order. The
 // region between the BEGIN/END markers is replaced wholesale on every
 // sync; do NOT hand-edit content between the markers in YTKit.user.js.
+// If a manifest feature cannot ship in the userscript, classify the feature ID
+// in scripts/check-userscript-drift.js instead of leaving silent parity drift.
 const V5_BUNDLE_MODULES = [
     'extension/core/styles.js',
     'extension/core/settings-schema.js',

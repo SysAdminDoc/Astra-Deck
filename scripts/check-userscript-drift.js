@@ -66,15 +66,127 @@ for (const entry of (manifest.content_scripts || [])) {
 
 // ── 4. Flag feature modules in manifest not covered by V5_BUNDLE_MODULES ──
 // Feature modules follow the pattern features/*/index.js and must be bundled.
-// Exception: extension-only modules that depend on chrome.* APIs unavailable
-// in the userscript environment are excluded by design.
-const EXTENSION_ONLY_FEATURES = new Set([
-    'features/download-ui/index.js',
+// Exception: extension-only modules must carry a classification so intentional
+// gaps do not look the same as accidental drift.
+const PARITY_CLASS_ORDER = Object.freeze([
+    'chrome-api',
+    'native-companion',
+    'unsafe-in-userscript',
+    'intentional-extension-only',
+    'not-yet-ported',
 ]);
+const PARITY_CLASSES = new Set(PARITY_CLASS_ORDER);
+
+const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
+    'features/download-ui/index.js': 'native-companion',
+});
+
+const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
+    aiVideoSummary: 'unsafe-in-userscript',
+    antiTranslateAudioTrack: 'not-yet-ported',
+    antiTranslateTranscript: 'not-yet-ported',
+    astraContextMenu: 'chrome-api',
+    audioNormalization: 'not-yet-ported',
+    audioPan: 'not-yet-ported',
+    audioTrackLanguage: 'not-yet-ported',
+    autoDismissContentWarning: 'not-yet-ported',
+    bulkCardActions: 'not-yet-ported',
+    bypassPlaylistMode: 'not-yet-ported',
+    chapterJumpButtons: 'not-yet-ported',
+    classicLayoutProfile: 'intentional-extension-only',
+    classicPlayerChrome: 'not-yet-ported',
+    cleanUiPreset: 'intentional-extension-only',
+    commentFilterManager: 'not-yet-ported',
+    commentFilterRules: 'not-yet-ported',
+    copyChapterMarkdown: 'not-yet-ported',
+    customSelectionColor: 'not-yet-ported',
+    deArrowChannelOverridesPanel: 'not-yet-ported',
+    deArrowVoting: 'unsafe-in-userscript',
+    dearrowPeekButton: 'not-yet-ported',
+    denseMode: 'not-yet-ported',
+    diagnosticLog: 'intentional-extension-only',
+    disableLoudnessNormalization: 'not-yet-ported',
+    downloadAudioFormat: 'native-companion',
+    downloadCobaltFallback: 'native-companion',
+    downloadHealthPanel: 'native-companion',
+    downloadHistoryPanel: 'native-companion',
+    downloadScreenshotFormat: 'native-companion',
+    downloadStreamLinksPanel: 'native-companion',
+    downloadSubtitlesWithScreenshot: 'native-companion',
+    downloadVideoFormat: 'native-companion',
+    feedTriageProfile: 'intentional-extension-only',
+    forcedColorsSupport: 'intentional-extension-only',
+    frameByFrameButtons: 'not-yet-ported',
+    globalAriaLiveRegion: 'intentional-extension-only',
+    hideJumpAheadButton: 'not-yet-ported',
+    hideLiveChatEngagement: 'not-yet-ported',
+    hideMembersOnly: 'not-yet-ported',
+    hidePinnedComments: 'not-yet-ported',
+    initialPlayerStateBackground: 'not-yet-ported',
+    initialPlayerStateForeground: 'not-yet-ported',
+    localAiSummary: 'unsafe-in-userscript',
+    localAiTranscriptQa: 'unsafe-in-userscript',
+    lowPowerProfile: 'intentional-extension-only',
+    monetizationIndicator: 'not-yet-ported',
+    monoToStereo: 'not-yet-ported',
+    musicVideoSpeedLock: 'not-yet-ported',
+    newPlayerUiRestore: 'not-yet-ported',
+    notifyAutoDubbedAudio: 'not-yet-ported',
+    oledTheme: 'not-yet-ported',
+    openInAlternativeFrontend: 'not-yet-ported',
+    perChannelIntroOutro: 'not-yet-ported',
+    playlistQuickRemove: 'not-yet-ported',
+    playlistSearch: 'not-yet-ported',
+    premiumLiveChat: 'not-yet-ported',
+    presetFocus: 'intentional-extension-only',
+    presetPowerUser: 'intentional-extension-only',
+    presetPrivacy: 'intentional-extension-only',
+    presetResearcher: 'intentional-extension-only',
+    qualityProfileMatrix: 'intentional-extension-only',
+    reactionSpammer: 'unsafe-in-userscript',
+    rectangularizeYouTube: 'not-yet-ported',
+    redditComments: 'unsafe-in-userscript',
+    reducedMotion: 'intentional-extension-only',
+    researchSpacedReview: 'not-yet-ported',
+    researchTranscriptIndex: 'not-yet-ported',
+    researchTranscriptSearchPanel: 'not-yet-ported',
+    restoreNativeYouTubeUi: 'not-yet-ported',
+    sbPerChannelProfiles: 'not-yet-ported',
+    selectorHealthPanel: 'intentional-extension-only',
+    sleepTimer: 'not-yet-ported',
+    storageQuotaLRU: 'chrome-api',
+    subtitleDownload: 'native-companion',
+    titleCaseTransform: 'not-yet-ported',
+    tokenThemeBridge: 'intentional-extension-only',
+    transcriptAiHandoff: 'unsafe-in-userscript',
+    videoAgeColors: 'not-yet-ported',
+    videoFlip: 'not-yet-ported',
+    videoRotation: 'not-yet-ported',
+    vlcMpvHandoff: 'native-companion',
+    volumeBoost: 'not-yet-ported',
+    volumeBoostLevel: 'not-yet-ported',
+    volumeWheelMode: 'not-yet-ported',
+    watchHistoryAnalytics: 'not-yet-ported',
+    watchLaterCleanup: 'not-yet-ported',
+    watchPageTabs: 'not-yet-ported',
+    wheelSeek: 'not-yet-ported',
+    zenMode: 'not-yet-ported',
+});
+
+for (const [featureId, parityClass] of Object.entries(EXTENSION_ONLY_FEATURE_CLASSIFICATIONS)) {
+    if (!PARITY_CLASSES.has(parityClass)) {
+        errors.push(`Extension-only feature "${featureId}" uses invalid parity class "${parityClass}"`);
+    }
+}
+for (const [modulePath, parityClass] of Object.entries(EXTENSION_ONLY_MANIFEST_MODULES)) {
+    if (!PARITY_CLASSES.has(parityClass)) {
+        errors.push(`Extension-only module "${modulePath}" uses invalid parity class "${parityClass}"`);
+    }
+}
 
 for (const js of manifestJsFiles) {
     if (!js.startsWith('features/')) continue;
-    if (EXTENSION_ONLY_FEATURES.has(js)) continue;
+    if (Object.hasOwn(EXTENSION_ONLY_MANIFEST_MODULES, js)) continue;
     const relative = 'extension/' + js;
     if (!bundleSet.has(relative)) {
         errors.push(`Manifest content_scripts includes "${js}" but V5_BUNDLE_MODULES does not — add it to sync-userscript.js or document the exclusion`);
@@ -127,10 +239,39 @@ if (fs.existsSync(featuresDir)) {
     }
 }
 
+for (const id of String(process.env.ASTRA_USERSCRIPT_DRIFT_INJECT_EXTENSION_IDS || '').split(/[,\s]+/)) {
+    if (/^[a-zA-Z][a-zA-Z0-9]*$/.test(id)) extIds.add(id);
+}
+
 const { resolveUserscriptPath: resolveUs } = require(path.join(REPO_ROOT, 'scripts', 'repo-paths'));
 const usIds = extractFeatureIds(resolveUs(REPO_ROOT));
 const parity = extIds.size > 0 ? Math.round((usIds.size / extIds.size) * 100) : 0;
 const extOnly = [...extIds].filter(id => !usIds.has(id)).sort();
+
+const parityClassCounts = Object.fromEntries(PARITY_CLASS_ORDER.map(cls => [cls, 0]));
+const unclassifiedExtOnly = [];
+for (const id of extOnly) {
+    const parityClass = EXTENSION_ONLY_FEATURE_CLASSIFICATIONS[id];
+    if (!parityClass) {
+        unclassifiedExtOnly.push(id);
+    } else if (PARITY_CLASSES.has(parityClass)) {
+        parityClassCounts[parityClass] += 1;
+    }
+}
+if (unclassifiedExtOnly.length) {
+    errors.push(`Unclassified extension-only feature ID(s): ${unclassifiedExtOnly.join(', ')}. Add a ${PARITY_CLASS_ORDER.join('|')} entry to EXTENSION_ONLY_FEATURE_CLASSIFICATIONS.`);
+}
+
+const staleClassifications = Object.keys(EXTENSION_ONLY_FEATURE_CLASSIFICATIONS)
+    .filter(id => !extOnly.includes(id))
+    .sort();
+if (staleClassifications.length) {
+    errors.push(`Stale extension-only feature classification(s): ${staleClassifications.join(', ')}. Remove entries after porting or deleting features.`);
+}
+
+const classSummary = PARITY_CLASS_ORDER
+    .map(cls => `${cls}=${parityClassCounts[cls]}`)
+    .join(', ');
 
 // ── Report ──
 
@@ -140,6 +281,7 @@ if (errors.length === 0) {
     console.log(`[check-userscript-drift] ${manifestFeatures.length} manifest feature module(s) covered by V5_BUNDLE_MODULES`);
     console.log(`[check-userscript-drift] Userscript bundle markers present`);
     console.log(`[check-userscript-drift] Feature-ID parity: ${usIds.size}/${extIds.size} (${parity}%) — ${extOnly.length} extension-only`);
+    console.log(`[check-userscript-drift] Extension-only classifications: ${classSummary}`);
     process.exit(0);
 }
 
