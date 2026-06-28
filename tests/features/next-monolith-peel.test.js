@@ -153,6 +153,9 @@ test('downloadUI factory returns all required exports', () => {
     assert.equal(typeof result._closeDlPopup, 'function');
     assert.equal(typeof result._mediaDLSendDownload, 'function');
     assert.equal(typeof result._fetchServerConfig, 'function');
+    assert.equal(typeof result.classifyDownloaderFailureResponse, 'function');
+    assert.equal(typeof result.showDownloaderFailure, 'function');
+    assert.equal(typeof result.showNativeChannelRequired, 'function');
 });
 
 test('downloadUI MediaDLManager prefers native messaging token over /health token echo', async () => {
@@ -219,6 +222,82 @@ test('downloadUI MediaDLManager falls back to legacy /health token when native m
     assert.equal(status.nativeTokenError, 'host missing');
     assert.equal(calls.length, 1);
     assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
+});
+
+test('downloadUI MediaDLManager reports native-channel-required when legacy health token echo is disabled', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'host missing' }),
+        extensionFetchJson: async (details) => {
+            calls.push(details);
+            if (calls.length > 1) throw new Error('closed');
+            return {
+                data: {
+                    service: 'astra-downloader',
+                    token_required: true,
+                    legacyTokenEcho: false,
+                    nativeChannelRequired: true,
+                    port: 9751,
+                    version: '1.6.0',
+                    downloads: 0,
+                },
+            };
+        },
+        DebugManager: { log() {} },
+    });
+
+    const status = await result.MediaDLManager.check(true);
+
+    assert.equal(status.ok, false);
+    assert.equal(status.nativeChannelRequired, true);
+    assert.equal(status.nativeTokenError, 'host missing');
+    assert.equal(status.tokenSource, 'native-required');
+    assert.equal(status.version, '1.6.0');
+    assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
+});
+
+test('downloadUI native-channel-required failures show recovery copy without install prompt', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const toasts = [];
+    const diagnostics = [];
+    const protocolLaunches = [];
+    let healthCalls = 0;
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'host missing' }),
+        extensionFetchJson: async () => {
+            healthCalls += 1;
+            if (healthCalls > 1) throw new Error('closed');
+            return {
+                data: {
+                    service: 'astra-downloader',
+                    token_required: true,
+                    legacyTokenEcho: false,
+                    nativeChannelRequired: true,
+                    port: 9751,
+                    version: '1.6.0',
+                },
+            };
+        },
+        showToast: (...args) => { toasts.push(args); },
+        openProtocol: (url) => { protocolLaunches.push(url); },
+        DiagnosticLog: { record: (...args) => diagnostics.push(args) },
+        DebugManager: { log() {} },
+    });
+
+    await result.ytKitDownload('https://www.youtube.com/watch?v=abcdefghijk', false);
+
+    assert.equal(protocolLaunches.length, 0);
+    assert.ok(toasts.some(([message]) => /browser native messaging/i.test(message)));
+    assert.ok(toasts.some(([message]) => /native host registration/i.test(message)));
+    assert.ok(toasts.some(([message]) => /host missing/i.test(message)));
+    assert.ok(diagnostics.some(([kind, detail]) => kind === 'download-failure' && /native-channel-required/.test(detail)));
 });
 
 test('downloadUI classifies companion failure codes into recovery copy', () => {
