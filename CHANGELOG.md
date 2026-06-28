@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.11 legacy health token echo switch.** Astra Downloader now has a
+  `LegacyHealthTokenEcho` / `ASTRA_LEGACY_HEALTH_TOKEN_ECHO=0` cutover gate
+  that suppresses `/health` token disclosure for non-native callers, and the
+  extension reports a `native-channel-required` recovery path instead of a
+  misleading install prompt.
 - **Fix: v4.46.10 downloader failure recovery codes.** Astra Downloader now
   classifies PO-token, provider-staleness, SABR, Deno, sign-in, ffmpeg, and
   network failures with stable `error_code` values; the extension and

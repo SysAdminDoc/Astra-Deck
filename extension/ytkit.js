@@ -727,7 +727,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.10';
+    const YTKIT_VERSION = '4.46.11';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2482,6 +2482,7 @@ return response;
         _token: null,
         _tokenSource: null,
         _nativeTokenError: null,
+        _nativeChannelRequired: false,
         _lastCheck: 0,
         _serverVersion: null,
         _autoStartAttempted: false,
@@ -2539,6 +2540,7 @@ return response;
                     token: this._token,
                     tokenSource: this._tokenSource || 'legacy-health',
                     nativeTokenError: this._nativeTokenError,
+                    nativeChannelRequired: this._nativeChannelRequired,
                     version: this._serverVersion,
                     port: this._port
                 };
@@ -2573,11 +2575,24 @@ return response;
 
             // Try previously-known port first, then all others.
             const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
+            let nativeRequiredStatus = null;
             for (const port of order) {
                 const data = await tryPort(port);
                 if (data) {
                     const token = nativeToken.token || data.token || null;
                     if (!token) {
+                        if (data.nativeChannelRequired === true || data.legacyTokenEcho === false) {
+                            nativeRequiredStatus = {
+                                ok: false,
+                                nativeChannelRequired: true,
+                                nativeTokenError: nativeToken.error,
+                                tokenSource: 'native-required',
+                                version: data.version || null,
+                                port,
+                            };
+                            DebugManager.log('MediaDL', `Astra Downloader on port ${port} requires native messaging for token bootstrap (${nativeToken.error || 'no native token'})`);
+                            continue;
+                        }
                         DebugManager.log('MediaDL', `Astra Downloader on port ${port} did not provide an auth token`);
                         continue;
                     }
@@ -2586,6 +2601,7 @@ return response;
                     this._token = token;
                     this._tokenSource = nativeToken.token ? 'native' : 'legacy-health';
                     this._nativeTokenError = nativeToken.token ? null : nativeToken.error;
+                    this._nativeChannelRequired = false;
                     this._serverVersion = data.version || null;
                     this._lastCheck = now;
                     DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, auth=${this._tokenSource}, ${data.downloads || 0} active)`);
@@ -2594,16 +2610,30 @@ return response;
                         token,
                         tokenSource: this._tokenSource,
                         nativeTokenError: this._nativeTokenError,
+                        nativeChannelRequired: false,
                         version: this._serverVersion,
                         port
                     };
                 }
             }
 
+            if (nativeRequiredStatus) {
+                this._port = nativeRequiredStatus.port;
+                this._status = 'native-required';
+                this._token = null;
+                this._tokenSource = null;
+                this._nativeTokenError = nativeRequiredStatus.nativeTokenError;
+                this._nativeChannelRequired = true;
+                this._serverVersion = nativeRequiredStatus.version || null;
+                this._lastCheck = now;
+                return nativeRequiredStatus;
+            }
+
             this._status = 'not-installed';
             this._token = null;
             this._tokenSource = null;
             this._nativeTokenError = nativeToken.error;
+            this._nativeChannelRequired = false;
             return { ok: false };
         },
 
@@ -2682,9 +2712,11 @@ return response;
         // `retries` times. If the protocol handler isn't registered, the browser
         // silently ignores it — no error dialog.
         async tryAutoStart(retries = 4) {
+            const current = await this.check(true);
+            if (current.ok || current.nativeChannelRequired) return current;
             if (this._autoStartAttempted) {
                 // Already tried this session — just do a single quick recheck
-                return this.check(true);
+                return current;
             }
             this._autoStartAttempted = true;
             DebugManager.log('MediaDL', 'Attempting auto-start via mediadl:// protocol…');
@@ -2698,6 +2730,7 @@ return response;
                     showToast(t('toastDlStarted', 'Astra Downloader started!'), '#22c55e', { duration: 2 });
                     return result;
                 }
+                if (result.nativeChannelRequired) return result;
             }
             DebugManager.log('MediaDL', 'Auto-start failed — server did not respond');
             return { ok: false };
@@ -2705,7 +2738,7 @@ return response;
 
         // Reset auto-start flag so the next download re-attempts.
         // Called from the "Retry" button after user installs.
-        resetAutoStart() { this._autoStartAttempted = false; this._status = null; },
+        resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; },
 
         async copyInstallCommand() {
             try {
@@ -3037,6 +3070,12 @@ return response;
             tone: '#ef4444',
             duration: 8,
         },
+        'native-channel-required': {
+            message: 'Astra Downloader needs browser native messaging to share its private token.',
+            advice: 'Reload the extension, verify the native host registration, then retry.',
+            tone: '#f59e0b',
+            duration: 12,
+        },
     });
 
     function classifyDownloaderFailureResponse(resp = {}) {
@@ -3064,6 +3103,16 @@ return response;
         return failure;
     }
 
+    function showNativeChannelRequired(status = {}) {
+        const reason = status.nativeTokenError ? ` Native error: ${status.nativeTokenError}` : '';
+        return showDownloaderFailure({
+            error_code: 'native-channel-required',
+            error: 'Astra Downloader needs browser native messaging to share its private token.',
+            advice: `Reload the extension, verify the native host registration, then retry.${reason}`,
+            next_action: 'repair-native-host',
+        });
+    }
+
     async function ytKitDownload(videoUrl, audioOnly, opts = {}) {
         if (_downloadInProgress) {
             showToast(t('toastDlInProgress', 'A download is already in progress.'), '#f59e0b', { duration: 3 });
@@ -3074,10 +3123,16 @@ return response;
         showToast(audioOnly ? 'Preparing your audio download…' : 'Preparing your video download…', '#3b82f6', { duration: 2 });
 
         let mdl = await MediaDLManager.check(true);
-        if (!mdl.ok) {
+        if (!mdl.ok && !mdl.nativeChannelRequired) {
             mdl = await MediaDLManager.tryAutoStart();
         }
         if (!mdl.ok) {
+            if (mdl.nativeChannelRequired) {
+                DebugManager.log('Download', `Astra Downloader requires native messaging token bootstrap (${mdl.nativeTokenError || 'no native token'})`);
+                showNativeChannelRequired(mdl);
+                _downloadInProgress = false;
+                return;
+            }
             DebugManager.log('Download', 'Local yt-dlp server unavailable');
             showToast(t('toastDlInstallPrompt', 'Install Astra Downloader to enable downloads.'), '#f59e0b', { duration: 4 });
             if (!storageRead('ytkit_mediadl_prompt_dismissed', false)) {

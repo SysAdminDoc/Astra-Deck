@@ -151,6 +151,19 @@ COMPANION_UPDATE_MIN_BYTES = 1024
 # not be able to fill the disk before the SHA-256 check ever runs.
 HELPER_DOWNLOAD_MAX_BYTES = 500 * 1024 * 1024  # 500 MB
 
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    lowered = str(value).strip().lower()
+    if lowered in ("1", "true", "yes", "on"):
+        return True
+    if lowered in ("0", "false", "no", "off"):
+        return False
+    return default
+
+
 DEFAULT_CONFIG = {
     # v1.2.2: default to the profile's Videos folder directly (was Videos/YouTube
     # subfolder). Premiere/Resolve/FCP users typically import straight out of
@@ -160,6 +173,7 @@ DEFAULT_CONFIG = {
     "AudioDownloadPath": "",
     "ServerPort": SERVER_PORT,
     "ServerToken": "",
+    "LegacyHealthTokenEcho": env_bool("ASTRA_LEGACY_HEALTH_TOKEN_ECHO", True),
     "EmbedMetadata": True,
     "EmbedThumbnail": True,
     "EmbedChapters": True,
@@ -1829,7 +1843,7 @@ def sanitize_config(raw):
     data["ServerToken"] = token if re.fullmatch(r'[A-Za-z0-9_\-]{16,128}', token) else uuid.uuid4().hex
     for key in ("EmbedMetadata", "EmbedThumbnail", "EmbedChapters", "EmbedSubs",
                 "SponsorBlock", "AutoUpdateYtDlp",
-                "StartMinimized", "CloseToTray"):
+                "StartMinimized", "CloseToTray", "LegacyHealthTokenEcho"):
         data[key] = coerce_bool(data.get(key), DEFAULT_CONFIG[key])
     data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))
     data["SponsorBlockAction"] = "mark" if data.get("SponsorBlockAction") == "mark" else "remove"
@@ -3525,6 +3539,10 @@ def create_api(config, dl_manager, history):
     api.config['MAX_CONTENT_LENGTH'] = MAX_REQUEST_BYTES
 
     token = config.get("ServerToken")
+    legacy_health_token_echo = coerce_bool(
+        config.get("LegacyHealthTokenEcho", DEFAULT_CONFIG["LegacyHealthTokenEcho"]),
+        DEFAULT_CONFIG["LegacyHealthTokenEcho"],
+    )
     # v1.2.0: token-bucket rate limit on /download. Other endpoints are
     # cheap and read-only; we don't limit them (local-only service, no
     # realistic DoS vector beyond /download work queue).
@@ -3633,6 +3651,8 @@ def create_api(config, dl_manager, history):
             "port": clamp_int(config.get("ServerPort", SERVER_PORT), SERVER_PORT, 1024, 65535),
             "downloads": dl_manager.active_count(),
             "token_required": True,
+            "legacyTokenEcho": legacy_health_token_echo,
+            "nativeChannelRequired": not legacy_health_token_echo,
             # v1.2.0: surface tool versions so the extension can show
             # "yt-dlp 2026.04.01" in the repair panel + warn on stale binaries.
             "ytDlpVersion": get_ytdlp_version(),
@@ -3683,7 +3703,8 @@ def create_api(config, dl_manager, history):
         if token_source:
             resp["tokenSource"] = token_source
         if (
-            token_source != "native"
+            legacy_health_token_echo
+            and token_source != "native"
             and request.headers.get("X-MDL-Client") == "MediaDL"
             and (not origin or is_extension_origin(origin))
         ):
