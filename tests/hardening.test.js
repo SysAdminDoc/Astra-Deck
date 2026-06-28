@@ -428,6 +428,51 @@ test('quality forcer uses MAIN-world setPlaybackQualityRange, not gear-menu DOM 
     assert.match(mainSource, /\/premium\/i/, 'MAIN bridge must detect Premium-labelled qualityLabel entries');
 });
 
+test('player-state retry manager is loaded before MAIN-world quality bridge', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+    const mainEntry = manifest.content_scripts.find(entry => entry.world === 'MAIN');
+    assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
+    assert.deepEqual(mainEntry.js.slice(0, 2), ['core/player.js', 'ytkit-main.js'],
+        'core/player.js must load before ytkit-main.js in MAIN world');
+
+    const playerCore = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'player.js'), 'utf8');
+    assert.match(playerCore, /createPlayerTaskManager/,
+        'core/player.js must expose the shared player task manager');
+    assert.match(playerCore, /yt-navigate-start/,
+        'manager must cancel stale retries when YouTube starts SPA navigation');
+    assert.match(playerCore, /loadedmetadata/,
+        'manager must reapply registered tasks on media readiness');
+    assert.match(playerCore, /yt-player-state-change/,
+        'manager must reapply registered tasks on player-state changes');
+});
+
+test('player-facing features schedule through the shared player task manager', () => {
+    const mainSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
+        'utf8'
+    );
+    assert.match(mainSource, /PlayerTaskManager\.schedule\('ytkit-main:autoMaxResolution'/,
+        'MAIN quality forcing must run through the shared player task manager');
+    assert.match(mainSource, /PlayerTaskManager\.schedule\('ytkit-main:contextQuality'/,
+        'per-context quality forcing must run through the shared player task manager');
+
+    for (const [featureId, taskId] of [
+        ['persistentSpeed', 'feature:persistentSpeed'],
+        ['autoTheaterMode', 'feature:autoTheaterMode'],
+        ['theaterAutoScroll', 'feature:theaterAutoScroll'],
+        ['initialPlayerStateForeground', 'feature:initialPlayerStateForeground'],
+        ['initialPlayerStateBackground', 'feature:initialPlayerStateBackground']
+    ]) {
+        const start = ytkitSource.indexOf(`id: '${featureId}'`);
+        assert.ok(start > -1, `${featureId} must exist`);
+        const block = ytkitSource.slice(start, start + 3500);
+        assert.match(block, new RegExp(`schedulePlayerTask\\(this\\._taskId|schedulePlayerTask\\('${taskId}'`),
+            `${featureId} must schedule through schedulePlayerTask`);
+        assert.match(block, new RegExp(`cancelPlayerTask\\(this\\._taskId\\)|cancelPlayerTask\\('${taskId}'`),
+            `${featureId} must cancel its player task on destroy`);
+    }
+});
+
 test('audio track language does not drive the native player settings menu', () => {
     const start = ytkitSource.indexOf("id: 'audioTrackLanguage'");
     // Bound the slice to the next feature object, not the end of the array —
@@ -6611,6 +6656,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/player.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
@@ -6713,6 +6759,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/player.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
