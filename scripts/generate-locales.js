@@ -33,10 +33,10 @@ const en = JSON.parse(fs.readFileSync(EN_PATH, 'utf8'));
 
 // LOCALES: locale-code → { language label in own script, translations map }
 // Each translations map is keyed by English message → translated message.
-// Keys in messages.json that don't have an entry in the map fall back to
-// the English text (chrome.i18n behavior is to skip a locale's missing
-// keys and look at default_locale, so falling back inside the locale file
-// is just a safety belt).
+// Keys in messages.json that don't have an entry in the map preserve the
+// checked-in locale string when one already exists, otherwise they fall back to
+// the English text. This keeps the generator from wiping proofed strings added
+// directly to locale files during earlier translation passes.
 
 const T = {};
 
@@ -1408,24 +1408,45 @@ const PROOFED_FEATURE_TRANSLATION_OVERRIDES = {
   }
 };
 
-// Generate locale files. For every key in en/messages.json, look up the
-// English message in the locale's translation table; fall back to the
-// English value if no translation exists (chrome.i18n then falls back
-// to default_locale at runtime, so this is just clearer for translators).
+function readExistingLocale(locale) {
+    const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (_) {
+        // reason: new locales have no existing messages file yet.
+        return {};
+    }
+}
+
+// Generate locale files. For every key in en/messages.json, preserve an
+// existing translated/proofed locale message first. Explicit translation-table
+// entries fill keys that are missing or still equal to EN, then English is the
+// final fallback for brand-new strings.
 for (const locale of Object.keys(T)) {
     const out = {};
+    const existingLocale = readExistingLocale(locale);
     const translationMap = {
         ...T[locale],
         ...(PROOFED_FEATURE_TRANSLATION_OVERRIDES[locale] || {})
     };
+    let mappedCount = 0;
+    let preservedCount = 0;
     for (const [key, entry] of Object.entries(en)) {
         const enMsg = entry.message;
-        const translated = translationMap[enMsg];
-        const outMsg = translated || enMsg;
+        const hasMappedTranslation = Object.prototype.hasOwnProperty.call(translationMap, enMsg);
+        const existingMsg = typeof existingLocale[key]?.message === 'string'
+            ? existingLocale[key].message
+            : '';
+        const hasExistingTranslation = existingMsg && existingMsg !== enMsg;
+        const outMsg = hasExistingTranslation
+            ? existingMsg
+            : (hasMappedTranslation ? translationMap[enMsg] : (existingMsg || enMsg));
         const missingTerms = missingProtectedTerms(enMsg, outMsg);
         if (missingTerms.length) {
             throw new Error(`${locale}:${key} translation must preserve do-not-translate term(s): ${missingTerms.join(', ')}`);
         }
+        if (hasExistingTranslation) preservedCount += 1;
+        else if (hasMappedTranslation) mappedCount += 1;
         const obj = { message: outMsg };
         if (entry.description) obj.description = entry.description;
         out[key] = obj;
@@ -1434,6 +1455,6 @@ for (const locale of Object.keys(T)) {
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, 'messages.json');
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n');
-    const translatedCount = Object.entries(en).filter(([, v]) => translationMap[v.message]).length;
-    console.log(`${locale}: wrote ${Object.keys(out).length} keys (${translatedCount} translated, ${Object.keys(out).length - translatedCount} fall through to English; ${DO_NOT_TRANSLATE_TERMS.length} protected terms checked)`);
+    const translatedCount = mappedCount + preservedCount;
+    console.log(`${locale}: wrote ${Object.keys(out).length} keys (${translatedCount} translated/preserved, ${Object.keys(out).length - translatedCount} fall through to English; ${DO_NOT_TRANSLATE_TERMS.length} protected terms checked)`);
 }
