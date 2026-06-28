@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chore: v4.46.12 userscript parity classification gate.** The userscript
+  drift checker now classifies all extension-only feature IDs as chrome API,
+  native companion, unsafe in userscript, intentional extension-only, or
+  not-yet-ported; new unclassified IDs now fail local checks with the allowed
+  class list.
 - **Fix: v4.46.11 legacy health token echo switch.** Astra Downloader now has a
   `LegacyHealthTokenEcho` / `ASTRA_LEGACY_HEALTH_TOKEN_ECHO=0` cutover gate
   that suppresses `/health` token disclosure for non-native callers, and the
