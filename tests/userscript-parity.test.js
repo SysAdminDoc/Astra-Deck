@@ -29,6 +29,46 @@ test('userscript hardens blank-target navigation and CPU tamer cleanup', () => {
     assert.match(userscriptSource, /clearInterval\.call\(window,\s*this\._pumpInterval\)/);
 });
 
+test('userscript pauseOtherTabs guards BroadcastChannel failures', () => {
+    const start = userscriptSource.indexOf("id: 'pauseOtherTabs'");
+    assert.ok(start > -1, 'userscript must include pauseOtherTabs');
+    const end = userscriptSource.indexOf("id: 'abLoop'", start);
+    assert.ok(end > start, 'pauseOtherTabs block must end before abLoop');
+    const block = userscriptSource.slice(start, end);
+
+    assert.match(block, /_recordChannelFailure\(operation,\s*error\)/);
+    assert.match(block, /_openChannel\(\)/);
+    assert.match(block, /typeof BroadcastChannel\s*!==\s*'function'/);
+    assert.match(block, /DiagnosticLog\?\.record\?\.\('broadcast-channel'/);
+    assert.match(block, /if \(!this\._channel\) return;/);
+    assert.match(block, /_broadcastPause\(\)/);
+    assert.match(block, /_recordChannelFailure\('postMessage'/);
+});
+
+test('userscript ports safe DOM and CSS parity batch', () => {
+    for (const featureId of [
+        'titleCaseTransform',
+        'customSelectionColor',
+        'bypassPlaylistMode',
+        'videoRotation',
+        'videoFlip'
+    ]) {
+        assert.match(userscriptSource, new RegExp(`id: '${featureId}'`),
+            `userscript must include ${featureId}`);
+    }
+
+    assert.match(userscriptSource, /text-transform:\s*\$\{transform\}/,
+        'titleCaseTransform must write the selected CSS text-transform');
+    assert.match(userscriptSource, /buildSelectionColorCss/,
+        'customSelectionColor must reuse the shared theme CSS builder when available');
+    assert.match(userscriptSource, /url\.searchParams\.delete\('list'\)/,
+        'bypassPlaylistMode must remove playlist query parameters');
+    assert.match(userscriptSource, /settingKey:\s*'videoRotationAngle'/,
+        'videoRotation must be wired to the existing setting key');
+    assert.match(userscriptSource, /settingKey:\s*'videoFlipMode'/,
+        'videoFlip must be wired to the existing setting key');
+});
+
 test('userscript ships videoNotes defaults and local notes runtime', () => {
     assert.match(userscriptSource, /videoNotes:\s*false/);
     assert.match(userscriptSource, /videoNotesData:\s*\{\}/);

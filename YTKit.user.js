@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.46.15
+// @name         YTKit v4.46.16
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.46.15
+// @version      4.46.16
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -18717,7 +18717,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.15';
+    const YTKIT_VERSION = '4.46.16';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -26258,28 +26258,58 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _channel: null,
             _playHandler: null,
 
-            init() {
-                this._channel = new BroadcastChannel('ytkit-pause-sync');
-                this._channel.onmessage = (e) => {
-                    if (e.data === 'pause') {
-                        const video = document.querySelector('video.html5-main-video');
-                        if (video && !video.paused) {
-                            video.__ytkit_pausedByBroadcast = true;
-                            video.pause();
-                        }
+            _recordChannelFailure(operation, error) {
+                const reason = error?.name || error?.message || 'unavailable';
+                console.warn(`[YTKit] pauseOtherTabs BroadcastChannel ${operation} failed; cross-tab pause sync is degraded.`, error);
+                DiagnosticLog?.record?.('broadcast-channel', `pauseOtherTabs ${operation} failed; cross-tab pause sync degraded: ${reason}`);
+            },
+            _openChannel() {
+                try {
+                    if (typeof BroadcastChannel !== 'function') {
+                        throw new Error('BroadcastChannel unavailable');
                     }
-                };
+                    const channel = new BroadcastChannel('ytkit-pause-sync');
+                    channel.onmessage = (e) => {
+                        if (e.data === 'pause') {
+                            const video = document.querySelector('video.html5-main-video');
+                            if (video && !video.paused) {
+                                video.__ytkit_pausedByBroadcast = true;
+                                video.pause();
+                            }
+                        }
+                    };
+                    return channel;
+                } catch (error) {
+                    this._recordChannelFailure('open', error);
+                    return null;
+                }
+            },
+            _broadcastPause() {
+                if (!this._channel) return;
+                try {
+                    this._channel.postMessage('pause');
+                } catch (error) {
+                    this._recordChannelFailure('postMessage', error);
+                    try { this._channel.close(); } catch (_) { /* reason: channel already unusable */ }
+                    this._channel = null;
+                }
+            },
+            init() {
+                this._channel = this._openChannel();
+                if (!this._channel) return;
                 this._playHandler = () => {
                     // Clear broadcast-paused flag since user is playing in this tab now
                     const video = document.querySelector('video.html5-main-video');
                     if (video) delete video.__ytkit_pausedByBroadcast;
-                    this._channel.postMessage('pause');
+                    this._broadcastPause();
                 };
                 document.addEventListener('play', this._playHandler, true);
             },
             destroy() {
-                document.removeEventListener('play', this._playHandler, true);
-                this._channel?.close(); this._channel = null;
+                if (this._playHandler) document.removeEventListener('play', this._playHandler, true);
+                this._playHandler = null;
+                try { this._channel?.close(); } catch (_) { /* reason: degraded BroadcastChannel may throw on close */ }
+                this._channel = null;
             }
         },
 
@@ -32322,6 +32352,173 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         cssFeature('squareAvatars', 'Square Avatars', 'Make channel avatars square instead of round', 'Theme', 'user',
             'yt-img-shadow, #avatar-link, #author-thumbnail, ytd-channel-avatar-editor img, yt-img-shadow img, .yt-spec-avatar-shape--circle { border-radius: 0 !important; }'),
+
+        {
+            id: 'titleCaseTransform',
+            name: 'Transform Video Title Case',
+            description: 'Override clickbait uppercase titles with a casing style of your choice',
+            group: 'Home / Subscriptions',
+            icon: 'case-sensitive',
+            type: 'select',
+            options: {
+                'none': 'Keep original',
+                'uppercase': 'UPPERCASE',
+                'lowercase': 'lowercase',
+                'capitalize': 'Capitalize Each Word'
+            },
+            settingKey: 'titleCaseMode',
+            _styleEl: null,
+            init() {
+                const mode = appState.settings.titleCaseMode || 'none';
+                let transform = 'none';
+                if (mode === 'uppercase') transform = 'uppercase';
+                else if (mode === 'lowercase') transform = 'lowercase';
+                else if (mode === 'capitalize') transform = 'capitalize';
+                const css = `
+                    #video-title, ytd-rich-grid-media #video-title,
+                    ytd-compact-video-renderer #video-title,
+                    ytd-watch-metadata h1.ytd-watch-metadata,
+                    ytd-video-primary-info-renderer h1 {
+                        text-transform: ${transform} !important;
+                    }
+                `;
+                this._styleEl = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'customSelectionColor',
+            name: 'Custom Text Selection Color',
+            description: 'Override the default text-selection background with your chosen color',
+            group: 'Theme',
+            icon: 'palette',
+            type: 'color',
+            settingKey: 'selectionColor',
+            _styleEl: null,
+            init() {
+                const mod = globalThis.YTKitFeatures?.themeCss?.buildSelectionColorCss;
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod(appState.settings);
+                } else {
+                    const color = appState.settings.selectionColor || '#2dd36f';
+                    css = `
+                    ::selection { background: ${color} !important; color: #000 !important; }
+                    ::-moz-selection { background: ${color} !important; color: #000 !important; }
+                `;
+                }
+                this._styleEl = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'bypassPlaylistMode',
+            name: 'Bypass Playlist Mode on Clicks',
+            description: 'Strip playlist parameters from thumbnail clicks so watch pages open standalone',
+            group: 'Navigation',
+            icon: 'list-x',
+            _onClick: null,
+            init() {
+                this._onClick = (e) => {
+                    const a = e.target?.closest?.('a#thumbnail, a.ytd-thumbnail, a[href*="/watch?"]');
+                    if (!a || !a.href) return;
+                    try {
+                        const url = new URL(a.href, window.location.href);
+                        if (!url.pathname.startsWith('/watch')) return;
+                        if (!url.searchParams.has('list')) return;
+                        url.searchParams.delete('list');
+                        url.searchParams.delete('index');
+                        url.searchParams.delete('pp');
+                        a.href = url.toString();
+                    } catch (_) {
+                        // reason: nonstandard or cross-origin anchor; leave it alone
+                    }
+                };
+                document.addEventListener('click', this._onClick, true);
+            },
+            destroy() {
+                if (this._onClick) {
+                    document.removeEventListener('click', this._onClick, true);
+                    this._onClick = null;
+                }
+            }
+        },
+        {
+            id: 'videoRotation',
+            name: 'Video Rotation',
+            description: 'Rotate the video 90, 180, or 270 degrees via CSS transform',
+            group: 'Video Player',
+            icon: 'rotate-cw',
+            type: 'select',
+            options: [
+                { value: 0, label: '0 deg (normal)' },
+                { value: 90, label: '90 deg clockwise' },
+                { value: 180, label: '180 deg flip' },
+                { value: 270, label: '270 deg counter-clockwise' },
+            ],
+            settingKey: 'videoRotationAngle',
+            _styleEl: null,
+            _navRule: null,
+            _apply() {
+                const raw = parseInt(appState.settings.videoRotationAngle, 10) || 0;
+                const angle = [0, 90, 180, 270].includes(raw) ? raw : 0;
+                const css = angle === 0
+                    ? `.html5-main-video { transform: none !important; }`
+                    : `.html5-main-video {
+                        transform: rotate(${angle}deg) ${angle % 180 !== 0 ? 'scale(0.5625)' : ''} !important;
+                        transform-origin: center center !important;
+                    }`;
+                if (this._styleEl) this._styleEl.textContent = css;
+                else this._styleEl = injectStyle(css, this.id, true);
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('videoRotation', this._navRule);
+            },
+            destroy() {
+                this._styleEl?.remove(); this._styleEl = null;
+                removeNavigateRule('videoRotation');
+                this._navRule = null;
+            }
+        },
+        {
+            id: 'videoFlip',
+            name: 'Video Flip',
+            description: 'Mirror the video horizontally or vertically',
+            group: 'Video Player',
+            icon: 'flip-horizontal',
+            type: 'select',
+            options: [
+                { value: 'none', label: 'None' },
+                { value: 'horizontal', label: 'Horizontal' },
+                { value: 'vertical', label: 'Vertical' },
+                { value: 'both', label: 'Both' },
+            ],
+            settingKey: 'videoFlipMode',
+            _styleEl: null,
+            _navRule: null,
+            _apply() {
+                const mode = appState.settings.videoFlipMode || 'none';
+                const scaleMap = { none: null, horizontal: '-1 1', vertical: '1 -1', both: '-1 -1' };
+                const scaleValue = scaleMap[mode] || null;
+                const css = scaleValue
+                    ? `.html5-main-video { scale: ${scaleValue} !important; }`
+                    : `.html5-main-video { scale: 1 1 !important; }`;
+                if (this._styleEl) this._styleEl.textContent = css;
+                else this._styleEl = injectStyle(css, this.id, true);
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('videoFlip', this._navRule);
+            },
+            destroy() {
+                this._styleEl?.remove(); this._styleEl = null;
+                removeNavigateRule('videoFlip');
+                this._navRule = null;
+            }
+        },
 
         // ── Fit Player to Window ──
         {

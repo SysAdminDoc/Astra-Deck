@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: v4.46.16 userscript parity reduction.** The standalone userscript
+  now carries five safe DOM/CSS controls from the extension runtime, mirrors
+  the guarded `pauseOtherTabs` BroadcastChannel degradation path, and the drift
+  checker caps the remaining `not-yet-ported` parity backlog at 19 classified
+  items.
 - **Fix: v4.46.15 storage-denied hardening.** `pauseOtherTabs` now degrades
   cleanly when `BroadcastChannel` is blocked, and the crash-loop guard keeps
   a storage-backed or in-memory safe-mode path when browser privacy settings
