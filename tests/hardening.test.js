@@ -1716,11 +1716,11 @@ test('theater-split teardown calls abortDividerDrag to handle SPA-nav mid-drag',
 
 // ── v3.20.4 H10: scripts/check-versions.js — pre-push version drift check ──
 //
-// .github/workflows/build.yml validates version-string consistency only
-// after a tag push. A developer who bumps most sources locally
-// (e.g. forgets to run `node sync-userscript.js`) won't notice until CI
-// fails post-tag. H10 ports the same check into a local `npm run check`
-// hook so drift is caught pre-push.
+// Product builds are local-only. A developer who bumps most sources locally
+// (e.g. forgets to run `node sync-userscript.js`) must catch that before
+// building or tagging. H10 keeps the local `npm run check` hook as the
+// version-source gate; v4.46.14 also makes it fail on stale active docs that
+// still describe retired hosted workflow paths.
 
 test('check-versions.js exists and is wired into npm run check', () => {
     const scriptPath = path.join(__dirname, '..', 'scripts', 'check-versions.js');
@@ -1732,6 +1732,14 @@ test('check-versions.js exists and is wired into npm run check', () => {
     assert.match(scriptSource, /readManifestVersion/, 'must read extension/manifest.json version');
     assert.match(scriptSource, /readYtkitVersion/, 'must read extension/ytkit.js YTKIT_VERSION');
     assert.match(scriptSource, /readUserscriptVersion/, 'must read YTKit.user.js @version');
+    assert.match(scriptSource, /checkActiveDocumentationTruth/,
+        'must reject stale active docs that mention retired workflow paths or old current-version claims');
+    assert.match(scriptSource, /ACTIVE_DOC_TRUTH_FILES/,
+        'must define the active docs covered by release-truth checking');
+    assert.match(scriptSource, /RESEARCH_REPORT\.md/,
+        'must keep retired research-report references out of active docs');
+    assert.match(scriptSource, /\.github\\\/workflows\\\//,
+        'must keep retired hosted workflow paths out of active docs');
     // Confirm the empty-string guard fix (earlier draft had .includes('') bug).
     assert.match(scriptSource, /sources\[0\]\.value\s*!==\s*['"]{2}/,
         "Empty-string guard must use !== '' (not .includes('') — which would always evaluate true and silently break the happy path)");
@@ -1756,6 +1764,31 @@ test('check-versions.js runs cleanly against the current tree', () => {
     }
     assert.equal(exitCode, 0,
         'check-versions must pass on a clean tree — if this fails, version drift exists somewhere in the canonical version surfaces');
+});
+
+test('active release docs match current product version and local-build policy', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const activeDocPaths = [
+        'README.md',
+        path.join('docs', 'architecture.md'),
+        path.join('docs', 'repo-settings.md'),
+        path.join('docs', 'signing-keys.md'),
+    ];
+    for (const relPath of activeDocPaths) {
+        const doc = fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+        assert.doesNotMatch(doc, /RESEARCH_REPORT\.md/,
+            `${relPath} must point at RESEARCH.md or active roadmap docs, not retired research reports`);
+        assert.doesNotMatch(doc, /\.github\/workflows\/[A-Za-z0-9_.\/-]+/,
+            `${relPath} must not cite retired hosted workflow paths as active release infrastructure`);
+        const claims = [
+            ...doc.matchAll(/today,\s+at\s+v(\d+\.\d+\.\d+)\+?/gi),
+            ...doc.matchAll(/currently\s+agree\s+at\s+v(\d+\.\d+\.\d+)/gi),
+        ];
+        for (const claim of claims) {
+            assert.equal(claim[1], pkg.version,
+                `${relPath} current-version claim must match package.json`);
+        }
+    }
 });
 
 test('build-extension.js updates package-lock version during --bump', () => {
@@ -10169,8 +10202,8 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'check-versions.js must define readSettingsMetaVersion');
     assert.match(checkSrc, /SETTINGS_VERSION drift detected/,
         'check-versions.js must emit a SETTINGS_VERSION-specific drift message');
-    assert.match(checkSrc, /process\.exit\(productOk && settingsOk \? 0 : 1\)/,
-        'check-versions.js must require BOTH product and settings version parity to exit 0');
+    assert.match(checkSrc, /process\.exit\(productOk && settingsOk && docsOk \? 0 : 1\)/,
+        'check-versions.js must require product, settings, and active-doc truth parity to exit 0');
 
     // 3. The popup-side fallback comment names the parity invariant
     // so a future code reviewer sees the invariant at the constant.
