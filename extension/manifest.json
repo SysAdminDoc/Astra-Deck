@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.46.16",
+  "version": "4.46.17",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
@@ -86,6 +86,7 @@
         "https://*.youtube.com/live_chat*"
       ],
       "js": [
+        "core/player.js",
         "ytkit-main.js"
       ],
       "run_at": "document_start",

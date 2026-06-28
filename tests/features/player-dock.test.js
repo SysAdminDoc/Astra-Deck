@@ -27,3 +27,10 @@ test('Player Dock creates player controls container', () => {
     assert.match(modSrc, /ytkit-player-controls|ytkit-po-logo-wrap/,
         'Player Dock must create a player controls container');
 });
+
+test('Player Dock speed picker wakes persistent speed reapply task', () => {
+    assert.match(sources.ytkit, /f\._scheduleApply\?\.\(0,\s*'player-dock'\)/,
+        'speed popup must wake persistentSpeed after changing the default speed');
+    assert.match(sources.ytkit, /const video = getMainVideoElement\(\);[\s\S]{0,240}video\.playbackRate = value/,
+        'speed popup must apply to the canonical main video element');
+});

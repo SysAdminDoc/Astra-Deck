@@ -151,7 +151,11 @@
     var ON = false;
     var lastApplied = '';     // `${videoId}:${quality}` to avoid re-applying needlessly
     var pendingTimer = null;
+    var pendingContextTimer = null;
     var DEBUG = false;
+    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
+    var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
 
     function log() {
         if (!DEBUG) return;
@@ -194,10 +198,13 @@
         return topTier[0];
     }
 
-    function apply() {
+    function apply(ctx) {
         if (!ON) return;
+        if (ctx && (ctx.reason === 'loadstart' || ctx.reason === 'navigate' || ctx.reason === 'page-data')) {
+            lastApplied = '';
+        }
         var p = getPlayer();
-        if (!p || typeof p.setPlaybackQualityRange !== 'function') return;
+        if (!p || typeof p.setPlaybackQualityRange !== 'function') return false;
 
         var data = (typeof p.getAvailableQualityData === 'function')
             ? p.getAvailableQualityData() : null;
@@ -215,49 +222,71 @@
             }
         }
 
-        if (!target) return;
+        if (!target) return false;
         var key = getVideoId() + ':' + target.quality + ':' + (target.qualityLabel || '');
-        if (key === lastApplied) return;
+        if (key === lastApplied) return true;
 
         try {
             p.setPlaybackQualityRange(target.quality, target.quality);
             if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(target.quality);
             lastApplied = key;
             log('applied', target.quality, target.qualityLabel || '');
-        } catch (e) { log('apply failed', e && e.message); }
+            return true;
+        } catch (e) { log('apply failed', e && e.message); return false; }
     }
 
-    function schedule(delay) {
+    function cancelTask(id, timerName) {
+        if (PlayerTaskManager && typeof PlayerTaskManager.cancel === 'function') PlayerTaskManager.cancel(id);
+        if (timerName === 'quality' && pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+        if (timerName === 'context' && pendingContextTimer) { clearTimeout(pendingContextTimer); pendingContextTimer = null; }
+    }
+
+    function schedule(delay, reason) {
+        if (PlayerTaskManager && typeof PlayerTaskManager.schedule === 'function') {
+            PlayerTaskManager.schedule('ytkit-main:autoMaxResolution', apply, {
+                owner: 'ytkit-main',
+                reason: reason || 'manual',
+                delay: delay || 0,
+                needsVideo: true,
+                needsPlayer: true,
+                maxAttempts: RETRY_DELAYS.length,
+                retryDelays: RETRY_DELAYS,
+                events: TASK_EVENTS
+            });
+            return;
+        }
         if (pendingTimer) clearTimeout(pendingTimer);
         pendingTimer = setTimeout(function() { pendingTimer = null; apply(); }, delay || 0);
     }
 
-    function reset() { lastApplied = ''; schedule(0); schedule(400); schedule(1500); }
+    function reset(reason) { lastApplied = ''; schedule(0, reason || 'reset'); }
 
     // Trigger sources — the player rebuilds quality data shortly after each of these.
-    document.addEventListener('loadstart', function(e) {
-        if (!ON) return;
-        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) reset();
-    }, true);
-    document.addEventListener('loadedmetadata', function(e) {
-        if (!ON) return;
-        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) schedule(150);
-    }, true);
-    document.addEventListener('canplay', function(e) {
-        if (!ON) return;
-        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) schedule(0);
-    }, true);
-    // YouTube SPA navigation
-    window.addEventListener('yt-navigate-finish', function() { if (ON) reset(); });
-    window.addEventListener('yt-page-data-updated', function() { if (ON) schedule(200); });
+    if (!PlayerTaskManager) {
+        document.addEventListener('loadstart', function(e) {
+            if (!ON) return;
+            if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) reset('loadstart');
+        }, true);
+        document.addEventListener('loadedmetadata', function(e) {
+            if (!ON) return;
+            if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) schedule(150, 'loadedmetadata');
+        }, true);
+        document.addEventListener('canplay', function(e) {
+            if (!ON) return;
+            if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) schedule(0, 'canplay');
+        }, true);
+        // YouTube SPA navigation
+        window.addEventListener('yt-navigate-finish', function() { if (ON) reset('navigate'); });
+        window.addEventListener('yt-page-data-updated', function() { if (ON) schedule(200, 'page-data'); });
+    }
 
     function syncFromAttr() {
         var v = document.documentElement.getAttribute('data-ytkit-quality');
         var next = (v === 'on');
         if (next === ON) return;
         ON = next;
-        if (ON) reset();
-        else { lastApplied = ''; if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; } }
+        if (ON) reset('attribute');
+        else { lastApplied = ''; cancelTask('ytkit-main:autoMaxResolution', 'quality'); }
     }
 
     _obsRegister(['data-ytkit-quality'], syncFromAttr);
@@ -270,30 +299,62 @@
     // qualityProfileMatrix (ISOLATED world). When present, it overrides the
     // best-quality picker above; when removed, the picker resumes.
     var _ctxLastApplied = '';
-    function applyContextQuality() {
+    function applyContextQuality(ctx) {
+        if (ctx && (ctx.reason === 'loadedmetadata' || ctx.reason === 'navigate' || ctx.reason === 'page-data' || ctx.reason === 'player-state')) {
+            _ctxLastApplied = '';
+        }
         var target = document.documentElement.getAttribute('data-ytkit-quality-target');
-        if (!target) { _ctxLastApplied = ''; return; }
+        if (!target) { _ctxLastApplied = ''; return true; }
         var p = getPlayer();
-        if (!p || typeof p.setPlaybackQualityRange !== 'function') return;
+        if (!p || typeof p.setPlaybackQualityRange !== 'function') return false;
         var vid = getVideoId();
         var key = vid + ':ctx:' + target;
-        if (key === _ctxLastApplied) return;
+        if (key === _ctxLastApplied) return true;
         try {
             p.setPlaybackQualityRange(target, target);
             if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(target);
             _ctxLastApplied = key;
             log('per-context quality applied', target);
-        } catch (e) { log('per-context apply failed', e && e.message); }
+            return true;
+        } catch (e) { log('per-context apply failed', e && e.message); return false; }
     }
-    _obsRegister(['data-ytkit-quality-target', 'data-ytkit-quality-context'], applyContextQuality);
-    document.addEventListener('loadedmetadata', function(e) {
-        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
-            _ctxLastApplied = '';
-            applyContextQuality();
+    function scheduleContextQuality(reason, delay) {
+        if (PlayerTaskManager && typeof PlayerTaskManager.schedule === 'function') {
+            PlayerTaskManager.schedule('ytkit-main:contextQuality', applyContextQuality, {
+                owner: 'ytkit-main',
+                reason: reason || 'manual',
+                delay: delay || 0,
+                needsVideo: true,
+                needsPlayer: true,
+                maxAttempts: RETRY_DELAYS.length,
+                retryDelays: RETRY_DELAYS,
+                events: ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data']
+            });
+            return;
         }
-    }, true);
-    window.addEventListener('yt-navigate-finish', function() { _ctxLastApplied = ''; applyContextQuality(); });
-    applyContextQuality();
+        if (pendingContextTimer) clearTimeout(pendingContextTimer);
+        pendingContextTimer = setTimeout(function() {
+            pendingContextTimer = null;
+            applyContextQuality();
+        }, delay || 0);
+    }
+    _obsRegister(['data-ytkit-quality-target', 'data-ytkit-quality-context'], function() {
+        _ctxLastApplied = '';
+        scheduleContextQuality('attribute', 0);
+    });
+    if (!PlayerTaskManager) {
+        document.addEventListener('loadedmetadata', function(e) {
+            if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+                _ctxLastApplied = '';
+                scheduleContextQuality('loadedmetadata', 0);
+            }
+        }, true);
+        window.addEventListener('yt-navigate-finish', function() {
+            _ctxLastApplied = '';
+            scheduleContextQuality('navigate', 0);
+        });
+    }
+    scheduleContextQuality('init', 0);
 })();
 
     // ──────────────────────────────────────────────────────────────────
