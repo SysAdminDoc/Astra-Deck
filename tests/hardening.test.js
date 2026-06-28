@@ -535,6 +535,56 @@ test('diagnosticLog destroy clears _errors for immediate storage relief', () => 
     assert.match(block, /DiagnosticLog\.clear\s*\(\s*\)/, 'destroy must call DiagnosticLog.clear()');
 });
 
+test('pauseOtherTabs degrades cleanly when BroadcastChannel is denied', () => {
+    const idx = ytkitSource.indexOf("id: 'pauseOtherTabs'");
+    assert.ok(idx > -1, 'pauseOtherTabs must exist');
+    const end = ytkitSource.indexOf("id: 'sleepTimer'", idx);
+    assert.ok(end > idx, 'pauseOtherTabs block must end before sleepTimer');
+    const block = ytkitSource.slice(idx, end);
+
+    assert.match(block, /_openChannel\s*\(\s*\)\s*\{[\s\S]*?try\s*\{/,
+        'BroadcastChannel construction must be behind an open helper try/catch');
+    assert.match(block, /typeof BroadcastChannel\s*!==\s*'function'/,
+        'missing BroadcastChannel API must be treated as a degraded mode');
+    assert.match(block, /new BroadcastChannel\('ytkit-pause-sync'\)/,
+        'pause sync must still use the expected channel name when available');
+    assert.match(block, /catch\s*\(error\)\s*\{[\s\S]*?_recordChannelFailure\('open',\s*error\)/,
+        'open failures must be reported instead of escaping feature init');
+    assert.match(block, /DiagnosticLog\?\.record\?\.\(\s*'broadcast-channel'/,
+        'BroadcastChannel degradation must write a diagnostic breadcrumb');
+    assert.match(block, /this\._channel\s*=\s*this\._openChannel\(\);[\s\S]*?if\s*\(!this\._channel\)\s*return;/,
+        'init must stop before adding play listeners when no channel is available');
+    assert.match(block, /_broadcastPause\s*\(\s*\)\s*\{[\s\S]*?this\._channel\.postMessage\('pause'\)/,
+        'postMessage must be isolated in a guarded helper');
+    assert.match(block, /catch\s*\(error\)\s*\{[\s\S]*?_recordChannelFailure\('postMessage',\s*error\)/,
+        'runtime postMessage failures must degrade without crashing later plays');
+});
+
+test('crash-loop guard keeps an in-memory fallback when localStorage is denied', () => {
+    const idx = ytkitSource.indexOf("const _CRASH_SESSION_KEY = '_ytkit_crash_guard'");
+    assert.ok(idx > -1, 'crash-loop guard must declare its storage key');
+    const end = ytkitSource.indexOf('const isSafeMode = _crashGuardTriggered', idx);
+    assert.ok(end > idx, 'crash-loop guard block must precede safe-mode evaluation');
+    const block = ytkitSource.slice(idx, end);
+
+    assert.match(block, /_crashGuardMemoryTimestamps\s*=\s*\[\]/,
+        'guard must keep a non-persistent memory timestamp ring');
+    assert.match(block, /_recordCrashGuardStorageDegraded/,
+        'guard must centralize storage-degraded reporting');
+    assert.match(block, /DiagnosticLog\?\.record\?\.\(\s*'storage-degraded'/,
+        'storage-denied guard path must emit a diagnostic breadcrumb');
+    assert.match(block, /hasExtensionContext\(\)[\s\S]*?storageRead\(_CRASH_SESSION_KEY,\s*\[\]\)/,
+        'extension builds must prefer preloaded extension storage over page localStorage');
+    assert.match(block, /localStorage\.getItem\(_CRASH_SESSION_KEY\)/,
+        'userscript builds must still use localStorage when extension storage is unavailable');
+    assert.match(block, /catch\s*\(error\)\s*\{[\s\S]*?return _crashGuardMemoryTimestamps\.slice\(\)/,
+        'storage read failures must fall back to the memory ring instead of skipping the guard');
+    assert.match(block, /void storageWrite\(_CRASH_SESSION_KEY,\s*next,\s*\{\s*immediate:\s*true\s*\}\)/,
+        'extension timestamp writes must flush through the shared storage cache');
+    assert.match(ytkitSource, /if\s*\(!_crashGuardTriggered\)\s*_clearCrashGuardTimestamps\(\);/,
+        'successful init must clear through the guarded storage helper');
+});
+
 // ── v3.16+ Audit Pass: popup.js serializes toggle writes ──
 
 test('popup.js serializes toggle writes to avoid read-merge-write race', () => {
