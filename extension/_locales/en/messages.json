@@ -1911,7 +1911,7 @@
     "message": "Styled Filter Chips"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up."
+    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels from the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML."
   },
   "feature_subscriptionGroups_name": {
     "message": "Subscription Groups"
