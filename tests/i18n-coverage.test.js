@@ -8,6 +8,7 @@ const path = require('path');
 
 const {
     buildCoverageReport,
+    checkReportFreshness,
     DEFAULT_FEATURE_WARNING_BASELINE,
     emitWarnings,
     parseArgs,
@@ -15,6 +16,7 @@ const {
 } = require('../scripts/i18n-coverage');
 const {
     DO_NOT_TRANSLATE_TERMS,
+    REVIEWED_EXACT_MESSAGES,
     missingProtectedTerms
 } = require('../scripts/i18n-policy');
 
@@ -73,6 +75,7 @@ test('i18n coverage parses warning threshold and emits non-fatal warnings', () =
         '--locales-dir', localesDir,
         '--output', path.join(os.tmpdir(), 'i18n-report.md'),
         '--warn-feature-identical-above', '0',
+        '--check-report',
         '--no-write'
     ]);
     const report = buildCoverageReport({ localesDir: parsed.localesDir });
@@ -87,6 +90,7 @@ test('i18n coverage parses warning threshold and emits non-fatal warnings', () =
     }
 
     assert.equal(parsed.writeReport, false);
+    assert.equal(parsed.checkReport, true);
     assert.equal(parsed.warnFeatureIdenticalAbove, 0);
     assert.deepEqual(warnings, ['de: 1 unresolved feature messages exceed threshold 0']);
     assert.deepEqual(captured, ['[i18n-coverage] WARN de: 1 unresolved feature messages exceed threshold 0']);
@@ -94,9 +98,37 @@ test('i18n coverage parses warning threshold and emits non-fatal warnings', () =
     assert.throws(() => parseArgs(['--warn-feature-identical-above', 'bad']), /non-negative integer/);
 });
 
+test('i18n coverage freshness gate fails on stale markdown reports', () => {
+    const { localesDir } = writeLocaleFixture();
+    const report = buildCoverageReport({ localesDir });
+    const markdown = renderMarkdown(report, { warnFeatureIdenticalAbove: 0 });
+    const reportPath = path.join(os.tmpdir(), `astra-i18n-report-${Date.now()}.md`);
+
+    fs.writeFileSync(reportPath, '# stale\n', 'utf8');
+    const captured = [];
+    const originalError = console.error;
+    let failures;
+    try {
+        console.error = (message) => { captured.push(message); };
+        failures = checkReportFreshness(markdown, reportPath);
+    } finally {
+        console.error = originalError;
+    }
+    assert.deepEqual(failures, [
+        `${path.relative(path.join(__dirname, '..'), reportPath).split(path.sep).join('/')} is stale; run npm run i18n:coverage`
+    ]);
+    assert.match(captured[0], /is stale; run npm run i18n:coverage/);
+
+    fs.writeFileSync(reportPath, `${markdown}\n`, 'utf8');
+    assert.deepEqual(checkReportFreshness(markdown, reportPath), []);
+});
+
 test('i18n policy names protected terms and detects over-translation', () => {
     assert.ok(DO_NOT_TRANSLATE_TERMS.includes('Astra Deck'));
     assert.ok(DO_NOT_TRANSLATE_TERMS.includes('SponsorBlock'));
+    assert.ok(REVIEWED_EXACT_MESSAGES.includes('Return YouTube Dislike'));
+    assert.ok(REVIEWED_EXACT_MESSAGES.includes('Theater Split'));
+    assert.equal(DO_NOT_TRANSLATE_TERMS.includes('Theater Split'), false);
     assert.deepEqual(
         missingProtectedTerms('Open YouTube with SponsorBlock', 'YouTube mit SponsorBlock öffnen'),
         []
@@ -111,4 +143,5 @@ test('i18n warning command is exposed through package scripts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     assert.equal(DEFAULT_FEATURE_WARNING_BASELINE, 582);
     assert.match(pkg.scripts['i18n:coverage:warn'] || '', /--warn-feature-identical-above 582/);
+    assert.match(pkg.scripts['i18n:coverage:gate'] || '', /--check-report/);
 });
