@@ -727,7 +727,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.14';
+    const YTKIT_VERSION = '4.46.15';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -20588,28 +20588,58 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _channel: null,
             _playHandler: null,
 
-            init() {
-                this._channel = new BroadcastChannel('ytkit-pause-sync');
-                this._channel.onmessage = (e) => {
-                    if (e.data === 'pause') {
-                        const video = getMainVideoElement();
-                        if (video && !video.paused) {
-                            video.__ytkit_pausedByBroadcast = true;
-                            video.pause();
-                        }
+            _recordChannelFailure(operation, error) {
+                const reason = error?.name || error?.message || 'unavailable';
+                console.warn(`[YTKit] pauseOtherTabs BroadcastChannel ${operation} failed; cross-tab pause sync is degraded.`, error);
+                DiagnosticLog?.record?.('broadcast-channel', `pauseOtherTabs ${operation} failed; cross-tab pause sync degraded: ${reason}`);
+            },
+            _openChannel() {
+                try {
+                    if (typeof BroadcastChannel !== 'function') {
+                        throw new Error('BroadcastChannel unavailable');
                     }
-                };
+                    const channel = new BroadcastChannel('ytkit-pause-sync');
+                    channel.onmessage = (e) => {
+                        if (e.data === 'pause') {
+                            const video = getMainVideoElement();
+                            if (video && !video.paused) {
+                                video.__ytkit_pausedByBroadcast = true;
+                                video.pause();
+                            }
+                        }
+                    };
+                    return channel;
+                } catch (error) {
+                    this._recordChannelFailure('open', error);
+                    return null;
+                }
+            },
+            _broadcastPause() {
+                if (!this._channel) return;
+                try {
+                    this._channel.postMessage('pause');
+                } catch (error) {
+                    this._recordChannelFailure('postMessage', error);
+                    try { this._channel.close(); } catch (_) { /* reason: channel already unusable */ }
+                    this._channel = null;
+                }
+            },
+            init() {
+                this._channel = this._openChannel();
+                if (!this._channel) return;
                 this._playHandler = () => {
                     // Clear broadcast-paused flag since user is playing in this tab now
                     const video = getMainVideoElement();
                     if (video) delete video.__ytkit_pausedByBroadcast;
-                    this._channel.postMessage('pause');
+                    this._broadcastPause();
                 };
                 document.addEventListener('play', this._playHandler, true);
             },
             destroy() {
-                document.removeEventListener('play', this._playHandler, true);
-                this._channel?.close(); this._channel = null;
+                if (this._playHandler) document.removeEventListener('play', this._playHandler, true);
+                this._playHandler = null;
+                try { this._channel?.close(); } catch (_) { /* reason: degraded BroadcastChannel may throw on close */ }
+                this._channel = null;
             }
         },
 
@@ -49770,28 +49800,85 @@ body.ytkit-panel-open #ytkit-settings-panel {
         // ── Global crash-loop guard ──
         // If the content script crashes 3+ times within 30s, auto-enter
         // safe mode so a corrupted-settings crash loop doesn't brick the
-        // extension. Uses localStorage (synchronous, content-script-accessible)
-        // with namespaced key. Timestamps older than the window are pruned.
+        // extension. Prefer extension storage after preload; fall back to
+        // localStorage for userscripts, then a non-persistent memory ring
+        // when browser privacy settings deny site-data APIs.
         const _CRASH_SESSION_KEY = '_ytkit_crash_guard';
         const _CRASH_THRESHOLD = 3;
         const _CRASH_WINDOW_MS = 30000;
         let _crashGuardTriggered = false;
+        let _crashGuardMemoryTimestamps = [];
+        let _crashGuardDegradedLogged = false;
+        const _recordCrashGuardStorageDegraded = (operation, error) => {
+            const reason = error?.name || error?.message || 'unavailable';
+            if (!_crashGuardDegradedLogged) {
+                console.warn(`[YTKit] Crash-loop guard ${operation} fell back to memory storage: ${reason}`);
+                _crashGuardDegradedLogged = true;
+            }
+            DiagnosticLog?.record?.('storage-degraded', `Crash-loop guard ${operation} used in-memory fallback: ${reason}`);
+        };
+        const _normalizeCrashGuardTimestamps = (raw) => {
+            let value = raw;
+            if (typeof value === 'string') {
+                if (!value.trim()) return [];
+                try {
+                    value = JSON.parse(value);
+                } catch (_) {
+                    return [];
+                }
+            }
+            if (!Array.isArray(value)) return [];
+            return value.filter(t => typeof t === 'number' && Number.isFinite(t));
+        };
+        const _readCrashGuardTimestamps = () => {
+            try {
+                if (hasExtensionContext()) {
+                    return _normalizeCrashGuardTimestamps(storageRead(_CRASH_SESSION_KEY, []));
+                }
+                return _normalizeCrashGuardTimestamps(localStorage.getItem(_CRASH_SESSION_KEY));
+            } catch (error) {
+                _recordCrashGuardStorageDegraded('read', error);
+                return _crashGuardMemoryTimestamps.slice();
+            }
+        };
+        const _writeCrashGuardTimestamps = (timestamps) => {
+            const next = _normalizeCrashGuardTimestamps(timestamps).slice(-(_CRASH_THRESHOLD + 1));
+            _crashGuardMemoryTimestamps = next.slice();
+            try {
+                if (hasExtensionContext()) {
+                    void storageWrite(_CRASH_SESSION_KEY, next, { immediate: true });
+                    return;
+                }
+                localStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(next));
+            } catch (error) {
+                _recordCrashGuardStorageDegraded('write', error);
+            }
+        };
+        const _clearCrashGuardTimestamps = () => {
+            _crashGuardMemoryTimestamps = [];
+            try {
+                if (hasExtensionContext()) {
+                    void storageWrite(_CRASH_SESSION_KEY, [], { immediate: true });
+                    return;
+                }
+                localStorage.removeItem(_CRASH_SESSION_KEY);
+            } catch (error) {
+                _recordCrashGuardStorageDegraded('clear', error);
+            }
+        };
         try {
             const now = Date.now();
-            const raw = localStorage.getItem(_CRASH_SESSION_KEY);
-            let timestamps = [];
-            if (raw) {
-                try { timestamps = JSON.parse(raw); } catch (_) { /* reason: corrupted — reset */ }
-                if (!Array.isArray(timestamps)) timestamps = [];
-            }
+            let timestamps = _readCrashGuardTimestamps();
             timestamps = timestamps.filter(t => typeof t === 'number' && now - t < _CRASH_WINDOW_MS);
             if (timestamps.length >= _CRASH_THRESHOLD) {
                 _crashGuardTriggered = true;
                 console.warn('[YTKit] Crash-loop guard triggered — entering safe mode automatically.');
             }
             timestamps.push(now);
-            localStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(timestamps.slice(-(_CRASH_THRESHOLD + 1))));
-        } catch (_) { /* reason: localStorage unavailable — skip guard */ }
+            _writeCrashGuardTimestamps(timestamps);
+        } catch (error) {
+            _recordCrashGuardStorageDegraded('evaluate', error);
+        }
 
         // ── Safe Mode + Diagnostics ──
         const isSafeMode = _crashGuardTriggered ||
@@ -50003,9 +50090,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         } // end !isSafeMode
 
         // Clear crash-loop guard on successful init
-        try {
-            if (!_crashGuardTriggered) localStorage.removeItem(_CRASH_SESSION_KEY);
-        } catch (_) { /* reason: localStorage unavailable */ }
+        if (!_crashGuardTriggered) _clearCrashGuardTimestamps();
 
         if (_crashGuardTriggered) {
             showToast('Astra Deck detected repeated crashes and entered safe mode. Check your settings or reset.', '#f97316', { duration: 15 });
