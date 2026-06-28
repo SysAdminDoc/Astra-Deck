@@ -4,13 +4,6 @@
 
 ### P2 — Portability / Migration
 
-- [ ] P2 — Userscript parity classification gate
-  Why: The userscript drift check passes but reports 89 extension-only feature IDs with no machine-readable reason, making portability regressions hard to separate from intentional browser-API gaps.
-  Evidence: `node scripts/check-userscript-drift.js` output, `scripts/check-userscript-drift.js`, `sync-userscript.js`, `extension/manifest.json`.
-  Touches: `scripts/check-userscript-drift.js`, `sync-userscript.js`, `extension/manifest.json`, `tests/hardening.test.js`.
-  Acceptance: Every extension-only feature ID is classified as `chrome-api`, `native-companion`, `unsafe-in-userscript`, `not-yet-ported`, or `intentional-extension-only`; the drift check fails on unclassified new IDs and prints parity counts by class.
-  Complexity: S
-
 - [ ] P2 — Subscription OPML import/export bridge
   Why: Subscription managers and desktop YouTube clients treat subscription import/export as table-stakes; Astra supports JSON/CSV groups but lacks OPML interop for migration.
   Evidence: PocketTube, FreeTube, `extension/features/subscription-groups/index.js:272`, `extension/features/subscription-groups/index.js:297`, `extension/features/subscription-groups/index.js:1199`.
