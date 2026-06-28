@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: v4.46.17 player-state retry manager.** Added a shared player task
+  manager for readiness-aware retries, stale SPA-navigation cancellation, and
+  media/player-state reapply events; quality forcing, per-context quality,
+  persistent speed, auto theater, theater auto-scroll, and initial play/pause
+  now schedule through that shared path.
 - **Feat: v4.46.16 userscript parity reduction.** The standalone userscript
   now carries five safe DOM/CSS controls from the extension runtime, mirrors
   the guarded `pauseOtherTabs` BroadcastChannel degradation path, and the drift
