@@ -112,8 +112,31 @@ test('release readiness helpers parse checksums and CLI options strictly', () =>
 test('release readiness command is wired into local package scripts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
 
+    assert.match(pkg.scripts['build:userscript'] || '', /release:sbom/,
+        'release artifact builds must write the SBOM before manifest generation');
+    assert.match(pkg.scripts['build:userscript'] || '', /release:manifest/,
+        'release artifact builds must write release-manifest.json and SHA256SUMS');
+    assert.match(pkg.scripts['release:prepare'] || '', /release:readiness -- --require-pass/,
+        'release preparation must finish by enforcing the readiness gate');
+    assert.match(pkg.scripts['release:sbom'] || '', /scripts\/generate-release-sbom\.js/,
+        'package.json must expose local SBOM generation for older npm versions');
     assert.match(pkg.scripts['release:readiness'] || '', /scripts\/generate-release-readiness\.js/);
     assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/);
     assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'build.yml')), false,
         'release readiness must stay local-only; no build workflow should exist');
+});
+
+test('release SBOM generation uses production package-lock dependencies', () => {
+    const { buildSbom } = require('../scripts/generate-release-sbom');
+    const sbom = buildSbom();
+    const componentNames = sbom.components.map((component) => component.name);
+
+    assert.equal(sbom.bomFormat, 'CycloneDX');
+    assert.equal(sbom.specVersion, '1.5');
+    assert.ok(componentNames.includes('crx3'),
+        'SBOM must include production dependencies from package-lock.json');
+    assert.equal(componentNames.includes('eslint'), false,
+        'SBOM must omit dev-only dependencies');
+    assert.ok(sbom.dependencies.some((entry) => entry.dependsOn && entry.dependsOn.length),
+        'SBOM must include dependency graph edges');
 });
