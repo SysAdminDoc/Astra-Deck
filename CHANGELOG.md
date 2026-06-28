@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: v4.46.18 feed scan budgeting.** Large Video Hider and Subscription
+  Groups feed passes now process cards in cancellable chunks, yield between
+  batches, bundle the shared navigation helper into the userscript, and expose
+  slow/cancelled scan timing in selector-health diagnostics.
 - **Feat: v4.46.17 player-state retry manager.** Added a shared player task
   manager for readiness-aware retries, stale SPA-navigation cancellation, and
   media/player-state reapply events; quality forcing, per-context quality,
