@@ -42,6 +42,7 @@
         removeMutationRule,
         removeNavigateRule,
         removeScopedMutationRule,
+        runBudgetedElementBatch,
         setFeatureHealth,
         shouldBuildPrimaryUI,
         storageRead,
@@ -110,6 +111,7 @@
         !removeMutationRule ||
         !removeNavigateRule ||
         !removeScopedMutationRule ||
+        !runBudgetedElementBatch ||
         !setFeatureHealth ||
         !shouldBuildPrimaryUI ||
         !storageRead ||
@@ -731,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.17';
+    const YTKIT_VERSION = '4.46.18';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -16757,6 +16759,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             PredicateSandbox,
             addNavigateRule,
             removeNavigateRule,
+            runBudgetedElementBatch,
             injectStyle
         }) || {
             id: 'hideVideosFromHome',
@@ -34241,6 +34244,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             removeNavigateRule,
             addMutationRule,
             removeMutationRule,
+            runBudgetedElementBatch,
             handleFileExport,
             isSafeObjectKey
         }) || {

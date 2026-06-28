@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.46.17
+// @name         YTKit v4.46.18
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.46.17
+// @version      4.46.18
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -1942,6 +1942,7 @@
             const exportedAt = options.exportedAt || new Date().toISOString();
             const productVersion = options.productVersion || 'unknown';
             const browserUA = options.browserUA || 'unknown';
+            const budgetedScans = Array.isArray(options.budgetedScans) ? options.budgetedScans : [];
             const lines = [];
             const summary = summarize(snapshot);
             const top = rankProblemSurfaces(snapshot, options.topN || 5);
@@ -1965,6 +1966,22 @@
             lines.push('  total shape drifts:      ' + summary.totalShapeDrifts);
             lines.push('  miss rate:               ' + summary.missRate + '%');
             lines.push('');
+
+            if (budgetedScans.length) {
+                lines.push('budgeted scan diagnostics:');
+                for (const scan of budgetedScans.slice(-5)) {
+                    const label = String(scan.label || 'scan');
+                    const processed = safeNumber(scan.processed);
+                    const total = safeNumber(scan.total);
+                    const chunks = safeNumber(scan.chunks);
+                    const durationMs = safeNumber(scan.durationMs);
+                    const cancelled = scan.cancelled ? '; cancelled' : '';
+                    lines.push('  - ' + label + ': ' + processed + '/' + total +
+                        ' cards in ' + chunks + ' chunk' + (chunks === 1 ? '' : 's') +
+                        ' (' + durationMs + 'ms' + cancelled + ')');
+                }
+                lines.push('');
+            }
 
             if (top.length === 0) {
                 lines.push('No problem surfaces — every tracked selector is hitting.');
@@ -2000,19 +2017,25 @@
                 || (() => (core.getSelectorHealthSnapshot ? core.getSelectorHealthSnapshot() : []));
             const exporter = options.exporter
                 || (() => (core.exportSelectorHealth ? core.exportSelectorHealth() : null));
+            const budgetedScanProvider = options.budgetedScanProvider
+                || (() => (core.getBudgetedScanDiagnostics ? core.getBudgetedScanDiagnostics() : []));
 
             function getReport() {
                 const snap = snapshotProvider();
                 return {
                     summary: summarize(snap),
                     topProblems: rankProblemSurfaces(snap, options.topN || 5),
-                    snapshot: snap
+                    snapshot: snap,
+                    budgetedScans: budgetedScanProvider()
                 };
             }
 
             function getCopyReport(extra = {}) {
                 const snap = snapshotProvider();
-                return formatCopyReport(snap, { ...options, ...extra });
+                const budgetedScans = Array.isArray(extra.budgetedScans)
+                    ? extra.budgetedScans
+                    : budgetedScanProvider();
+                return formatCopyReport(snap, { ...options, ...extra, budgetedScans });
             }
 
             function exportSnapshotJson() {
@@ -2673,6 +2696,498 @@
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = { createToastSystem };
         }
+    })();
+
+    // ── bundled module: extension/core/navigation.js ──
+    (() => {
+        'use strict';
+
+        const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+        if (core.addNavigateRule) return;
+        const isWatchPagePath = core.isWatchPagePath || ((path = window.location.pathname) => String(path).startsWith('/watch'));
+
+        const runtime = {
+            navDebounce: 50,
+            elementTimeout: 3000
+        };
+
+        let mutationObserver = null;
+        const mutationRules = new Map();
+        const scopedMutationRules = new Map();
+        const navigateRules = new Map();
+        let isNavigateListenerAttached = false;
+        let watchFlexyObserver = null;
+        let watchFlexyObservedNode = null;
+        let navigateDebounceTimer = null;
+        let mutationScheduled = false;
+        // Pending mutation records collected between observer fires, drained in
+        // the rAF dispatch. Scoped rules inspect these to early-exit when no
+        // newly-added node matches their selector.
+        let pendingMutationRecords = [];
+
+        function configureNavigationRuntime(options = {}) {
+            if (Number.isFinite(options.navDebounce)) {
+                runtime.navDebounce = Math.max(0, options.navDebounce);
+            }
+            if (Number.isFinite(options.elementTimeout)) {
+                runtime.elementTimeout = Math.max(0, options.elementTimeout);
+            }
+        }
+
+        function waitForElement(selector, callback, timeout = runtime.elementTimeout) {
+            if (!selector || typeof callback !== 'function') return () => {};
+            const existing = document.querySelector(selector);
+            if (existing) {
+                callback(existing);
+                return () => {};
+            }
+
+            let fired = false;
+            let timeoutId = null;
+            let observer = null;
+            const cleanup = () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                observer?.disconnect();
+                observer = null;
+            };
+            observer = new MutationObserver((mutations) => {
+                if (fired) return;
+                for (const mutation of mutations) {
+                    for (const node of mutation.addedNodes) {
+                        if (node.nodeType !== 1) continue;
+                        if (node.matches?.(selector)) {
+                            fired = true;
+                            cleanup();
+                            callback(node);
+                            return;
+                        }
+                    }
+                }
+
+                const matched = document.querySelector(selector);
+                if (matched) {
+                    fired = true;
+                    cleanup();
+                    callback(matched);
+                }
+            });
+
+            observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+            timeoutId = setTimeout(() => {
+                if (!fired) cleanup();
+            }, timeout);
+            return cleanup;
+        }
+
+        function waitForPageContent(callback, fallbackSelector = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer') {
+            if (typeof callback !== 'function') return () => {};
+            let fired = false;
+            let fallbackTimer = null;
+            let cancelElementWait = null;
+            const onPageUpdated = () => fire();
+            const fire = () => {
+                if (fired) return;
+                fired = true;
+                if (fallbackTimer) {
+                    clearTimeout(fallbackTimer);
+                    fallbackTimer = null;
+                }
+                if (cancelElementWait) {
+                    cancelElementWait();
+                    cancelElementWait = null;
+                }
+                document.removeEventListener('yt-page-data-updated', onPageUpdated);
+                callback();
+            };
+            const cancel = () => {
+                if (fired) return;
+                fired = true;
+                if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+                if (cancelElementWait) { cancelElementWait(); cancelElementWait = null; }
+                document.removeEventListener('yt-page-data-updated', onPageUpdated);
+            };
+
+            document.addEventListener('yt-page-data-updated', onPageUpdated, { once: true });
+            cancelElementWait = waitForElement(fallbackSelector, fire);
+            fallbackTimer = setTimeout(fire, 3000);
+            return cancel;
+        }
+
+        function getIsWatchPage() {
+            return isWatchPagePath(window.location.pathname);
+        }
+
+        function disconnectWatchFlexyObserver() {
+            watchFlexyObserver?.disconnect();
+            watchFlexyObserver = null;
+            watchFlexyObservedNode = null;
+        }
+
+        function ensureWatchFlexyObserver() {
+            const watchFlexy = document.querySelector('ytd-watch-flexy');
+            if (!watchFlexy) {
+                if (watchFlexyObservedNode && !document.contains(watchFlexyObservedNode)) {
+                    disconnectWatchFlexyObserver();
+                }
+                return;
+            }
+
+            if (watchFlexyObservedNode === watchFlexy && watchFlexyObserver) return;
+
+            disconnectWatchFlexyObserver();
+            watchFlexyObservedNode = watchFlexy;
+            watchFlexyObserver = new MutationObserver(() => debouncedRunNavigateRules());
+            watchFlexyObserver.observe(watchFlexy, {
+                attributes: true,
+                attributeFilter: ['video-id']
+            });
+        }
+
+        function _executeNavigateRules() {
+            const isWatch = getIsWatchPage();
+            ensureWatchFlexyObserver();
+            for (const rule of navigateRules.values()) {
+                try {
+                    rule(document.body, isWatch);
+                } catch (error) {
+                    console.error('[YTKit] Navigate rule error:', error);
+                }
+            }
+        }
+
+        function runNavigateRules() {
+            if (typeof document.startViewTransition === 'function') {
+                document.startViewTransition(() => _executeNavigateRules());
+            } else {
+                _executeNavigateRules();
+            }
+        }
+
+        function debouncedRunNavigateRules() {
+            if (navigateDebounceTimer) clearTimeout(navigateDebounceTimer);
+            navigateDebounceTimer = setTimeout(runNavigateRules, runtime.navDebounce);
+        }
+
+        // v3.23.0 (L1): Navigation API self-detection as a last-resort
+        // fallback for SPA reloads. yt-navigate-finish + yt-page-data-updated
+        // + popstate cover ~99.9% of YouTube navigations, but Tampermonkey
+        // issue #2673 (closed as "not planned") leaves a pre-existing class
+        // of SPA reloads where these YT-internal events never fire — the
+        // browser's own Navigation API still observes the URL change. We
+        // attach as an additive fallback, gated behind feature detection
+        // so older browsers without `window.navigation` aren't affected.
+        // Refs:
+        //   https://github.com/tampermonkey/tampermonkey/issues/2673
+        //   https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API
+        let navigationApiHandler = null;
+
+        function attachNavigationApi() {
+            if (navigationApiHandler) return;
+            if (typeof window.navigation?.addEventListener !== 'function') return;
+            navigationApiHandler = () => debouncedRunNavigateRules();
+            try {
+                window.navigation.addEventListener('navigate', navigationApiHandler);
+            } catch (_) {
+                // reason: Navigation API surface is experimental; some
+                // browsers expose `navigation` but reject addEventListener.
+                // Fall back to the existing yt-*/popstate chain silently.
+                navigationApiHandler = null;
+            }
+        }
+
+        function detachNavigationApi() {
+            if (!navigationApiHandler) return;
+            try {
+                window.navigation.removeEventListener('navigate', navigationApiHandler);
+            } catch (_) {
+                // reason: removeEventListener mismatch is harmless; the
+                // listener will be GC'd when the page unloads.
+            }
+            navigationApiHandler = null;
+        }
+
+        function ensureNavigateListener() {
+            if (isNavigateListenerAttached) return;
+
+            document.addEventListener('yt-navigate-finish', debouncedRunNavigateRules);
+            document.addEventListener('yt-page-data-updated', debouncedRunNavigateRules);
+            window.addEventListener('popstate', debouncedRunNavigateRules);
+            attachNavigationApi();
+
+            ensureWatchFlexyObserver();
+            runNavigateRules();
+            isNavigateListenerAttached = true;
+        }
+
+        function stopNavigateListener() {
+            if (!isNavigateListenerAttached) return;
+
+            document.removeEventListener('yt-navigate-finish', debouncedRunNavigateRules);
+            document.removeEventListener('yt-page-data-updated', debouncedRunNavigateRules);
+            window.removeEventListener('popstate', debouncedRunNavigateRules);
+            detachNavigationApi();
+            if (navigateDebounceTimer) {
+                clearTimeout(navigateDebounceTimer);
+                navigateDebounceTimer = null;
+            }
+            disconnectWatchFlexyObserver();
+            isNavigateListenerAttached = false;
+        }
+
+        function addNavigateRule(id, ruleFn) {
+            if (!id || typeof ruleFn !== 'function') return;
+            ensureNavigateListener();
+            navigateRules.set(id, ruleFn);
+            try {
+                ruleFn(document.body, getIsWatchPage());
+            } catch (error) {
+                console.error('[YTKit] Navigate rule error:', error);
+            }
+        }
+
+        function removeNavigateRule(id) {
+            navigateRules.delete(id);
+            if (navigateRules.size === 0) {
+                stopNavigateListener();
+            }
+        }
+
+        // Collect newly-added Element nodes from a mutation record batch so scoped
+        // rules can selector-match once without each rule walking the tree again.
+        function collectAddedElements(records) {
+            const added = [];
+            for (const record of records) {
+                if (record.type !== 'childList') continue;
+                for (const node of record.addedNodes) {
+                    if (node && node.nodeType === 1) added.push(node);
+                }
+            }
+            return added;
+        }
+
+        function anyAddedMatchesSelector(addedElements, selector) {
+            if (!addedElements.length) return false;
+            for (const el of addedElements) {
+                if (typeof el.matches === 'function' && el.matches(selector)) return true;
+                if (typeof el.querySelector === 'function' && el.querySelector(selector)) return true;
+            }
+            return false;
+        }
+
+        function runMutationRules(targetNode, records) {
+            for (const rule of mutationRules.values()) {
+                try {
+                    rule(targetNode);
+                } catch (error) {
+                    console.error('[YTKit] Mutation rule error:', error);
+                }
+            }
+
+            if (scopedMutationRules.size === 0) return;
+            const addedElements = collectAddedElements(records);
+            for (const entry of scopedMutationRules.values()) {
+                try {
+                    // Fast path: empty batch (observer fired from attribute-only
+                    // mutation) — skip the rule entirely.
+                    if (!addedElements.length) continue;
+                    if (!anyAddedMatchesSelector(addedElements, entry.selector)) continue;
+                    entry.ruleFn(targetNode, addedElements);
+                } catch (error) {
+                    console.error('[YTKit] Scoped mutation rule error:', error);
+                }
+            }
+        }
+
+        function observerCallback(records) {
+            if (records && records.length) {
+                // Accumulate records across batches delivered before the rAF drain.
+                for (const record of records) pendingMutationRecords.push(record);
+            }
+            if (mutationScheduled) return;
+            mutationScheduled = true;
+            requestAnimationFrame(() => {
+                mutationScheduled = false;
+                const drained = pendingMutationRecords;
+                pendingMutationRecords = [];
+                runMutationRules(document.body, drained);
+            });
+        }
+
+        function startObserver() {
+            if (mutationObserver) return;
+            mutationObserver = new MutationObserver(observerCallback);
+            mutationObserver.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['theater', 'fullscreen', 'hidden', 'video-id', 'page-subtype']
+            });
+        }
+
+        function stopObserver() {
+            if (!mutationObserver) return;
+            mutationObserver.disconnect();
+            mutationObserver = null;
+            pendingMutationRecords = [];
+        }
+
+        function hasAnyMutationRule() {
+            return mutationRules.size > 0 || scopedMutationRules.size > 0;
+        }
+
+        function addMutationRule(id, ruleFn) {
+            if (!id || typeof ruleFn !== 'function') return;
+            if (!hasAnyMutationRule()) startObserver();
+            mutationRules.set(id, ruleFn);
+            try {
+                ruleFn(document.body);
+            } catch (error) {
+                console.error('[YTKit] Mutation rule error:', error);
+            }
+        }
+
+        function removeMutationRule(id) {
+            mutationRules.delete(id);
+            if (!hasAnyMutationRule()) stopObserver();
+        }
+
+        // Scoped mutation rule — only runs when a node matching `selector` is
+        // added anywhere in the observed subtree. Massively cuts per-frame work
+        // for feed-driven features that previously did `document.querySelectorAll`
+        // on every mutation tick.
+        //
+        // `ruleFn` receives `(targetNode, addedElements)` where `addedElements`
+        // is the array of Element nodes inserted in this batch. The rule can
+        // scope its own work to that array instead of the whole document.
+        function addScopedMutationRule(id, selector, ruleFn) {
+            if (!id || typeof selector !== 'string' || typeof ruleFn !== 'function') return;
+            if (!hasAnyMutationRule()) startObserver();
+            scopedMutationRules.set(id, { selector, ruleFn });
+            try {
+                ruleFn(document.body, []);
+            } catch (error) {
+                console.error('[YTKit] Scoped mutation rule error:', error);
+            }
+        }
+
+        function removeScopedMutationRule(id) {
+            scopedMutationRules.delete(id);
+            if (!hasAnyMutationRule()) stopObserver();
+        }
+
+        const budgetedScanDiagnostics = [];
+
+        function nowMs() {
+            if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+                return performance.now();
+            }
+            return Date.now();
+        }
+
+        function recordBudgetedScanDiagnostic(entry) {
+            budgetedScanDiagnostics.push({
+                at: new Date().toISOString(),
+                label: entry.label,
+                total: entry.total,
+                processed: entry.processed,
+                chunks: entry.chunks,
+                durationMs: Math.round(entry.durationMs * 10) / 10,
+                budgetMs: entry.budgetMs,
+                cancelled: !!entry.cancelled
+            });
+            while (budgetedScanDiagnostics.length > 20) budgetedScanDiagnostics.shift();
+        }
+
+        function runBudgetedElementBatch(items, callback, options = {}) {
+            const list = Array.from(items || []);
+            const label = String(options.label || 'budgeted-scan').slice(0, 80);
+            const chunkSize = Math.max(1, Math.floor(Number(options.chunkSize) || 80));
+            const budgetMs = Math.max(1, Number(options.budgetMs) || 8);
+            const yieldMs = Math.max(0, Number(options.yieldMs) || 0);
+            const warnAfterMs = Math.max(budgetMs, Number(options.warnAfterMs) || 16);
+            let index = 0;
+            let chunks = 0;
+            let timer = null;
+            let cancelled = false;
+            let finished = false;
+            const startedAt = nowMs();
+
+            let resolvePromise;
+            const promise = new Promise(resolve => { resolvePromise = resolve; });
+
+            const finish = () => {
+                if (finished) return;
+                finished = true;
+                const durationMs = nowMs() - startedAt;
+                const result = {
+                    label,
+                    total: list.length,
+                    processed: index,
+                    chunks,
+                    durationMs,
+                    budgetMs,
+                    cancelled
+                };
+                if (chunks > 1 || durationMs > warnAfterMs || cancelled) recordBudgetedScanDiagnostic(result);
+                resolvePromise(result);
+            };
+
+            const step = () => {
+                timer = null;
+                if (cancelled) { finish(); return; }
+                const chunkStartedAt = nowMs();
+                let processedInChunk = 0;
+                while (index < list.length && processedInChunk < chunkSize) {
+                    callback(list[index], index, list);
+                    index += 1;
+                    processedInChunk += 1;
+                    if ((nowMs() - chunkStartedAt) >= budgetMs) break;
+                }
+                chunks += 1;
+                if (index < list.length && !cancelled) {
+                    timer = setTimeout(step, yieldMs);
+                    return;
+                }
+                finish();
+            };
+
+            timer = setTimeout(step, 0);
+
+            return {
+                cancel() {
+                    if (cancelled) return;
+                    cancelled = true;
+                    if (timer) {
+                        clearTimeout(timer);
+                        timer = null;
+                    }
+                    finish();
+                },
+                promise,
+                get cancelled() { return cancelled; }
+            };
+        }
+
+        function getBudgetedScanDiagnostics() {
+            return budgetedScanDiagnostics.slice();
+        }
+
+        Object.assign(core, {
+            addMutationRule,
+            addNavigateRule,
+            addScopedMutationRule,
+            configureNavigationRuntime,
+            getBudgetedScanDiagnostics,
+            removeMutationRule,
+            removeNavigateRule,
+            removeScopedMutationRule,
+            runBudgetedElementBatch,
+            waitForElement,
+            waitForPageContent
+        });
     })();
 
     // ── bundled module: extension/core/player.js ──
@@ -10442,6 +10957,10 @@
                 PredicateSandbox = { compile() { return { ok: false, error: 'unavailable', position: 0 }; } },
                 addNavigateRule = () => {},
                 removeNavigateRule = () => {},
+                runBudgetedElementBatch = (items, callback) => {
+                    Array.from(items || []).forEach(callback);
+                    return { cancel() {}, promise: Promise.resolve({ total: Array.from(items || []).length, processed: Array.from(items || []).length, chunks: 1, durationMs: 0 }) };
+                },
                 injectStyle = () => ({ remove() {} })
             } = deps;
 
@@ -11474,22 +11993,56 @@
 
                 _processAllDebounceTimer: null,
                 _chipSecondPassTimer: null,
+                _processAllBudgetHandle: null,
+                _mutationBudgetHandle: null,
+                _lastScanDiagnostics: null,
+                _cancelBudgetedScans() {
+                    this._processAllBudgetHandle?.cancel?.();
+                    this._mutationBudgetHandle?.cancel?.();
+                    this._processAllBudgetHandle = null;
+                    this._mutationBudgetHandle = null;
+                },
+                _recordScanDiagnostics(result) {
+                    if (!result) return;
+                    this._lastScanDiagnostics = {
+                        label: result.label || 'video-hider',
+                        total: result.total || 0,
+                        processed: result.processed || 0,
+                        chunks: result.chunks || 0,
+                        durationMs: Math.round((result.durationMs || 0) * 10) / 10,
+                        cancelled: !!result.cancelled
+                    };
+                    if ((result.chunks || 0) > 1 || (result.durationMs || 0) > 16) {
+                        DebugManager.log('VideoHider', `Budgeted scan ${this._lastScanDiagnostics.label}: ${this._lastScanDiagnostics.processed}/${this._lastScanDiagnostics.total} cards in ${this._lastScanDiagnostics.chunks} chunks (${this._lastScanDiagnostics.durationMs}ms)`);
+                    }
+                },
                 _processAllVideos() {
                     // Clear pending batch to prevent race with MutationObserver
                     this._clearBatchBuffer?.();
+                    this._cancelBudgetedScans();
                     this._restoreRemovedVideoNodes();
                     document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
-                    const videos = document.querySelectorAll(this._VIDEO_SELECTORS);
-                    if (!this._isScopeEnabledForPath()) {
-                        videos.forEach(el => {
+                    const videos = Array.from(document.querySelectorAll(this._VIDEO_SELECTORS));
+                    const processOne = !this._isScopeEnabledForPath()
+                        ? (el) => {
                             this._applyVideoHiddenState(el, false);
                             this._syncQuickHideButton(el, this._extractVideoId(el));
-                        });
-                        this._updatePageActionButtons();
-                        return;
-                    }
-                    videos.forEach(el => this._processVideoElement(el));
-                    this._updatePageActionButtons();
+                        }
+                        : (el) => this._processVideoElement(el);
+                    const handle = runBudgetedElementBatch(videos, processOne, {
+                        label: 'video-hider:process-all',
+                        chunkSize: 60,
+                        budgetMs: 8,
+                        warnAfterMs: 16
+                    });
+                    this._processAllBudgetHandle = handle;
+                    Promise.resolve(handle.promise).then((result) => {
+                        if (this._processAllBudgetHandle !== handle) return;
+                        this._processAllBudgetHandle = null;
+                        this._recordScanDiagnostics(result);
+                        if (!result?.cancelled) this._updatePageActionButtons();
+                    });
+                    return handle;
                 },
                 _processAllVideosDebounced(delay = 300) {
                     if (this._processAllDebounceTimer) clearTimeout(this._processAllDebounceTimer);
@@ -11821,21 +12374,37 @@
                     };
 
                     this._observer = new MutationObserver(mutations => {
+                        const addedCards = [];
                         for (const m of mutations) {
                             for (const node of m.addedNodes) {
                                 if (node.nodeType !== 1) continue;
                                 if (node.matches?.(selectors)) {
-                                    const wasHidden = this._processVideoElementWithResult(node);
-                                    batchBuffer.push({ element: node, hidden: wasHidden });
+                                    addedCards.push(node);
                                 }
                                 node.querySelectorAll?.(selectors).forEach(el => {
-                                    const wasHidden = this._processVideoElementWithResult(el);
-                                    batchBuffer.push({ element: el, hidden: wasHidden });
+                                    addedCards.push(el);
                                 });
                             }
                         }
-                        if (batchTimeout) clearTimeout(batchTimeout);
-                        batchTimeout = setTimeout(processBatch, 300);
+                        if (!addedCards.length) return;
+                        this._mutationBudgetHandle?.cancel?.();
+                        const handle = runBudgetedElementBatch(addedCards, (el) => {
+                            const wasHidden = this._processVideoElementWithResult(el);
+                            batchBuffer.push({ element: el, hidden: wasHidden });
+                        }, {
+                            label: 'video-hider:mutation-batch',
+                            chunkSize: 80,
+                            budgetMs: 8,
+                            warnAfterMs: 16
+                        });
+                        this._mutationBudgetHandle = handle;
+                        Promise.resolve(handle.promise).then((result) => {
+                            if (this._mutationBudgetHandle !== handle) return;
+                            this._mutationBudgetHandle = null;
+                            this._recordScanDiagnostics(result);
+                            if (batchTimeout) clearTimeout(batchTimeout);
+                            batchTimeout = setTimeout(processBatch, 300);
+                        });
                     });
                     const observeTarget = document.querySelector('ytd-app') || document.body;
                     this._observer.observe(observeTarget, { childList: true, subtree: true });
@@ -11898,6 +12467,7 @@
                     this._styleElement?.remove();
                     this._observer?.disconnect();
                     this._clearBatchBuffer?.();
+                    this._cancelBudgetedScans();
                     this._restoreRemovedVideoNodes();
                     if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                     if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
@@ -12310,6 +12880,21 @@
                 removeNavigateRule = () => {},
                 addMutationRule = () => {},
                 removeMutationRule = () => {},
+                runBudgetedElementBatch = (items, callback) => {
+                    const list = Array.from(items || []);
+                    list.forEach(callback);
+                    return {
+                        cancel() {},
+                        promise: Promise.resolve({
+                            label: 'subscription-groups:fallback',
+                            total: list.length,
+                            processed: list.length,
+                            chunks: 1,
+                            durationMs: 0,
+                            cancelled: false
+                        })
+                    };
+                },
                 handleFileExport = () => {},
                 isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || ''))
             } = deps;
@@ -12334,6 +12919,62 @@
                 _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
                 _STALE_CHANNEL_MIN_AGE_DAYS: 365,
                 _SORT_MODES: Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']),
+                _budgetHandles: null,
+                _lastScanDiagnostics: null,
+
+                _ensureBudgetHandles() {
+                    if (!this._budgetHandles) this._budgetHandles = new Map();
+                    return this._budgetHandles;
+                },
+
+                _cancelBudgetedScan(label) {
+                    const handles = this._budgetHandles;
+                    const handle = handles?.get(label);
+                    handle?.cancel?.();
+                    handles?.delete(label);
+                },
+
+                _cancelAllBudgetedScans() {
+                    if (!this._budgetHandles) return;
+                    for (const handle of this._budgetHandles.values()) handle?.cancel?.();
+                    this._budgetHandles.clear();
+                },
+
+                _recordScanDiagnostics(result) {
+                    if (!result) return;
+                    this._lastScanDiagnostics = {
+                        label: result.label || 'subscription-groups',
+                        total: result.total || 0,
+                        processed: result.processed || 0,
+                        chunks: result.chunks || 0,
+                        durationMs: Math.round((result.durationMs || 0) * 10) / 10,
+                        cancelled: !!result.cancelled
+                    };
+                    if ((result.chunks || 0) > 1 || (result.durationMs || 0) > 16) {
+                        DebugManager.log('SubGroups', `Budgeted scan ${this._lastScanDiagnostics.label}: ${this._lastScanDiagnostics.processed}/${this._lastScanDiagnostics.total} cards in ${this._lastScanDiagnostics.chunks} chunks (${this._lastScanDiagnostics.durationMs}ms)`);
+                    }
+                },
+
+                _runCardBatch(label, cards, callback, onComplete = null) {
+                    const list = Array.from(cards || []);
+                    const safeLabel = String(label || 'cards').slice(0, 64);
+                    this._cancelBudgetedScan(safeLabel);
+                    const handle = runBudgetedElementBatch(list, callback, {
+                        label: `subscription-groups:${safeLabel}`,
+                        chunkSize: 80,
+                        budgetMs: 8,
+                        warnAfterMs: 16
+                    });
+                    const handles = this._ensureBudgetHandles();
+                    handles.set(safeLabel, handle);
+                    Promise.resolve(handle.promise).then((result) => {
+                        if (handles.get(safeLabel) !== handle) return;
+                        handles.delete(safeLabel);
+                        this._recordScanDiagnostics(result);
+                        if (!result?.cancelled && typeof onComplete === 'function') onComplete(result);
+                    });
+                    return handle;
+                },
 
                 _ensureStyles() {
                     if (this._styleElement) return;
@@ -12688,8 +13329,8 @@
                     const groups = this._readGroups();
                     const active = this._activeGroupId;
                     const allowed = active && groups[active] ? this._getGroupChannelIdSet(active, groups) : null;
-                    const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
-                    cards.forEach(card => {
+                    const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                    return this._runCardBatch('group-filter', cards, card => {
                         if (!allowed) {
                             card.classList.remove('ytkit-sub-hidden-by-group');
                             return;
@@ -12697,15 +13338,14 @@
                         const channelId = this._extractChannelIdFromCard(card);
                         if (!channelId || !allowed.has(channelId)) card.classList.add('ytkit-sub-hidden-by-group');
                         else card.classList.remove('ytkit-sub-hidden-by-group');
-                    });
-                    this._renderGroupEmptyState(allowed);
+                    }, () => this._renderGroupEmptyState(allowed));
                 },
 
                 _applyContentTypeFilter() {
                     const filterLive = !!appState?.settings?.subscriptionFilterLive;
                     const filterStreamed = !!appState?.settings?.subscriptionFilterStreamed;
-                    const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
-                    cards.forEach(card => {
+                    const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                    return this._runCardBatch('content-type-filter', cards, card => {
                         if (!filterLive && !filterStreamed) {
                             card.classList.remove('ytkit-sub-hidden-by-type');
                             return;
@@ -12727,7 +13367,8 @@
                     document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                     if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
                     const lastVisit = this._readLastVisit();
-                    document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                    return this._runCardBatch('new-since-markers', cards, card => {
                         const channelId = this._extractChannelIdFromCard(card);
                         if (!channelId) return;
                         if (this._isCardNewSinceLastVisit(card, channelId, lastVisit)) {
@@ -12745,12 +13386,14 @@
                 _stampLastVisit() {
                     const lastVisit = { ...this._readLastVisit() };
                     const now = Date.now();
-                    document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                    return this._runCardBatch('stamp-last-visit', cards, card => {
                         const channelId = this._extractChannelIdFromCard(card);
                         if (channelId) lastVisit[channelId] = now;
+                    }, () => {
+                        this._writeLastVisit(this._capLastVisitMap(lastVisit));
+                        if (this._digestPanel) this._renderDigestPanel();
                     });
-                    this._writeLastVisit(this._capLastVisitMap(lastVisit));
-                    if (this._digestPanel) this._renderDigestPanel();
                 },
 
                 _getCardMetaText(card) {
@@ -13032,7 +13675,8 @@
                         delete card.dataset.ytkitChannelAgeDays;
                         delete card.dataset.ytkitStagedUnsubscribe;
                     });
-                    document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                    this._runCardBatch('dead-channel-markers', cards, card => {
                         const channelId = this._extractChannelIdFromCard(card);
                         if (!channelId) return;
                         const target = card.querySelector('#metadata-line, ytd-video-meta-block, #meta');
@@ -13605,7 +14249,10 @@
                     // every deferred callback below re-check the path themselves.
                     this._ensureStyles();
                     this._navRule = () => {
-                        if (window.location.pathname !== '/feed/subscriptions') return;
+                        if (window.location.pathname !== '/feed/subscriptions') {
+                            this._cancelAllBudgetedScans();
+                            return;
+                        }
                         // Track + clear these so a navigation away within the delay
                         // can't fire them on the wrong page. The 8s _stampLastVisit
                         // in particular would otherwise stamp lastVisit for whatever
@@ -13642,6 +14289,7 @@
                 destroy() {
                     removeNavigateRule(this.id);
                     removeScopedMutationRule(this.id);
+                    this._cancelAllBudgetedScans();
                     if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }
                     if (this._stampTimer) { clearTimeout(this._stampTimer); this._stampTimer = null; }
                     this._navRule = null;
@@ -19320,7 +19968,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.17';
+    const YTKIT_VERSION = '4.46.18';
 
     // ── Z-Index Hierarchy ──
     const Z = {
