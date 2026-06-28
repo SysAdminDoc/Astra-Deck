@@ -342,8 +342,10 @@ test('playback stats overlay drops hacker-green text and exposes toggle state', 
 test('companion toasts standardize on "Astra Downloader" (no MediaDL prefix)', () => {
     assert.ok(!ytkitSource.includes("'MediaDL: '"),
         'the user-facing MediaDL: toast prefix must be gone');
-    assert.ok(ytkitSource.includes("showToast('Astra Downloader: ' + (resp.error || 'Unknown error')"),
-        'download error toast must use the Astra Downloader prefix');
+    assert.ok(ytkitSource.includes('showDownloaderFailure(resp || {})'),
+        'download error handling must route through classified recovery copy');
+    assert.ok(ytkitSource.includes('showToast(`Astra Downloader: ${failure.message} ${failure.advice}`'),
+        'classified download failure toasts must use the Astra Downloader prefix');
     assert.ok(ytkitSource.includes("t('toastDlReady', 'Astra Downloader is ready.')"),
         'ready toast must say Astra Downloader is ready.');
     assert.ok(ytkitSource.includes("t('toastDlStopped', 'Astra Downloader stopped. Starting it again…')"),
