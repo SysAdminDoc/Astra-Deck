@@ -2,15 +2,6 @@
 
 ## Research-Driven Additions
 
-### P1 — Reliability / Recovery
-
-- [ ] P1 — Legacy downloader token-echo retirement switch
-  Why: Native token bootstrap exists, but `/health` still supports legacy token echo; a tested retirement switch lets the project prove no-token `/health` behavior before final browser-ID validation.
-  Evidence: `docs/native-messaging-token-bootstrap.md`, `extension/background.js:910`, `extension/features/download-ui/index.js:84`, `astra_downloader/astra_downloader.py:189`, `astra_downloader/astra_downloader.py:3534`, Chrome/MDN native messaging docs.
-  Touches: `astra_downloader/astra_downloader.py`, `astra_downloader/test_astra_downloader.py`, `extension/features/download-ui/index.js`, `tests/features/next-monolith-peel.test.js`.
-  Acceptance: A config/env gate can disable legacy `/health` token echo; tests prove `/health` never returns the auth token in disabled mode, native-sourced requests still work, and the UI reports a clear native-channel-required recovery message when no native token is available.
-  Complexity: M
-
 ### P2 — Portability / Migration
 
 - [ ] P2 — Userscript parity classification gate

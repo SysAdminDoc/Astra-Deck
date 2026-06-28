@@ -72,6 +72,7 @@ class NormalizationTests(unittest.TestCase):
             "RateLimit": "2m",
             "Proxy": "file:///tmp/nope",
             "EmbedMetadata": "false",
+            "LegacyHealthTokenEcho": "false",
             "SubLangs": "en,es;<bad>",
         })
         self.assertEqual(cfg["ServerPort"], 65535)
@@ -79,6 +80,7 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(cfg["RateLimit"], "2M")
         self.assertEqual(cfg["Proxy"], "")
         self.assertFalse(cfg["EmbedMetadata"])
+        self.assertFalse(cfg["LegacyHealthTokenEcho"])
         self.assertEqual(cfg["SubLangs"], "en,esbad")
         self.assertGreaterEqual(len(cfg["ServerToken"]), 16)
 
@@ -237,6 +239,8 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(body["service"], ad.SERVICE_ID)
         self.assertEqual(body["api"], ad.SERVICE_API_VERSION)
         self.assertTrue(body["token_required"])
+        self.assertTrue(body["legacyTokenEcho"])
+        self.assertFalse(body["nativeChannelRequired"])
         self.assertEqual(body["token"], "a" * 32)
 
     def test_health_token_is_not_exposed_to_null_origin_pages(self):
@@ -270,6 +274,49 @@ class ApiSecurityTests(unittest.TestCase):
         native_body = native_resp.get_json()
         self.assertEqual(native_body["tokenSource"], "native")
         self.assertNotIn("token", native_body)
+
+    def test_health_legacy_token_echo_can_be_disabled(self):
+        token = "b" * 32
+        config = FakeConfig({
+            "ServerToken": token,
+            "LegacyHealthTokenEcho": False,
+        })
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+
+        background_resp = client.get("/health", headers={"X-MDL-Client": "MediaDL"})
+        background_body = background_resp.get_json()
+        self.assertEqual(background_body["status"], "ok")
+        self.assertFalse(background_body["legacyTokenEcho"])
+        self.assertTrue(background_body["nativeChannelRequired"])
+        self.assertNotIn("token", background_body)
+
+        extension_origin = "chrome-extension://abcdefghijklmnop"
+        extension_resp = client.get("/health", headers={
+            "Origin": extension_origin,
+            "X-MDL-Client": "MediaDL",
+        })
+        extension_body = extension_resp.get_json()
+        self.assertEqual(extension_resp.headers.get("Access-Control-Allow-Origin"), extension_origin)
+        self.assertFalse(extension_body["legacyTokenEcho"])
+        self.assertTrue(extension_body["nativeChannelRequired"])
+        self.assertNotIn("token", extension_body)
+
+        native_resp = client.get("/health", headers={
+            "X-MDL-Client": "MediaDL",
+            "X-MDL-Token-Source": "native",
+        })
+        native_body = native_resp.get_json()
+        self.assertEqual(native_body["status"], "ok")
+        self.assertEqual(native_body["tokenSource"], "native")
+        self.assertNotIn("token", native_body)
+
+        authenticated_resp = client.get("/history?limit=1", headers={
+            "X-Auth-Token": token,
+            "X-MDL-Token-Source": "native",
+        })
+        self.assertEqual(authenticated_resp.status_code, 200)
 
     def test_download_rejects_non_object_json_body(self):
         token = "c" * 32
