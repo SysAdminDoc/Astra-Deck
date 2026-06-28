@@ -2,15 +2,6 @@
 
 ## Research-Driven Additions
 
-### P2 — Portability / Migration
-
-- [ ] P2 — Subscription OPML import/export bridge
-  Why: Subscription managers and desktop YouTube clients treat subscription import/export as table-stakes; Astra supports JSON/CSV groups but lacks OPML interop for migration.
-  Evidence: PocketTube, FreeTube, `extension/features/subscription-groups/index.js:272`, `extension/features/subscription-groups/index.js:297`, `extension/features/subscription-groups/index.js:1199`.
-  Touches: `extension/features/subscription-groups/index.js`, `tests/features/next-monolith-peel.test.js`, `extension/_locales/en/messages.json`, locale coverage script.
-  Acceptance: Users can export groups/channels as OPML and import OPML with duplicate handling, malformed XML errors, row limits, and undo/status feedback; tests cover round-trip, duplicates, and invalid files.
-  Complexity: M
-
 ### P2 — Documentation / Release Truth
 
 - [ ] P2 — Architecture and release-doc truth gate

@@ -40,6 +40,14 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
+function subscriptionGroupsBlock() {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    assert.ok(start > -1, 'subscriptionGroups must exist');
+    const end = ytkitSource.indexOf('\n        }),', start);
+    assert.ok(end > start, 'subscriptionGroups factory block must close cleanly');
+    return ytkitSource.slice(start, end);
+}
+
 // PredicateSandbox moved out of ytkit.js into
 // core/predicate-sandbox.js. The safety-invariant hardening tests read
 // this source instead so the tests follow the implementation.
@@ -3531,9 +3539,7 @@ test('monetizationIndicator paints exactly one pill and removes it on destroy', 
 // ── v3.29.0 P1: Subscription manager invariants ──
 
 test('subscriptionGroups keys by channel ID and survives SPA navigation', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    assert.ok(start > -1, 'subscriptionGroups must exist');
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /_GROUPS_KEY: 'subscriptionGroupData'/,
         'must persist groups to subscriptionGroupData');
     assert.match(block, /a\[href\*="\/channel\/"]/,
@@ -3545,8 +3551,7 @@ test('subscriptionGroups keys by channel ID and survives SPA navigation', () => 
 });
 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /schemaVersion:\s*2/,
         'export payload must declare schemaVersion 2');
     assert.match(block, /astra-deck-subscription-groups-/,
@@ -3558,11 +3563,18 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
         'import must validate the color is a 6-digit hex code');
     assert.match(block, /parentId:\s*''/,
         'import must default parentId to top-level for legacy v1 payloads');
+    assert.match(block, /_exportGroupsOpml\(\)/,
+        'subscription groups must export OPML for migration to subscription managers');
+    assert.match(block, /_importGroupsOpml\(opmlText\)/,
+        'subscription groups must import OPML with the same local group model');
+    assert.match(block, /duplicateChannels/,
+        'OPML import must report skipped duplicate channels');
+    assert.match(block, /text\/x-opml/,
+        'OPML export must use an OPML-specific MIME type');
 });
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
@@ -3574,16 +3586,14 @@ test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and 
 });
 
 test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
 });
 
 test('subscriptionGroups persists sort mode per active group (NF31)', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /_SORT_MODES:\s*Object\.freeze\(\['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular'\]\)/,
         'subscriptionGroups must centralize the allowed sort modes');
     assert.match(block, /_getActiveSortMode\(groups = this\._readGroups\(\)\)[\s\S]*groups\[this\._activeGroupId\]\?\.sortMode/,
@@ -3603,8 +3613,7 @@ test('subscriptionGroups persists sort mode per active group (NF31)', () => {
 });
 
 test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (NF2)', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /_getGroupParentId\(groupId, groups = this\._readGroups\(\)\)/,
         'subscriptionGroups must expose parentId normalization for nested groups');
     assert.match(block, /grandParentId && groups\[grandParentId\] \? '' : parentId/,
@@ -3634,8 +3643,7 @@ test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (
 });
 
 test('subscriptionGroups stages dead-channel unsubscribe candidates with a 30-day undo window', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /_UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData'/,
         'dead-channel staging must persist into subscriptionUnsubscribeStagingData');
     assert.match(block, /_UNSUB_STAGE_TTL_MS:\s*30 \* 24 \* 60 \* 60 \* 1000/,
@@ -4504,8 +4512,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
 // ── v4.2.0 P1: Popularity sort + transcript search panel ──
 
 test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /_parseCompactViewCount/,
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
@@ -4641,8 +4648,7 @@ test('PageTypes covers music, embed, and live_chat surfaces', () => {
 });
 
 test('subscriptionGroups uses an inline dialog instead of window.prompt', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     // Hardening pass replaced window.prompt with _showNewGroupDialog.
     assert.match(block, /_showNewGroupDialog/,
         'subscriptionGroups must expose the inline new-group dialog');
@@ -4660,8 +4666,7 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
 });
 
 test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     const capIdx = block.indexOf('_capLastVisitMap');
     const capBody = block.slice(capIdx, capIdx + 1200);
     const stampIdx = block.indexOf('_stampLastVisit()');
@@ -4675,8 +4680,7 @@ test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
 });
 
 test('subscriptionGroups renders group digest counts and mark-read controls', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /_digestPanel:\s*null/,
         'subscriptionGroups must track the digest panel for teardown and rerenders');
     assert.match(block, /_extractCardAgeMs\(text\)/,
@@ -4783,8 +4787,7 @@ test('subscriptionAiTags persists generated tags into subscriptionAiTagData per 
 });
 
 test('subscriptionAiTags renders chip suffix and binds shift+click for regeneration', () => {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 78000);
+    const block = subscriptionGroupsBlock();
     assert.match(block, /aiTagData\[id\]\?\.tags\?\.length/,
         'chip render must check for stored tags');
     assert.match(block, /Shift\+click to regenerate/,

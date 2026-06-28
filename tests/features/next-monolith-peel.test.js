@@ -486,7 +486,12 @@ test('subscriptionGroups factory returns the group management runtime surface', 
         '_renderToolbar',
         '_applyGroupFilter',
         '_exportGroups',
+        '_exportGroupsCsv',
+        '_exportGroupsOpml',
         '_importGroups',
+        '_importGroupsOpml',
+        '_buildGroupsOpml',
+        '_parseGroupsOpml',
         '_toggleMembersPanel',
         '_playGroupAsQueue',
         '_generateAiTagsForGroup'
@@ -532,10 +537,142 @@ test('subscriptionGroups monolith prefers the module runtime factory before inli
         'removeNavigateRule',
         'addMutationRule',
         'removeMutationRule',
-        'handleFileExport'
+        'handleFileExport',
+        'isSafeObjectKey'
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
+});
+
+test('subscriptionGroups OPML export/import round-trips nested groups and channels', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const sourceAppState = {
+        settings: {
+            subscriptionGroupData: {
+                coding: {
+                    name: 'Coding',
+                    color: '#22c55e',
+                    channelIds: ['UCalpha1111111111111111'],
+                    parentId: '',
+                    sortMode: 'popular',
+                    updatedAt: 1,
+                },
+                codingFrontend: {
+                    name: 'Frontend',
+                    color: '#7c3aed',
+                    channelIds: ['UCbeta22222222222222222'],
+                    parentId: 'coding',
+                    sortMode: 'date-desc',
+                    updatedAt: 1,
+                },
+            },
+        },
+    };
+    const source = mod.createSubscriptionGroupsFeature({
+        appState: sourceAppState,
+        settingsManager: { save() {} },
+        showToast() {},
+    });
+
+    const opml = source._buildGroupsOpml();
+
+    assert.match(opml, /<opml version="2\.0"/);
+    assert.match(opml, /astra:id="coding"/);
+    assert.match(opml, /channel_id=UCalpha1111111111111111/);
+
+    const targetAppState = { settings: { subscriptionGroupData: {} } };
+    const target = mod.createSubscriptionGroupsFeature({
+        appState: targetAppState,
+        settingsManager: { save() {} },
+        showToast() {},
+    });
+    target._renderToolbar = () => {};
+    target._applyGroupFilter = () => {};
+    target._renderDeadChannelMarkers = () => {};
+
+    const result = target._importGroupsOpml(opml);
+    const imported = targetAppState.settings.subscriptionGroupData;
+
+    assert.equal(result.ok, true);
+    assert.equal(imported.coding.name, 'Coding');
+    assert.equal(imported.coding.sortMode, 'popular');
+    assert.deepEqual(imported.coding.channelIds, ['UCalpha1111111111111111']);
+    assert.equal(imported.codingFrontend.parentId, 'coding');
+    assert.deepEqual(imported.codingFrontend.channelIds, ['UCbeta22222222222222222']);
+});
+
+test('subscriptionGroups OPML import deduplicates channels and exposes undo status', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const appState = {
+        settings: {
+            subscriptionGroupData: {
+                previous: { name: 'Previous', color: '#7c3aed', channelIds: ['UCold'], parentId: '', sortMode: 'default', updatedAt: 1 },
+            },
+        },
+    };
+    const toasts = [];
+    const feature = mod.createSubscriptionGroupsFeature({
+        appState,
+        settingsManager: { save() {} },
+        showToast: (...args) => toasts.push(args),
+    });
+    feature._renderToolbar = () => {};
+    feature._applyGroupFilter = () => {};
+    feature._renderDeadChannelMarkers = () => {};
+    const opml = `<?xml version="1.0"?>
+<opml version="2.0"><body>
+  <outline text="News" astra:type="group" astra:id="news">
+    <outline type="rss" text="One" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCone11111111111111111" />
+    <outline type="rss" text="One duplicate" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCone11111111111111111" />
+    <outline type="rss" text="Two" htmlUrl="https://www.youtube.com/channel/UCtwo22222222222222222" />
+  </outline>
+</body></opml>`;
+
+    const result = feature._importGroupsOpml(opml);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.duplicateChannels, 1);
+    assert.deepEqual(appState.settings.subscriptionGroupData.news.channelIds, [
+        'UCone11111111111111111',
+        'UCtwo22222222222222222',
+    ]);
+    assert.match(toasts[0][0], /skipped 1 duplicate channel/);
+    assert.equal(toasts[0][2].action.text, 'Undo');
+
+    toasts[0][2].action.onClick();
+    assert.deepEqual(Object.keys(appState.settings.subscriptionGroupData), ['previous']);
+});
+
+test('subscriptionGroups OPML import reports malformed files without overwriting groups', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const appState = {
+        settings: {
+            subscriptionGroupData: {
+                keep: { name: 'Keep', color: '#7c3aed', channelIds: ['UCkeep'], parentId: '', sortMode: 'default', updatedAt: 1 },
+            },
+        },
+    };
+    const toasts = [];
+    const feature = mod.createSubscriptionGroupsFeature({
+        appState,
+        settingsManager: { save() {} },
+        showToast: (...args) => toasts.push(args),
+    });
+
+    const result = feature._importGroupsOpml('<not-opml><outline text="Broken" /></not-opml>');
+
+    assert.equal(result.ok, false);
+    assert.deepEqual(Object.keys(appState.settings.subscriptionGroupData), ['keep']);
+    assert.match(toasts[0][0], /OPML import failed/i);
 });
 
 // ── Digital Wellbeing peel ──
