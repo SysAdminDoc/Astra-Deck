@@ -221,6 +221,64 @@ test('downloadUI MediaDLManager falls back to legacy /health token when native m
     assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
 });
 
+test('downloadUI classifies companion failure codes into recovery copy', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const result = mod.createDownloadUIFeature();
+    const expected = new Map([
+        ['po-token-required', /PO token/i],
+        ['po-provider-stale', /provider/i],
+        ['sabr-limited', /SABR/i],
+        ['deno-runtime-missing', /Deno/i],
+        ['sign-in-required', /signed-in|Sign in/i],
+        ['ffmpeg-missing-or-stale', /ffmpeg/i],
+        ['network-unreachable', /network/i],
+    ]);
+
+    for (const [code, pattern] of expected) {
+        const classified = result.classifyDownloaderFailureResponse({ error_code: code });
+
+        assert.equal(classified.code, code);
+        assert.match(classified.message + ' ' + classified.advice, pattern);
+        assert.equal(typeof classified.nextAction, 'string');
+        assert.ok(classified.nextAction.length > 0);
+    }
+});
+
+test('downloadUI classified failures render recovery toast and diagnostic code', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const toasts = [];
+    const diagnostics = [];
+    const result = mod.createDownloadUIFeature({
+        extensionFetchJson: async () => ({
+            response: { status: 422, responseText: '{"error_code":"po-token-required"}' },
+            data: {
+                error_code: 'po-token-required',
+                error: 'PO token required by YouTube',
+                advice: 'Start bgutil-ytdlp-pot-provider on 127.0.0.1:4416.',
+                next_action: 'start-po-token-provider',
+            },
+        }),
+        showToast: (...args) => toasts.push(args),
+        DiagnosticLog: { record: (...args) => diagnostics.push(args) },
+        browserCookies: {},
+        DebugManager: { log() {} },
+    });
+
+    await result._mediaDLSendDownload('https://www.youtube.com/watch?v=abcdefghijk', false, 'token');
+
+    assert.equal(toasts.length, 1);
+    assert.match(toasts[0][0], /PO token required/i);
+    assert.match(toasts[0][0], /127\.0\.0\.1:4416/);
+    assert.deepEqual(diagnostics[0][0], 'download-failure');
+    assert.match(diagnostics[0][1], /po-token-required/);
+});
+
 test('downloadUI factory returns all four feature objects', () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',

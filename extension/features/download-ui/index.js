@@ -748,6 +748,76 @@
                 || message.includes('extension request failed');
         }
 
+        const DOWNLOADER_FAILURE_COPY = Object.freeze({
+            'po-token-required': {
+                message: 'YouTube requires a PO token for this video.',
+                advice: 'Start the PO-token provider on 127.0.0.1:4416, then retry.',
+                tone: '#f59e0b',
+                duration: 10,
+            },
+            'po-provider-stale': {
+                message: 'The PO-token provider returned a stale or unusable token.',
+                advice: 'Update or restart bgutil-ytdlp-pot-provider, then retry.',
+                tone: '#f59e0b',
+                duration: 10,
+            },
+            'sabr-limited': {
+                message: 'This video is currently SABR-limited.',
+                advice: 'Update yt-dlp when SABR support lands, or retry after YouTube exposes standard formats.',
+                tone: '#f59e0b',
+                duration: 12,
+            },
+            'deno-runtime-missing': {
+                message: 'Deno is required for this yt-dlp build.',
+                advice: 'Install Deno or click the Deno health pill to provision it, then restart Astra Downloader.',
+                tone: '#f59e0b',
+                duration: 15,
+            },
+            'sign-in-required': {
+                message: 'YouTube needs signed-in browser access for this video.',
+                advice: 'Sign in to YouTube, allow the cookie bridge, then retry.',
+                tone: '#f59e0b',
+                duration: 10,
+            },
+            'ffmpeg-missing-or-stale': {
+                message: 'ffmpeg is missing, stale, or failed during merge.',
+                advice: 'Refresh ffmpeg from Astra Downloader before retrying.',
+                tone: '#ef4444',
+                duration: 10,
+            },
+            'network-unreachable': {
+                message: 'Astra Downloader could not reach YouTube or a required provider.',
+                advice: 'Check your network, VPN, firewall, and provider process, then retry.',
+                tone: '#ef4444',
+                duration: 8,
+            },
+        });
+
+        function classifyDownloaderFailureResponse(resp = {}) {
+            const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
+            const code = String(rawCode || 'download-failed');
+            const preset = DOWNLOADER_FAILURE_COPY[code] || {};
+            const message = String(resp?.error || preset.message || 'Download failed.').slice(0, 220);
+            const advice = String(resp?.advice || preset.advice || 'Open Astra Downloader diagnostics, then retry.').slice(0, 220);
+            return {
+                code,
+                message,
+                advice,
+                nextAction: String(resp?.next_action || resp?.nextAction || preset.nextAction || 'retry'),
+                tone: preset.tone || '#ef4444',
+                duration: preset.duration || 6,
+            };
+        }
+
+        function showDownloaderFailure(resp = {}) {
+            const failure = classifyDownloaderFailureResponse(resp);
+            DiagnosticLog?.record?.('download-failure', `${failure.code}: ${failure.message} | ${failure.advice}`);
+            showToast(`Astra Downloader: ${failure.message} ${failure.advice}`, failure.tone, {
+                duration: failure.duration,
+            });
+            return failure;
+        }
+
         async function ytKitDownload(videoUrl, audioOnly, opts = {}) {
             if (_downloadInProgress) {
                 showToast(t('toastDlInProgress', 'A download is already in progress.'), '#f59e0b', { duration: 3 });
@@ -820,15 +890,8 @@
                     DebugManager.log('MediaDL', `Download response: ${response.status} - ${response.responseText}`);
                     if (resp.id) {
                         showDownloadProgress(resp.id, token, audioOnly);
-                    } else if (resp.code === 'deno-runtime-missing') {
-                        const advice = String(resp.advice || 'Install Deno (https://deno.com/) and restart Astra Downloader.').slice(0, 200);
-                        showToast(
-                            'Deno required for downloads — ' + advice,
-                            '#f59e0b',
-                            { duration: 15 }
-                        );
                     } else {
-                        showToast('Astra Downloader: ' + (resp.error || 'Unknown error'), '#ef4444', { duration: 5 });
+                        showDownloaderFailure(resp || {});
                     }
                 } catch (error) {
                     DebugManager.log('MediaDL', `Download request error: ${error.message}`);
@@ -1787,6 +1850,8 @@
             _mediaDLSendDownload,
             _fetchServerConfig,
             _isDownloaderConnectionError,
+            classifyDownloaderFailureResponse,
+            showDownloaderFailure,
             normalizeCookieExpiry,
             VIDEO_FORMATS,
             AUDIO_FORMATS,

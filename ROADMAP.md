@@ -1,70 +1,37 @@
-# Roadmap — Astra Deck
-
-## Research-Driven Additions (June 2026 Cycle 5)
-
-### P2 — Quick Wins / Enhancement
-
-- [ ] P2 — Subscription groups monolith peel
-  Why: Subscription groups is the largest remaining inline feature cluster (~3K lines). It includes group CRUD, chip filtering, sort modes, digest panel, membership editor, CSV/JSON export/import, content-type filter, stale-channel detection, AI tags, and queue playback. Extracting it to `features/subscription-groups/index.js` continues the monolith decomposition.
-  Evidence: Grep for `subscriptionGroup` in `extension/ytkit.js` — ~3K lines of inline code.
-  Touches: `extension/features/subscription-groups/index.js` (new), `extension/ytkit.js` (delegation), `extension/manifest.json` (content_scripts), `sync-userscript.js` (V5_BUNDLE_MODULES)
-  Acceptance: Subscription groups runtime extracted. Monolith delegates to factory with inline fallback. All existing tests pass plus 3+ new peel coverage tests.
-  Complexity: L
-
-- [ ] P2 — Digital wellbeing monolith peel
-  Why: Digital wellbeing (~1.5K lines) handles watch time tracking, break reminders, daily limits, and statistics. It's self-contained and a clean peel candidate.
-  Evidence: Grep for `digitalWellbeing` in `extension/ytkit.js`.
-  Touches: `extension/features/digital-wellbeing/index.js` (new), `extension/ytkit.js`, `extension/manifest.json`, `sync-userscript.js`
-  Acceptance: Digital wellbeing runtime extracted. Monolith delegates with inline fallback. Existing tests pass.
-  Complexity: M
-
-- [ ] P2 — Settings panel monolith peel
-  Why: The in-page settings panel (~4K lines) handles rendering, search/filter, conflict management, and live sync. It's the second-largest remaining feature cluster and runs independently of other features.
-  Evidence: Grep for `buildSettingsPanel\|_settingsPanel\|settingsPanelOpen` in `extension/ytkit.js`.
-  Touches: `extension/features/settings-panel/index.js` (new), `extension/ytkit.js`, `extension/manifest.json`, `sync-userscript.js`
-  Acceptance: Settings panel runtime extracted. Monolith delegates with inline fallback. Existing tests pass.
-  Complexity: L
-
-### P3 — Later / Under Consideration
-
-- [ ] P3 — Firefox `sidebarAction` fallback for diagnostic dashboard
-  Why: Chrome Side Panel diagnostic dashboard is Chrome-only. Firefox uses `sidebarAction` API (incompatible with `sidePanel`). Firefox users have no equivalent persistent diagnostic surface. A `sidebarAction` fallback would give Firefox users feature parity.
-  Evidence: MDN sidebarAction docs; blog.mozilla.org/addons Firefox MV3 updates confirm no `sidePanel` adoption planned.
-  Touches: `extension/manifest.json` (add `sidebar_action` for Firefox), new `extension/sidebar.html` + `extension/sidebar.js`, `scripts/manifest-patch.js` (add `sidebar_action` to Firefox builds)
-  Acceptance: Firefox build includes a sidebar with the same diagnostic sections as Chrome's Side Panel. Chrome builds are unaffected.
-  Complexity: L
-
-- [ ] P3 — Video notes monolith peel
-  Why: Video notes (~1K lines) handles per-video local note storage, export, and LRU eviction. Small and self-contained.
-  Evidence: Grep for `videoNotes` in `extension/ytkit.js`.
-  Touches: `extension/features/video-notes/index.js` (new), `extension/ytkit.js`, `extension/manifest.json`
-  Acceptance: Video notes runtime extracted. Monolith delegates with inline fallback. Existing tests pass.
-  Complexity: S
-
+# Roadmap - Astra Deck
 
 ## Research-Driven Additions
 
-### P1 — Security / Reliability
+### P1 — Reliability / Recovery
 
-- [ ] P1 — Native-messaging token bootstrap cutover
-  Why: The companion still keeps HTTP `/health` token disclosure as the compatibility path; native messaging is already partially implemented and gives Chrome/Firefox a browser-pinned token channel.
-  Evidence: `docs/native-messaging-token-bootstrap.md`, `astra_downloader/astra_downloader.py:5640`, `extension/background.js:944`, Chrome native messaging docs, MDN native messaging docs.
-  Touches: `astra_downloader/astra_downloader.py`, `astra_downloader/test_astra_downloader.py`, `extension/background.js`, `extension/features/download-ui/index.js`, `build-extension.js`, companion installer/packaging scripts.
-  Acceptance: Companion setup writes Chrome `allowed_origins` and Firefox `allowed_extensions` native-host manifests for configured extension IDs; the extension tries native messaging before `/health`; diagnostics expose `tokenSource: native|legacy`; `/health` no longer returns the auth token once native bootstrap succeeds; tests cover manifest shape, fallback, and malformed native messages.
-  Complexity: L
-
-- [ ] P1 — External crowd API health dashboard
-  Why: SponsorBlock, DeArrow, and Return YouTube Dislike are high-value external dependencies with recurring YouTube/API breakage; current diagnostics do not expose per-service last-success, last-error, and degraded/fallback state.
-  Evidence: SponsorBlock issues #2290/#2341, Return YouTube Dislike issue #1274, DeArrow release cadence, `extension/features/sponsorblock/index.js`, `extension/features/dearrow/index.js`, `extension/features/return-dislike/index.js`, `extension/core/diagnostic-log.js`.
-  Touches: `extension/core/diagnostic-log.js`, `extension/core/data-flow.js`, `extension/features/sponsorblock/index.js`, `extension/features/dearrow/index.js`, `extension/features/return-dislike/index.js`, `extension/popup.js`, `extension/sidepanel.js`, tests.
-  Acceptance: Popup/sidepanel diagnostics show SponsorBlock, DeArrow, and RYD status with last success, last error class, cache/fallback state, and request budget when relevant; Copy/Save diagnostic export includes the same summary; tests simulate 429, 5xx, network offline, invalid payload, and cached fallback cases.
+- [ ] P1 — Legacy downloader token-echo retirement switch
+  Why: Native token bootstrap exists, but `/health` still supports legacy token echo; a tested retirement switch lets the project prove no-token `/health` behavior before final browser-ID validation.
+  Evidence: `docs/native-messaging-token-bootstrap.md`, `extension/background.js:910`, `extension/features/download-ui/index.js:84`, `astra_downloader/astra_downloader.py:189`, `astra_downloader/astra_downloader.py:3534`, Chrome/MDN native messaging docs.
+  Touches: `astra_downloader/astra_downloader.py`, `astra_downloader/test_astra_downloader.py`, `extension/features/download-ui/index.js`, `tests/features/next-monolith-peel.test.js`.
+  Acceptance: A config/env gate can disable legacy `/health` token echo; tests prove `/health` never returns the auth token in disabled mode, native-sourced requests still work, and the UI reports a clear native-channel-required recovery message when no native token is available.
   Complexity: M
 
-### P2 — Research / Offline Workflow
+### P2 — Portability / Migration
 
-- [ ] P2 — Transcript study batch export queue
-  Why: AI transcript competitors win on playlist/batch workflows and structured study exports; Astra already has local transcript, search, and AI handoff primitives but no bounded multi-video queue.
-  Evidence: Glasp, Eightify, NoteGPT, `extension/core/transcript-service.js`, `extension/core/storage-manager.js`, `extension/ytkit.js` transcript/search/export code.
-  Touches: `extension/core/transcript-service.js`, `extension/core/storage-manager.js`, `extension/ytkit.js`, `extension/popup.js`, `extension/core/settings-schema.js`, tests.
-  Acceptance: User can queue current playlist/channel visible videos for transcript fetch, see per-video pending/success/failure state, and export a Markdown + JSONL study pack with video metadata, transcript language, timestamps, and failure reasons; queue size and retry caps are enforced; no remote AI call or API key is required.
-  Complexity: L
+- [ ] P2 — Userscript parity classification gate
+  Why: The userscript drift check passes but reports 89 extension-only feature IDs with no machine-readable reason, making portability regressions hard to separate from intentional browser-API gaps.
+  Evidence: `node scripts/check-userscript-drift.js` output, `scripts/check-userscript-drift.js`, `sync-userscript.js`, `extension/manifest.json`.
+  Touches: `scripts/check-userscript-drift.js`, `sync-userscript.js`, `extension/manifest.json`, `tests/hardening.test.js`.
+  Acceptance: Every extension-only feature ID is classified as `chrome-api`, `native-companion`, `unsafe-in-userscript`, `not-yet-ported`, or `intentional-extension-only`; the drift check fails on unclassified new IDs and prints parity counts by class.
+  Complexity: S
+
+- [ ] P2 — Subscription OPML import/export bridge
+  Why: Subscription managers and desktop YouTube clients treat subscription import/export as table-stakes; Astra supports JSON/CSV groups but lacks OPML interop for migration.
+  Evidence: PocketTube, FreeTube, `extension/features/subscription-groups/index.js:272`, `extension/features/subscription-groups/index.js:297`, `extension/features/subscription-groups/index.js:1199`.
+  Touches: `extension/features/subscription-groups/index.js`, `tests/features/next-monolith-peel.test.js`, `extension/_locales/en/messages.json`, locale coverage script.
+  Acceptance: Users can export groups/channels as OPML and import OPML with duplicate handling, malformed XML errors, row limits, and undo/status feedback; tests cover round-trip, duplicates, and invalid files.
+  Complexity: M
+
+### P2 — Documentation / Release Truth
+
+- [ ] P2 — Architecture and release-doc truth gate
+  Why: Active docs still reference v4.46.0, `RESEARCH_REPORT.md`, and retired GitHub Actions workflows while tests require local-only builds; stale trust docs undermine release integrity.
+  Evidence: `docs/architecture.md:3`, `docs/architecture.md:127`, `docs/repo-settings.md:53`, `scripts/check-versions.js:6`, `tests/actions-policy.test.js:37`, `tests/hardening.test.js:1990`.
+  Touches: `docs/architecture.md`, `docs/repo-settings.md`, `README.md`, `scripts/check-versions.js`, `tests/actions-policy.test.js`, `tests/hardening.test.js`.
+  Acceptance: Active docs match the current version and local-only build policy; a local check fails if active docs mention retired workflow paths or stale current-version literals outside changelog/archive/history contexts.
+  Complexity: S

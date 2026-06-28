@@ -191,6 +191,41 @@ class DownloadManagerTests(unittest.TestCase):
         self.assertEqual(dl.status, "complete")
 
 
+class DownloadFailureClassifierTests(unittest.TestCase):
+    def test_classifies_recoverable_youtube_failures(self):
+        cases = [
+            ('ERROR: Missing PO Token for web client', 'po-token-required'),
+            ('bgutil PO token provider failed to issue token: stale provider', 'po-provider-stale'),
+            ('ERROR: requested format is not available; SABR only', 'sabr-limited'),
+            ('Deno JavaScript runtime not found for n/sig signature solving', 'deno-runtime-missing'),
+            ('ERROR: Sign in to confirm you are not a bot', 'sign-in-required'),
+            ('ERROR: ffmpeg not found; install ffmpeg', 'ffmpeg-missing-or-stale'),
+            ('ERROR: Unable to download webpage: HTTP Error 503', 'network-unreachable'),
+        ]
+        for message, expected in cases:
+            with self.subTest(expected=expected):
+                self.assertEqual(ad.classify_download_failure(message), expected)
+
+    def test_download_error_payload_keeps_legacy_code_and_action_fields(self):
+        payload = ad.download_error_payload('po-token-required')
+
+        self.assertEqual(payload['code'], 'po-token-required')
+        self.assertEqual(payload['error_code'], 'po-token-required')
+        self.assertEqual(payload['next_action'], 'start-po-token-provider')
+        self.assertIn('PO token', payload['error'])
+        self.assertIn('127.0.0.1:4416', payload['advice'])
+
+    def test_download_to_dict_includes_failure_recovery_metadata(self):
+        dl = ad.Download('dl_test', 'https://www.youtube.com/watch?v=abcdefghijk')
+
+        ad.apply_download_failure_classification(dl, 'ffmpeg-missing-or-stale')
+        payload = dl.to_dict()
+
+        self.assertEqual(payload['error_code'], 'ffmpeg-missing-or-stale')
+        self.assertEqual(payload['next_action'], 'refresh-ffmpeg')
+        self.assertIn('ffmpeg', payload['advice'])
+
+
 class ApiSecurityTests(unittest.TestCase):
     def test_health_advertises_service_identity(self):
         config = FakeConfig({"ServerToken": "a" * 32})
@@ -1062,6 +1097,10 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
         body = resp.get_json() or {}
         self.assertEqual(body.get('code'), 'deno-runtime-missing',
                          'Error code must identify the Deno cause')
+        self.assertEqual(body.get('error_code'), 'deno-runtime-missing',
+                         'Stable snake_case error_code must identify the Deno cause')
+        self.assertEqual(body.get('next_action'), 'install-deno',
+                         'Payload must include the recovery action for the extension UI')
         self.assertIn('Deno', body.get('error', ''),
                       'Error message must mention Deno so the extension can surface it')
         self.assertIn('winget install', body.get('advice', ''),
@@ -1864,6 +1903,10 @@ class EndToEndDownloadTests(unittest.TestCase):
                 f"non-zero exit with low progress must fail; got {dl.status}")
             self.assertIn("Sign in to confirm", dl.error or "",
                 "error must surface the yt-dlp ERROR text")
+            self.assertEqual(dl.error_code, "sign-in-required",
+                "sign-in failures must expose a stable recovery code")
+            self.assertEqual(dl.to_dict().get("next_action"), "sign-in-and-retry",
+                "status payload must expose the matching recovery action")
             self.assertEqual(len(history.entries), 0,
                 "failed download must NOT write a history entry")
 

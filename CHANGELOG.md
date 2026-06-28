@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.10 downloader failure recovery codes.** Astra Downloader now
+  classifies PO-token, provider-staleness, SABR, Deno, sign-in, ffmpeg, and
+  network failures with stable `error_code` values; the extension and
+  userscript show matching recovery guidance and record the code in
+  diagnostics.
 - **Polish: v4.46.9 dashboard and popup degraded states.** Side-panel
   diagnostics now hide empty metric chips, render structured recovery states,
   and explain unavailable storage; the toolbar popup now treats missing
@@ -24,13 +29,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   bounded desktop layout, aligned feature rows, custom select chrome, stronger
   player-overlay z-index, and refreshed Chrome reload artifacts.
 - **Release: v4.46.5 Chrome reload build.** Product version surfaces now
-  agree at 4.46.5, and fresh Chrome/Firefox validation artifacts plus the
+  agree at `4.46.5`, and fresh Chrome/Firefox validation artifacts plus the
   userscript copy were rebuilt from the polished settings/dashboard code.
 - **Polish: settings and diagnostic dashboard experience.** Reworked the
   side-panel/sidebar dashboard into a premium grouped diagnostics surface,
   upgraded Quick Settings search/filter states, added visible status feedback
   to in-page settings save/import/export/reset flows, and tightened side-panel
   hidden/focus accessibility contracts.
+- **Docs: companion release status sync.** `docs/native-messaging-token-bootstrap.md`
+  reflects the implemented native-first token bootstrap with legacy `/health`
+  fallback, and README / blocked-roadmap notes match the `v4.46.4`
+  release state where `AstraDownloader.exe` is attached but its `.sha256`
+  sidecar still needs maintainer upload.
 - **Refactor: video notes monolith peel.** The per-video local notes runtime
   now lives in `extension/features/video-notes/index.js` with inline fallback,
   manifest/userscript bundle wiring, raw-CSS userscript parity, and focused

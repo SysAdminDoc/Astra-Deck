@@ -2635,6 +2635,139 @@ def build_video_format_args(container, quality):
     return ['-f', fmt_sel, '--merge-output-format', container]
 
 
+DOWNLOAD_FAILURE_RECOVERY = {
+    'po-token-required': {
+        'error': (
+            'YouTube requires a PO token for this video. Start the PO-token '
+            'provider, then retry the download.'
+        ),
+        'advice': 'Start bgutil-ytdlp-pot-provider on 127.0.0.1:4416 and retry.',
+        'next_action': 'start-po-token-provider',
+    },
+    'po-provider-stale': {
+        'error': (
+            'The PO-token provider is reachable but looks stale or failed to '
+            'issue a usable token.'
+        ),
+        'advice': 'Update or restart bgutil-ytdlp-pot-provider, then retry.',
+        'next_action': 'update-po-token-provider',
+    },
+    'sabr-limited': {
+        'error': (
+            'This video only exposes SABR-limited formats that this yt-dlp '
+            'path cannot download yet.'
+        ),
+        'advice': 'Update yt-dlp when SABR support lands, or retry after YouTube exposes standard formats.',
+        'next_action': 'update-ytdlp-or-retry-later',
+    },
+    'deno-runtime-missing': {
+        'error': (
+            'yt-dlp needs the Deno JavaScript runtime to solve recent YouTube '
+            'signature challenges.'
+        ),
+        'advice': 'Install Deno with winget install DenoLand.Deno, then restart Astra Downloader.',
+        'next_action': 'install-deno',
+    },
+    'sign-in-required': {
+        'error': (
+            'Sign in to confirm YouTube access. Grant browser cookies or open '
+            'the video while signed in, then retry.'
+        ),
+        'advice': 'Sign in to YouTube in this browser and allow Astra Deck to attach YouTube cookies.',
+        'next_action': 'sign-in-and-retry',
+    },
+    'ffmpeg-missing-or-stale': {
+        'error': 'ffmpeg is missing, stale, or failed during merge/extract.',
+        'advice': 'Open Astra Downloader and refresh ffmpeg before retrying.',
+        'next_action': 'refresh-ffmpeg',
+    },
+    'network-unreachable': {
+        'error': 'Astra Downloader could not reach YouTube or a required provider.',
+        'advice': 'Check the network, VPN, firewall, and provider process, then retry.',
+        'next_action': 'check-network-and-retry',
+    },
+}
+
+
+def download_error_payload(error_code, error=None, advice=None):
+    meta = DOWNLOAD_FAILURE_RECOVERY.get(error_code, {})
+    message = error or meta.get('error') or 'Download failed.'
+    recovery = advice or meta.get('advice') or 'Retry after checking Astra Downloader diagnostics.'
+    return {
+        'error': message,
+        'code': error_code,
+        'error_code': error_code,
+        'advice': recovery,
+        'next_action': meta.get('next_action', 'retry'),
+    }
+
+
+def classify_download_failure(message='', lines=None):
+    text_parts = [str(message or '')]
+    if lines:
+        text_parts.extend(str(line or '') for line in lines)
+    text = ' '.join(text_parts).lower()
+
+    if not text.strip():
+        return None
+
+    if (
+        'deno' in text
+        and ('javascript runtime' in text or 'signature' in text or 'n/sig' in text
+             or 'not found' in text or 'requires' in text)
+    ):
+        return 'deno-runtime-missing'
+
+    po_markers = ('po token', 'po-token', 'potoken', 'po_token', 'bgutil')
+    if any(marker in text for marker in po_markers):
+        if any(marker in text for marker in (
+            'stale', 'expired', 'outdated', 'provider failed', 'failed to issue',
+            'failed to fetch', 'unreachable', 'connection refused', 'invalid response',
+        )):
+            return 'po-provider-stale'
+        return 'po-token-required'
+
+    if any(marker in text for marker in (
+        'sign in to confirm', 'please sign in', 'login required', 'not logged in',
+        'confirm you are not a bot', 'cookies are required', 'use cookies',
+        'authentication required',
+    )):
+        return 'sign-in-required'
+
+    if 'ffmpeg' in text and any(marker in text for marker in (
+        'not found', 'not installed', 'no such file', 'exited with code',
+        'version', 'stale', 'unable to execute', 'failed',
+    )):
+        return 'ffmpeg-missing-or-stale'
+
+    if any(marker in text for marker in (
+        'sabr', 'no video formats', 'requested format is not available',
+        'no formats available', 'only images are available',
+    )):
+        return 'sabr-limited'
+
+    if any(marker in text for marker in (
+        'network is unreachable', 'failed to establish a new connection',
+        'connection refused', 'connection reset', 'connection timed out',
+        'timed out', 'temporary failure in name resolution', 'name or service not known',
+        'dns', 'unable to download webpage', 'http error 502', 'http error 503',
+        'http error 504',
+    )):
+        return 'network-unreachable'
+
+    return None
+
+
+def apply_download_failure_classification(download, error_code, error=None, advice=None):
+    if not error_code:
+        return
+    payload = download_error_payload(error_code, error=error, advice=advice)
+    download.error_code = payload['error_code']
+    download.error_advice = payload['advice']
+    download.error_action = payload['next_action']
+    download.error = payload['error']
+
+
 class Download:
     def __init__(self, dl_id, url, audio_only=False, fmt=None, quality='best',
                  output_dir=None, title=None, referer=None, cookies_file=None):
@@ -2653,17 +2786,25 @@ class Download:
         self.eta = ""
         self.filename = ""
         self.error = ""
+        self.error_code = ""
+        self.error_advice = ""
+        self.error_action = ""
         self.start_time = time.time()
         self.process = None
 
     def to_dict(self):
-        return {
+        payload = {
             "id": self.id, "url": self.url, "title": self.title,
             "status": self.status, "progress": round(self.progress, 1),
             "speed": self.speed, "eta": self.eta, "filename": self.filename,
             "error": self.error, "audioOnly": self.audio_only,
             "format": self.format, "quality": self.quality,
         }
+        if self.error_code:
+            payload["error_code"] = self.error_code
+            payload["advice"] = self.error_advice
+            payload["next_action"] = self.error_action
+        return payload
 
 # ══════════════════════════════════════════════════════════════
 # v1.2.2: cross-thread native folder picker
@@ -3042,6 +3183,7 @@ class DownloadManager(QObject):
                         "Download stalled (no progress for "
                         f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
                     )
+                    apply_download_failure_classification(dl, 'network-unreachable')
                 elif proc.returncode == 0 or dl.progress >= 99:
                     dl.status = "complete"
                     dl.progress = 100
@@ -3170,6 +3312,7 @@ class DownloadManager(QObject):
                                 "Download stalled (no progress for "
                                 f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
                             )
+                            apply_download_failure_classification(dl, 'network-unreachable')
                         elif proc.returncode == 0 or dl.progress >= 99:
                             dl.status = "complete"
                             dl.progress = 100
@@ -3181,6 +3324,10 @@ class DownloadManager(QObject):
                                 dl.error = " ".join(last_lines)[-240:]
                             else:
                                 dl.error = "Unknown error"
+                            apply_download_failure_classification(
+                                dl,
+                                classify_download_failure(dl.error, last_lines),
+                            )
                     elif 'live event has ended' in combined:
                         dl.error = (
                             "YouTube reports this live stream has ended. "
@@ -3189,10 +3336,11 @@ class DownloadManager(QObject):
                         )
                     elif ('sabr' in combined or 'no video formats' in combined
                             or 'requested format is not available' in combined):
-                        dl.error = (
-                            "This video only offers SABR streaming formats that "
-                            "yt-dlp cannot yet download. This is a YouTube platform "
-                            "limitation, not an Astra Deck bug. See yt-dlp issue #12482."
+                        apply_download_failure_classification(dl, 'sabr-limited')
+                    else:
+                        apply_download_failure_classification(
+                            dl,
+                            classify_download_failure(dl.error, last_lines),
                         )
 
         except FileNotFoundError:
@@ -3607,16 +3755,17 @@ def create_api(config, dl_manager, history):
         deno = probe_deno_runtime()
         if deno.get('ytdlpNeedsRuntime') and not deno.get('installed'):
             advice = deno.get('advice') or 'Install Deno (https://deno.com/) and restart Astra Downloader.'
+            payload = download_error_payload(
+                'deno-runtime-missing',
+                error=(
+                    "yt-dlp >= 2026.04.01 requires the Deno JavaScript runtime to "
+                    "solve YouTube's signature challenges; without it, every "
+                    "download returns empty format lists. " + advice
+                ),
+                advice=advice,
+            )
             return cors_response(
-                {
-                    "error": (
-                        "yt-dlp >= 2026.04.01 requires the Deno JavaScript runtime to "
-                        "solve YouTube's signature challenges; without it, every "
-                        "download returns empty format lists. " + advice
-                    ),
-                    "code": "deno-runtime-missing",
-                    "advice": advice,
-                },
+                payload,
                 422,
             )
 
