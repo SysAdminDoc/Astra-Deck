@@ -6775,6 +6775,22 @@ test('v4.46.12 userscript drift checker reports extension-only feature classific
     }
 });
 
+test('v4.46.16 userscript drift checker caps not-yet-ported parity gaps', () => {
+    const driftSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'check-userscript-drift.js'), 'utf8'
+    );
+    assert.match(driftSource, /MAX_NOT_YET_PORTED_FEATURES\s*=\s*19/,
+        'drift checker must pin the remaining not-yet-ported ceiling');
+
+    const result = runNodeCommand(['scripts/check-userscript-drift.js']);
+    assert.equal(result.status, 0, result.stderr.toString());
+    const output = result.stdout.toString();
+    const match = output.match(/not-yet-ported=(\d+)/);
+    assert.ok(match, 'drift output must include the not-yet-ported count');
+    assert.ok(Number(match[1]) <= 19,
+        'not-yet-ported userscript parity gaps must stay at or below the current ceiling');
+});
+
 test('v4.46.12 userscript drift checker fails on unclassified extension-only feature IDs', () => {
     const result = runNodeCommand(['scripts/check-userscript-drift.js'], {
         env: { ASTRA_USERSCRIPT_DRIFT_INJECT_EXTENSION_IDS: 'unclassifiedTestFeature' }
