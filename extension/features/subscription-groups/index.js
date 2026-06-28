@@ -24,13 +24,14 @@
             removeNavigateRule = () => {},
             addMutationRule = () => {},
             removeMutationRule = () => {},
-            handleFileExport = () => {}
+            handleFileExport = () => {},
+            isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || ''))
         } = deps;
 
         return {
             id: 'subscriptionGroups',
             name: 'Subscription Groups',
-            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up.',
+            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.',
             group: 'Subscriptions',
             icon: 'folder-tree',
             pages: [PageTypes.SUBSCRIPTIONS],
@@ -322,6 +323,19 @@
                 if (typeof showToast === 'function') showToast('Exported subscription groups as CSV', '#22c55e');
             },
 
+            _exportGroupsOpml() {
+                const opml = this._buildGroupsOpml();
+                const blob = new Blob([opml], { type: 'text/x-opml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.opml`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                if (typeof showToast === 'function') showToast('Exported subscription groups as OPML', '#22c55e');
+                return opml;
+            },
+
             _importGroups(json) {
                 try {
                     const data = JSON.parse(json);
@@ -352,13 +366,24 @@
                             sanitized[id].parentId = parentId;
                         }
                     }
-                    this._writeGroups(sanitized);
-                    if (typeof showToast === 'function') showToast(`Imported ${Object.keys(sanitized).length} subscription groups`, '#22c55e');
-                    this._renderToolbar();
-                    this._applyGroupFilter();
-                    this._renderDeadChannelMarkers();
+                    return this._commitImportedGroups(sanitized, 'JSON');
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
+                    return { ok: false, error: e.message };
+                }
+            },
+
+            _importGroupsOpml(opmlText) {
+                try {
+                    const parsed = this._parseGroupsOpml(opmlText);
+                    return this._commitImportedGroups(parsed.groups, 'OPML', {
+                        duplicateChannels: parsed.duplicateChannels,
+                        importedChannels: parsed.importedChannels
+                    });
+                } catch (e) {
+                    const message = `OPML import failed: ${e.message}`;
+                    if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
+                    return { ok: false, error: e.message };
                 }
             },
 
@@ -1207,6 +1232,14 @@
                 csvBtn.addEventListener('click', () => this._exportGroupsCsv());
                 bar.appendChild(csvBtn);
 
+                const opmlBtn = document.createElement('button');
+                opmlBtn.type = 'button';
+                opmlBtn.dataset.action = 'export-opml';
+                opmlBtn.textContent = 'OPML';
+                opmlBtn.setAttribute('aria-label', 'Export subscription groups as OPML');
+                opmlBtn.addEventListener('click', () => this._exportGroupsOpml());
+                bar.appendChild(opmlBtn);
+
                 const importBtn = document.createElement('button');
                 importBtn.type = 'button';
                 importBtn.textContent = 'Import';
@@ -1214,11 +1247,18 @@
                 importBtn.addEventListener('click', () => {
                     const inp = document.createElement('input');
                     inp.type = 'file';
-                    inp.accept = 'application/json';
+                    inp.accept = 'application/json,.json,.opml,.xml,application/xml,text/xml,text/x-opml';
                     inp.addEventListener('change', () => {
                         const file = inp.files?.[0];
                         if (!file) return;
-                        file.text().then(text => this._importGroups(text));
+                        file.text().then(text => {
+                            const name = String(file.name || '').toLowerCase();
+                            if (name.endsWith('.opml') || name.endsWith('.xml') || /^\s*<\?xml|^\s*<opml/i.test(text)) {
+                                this._importGroupsOpml(text);
+                            } else {
+                                this._importGroups(text);
+                            }
+                        });
                     });
                     inp.click();
                 });
@@ -1491,6 +1531,244 @@
                 if (typeof showToast === 'function') {
                     showToast(included ? 'Channel added to group' : 'Channel removed from group', '#7c3aed', { duration: 2 });
                 }
+            },
+            _xmlEscape(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&apos;');
+            },
+
+            _xmlUnescape(value) {
+                return String(value ?? '')
+                    .replace(/&apos;/g, "'")
+                    .replace(/&quot;/g, '"')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&amp;/g, '&');
+            },
+
+            _sanitizeOpmlId(value, fallbackPrefix = 'opml') {
+                const cleaned = String(value || '')
+                    .trim()
+                    .replace(/[^A-Za-z0-9_-]+/g, '-')
+                    .replace(/^-+|-+$/g, '')
+                    .slice(0, 64);
+                return cleaned && isSafeObjectKey(cleaned) ? cleaned : `${fallbackPrefix}_${Math.random().toString(36).slice(2, 9)}`;
+            },
+
+            _sanitizeOpmlChannelId(value) {
+                const raw = String(value || '').trim();
+                if (!raw || raw.length > 128) return '';
+                return /^[A-Za-z0-9_@./:-]+$/.test(raw) ? raw : '';
+            },
+
+            _extractOpmlChannelId(attrs = {}) {
+                const direct = this._sanitizeOpmlChannelId(attrs['astra:channelId'] || attrs.channelId || attrs.channelIdHash);
+                if (direct) return direct;
+                for (const key of ['xmlUrl', 'htmlUrl', 'url']) {
+                    const raw = String(attrs[key] || '');
+                    if (!raw) continue;
+                    try {
+                        const parsed = new URL(raw, 'https://www.youtube.com');
+                        const channelId = parsed.searchParams.get('channel_id');
+                        if (channelId) {
+                            const normalized = this._sanitizeOpmlChannelId(channelId);
+                            if (normalized) return normalized;
+                        }
+                        const path = parsed.pathname.replace(/^\/+/, '');
+                        const channelMatch = path.match(/^channel\/([^/]+)/);
+                        if (channelMatch) {
+                            const normalized = this._sanitizeOpmlChannelId(channelMatch[1]);
+                            if (normalized) return normalized;
+                        }
+                        const handleMatch = path.match(/^@[^/]+/);
+                        if (handleMatch) {
+                            const normalized = this._sanitizeOpmlChannelId(handleMatch[0]);
+                            if (normalized) return normalized;
+                        }
+                    } catch (_) {
+                        const textMatch = raw.match(/[?&]channel_id=([A-Za-z0-9_-]+)/);
+                        if (textMatch) return this._sanitizeOpmlChannelId(textMatch[1]);
+                    }
+                }
+                return '';
+            },
+
+            _parseOpmlAttributes(raw = '') {
+                const attrs = {};
+                const attrRe = /([A-Za-z_:][A-Za-z0-9_:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+                let match;
+                while ((match = attrRe.exec(raw)) !== null) {
+                    attrs[match[1]] = this._xmlUnescape(match[2] ?? match[3] ?? '');
+                }
+                return attrs;
+            },
+
+            _parseOpmlOutlineTree(opmlText) {
+                const source = String(opmlText || '');
+                if (!/<\s*opml\b/i.test(source)) throw new Error('Not an OPML document');
+                const root = { attrs: {}, children: [] };
+                const stack = [root];
+                const tokenRe = /<\s*(\/?)\s*outline\b([^>]*?)(\/?)\s*>/gi;
+                let match;
+                while ((match = tokenRe.exec(source)) !== null) {
+                    const closing = !!match[1];
+                    const selfClosing = !!match[3] || /\/\s*$/.test(match[2] || '');
+                    if (closing) {
+                        if (stack.length === 1) throw new Error('Malformed OPML outline nesting');
+                        stack.pop();
+                        continue;
+                    }
+                    const node = { attrs: this._parseOpmlAttributes(match[2]), children: [] };
+                    stack[stack.length - 1].children.push(node);
+                    if (!selfClosing) stack.push(node);
+                }
+                if (stack.length !== 1) throw new Error('Malformed OPML outline nesting');
+                if (!root.children.length) throw new Error('No OPML outline entries found');
+                return root.children;
+            },
+
+            _buildGroupsOpml(groups = this._readGroups()) {
+                const lines = [
+                    '<?xml version="1.0" encoding="UTF-8"?>',
+                    '<opml version="2.0" xmlns:astra="https://github.com/SysAdminDoc/Astra-Deck/opml">',
+                    '  <head>',
+                    '    <title>Astra Deck Subscription Groups</title>',
+                    `    <dateCreated>${this._xmlEscape(new Date().toISOString())}</dateCreated>`,
+                    '  </head>',
+                    '  <body>'
+                ];
+                const renderChannel = (channelId, depth) => {
+                    const safeId = this._xmlEscape(channelId);
+                    const label = safeId;
+                    const pad = '  '.repeat(depth);
+                    lines.push(`${pad}<outline type="rss" text="${label}" title="${label}" astra:channelId="${safeId}" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=${safeId}" htmlUrl="https://www.youtube.com/channel/${safeId}" />`);
+                };
+                const renderGroup = (id, depth) => {
+                    const group = groups[id];
+                    if (!group) return;
+                    const pad = '  '.repeat(depth);
+                    const name = this._xmlEscape(group.name || id);
+                    const color = this._xmlEscape(group.color || '#7c3aed');
+                    const sortMode = this._xmlEscape(this._normalizeSubscriptionSortMode(group.sortMode));
+                    lines.push(`${pad}<outline text="${name}" title="${name}" astra:type="group" astra:id="${this._xmlEscape(id)}" astra:color="${color}" astra:sortMode="${sortMode}">`);
+                    const seen = new Set();
+                    for (const channelId of Array.isArray(group.channelIds) ? group.channelIds : []) {
+                        const safeChannelId = this._sanitizeOpmlChannelId(channelId);
+                        if (!safeChannelId || seen.has(safeChannelId)) continue;
+                        seen.add(safeChannelId);
+                        renderChannel(safeChannelId, depth + 1);
+                    }
+                    for (const childId of this._getChildGroupIds(id, groups)) renderGroup(childId, depth + 1);
+                    lines.push(`${pad}</outline>`);
+                };
+                for (const id of this._getTopLevelGroupIds(groups)) renderGroup(id, 2);
+                lines.push('  </body>', '</opml>');
+                return lines.join('\n') + '\n';
+            },
+
+            _groupsFromOpmlTree(outlines) {
+                const GROUP_LIMIT = 500;
+                const CHANNEL_LIMIT = 1000;
+                const now = Date.now();
+                const groups = {};
+                const usedIds = new Set();
+                let duplicateChannels = 0;
+                let importedChannels = 0;
+                const makeUniqueGroupId = (base) => {
+                    let candidate = this._sanitizeOpmlId(base || 'opml_group', 'opml');
+                    let n = 2;
+                    while (usedIds.has(candidate) || groups[candidate]) {
+                        candidate = `${this._sanitizeOpmlId(base || 'opml_group', 'opml').slice(0, 58)}_${n++}`;
+                    }
+                    usedIds.add(candidate);
+                    return candidate;
+                };
+                const ensureDefaultGroup = () => {
+                    if (groups.imported_opml) return 'imported_opml';
+                    usedIds.add('imported_opml');
+                    groups.imported_opml = {
+                        name: 'Imported OPML',
+                        color: '#7c3aed',
+                        channelIds: [],
+                        parentId: '',
+                        sortMode: 'default',
+                        updatedAt: now
+                    };
+                    return 'imported_opml';
+                };
+                const addChannel = (groupId, channelId) => {
+                    const safeChannelId = this._sanitizeOpmlChannelId(channelId);
+                    const group = groups[groupId];
+                    if (!safeChannelId || !group) return;
+                    if (group.channelIds.includes(safeChannelId)) {
+                        duplicateChannels += 1;
+                        return;
+                    }
+                    if (group.channelIds.length >= CHANNEL_LIMIT) return;
+                    group.channelIds.push(safeChannelId);
+                    importedChannels += 1;
+                };
+                const visit = (node, parentId = '') => {
+                    if (Object.keys(groups).length >= GROUP_LIMIT) return;
+                    const attrs = node.attrs || {};
+                    const channelId = this._extractOpmlChannelId(attrs);
+                    const explicitGroup = attrs['astra:type'] === 'group' || (!channelId && node.children?.length);
+                    if (channelId && !explicitGroup) {
+                        addChannel(parentId || ensureDefaultGroup(), channelId);
+                        return;
+                    }
+                    const name = String(attrs.text || attrs.title || attrs['astra:id'] || 'Imported Group').trim().slice(0, 80) || 'Imported Group';
+                    const groupId = makeUniqueGroupId(attrs['astra:id'] || name);
+                    groups[groupId] = {
+                        name,
+                        color: /^#[0-9a-fA-F]{6}$/.test(attrs['astra:color'] || '') ? attrs['astra:color'] : '#7c3aed',
+                        channelIds: [],
+                        parentId: parentId && groups[parentId] && !groups[parentId].parentId ? parentId : '',
+                        sortMode: this._normalizeSubscriptionSortMode(attrs['astra:sortMode']),
+                        updatedAt: now
+                    };
+                    if (channelId) addChannel(groupId, channelId);
+                    for (const child of node.children || []) visit(child, groupId);
+                };
+                for (const outline of outlines) visit(outline, '');
+                return { groups, duplicateChannels, importedChannels };
+            },
+
+            _parseGroupsOpml(opmlText) {
+                const outlines = this._parseOpmlOutlineTree(opmlText);
+                const result = this._groupsFromOpmlTree(outlines);
+                if (!Object.keys(result.groups).length) throw new Error('No subscription groups or channels found');
+                return result;
+            },
+
+            _commitImportedGroups(groups, label, meta = {}) {
+                const previous = this._readGroups();
+                this._writeGroups(groups);
+                const count = Object.keys(groups).length;
+                const duplicateText = meta.duplicateChannels ? `; skipped ${meta.duplicateChannels} duplicate channel${meta.duplicateChannels === 1 ? '' : 's'}` : '';
+                if (typeof showToast === 'function') {
+                    showToast(`Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label}${duplicateText}`, '#22c55e', {
+                        duration: 6,
+                        action: {
+                            text: 'Undo',
+                            onClick: () => {
+                                this._writeGroups(previous);
+                                this._renderToolbar();
+                                this._applyGroupFilter();
+                                this._renderDeadChannelMarkers();
+                                showToast('Restored previous subscription groups', '#6b7280', { duration: 4, tone: 'neutral' });
+                            }
+                        }
+                    });
+                }
+                this._renderToolbar();
+                this._applyGroupFilter();
+                this._renderDeadChannelMarkers();
+                return { ok: true, importedGroups: count, ...meta };
             },
         };
     }

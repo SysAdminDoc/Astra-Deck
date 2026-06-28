@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: v4.46.13 subscription OPML bridge.** Subscription Groups can export
+  and import OPML with duplicate-channel handling, malformed-file recovery,
+  capped group/channel rows, and Undo-backed import status while keeping
+  JSON/CSV backups intact.
 - **Chore: v4.46.12 userscript parity classification gate.** The userscript
   drift checker now classifies all extension-only feature IDs as chrome API,
   native companion, unsafe in userscript, intentional extension-only, or
