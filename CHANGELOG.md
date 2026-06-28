@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chore: release readiness artifact build.** `npm run build:userscript`
+  now emits the CycloneDX production SBOM, release manifest, and SHA256SUMS,
+  and `npm run release:prepare` builds those artifacts before enforcing the
+  local release-readiness gate.
 - **Fix: v4.46.14 release-doc truth gate.** Active architecture, repo-settings,
   and signing-key docs now match the local-only build/release policy and current
   product version, and `check-versions` fails if active docs drift back to
