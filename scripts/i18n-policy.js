@@ -11,11 +11,20 @@ const DO_NOT_TRANSLATE_TERMS = Object.freeze([
     'VP9',
     'AV1',
     'H.264',
-    'TrustedTypes',
-    'ETA'
+    'TrustedTypes'
 ]);
 
-const DO_NOT_TRANSLATE_MESSAGES = new Set(DO_NOT_TRANSLATE_TERMS);
+const REVIEWED_EXACT_MESSAGES = Object.freeze([
+    ...DO_NOT_TRANSLATE_TERMS,
+    'ETA',
+    'Super Chats',
+    'CPU Tamer',
+    'Picture-in-Picture',
+    'Return YouTube Dislike',
+    'Theater Split'
+]);
+
+const DO_NOT_TRANSLATE_MESSAGES = new Set(REVIEWED_EXACT_MESSAGES);
 const FEATURE_MESSAGE_RE = /^feature_[A-Za-z0-9_]+_(name|desc)$/;
 
 function messageText(value) {
@@ -40,6 +49,7 @@ function missingProtectedTerms(sourceMessage, translatedMessage) {
 
 module.exports = {
     DO_NOT_TRANSLATE_TERMS,
+    REVIEWED_EXACT_MESSAGES,
     isFeatureMessageKey,
     isIntentionallyIdenticalMessage,
     missingProtectedTerms

@@ -14,6 +14,7 @@ const path = require('path');
 
 const {
     DO_NOT_TRANSLATE_TERMS,
+    REVIEWED_EXACT_MESSAGES,
     isFeatureMessageKey,
     isIntentionallyIdenticalMessage
 } = require('./i18n-policy');
@@ -62,6 +63,7 @@ function parseArgs(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
         localesDir: path.join(repoRoot, 'extension', '_locales'),
         reportPath: path.join(repoRoot, 'docs', 'i18n-coverage.md'),
         warnFeatureIdenticalAbove: null,
+        checkReport: false,
         writeReport: true
     };
 
@@ -81,6 +83,8 @@ function parseArgs(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
         } else if (arg === '--fail-above') {
             i += 1;
             args.failAbove = parseNonNegativeInt(argv[i], arg);
+        } else if (arg === '--check-report') {
+            args.checkReport = true;
         } else if (arg === '--no-write') {
             args.writeReport = false;
         } else if (arg === '--help' || arg === '-h') {
@@ -184,7 +188,7 @@ function buildCoverageReport({ localesDir = LOCALES_DIR } = {}) {
 function renderMarkdown(report, options = {}) {
     const lines = [];
     const threshold = options.warnFeatureIdenticalAbove;
-    const protectedTerms = DO_NOT_TRANSLATE_TERMS.map((term) => `\`${term}\``).join(', ');
+    const reviewedExactMessages = REVIEWED_EXACT_MESSAGES.map((term) => `\`${term}\``).join(', ');
 
     lines.push('# Astra Deck - i18n Coverage');
     lines.push('');
@@ -215,7 +219,7 @@ function renderMarkdown(report, options = {}) {
     lines.push('');
     lines.push('Reviewed exact do-not-translate messages:');
     lines.push('');
-    lines.push(protectedTerms);
+    lines.push(reviewedExactMessages);
     lines.push('');
     lines.push('## Warning Mode');
     lines.push('');
@@ -284,6 +288,21 @@ function checkThreshold(report, threshold) {
     return failures;
 }
 
+function checkReportFreshness(markdown, reportPath) {
+    const expected = `${markdown}\n`;
+    const rel = toPosix(path.relative(REPO_ROOT, reportPath));
+    if (!fs.existsSync(reportPath)) {
+        const failure = `${rel} is missing; run npm run i18n:coverage`;
+        console.error(`[i18n-coverage] FAIL ${failure}`);
+        return [failure];
+    }
+    const current = fs.readFileSync(reportPath, 'utf8');
+    if (current === expected) return [];
+    const failure = `${rel} is stale; run npm run i18n:coverage`;
+    console.error(`[i18n-coverage] FAIL ${failure}`);
+    return [failure];
+}
+
 function printHelp() {
     console.log([
         'Usage: node scripts/i18n-coverage.js [options]',
@@ -293,6 +312,7 @@ function printHelp() {
         '  --output <path>                      Markdown report path',
         '  --warn-feature-identical-above <n>   Warn when unresolved feature copy exceeds n',
         '  --fail-above <n>                     Exit non-zero when any locale has more than n placeholder-identical keys',
+        '  --check-report                       Exit non-zero when the markdown report is stale',
         '  --no-write                           Analyze without writing the report',
         '  -h, --help                           Show this help'
     ].join('\n'));
@@ -313,8 +333,11 @@ function main(argv = process.argv.slice(2)) {
         console.log(`[i18n-coverage] analyzed ${report.rows.length} locale(s) against ${report.totalKeys} EN keys`);
     }
     emitWarnings(report, options.warnFeatureIdenticalAbove);
+    const freshnessFailures = options.checkReport
+        ? checkReportFreshness(markdown, options.reportPath)
+        : [];
     const failures = checkThreshold(report, options.failAbove);
-    if (failures.length > 0) {
+    if (freshnessFailures.length > 0 || failures.length > 0) {
         process.exitCode = 1;
     }
 }
@@ -331,6 +354,7 @@ if (require.main === module) {
 module.exports = {
     analyzeLocale,
     buildCoverageReport,
+    checkReportFreshness,
     checkThreshold,
     DEFAULT_FEATURE_WARNING_BASELINE,
     emitWarnings,
