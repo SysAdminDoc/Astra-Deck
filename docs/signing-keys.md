@@ -217,15 +217,15 @@ The build script enforces this custody boundary:
   release builds. They require an external key via `ASTRA_CRX_KEY_PATH`, the
   default path above, or `--crx-key <path>`, and reject any path inside the
   repo worktree.
-- CI sets `ASTRA_CRX_KEY_MODE=ephemeral` explicitly so workflow artifacts stay
-  useful for validation/provenance without receiving the maintainer key.
+- Local validation builds can set `ASTRA_CRX_KEY_MODE=ephemeral` so ZIP/CRX/XPI
+  artifacts stay useful for smoke testing without receiving the maintainer key.
 
 | Where | Why |
 |---|---|
 | Local primary build machine (encrypted home dir) | Daily build use. |
 | Offline backup (encrypted external drive or 1Password / Bitwarden vault) | Disaster recovery. Restore takes hours, not days. |
 | Never on cloud storage without zero-knowledge encryption | Cloud-storage providers can subpoena, leak, or accidentally publish files. |
-| Never in a CI secret store | CI never receives `ytkit.pem` and does not publish GitHub Releases. The tag workflow builds validation artifacts, emits `release-manifest.json` / `SHA256SUMS`, and creates attestations for those CI-built artifacts only. The maintainer builds the public CRX artifacts locally with `ytkit.pem` and uploads them with the local checksum manifest. |
+| Never in a CI secret store | Hosted CI never receives `ytkit.pem` and does not publish GitHub Releases. Validation artifacts are built locally with an ephemeral key; the maintainer builds public CRX artifacts locally with `ytkit.pem` and uploads them with the local checksum manifest. |
 
 Refresh the offline backup whenever the primary key changes.
 

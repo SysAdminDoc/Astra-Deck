@@ -3,10 +3,8 @@
 
 // Cross-validate the canonical version strings before tag/push.
 //
-// The Build & Release workflow (.github/workflows/build.yml) already
-// runs this comparison on tag push, but a developer who bumps most sources
-// locally won't notice the drift until CI fails post-tag.
-// Running this in `npm run check` catches it pre-push.
+// Product builds are local-only. Running this in `npm run check` catches
+// version drift before a local build, tag, or release upload.
 //
 // PRODUCT-VERSION sources of truth (must all match):
 //   1. package.json                  → "version"
@@ -30,6 +28,12 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO_ROOT = path.join(__dirname, '..');
+const ACTIVE_DOC_TRUTH_FILES = Object.freeze([
+    'README.md',
+    path.join('docs', 'architecture.md'),
+    path.join('docs', 'repo-settings.md'),
+    path.join('docs', 'signing-keys.md'),
+]);
 
 function readPackageVersion() {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
@@ -101,6 +105,53 @@ function parseTagFlag(argv) {
     return raw.startsWith('v') ? raw.slice(1) : raw;
 }
 
+function lineNumberForIndex(text, index) {
+    return text.slice(0, index).split(/\r?\n/).length;
+}
+
+function checkActiveDocumentationTruth(productVersion) {
+    const failures = [];
+    const retiredRefs = [
+        { re: /RESEARCH_REPORT\.md/g, label: 'retired RESEARCH_REPORT.md reference' },
+        { re: /\.github\/workflows\/[A-Za-z0-9_.\/-]+/g, label: 'retired GitHub Actions workflow path' },
+    ];
+    const currentVersionClaims = [
+        { re: /today,\s+at\s+v(\d+\.\d+\.\d+)\+?/gi, label: '"today" architecture version claim' },
+        { re: /currently\s+agree\s+at\s+v(\d+\.\d+\.\d+)/gi, label: 'current product-version parity claim' },
+    ];
+
+    for (const relPath of ACTIVE_DOC_TRUTH_FILES) {
+        const absPath = path.join(REPO_ROOT, relPath);
+        if (!fs.existsSync(absPath)) continue;
+        const text = fs.readFileSync(absPath, 'utf8');
+        for (const { re, label } of retiredRefs) {
+            let match;
+            while ((match = re.exec(text)) !== null) {
+                failures.push(`${relPath}:${lineNumberForIndex(text, match.index)} ${label}: ${match[0]}`);
+            }
+        }
+        for (const { re, label } of currentVersionClaims) {
+            let match;
+            while ((match = re.exec(text)) !== null) {
+                if (match[1] !== productVersion) {
+                    failures.push(`${relPath}:${lineNumberForIndex(text, match.index)} stale ${label}: v${match[1]} (expected v${productVersion})`);
+                }
+            }
+        }
+    }
+
+    if (!failures.length) {
+        console.log(`[check-versions] Active documentation truth matches v${productVersion} and the local-build policy`);
+        return true;
+    }
+
+    console.error('[check-versions] Active documentation truth drift detected:');
+    for (const failure of failures) console.error(`  ${failure}`);
+    console.error('');
+    console.error('Fix active docs or move historical/dead-policy references into archived research/history docs.');
+    return false;
+}
+
 function main(argv) {
     const sources = [
         readPackageVersion(),
@@ -163,7 +214,9 @@ function main(argv) {
         console.error('version; bumps when storage shape changes).');
     }
 
-    process.exit(productOk && settingsOk ? 0 : 1);
+    const docsOk = productOk && checkActiveDocumentationTruth(sources[0].value);
+
+    process.exit(productOk && settingsOk && docsOk ? 0 : 1);
 }
 
 if (require.main === module) {
