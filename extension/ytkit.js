@@ -20,6 +20,8 @@
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,
+        schedulePlayerTask,
+        cancelPlayerTask,
         getRegisteredFeature,
         getFeatureHealthSnapshot,
         getSelectorHealthSnapshot,
@@ -86,6 +88,8 @@
         !getMainVideoElement ||
         !getMoviePlayerElement ||
         !getPlayerProgressBar ||
+        !schedulePlayerTask ||
+        !cancelPlayerTask ||
         !getRegisteredFeature ||
         !getFeatureHealthSnapshot ||
         !getSelectorHealthSnapshot ||
@@ -727,7 +731,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.16';
+    const YTKIT_VERSION = '4.46.17';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -3314,14 +3318,17 @@ return response;
                 appState.settings.persistentSpeed = true;
                 try { storageWriteJSON('ytSuiteSettings', appState.settings); } catch (_) { /* reason: storage write best-effort */ }
                 // Apply to current video immediately.
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (video) {
                     video.playbackRate = value;
                     // Reset persistentSpeed feature's idempotency flag so the
                     // next navigate triggers re-application (safety net for
                     // SPA edge cases where playbackRate gets reset).
                     const f = getFeatureById?.('persistentSpeed');
-                    if (f) f._applied = false;
+                    if (f) {
+                        f._applied = false;
+                        f._scheduleApply?.(0, 'player-dock');
+                    }
                 }
                 if (typeof onChange === 'function') onChange();
                 _closeSpeedPopup();
@@ -22585,7 +22592,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingKey: 'persistentSpeedValue',
             _applied: false,
             _applyTimer: null,
-            _scheduleApply(delay = 2500) {
+            _taskId: 'feature:persistentSpeed',
+            _scheduleApply(delay = 250, reason = 'manual') {
+                if (typeof schedulePlayerTask === 'function') {
+                    schedulePlayerTask(this._taskId, (ctx) => this._apply(ctx), {
+                        owner: this.id,
+                        reason,
+                        delay,
+                        needsVideo: true,
+                        events: ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'],
+                        retryDelays: [0, 150, 400, 1000, 1800, 3000],
+                        maxAttempts: 6
+                    });
+                    return;
+                }
                 if (this._applyTimer) clearTimeout(this._applyTimer);
                 this._applyTimer = setTimeout(() => {
                     this._applyTimer = null;
@@ -22593,26 +22613,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
-            _apply() {
-                if (this._applied) return;
-                const video = document.querySelector('video.html5-main-video');
-                if (!video) return;
+            _apply(ctx = {}) {
+                if (ctx.reason === 'loadedmetadata' || ctx.reason === 'navigate' || ctx.reason === 'page-data') {
+                    this._applied = false;
+                }
+                if (this._applied) return true;
+                const video = getMainVideoElement();
+                if (!video) return false;
                 const speed = parseFloat(appState.settings.persistentSpeedValue) || 1;
                 if (speed !== 1 && speed !== video.playbackRate) {
                     video.playbackRate = speed;
                     DebugManager.log('PersistentSpeed', `Applied ${speed}x`);
                 }
                 this._applied = true;
+                return true;
             },
 
             init() {
-                this._scheduleApply(2500);
+                this._scheduleApply(250, 'init');
                 addNavigateRule('persistSpeed', () => {
                     this._applied = false;
-                    this._scheduleApply(2500);
+                    this._scheduleApply(0, 'navigate');
                 });
             },
             destroy() {
+                if (typeof cancelPlayerTask === 'function') cancelPlayerTask(this._taskId);
                 if (this._applyTimer) clearTimeout(this._applyTimer);
                 this._applyTimer = null;
                 removeNavigateRule('persistSpeed');
@@ -23494,7 +23519,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'maximize-2',
             _applyTimer: null,
-            _scheduleApply(delay = 1000) {
+            _taskId: 'feature:autoTheaterMode',
+            _scheduleApply(delay = 250, reason = 'manual') {
+                if (typeof schedulePlayerTask === 'function') {
+                    schedulePlayerTask(this._taskId, () => this._apply(), {
+                        owner: this.id,
+                        reason,
+                        delay,
+                        needsVideo: false,
+                        needsPlayer: true,
+                        events: ['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data'],
+                        retryDelays: [0, 150, 400, 1000, 1800, 3000],
+                        maxAttempts: 6
+                    });
+                    return;
+                }
                 if (this._applyTimer) clearTimeout(this._applyTimer);
                 this._applyTimer = setTimeout(() => {
                     this._applyTimer = null;
@@ -23503,21 +23542,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _apply() {
-                if (!isWatchPagePath()) return;
-                const player = document.querySelector('#movie_player');
-                if (!player) return;
+                if (!isWatchPagePath()) return true;
+                const player = getMoviePlayerElement();
+                if (!player) return false;
                 const isTheater = document.querySelector('ytd-watch-flexy')?.hasAttribute('theater');
                 if (!isTheater) {
                     const btn = document.querySelector('.ytp-size-button, button.ytp-size-button');
-                    if (btn) btn.click();
+                    if (!btn) return false;
+                    btn.click();
+                    globalThis.YTKitCore?.playerTaskManager?.notify?.('player-state');
                 }
+                return true;
             },
 
             init() {
-                addNavigateRule('autoTheaterMode', () => this._scheduleApply(1000));
-                this._scheduleApply(1000);
+                addNavigateRule('autoTheaterMode', () => this._scheduleApply(0, 'navigate'));
+                this._scheduleApply(250, 'init');
             },
             destroy() {
+                if (typeof cancelPlayerTask === 'function') cancelPlayerTask(this._taskId);
                 if (this._applyTimer) clearTimeout(this._applyTimer);
                 this._applyTimer = null;
                 removeNavigateRule('autoTheaterMode');
@@ -27496,22 +27539,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             isSubFeature: true,
             parentId: 'autoTheaterMode',
             _scrollTimer: null,
+            _taskId: 'feature:theaterAutoScroll',
+            _scheduleScroll(delay = 200, reason = 'manual') {
+                if (typeof schedulePlayerTask === 'function') {
+                    schedulePlayerTask(this._taskId, () => this._scrollIfReady(), {
+                        owner: this.id,
+                        reason,
+                        delay,
+                        needsVideo: false,
+                        needsPlayer: true,
+                        events: ['loadedmetadata', 'player-state', 'navigate', 'page-data'],
+                        retryDelays: [0, 150, 400, 1000, 1800],
+                        maxAttempts: 5
+                    });
+                    return;
+                }
+                clearTimeout(this._scrollTimer);
+                this._scrollTimer = setTimeout(() => {
+                    this._scrollTimer = null;
+                    this._scrollIfReady();
+                }, delay);
+            },
+            _scrollIfReady() {
+                if (!window.location.pathname.startsWith('/watch')) return true;
+                if (!appState.settings.autoTheaterMode) return true;
+                const watchFlexy = document.querySelector('ytd-watch-flexy');
+                if (!watchFlexy?.hasAttribute('theater')) return false;
+                const player = document.querySelector('#player-container, #movie_player');
+                if (!player) return false;
+                player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return true;
+            },
             init() {
                 addNavigateRule(this.id, () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    if (!appState.settings.autoTheaterMode) return;
-                    clearTimeout(this._scrollTimer);
-                    this._scrollTimer = setTimeout(() => {
-                        this._scrollTimer = null;
-                        const watchFlexy = document.querySelector('ytd-watch-flexy');
-                        if (watchFlexy?.hasAttribute('theater')) {
-                            const player = document.querySelector('#player-container, #movie_player');
-                            if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                    }, 500);
+                    this._scheduleScroll(200, 'navigate');
                 });
+                this._scheduleScroll(200, 'init');
             },
             destroy() {
+                if (typeof cancelPlayerTask === 'function') cancelPlayerTask(this._taskId);
                 clearTimeout(this._scrollTimer);
                 this._scrollTimer = null;
                 removeNavigateRule(this.id);
@@ -32591,21 +32657,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             options: { inherit: 'Inherit (YouTube default)', play: 'Force play', pause: 'Force pause' },
             pages: [PageTypes.WATCH],
             _navRule: null,
+            _taskId: 'feature:initialPlayerStateForeground',
+            _scheduleApply(delay = 250, reason = 'manual') {
+                schedulePlayerTask(this._taskId, () => this._apply(), {
+                    owner: this.id,
+                    reason,
+                    delay,
+                    needsVideo: true,
+                    events: ['loadedmetadata', 'navigate', 'page-data'],
+                    retryDelays: [0, 150, 400, 1000, 1800],
+                    maxAttempts: 5
+                });
+            },
             _apply() {
                 const mode = String(appState?.settings?.initialPlayerStateForeground || 'inherit');
-                if (mode === 'inherit') return;
-                if (document.visibilityState !== 'visible') return;
-                const video = document.querySelector('video.html5-main-video');
-                if (!video) return;
+                if (mode === 'inherit') return true;
+                if (document.visibilityState !== 'visible') return true;
+                const video = getMainVideoElement();
+                if (!video) return false;
                 if (mode === 'play') { try { video.play().catch(() => { /* user-gesture required */ }); } catch { /* reason: player may reject scripted play */ } }
                 else if (mode === 'pause') { try { video.pause(); } catch { /* reason: player may reject scripted pause */ } }
+                return true;
             },
             init() {
-                this._navRule = () => { setTimeout(() => this._apply(), 1200); };
+                this._navRule = () => this._scheduleApply(0, 'navigate');
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
-            destroy() { removeNavigateRule(this.id); this._navRule = null; }
+            destroy() { cancelPlayerTask(this._taskId); removeNavigateRule(this.id); this._navRule = null; }
         },
         {
             id: 'initialPlayerStateBackground',
@@ -32618,21 +32697,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             options: { inherit: 'Inherit (YouTube default)', play: 'Force play', pause: 'Force pause' },
             pages: [PageTypes.WATCH],
             _navRule: null,
+            _taskId: 'feature:initialPlayerStateBackground',
+            _scheduleApply(delay = 250, reason = 'manual') {
+                schedulePlayerTask(this._taskId, () => this._apply(), {
+                    owner: this.id,
+                    reason,
+                    delay,
+                    needsVideo: true,
+                    events: ['loadedmetadata', 'navigate', 'page-data'],
+                    retryDelays: [0, 150, 400, 1000, 1800],
+                    maxAttempts: 5
+                });
+            },
             _apply() {
                 const mode = String(appState?.settings?.initialPlayerStateBackground || 'inherit');
-                if (mode === 'inherit') return;
-                if (document.visibilityState === 'visible') return;
-                const video = document.querySelector('video.html5-main-video');
-                if (!video) return;
+                if (mode === 'inherit') return true;
+                if (document.visibilityState === 'visible') return true;
+                const video = getMainVideoElement();
+                if (!video) return false;
                 if (mode === 'play') { try { video.play().catch(() => { /* gesture-required in bg tabs */ }); } catch { /* reason: background tab may reject scripted play */ } }
                 else if (mode === 'pause') { try { video.pause(); } catch { /* reason: background tab may reject scripted pause */ } }
+                return true;
             },
             init() {
-                this._navRule = () => { setTimeout(() => this._apply(), 1200); };
+                this._navRule = () => this._scheduleApply(0, 'navigate');
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
-            destroy() { removeNavigateRule(this.id); this._navRule = null; }
+            destroy() { cancelPlayerTask(this._taskId); removeNavigateRule(this.id); this._navRule = null; }
         },
         // ═══════════════════════════════════════════════════════════════════
         //  PER-CHANNEL INTRO/OUTRO OFFSETS — Auto-skip intros/outros per channel

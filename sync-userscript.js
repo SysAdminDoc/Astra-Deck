@@ -60,6 +60,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/data-flow.js',
     'extension/core/toast.js',
     'extension/core/toast-dom.js',
+    'extension/core/player.js',
     'extension/core/runtime-flags.js',
     'extension/core/capability-probe.js',
     'extension/features/subtitles/index.js',
