@@ -1,94 +1,88 @@
 # Native-messaging token bootstrap
 
-Status: **scaffolding landed; cutover requires on-device validation.**
+Status: **native-first bootstrap is implemented; legacy `/health` token echo is now gated.**
 
 ## Problem
 
 The extension and the local Astra Downloader companion authenticate requests
-with a shared `ServerToken`. The extension discovers that token by calling the
-companion's HTTP `/health` endpoint, which returns the token to a caller that
-sends `X-MDL-Client: MediaDL` **and** either an allowlisted extension `Origin`
-or **no Origin at all** (the background service-worker bootstrap path).
+with a shared `ServerToken`. Legacy clients discover that token by calling the
+companion's HTTP `/health` endpoint with `X-MDL-Client: MediaDL`.
 
-The "no Origin" branch is the weak point: **any local process** — not just our
-extension — can open `http://127.0.0.1:9751/health` with that header and read
-the token, then drive every authenticated endpoint (`/download`, `/update`,
-…). The Host-header anti-rebind guard only stops *browsers* doing DNS
-rebinding; it does nothing against a local non-browser process. So on a
-multi-process machine the token is not a real secret, and the auth model that
-`/download` and `/update` rely on is only as strong as "no other local code is
-hostile."
+That legacy path is weaker than a browser-pinned channel because any local
+process can reach loopback if it knows the header and port. The Host-header
+anti-rebind guard blocks hostile web pages, but it does not turn the token into
+a secret from other local processes.
 
-Verified in `astra_downloader/test_astra_downloader.py`
-(`test_health_token_is_not_exposed_to_null_origin_pages`): a no-Origin
-`/health` request *intentionally* receives the token today.
+## Native channel
 
-## Why native messaging fixes it
+Chrome and Firefox native messaging give the extension a browser-pinned token
+channel:
 
-Chrome/Firefox native messaging gives a **browser-pinned** channel:
+- The native-host manifest lists allowed extension identities.
+- The browser launches the host and talks over a private stdio pipe.
+- Other local processes cannot launch the host through the browser grant.
 
-- The native-host **manifest** lists `allowed_origins` — only the extension IDs
-  named there may launch and talk to the host. Other local processes cannot.
-- The browser launches the host and talks to it over a **private stdio pipe**
-  that no other process can read.
-
-So the token is delivered to *our* extension and nothing else — the property
-`/health` cannot provide.
-
-## What has landed (testable, behind a gate)
+## Implemented state
 
 In `astra_downloader/astra_downloader.py`:
 
-- `read_native_message` / `write_native_message` — Chrome's framing (4-byte
-  little-endian length prefix + UTF-8 JSON), with a 1 MB bound.
-- `handle_native_bootstrap_request(request, token)` — pure handler:
-  `{"type":"get-token"}` → `{ok, service, api, token}`; `{"type":"ping"}` →
-  identity only; anything else → `{ok:false}` with **no token**.
-- `run_native_messaging_host(token, stdin, stdout)` — serve until EOF.
-- `argv_requests_native_host(argv)` — the browser launches a host with the
-  calling extension origin as a positional argv (`chrome-extension://<id>/`),
-  which normal launches and the test suite never carry, so the gate cannot
-  misfire.
-- `build_native_host_manifest(exe_path, extension_ids)` — emits the host
-  manifest with `allowed_origins` pinned to the given IDs.
-- `main()` runs the host and exits when `argv_requests_native_host(sys.argv)`,
-  before any GUI/Flask logic.
+- `read_native_message` and `write_native_message` implement Chrome's 4-byte
+  little-endian length framing with a 1 MB bound.
+- `handle_native_bootstrap_request(request, token)` returns the token only for
+  `{ "type": "get-token" }`, supports `{ "type": "ping" }`, and withholds the
+  token for malformed or unsupported requests.
+- `run_native_messaging_host(token, stdin, stdout)` serves requests until EOF.
+- `argv_requests_native_host(argv)` gates native-host mode before GUI or Flask
+  startup.
+- `build_native_host_manifest(exe_path, extension_ids, browser)` emits Chrome
+  `allowed_origins` or Firefox `allowed_extensions`.
+- `register_native_messaging_hosts(target, base_args, config)` writes Chrome
+  and Firefox host manifests under `%LOCALAPPDATA%\AstraDownloader\native-hosts`
+  and registers the HKCU native-host registry values when the companion is
+  running as an installed EXE.
+- `ensure_system_integrations()` invokes native-host registration on matching
+  version launches so configured extension IDs are repaired without a full
+  reinstall.
 
-Covered by `NativeMessagingBootstrapTests` (framing round-trip, oversized-length
-rejection, token-only-for-get-token, malformed-request rejection,
-unconfigured-token withholding, run-to-EOF, the argv gate, and origin pinning).
+In the extension:
 
-This changes **no runtime behavior** today: nothing launches the host until the
-manifest is registered (below), and the HTTP `/health` bootstrap is untouched.
+- `extension/manifest.json` includes the `nativeMessaging` permission.
+- `extension/background.js` handles `NATIVE_MSG_GET_TOKEN` with
+  `chrome.runtime.connectNative('com.astra.deck.downloader')`, a timeout, and
+  duplicate-response guards.
+- `extension/features/download-ui/index.js` requests the native token before
+  probing `/health`, sends `X-MDL-Token-Source: native` when native bootstrap
+  succeeds, records `tokenSource: native|legacy-health`, and shows a
+  `native-channel-required` recovery state when the companion no longer echoes
+  a token over `/health`.
+- `/health` suppresses `token` when the request declares
+  `X-MDL-Token-Source: native`. The `LegacyHealthTokenEcho` config key and
+  `ASTRA_LEGACY_HEALTH_TOKEN_ECHO=0` environment switch can suppress legacy
+  token echo for all non-native callers, in which case `/health` reports
+  `legacyTokenEcho: false` and `nativeChannelRequired: true`.
 
-## Remaining cutover (needs a real browser + OS — not validatable in CI)
+Coverage includes native framing tests, malformed-message tests, manifest-shape
+tests, registry-write tests, downloader health token-suppression tests,
+extension fallback tests, native-channel-required UI recovery tests, and
+UI health-pill assertions.
 
-1. **Register the host manifest.**
-   - Windows: write `build_native_host_manifest(exe, [<ext-id>])` to a JSON
-     file and set
-     `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.astra.deck.downloader`
-     (and the Chromium/Edge equivalents) to its path. Firefox uses
-     `HKCU\Software\Mozilla\NativeMessagingHosts\…` and `allowed_extensions`
-     (the gecko ID) instead of `allowed_origins`.
-   - Do this from the existing installer / `ensure_system_integrations`
-     path, and remove it on `--uninstall`.
-2. **Extension manifest:** add `"nativeMessaging"` to `permissions`. This is a
-   new store-reviewed permission, so update `docs/store-permission-rationale.md`
-   and the manifest-permission hardening tests, and gate it to the GitHub-full
-   profile if store-safe should not ship the companion integration.
-3. **Extension bootstrap:** replace the `fetch('http://127.0.0.1:…/health')`
-   token discovery with `chrome.runtime.connectNative('com.astra.deck.downloader')`
-   → send `{type:'get-token'}` → cache the returned token. Keep the HTTP health
-   *probe* (is the server up? which port?) but stop trusting `/health` for the
-   token.
-4. **Companion `/health`:** once the extension no longer needs the token over
-   HTTP, drop the token from the `/health` response entirely (remove the
-   `not origin` disclosure branch and its test), closing the local-process
-   leak for good.
-5. **Extension-ID pinning:** `allowed_origins` needs the *published* extension
-   IDs. Unpacked/dev installs have a different ID derived from the key, so the
-   registration step must accept the running extension's ID (or ship the known
-   release IDs) — coordinate with the signing/release flow.
+## Remaining validation and retirement gates
 
-Until 1–5 are done on-device, the native host is dormant and the documented
-HTTP residual risk stands (see `the project notes` and the cookie/SSRF threat model).
+1. **Chrome extension IDs.** Firefox uses the fixed Gecko ID by default. Chrome
+   IDs must be configured through `NativeChromeExtensionIds` or
+   `ASTRA_NATIVE_CHROME_EXTENSION_IDS` once the release/store IDs are known.
+2. **Real browser validation.** Verify Chrome and Firefox can launch the
+   registered native host from the packaged extension, receive the token over
+   native messaging, and still detect the running HTTP service on the selected
+   loopback port.
+3. **Legacy default-off rollout.** After packaged Chrome/Firefox validation,
+   set `LegacyHealthTokenEcho` false in the shipped companion defaults or
+   installer-managed config, then remove the fallback branch after a compatibility
+   window once legacy clients have migrated.
+4. **Release packaging.** The companion setup path still requires both
+   `AstraDownloader.exe` and `AstraDownloader.exe.sha256` on the GitHub release.
+   Latest `v4.46.4` includes the EXE but is missing the hash sidecar.
+
+Until the legacy branch is removed, native-capable clients get the stronger
+browser-pinned token channel while controlled deployments can disable the
+documented local-process residual risk with the gate above.
