@@ -1032,8 +1032,7 @@ This pass closes three observability gaps and one dead-code finding:
 ### Chore
 
 - `.gitignore` now covers the local working-notes and tooling
-  directories, and the underscore spelling of
-  `CODEX_CHANGELOG.md` alongside the existing dashed form.
+  directories.
 
 ## [3.20.1] - Hardening Pass 8 - 2026-04-24
 
@@ -1544,7 +1543,7 @@ End-to-end audit covering the Python downloader, build system, CI pipeline, and 
 ### Documentation
 - **`HARDENING.md`** — extended with Pass 5 section.
 - **README badge** bumped to 3.15.0.
-- **CHANGELOG**, **CLAUDE.md**, memory file — synced.
+- **CHANGELOG** — synced.
 
 ---
 
