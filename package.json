@@ -14,7 +14,9 @@
   },
   "scripts": {
     "build": "node build-extension.js",
-    "build:userscript": "node build-extension.js --with-userscript",
+    "build:userscript": "node build-extension.js --with-userscript && npm run release:sbom && npm run release:manifest",
+    "release:prepare": "npm run build:userscript && npm run release:readiness -- --require-pass",
+    "release:sbom": "node scripts/generate-release-sbom.js",
     "release:manifest": "node scripts/generate-release-manifest.js",
     "release:readiness": "node scripts/generate-release-readiness.js",
     "release:verify-digests": "node scripts/compare-release-digests.js",

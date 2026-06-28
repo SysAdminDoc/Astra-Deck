@@ -400,9 +400,10 @@ npm ci
 npm test
 npm run check
 npm run build                             # Build store-safe + GitHub-full artifacts
-npm run build:userscript                  # Include userscript artifact too
-npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json
-npm run release:manifest                  # Generate release-manifest.json + SHA256SUMS
+npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
+npm run release:prepare                   # Build userscript artifacts and require readiness pass
+npm run release:sbom                      # Regenerate build/astra-deck-npm-sbom.cdx.json
+npm run release:manifest                  # Regenerate release-manifest.json + SHA256SUMS
 npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
 npm run release:verify-digests -- --tag vX.Y.Z # Compare uploaded asset digests after release upload
 node build-extension.js --profile store-safe
@@ -423,7 +424,7 @@ Outputs in `build/`:
 - `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
 - `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
-- `ytkit-v*.user.js` (with `--with-userscript`)
+- `ytkit-v*.user.js` (with `--with-userscript` / `npm run build:userscript`)
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
 - `release-readiness/release-readiness.json` and
   `release-readiness/release-readiness.md` after `npm run release:readiness`
