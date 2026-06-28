@@ -48,11 +48,12 @@ const predicateSandboxSource = fs.readFileSync(
     'utf8'
 );
 
-function runNodeCommand(args) {
+function runNodeCommand(args, options = {}) {
     const { spawnSync } = require('child_process');
     return spawnSync(process.execPath, args, {
         stdio: 'pipe',
-        cwd: path.join(__dirname, '..')
+        cwd: path.join(__dirname, '..'),
+        env: options.env ? { ...process.env, ...options.env } : process.env
     });
 }
 
@@ -6668,6 +6669,40 @@ test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the
 });
 
 // ── v4.21.0 NX1: theme-css extended with forceDark + accentColor builders ──
+
+test('v4.46.12 userscript drift checker reports extension-only feature classifications', () => {
+    const result = runNodeCommand(['scripts/check-userscript-drift.js']);
+    assert.equal(result.status, 0, result.stderr.toString());
+    const output = result.stdout.toString();
+
+    assert.match(output, /Extension-only classifications:/,
+        'drift check must print the extension-only parity breakdown');
+    for (const parityClass of [
+        'chrome-api',
+        'native-companion',
+        'unsafe-in-userscript',
+        'intentional-extension-only',
+        'not-yet-ported'
+    ]) {
+        assert.match(output, new RegExp(`${parityClass}=\\d+`),
+            `drift check must count ${parityClass} extension-only features`);
+    }
+});
+
+test('v4.46.12 userscript drift checker fails on unclassified extension-only feature IDs', () => {
+    const result = runNodeCommand(['scripts/check-userscript-drift.js'], {
+        env: { ASTRA_USERSCRIPT_DRIFT_INJECT_EXTENSION_IDS: 'unclassifiedTestFeature' }
+    });
+    assert.notEqual(result.status, 0, 'injected extension-only feature must fail without a classification');
+    const errorOutput = result.stderr.toString();
+
+    assert.match(errorOutput, /Unclassified extension-only feature ID/,
+        'failure must name the unclassified-feature class of error');
+    assert.match(errorOutput, /unclassifiedTestFeature/,
+        'failure must name the unclassified feature ID');
+    assert.match(errorOutput, /chrome-api\|native-companion\|unsafe-in-userscript\|intentional-extension-only\|not-yet-ported/,
+        'failure must list the allowed parity classes');
+});
 
 test('v4.21.0 features/theme-css exports the two new builders', () => {
     delete require.cache[require.resolve('../extension/features/theme-css/index.js')];
