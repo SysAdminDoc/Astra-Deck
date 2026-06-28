@@ -24,6 +24,21 @@
             removeNavigateRule = () => {},
             addMutationRule = () => {},
             removeMutationRule = () => {},
+            runBudgetedElementBatch = (items, callback) => {
+                const list = Array.from(items || []);
+                list.forEach(callback);
+                return {
+                    cancel() {},
+                    promise: Promise.resolve({
+                        label: 'subscription-groups:fallback',
+                        total: list.length,
+                        processed: list.length,
+                        chunks: 1,
+                        durationMs: 0,
+                        cancelled: false
+                    })
+                };
+            },
             handleFileExport = () => {},
             isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || ''))
         } = deps;
@@ -48,6 +63,62 @@
             _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
             _STALE_CHANNEL_MIN_AGE_DAYS: 365,
             _SORT_MODES: Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']),
+            _budgetHandles: null,
+            _lastScanDiagnostics: null,
+
+            _ensureBudgetHandles() {
+                if (!this._budgetHandles) this._budgetHandles = new Map();
+                return this._budgetHandles;
+            },
+
+            _cancelBudgetedScan(label) {
+                const handles = this._budgetHandles;
+                const handle = handles?.get(label);
+                handle?.cancel?.();
+                handles?.delete(label);
+            },
+
+            _cancelAllBudgetedScans() {
+                if (!this._budgetHandles) return;
+                for (const handle of this._budgetHandles.values()) handle?.cancel?.();
+                this._budgetHandles.clear();
+            },
+
+            _recordScanDiagnostics(result) {
+                if (!result) return;
+                this._lastScanDiagnostics = {
+                    label: result.label || 'subscription-groups',
+                    total: result.total || 0,
+                    processed: result.processed || 0,
+                    chunks: result.chunks || 0,
+                    durationMs: Math.round((result.durationMs || 0) * 10) / 10,
+                    cancelled: !!result.cancelled
+                };
+                if ((result.chunks || 0) > 1 || (result.durationMs || 0) > 16) {
+                    DebugManager.log('SubGroups', `Budgeted scan ${this._lastScanDiagnostics.label}: ${this._lastScanDiagnostics.processed}/${this._lastScanDiagnostics.total} cards in ${this._lastScanDiagnostics.chunks} chunks (${this._lastScanDiagnostics.durationMs}ms)`);
+                }
+            },
+
+            _runCardBatch(label, cards, callback, onComplete = null) {
+                const list = Array.from(cards || []);
+                const safeLabel = String(label || 'cards').slice(0, 64);
+                this._cancelBudgetedScan(safeLabel);
+                const handle = runBudgetedElementBatch(list, callback, {
+                    label: `subscription-groups:${safeLabel}`,
+                    chunkSize: 80,
+                    budgetMs: 8,
+                    warnAfterMs: 16
+                });
+                const handles = this._ensureBudgetHandles();
+                handles.set(safeLabel, handle);
+                Promise.resolve(handle.promise).then((result) => {
+                    if (handles.get(safeLabel) !== handle) return;
+                    handles.delete(safeLabel);
+                    this._recordScanDiagnostics(result);
+                    if (!result?.cancelled && typeof onComplete === 'function') onComplete(result);
+                });
+                return handle;
+            },
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -402,8 +473,8 @@
                 const groups = this._readGroups();
                 const active = this._activeGroupId;
                 const allowed = active && groups[active] ? this._getGroupChannelIdSet(active, groups) : null;
-                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
-                cards.forEach(card => {
+                const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                return this._runCardBatch('group-filter', cards, card => {
                     if (!allowed) {
                         card.classList.remove('ytkit-sub-hidden-by-group');
                         return;
@@ -411,15 +482,14 @@
                     const channelId = this._extractChannelIdFromCard(card);
                     if (!channelId || !allowed.has(channelId)) card.classList.add('ytkit-sub-hidden-by-group');
                     else card.classList.remove('ytkit-sub-hidden-by-group');
-                });
-                this._renderGroupEmptyState(allowed);
+                }, () => this._renderGroupEmptyState(allowed));
             },
 
             _applyContentTypeFilter() {
                 const filterLive = !!appState?.settings?.subscriptionFilterLive;
                 const filterStreamed = !!appState?.settings?.subscriptionFilterStreamed;
-                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
-                cards.forEach(card => {
+                const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                return this._runCardBatch('content-type-filter', cards, card => {
                     if (!filterLive && !filterStreamed) {
                         card.classList.remove('ytkit-sub-hidden-by-type');
                         return;
@@ -441,7 +511,8 @@
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                 if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
                 const lastVisit = this._readLastVisit();
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                return this._runCardBatch('new-since-markers', cards, card => {
                     const channelId = this._extractChannelIdFromCard(card);
                     if (!channelId) return;
                     if (this._isCardNewSinceLastVisit(card, channelId, lastVisit)) {
@@ -459,12 +530,14 @@
             _stampLastVisit() {
                 const lastVisit = { ...this._readLastVisit() };
                 const now = Date.now();
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                return this._runCardBatch('stamp-last-visit', cards, card => {
                     const channelId = this._extractChannelIdFromCard(card);
                     if (channelId) lastVisit[channelId] = now;
+                }, () => {
+                    this._writeLastVisit(this._capLastVisitMap(lastVisit));
+                    if (this._digestPanel) this._renderDigestPanel();
                 });
-                this._writeLastVisit(this._capLastVisitMap(lastVisit));
-                if (this._digestPanel) this._renderDigestPanel();
             },
 
             _getCardMetaText(card) {
@@ -746,7 +819,8 @@
                     delete card.dataset.ytkitChannelAgeDays;
                     delete card.dataset.ytkitStagedUnsubscribe;
                 });
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
+                this._runCardBatch('dead-channel-markers', cards, card => {
                     const channelId = this._extractChannelIdFromCard(card);
                     if (!channelId) return;
                     const target = card.querySelector('#metadata-line, ytd-video-meta-block, #meta');
@@ -1319,7 +1393,10 @@
                 // every deferred callback below re-check the path themselves.
                 this._ensureStyles();
                 this._navRule = () => {
-                    if (window.location.pathname !== '/feed/subscriptions') return;
+                    if (window.location.pathname !== '/feed/subscriptions') {
+                        this._cancelAllBudgetedScans();
+                        return;
+                    }
                     // Track + clear these so a navigation away within the delay
                     // can't fire them on the wrong page. The 8s _stampLastVisit
                     // in particular would otherwise stamp lastVisit for whatever
@@ -1356,6 +1433,7 @@
             destroy() {
                 removeNavigateRule(this.id);
                 removeScopedMutationRule(this.id);
+                this._cancelAllBudgetedScans();
                 if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }
                 if (this._stampTimer) { clearTimeout(this._stampTimer); this._stampTimer = null; }
                 this._navRule = null;

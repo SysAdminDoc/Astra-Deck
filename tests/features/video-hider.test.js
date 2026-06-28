@@ -2,9 +2,15 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { sources, config } = require('../helpers/source');
 
 const MODULE_PATH = '../../extension/features/video-hider/index.js';
+const MODULE_SOURCE = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'extension', 'features', 'video-hider', 'index.js'),
+    'utf8'
+);
 
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -76,12 +82,36 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
         'PredicateSandbox',
         'addNavigateRule',
         'removeNavigateRule',
+        'runBudgetedElementBatch',
         'injectStyle'
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
     assert.ok(dependencyBag.includes('createSVG: globalThis.YTKitCore?.createSVG'),
         'factory dependency bag must avoid the later-declared local createSVG binding');
+});
+
+test('hideVideosFromHome budgets large feed scans and cancels stale batches', () => {
+    assert.match(MODULE_SOURCE, /runBudgetedElementBatch = \(items, callback\) =>/,
+        'module factory must accept an injected budgeted batch runner');
+    assert.match(MODULE_SOURCE, /_processAllBudgetHandle: null/,
+        'full-page scan handle must be tracked for cancellation');
+    assert.match(MODULE_SOURCE, /_mutationBudgetHandle: null/,
+        'mutation scan handle must be tracked for cancellation');
+    assert.match(MODULE_SOURCE, /_cancelBudgetedScans\(\)/,
+        'feature must expose a shared cancellation helper');
+    assert.match(MODULE_SOURCE, /label: 'video-hider:process-all'/,
+        'all-card scans must carry a diagnostic label');
+    assert.match(MODULE_SOURCE, /label: 'video-hider:mutation-batch'/,
+        'mutation batches must carry a diagnostic label');
+    assert.match(MODULE_SOURCE, /chunkSize: 60/,
+        'full-page scans should use a bounded chunk size');
+    assert.match(MODULE_SOURCE, /chunkSize: 80/,
+        'mutation batches should use a bounded chunk size');
+    assert.match(MODULE_SOURCE, /DebugManager\.log\('VideoHider', `Budgeted scan/,
+        'slow multi-chunk scans must be logged for diagnostics');
+    assert.match(MODULE_SOURCE, /this\._cancelBudgetedScans\(\);[\s\S]*this\._restoreRemovedVideoNodes/,
+        'destroy must cancel pending scans before restoring DOM state');
 });
 
 test('_parseCompactCount preserves comma-grouped view counts (no decimal corruption)', () => {

@@ -5602,6 +5602,52 @@ test('v5.1.0 selector-health: createSelectorHealth uses pluggable provider for t
     assert.match(text, /miss rate:\s+10%/);
 });
 
+test('v4.46.18 selector-health reports budgeted feed scan diagnostics', () => {
+    const core = loadSelectorHealthModule();
+    const sh = core.createSelectorHealth({
+        snapshotProvider: () => [{ surface: 'feed', hitCount: 10, missCount: 0, errorCount: 0 }],
+        budgetedScanProvider: () => [{
+            label: 'video-hider:process-all',
+            total: 240,
+            processed: 240,
+            chunks: 4,
+            durationMs: 27.4,
+            cancelled: false
+        }],
+        topN: 1
+    });
+
+    const structured = sh.getReport();
+    assert.equal(structured.budgetedScans.length, 1,
+        'structured selector-health reports must expose budgeted scan diagnostics');
+    assert.equal(structured.budgetedScans[0].label, 'video-hider:process-all');
+
+    const text = sh.getCopyReport({ productVersion: '4.46.18' });
+    assert.match(text, /budgeted scan diagnostics:/,
+        'copy report must include a budgeted scan diagnostics section');
+    assert.match(text, /video-hider:process-all: 240\/240 cards in 4 chunks \(27\.4ms\)/);
+});
+
+test('v4.46.18 navigation core exposes cancellable budgeted element batches', () => {
+    const navSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'navigation.js'), 'utf8'
+    );
+    assert.match(navSource, /function runBudgetedElementBatch\(items, callback, options = \{\}\)/,
+        'navigation core must expose a shared budgeted element batch runner');
+    assert.match(navSource, /function getBudgetedScanDiagnostics\(\)/,
+        'navigation core must expose budgeted scan diagnostics');
+    assert.match(navSource, /recordBudgetedScanDiagnostic\(result\)/,
+        'slow or cancelled scans must be recorded for diagnostics');
+    assert.match(navSource, /timer = setTimeout\(step, yieldMs\)/,
+        'large batches must yield between chunks');
+    assert.match(navSource, /cancel\(\) \{[\s\S]*clearTimeout\(timer\)/,
+        'pending batch work must be cancellable');
+    assert.match(navSource, /runBudgetedElementBatch,/,
+        'budget runner must be exported on YTKitCore');
+    assert.match(navSource, /getBudgetedScanDiagnostics,/,
+        'budget diagnostics must be exported on YTKitCore');
+});
+
 test('v5.1.0 feature-lifecycle: getLifecycle returns a stable singleton', () => {
     delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
     const stub = {};
@@ -6656,6 +6702,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/navigation.js',
         'extension/core/player.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
@@ -6706,6 +6753,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
         'core/toast.js':                        'function inferToastTone(color)',
         'core/toast-dom.js':                    'function createToastSystem(deps',
+        'core/navigation.js':                   'function runBudgetedElementBatch(items',
         'core/runtime-flags.js':                'core.runtimeFlags = flags;',
         'core/capability-probe.js':             'core.capabilityProbe = surface;',
         'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
@@ -6759,6 +6807,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/navigation.js',
         'extension/core/player.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',

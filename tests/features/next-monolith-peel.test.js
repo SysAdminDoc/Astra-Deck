@@ -494,7 +494,10 @@ test('subscriptionGroups factory returns the group management runtime surface', 
         '_parseGroupsOpml',
         '_toggleMembersPanel',
         '_playGroupAsQueue',
-        '_generateAiTagsForGroup'
+        '_generateAiTagsForGroup',
+        '_runCardBatch',
+        '_cancelAllBudgetedScans',
+        '_recordScanDiagnostics'
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
     }
@@ -537,11 +540,43 @@ test('subscriptionGroups monolith prefers the module runtime factory before inli
         'removeNavigateRule',
         'addMutationRule',
         'removeMutationRule',
+        'runBudgetedElementBatch',
         'handleFileExport',
         'isSafeObjectKey'
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
+});
+
+test('subscriptionGroups budgets high-card feed passes and cancels stale work', () => {
+    const source = sources.ytkit;
+    const factoryNeedle = 'globalThis.YTKitFeatures?.subscriptionGroups?.createSubscriptionGroupsFeature?.({';
+    const factoryIndex = source.indexOf(factoryNeedle);
+    const fallbackIndex = source.indexOf("id: 'subscriptionGroups'", factoryIndex);
+    const dependencyBag = source.slice(factoryIndex, fallbackIndex);
+    assert.ok(dependencyBag.includes('runBudgetedElementBatch'),
+        'ytkit.js must pass the navigation batch budget helper into subscriptionGroups');
+
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const featureSource = String(mod.createSubscriptionGroupsFeature);
+    for (const label of [
+        'subscription-groups:${safeLabel}',
+        'group-filter',
+        'content-type-filter',
+        'new-since-markers',
+        'stamp-last-visit',
+        'dead-channel-markers'
+    ]) {
+        assert.ok(featureSource.includes(label),
+            'subscriptionGroups budgeted scan source must include ' + label);
+    }
+    assert.ok(featureSource.includes('this._cancelAllBudgetedScans();'),
+        'navigation-away and destroy paths must cancel pending subscription scans');
+    assert.ok(featureSource.includes("DebugManager.log('SubGroups', `Budgeted scan"),
+        'slow subscription scans must log budget diagnostics');
 });
 
 test('subscriptionGroups OPML export/import round-trips nested groups and channels', () => {
