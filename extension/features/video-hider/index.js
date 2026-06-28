@@ -43,6 +43,21 @@
             PredicateSandbox = { compile() { return { ok: false, error: 'unavailable', position: 0 }; } },
             addNavigateRule = () => {},
             removeNavigateRule = () => {},
+            runBudgetedElementBatch = (items, callback) => {
+                const list = Array.from(items || []);
+                list.forEach(callback);
+                return {
+                    cancel() {},
+                    promise: Promise.resolve({
+                        label: 'video-hider:fallback',
+                        total: list.length,
+                        processed: list.length,
+                        chunks: 1,
+                        durationMs: 0,
+                        cancelled: false
+                    })
+                };
+            },
             injectStyle = () => ({ remove() {} })
         } = deps;
 
@@ -1075,22 +1090,56 @@
 
             _processAllDebounceTimer: null,
             _chipSecondPassTimer: null,
+            _processAllBudgetHandle: null,
+            _mutationBudgetHandle: null,
+            _lastScanDiagnostics: null,
+            _cancelBudgetedScans() {
+                this._processAllBudgetHandle?.cancel?.();
+                this._mutationBudgetHandle?.cancel?.();
+                this._processAllBudgetHandle = null;
+                this._mutationBudgetHandle = null;
+            },
+            _recordScanDiagnostics(result) {
+                if (!result) return;
+                this._lastScanDiagnostics = {
+                    label: result.label || 'video-hider',
+                    total: result.total || 0,
+                    processed: result.processed || 0,
+                    chunks: result.chunks || 0,
+                    durationMs: Math.round((result.durationMs || 0) * 10) / 10,
+                    cancelled: !!result.cancelled
+                };
+                if ((result.chunks || 0) > 1 || (result.durationMs || 0) > 16) {
+                    DebugManager.log('VideoHider', `Budgeted scan ${this._lastScanDiagnostics.label}: ${this._lastScanDiagnostics.processed}/${this._lastScanDiagnostics.total} cards in ${this._lastScanDiagnostics.chunks} chunks (${this._lastScanDiagnostics.durationMs}ms)`);
+                }
+            },
             _processAllVideos() {
                 // Clear pending batch to prevent race with MutationObserver
                 this._clearBatchBuffer?.();
+                this._cancelBudgetedScans();
                 this._restoreRemovedVideoNodes();
                 document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
-                const videos = document.querySelectorAll(this._VIDEO_SELECTORS);
-                if (!this._isScopeEnabledForPath()) {
-                    videos.forEach(el => {
+                const videos = Array.from(document.querySelectorAll(this._VIDEO_SELECTORS));
+                const processOne = !this._isScopeEnabledForPath()
+                    ? (el) => {
                         this._applyVideoHiddenState(el, false);
                         this._syncQuickHideButton(el, this._extractVideoId(el));
-                    });
-                    this._updatePageActionButtons();
-                    return;
-                }
-                videos.forEach(el => this._processVideoElement(el));
-                this._updatePageActionButtons();
+                    }
+                    : (el) => this._processVideoElement(el);
+                const handle = runBudgetedElementBatch(videos, processOne, {
+                    label: 'video-hider:process-all',
+                    chunkSize: 60,
+                    budgetMs: 8,
+                    warnAfterMs: 16
+                });
+                this._processAllBudgetHandle = handle;
+                Promise.resolve(handle.promise).then((result) => {
+                    if (this._processAllBudgetHandle !== handle) return;
+                    this._processAllBudgetHandle = null;
+                    this._recordScanDiagnostics(result);
+                    if (!result?.cancelled) this._updatePageActionButtons();
+                });
+                return handle;
             },
             _processAllVideosDebounced(delay = 300) {
                 if (this._processAllDebounceTimer) clearTimeout(this._processAllDebounceTimer);
@@ -1422,21 +1471,37 @@
                 };
 
                 this._observer = new MutationObserver(mutations => {
+                    const addedCards = [];
                     for (const m of mutations) {
                         for (const node of m.addedNodes) {
                             if (node.nodeType !== 1) continue;
                             if (node.matches?.(selectors)) {
-                                const wasHidden = this._processVideoElementWithResult(node);
-                                batchBuffer.push({ element: node, hidden: wasHidden });
+                                addedCards.push(node);
                             }
                             node.querySelectorAll?.(selectors).forEach(el => {
-                                const wasHidden = this._processVideoElementWithResult(el);
-                                batchBuffer.push({ element: el, hidden: wasHidden });
+                                addedCards.push(el);
                             });
                         }
                     }
-                    if (batchTimeout) clearTimeout(batchTimeout);
-                    batchTimeout = setTimeout(processBatch, 300);
+                    if (!addedCards.length) return;
+                    this._mutationBudgetHandle?.cancel?.();
+                    const handle = runBudgetedElementBatch(addedCards, (el) => {
+                        const wasHidden = this._processVideoElementWithResult(el);
+                        batchBuffer.push({ element: el, hidden: wasHidden });
+                    }, {
+                        label: 'video-hider:mutation-batch',
+                        chunkSize: 80,
+                        budgetMs: 8,
+                        warnAfterMs: 16
+                    });
+                    this._mutationBudgetHandle = handle;
+                    Promise.resolve(handle.promise).then((result) => {
+                        if (this._mutationBudgetHandle !== handle) return;
+                        this._mutationBudgetHandle = null;
+                        this._recordScanDiagnostics(result);
+                        if (batchTimeout) clearTimeout(batchTimeout);
+                        batchTimeout = setTimeout(processBatch, 300);
+                    });
                 });
                 const observeTarget = document.querySelector('ytd-app') || document.body;
                 this._observer.observe(observeTarget, { childList: true, subtree: true });
@@ -1499,6 +1564,7 @@
                 this._styleElement?.remove();
                 this._observer?.disconnect();
                 this._clearBatchBuffer?.();
+                this._cancelBudgetedScans();
                 this._restoreRemovedVideoNodes();
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                 if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }

@@ -152,6 +152,7 @@
         const exportedAt = options.exportedAt || new Date().toISOString();
         const productVersion = options.productVersion || 'unknown';
         const browserUA = options.browserUA || 'unknown';
+        const budgetedScans = Array.isArray(options.budgetedScans) ? options.budgetedScans : [];
         const lines = [];
         const summary = summarize(snapshot);
         const top = rankProblemSurfaces(snapshot, options.topN || 5);
@@ -175,6 +176,22 @@
         lines.push('  total shape drifts:      ' + summary.totalShapeDrifts);
         lines.push('  miss rate:               ' + summary.missRate + '%');
         lines.push('');
+
+        if (budgetedScans.length) {
+            lines.push('budgeted scan diagnostics:');
+            for (const scan of budgetedScans.slice(-5)) {
+                const label = String(scan.label || 'scan');
+                const processed = safeNumber(scan.processed);
+                const total = safeNumber(scan.total);
+                const chunks = safeNumber(scan.chunks);
+                const durationMs = safeNumber(scan.durationMs);
+                const cancelled = scan.cancelled ? '; cancelled' : '';
+                lines.push('  - ' + label + ': ' + processed + '/' + total +
+                    ' cards in ' + chunks + ' chunk' + (chunks === 1 ? '' : 's') +
+                    ' (' + durationMs + 'ms' + cancelled + ')');
+            }
+            lines.push('');
+        }
 
         if (top.length === 0) {
             lines.push('No problem surfaces — every tracked selector is hitting.');
@@ -210,19 +227,25 @@
             || (() => (core.getSelectorHealthSnapshot ? core.getSelectorHealthSnapshot() : []));
         const exporter = options.exporter
             || (() => (core.exportSelectorHealth ? core.exportSelectorHealth() : null));
+        const budgetedScanProvider = options.budgetedScanProvider
+            || (() => (core.getBudgetedScanDiagnostics ? core.getBudgetedScanDiagnostics() : []));
 
         function getReport() {
             const snap = snapshotProvider();
             return {
                 summary: summarize(snap),
                 topProblems: rankProblemSurfaces(snap, options.topN || 5),
-                snapshot: snap
+                snapshot: snap,
+                budgetedScans: budgetedScanProvider()
             };
         }
 
         function getCopyReport(extra = {}) {
             const snap = snapshotProvider();
-            return formatCopyReport(snap, { ...options, ...extra });
+            const budgetedScans = Array.isArray(extra.budgetedScans)
+                ? extra.budgetedScans
+                : budgetedScanProvider();
+            return formatCopyReport(snap, { ...options, ...extra, budgetedScans });
         }
 
         function exportSnapshotJson() {

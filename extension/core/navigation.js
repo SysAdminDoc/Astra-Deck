@@ -377,14 +377,113 @@
         if (!hasAnyMutationRule()) stopObserver();
     }
 
+    const budgetedScanDiagnostics = [];
+
+    function nowMs() {
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+            return performance.now();
+        }
+        return Date.now();
+    }
+
+    function recordBudgetedScanDiagnostic(entry) {
+        budgetedScanDiagnostics.push({
+            at: new Date().toISOString(),
+            label: entry.label,
+            total: entry.total,
+            processed: entry.processed,
+            chunks: entry.chunks,
+            durationMs: Math.round(entry.durationMs * 10) / 10,
+            budgetMs: entry.budgetMs,
+            cancelled: !!entry.cancelled
+        });
+        while (budgetedScanDiagnostics.length > 20) budgetedScanDiagnostics.shift();
+    }
+
+    function runBudgetedElementBatch(items, callback, options = {}) {
+        const list = Array.from(items || []);
+        const label = String(options.label || 'budgeted-scan').slice(0, 80);
+        const chunkSize = Math.max(1, Math.floor(Number(options.chunkSize) || 80));
+        const budgetMs = Math.max(1, Number(options.budgetMs) || 8);
+        const yieldMs = Math.max(0, Number(options.yieldMs) || 0);
+        const warnAfterMs = Math.max(budgetMs, Number(options.warnAfterMs) || 16);
+        let index = 0;
+        let chunks = 0;
+        let timer = null;
+        let cancelled = false;
+        let finished = false;
+        const startedAt = nowMs();
+
+        let resolvePromise;
+        const promise = new Promise(resolve => { resolvePromise = resolve; });
+
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            const durationMs = nowMs() - startedAt;
+            const result = {
+                label,
+                total: list.length,
+                processed: index,
+                chunks,
+                durationMs,
+                budgetMs,
+                cancelled
+            };
+            if (chunks > 1 || durationMs > warnAfterMs || cancelled) recordBudgetedScanDiagnostic(result);
+            resolvePromise(result);
+        };
+
+        const step = () => {
+            timer = null;
+            if (cancelled) { finish(); return; }
+            const chunkStartedAt = nowMs();
+            let processedInChunk = 0;
+            while (index < list.length && processedInChunk < chunkSize) {
+                callback(list[index], index, list);
+                index += 1;
+                processedInChunk += 1;
+                if ((nowMs() - chunkStartedAt) >= budgetMs) break;
+            }
+            chunks += 1;
+            if (index < list.length && !cancelled) {
+                timer = setTimeout(step, yieldMs);
+                return;
+            }
+            finish();
+        };
+
+        timer = setTimeout(step, 0);
+
+        return {
+            cancel() {
+                if (cancelled) return;
+                cancelled = true;
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                finish();
+            },
+            promise,
+            get cancelled() { return cancelled; }
+        };
+    }
+
+    function getBudgetedScanDiagnostics() {
+        return budgetedScanDiagnostics.slice();
+    }
+
     Object.assign(core, {
         addMutationRule,
         addNavigateRule,
         addScopedMutationRule,
         configureNavigationRuntime,
+        getBudgetedScanDiagnostics,
         removeMutationRule,
         removeNavigateRule,
         removeScopedMutationRule,
+        runBudgetedElementBatch,
         waitForElement,
         waitForPageContent
     });
