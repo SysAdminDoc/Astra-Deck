@@ -28,7 +28,9 @@ Run before the first submission AND before every subsequent update.
       unsafe-eval, or wildcard sources. Astra Deck ships
       `script-src 'self'; object-src 'self'; connect-src <explicit list>`
       per H20 / NX11.
-- [ ] `web_accessible_resources` lists only `icons/*` — no source code.
+- [ ] `web_accessible_resources` lists only `icons/*` and `assets/*` for
+      packaged icons plus bundled theme media — no source code, HTML, CSS, or
+      unreviewed asset paths.
 
 ---
 
