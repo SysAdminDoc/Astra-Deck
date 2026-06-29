@@ -164,11 +164,14 @@ test('settings panel exposes persistent live status feedback for save/import/exp
 
 test('settings panel search copy matches the expanded filter behavior', () => {
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
-    assert.equal(en.panelSearchPlaceholder.message, 'Search settings...');
-    assert.equal(en.panelSearchAria.message, 'Search settings by name, category, page, type, or description');
+    assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, controls...');
+    assert.equal(en.panelSearchAria.message, 'Search settings by name, page, category, or control type');
+    assert.equal(en.panelSearchHint.message, 'Search by name, page, category, control type, or description.');
     for (const source of [settingsPanelModuleSource, ytkitSource, userscriptSource]) {
-        assert.ok(source.includes('Search by name, category, page, type, or description.'),
+        assert.ok(source.includes('Search by name, page, category, control type, or description.'),
             'settings panel search hint must describe every indexed field');
+        assert.ok(source.includes("mark.className = 'ytkit-search-mark'"),
+            'settings panel search highlights must use the themed mark style');
     }
 });
 
@@ -183,8 +186,10 @@ test('settings panel header actions use a dedicated PIN button pattern', () => {
             `${label} settings PIN control must not reuse the close-button class`);
         assert.doesNotMatch(source, /pinBtn\.style\.cssText/,
             `${label} settings PIN control must not rely on inline layout styles`);
-        assert.ok(source.includes("pinBtn.setAttribute('aria-label', 'Manage settings PIN lock')"),
+        assert.ok(source.includes("pinBtn.setAttribute('aria-label', t('panelPinAria', 'Manage settings PIN lock'))"),
             `${label} settings PIN control must have an accessible name`);
+        assert.ok(source.includes('const pinIcon = (ICONS.lock || ICONS.shield || ICONS.settings)()'),
+            `${label} settings PIN control must render a dedicated lock icon`);
     }
     assert.ok(userscriptSource.includes("pinBtn.className = 'ytkit-pin-btn'"),
         'userscript bundled settings module must carry the dedicated PIN control');

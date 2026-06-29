@@ -2315,8 +2315,26 @@
   "panelLiveApplyBadge": {
     "message": "Применять сразу"
   },
+  "panelPinAria": {
+    "message": "Manage settings PIN lock"
+  },
+  "panelPinChangeTitle": {
+    "message": "Change or clear settings PIN"
+  },
+  "panelPinLabel": {
+    "message": "PIN"
+  },
+  "panelPinSetTitle": {
+    "message": "Set a settings PIN"
+  },
+  "panelPinTitle": {
+    "message": "Manage settings PIN"
+  },
   "panelSearchAria": {
-    "message": "Поиск настроек"
+    "message": "Search settings by name, page, category, or control type"
+  },
+  "panelSearchHint": {
+    "message": "Search by name, page, category, control type, or description."
   },
   "panelSearchClearAria": {
     "message": "Очистить поиск настроек"
@@ -2325,7 +2343,19 @@
     "message": "Очистить поиск"
   },
   "panelSearchPlaceholder": {
-    "message": "Поиск настроек…"
+    "message": "Search settings, pages, controls..."
+  },
+  "panelSearchStateBadge": {
+    "message": "Search"
+  },
+  "panelSearchStateClear": {
+    "message": "Clear search"
+  },
+  "panelSearchStateCopy": {
+    "message": "Type a control, page, or category to narrow the menu instantly."
+  },
+  "panelSearchStateTitle": {
+    "message": "Search across all settings"
   },
   "panelSidebarAria": {
     "message": "Категории настроек"
@@ -2704,5 +2734,101 @@
   },
   "feature_audioPan_desc": {
     "message": "Сместить баланс звука влево или вправо. Диапазон: от -1 (полностью влево) до 1 (полностью вправо), 0 — центр."
+  },
+  "welcomeProfileGroupAria": {
+    "message": "Pick a starting profile"
+  },
+  "welcomePresetBody": {
+    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+  },
+  "welcomePresetGroupAria": {
+    "message": "Pick a usage preset"
+  },
+  "welcomePresetPrivacyTitle": {
+    "message": "Privacy"
+  },
+  "welcomePresetPrivacyDesc": {
+    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+  },
+  "welcomePresetResearcherTitle": {
+    "message": "Researcher"
+  },
+  "welcomePresetResearcherDesc": {
+    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+  },
+  "welcomePresetPowerTitle": {
+    "message": "Power User"
+  },
+  "welcomePresetPowerDesc": {
+    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+  },
+  "welcomePresetFocusTitle": {
+    "message": "Focus"
+  },
+  "welcomePresetFocusDesc": {
+    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+  },
+  "welcomePresetSkip": {
+    "message": "Skip - configure manually"
+  },
+  "openDashboard": {
+    "message": "Dashboard"
+  },
+  "externalHealthAria": {
+    "message": "External API health"
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
+  },
+  "externalHealthCopyAria": {
+    "message": "Copy external API health report to clipboard"
+  },
+  "externalHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "externalHealthCopyPending": {
+    "message": "Building report..."
+  },
+  "externalHealthCopyDone": {
+    "message": "Copied."
+  },
+  "externalHealthCopyFail": {
+    "message": "Could not copy."
+  },
+  "externalHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "externalHealthDetailEmpty": {
+    "message": "No requests observed in this tab yet."
+  },
+  "externalHealthEmpty": {
+    "message": "No external API services tracked yet."
+  },
+  "externalHealthTotalTpl": {
+    "message": "{count} services"
+  },
+  "featurePerfAria": {
+    "message": "Feature performance"
+  },
+  "featurePerfTitle": {
+    "message": "Feature init timing"
+  },
+  "featurePerfEmpty": {
+    "message": "No features initialized yet."
+  },
+  "featurePerfTotalTpl": {
+    "message": "{count} features measured"
+  },
+  "updateCompanionAria": {
+    "message": "Update Astra Downloader companion"
+  },
+  "updateCompanionBtn": {
+    "message": "Update Astra Downloader"
+  },
+  "statusWelcomePresetFail": {
+    "message": "Could not apply preset"
+  },
+  "statusOpenDashboardFail": {
+    "message": "Could not open dashboard"
   }
 }

@@ -3379,7 +3379,7 @@
                     'gap:5px',
                     'padding:12px 15px 11px',
                     'box-sizing:border-box',
-                    'overflow:hidden'
+                    'overflow:visible'
                 ].join(';');
 
                 const channel = document.createElement('div');
@@ -3483,6 +3483,15 @@
                 if (titleEl) {
                     titleEl.textContent = title;
                     titleEl.hidden = !title;
+                    titleEl.style.setProperty('display', 'block');
+                    titleEl.style.setProperty('width', '100%');
+                    titleEl.style.setProperty('max-width', '100%');
+                    titleEl.style.setProperty('max-inline-size', '100%');
+                    titleEl.style.setProperty('overflow', 'visible');
+                    titleEl.style.setProperty('text-overflow', 'clip');
+                    titleEl.style.setProperty('white-space', 'normal');
+                    titleEl.style.setProperty('overflow-wrap', 'anywhere');
+                    titleEl.style.setProperty('word-break', 'break-word');
                     titleEl.style.setProperty('-webkit-line-clamp', 'unset');
                     titleEl.style.setProperty('-webkit-box-orient', 'initial');
                     titleEl.style.setProperty('max-height', 'none');

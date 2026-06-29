@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Polish: v4.46.20 premium settings and diagnostics pass.** Refined the
+  in-page settings header/search states, side-panel quick-settings recovery,
+  popup onboarding/diagnostics localization, and live Theater Split title
+  wrapping; rebuilt the reloadable extension and userscript artifacts.
 - **Fix: v4.46.19 i18n coverage freshness gate.** `npm run check` now fails
   stale `docs/i18n-coverage.md` output, the report is regenerated against the
   901-key locale catalog, feature-copy placeholders are zeroed via reviewed
