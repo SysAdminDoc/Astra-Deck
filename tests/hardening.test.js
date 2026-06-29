@@ -40,6 +40,11 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
+const settingsPanelSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'),
+    'utf8'
+);
+
 function subscriptionGroupsBlock() {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
@@ -3948,6 +3953,31 @@ test('watch progress and watch-time stores enforce deterministic caps on write',
 });
 
 // ── v3.30.0 P1: Research workspace invariants ──
+
+test('YouTube Takeout watch-history import feeds local analytics with dedupe ledger', () => {
+    assert.match(ytkitSource, /watchTimeImportedEntries:\s*5000/,
+        'watch-time store must cap the imported Takeout dedupe ledger');
+    assert.match(ytkitSource, /const TAKEOUT_WATCH_SECONDS = 60;/,
+        'Takeout imports must use a documented local-only estimate per watched entry');
+    assert.match(ytkitSource, /function normalizeTakeoutWatchTitle\(value\)[\s\S]*replace\(\s*\/\^Watched\\s\+\/i,\s*''\s*\)\.trim\(\)/,
+        'Takeout title normalization must strip the English Takeout "Watched " prefix and trim trailing spaces');
+    assert.match(ytkitSource, /function extractTakeoutVideoId\(value\)[\s\S]*searchParams\.get\('v'\)[\s\S]*\['shorts', 'embed', 'live'\]/,
+        'Takeout importer must resolve video ids from watch, shorts, embed, live, and youtu.be URLs');
+    assert.match(ytkitSource, /function mergeTakeoutWatchHistoryIntoStats\(currentStats, takeoutPayload, nowDate = new Date\(\)\)/,
+        'Takeout importer must merge into the existing watch-time stats shape');
+    assert.match(ytkitSource, /const key = `\$\{entry\.videoId\}@\$\{entry\.watchedAt\}`;[\s\S]*if \(importedLedger\[key\]\)/,
+        'Takeout duplicate handling must merge by video id plus watched timestamp');
+    assert.match(ytkitSource, /stats\.days\[entry\.dayKey\] = \(Number\(stats\.days\[entry\.dayKey\]\) \|\| 0\) \+ entry\.seconds;/,
+        'Takeout imports must feed the existing daily watch analytics bars');
+    assert.match(ytkitSource, /StorageManager\.setSync\(STORAGE_KEYS\.watchTime, result\.stats\)/,
+        'Takeout import must write only the local watch-time store');
+    assert.match(ytkitSource, /id = 'ytkit-import-history'/,
+        'inline settings fallback must expose the Takeout import action');
+    assert.match(settingsPanelSource, /id = 'ytkit-import-history'/,
+        'settings-panel module must expose the Takeout import action');
+    assert.doesNotMatch(ytkitSource, /importYouTubeTakeoutWatchHistory[\s\S]{0,2500}fetch\(/,
+        'Takeout import must stay local-only and never fetch remote metadata');
+});
 
 test('localAiSummary checks for Chrome built-in Summarizer and never falls through to remote providers', () => {
     const start = ytkitSource.indexOf("id: 'localAiSummary'");

@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: v4.46.26 YouTube Takeout watch-history import.** Added a local-only
+  settings-panel import action for Takeout `watch-history.json`, normalizing
+  titles, deduping repeated imports by video ID and watched timestamp, and
+  merging recent entries into the existing watch-time analytics store.
 - **Fix: v4.46.25 injected-overlay keyboard paths.** Expanded the overlay
   accessibility audit with synthetic Tab/Shift-Tab, Enter/Space, Escape,
   tablist, native select/typeahead, and `aria-expanded` behavior coverage;
