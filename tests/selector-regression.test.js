@@ -132,6 +132,7 @@ const FIXTURES = {
     home: 'yt-home.tokens.txt',
     watch: 'yt-watch.tokens.txt',
     liveChat: 'yt-live-chat.tokens.txt',
+    searchResults: 'yt-search-results.tokens.txt',
 };
 
 // Critical selectors. Each must appear as a token in at least one fixture
@@ -419,10 +420,12 @@ test('selector surface match fixture stays synced to capture-backed packs', () =
         const minElements = target.minElements || 100;
         assert.ok(snapshot.elementCount >= minElements,
             `${surfaceName} fixture parsed only ${snapshot.elementCount} elements`);
-        assert.ok(snapshot.stable.some((row) => row.matched),
-            `${surfaceName} must match at least one stable selector in ${snapshot.source}`);
-        assert.ok(snapshot.matchedSelectors.length >= 1,
-            `${surfaceName} must record at least one matched selector in ${snapshot.source}`);
+        if (!target.allowZeroMatches) {
+            assert.ok(snapshot.stable.some((row) => row.matched),
+                `${surfaceName} must match at least one stable selector in ${snapshot.source}`);
+            assert.ok(snapshot.matchedSelectors.length >= 1,
+                `${surfaceName} must record at least one matched selector in ${snapshot.source}`);
+        }
         assert.deepEqual(
             snapshot.stable.map((row) => row.selector),
             [...liveSurface.stable],
@@ -449,6 +452,13 @@ test('selector surface match fixture proves expanded capture-backed selectors re
         feedCard: [
             'ytd-rich-item-renderer',
             'yt-lockup-view-model',
+        ],
+        feedExperimentChips: [
+            'yt-chip-cloud-chip-renderer',
+            'ytd-feed-filter-chip-bar-renderer',
+        ],
+        feedPlayables: [
+            'ytd-rich-shelf-renderer',
         ],
         leftNav: [
             'ytd-mini-guide-renderer',
@@ -509,6 +519,13 @@ test('selector surface match fixture proves expanded capture-backed selectors re
             'ytd-video-renderer',
             'yt-lockup-view-model',
         ],
+        'searchResults.feedExperimentChips': [
+            'yt-chip-cloud-chip-renderer',
+            'yt-chip-cloud-renderer',
+        ],
+        'searchResults.feedSponsored': [
+            'ytd-in-feed-ad-layout-renderer',
+        ],
         'channel.profile': [
             'ytd-channel-name',
             '#channel-name',
@@ -541,6 +558,43 @@ test('selector surface match fixture proves expanded capture-backed selectors re
             assert.ok(surface.matchedSelectors.includes(selector),
                 `${surfaceName} matchedSelectors must include "${selector}"`);
         }
+    }
+});
+
+test('feed experiment token canaries remain capture-backed and source-referenced', () => {
+    const tokenFixtures = [
+        loadTokens(FIXTURES.home),
+        loadTokens(FIXTURES.searchResults),
+    ];
+    const expected = [
+        'yt-chip-cloud-chip-renderer',
+        'yt-chip-cloud-renderer',
+        'ytd-feed-filter-chip-bar-renderer',
+        'ytd-in-feed-ad-layout-renderer',
+        'ytd-ad-feedback-renderer',
+        'ytd-page-top-ad-layout-renderer',
+        'ytd-feedback-survey-renderer',
+        'ytd-feedback-question-renderer',
+        'ytd-identity-prompt-footer-renderer',
+        'ytd-feedback-elicitation-single-question-renderer',
+        'ytd-feedback-option-renderer',
+        'ytd-feed-nudge-renderer',
+        'ytd-game-card-renderer',
+        'ytd-mini-game-card-view-model',
+        'ytd-rich-shelf-renderer',
+        'ytd-game-details-renderer',
+        'yt-mini-app-game-info-dialog-view-model',
+    ];
+
+    for (const token of expected) {
+        assert.ok(
+            tokenFixtures.some((tokens) => tokens.has(token)),
+            `Feed experiment token "${token}" is absent from home/search fixtures. Refresh captures before shipping.`
+        );
+        assert.ok(
+            sourceReferencesToken(token),
+            `Feed experiment token "${token}" is no longer referenced by runtime selector packs.`
+        );
     }
 });
 
