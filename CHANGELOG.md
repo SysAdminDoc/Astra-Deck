@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.25 injected-overlay keyboard paths.** Expanded the overlay
+  accessibility audit with synthetic Tab/Shift-Tab, Enter/Space, Escape,
+  tablist, native select/typeahead, and `aria-expanded` behavior coverage;
+  added mutation canaries for settings-panel focus traps, download-popup
+  expansion state, and subscription-group Enter submit handling.
 - **Fix: v4.46.24 YouTube feed experiment canaries.** Added selector-pack
   coverage for category chips, sponsored feed variants, prompt/survey nudges,
   and Playables shelves, with generated home/search fixture evidence that
