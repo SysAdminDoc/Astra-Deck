@@ -2707,7 +2707,11 @@ test('npm run audit:overlays covers in-page overlays and mutation canaries', () 
         'sub-24px target',
         'Download options dialog',
         'Transcript search dialog',
-        'Subscription group modal'
+        'Subscription group modal',
+        'Tab/Shift-Tab focus movement behavior',
+        'Enter/Space activation behavior',
+        'select/typeahead behavior',
+        'Download options popup must mirror aria-expanded'
     ]) {
         assert.ok(scriptSource.includes(marker), `overlay audit must cover ${marker}`);
     }

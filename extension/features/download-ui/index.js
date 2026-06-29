@@ -1258,6 +1258,7 @@
 
             document.body.appendChild(popup);
             _dlPopup = popup;
+            anchorEl?.setAttribute?.('aria-expanded', 'true');
 
             if (_usePopover) {
                 popup.showPopover();
@@ -1291,6 +1292,11 @@
                 _dlPopupCleanup = () => {
                     document.removeEventListener('click', outsideClick, true);
                     document.removeEventListener('keydown', escHandler);
+                    anchorEl?.setAttribute?.('aria-expanded', 'false');
+                };
+            } else {
+                _dlPopupCleanup = () => {
+                    anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             }
 
