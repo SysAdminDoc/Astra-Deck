@@ -2454,8 +2454,8 @@ function attachUIEventListeners() {
             }
             if (e.target.closest('#ytkit-import')) {
                 handleFileImport(async (content) => {
-                    const success = settingsManager.importAllSettings(content);
-                    if (success) {
+                    const result = settingsManager.importAllSettingsDetailed(content);
+                    if (result?.ok) {
                         handleExternalStorageChanges({
                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
                             [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
@@ -2463,11 +2463,35 @@ function attachUIEventListeners() {
                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                         }, 'import', { forceApplyLocal: true });
-                        createToast('Settings imported. Changes applied live.', 'success');
-                        setPanelStatus('Settings imported. Changes applied live.', 'success');
+                        showToast(result.message, '#22c55e', {
+                            duration: 8,
+                            action: {
+                                text: 'Undo',
+                                onClick: () => {
+                                    const undo = settingsManager.undoLastSettingsImport();
+                                    if (undo?.ok) {
+                                        handleExternalStorageChanges({
+                                            [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
+                                            [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
+                                            [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
+                                            [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
+                                            [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
+                                        }, 'import-undo', { forceApplyLocal: true });
+                                        showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });
+                                        setPanelStatus(undo.message, 'warn');
+                                    } else {
+                                        const message = undo?.message || 'Import undo is no longer available.';
+                                        showToast(message, '#f59e0b', { duration: 4, tone: 'warning' });
+                                        setPanelStatus(message, 'warn');
+                                    }
+                                }
+                            }
+                        });
+                        setPanelStatus(`${result.message} Undo is available in the toast.`, 'success');
                     } else {
-                        createToast('Import failed. Invalid file format.', 'error');
-                        setPanelStatus('Import failed. Choose a valid Astra Deck settings export.', 'error');
+                        const message = result?.message || 'Import failed. Choose a valid Astra Deck settings export.';
+                        createToast(message, 'error');
+                        setPanelStatus(message, 'error');
                     }
                 });
                 return;

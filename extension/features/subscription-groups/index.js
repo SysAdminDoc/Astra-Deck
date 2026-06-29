@@ -413,14 +413,42 @@
                     if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
                     const sanitized = {};
                     const rawParentById = {};
+                    let skippedGroups = 0;
+                    let skippedChannels = 0;
+                    let duplicateChannels = 0;
+                    let importedChannels = 0;
                     for (const [id, raw] of Object.entries(data.groups)) {
-                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) continue;
-                        if (!raw || typeof raw !== 'object') continue;
+                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) {
+                            skippedGroups++;
+                            continue;
+                        }
+                        if (!raw || typeof raw !== 'object') {
+                            skippedGroups++;
+                            continue;
+                        }
                         const name = String(raw.name || '').slice(0, 80);
                         const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
-                        const channelIds = Array.isArray(raw.channelIds)
-                            ? raw.channelIds.filter(s => typeof s === 'string' && s.length < 64).slice(0, 1000)
-                            : [];
+                        const rawChannelIds = Array.isArray(raw.channelIds) ? raw.channelIds : [];
+                        const channelIds = [];
+                        const seenChannels = new Set();
+                        for (let i = 0; i < rawChannelIds.length; i++) {
+                            if (channelIds.length >= 1000) {
+                                skippedChannels += rawChannelIds.length - i;
+                                break;
+                            }
+                            const channelId = typeof rawChannelIds[i] === 'string' ? rawChannelIds[i].trim() : '';
+                            if (!channelId || channelId.length >= 64) {
+                                skippedChannels++;
+                                continue;
+                            }
+                            if (seenChannels.has(channelId)) {
+                                duplicateChannels++;
+                                continue;
+                            }
+                            seenChannels.add(channelId);
+                            channelIds.push(channelId);
+                            importedChannels++;
+                        }
                         sanitized[id] = {
                             name,
                             color,
@@ -437,7 +465,12 @@
                             sanitized[id].parentId = parentId;
                         }
                     }
-                    return this._commitImportedGroups(sanitized, 'JSON');
+                    return this._commitImportedGroups(sanitized, 'JSON', {
+                        skippedGroups,
+                        skippedChannels,
+                        duplicateChannels,
+                        importedChannels
+                    });
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
                     return { ok: false, error: e.message };
@@ -1826,10 +1859,36 @@
             _commitImportedGroups(groups, label, meta = {}) {
                 const previous = this._readGroups();
                 this._writeGroups(groups);
-                const count = Object.keys(groups).length;
-                const duplicateText = meta.duplicateChannels ? `; skipped ${meta.duplicateChannels} duplicate channel${meta.duplicateChannels === 1 ? '' : 's'}` : '';
+                const ids = Object.keys(groups);
+                const previousIds = Object.keys(previous);
+                const count = ids.length;
+                const createdGroups = ids.filter(id => !Object.prototype.hasOwnProperty.call(previous, id)).length;
+                const updatedGroups = ids.filter(id => (
+                    Object.prototype.hasOwnProperty.call(previous, id) &&
+                    JSON.stringify(previous[id]) !== JSON.stringify(groups[id])
+                )).length;
+                const removedGroups = previousIds.filter(id => !Object.prototype.hasOwnProperty.call(groups, id)).length;
+                const totalChannels = ids.reduce((total, id) => {
+                    const channelIds = groups[id]?.channelIds;
+                    return total + (Array.isArray(channelIds) ? channelIds.length : 0);
+                }, 0);
+                const importedChannels = Number.isFinite(Number(meta.importedChannels)) ? Number(meta.importedChannels) : totalChannels;
+                const skippedGroups = Math.max(0, Number(meta.skippedGroups) || 0);
+                const skippedChannels = Math.max(0, Number(meta.skippedChannels) || 0);
+                const duplicateChannels = Math.max(0, Number(meta.duplicateChannels) || 0);
+                const detailParts = [
+                    `${createdGroups} new`,
+                    `${updatedGroups} updated`,
+                    `${importedChannels} channel${importedChannels === 1 ? '' : 's'}`
+                ];
+                if (removedGroups) detailParts.push(`${removedGroups} removed`);
+                const skipParts = [];
+                if (skippedGroups) skipParts.push(`${skippedGroups} skipped group${skippedGroups === 1 ? '' : 's'}`);
+                if (skippedChannels) skipParts.push(`${skippedChannels} skipped channel${skippedChannels === 1 ? '' : 's'}`);
+                if (duplicateChannels) skipParts.push(`skipped ${duplicateChannels} duplicate channel${duplicateChannels === 1 ? '' : 's'}`);
+                const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
                 if (typeof showToast === 'function') {
-                    showToast(`Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label}${duplicateText}`, '#22c55e', {
+                    showToast(message, '#22c55e', {
                         duration: 6,
                         action: {
                             text: 'Undo',
@@ -1846,7 +1905,17 @@
                 this._renderToolbar();
                 this._applyGroupFilter();
                 this._renderDeadChannelMarkers();
-                return { ok: true, importedGroups: count, ...meta };
+                return {
+                    ok: true,
+                    importedGroups: count,
+                    createdGroups,
+                    updatedGroups,
+                    removedGroups,
+                    importedChannels,
+                    skippedGroups,
+                    skippedChannels,
+                    duplicateChannels
+                };
             },
         };
     }
