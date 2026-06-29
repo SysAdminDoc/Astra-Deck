@@ -139,6 +139,8 @@ DENO_PATH = DENO_DIR / 'deno.exe'
 NATIVE_HOST_DIR = INSTALL_DIR / 'native-hosts'
 DEFAULT_FIREFOX_EXTENSION_IDS = ("ytkit@sysadmindoc.github.io",)
 DENO_ZIP_URL = "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
+DENO_SHA256_URL = DENO_ZIP_URL + ".sha256sum"
+DENO_SHA256_ASSET = Path(urlparse(DENO_ZIP_URL).path).name
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
 COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
 COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe"
@@ -282,6 +284,7 @@ BGUTIL_POT_MIN_VERSION = "1.3.0"
 # yt-dlps are flagged; older ones (the in-field-stable pre-Deno line)
 # don't false-positive on a misconfigured PATH.
 YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)
+DENO_MIN_VERSION = "2.3.0"
 DENO_RUNTIME_PROBE_TIMEOUT = 1.5
 _DENO_RUNTIME_CACHE_TTL_SECONDS = 60
 
@@ -850,18 +853,72 @@ def ytdlp_needs_external_runtime(version_string):
     return parsed >= YTDLP_EXTERNAL_RUNTIME_CUTOFF
 
 
+class DenoProvisionError(RuntimeError):
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
+_last_deno_provision_error = {'code': None, 'message': ''}
+
+
+def _set_deno_provision_error(code=None, message=''):
+    _last_deno_provision_error['code'] = code
+    _last_deno_provision_error['message'] = str(message or '')
+
+
+def get_last_deno_provision_error():
+    return dict(_last_deno_provision_error)
+
+
+def _parse_deno_version(output):
+    if not output:
+        return None
+    first_line = output.strip().splitlines()[0] if output.strip() else ''
+    m = re.search(r'(\d+\.\d+\.\d+)', first_line)
+    if m:
+        return m.group(1)
+    return first_line[:32] if first_line else None
+
+
+def _is_deno_version_supported(version):
+    if not version:
+        return True
+    try:
+        return _compare_semver(version, DENO_MIN_VERSION) >= 0
+    except Exception:
+        return True
+
+
+def _probe_deno_binary_version(deno_path):
+    output = _run_captured([str(deno_path), '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
+    return _parse_deno_version(output)
+
+
 def provision_deno():
     """Download Deno into DENO_DIR if not already present.
 
     Returns the path to the provisioned deno.exe, or None on failure.
     Follows the same atomic-download pattern as yt-dlp and ffmpeg.
     """
+    _set_deno_provision_error()
     if DENO_PATH.exists():
-        return str(DENO_PATH)
+        version = _probe_deno_binary_version(DENO_PATH)
+        if _is_deno_version_supported(version):
+            return str(DENO_PATH)
+        write_persistent_log(
+            f"Bundled Deno {version or 'unknown'} is below required {DENO_MIN_VERSION}; refreshing"
+        )
     DENO_DIR.mkdir(parents=True, exist_ok=True)
     import zipfile
     tmp_zip = DENO_DIR / f'.deno.{uuid.uuid4().hex}.zip'
     try:
+        expected_hash = fetch_expected_sha256(DENO_SHA256_URL, target_asset=DENO_SHA256_ASSET)
+        if not expected_hash:
+            raise DenoProvisionError(
+                'deno-sha256-sidecar-missing',
+                'Deno checksum sidecar was missing or malformed; refusing to extract an unverified runtime.',
+            )
         with http_requests.get(DENO_ZIP_URL, stream=True, timeout=120) as r:
             r.raise_for_status()
             total_bytes = 0
@@ -876,6 +933,14 @@ def provision_deno():
                 os.fsync(f.fileno())
         if tmp_zip.stat().st_size <= 0:
             raise RuntimeError('Downloaded Deno archive was empty')
+        try:
+            verify_file_sha256(tmp_zip, expected_hash)
+        except RuntimeError as e:
+            try:
+                tmp_zip.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise DenoProvisionError('deno-sha256-verification-failed', str(e))
         tmp_exe = DENO_PATH.with_name(f'.deno.{uuid.uuid4().hex}.exe')
         with zipfile.ZipFile(tmp_zip) as zf:
             found = False
@@ -892,9 +957,27 @@ def provision_deno():
                     break
             if not found:
                 raise RuntimeError('deno.exe not found in archive')
+        installed_version = _probe_deno_binary_version(DENO_PATH)
+        if not _is_deno_version_supported(installed_version):
+            try:
+                DENO_PATH.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise DenoProvisionError(
+                'deno-runtime-unsupported',
+                (
+                    f"Provisioned Deno {installed_version or 'unknown'} is below "
+                    f"the required {DENO_MIN_VERSION} runtime floor."
+                ),
+            )
         reset_deno_runtime_cache()
         return str(DENO_PATH)
+    except DenoProvisionError as e:
+        _set_deno_provision_error(e.code, str(e))
+        write_persistent_log(f"Deno provisioning failed: {e}")
+        return None
     except Exception as e:
+        _set_deno_provision_error('deno-provision-failed', str(e))
         write_persistent_log(f"Deno provisioning failed: {e}")
         return None
     finally:
@@ -915,8 +998,9 @@ def probe_deno_runtime(force=False):
     """Best-effort detection of an installed external JavaScript runtime.
 
     Returns ``{'installed': bool, 'version': str | None, 'path': str | None,
-    'source': 'bundled' | 'system' | None, 'ytdlpNeedsRuntime': bool,
-    'advice': str}``. Cached for 60 s.
+    'source': 'bundled' | 'system' | None, 'supported': bool, 'stale': bool,
+    'minVersion': str, 'ytdlpNeedsRuntime': bool, 'advice': str}``.
+    Cached for 60 s.
 
     Checks the bundled DENO_DIR first, then falls back to system PATH
     via ``shutil.which('deno')``.
@@ -941,26 +1025,31 @@ def probe_deno_runtime(force=False):
         installed = deno_path is not None
         version = None
         if installed:
-            output = _run_captured([deno_path, '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
-            if output:
-                first_line = output.strip().splitlines()[0] if output.strip() else ''
-                m = re.search(r'(\d+\.\d+\.\d+)', first_line)
-                if m:
-                    version = m.group(1)
-                elif first_line:
-                    version = first_line[:32]
+            version = _probe_deno_binary_version(deno_path)
+        stale = bool(installed and version and not _is_deno_version_supported(version))
+        supported = bool(installed and not stale)
         advice = ''
         if needs_runtime and not installed:
             advice = (
-                'yt-dlp >= 2026.04 needs an external JavaScript runtime for '
+                'yt-dlp >= 2026.04 needs Deno >= 2.3.0 for '
                 'YouTube. Click Provision Deno in the companion, or install '
                 'manually: winget install DenoLand.Deno.'
+            )
+        elif needs_runtime and stale:
+            advice = (
+                f"Deno {version} is below the required {DENO_MIN_VERSION} "
+                'runtime floor for this yt-dlp build. Click Provision Deno '
+                'to install the bundled runtime, or update manually: winget '
+                'upgrade DenoLand.Deno.'
             )
         result = {
             'installed': installed,
             'version': version,
             'path': deno_path,
             'source': source,
+            'supported': supported,
+            'stale': stale,
+            'minVersion': DENO_MIN_VERSION,
             'ytdlpNeedsRuntime': needs_runtime,
             'advice': advice,
         }
@@ -2682,6 +2771,14 @@ DOWNLOAD_FAILURE_RECOVERY = {
         'advice': 'Install Deno with winget install DenoLand.Deno, then restart Astra Downloader.',
         'next_action': 'install-deno',
     },
+    'deno-runtime-unsupported': {
+        'error': (
+            'The installed Deno runtime is too old for this yt-dlp build to '
+            'solve recent YouTube signature challenges.'
+        ),
+        'advice': 'Upgrade Deno to 2.3.0 or newer with winget upgrade DenoLand.Deno, then retry.',
+        'next_action': 'upgrade-deno',
+    },
     'sign-in-required': {
         'error': (
             'Sign in to confirm YouTube access. Grant browser cookies or open '
@@ -2730,6 +2827,8 @@ def classify_download_failure(message='', lines=None):
         and ('javascript runtime' in text or 'signature' in text or 'n/sig' in text
              or 'not found' in text or 'requires' in text)
     ):
+        if any(marker in text for marker in ('stale', 'outdated', 'unsupported', 'too old', 'below')):
+            return 'deno-runtime-unsupported'
         return 'deno-runtime-missing'
 
     po_markers = ('po token', 'po-token', 'potoken', 'po_token', 'bgutil')
@@ -3719,7 +3818,12 @@ def create_api(config, dl_manager, history):
         if result:
             runtime = probe_deno_runtime(force=True)
             return cors_response({"ok": True, "path": result, "denoRuntime": runtime})
-        return cors_response({"ok": False, "error": "Failed to download Deno. Check network connection."}, 500)
+        error = get_last_deno_provision_error()
+        return cors_response({
+            "ok": False,
+            "code": error.get('code') or 'deno-provision-failed',
+            "error": error.get('message') or "Failed to download Deno. Check network connection.",
+        }, 500)
 
     @api.route('/download', methods=['POST'])
     def download():
@@ -3774,14 +3878,16 @@ def create_api(config, dl_manager, history):
         # anyway and the user saw the late failure. NF27 turns this into an
         # actionable upfront error.
         deno = probe_deno_runtime()
-        if deno.get('ytdlpNeedsRuntime') and not deno.get('installed'):
+        deno_usable = deno.get('installed') and deno.get('supported', True)
+        if deno.get('ytdlpNeedsRuntime') and not deno_usable:
+            error_code = 'deno-runtime-unsupported' if deno.get('installed') else 'deno-runtime-missing'
             advice = deno.get('advice') or 'Install Deno (https://deno.com/) and restart Astra Downloader.'
             payload = download_error_payload(
-                'deno-runtime-missing',
+                error_code,
                 error=(
-                    "yt-dlp >= 2026.04.01 requires the Deno JavaScript runtime to "
-                    "solve YouTube's signature challenges; without it, every "
-                    "download returns empty format lists. " + advice
+                    "yt-dlp >= 2026.04.01 requires Deno >= 2.3.0 to solve "
+                    "YouTube's signature challenges; without a supported "
+                    "runtime, every download returns empty format lists. " + advice
                 ),
                 advice=advice,
             )

@@ -806,6 +806,12 @@
                 tone: '#f59e0b',
                 duration: 15,
             },
+            'deno-runtime-unsupported': {
+                message: 'Deno needs an update for this yt-dlp build.',
+                advice: 'Upgrade Deno to 2.3.0 or newer, or click the Deno health pill to provision the bundled runtime.',
+                tone: '#f59e0b',
+                duration: 15,
+            },
             'sign-in-required': {
                 message: 'YouTube needs signed-in browser access for this video.',
                 advice: 'Sign in to YouTube, allow the cookie bridge, then retry.',
@@ -1402,14 +1408,17 @@
                 }
                 const deno = data.denoRuntime;
                 if (deno && deno.ytdlpNeedsRuntime) {
-                    const tone = deno.installed ? 'ok' : 'warn';
-                    const label = deno.installed
-                        ? (deno.version ? `v${deno.version}` : 'installed')
-                        : 'missing';
+                    const supported = deno.installed && deno.supported !== false;
+                    const tone = supported ? 'ok' : 'warn';
+                    const label = !deno.installed
+                        ? 'missing'
+                        : deno.supported === false
+                            ? `stale ${deno.version ? `v${deno.version}` : ''}`.trim()
+                            : (deno.version ? `v${deno.version}` : 'installed');
                     const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
                     const pill = this._renderPill('Deno', label + suffix, tone);
-                    if (!deno.installed) {
-                        pill.title = 'Click to auto-provision Deno';
+                    if (!supported) {
+                        pill.title = deno.advice || 'Click to auto-provision Deno';
                         pill.style.cursor = 'pointer';
                         pill.addEventListener('click', async () => {
                             pill.textContent = 'Provisioning...';
