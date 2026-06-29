@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.24 YouTube feed experiment canaries.** Added selector-pack
+  coverage for category chips, sponsored feed variants, prompt/survey nudges,
+  and Playables shelves, with generated home/search fixture evidence that
+  separates DOM-match diagnostics from token-only drift canaries.
 - **Fix: v4.46.23 web-accessible-resource review gate.** Build profiles now
   stamp an exact `icons/*` + `assets/*` web-accessible-resource allowlist,
   tests compare source, store-safe, GitHub-full, and reviewer docs, and store

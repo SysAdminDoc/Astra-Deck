@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P2 - Add YouTube experiment canaries for custom feeds, sponsored variants, and category chips
-  Why: Competitor trackers show YouTube is changing sponsored-card, Playables, category-chip, and prompt-generated feed surfaces; Astra already hides related surfaces but needs drift canaries before selectors silently miss.
-  Evidence: Control Panel for YouTube issues 300, 298, and 296; `extension/core/settings-schema.js:127`, `extension/ytkit.js:8590`, `extension/features/video-hider/index.js`.
-  Touches: `extension/core/selector-packs/feed.js`, `extension/core/selector-packs/thumbnail.js`, `extension/features/video-hider/index.js`, `extension/features/home-subs-css/index.js`, `tests/selector-regression.test.js`, `tests/fixtures/*.tokens.txt`
-  Acceptance: Selector packs include capture evidence for sponsored variants, Playables, custom prompt feeds, and category chips; diagnostics show misses by surface; hide/filter features continue to work when one selector variant changes.
-  Complexity: M
-
 - [ ] P2 - Add keyboard-path regression coverage for injected overlays
   Why: SponsorBlock's keyboard-only category bug shows mouse-path testing can miss extension UI failures; Astra has many injected dialogs, popovers, and menus with static a11y checks but limited keyboard-path behavior coverage.
   Evidence: SponsorBlock PR 2504; `docs/screen-reader-smoke.md`; `scripts/audit-overlays-a11y.js`.
