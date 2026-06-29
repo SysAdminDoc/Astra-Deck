@@ -97,6 +97,7 @@ function showEmpty(el, message, state = 'idle', options = {}) {
         action.type = 'button';
         action.className = 'sp-empty-action';
         action.textContent = options.actionLabel;
+        action.setAttribute('aria-label', options.actionAriaLabel || options.actionLabel);
         action.addEventListener('click', options.action);
         el.appendChild(action);
     }
@@ -494,13 +495,29 @@ function renderSettings(filter) {
     }
     if (settingsClear) settingsClear.hidden = !query;
 
-    if (settingsEmpty) {
-        settingsEmpty.hidden = visible.length > 0;
-        if (!visible.length) {
-            settingsEmpty.textContent = query
-                ? `No settings match "${filter}". Clear the filter to return to all controls.`
-                : 'No quick settings available.';
-        }
+    if (visible.length) {
+        hideEmpty(settingsEmpty);
+    } else if (query) {
+        showEmpty(settingsEmpty, `No settings match "${filter}". Clear the filter to return to all controls.`, 'idle', {
+            title: 'No matching quick settings',
+            actionLabel: settingsClear ? 'Clear filter' : '',
+            actionAriaLabel: 'Clear quick settings filter',
+            action: () => {
+                if (!settingsSearch) return;
+                settingsSearch.value = '';
+                renderSettings('');
+                settingsSearch.focus();
+            }
+        });
+    } else {
+        showEmpty(settingsEmpty, 'Open full Settings to manage every Astra Deck control.', 'idle', {
+            title: 'No quick settings available',
+            actionLabel: 'Open Settings',
+            actionAriaLabel: 'Open full Astra Deck settings',
+            action: () => {
+                try { chrome.runtime.openOptionsPage(); } catch (_) { /* reason: unavailable in static preview */ }
+            }
+        });
     }
 
     for (const [category, entries] of groupSettings(visible)) {
@@ -598,14 +615,6 @@ if (settingsSearch) {
     settingsSearch.addEventListener('input', () => {
         clearTimeout(_debounce);
         _debounce = setTimeout(() => renderSettings(settingsSearch.value), 120);
-    });
-    settingsSearch.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && settingsSearch.value) {
-            event.preventDefault();
-            settingsSearch.value = '';
-            renderSettings('');
-            settingsSearch.focus();
-        }
     });
 }
 
