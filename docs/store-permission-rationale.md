@@ -149,6 +149,10 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 
 ## Reviewer Notes
 
+- `web_accessible_resources` is intentionally restricted to `icons/*` and
+  `assets/*`. The latter exists only for bundled theme media such as
+  `assets/cat.gif`; JavaScript, HTML, CSS, source maps, and data exports are not
+  web-accessible in any build profile.
 - Store-safe excludes AI provider, Cobalt, Ollama, and Astra Downloader loopback
   host grants from the packaged manifest and CSP.
 - Store-safe declares SponsorBlock/DeArrow, thumbnail, Return YouTube Dislike,

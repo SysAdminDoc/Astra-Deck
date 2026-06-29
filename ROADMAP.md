@@ -23,13 +23,6 @@
   Acceptance: Users can import YouTube Takeout watch-history JSON locally; titles are normalized without adding trailing spaces; duplicates are merged by video ID/time; imported data feeds watch analytics without remote calls.
   Complexity: M
 
-- [ ] P2 - Gate web-accessible-resource policy drift
-  Why: The live manifest intentionally exposes `assets/*` for bundled theme media, but the Chrome Web Store checklist still says `web_accessible_resources` should list only `icons/*`.
-  Evidence: `extension/manifest.json` `web_accessible_resources`; `tests/hardening.test.js` nyan-cat asset test; `docs/cws-submission-checklist.md`.
-  Touches: `docs/cws-submission-checklist.md`, `docs/store-permission-rationale.md`, `tests/hardening.test.js`, `build-extension.js`
-  Acceptance: Store-review docs and tests agree on the exact allowed WAR entries for store-safe and github-full profiles; tests fail if source files or unexpected assets become web-accessible.
-  Complexity: S
-
 - [ ] P2 - Add import summaries and undo affordances for local data imports
   Why: Astra validates and rolls back import failures, but large settings/profile/subscription imports need a visible summary of changed data and a fast recovery path after commit.
   Evidence: YouTube Enhancer v1.33.0 settings import conflict handling; `extension/ytkit.js` settings/profile import paths; `extension/features/subscription-groups/index.js` OPML/JSON import paths.

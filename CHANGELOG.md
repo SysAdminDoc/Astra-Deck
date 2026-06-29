@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.23 web-accessible-resource review gate.** Build profiles now
+  stamp an exact `icons/*` + `assets/*` web-accessible-resource allowlist,
+  tests compare source, store-safe, GitHub-full, and reviewer docs, and store
+  review copy now explains why bundled theme media is exposed without exposing
+  source files.
 - **Fix: v4.46.22 Python companion dependency audit gate.** `npm run check`
   now runs `pip-audit` against `astra_downloader/requirements.txt`, writes
   `build/astra-downloader-pip-audit.json` for release review, and fails
