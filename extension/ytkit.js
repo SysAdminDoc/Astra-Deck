@@ -733,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.20';
+    const YTKIT_VERSION = '4.46.21';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -3055,6 +3055,12 @@ return response;
         'deno-runtime-missing': {
             message: 'Deno is required for this yt-dlp build.',
             advice: 'Install Deno or click the Deno health pill to provision it, then restart Astra Downloader.',
+            tone: '#f59e0b',
+            duration: 15,
+        },
+        'deno-runtime-unsupported': {
+            message: 'Deno needs an update for this yt-dlp build.',
+            advice: 'Upgrade Deno to 2.3.0 or newer, or click the Deno health pill to provision the bundled runtime.',
             tone: '#f59e0b',
             duration: 15,
         },
@@ -32941,14 +32947,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // the user can hover instead of opening the popup.
                 const deno = data.denoRuntime;
                 if (deno && deno.ytdlpNeedsRuntime) {
-                    const tone = deno.installed ? 'ok' : 'warn';
-                    const label = deno.installed
-                        ? (deno.version ? `v${deno.version}` : 'installed')
-                        : 'missing';
+                    const supported = deno.installed && deno.supported !== false;
+                    const tone = supported ? 'ok' : 'warn';
+                    const label = !deno.installed
+                        ? 'missing'
+                        : deno.supported === false
+                            ? `stale ${deno.version ? `v${deno.version}` : ''}`.trim()
+                            : (deno.version ? `v${deno.version}` : 'installed');
                     const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
                     const pill = this._renderPill('Deno', label + suffix, tone);
-                    if (!deno.installed) {
-                        pill.title = 'Click to auto-provision Deno';
+                    if (!supported) {
+                        pill.title = deno.advice || 'Click to auto-provision Deno';
                         pill.style.cursor = 'pointer';
                         pill.addEventListener('click', async () => {
                             pill.textContent = 'Provisioning...';
