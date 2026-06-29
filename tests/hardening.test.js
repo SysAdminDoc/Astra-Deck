@@ -2925,6 +2925,37 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         'github-full CSP must include local downloader loopback');
 });
 
+test('build-extension gates web_accessible_resources policy for every profile', () => {
+    const builder = require('../build-extension.js');
+    const baseManifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8',
+    ));
+    const expectedWar = [{
+        resources: ['icons/*', 'assets/*'],
+        matches: [
+            'https://*.youtube.com/*',
+            'https://*.youtube-nocookie.com/*',
+            'https://youtu.be/*'
+        ]
+    }];
+
+    assert.deepEqual(builder.getManifestWebAccessibleResources(), expectedWar,
+        'build policy must expose only the reviewed WAR entries');
+    assert.deepEqual(baseManifest.web_accessible_resources, expectedWar,
+        'source manifest WAR must match the reviewed build policy exactly');
+
+    for (const profile of ['store-safe', 'github-full']) {
+        const manifest = builder.patchManifestForBuildProfile(
+            JSON.parse(JSON.stringify(baseManifest)), profile);
+        assert.deepEqual(manifest.web_accessible_resources, expectedWar,
+            `${profile} manifest must keep the exact WAR allowlist`);
+        const resources = manifest.web_accessible_resources.flatMap((entry) => entry.resources || []);
+        assert.equal(resources.some((resource) => /\.(?:js|mjs|css|html|map|json)$/i.test(resource)), false,
+            `${profile} manifest must not expose source, style, map, or data files`);
+    }
+});
+
 test('store permission rationale covers live manifest permissions and profile host grants', () => {
     const builder = require('../build-extension.js');
     const manifest = JSON.parse(fs.readFileSync(
@@ -2942,12 +2973,16 @@ test('store permission rationale covers live manifest permissions and profile ho
 
     assert.ok(checklist.includes('store-permission-rationale.md'),
         'CWS checklist must point reviewers to the copy-paste rationale doc');
+    assert.match(checklist, /`icons\/\*`\s+and\s+`assets\/\*`/,
+        'CWS checklist must document the exact web_accessible_resources allowlist');
     assert.ok(rationale.includes('## Single-Purpose Statement'),
         'rationale doc must include a single-purpose statement');
     assert.ok(rationale.includes('## Data-Handling Statement'),
         'rationale doc must include a data-handling statement');
     assert.ok(rationale.includes('## Firefox Data Consent'),
         'rationale doc must include Firefox data-consent reviewer copy');
+    assert.match(rationale, /`web_accessible_resources`[\s\S]*`icons\/\*`[\s\S]*`assets\/\*`/,
+        'store rationale must explain the exact web_accessible_resources allowlist');
 
     for (const permission of manifest.permissions || []) {
         assert.ok(rationale.includes('`' + permission + '`'),
