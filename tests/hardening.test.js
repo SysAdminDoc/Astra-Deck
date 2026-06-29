@@ -8684,9 +8684,15 @@ test('v4.46.0 dependency auditing is enforced by local scripts', () => {
         'npm run check must keep the local npm dependency audit');
     assert.equal(pkg.scripts['audit:deps'], 'npm audit --omit=dev --audit-level=moderate',
         'local npm audit must fail moderate-or-higher production vulnerabilities');
+    assert.match(pkg.scripts.check, /npm run audit:python/,
+        'npm run check must keep the local Python companion dependency audit');
+    assert.equal(pkg.scripts['audit:python'], 'node scripts/audit-python-deps.js',
+        'local Python audit must be a source-controlled script');
     const requirements = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'requirements.txt'), 'utf8');
     assert.match(requirements, /^yt-dlp==/m,
         'companion Python dependencies must remain exactly pinned for local audit review');
+    assert.equal(fs.existsSync(path.join(__dirname, '..', 'scripts', 'audit-python-deps.js')), true,
+        'Python audit wrapper must exist for release-review artifacts');
 });
 
 test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
