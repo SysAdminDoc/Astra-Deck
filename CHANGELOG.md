@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: v4.46.27 local import summaries and undo.** Settings imports now
+  report changed settings, restored local lists, skipped entries, and duplicate
+  rows with an immediate Undo toast; Subscription Groups JSON/OPML imports now
+  report created, updated, removed, skipped, duplicate, and channel counts while
+  keeping the existing no-confirmation undo path.
 - **Feat: v4.46.26 YouTube Takeout watch-history import.** Added a local-only
   settings-panel import action for Takeout `watch-history.json`, normalizing
   titles, deduping repeated imports by video ID and watched timestamp, and
