@@ -45,6 +45,11 @@ const settingsPanelSource = fs.readFileSync(
     'utf8'
 );
 
+const subscriptionGroupsSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'features', 'subscription-groups', 'index.js'),
+    'utf8'
+);
+
 function subscriptionGroupsBlock() {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
@@ -374,6 +379,25 @@ test('settings backup import/export paths use strict schema validation and scrub
 });
 
 // ── v3.14.0 infrastructure: selectorChain helper ──
+
+test('settings imports return summaries and expose immediate undo', () => {
+    assert.match(ytkitSource, /_lastSettingsImportUndo:\s*null/,
+        'settingsManager must keep the latest settings import snapshot for undo');
+    assert.match(ytkitSource, /importAllSettingsDetailed\(jsonString\)/,
+        'settingsManager must expose a detailed import path for UI summaries');
+    assert.match(ytkitSource, /_formatSettingsImportSummary\(summary\)/,
+        'settingsManager must centralize human-readable import summaries');
+    assert.match(ytkitSource, /undoLastSettingsImport\(\)/,
+        'settingsManager must expose an immediate undo path after import commit');
+    assert.match(ytkitSource, /importAllSettings\(jsonString\)\s*\{[\s\S]*?return this\.importAllSettingsDetailed\(jsonString\)\.ok;/,
+        'legacy importAllSettings callers must keep the boolean contract');
+    assert.match(settingsPanelSource, /settingsManager\.importAllSettingsDetailed\(content\)/,
+        'settings-panel imports must use the detailed import result');
+    assert.match(settingsPanelSource, /showToast\(result\.message, '#22c55e'[\s\S]*text: 'Undo'[\s\S]*settingsManager\.undoLastSettingsImport\(\)/,
+        'settings-panel import success must show the summary with an immediate undo action');
+    assert.match(ytkitSource, /showToast\(result\.message, '#22c55e'[\s\S]*text: 'Undo'[\s\S]*settingsManager\.undoLastSettingsImport\(\)/,
+        'inline settings fallback import success must show the summary with an immediate undo action');
+});
 
 test('selectorChain helper exists with label, all:true, and first-miss logging', () => {
     assert.match(
@@ -3745,6 +3769,26 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
         'OPML import must report skipped duplicate channels');
     assert.match(block, /text\/x-opml/,
         'OPML export must use an OPML-specific MIME type');
+});
+
+test('subscriptionGroups import summaries report counts and keep undo affordance', () => {
+    const block = subscriptionGroupsBlock();
+    for (const source of [block, subscriptionGroupsSource]) {
+        assert.match(source, /createdGroups/,
+            'subscription group imports must report created group counts');
+        assert.match(source, /updatedGroups/,
+            'subscription group imports must report updated group counts');
+        assert.match(source, /removedGroups/,
+            'subscription group imports must report replaced previous groups');
+        assert.match(source, /skippedGroups/,
+            'subscription group imports must report skipped invalid groups');
+        assert.match(source, /skippedChannels/,
+            'subscription group imports must report skipped invalid channels');
+        assert.match(source, /duplicateChannels/,
+            'subscription group imports must report duplicate channel skips');
+        assert.match(source, /text:\s*'Undo'/,
+            'subscription group imports must keep the immediate undo toast action');
+    }
 });
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {

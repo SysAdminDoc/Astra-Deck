@@ -733,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.26';
+    const YTKIT_VERSION = '4.46.27';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4831,6 +4831,57 @@ return response;
         setFirstRunStatus(hasRun) {
             StorageManager.set('ytSuiteHasRun', hasRun);
         },
+        _lastSettingsImportUndo: null,
+        _countChangedSettings(before, after) {
+            const keys = new Set([...Object.keys(this.defaults), ...Object.keys(before || {}), ...Object.keys(after || {})]);
+            let changed = 0;
+            for (const key of keys) {
+                if (!isSafeObjectKey(key) || key.startsWith('_')) continue;
+                if (JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key])) changed++;
+            }
+            return changed;
+        },
+        _summarizeVideoIdImport(raw, sanitized, limit = IMPORT_LIMITS.hiddenVideos) {
+            if (!Array.isArray(raw)) return { imported: sanitized?.length || 0, skipped: 0, duplicates: 0 };
+            const seen = new Set();
+            let skipped = 0;
+            let duplicates = 0;
+            for (const entry of raw) {
+                const videoId = typeof entry === 'string' ? entry.trim() : '';
+                if (!VIDEO_ID_PATTERN.test(videoId)) {
+                    skipped++;
+                    continue;
+                }
+                if (seen.has(videoId)) {
+                    duplicates++;
+                    continue;
+                }
+                seen.add(videoId);
+            }
+            const capped = Math.max(0, seen.size - Math.max(0, Number(limit) || 0));
+            return { imported: sanitized?.length || 0, skipped: skipped + capped, duplicates };
+        },
+        _summarizeObjectMapImport(raw, sanitized) {
+            if (!isPlainObject(raw)) return { imported: Object.keys(sanitized || {}).length, skipped: 0, duplicates: 0 };
+            return {
+                imported: Object.keys(sanitized || {}).length,
+                skipped: Math.max(0, Object.keys(raw).length - Object.keys(sanitized || {}).length),
+                duplicates: 0
+            };
+        },
+        _formatSettingsImportSummary(summary) {
+            const parts = [];
+            if (summary.settingsUpdated) parts.push(`${summary.settingsUpdated} setting${summary.settingsUpdated === 1 ? '' : 's'} updated`);
+            if (summary.hiddenVideos) parts.push(`${summary.hiddenVideos} hidden video${summary.hiddenVideos === 1 ? '' : 's'}`);
+            if (summary.allowedVideos) parts.push(`${summary.allowedVideos} allowed video${summary.allowedVideos === 1 ? '' : 's'}`);
+            if (summary.blockedChannels) parts.push(`${summary.blockedChannels} blocked channel${summary.blockedChannels === 1 ? '' : 's'}`);
+            if (summary.bookmarkVideos) parts.push(`${summary.bookmarkVideos} bookmark video${summary.bookmarkVideos === 1 ? '' : 's'}`);
+            const main = parts.length ? parts.join(', ') : 'no value changes';
+            const extras = [];
+            if (summary.skipped) extras.push(`${summary.skipped} skipped`);
+            if (summary.duplicates) extras.push(`${summary.duplicates} duplicate${summary.duplicates === 1 ? '' : 's'}`);
+            return `Imported ${main}.${extras.length ? ` ${extras.join(', ')}.` : ''}`;
+        },
         exportAllSettings() {
             const exportSettings = this._buildSchemaValidatedExportSettings(this.load());
             // Include Video Hider lists, blocked channels, and bookmarks in export
@@ -4867,24 +4918,34 @@ return response;
             };
             return JSON.stringify(exportData, null, 2);
         },
-        importAllSettings(jsonString) {
+        importAllSettingsDetailed(jsonString) {
             try {
                 const importedData = JSON.parse(jsonString);
-                if (!isPlainObject(importedData)) return false;
+                if (!isPlainObject(importedData)) return { ok: false, message: 'Invalid file format.' };
 
                 // Handle different export versions
                 let settings, hiddenVideos, allowedVideos, blockedChannels, bookmarks;
+                let rawHiddenVideos = null;
+                let rawAllowedVideos = null;
+                let rawBlockedChannels = null;
+                let rawBookmarks = null;
                 if (importedData.exportVersion >= 3) {
                     settings = this._sanitize(importedData.settings || {});
-                    hiddenVideos = sanitizeImportedHiddenVideos(getImportedFilteredVideoPosts(importedData));
-                    allowedVideos = sanitizeImportedVideoIdList(importedData.allowedVideos, IMPORT_LIMITS.allowedVideos);
-                    blockedChannels = sanitizeImportedBlockedChannels(importedData.blockedChannels);
-                    bookmarks = sanitizeImportedBookmarks(importedData.bookmarks);
+                    rawHiddenVideos = getImportedFilteredVideoPosts(importedData);
+                    rawAllowedVideos = importedData.allowedVideos;
+                    rawBlockedChannels = importedData.blockedChannels;
+                    rawBookmarks = importedData.bookmarks;
+                    hiddenVideos = sanitizeImportedHiddenVideos(rawHiddenVideos);
+                    allowedVideos = sanitizeImportedVideoIdList(rawAllowedVideos, IMPORT_LIMITS.allowedVideos);
+                    blockedChannels = sanitizeImportedBlockedChannels(rawBlockedChannels);
+                    bookmarks = sanitizeImportedBookmarks(rawBookmarks);
                 } else if (importedData.exportVersion >= 2) {
                     settings = this._sanitize(importedData.settings || {});
-                    hiddenVideos = sanitizeImportedHiddenVideos(getImportedFilteredVideoPosts(importedData));
+                    rawHiddenVideos = getImportedFilteredVideoPosts(importedData);
+                    rawBlockedChannels = importedData.blockedChannels;
+                    hiddenVideos = sanitizeImportedHiddenVideos(rawHiddenVideos);
                     allowedVideos = null;
-                    blockedChannels = sanitizeImportedBlockedChannels(importedData.blockedChannels);
+                    blockedChannels = sanitizeImportedBlockedChannels(rawBlockedChannels);
                     bookmarks = null;
                 } else {
                     settings = this._sanitize(importedData);
@@ -4903,8 +4964,8 @@ return response;
                     || (allowedVideos !== null && allowedVideos.length > 0)
                     || (blockedChannels !== null && blockedChannels.length > 0)
                     || (bookmarks !== null && Object.keys(bookmarks).length > 0);
-                if (Object.keys(settings).length > 0 && !hasValidKey) return false;
-                if (!hasImportedData) return false;
+                if (Object.keys(settings).length > 0 && !hasValidKey) return { ok: false, message: 'No known settings found in file.' };
+                if (!hasImportedData) return { ok: false, message: 'No importable settings or local data found.' };
 
                 // Backup current state before applying
                 const backup = {
@@ -4936,7 +4997,31 @@ return response;
                     if (allowedVideos !== null) StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos);
                     if (blockedChannels !== null) StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels);
                     if (bookmarks !== null) StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks);
-                    return true;
+                    const hiddenSummary = this._summarizeVideoIdImport(rawHiddenVideos, hiddenVideos, IMPORT_LIMITS.hiddenVideos);
+                    const allowedSummary = this._summarizeVideoIdImport(rawAllowedVideos, allowedVideos, IMPORT_LIMITS.allowedVideos);
+                    const blockedSummary = Array.isArray(rawBlockedChannels)
+                        ? {
+                            imported: blockedChannels?.length || 0,
+                            skipped: Math.max(0, rawBlockedChannels.length - (blockedChannels?.length || 0)),
+                            duplicates: 0
+                        }
+                        : { imported: blockedChannels?.length || 0, skipped: 0, duplicates: 0 };
+                    const bookmarkSummary = this._summarizeObjectMapImport(rawBookmarks, bookmarks);
+                    const summary = {
+                        settingsUpdated: this._countChangedSettings(backup.settings, newSettings),
+                        hiddenVideos: hiddenSummary.imported,
+                        allowedVideos: allowedSummary.imported,
+                        blockedChannels: blockedSummary.imported,
+                        bookmarkVideos: bookmarkSummary.imported,
+                        skipped: hiddenSummary.skipped + allowedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped,
+                        duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates
+                    };
+                    this._lastSettingsImportUndo = { backup, summary, createdAt: Date.now() };
+                    return {
+                        ok: true,
+                        summary,
+                        message: this._formatSettingsImportSummary(summary)
+                    };
                 } catch (applyErr) {
                     // Rollback on failure
                     console.error('[YTKit] Import apply failed, rolling back:', applyErr);
@@ -4946,12 +5031,32 @@ return response;
                     StorageManager.setSync(STORAGE_KEYS.allowedVideos, backup.allowedVideos);
                     StorageManager.setSync(STORAGE_KEYS.blockedChannels, backup.blockedChannels);
                     StorageManager.setSync(STORAGE_KEYS.bookmarks, backup.bookmarks);
-                    return false;
+                    return { ok: false, message: 'Import failed while applying data; previous state was restored.' };
                 }
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
-                return false;
+                return { ok: false, message: e?.message || 'Invalid file format.' };
             }
+        },
+        importAllSettings(jsonString) {
+            return this.importAllSettingsDetailed(jsonString).ok;
+        },
+        undoLastSettingsImport() {
+            const snapshot = this._lastSettingsImportUndo;
+            if (!snapshot?.backup) return { ok: false, message: 'No import undo is available.' };
+            this._lastSettingsImportUndo = null;
+            const { backup } = snapshot;
+            StorageManager.setSync(STORAGE_KEYS.settings, backup.settings);
+            StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, backup.legacySidebarOrder);
+            StorageManager.setSync(STORAGE_KEYS.hiddenVideos, backup.hiddenVideos);
+            StorageManager.setSync(STORAGE_KEYS.allowedVideos, backup.allowedVideos);
+            StorageManager.setSync(STORAGE_KEYS.blockedChannels, backup.blockedChannels);
+            StorageManager.setSync(STORAGE_KEYS.bookmarks, backup.bookmarks);
+            return {
+                ok: true,
+                message: 'Import undone. Previous settings and local data restored.',
+                restored: backup
+            };
         },
         importYouTubeTakeoutWatchHistory(jsonString) {
             try {
@@ -34751,14 +34856,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
                     const sanitized = {};
                     const rawParentById = {};
+                    let skippedGroups = 0;
+                    let skippedChannels = 0;
+                    let duplicateChannels = 0;
+                    let importedChannels = 0;
                     for (const [id, raw] of Object.entries(data.groups)) {
-                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) continue;
-                        if (!raw || typeof raw !== 'object') continue;
+                        if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) {
+                            skippedGroups++;
+                            continue;
+                        }
+                        if (!raw || typeof raw !== 'object') {
+                            skippedGroups++;
+                            continue;
+                        }
                         const name = String(raw.name || '').slice(0, 80);
                         const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
-                        const channelIds = Array.isArray(raw.channelIds)
-                            ? raw.channelIds.filter(s => typeof s === 'string' && s.length < 64).slice(0, 1000)
-                            : [];
+                        const rawChannelIds = Array.isArray(raw.channelIds) ? raw.channelIds : [];
+                        const channelIds = [];
+                        const seenChannels = new Set();
+                        for (let i = 0; i < rawChannelIds.length; i++) {
+                            if (channelIds.length >= 1000) {
+                                skippedChannels += rawChannelIds.length - i;
+                                break;
+                            }
+                            const channelId = typeof rawChannelIds[i] === 'string' ? rawChannelIds[i].trim() : '';
+                            if (!channelId || channelId.length >= 64) {
+                                skippedChannels++;
+                                continue;
+                            }
+                            if (seenChannels.has(channelId)) {
+                                duplicateChannels++;
+                                continue;
+                            }
+                            seenChannels.add(channelId);
+                            channelIds.push(channelId);
+                            importedChannels++;
+                        }
                         sanitized[id] = {
                             name,
                             color,
@@ -34775,7 +34908,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             sanitized[id].parentId = parentId;
                         }
                     }
-                    return this._commitImportedGroups(sanitized, 'JSON');
+                    return this._commitImportedGroups(sanitized, 'JSON', {
+                        skippedGroups,
+                        skippedChannels,
+                        duplicateChannels,
+                        importedChannels
+                    });
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
                     return { ok: false, error: e.message };
@@ -36157,10 +36295,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _commitImportedGroups(groups, label, meta = {}) {
                 const previous = this._readGroups();
                 this._writeGroups(groups);
-                const count = Object.keys(groups).length;
-                const duplicateText = meta.duplicateChannels ? `; skipped ${meta.duplicateChannels} duplicate channel${meta.duplicateChannels === 1 ? '' : 's'}` : '';
+                const ids = Object.keys(groups);
+                const previousIds = Object.keys(previous);
+                const count = ids.length;
+                const createdGroups = ids.filter(id => !Object.prototype.hasOwnProperty.call(previous, id)).length;
+                const updatedGroups = ids.filter(id => (
+                    Object.prototype.hasOwnProperty.call(previous, id) &&
+                    JSON.stringify(previous[id]) !== JSON.stringify(groups[id])
+                )).length;
+                const removedGroups = previousIds.filter(id => !Object.prototype.hasOwnProperty.call(groups, id)).length;
+                const totalChannels = ids.reduce((total, id) => {
+                    const channelIds = groups[id]?.channelIds;
+                    return total + (Array.isArray(channelIds) ? channelIds.length : 0);
+                }, 0);
+                const importedChannels = Number.isFinite(Number(meta.importedChannels)) ? Number(meta.importedChannels) : totalChannels;
+                const skippedGroups = Math.max(0, Number(meta.skippedGroups) || 0);
+                const skippedChannels = Math.max(0, Number(meta.skippedChannels) || 0);
+                const duplicateChannels = Math.max(0, Number(meta.duplicateChannels) || 0);
+                const detailParts = [
+                    `${createdGroups} new`,
+                    `${updatedGroups} updated`,
+                    `${importedChannels} channel${importedChannels === 1 ? '' : 's'}`
+                ];
+                if (removedGroups) detailParts.push(`${removedGroups} removed`);
+                const skipParts = [];
+                if (skippedGroups) skipParts.push(`${skippedGroups} skipped group${skippedGroups === 1 ? '' : 's'}`);
+                if (skippedChannels) skipParts.push(`${skippedChannels} skipped channel${skippedChannels === 1 ? '' : 's'}`);
+                if (duplicateChannels) skipParts.push(`skipped ${duplicateChannels} duplicate channel${duplicateChannels === 1 ? '' : 's'}`);
+                const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
                 if (typeof showToast === 'function') {
-                    showToast(`Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label}${duplicateText}`, '#22c55e', {
+                    showToast(message, '#22c55e', {
                         duration: 6,
                         action: {
                             text: 'Undo',
@@ -36177,7 +36341,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._renderToolbar();
                 this._applyGroupFilter();
                 this._renderDeadChannelMarkers();
-                return { ok: true, importedGroups: count, ...meta };
+                return {
+                    ok: true,
+                    importedGroups: count,
+                    createdGroups,
+                    updatedGroups,
+                    removedGroups,
+                    importedChannels,
+                    skippedGroups,
+                    skippedChannels,
+                    duplicateChannels
+                };
             },
         }),
         // ═══════════════════════════════════════════════════════════════════
@@ -41500,8 +41674,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
             if (e.target.closest('#ytkit-import')) {
                 handleFileImport(async (content) => {
-                    const success = settingsManager.importAllSettings(content);
-                    if (success) {
+                    const result = settingsManager.importAllSettingsDetailed(content);
+                    if (result?.ok) {
                         handleExternalStorageChanges({
                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
                             [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
@@ -41509,11 +41683,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                         }, 'import', { forceApplyLocal: true });
-                        createToast('Settings imported. Changes applied live.', 'success');
-                        setPanelStatus('Settings imported. Changes applied live.', 'success');
+                        showToast(result.message, '#22c55e', {
+                            duration: 8,
+                            action: {
+                                text: 'Undo',
+                                onClick: () => {
+                                    const undo = settingsManager.undoLastSettingsImport();
+                                    if (undo?.ok) {
+                                        handleExternalStorageChanges({
+                                            [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
+                                            [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
+                                            [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
+                                            [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
+                                            [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
+                                        }, 'import-undo', { forceApplyLocal: true });
+                                        showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });
+                                        setPanelStatus(undo.message, 'warn');
+                                    } else {
+                                        const message = undo?.message || 'Import undo is no longer available.';
+                                        showToast(message, '#f59e0b', { duration: 4, tone: 'warning' });
+                                        setPanelStatus(message, 'warn');
+                                    }
+                                }
+                            }
+                        });
+                        setPanelStatus(`${result.message} Undo is available in the toast.`, 'success');
                     } else {
-                        createToast('Import failed. Invalid file format.', 'error');
-                        setPanelStatus('Import failed. Choose a valid Astra Deck settings export.', 'error');
+                        const message = result?.message || 'Import failed. Choose a valid Astra Deck settings export.';
+                        createToast(message, 'error');
+                        setPanelStatus(message, 'error');
                     }
                 });
                 return;
