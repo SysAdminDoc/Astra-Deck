@@ -733,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.19';
+    const YTKIT_VERSION = '4.46.20';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -10057,7 +10057,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     'gap:5px',
                     'padding:12px 15px 11px',
                     'box-sizing:border-box',
-                    'overflow:hidden'
+                    'overflow:visible'
                 ].join(';');
 
                 const channel = document.createElement('div');
@@ -10161,6 +10161,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (titleEl) {
                     titleEl.textContent = title;
                     titleEl.hidden = !title;
+                    titleEl.style.setProperty('display', 'block');
+                    titleEl.style.setProperty('width', '100%');
+                    titleEl.style.setProperty('max-width', '100%');
+                    titleEl.style.setProperty('max-inline-size', '100%');
+                    titleEl.style.setProperty('overflow', 'visible');
+                    titleEl.style.setProperty('text-overflow', 'clip');
+                    titleEl.style.setProperty('white-space', 'normal');
+                    titleEl.style.setProperty('overflow-wrap', 'anywhere');
+                    titleEl.style.setProperty('word-break', 'break-word');
                     titleEl.style.setProperty('-webkit-line-clamp', 'unset');
                     titleEl.style.setProperty('-webkit-box-orient', 'initial');
                     titleEl.style.setProperty('max-height', 'none');
@@ -38904,11 +38913,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const pinBtn = document.createElement('button');
         pinBtn.className = 'ytkit-pin-btn';
         pinBtn.type = 'button';
-        pinBtn.textContent = 'PIN';
-        pinBtn.title = 'PIN lock';
-        pinBtn.setAttribute('aria-label', 'Manage settings PIN lock');
+        pinBtn.title = t('panelPinTitle', 'Manage settings PIN');
+        pinBtn.setAttribute('aria-label', t('panelPinAria', 'Manage settings PIN lock'));
+        const pinIcon = (ICONS.lock || ICONS.shield || ICONS.settings)();
+        pinIcon.setAttribute('aria-hidden', 'true');
+        const pinLabel = document.createElement('span');
+        pinLabel.className = 'ytkit-pin-label';
+        pinLabel.textContent = t('panelPinLabel', 'PIN');
+        pinBtn.appendChild(pinIcon);
+        pinBtn.appendChild(pinLabel);
         (async () => {
-            pinBtn.title = (await isPinSet()) ? 'Change or clear PIN' : 'Set a PIN lock';
+            const pinCopy = (await isPinSet())
+                ? t('panelPinChangeTitle', 'Change or clear settings PIN')
+                : t('panelPinSetTitle', 'Set a settings PIN');
+            pinBtn.title = pinCopy;
+            pinBtn.setAttribute('aria-label', pinCopy);
         })();
         pinBtn.onclick = () => _showPinManageDialog();
 
@@ -38943,13 +38962,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings...');
+        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls...');
         searchInput.id = 'ytkit-search';
         searchInput.name = 'settingsSearch';
         searchInput.autocomplete = 'off';
         searchInput.spellcheck = false;
         searchInput.setAttribute('enterkeyhint', 'search');
-        searchInput.setAttribute('aria-label', t('panelSearchAria', 'Search settings'));
+        searchInput.setAttribute('aria-label', t('panelSearchAria', 'Search settings by name, page, category, or control type'));
         const searchIcon = ICONS.search();
         searchIcon.setAttribute('class', 'ytkit-search-icon');
         searchIcon.setAttribute('aria-hidden', 'true');
@@ -38976,7 +38995,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const searchHint = document.createElement('p');
         searchHint.className = 'ytkit-search-hint';
-        searchHint.textContent = 'Search by name, category, page, type, or description.';
+        searchHint.textContent = t('panelSearchHint', 'Search by name, page, category, control type, or description.');
         sidebarTop.appendChild(searchHint);
         sidebar.appendChild(sidebarTop);
 
@@ -39115,17 +39134,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const searchStateBadge = document.createElement('span');
         searchStateBadge.className = 'ytkit-search-state-badge';
-        searchStateBadge.textContent = 'Search results';
+        searchStateBadge.textContent = t('panelSearchStateBadge', 'Search');
 
         const searchStateTitle = document.createElement('h2');
         searchStateTitle.className = 'ytkit-search-state-title';
         searchStateTitle.id = 'ytkit-search-state-title';
-        searchStateTitle.textContent = 'Search all settings';
+        searchStateTitle.textContent = t('panelSearchStateTitle', 'Search across all settings');
 
         const searchStateCopy = document.createElement('p');
         searchStateCopy.className = 'ytkit-search-state-copy';
         searchStateCopy.id = 'ytkit-search-state-copy';
-        searchStateCopy.textContent = 'Use search to jump straight to the settings you need.';
+        searchStateCopy.textContent = t('panelSearchStateCopy', 'Type a control, page, or category to narrow the menu instantly.');
 
         const searchStateActions = document.createElement('div');
         searchStateActions.className = 'ytkit-search-state-actions';
@@ -39133,7 +39152,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         searchStateClear.type = 'button';
         searchStateClear.className = 'ytkit-reset-group-btn';
         searchStateClear.id = 'ytkit-search-state-clear';
-        searchStateClear.textContent = 'Clear Search';
+        searchStateClear.textContent = t('panelSearchStateClear', 'Clear search');
         searchStateActions.appendChild(searchStateClear);
 
         searchState.appendChild(searchStateBadge);
@@ -41330,7 +41349,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             if (searchMeta) {
                 searchMeta.textContent = matchCount > 0
-                    ? `${matchCount} result${matchCount === 1 ? '' : 's'}`
+                    ? `${matchCount} match${matchCount === 1 ? '' : 'es'}`
                     : 'No matches';
             }
 
@@ -41340,11 +41359,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             searchState.classList.toggle('is-empty', matchCount === 0);
 
             if (matchCount > 0) {
-                searchStateTitle.textContent = `${matchCount} setting${matchCount === 1 ? '' : 's'} found`;
-                searchStateCopy.textContent = `Showing matches across ${visibleSectionCount} section${visibleSectionCount === 1 ? '' : 's'} for "${rawLabel}". Toggle any result to apply it instantly.`;
+                searchStateTitle.textContent = `${matchCount} matching setting${matchCount === 1 ? '' : 's'}`;
+                searchStateCopy.textContent = `Showing results across ${visibleSectionCount} section${visibleSectionCount === 1 ? '' : 's'} for "${rawLabel}". Changes save automatically as you toggle or edit a result.`;
             } else {
-                searchStateTitle.textContent = `No settings matched "${rawLabel}"`;
-                searchStateCopy.textContent = 'Try broader words like comments, transcript, download, or theme, or clear the search to browse every section again.';
+                searchStateTitle.textContent = `No settings found for "${rawLabel}"`;
+                searchStateCopy.textContent = 'Try a feature name, page, or words like comments, transcript, download, or theme.';
             }
         }
 
@@ -41412,7 +41431,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 el.textContent = '';
                 el.appendChild(document.createTextNode(text.substring(0, idx)));
                 const mark = document.createElement('mark');
-                mark.style.cssText = 'background:#fbbf24;color:#000;border-radius:2px;padding:0 1px;';
+                mark.className = 'ytkit-search-mark';
                 mark.textContent = text.substring(idx, idx + q.length);
                 el.appendChild(mark);
                 el.appendChild(document.createTextNode(text.substring(idx + q.length)));
@@ -49217,16 +49236,27 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             height: 38px;
-            min-width: 54px;
-            padding: 0 13px;
+            min-width: 72px;
+            padding: 0 12px;
             font-family: var(--ytkit-font);
             font-size: 11px;
             font-weight: 800;
-            letter-spacing: 0.08em;
+            letter-spacing: 0;
             line-height: 1;
-            text-transform: uppercase;
             cursor: pointer;
+        }
+
+        .ytkit-pin-btn svg,
+        .ytkit-close svg {
+            width: 16px !important;
+            height: 16px !important;
+            flex: 0 0 auto;
+        }
+
+        .ytkit-pin-label {
+            transform: translateY(0.5px);
         }
 
         .ytkit-close {
@@ -49329,9 +49359,35 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-search-clear {
+            display: inline-grid !important;
+            place-items: center !important;
             width: 26px !important;
             height: 26px !important;
             border-radius: 7px !important;
+            border: 1px solid transparent !important;
+            background: transparent !important;
+            color: rgba(226,232,240,0.66) !important;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease !important;
+        }
+
+        .ytkit-search-clear:hover {
+            border-color: rgba(255,255,255,0.12) !important;
+            background: rgba(255,255,255,0.07) !important;
+            color: rgba(255,255,255,0.96) !important;
+        }
+
+        .ytkit-search-clear:active {
+            transform: scale(0.96) !important;
+        }
+
+        .ytkit-search-clear:focus-visible {
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.95), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.64) !important;
+        }
+
+        .ytkit-search-clear svg {
+            width: 13px !important;
+            height: 13px !important;
         }
 
         .ytkit-search-meta {
@@ -49346,6 +49402,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
             letter-spacing: 0 !important;
             line-height: 1 !important;
             text-transform: none !important;
+            white-space: nowrap !important;
+            font-variant-numeric: tabular-nums !important;
         }
 
         .ytkit-search-hint {
@@ -49353,6 +49411,14 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(226,232,240,0.56) !important;
             font-size: 11px !important;
             line-height: 1.4 !important;
+        }
+
+        .ytkit-search-mark {
+            border-radius: 4px !important;
+            padding: 0 3px !important;
+            background: rgba(255,188,92,0.22) !important;
+            color: #fff4cf !important;
+            box-shadow: inset 0 0 0 1px rgba(255,188,92,0.28) !important;
         }
 
         .ytkit-nav-list {
@@ -49374,6 +49440,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
             border: 1px solid transparent !important;
             background: transparent !important;
             text-align: left !important;
+            cursor: pointer !important;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease !important;
         }
 
         .ytkit-nav-btn:hover {
@@ -49388,6 +49456,18 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 linear-gradient(90deg, rgba(255,126,92,0.14), rgba(255,255,255,0.03) 64%),
                 rgba(255,255,255,0.025) !important;
             box-shadow: inset 3px 0 0 rgba(255,126,92,0.82) !important;
+        }
+
+        .ytkit-nav-btn:focus-visible {
+            outline: none !important;
+            border-color: rgba(var(--ytkit-accent-rgb),0.42) !important;
+            box-shadow:
+                inset 3px 0 0 rgba(var(--ytkit-accent-rgb),0.82),
+                0 0 0 3px rgba(var(--ytkit-accent-rgb),0.18) !important;
+        }
+
+        .ytkit-nav-btn.ytkit-search-empty-nav {
+            opacity: 0.52;
         }
 
         .ytkit-nav-icon {
@@ -49452,6 +49532,58 @@ body.ytkit-panel-open #ytkit-settings-panel {
             overflow: auto !important;
         }
 
+        .ytkit-search-state {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 9px !important;
+            margin: 0 0 14px !important;
+            padding: 14px 16px !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(255,255,255,0.09) !important;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.014)),
+                rgba(11,15,21,0.88) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.026) !important;
+        }
+
+        .ytkit-search-state[hidden] {
+            display: none !important;
+        }
+
+        .ytkit-search-state.is-empty {
+            border-color: rgba(255,166,119,0.24) !important;
+            background:
+                linear-gradient(180deg, rgba(255,166,119,0.1), rgba(255,255,255,0.016)),
+                rgba(12,15,20,0.92) !important;
+        }
+
+        .ytkit-search-state-badge {
+            border-radius: 7px !important;
+            padding: 4px 8px !important;
+            background: rgba(255,255,255,0.055) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            color: #ffb19a !important;
+            font-size: 9px !important;
+            font-weight: 850 !important;
+            letter-spacing: 0.08em !important;
+        }
+
+        .ytkit-search-state-title {
+            margin: 0 !important;
+            color: rgba(248,250,252,0.95) !important;
+            font-size: 16px !important;
+            line-height: 1.18 !important;
+        }
+
+        .ytkit-search-state-copy {
+            max-width: 760px !important;
+            margin: 0 !important;
+            color: rgba(226,232,240,0.66) !important;
+            font-size: 12px !important;
+            line-height: 1.5 !important;
+        }
+
         .ytkit-pane-header {
             top: 0 !important;
             z-index: 4 !important;
@@ -49493,6 +49625,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-feature-card {
+            position: relative !important;
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) auto !important;
             align-items: center !important;
@@ -49505,6 +49638,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.012)),
                 rgba(10,14,20,0.82) !important;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.025) !important;
+            transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 120ms ease !important;
         }
 
         .ytkit-feature-card:hover {
@@ -49520,6 +49654,22 @@ body.ytkit-panel-open #ytkit-settings-panel {
             box-shadow:
                 inset 3px 0 0 color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 78%, #fff),
                 inset 0 1px 0 rgba(255,255,255,0.025) !important;
+        }
+
+        .ytkit-feature-card:focus-within {
+            border-color: rgba(var(--ytkit-accent-rgb),0.34) !important;
+            box-shadow:
+                inset 3px 0 0 rgba(var(--ytkit-accent-rgb),0.68),
+                0 0 0 3px rgba(var(--ytkit-accent-rgb),0.16),
+                inset 0 1px 0 rgba(255,255,255,0.026) !important;
+        }
+
+        .ytkit-feature-card[data-search-matched="true"] {
+            border-color: color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 24%, rgba(255,255,255,0.09)) !important;
+        }
+
+        .ytkit-feature-card.ytkit-search-context-card {
+            opacity: 0.78;
         }
 
         .ytkit-feature-main {
@@ -49623,6 +49773,28 @@ body.ytkit-panel-open #ytkit-settings-panel {
             box-shadow: 0 0 0 3px rgba(var(--ytkit-accent-rgb),0.18) !important;
         }
 
+        .ytkit-input:hover,
+        .ytkit-select:hover {
+            border-color: rgba(255,255,255,0.16) !important;
+        }
+
+        .ytkit-input:focus,
+        .ytkit-select:focus {
+            outline: none !important;
+        }
+
+        .ytkit-input:focus {
+            border-color: rgba(var(--ytkit-accent-rgb),0.4) !important;
+            box-shadow: 0 0 0 3px rgba(var(--ytkit-accent-rgb),0.18), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+        }
+
+        .ytkit-switch:focus-within .ytkit-switch-track {
+            box-shadow:
+                0 0 0 2px rgba(8,11,16,0.95),
+                0 0 0 4px rgba(var(--ytkit-accent-rgb),0.62) !important;
+            border-color: rgba(var(--ytkit-accent-rgb),0.36) !important;
+        }
+
         .ytkit-select-shell::after {
             content: '' !important;
             position: absolute !important;
@@ -49711,6 +49883,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-weight: 780 !important;
         }
 
+        #ytkit-settings-panel button:disabled,
+        #ytkit-settings-panel input:disabled,
+        #ytkit-settings-panel select:disabled,
+        #ytkit-settings-panel textarea:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+        }
+
         html:not([dark]) #ytkit-settings-panel {
             background:
                 radial-gradient(circle at 10% 0%, rgba(255,118,86,0.1), transparent 28%),
@@ -49736,8 +49917,11 @@ body.ytkit-panel-open #ytkit-settings-panel {
         html:not([dark]) .ytkit-pin-btn,
         html:not([dark]) .ytkit-close,
         html:not([dark]) .ytkit-search-input,
+        html:not([dark]) .ytkit-search-meta,
+        html:not([dark]) .ytkit-search-state,
         html:not([dark]) .ytkit-select,
         html:not([dark]) .ytkit-feature-card,
+        html:not([dark]) .ytkit-nav-count,
         html:not([dark]) .ytkit-panel-status {
             background: #fff !important;
             border-color: rgba(15,23,42,0.12) !important;
@@ -49748,15 +49932,33 @@ body.ytkit-panel-open #ytkit-settings-panel {
         html:not([dark]) .ytkit-pane-description,
         html:not([dark]) .ytkit-feature-desc,
         html:not([dark]) .ytkit-nav-meta,
-        html:not([dark]) .ytkit-search-hint {
+        html:not([dark]) .ytkit-search-hint,
+        html:not([dark]) .ytkit-search-state-copy {
             color: #475569 !important;
         }
 
         html:not([dark]) .ytkit-title,
         html:not([dark]) .ytkit-pane-title h2,
         html:not([dark]) .ytkit-feature-name,
-        html:not([dark]) .ytkit-nav-label {
+        html:not([dark]) .ytkit-nav-label,
+        html:not([dark]) .ytkit-search-state-title {
             color: #111827 !important;
+        }
+
+        html:not([dark]) .ytkit-search-clear {
+            color: #475569 !important;
+        }
+
+        html:not([dark]) .ytkit-search-clear:hover {
+            background: rgba(15,23,42,0.06) !important;
+            border-color: rgba(15,23,42,0.12) !important;
+            color: #111827 !important;
+        }
+
+        html:not([dark]) .ytkit-search-mark {
+            background: #fde68a !important;
+            color: #111827 !important;
+            box-shadow: inset 0 0 0 1px rgba(180,83,9,0.22) !important;
         }
 
         @media (max-width: 1320px) and (min-width: 901px) {
@@ -49871,8 +50073,12 @@ body.ytkit-panel-open #ytkit-settings-panel {
             }
 
             .ytkit-pin-btn {
-                min-width: 46px;
+                min-width: 38px;
                 padding: 0 10px;
+            }
+
+            .ytkit-pin-label {
+                display: none !important;
             }
 
             .ytkit-content {

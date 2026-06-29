@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.10
+// @name         Theater Split v1.0.11
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.10
+// @version      1.0.11
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -23,6 +23,8 @@
 //                    long stream titles wrap inside the right pane.
 //   @version 1.0.10 - Live title containment: remove live-title line clamps and
 //                     bound native metadata so full titles fit the split pane.
+//   @version 1.0.11 - Reapply live-title wrapping on each metadata refresh and
+//                     let the header measure the full wrapped title height.
 
 (function() {
     'use strict';
@@ -2071,7 +2073,7 @@
             'gap:5px',
             'padding:12px 15px 11px',
             'box-sizing:border-box',
-            'overflow:hidden'
+            'overflow:visible'
         ].join(';');
 
         const channel = document.createElement('div');
@@ -2173,6 +2175,15 @@
         if (titleEl) {
             titleEl.textContent = title;
             titleEl.hidden = !title;
+            titleEl.style.setProperty('display', 'block');
+            titleEl.style.setProperty('width', '100%');
+            titleEl.style.setProperty('max-width', '100%');
+            titleEl.style.setProperty('max-inline-size', '100%');
+            titleEl.style.setProperty('overflow', 'visible');
+            titleEl.style.setProperty('text-overflow', 'clip');
+            titleEl.style.setProperty('white-space', 'normal');
+            titleEl.style.setProperty('overflow-wrap', 'anywhere');
+            titleEl.style.setProperty('word-break', 'break-word');
             titleEl.style.setProperty('-webkit-line-clamp', 'unset');
             titleEl.style.setProperty('-webkit-box-orient', 'initial');
             titleEl.style.setProperty('max-height', 'none');

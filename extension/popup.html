@@ -48,7 +48,7 @@
       </header>
       <div class="welcome-step" id="welcome-step-profile">
         <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
-        <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
+        <div class="welcome-profile-row" role="group" data-i18n-attr-aria-label="welcomeProfileGroupAria" aria-label="Pick a starting profile">
           <button type="button" class="welcome-profile-btn is-recommended" id="welcome-profile-safe" data-profile="store-safe" aria-describedby="welcome-profile-safe-rec">
             <span class="welcome-profile-rec" id="welcome-profile-safe-rec" data-i18n="welcomeProfileRecommended">Recommended</span>
             <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
@@ -61,26 +61,26 @@
         </div>
       </div>
       <div class="welcome-step" id="welcome-step-preset" hidden>
-        <p class="welcome-body">How will you use YouTube? Pick a preset or skip to configure manually.</p>
-        <div class="welcome-preset-row" role="group" aria-label="Pick a usage preset">
+        <p class="welcome-body" data-i18n="welcomePresetBody">How will you use YouTube? Pick a preset or skip to configure manually.</p>
+        <div class="welcome-preset-row" role="group" data-i18n-attr-aria-label="welcomePresetGroupAria" aria-label="Pick a usage preset">
           <button type="button" class="welcome-preset-btn" id="welcome-preset-privacy" data-preset="presetPrivacy">
-            <strong class="welcome-preset-title">Privacy</strong>
-            <span class="welcome-preset-desc">Clean URLs, hide Shorts, block infinite scroll, no AI summary.</span>
+            <strong class="welcome-preset-title" data-i18n="welcomePresetPrivacyTitle">Privacy</strong>
+            <span class="welcome-preset-desc" data-i18n="welcomePresetPrivacyDesc">Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off.</span>
           </button>
           <button type="button" class="welcome-preset-btn" id="welcome-preset-researcher" data-preset="presetResearcher">
-            <strong class="welcome-preset-title">Researcher</strong>
-            <span class="welcome-preset-desc">Transcripts, bookmarks, watch time, AI summary, comment search.</span>
+            <strong class="welcome-preset-title" data-i18n="welcomePresetResearcherTitle">Researcher</strong>
+            <span class="welcome-preset-desc" data-i18n="welcomePresetResearcherDesc">Transcripts, bookmarks, watch time, summaries, and comment search.</span>
           </button>
           <button type="button" class="welcome-preset-btn" id="welcome-preset-power" data-preset="presetPowerUser">
-            <strong class="welcome-preset-title">Power User</strong>
-            <span class="welcome-preset-desc">Persistent speed, A-B loop, stats overlay, PiP, focused mode.</span>
+            <strong class="welcome-preset-title" data-i18n="welcomePresetPowerTitle">Power User</strong>
+            <span class="welcome-preset-desc" data-i18n="welcomePresetPowerDesc">Persistent speed, A-B loop, stats overlay, PiP, and focused mode.</span>
           </button>
           <button type="button" class="welcome-preset-btn" id="welcome-preset-focus" data-preset="presetFocus">
-            <strong class="welcome-preset-title">Focus</strong>
-            <span class="welcome-preset-desc">Hide Shorts, related, infinite scroll, autoplay. Zen Mode and Digital Wellbeing.</span>
+            <strong class="welcome-preset-title" data-i18n="welcomePresetFocusTitle">Focus</strong>
+            <span class="welcome-preset-desc" data-i18n="welcomePresetFocusDesc">Reduce Shorts, related videos, infinite scroll, autoplay, and session drift.</span>
           </button>
         </div>
-        <button type="button" class="welcome-preset-skip" id="welcome-preset-skip">Skip — configure manually</button>
+        <button type="button" class="welcome-preset-skip" id="welcome-preset-skip" data-i18n="welcomePresetSkip">Skip - configure manually</button>
       </div>
     </section>
 
@@ -122,7 +122,7 @@
       </div>
       <div class="main-action">
         <button id="openPanel" class="cta-button" type="button" data-i18n="openFullSettings">Open Full Settings</button>
-        <button id="openSidePanel" class="cta-button cta-secondary" type="button">Dashboard</button>
+        <button id="openSidePanel" class="cta-button cta-secondary" type="button" data-i18n="openDashboard">Dashboard</button>
       </div>
     </section>
 
@@ -194,19 +194,19 @@
       <div class="selector-health-copy-status" id="selector-health-copy-status" aria-live="polite"></div>
     </section>
 
-    <section class="external-health" id="external-health" aria-label="External API health" hidden>
+    <section class="external-health" id="external-health" data-i18n-attr-aria-label="externalHealthAria" aria-label="External API health" hidden>
       <header class="external-health-head">
-        <strong class="external-health-title">External API health</strong>
+        <strong class="external-health-title" data-i18n="externalHealthTitle">External API health</strong>
         <span class="external-health-total" id="external-health-total" aria-live="polite"></span>
-        <button type="button" class="external-health-copy-btn" id="external-health-copy-btn" aria-label="Copy external API health report to clipboard">Copy report</button>
+        <button type="button" class="external-health-copy-btn" id="external-health-copy-btn" data-i18n-attr-aria-label="externalHealthCopyAria" aria-label="Copy external API health report to clipboard" data-i18n="externalHealthCopyBtn">Copy report</button>
       </header>
       <ul class="external-health-list" id="external-health-list" role="list"></ul>
       <div class="external-health-copy-status" id="external-health-copy-status" aria-live="polite"></div>
     </section>
 
-    <section class="feature-perf" id="feature-perf" aria-label="Feature performance" hidden>
+    <section class="feature-perf" id="feature-perf" data-i18n-attr-aria-label="featurePerfAria" aria-label="Feature performance" hidden>
       <header class="feature-perf-head">
-        <strong class="feature-perf-title">Feature init timing</strong>
+        <strong class="feature-perf-title" data-i18n="featurePerfTitle">Feature init timing</strong>
         <span class="feature-perf-total" id="feature-perf-total" aria-live="polite"></span>
       </header>
       <ul class="feature-perf-list" id="feature-perf-list" role="list"></ul>
@@ -274,7 +274,7 @@
         <!-- v4.47.0 NF6: companion self-update. Calls Astra Downloader's
              /update endpoint through the active YouTube content script so
              the popup never owns the local auth token. -->
-        <button id="update-companion-btn" class="undo-action" type="button" aria-label="Update Astra Downloader companion">Update Astra Downloader</button>
+        <button id="update-companion-btn" class="undo-action" type="button" data-i18n-attr-aria-label="updateCompanionAria" aria-label="Update Astra Downloader companion" data-i18n="updateCompanionBtn">Update Astra Downloader</button>
         <!-- v4.47.0 NF18: on-demand yt-dlp self-update. When YouTube
              breaks the user's current yt-dlp build, this fixes it
              without waiting up to 24 h for the auto-update throttle.

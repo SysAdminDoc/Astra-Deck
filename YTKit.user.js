@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.46.19
+// @name         YTKit v4.46.20
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.46.19
+// @version      4.46.20
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -9298,7 +9298,7 @@
                         'gap:5px',
                         'padding:12px 15px 11px',
                         'box-sizing:border-box',
-                        'overflow:hidden'
+                        'overflow:visible'
                     ].join(';');
 
                     const channel = document.createElement('div');
@@ -9402,6 +9402,15 @@
                     if (titleEl) {
                         titleEl.textContent = title;
                         titleEl.hidden = !title;
+                        titleEl.style.setProperty('display', 'block');
+                        titleEl.style.setProperty('width', '100%');
+                        titleEl.style.setProperty('max-width', '100%');
+                        titleEl.style.setProperty('max-inline-size', '100%');
+                        titleEl.style.setProperty('overflow', 'visible');
+                        titleEl.style.setProperty('text-overflow', 'clip');
+                        titleEl.style.setProperty('white-space', 'normal');
+                        titleEl.style.setProperty('overflow-wrap', 'anywhere');
+                        titleEl.style.setProperty('word-break', 'break-word');
                         titleEl.style.setProperty('-webkit-line-clamp', 'unset');
                         titleEl.style.setProperty('-webkit-box-orient', 'initial');
                         titleEl.style.setProperty('max-height', 'none');
@@ -10958,8 +10967,19 @@
                 addNavigateRule = () => {},
                 removeNavigateRule = () => {},
                 runBudgetedElementBatch = (items, callback) => {
-                    Array.from(items || []).forEach(callback);
-                    return { cancel() {}, promise: Promise.resolve({ total: Array.from(items || []).length, processed: Array.from(items || []).length, chunks: 1, durationMs: 0 }) };
+                    const list = Array.from(items || []);
+                    list.forEach(callback);
+                    return {
+                        cancel() {},
+                        promise: Promise.resolve({
+                            label: 'video-hider:fallback',
+                            total: list.length,
+                            processed: list.length,
+                            chunks: 1,
+                            durationMs: 0,
+                            cancelled: false
+                        })
+                    };
                 },
                 injectStyle = () => ({ remove() {} })
             } = deps;
@@ -15373,11 +15393,21 @@
             const pinBtn = document.createElement('button');
             pinBtn.className = 'ytkit-pin-btn';
             pinBtn.type = 'button';
-            pinBtn.textContent = 'PIN';
-            pinBtn.title = 'PIN lock';
-            pinBtn.setAttribute('aria-label', 'Manage settings PIN lock');
+            pinBtn.title = t('panelPinTitle', 'Manage settings PIN');
+            pinBtn.setAttribute('aria-label', t('panelPinAria', 'Manage settings PIN lock'));
+            const pinIcon = (ICONS.lock || ICONS.shield || ICONS.settings)();
+            pinIcon.setAttribute('aria-hidden', 'true');
+            const pinLabel = document.createElement('span');
+            pinLabel.className = 'ytkit-pin-label';
+            pinLabel.textContent = t('panelPinLabel', 'PIN');
+            pinBtn.appendChild(pinIcon);
+            pinBtn.appendChild(pinLabel);
             (async () => {
-                pinBtn.title = (await isPinSet()) ? 'Change or clear PIN' : 'Set a PIN lock';
+                const pinCopy = (await isPinSet())
+                    ? t('panelPinChangeTitle', 'Change or clear settings PIN')
+                    : t('panelPinSetTitle', 'Set a settings PIN');
+                pinBtn.title = pinCopy;
+                pinBtn.setAttribute('aria-label', pinCopy);
             })();
             pinBtn.onclick = () => _showPinManageDialog();
 
@@ -15412,13 +15442,13 @@
             const searchInput = document.createElement('input');
             searchInput.type = 'search';
             searchInput.className = 'ytkit-search-input';
-            searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings...');
+            searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls...');
             searchInput.id = 'ytkit-search';
             searchInput.name = 'settingsSearch';
             searchInput.autocomplete = 'off';
             searchInput.spellcheck = false;
             searchInput.setAttribute('enterkeyhint', 'search');
-            searchInput.setAttribute('aria-label', t('panelSearchAria', 'Search settings'));
+            searchInput.setAttribute('aria-label', t('panelSearchAria', 'Search settings by name, page, category, or control type'));
             const searchIcon = ICONS.search();
             searchIcon.setAttribute('class', 'ytkit-search-icon');
             searchIcon.setAttribute('aria-hidden', 'true');
@@ -15445,7 +15475,7 @@
 
             const searchHint = document.createElement('p');
             searchHint.className = 'ytkit-search-hint';
-            searchHint.textContent = 'Search by name, category, page, type, or description.';
+            searchHint.textContent = t('panelSearchHint', 'Search by name, page, category, control type, or description.');
             sidebarTop.appendChild(searchHint);
             sidebar.appendChild(sidebarTop);
 
@@ -15584,17 +15614,17 @@
 
             const searchStateBadge = document.createElement('span');
             searchStateBadge.className = 'ytkit-search-state-badge';
-            searchStateBadge.textContent = 'Search results';
+            searchStateBadge.textContent = t('panelSearchStateBadge', 'Search');
 
             const searchStateTitle = document.createElement('h2');
             searchStateTitle.className = 'ytkit-search-state-title';
             searchStateTitle.id = 'ytkit-search-state-title';
-            searchStateTitle.textContent = 'Search all settings';
+            searchStateTitle.textContent = t('panelSearchStateTitle', 'Search across all settings');
 
             const searchStateCopy = document.createElement('p');
             searchStateCopy.className = 'ytkit-search-state-copy';
             searchStateCopy.id = 'ytkit-search-state-copy';
-            searchStateCopy.textContent = 'Use search to jump straight to the settings you need.';
+            searchStateCopy.textContent = t('panelSearchStateCopy', 'Type a control, page, or category to narrow the menu instantly.');
 
             const searchStateActions = document.createElement('div');
             searchStateActions.className = 'ytkit-search-state-actions';
@@ -15602,7 +15632,7 @@
             searchStateClear.type = 'button';
             searchStateClear.className = 'ytkit-reset-group-btn';
             searchStateClear.id = 'ytkit-search-state-clear';
-            searchStateClear.textContent = 'Clear Search';
+            searchStateClear.textContent = t('panelSearchStateClear', 'Clear search');
             searchStateActions.appendChild(searchStateClear);
 
             searchState.appendChild(searchStateBadge);
@@ -17612,7 +17642,7 @@
 
                 if (searchMeta) {
                     searchMeta.textContent = matchCount > 0
-                        ? `${matchCount} result${matchCount === 1 ? '' : 's'}`
+                        ? `${matchCount} match${matchCount === 1 ? '' : 'es'}`
                         : 'No matches';
                 }
 
@@ -17622,11 +17652,11 @@
                 searchState.classList.toggle('is-empty', matchCount === 0);
 
                 if (matchCount > 0) {
-                    searchStateTitle.textContent = `${matchCount} setting${matchCount === 1 ? '' : 's'} found`;
-                    searchStateCopy.textContent = `Showing matches across ${visibleSectionCount} section${visibleSectionCount === 1 ? '' : 's'} for "${rawLabel}". Toggle any result to apply it instantly.`;
+                    searchStateTitle.textContent = `${matchCount} matching setting${matchCount === 1 ? '' : 's'}`;
+                    searchStateCopy.textContent = `Showing results across ${visibleSectionCount} section${visibleSectionCount === 1 ? '' : 's'} for "${rawLabel}". Changes save automatically as you toggle or edit a result.`;
                 } else {
-                    searchStateTitle.textContent = `No settings matched "${rawLabel}"`;
-                    searchStateCopy.textContent = 'Try broader words like comments, transcript, download, or theme, or clear the search to browse every section again.';
+                    searchStateTitle.textContent = `No settings found for "${rawLabel}"`;
+                    searchStateCopy.textContent = 'Try a feature name, page, or words like comments, transcript, download, or theme.';
                 }
             }
 
@@ -17694,7 +17724,7 @@
                     el.textContent = '';
                     el.appendChild(document.createTextNode(text.substring(0, idx)));
                     const mark = document.createElement('mark');
-                    mark.style.cssText = 'background:#fbbf24;color:#000;border-radius:2px;padding:0 1px;';
+                    mark.className = 'ytkit-search-mark';
                     mark.textContent = text.substring(idx, idx + q.length);
                     el.appendChild(mark);
                     el.appendChild(document.createTextNode(text.substring(idx + q.length)));
@@ -19968,7 +19998,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.19';
+    const YTKIT_VERSION = '4.46.20';
 
     // ── Z-Index Hierarchy ──
     const Z = {

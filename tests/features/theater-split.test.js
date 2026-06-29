@@ -170,6 +170,8 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
             `${label} must reserve enough compact height for wrapped live titles`);
         assert.ok(contents.includes('grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))'),
             `${label} must bound the native action column so the title cannot measure wider than the pane`);
+        assert.ok(contents.includes("'overflow:visible'"),
+            `${label} must let wrapped live-title content contribute to measured header height`);
         assert.ok(contents.includes('min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;'),
             `${label} must contain the action dock instead of letting native controls force hidden overflow`);
         assert.ok(contents.includes('const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));')
@@ -185,6 +187,10 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
             `${label} must leave enough measured height for the full wrapped live title`);
         assert.ok(contents.includes("titleEl.style.setProperty('-webkit-line-clamp', 'unset')"),
             `${label} must not reintroduce runtime live-title clamping`);
+        assert.ok(contents.includes("titleEl.style.setProperty('white-space', 'normal')")
+            && contents.includes("titleEl.style.setProperty('overflow-wrap', 'anywhere')")
+            && contents.includes("titleEl.style.setProperty('word-break', 'break-word')"),
+            `${label} must reapply live-title wrapping after each metadata refresh`);
         assert.ok(contents.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
             `${label} must measure the wrapped title before offsetting chat`);
         assert.ok(contents.includes('return liveHeaderHeight;'),
