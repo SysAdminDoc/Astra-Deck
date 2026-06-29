@@ -733,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.25';
+    const YTKIT_VERSION = '4.46.26';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -766,8 +766,10 @@ return response;
     const STORAGE_CAPS = Object.freeze({
         watchProgressVideos: 2000,
         watchProgressMaxAgeMs: 30 * 24 * 60 * 60 * 1000,
-        watchTimeDays: 90
+        watchTimeDays: 90,
+        watchTimeImportedEntries: 5000
     });
+    const TAKEOUT_WATCH_SECONDS = 60;
     const PANEL_OPEN_CLASS = 'ytkit-panel-open';
     const PANEL_MESSAGE_TYPES = Object.freeze({
         open: 'YTKIT_OPEN_PANEL',
@@ -1037,6 +1039,88 @@ return response;
         return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     }
 
+    function normalizeTakeoutWatchTitle(value) {
+        const raw = String(value || '').replace(/\s+/g, ' ').trim();
+        const title = raw.replace(/^Watched\s+/i, '').trim();
+        return (title || 'Untitled YouTube video').slice(0, 180);
+    }
+
+    function extractTakeoutVideoId(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        if (VIDEO_ID_PATTERN.test(raw)) return raw;
+        try {
+            const url = new URL(raw, 'https://www.youtube.com');
+            const fromQuery = url.searchParams.get('v');
+            if (VIDEO_ID_PATTERN.test(fromQuery || '')) return fromQuery;
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            const youtuBeId = url.hostname === 'youtu.be' ? pathParts[0] : '';
+            if (VIDEO_ID_PATTERN.test(youtuBeId || '')) return youtuBeId;
+            for (const marker of ['shorts', 'embed', 'live']) {
+                const idx = pathParts.indexOf(marker);
+                if (idx > -1 && VIDEO_ID_PATTERN.test(pathParts[idx + 1] || '')) return pathParts[idx + 1];
+            }
+        } catch (_) {
+            // reason: fallback regex below covers raw Takeout-ish strings
+        }
+        const match = raw.match(/[?&]v=([a-zA-Z0-9_-]{11})\b|youtu\.be\/([a-zA-Z0-9_-]{11})\b|\/(?:shorts|embed|live)\/([a-zA-Z0-9_-]{11})\b/);
+        return match ? (match[1] || match[2] || match[3] || '') : '';
+    }
+
+    function getTakeoutWatchEntriesPayload(value) {
+        if (Array.isArray(value)) return value;
+        if (!isPlainObject(value)) return [];
+        for (const key of ['watchHistory', 'watch_history', 'history', 'items', 'entries']) {
+            if (Array.isArray(value[key])) return value[key];
+        }
+        return [];
+    }
+
+    function normalizeTakeoutWatchEntry(entry) {
+        if (!isPlainObject(entry)) return null;
+        const videoId = extractTakeoutVideoId(entry.titleUrl || entry.url || entry.href || entry.videoId || entry.id);
+        const timeMs = Date.parse(entry.time || entry.timestamp || entry.watchedAt || entry.date || '');
+        if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(timeMs)) return null;
+        const watchedAtDate = new Date(timeMs);
+        const watchedAt = watchedAtDate.toISOString();
+        return {
+            videoId,
+            watchedAt,
+            dayKey: formatLocalDateKey(watchedAtDate),
+            title: normalizeTakeoutWatchTitle(entry.title || entry.name || entry.videoTitle || ''),
+            seconds: TAKEOUT_WATCH_SECONDS
+        };
+    }
+
+    function sanitizeWatchTimeImportedEntries(value, nowDate = new Date()) {
+        if (!isPlainObject(value)) return {};
+        const cutoff = new Date(nowDate);
+        cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
+        const cutoffKey = formatLocalDateKey(cutoff);
+        const entries = [];
+        for (const [rawKey, raw] of Object.entries(value)) {
+            if (!isSafeObjectKey(rawKey) || !isPlainObject(raw)) continue;
+            const videoId = extractTakeoutVideoId(raw.videoId || raw.id || rawKey);
+            const watchedMs = Date.parse(raw.watchedAt || raw.time || raw.timestamp || '');
+            if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(watchedMs)) continue;
+            const watchedAt = new Date(watchedMs).toISOString();
+            const dayKey = /^\d{4}-\d{2}-\d{2}$/.test(raw.dayKey || '')
+                ? raw.dayKey
+                : formatLocalDateKey(new Date(watchedMs));
+            if (dayKey <= cutoffKey) continue;
+            const seconds = Math.max(1, Math.min(24 * 60 * 60, Math.floor(Number(raw.seconds) || TAKEOUT_WATCH_SECONDS)));
+            entries.push([`${videoId}@${watchedAt}`, {
+                videoId,
+                watchedAt,
+                dayKey,
+                title: normalizeTakeoutWatchTitle(raw.title),
+                seconds
+            }]);
+        }
+        entries.sort((left, right) => right[1].watchedAt.localeCompare(left[1].watchedAt) || left[0].localeCompare(right[0]));
+        return Object.fromEntries(entries.slice(0, STORAGE_CAPS.watchTimeImportedEntries));
+    }
+
     function sanitizeWatchTimeStats(value, nowDate = new Date()) {
         const stats = isPlainObject(value) ? value : {};
         const rawDays = isPlainObject(stats.days) ? stats.days : {};
@@ -1054,7 +1138,44 @@ return response;
         const total = Number(stats.total);
         return {
             days: Object.fromEntries(days.slice(0, STORAGE_CAPS.watchTimeDays)),
-            total: Number.isFinite(total) && total > 0 ? total : 0
+            total: Number.isFinite(total) && total > 0 ? total : 0,
+            imported: sanitizeWatchTimeImportedEntries(stats.imported, nowDate)
+        };
+    }
+
+    function mergeTakeoutWatchHistoryIntoStats(currentStats, takeoutPayload, nowDate = new Date()) {
+        const stats = sanitizeWatchTimeStats(currentStats, nowDate);
+        const entries = getTakeoutWatchEntriesPayload(takeoutPayload).map(normalizeTakeoutWatchEntry).filter(Boolean);
+        const cutoff = new Date(nowDate);
+        cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
+        const cutoffKey = formatLocalDateKey(cutoff);
+        const importedLedger = { ...(stats.imported || {}) };
+        let imported = 0;
+        let duplicates = 0;
+        let skipped = 0;
+
+        for (const entry of entries) {
+            if (entry.dayKey <= cutoffKey) {
+                skipped++;
+                continue;
+            }
+            const key = `${entry.videoId}@${entry.watchedAt}`;
+            if (importedLedger[key]) {
+                duplicates++;
+                continue;
+            }
+            importedLedger[key] = entry;
+            stats.days[entry.dayKey] = (Number(stats.days[entry.dayKey]) || 0) + entry.seconds;
+            stats.total = (Number(stats.total) || 0) + entry.seconds;
+            imported++;
+        }
+
+        return {
+            stats: sanitizeWatchTimeStats({ ...stats, imported: importedLedger }, nowDate),
+            imported,
+            duplicates,
+            skipped,
+            parsed: entries.length
         };
     }
 
@@ -4830,6 +4951,57 @@ return response;
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
                 return false;
+            }
+        },
+        importYouTubeTakeoutWatchHistory(jsonString) {
+            try {
+                const takeoutPayload = JSON.parse(jsonString);
+                const currentStats = StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 });
+                const result = mergeTakeoutWatchHistoryIntoStats(currentStats, takeoutPayload);
+                const fmt = (value) => new Intl.NumberFormat().format(Math.max(0, Number(value) || 0));
+                if (result.parsed === 0) {
+                    return {
+                        ok: false,
+                        toastTone: 'error',
+                        statusTone: 'error',
+                        message: 'No valid YouTube Takeout watch-history entries found.'
+                    };
+                }
+                if (result.imported > 0) {
+                    StorageManager.setSync(STORAGE_KEYS.watchTime, result.stats);
+                }
+                const duplicateCopy = result.duplicates > 0
+                    ? ` ${fmt(result.duplicates)} duplicate${result.duplicates === 1 ? '' : 's'} already existed.`
+                    : '';
+                const skippedCopy = result.skipped > 0
+                    ? ` ${fmt(result.skipped)} older entr${result.skipped === 1 ? 'y was' : 'ies were'} outside the ${STORAGE_CAPS.watchTimeDays}-day analytics window.`
+                    : '';
+                if (result.imported === 0) {
+                    return {
+                        ok: true,
+                        changed: false,
+                        toastTone: 'warning',
+                        statusTone: 'warn',
+                        ...result,
+                        message: `No new watch-history entries imported.${duplicateCopy}${skippedCopy}`
+                    };
+                }
+                return {
+                    ok: true,
+                    changed: true,
+                    toastTone: 'success',
+                    statusTone: 'success',
+                    ...result,
+                    message: `Imported ${fmt(result.imported)} Takeout watch entr${result.imported === 1 ? 'y' : 'ies'} into local watch analytics.${duplicateCopy}${skippedCopy}`
+                };
+            } catch (e) {
+                console.error('[YTKit] Failed to import YouTube Takeout watch history:', e);
+                return {
+                    ok: false,
+                    toastTone: 'error',
+                    statusTone: 'error',
+                    message: 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.'
+                };
             }
         }
     };
@@ -40714,6 +40886,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
 
+        const historyImportBtn = document.createElement('button');
+        historyImportBtn.type = 'button';
+        historyImportBtn.className = 'ytkit-btn ytkit-btn-secondary';
+        historyImportBtn.id = 'ytkit-import-history';
+        historyImportBtn.setAttribute('aria-label', 'Import YouTube Takeout watch history');
+        historyImportBtn.appendChild(ICONS.upload());
+        const historyImportText = document.createElement('span');
+        historyImportText.textContent = 'Import History';
+        historyImportBtn.appendChild(historyImportText);
+
         const importBtn = document.createElement('button');
         importBtn.type = 'button';
         importBtn.className = 'ytkit-btn ytkit-btn-secondary';
@@ -40734,6 +40916,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         exportText.textContent = 'Export';
         exportBtn.appendChild(exportText);
 
+        footerRight.appendChild(historyImportBtn);
         footerRight.appendChild(importBtn);
         footerRight.appendChild(exportBtn);
 
@@ -41331,6 +41514,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     } else {
                         createToast('Import failed. Invalid file format.', 'error');
                         setPanelStatus('Import failed. Choose a valid Astra Deck settings export.', 'error');
+                    }
+                });
+                return;
+            }
+            if (e.target.closest('#ytkit-import-history')) {
+                handleFileImport(async (content) => {
+                    const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
+                    if (result?.ok) {
+                        if (result.changed) {
+                            handleExternalStorageChanges({
+                                [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
+                            }, 'takeout-import', { forceApplyLocal: true });
+                        }
+                        createToast(result.message, result.toastTone || result.tone || 'success');
+                        setPanelStatus(result.message, result.statusTone || result.tone || 'success');
+                    } else {
+                        const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
+                        createToast(message, 'error');
+                        setPanelStatus(message, 'error');
                     }
                 });
             }
