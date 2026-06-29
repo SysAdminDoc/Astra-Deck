@@ -2100,7 +2100,7 @@ function formatExternalHealthDetail(service) {
     const budget = formatExternalHealthBudget(service.requestBudget);
     if (budget) parts.push(budget);
     if (service.lastErrorMessage) parts.push(String(service.lastErrorMessage).slice(0, 90));
-    return parts.join(' | ') || 'No requests observed in this tab yet.';
+    return parts.join(' | ') || t('externalHealthDetailEmpty', 'No requests observed in this tab yet.');
 }
 
 async function requestExternalApiHealthSnapshot(timeoutMs = 1500) {
@@ -2129,7 +2129,7 @@ function renderExternalHealthRows(services) {
     if (!services.length) {
         const empty = document.createElement('li');
         empty.className = 'external-health-empty';
-        empty.textContent = 'No external API services tracked yet.';
+        empty.textContent = t('externalHealthEmpty', 'No external API services tracked yet.');
         externalHealthList.appendChild(empty);
         return;
     }
@@ -2162,7 +2162,10 @@ async function renderExternalApiHealthDashboard() {
             return;
         }
         renderExternalHealthRows(snapshot.services);
-        if (externalHealthTotal) externalHealthTotal.textContent = `${snapshot.totalServices} services`;
+        if (externalHealthTotal) {
+            externalHealthTotal.textContent = t('externalHealthTotalTpl', '{count} services')
+                .replace('{count}', String(snapshot.totalServices));
+        }
         externalHealthSection.hidden = false;
     } catch (_) {
         externalHealthSection.hidden = true;
@@ -2197,11 +2200,11 @@ async function copyExternalApiHealthReport() {
     const setStatus = (msg) => { if (externalHealthCopyStatus) externalHealthCopyStatus.textContent = msg; };
     _externalHealthCopyInFlight = true;
     externalHealthCopyBtn.disabled = true;
-    setStatus('Building report...');
+    setStatus(t('externalHealthCopyPending', 'Building report...'));
     try {
         const snapshot = await requestExternalApiHealthSnapshot();
         if (!snapshot) {
-            setStatus('Open a YouTube tab to build the report.');
+            setStatus(t('externalHealthCopyNeedYt', 'Open a YouTube tab to build the report.'));
             return;
         }
         let safeTabUrl = 'unknown';
@@ -2213,7 +2216,7 @@ async function copyExternalApiHealthReport() {
         });
         try {
             await navigator.clipboard.writeText(payload);
-            setStatus('Copied.');
+            setStatus(t('externalHealthCopyDone', 'Copied.'));
         } catch (_) {
             const ta = document.createElement('textarea');
             ta.value = payload;
@@ -2225,10 +2228,12 @@ async function copyExternalApiHealthReport() {
             let ok = false;
             try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
             ta.remove();
-            setStatus(ok ? 'Copied.' : 'Could not copy.');
+            setStatus(ok
+                ? t('externalHealthCopyDone', 'Copied.')
+                : t('externalHealthCopyFail', 'Could not copy.'));
         }
     } catch (_) {
-        setStatus('Could not copy.');
+        setStatus(t('externalHealthCopyFail', 'Could not copy.'));
     } finally {
         _externalHealthCopyInFlight = false;
         if (externalHealthCopyBtn) externalHealthCopyBtn.disabled = false;
@@ -2275,7 +2280,7 @@ async function renderFeaturePerfDashboard() {
         if (top.length === 0) {
             const empty = document.createElement('li');
             empty.className = 'feature-perf-empty';
-            empty.textContent = 'No features initialized yet.';
+            empty.textContent = t('featurePerfEmpty', 'No features initialized yet.');
             featurePerfList.appendChild(empty);
         } else {
             const maxMs = top[0].initMs || 1;
@@ -2299,7 +2304,8 @@ async function renderFeaturePerfDashboard() {
             }
         }
         if (featurePerfTotal) {
-            featurePerfTotal.textContent = `${response.totalFeatures} feature${response.totalFeatures === 1 ? '' : 's'} measured`;
+            featurePerfTotal.textContent = t('featurePerfTotalTpl', '{count} features measured')
+                .replace('{count}', String(response.totalFeatures));
         }
         featurePerfSection.hidden = false;
     } catch (_) {
@@ -3411,7 +3417,7 @@ async function pickWelcomePreset(presetKey) {
         await dismissWelcomeCard(presetKey ? `preset-${presetKey}` : 'preset-skip');
         renderSchemaOverview();
     } catch (err) {
-        showStatus('Could not apply preset: ' + err.message, 'error', 4200);
+        showStatus(t('statusWelcomePresetFail', 'Could not apply preset') + ': ' + err.message, 'error', 4200);
         document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = false; });
     } finally {
         _welcomePickInFlight = false;
@@ -4346,7 +4352,7 @@ function installWheelScrolling() {
                     await chrome.sidePanel.open({ tabId: tab?.id });
                     window.close();
                 } catch (err) {
-                    showStatus('Could not open side panel: ' + err.message, 'error', 3000);
+                    showStatus(t('statusOpenDashboardFail', 'Could not open dashboard') + ': ' + err.message, 'error', 3000);
                 }
             });
         } else {
