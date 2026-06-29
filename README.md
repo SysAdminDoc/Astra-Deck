@@ -397,8 +397,10 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 
 ```bash
 npm ci
+py -3.12 -m pip install --user pip-audit # One-time companion audit tool
 npm test
 npm run check
+npm run audit:python                     # Writes build/astra-downloader-pip-audit.json
 npm run build                             # Build store-safe + GitHub-full artifacts
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run release:prepare                   # Build userscript artifacts and require readiness pass
@@ -426,6 +428,7 @@ Outputs in `build/`:
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript` / `npm run build:userscript`)
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
+- `astra-downloader-pip-audit.json` after `npm run audit:python`
 - `release-readiness/release-readiness.json` and
   `release-readiness/release-readiness.md` after `npm run release:readiness`
 
