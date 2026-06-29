@@ -1,6 +1,6 @@
 # Astra Deck — Architecture Map
 
-This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.23), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.46.23. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the current research-backed rationale. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
+This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.24), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.46.24. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the current research-backed rationale. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
 
 ## The four moving parts
 
@@ -13,7 +13,7 @@ These four pieces communicate exclusively through three trust boundaries:
 
 - **Content script ↔ background service worker** — `chrome.runtime.sendMessage` (typed messages: `EXT_FETCH`, `DOWNLOAD_FILE`, `EXT_COOKIE_LIST`, `OPEN_URL`, `YTKIT_GET_SELECTOR_HEALTH`, `YTKIT_OPEN_PANEL`, `YTKIT_SETTING_CHANGED`, `YTKIT_SETTINGS_REPLACED`).
 - **Extension ↔ Astra Downloader** — HTTP on `127.0.0.1:9751` (with five fallback ports 9761/9771/9781/9791/9851), bearer-token authenticated via `X-Auth-Token`, DNS-rebinding-defended via a Host header allowlist.
-- **Extension ↔ YouTube DOM** — selector packs in `extension/core/selector-packs/` (28 surfaces + 2 aliases, capture-provenanced from `mhtml/*.mhtml`).
+- **Extension ↔ YouTube DOM** — selector packs in `extension/core/selector-packs/` (30 surfaces + 2 aliases, capture-provenanced from `mhtml/*.mhtml`).
 
 ## End-to-end data flow
 

@@ -1160,6 +1160,337 @@
         "video.video-stream",
         ".html5-video-container video"
       ]
+    },
+    "feedExperimentChips": {
+      "surface": "feedExperimentChips",
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "yt-chip-cloud-chip-renderer",
+          "matched": true,
+          "matchCount": 11
+        },
+        {
+          "selector": "yt-chip-cloud-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feed-filter-chip-bar-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-rich-grid-renderer yt-chip-cloud-chip-renderer",
+          "matched": true,
+          "matchCount": 11
+        },
+        {
+          "selector": "ytd-rich-grid-renderer ytd-feed-filter-chip-bar-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "yt-chip-cloud-chip-renderer",
+        "ytd-feed-filter-chip-bar-renderer",
+        "ytd-rich-grid-renderer yt-chip-cloud-chip-renderer",
+        "ytd-rich-grid-renderer ytd-feed-filter-chip-bar-renderer"
+      ]
+    },
+    "feedPlayables": {
+      "surface": "feedPlayables",
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-game-card-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-mini-game-card-view-model",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-shelf-renderer",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-game-details-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "yt-mini-app-game-info-dialog-view-model",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-grid-renderer ytd-rich-shelf-renderer",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-rich-shelf-renderer",
+        "ytd-rich-grid-renderer ytd-rich-shelf-renderer"
+      ]
+    },
+    "feedPrompt": {
+      "surface": "feedPrompt",
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-feedback-survey-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feedback-question-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-identity-prompt-footer-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-feedback-elicitation-single-question-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feedback-option-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feed-nudge-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": []
+    },
+    "feedSponsored": {
+      "surface": "feedSponsored",
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-in-feed-ad-layout-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-ad-feedback-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-page-top-ad-layout-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-rich-grid-renderer ytd-in-feed-ad-layout-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-promoted-video-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-display-ad-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": []
+    },
+    "searchResults.feedExperimentChips": {
+      "surface": "feedExperimentChips",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "yt-chip-cloud-chip-renderer",
+          "matched": true,
+          "matchCount": 7
+        },
+        {
+          "selector": "yt-chip-cloud-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-feed-filter-chip-bar-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-rich-grid-renderer yt-chip-cloud-chip-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-grid-renderer ytd-feed-filter-chip-bar-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-chip-cloud-chip-renderer",
+        "yt-chip-cloud-renderer"
+      ]
+    },
+    "searchResults.feedPlayables": {
+      "surface": "feedPlayables",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-game-card-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-mini-game-card-view-model",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-shelf-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-game-details-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "yt-mini-app-game-info-dialog-view-model",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-grid-renderer ytd-rich-shelf-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": []
+    },
+    "searchResults.feedPrompt": {
+      "surface": "feedPrompt",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-feedback-survey-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feedback-question-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-identity-prompt-footer-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-feedback-elicitation-single-question-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feedback-option-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-feed-nudge-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": []
+    },
+    "searchResults.feedSponsored": {
+      "surface": "feedSponsored",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-in-feed-ad-layout-renderer",
+          "matched": true,
+          "matchCount": 5
+        },
+        {
+          "selector": "ytd-ad-feedback-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-page-top-ad-layout-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-rich-grid-renderer ytd-in-feed-ad-layout-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-promoted-video-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-display-ad-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-in-feed-ad-layout-renderer"
+      ]
     }
   }
 }
