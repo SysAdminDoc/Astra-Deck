@@ -2027,6 +2027,16 @@ function buildSettingsPanel() {
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
 
+        const historyImportBtn = document.createElement('button');
+        historyImportBtn.type = 'button';
+        historyImportBtn.className = 'ytkit-btn ytkit-btn-secondary';
+        historyImportBtn.id = 'ytkit-import-history';
+        historyImportBtn.setAttribute('aria-label', 'Import YouTube Takeout watch history');
+        historyImportBtn.appendChild(ICONS.upload());
+        const historyImportText = document.createElement('span');
+        historyImportText.textContent = 'Import History';
+        historyImportBtn.appendChild(historyImportText);
+
         const importBtn = document.createElement('button');
         importBtn.type = 'button';
         importBtn.className = 'ytkit-btn ytkit-btn-secondary';
@@ -2047,6 +2057,7 @@ function buildSettingsPanel() {
         exportText.textContent = 'Export';
         exportBtn.appendChild(exportText);
 
+        footerRight.appendChild(historyImportBtn);
         footerRight.appendChild(importBtn);
         footerRight.appendChild(exportBtn);
 
@@ -2457,6 +2468,25 @@ function attachUIEventListeners() {
                     } else {
                         createToast('Import failed. Invalid file format.', 'error');
                         setPanelStatus('Import failed. Choose a valid Astra Deck settings export.', 'error');
+                    }
+                });
+                return;
+            }
+            if (e.target.closest('#ytkit-import-history')) {
+                handleFileImport(async (content) => {
+                    const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
+                    if (result?.ok) {
+                        if (result.changed) {
+                            handleExternalStorageChanges({
+                                [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
+                            }, 'takeout-import', { forceApplyLocal: true });
+                        }
+                        createToast(result.message, result.toastTone || result.tone || 'success');
+                        setPanelStatus(result.message, result.statusTone || result.tone || 'success');
+                    } else {
+                        const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
+                        createToast(message, 'error');
+                        setPanelStatus(message, 'error');
                     }
                 });
             }
