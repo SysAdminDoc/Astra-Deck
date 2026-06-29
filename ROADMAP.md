@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P2 - Add keyboard-path regression coverage for injected overlays
-  Why: SponsorBlock's keyboard-only category bug shows mouse-path testing can miss extension UI failures; Astra has many injected dialogs, popovers, and menus with static a11y checks but limited keyboard-path behavior coverage.
-  Evidence: SponsorBlock PR 2504; `docs/screen-reader-smoke.md`; `scripts/audit-overlays-a11y.js`.
-  Touches: `scripts/audit-overlays-a11y.js`, `extension/features/settings-panel/index.js`, `extension/features/subscription-groups/index.js`, `extension/features/download-ui/index.js`, `tests/hardening.test.js`
-  Acceptance: Local tests cover Tab/Shift-Tab focus movement, Enter/Space activation, Escape close behavior, select/typeahead paths, and aria-expanded/state updates for the main injected overlays without adding keyboard shortcuts.
-  Complexity: M
-
 - [ ] P2 - Add YouTube Takeout watch-history import for local analytics migration
   Why: FreeTube treats YouTube history import/export as a local-data ownership feature; Astra has watch analytics and study exports but no migration path from a user's existing Takeout history.
   Evidence: FreeTube PR 9204; `extension/ytkit.js` watch analytics/watch-time stores; `README.md` local-first data model.
