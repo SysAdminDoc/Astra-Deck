@@ -23,13 +23,6 @@
   Acceptance: Users can import YouTube Takeout watch-history JSON locally; titles are normalized without adding trailing spaces; duplicates are merged by video ID/time; imported data feeds watch analytics without remote calls.
   Complexity: M
 
-- [ ] P1 - Add Python companion vulnerability auditing to the local release gate
-  Why: `npm run check` audits npm dependencies but not the pinned Python companion stack, while the store checklist already expects `pip-audit` evidence for `astra_downloader/requirements.txt`.
-  Evidence: `package.json` `audit:deps`; `astra_downloader/requirements.txt`; `docs/cws-submission-checklist.md`; yt-dlp 2026.06.09 security advisories.
-  Touches: `package.json`, `scripts/audit-python-deps.js`, `tests/dependency-review-policy.test.js`, `astra_downloader/requirements.txt`, `build/`
-  Acceptance: `npm run check` runs a local Python vulnerability audit against `astra_downloader/requirements.txt`, fails on actionable moderate+ findings unless explicitly reviewed in code, and emits a release-review JSON artifact under `build/`.
-  Complexity: M
-
 - [ ] P2 - Gate web-accessible-resource policy drift
   Why: The live manifest intentionally exposes `assets/*` for bundled theme media, but the Chrome Web Store checklist still says `web_accessible_resources` should list only `icons/*`.
   Evidence: `extension/manifest.json` `web_accessible_resources`; `tests/hardening.test.js` nyan-cat asset test; `docs/cws-submission-checklist.md`.

@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.22 Python companion dependency audit gate.** `npm run check`
+  now runs `pip-audit` against `astra_downloader/requirements.txt`, writes
+  `build/astra-downloader-pip-audit.json` for release review, and fails
+  moderate-or-unknown Python findings unless an advisory is explicitly
+  reviewed in source.
 - **Fix: v4.46.21 Deno runtime trust gate.** Astra Downloader now treats
   Deno below 2.3.0 as stale when current yt-dlp needs the external JavaScript
   runtime, blocks downloads with upgrade guidance, verifies Deno bootstrap ZIPs
