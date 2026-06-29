@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.21 Deno runtime trust gate.** Astra Downloader now treats
+  Deno below 2.3.0 as stale when current yt-dlp needs the external JavaScript
+  runtime, blocks downloads with upgrade guidance, verifies Deno bootstrap ZIPs
+  against upstream `.sha256sum` sidecars before extraction, and returns
+  structured provisioning failure codes.
 - **Polish: v4.46.20 premium settings and diagnostics pass.** Refined the
   in-page settings header/search states, side-panel quick-settings recovery,
   popup onboarding/diagnostics localization, and live Theater Split title

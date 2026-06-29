@@ -8,6 +8,7 @@ import tempfile
 import threading
 import time
 import unittest
+import zipfile
 from unittest import mock
 from pathlib import Path
 
@@ -1202,6 +1203,36 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
             self.assertNotEqual(body.get('code'), 'deno-runtime-missing',
                                 'Pre-cutoff yt-dlp path must skip the NF27 gate')
 
+    def test_download_rejected_when_deno_is_below_runtime_floor(self):
+        client, cfg = self._create_api({
+            'installed': True,
+            'version': '2.2.9',
+            'supported': False,
+            'stale': True,
+            'minVersion': '2.3.0',
+            'ytdlpNeedsRuntime': True,
+            'advice': 'upgrade Deno',
+        })
+        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+            'installed': True,
+            'version': '2.2.9',
+            'supported': False,
+            'stale': True,
+            'minVersion': '2.3.0',
+            'ytdlpNeedsRuntime': True,
+            'advice': 'upgrade Deno',
+        }):
+            resp = client.post(
+                '/download',
+                headers={**self._auth_header(cfg), 'Host': '127.0.0.1'},
+                json={'url': 'https://www.youtube.com/watch?v=abcdefghijk'},
+            )
+        self.assertEqual(resp.status_code, 422)
+        body = resp.get_json() or {}
+        self.assertEqual(body.get('code'), 'deno-runtime-unsupported')
+        self.assertEqual(body.get('next_action'), 'upgrade-deno')
+        self.assertIn('2.3.0', body.get('error', ''))
+
 
 class NoArchiveLockTests(unittest.TestCase):
     """v1.3.0 removed the download-archive lock so re-downloads always
@@ -1662,13 +1693,36 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         # these fields. Adding fields is safe (additive); renaming or
         # dropping any of these would break the downloadHealthPanel.
         self.assertEqual(set(result.keys()), {
-            'installed', 'version', 'path', 'source', 'ytdlpNeedsRuntime', 'advice'
+            'installed', 'version', 'path', 'source', 'supported', 'stale',
+            'minVersion', 'ytdlpNeedsRuntime', 'advice'
         })
         self.assertTrue(result['installed'])
         self.assertEqual(result['version'], '2.4.1')
         self.assertIn(result['source'], ('bundled', 'system'))
+        self.assertTrue(result['supported'])
+        self.assertFalse(result['stale'])
+        self.assertEqual(result['minVersion'], ad.DENO_MIN_VERSION)
         self.assertTrue(result['ytdlpNeedsRuntime'])
         self.assertEqual(result['advice'], '')
+
+    def test_probe_deno_runtime_marks_stale_version_unsupported(self):
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        original_run_captured = ad._run_captured
+        ad.shutil.which = lambda binary: '/usr/local/bin/deno' if binary == 'deno' else None
+        ad.get_ytdlp_version = lambda force=False: '2026.06.09'
+        ad._run_captured = lambda args, timeout=5: 'deno 2.2.9\n'
+        try:
+            result = ad.probe_deno_runtime(force=True)
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+            ad._run_captured = original_run_captured
+        self.assertTrue(result['installed'])
+        self.assertFalse(result['supported'])
+        self.assertTrue(result['stale'])
+        self.assertEqual(result['minVersion'], '2.3.0')
+        self.assertIn('2.3.0', result['advice'])
 
     def test_probe_deno_runtime_surfaces_advice_when_needed_and_missing(self):
         original_which = ad.shutil.which
@@ -1727,6 +1781,25 @@ class DenoRuntimeProbeTests(unittest.TestCase):
 class DenoProvisionTests(unittest.TestCase):
     """provision_deno auto-download and /provision-deno endpoint."""
 
+    class _FakeResponse:
+        def __init__(self, payload, status_code=200):
+            self.payload = payload
+            self.status_code = status_code
+            self.text = payload.decode('utf-8', errors='replace') if isinstance(payload, bytes) else str(payload)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError(f"HTTP {self.status_code}")
+
+        def iter_content(self, _chunk_size):
+            yield self.payload
+
     def test_provision_deno_returns_none_on_network_failure(self):
         original_get = ad.http_requests.get
         ad.http_requests.get = lambda *a, **k: (_ for _ in ()).throw(Exception("offline"))
@@ -1745,6 +1818,63 @@ class DenoProvisionTests(unittest.TestCase):
         api = ad.create_api(config, manager, FakeHistory())
         resp = api.test_client().post("/provision-deno")
         self.assertEqual(resp.status_code, 403)
+
+    def test_provision_deno_requires_sha256_sidecar_before_extracting(self):
+        original_path = ad.DENO_PATH
+        original_dir = ad.DENO_DIR
+        with tempfile.TemporaryDirectory() as tmp:
+            ad.DENO_DIR = Path(tmp)
+            ad.DENO_PATH = ad.DENO_DIR / 'deno.exe'
+            with mock.patch.object(ad, 'fetch_expected_sha256', return_value=None), \
+                    mock.patch.object(ad.http_requests, 'get') as get_mock:
+                result = ad.provision_deno()
+            self.assertIsNone(result)
+            get_mock.assert_not_called()
+            error = ad.get_last_deno_provision_error()
+            self.assertEqual(error['code'], 'deno-sha256-sidecar-missing')
+            self.assertFalse(ad.DENO_PATH.exists())
+        ad.DENO_PATH = original_path
+        ad.DENO_DIR = original_dir
+
+    def test_provision_deno_rejects_sha256_mismatch_and_deletes_archive(self):
+        original_path = ad.DENO_PATH
+        original_dir = ad.DENO_DIR
+        with tempfile.TemporaryDirectory() as tmp:
+            ad.DENO_DIR = Path(tmp)
+            ad.DENO_PATH = ad.DENO_DIR / 'deno.exe'
+            zip_path = Path(tmp) / 'deno.zip'
+            with zipfile.ZipFile(zip_path, 'w') as zf:
+                zf.writestr('deno.exe', b'MZ fake deno')
+            payload = zip_path.read_bytes()
+            with mock.patch.object(ad, 'fetch_expected_sha256', return_value='0' * 64), \
+                    mock.patch.object(ad.http_requests, 'get', return_value=self._FakeResponse(payload)):
+                result = ad.provision_deno()
+            self.assertIsNone(result)
+            error = ad.get_last_deno_provision_error()
+            self.assertEqual(error['code'], 'deno-sha256-verification-failed')
+            self.assertFalse(ad.DENO_PATH.exists())
+            self.assertEqual(list(ad.DENO_DIR.glob('.deno.*.zip')), [])
+        ad.DENO_PATH = original_path
+        ad.DENO_DIR = original_dir
+
+    def test_provision_deno_endpoint_returns_structured_failure_code(self):
+        config = FakeConfig({"ServerToken": "f" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        with mock.patch.object(ad, 'provision_deno', return_value=None), \
+                mock.patch.object(ad, 'get_last_deno_provision_error', return_value={
+                    'code': 'deno-sha256-verification-failed',
+                    'message': 'checksum mismatch',
+                }):
+            resp = api.test_client().post(
+                "/provision-deno",
+                headers={'X-MDL-Token': 'f' * 32},
+            )
+        self.assertEqual(resp.status_code, 500)
+        body = resp.get_json() or {}
+        self.assertFalse(body['ok'])
+        self.assertEqual(body['code'], 'deno-sha256-verification-failed')
+        self.assertIn('checksum', body['error'])
 
     def test_probe_includes_source_field(self):
         ad.reset_deno_runtime_cache()
