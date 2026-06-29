@@ -56,6 +56,14 @@ const CONTENT_HOST_PERMISSIONS = Object.freeze([
     'https://youtu.be/*'
 ]);
 
+const WEB_ACCESSIBLE_RESOURCE_POLICY = Object.freeze({
+    resources: Object.freeze([
+        'icons/*',
+        'assets/*'
+    ]),
+    matches: CONTENT_HOST_PERMISSIONS
+});
+
 const ORIGIN_HOST_PERMISSION_ALIASES = Object.freeze({
     'https://www.reddit.com': Object.freeze([
         'https://www.reddit.com/*',
@@ -414,6 +422,13 @@ function buildExtensionPagesCsp(profile) {
     ].join('; ');
 }
 
+function getManifestWebAccessibleResources() {
+    return [{
+        resources: WEB_ACCESSIBLE_RESOURCE_POLICY.resources.slice(),
+        matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
+    }];
+}
+
 function patchManifestForBuildProfile(profileManifest, profile) {
     const normalized = normalizeBuildProfile(profile);
     profileManifest.host_permissions = getManifestProfileHostPermissions(normalized);
@@ -427,6 +442,7 @@ function patchManifestForBuildProfile(profileManifest, profile) {
         ...(profileManifest.content_security_policy || {}),
         extension_pages: buildExtensionPagesCsp(normalized)
     };
+    profileManifest.web_accessible_resources = getManifestWebAccessibleResources();
     return profileManifest;
 }
 
@@ -656,7 +672,9 @@ module.exports = {
     getArtifactBaseName,
     getManifestProfileHostPermissions,
     getManifestProfileOptionalHostPermissions,
+    getManifestWebAccessibleResources,
     patchManifestForBuildProfile,
     resolveCrxSigningConfig,
-    shouldStageEntry
+    shouldStageEntry,
+    WEB_ACCESSIBLE_RESOURCE_POLICY
 };
