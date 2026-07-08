@@ -36323,7 +36323,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (Object.keys(groups).length >= GROUP_LIMIT) return;
                     const attrs = node.attrs || {};
                     const channelId = this._extractOpmlChannelId(attrs);
-                    const explicitGroup = attrs['astra:type'] === 'group' || (!channelId && node.children?.length);
+                    const hasChildren = node.children?.length > 0;
+                    const explicitGroup = attrs['astra:type'] === 'group' || hasChildren;
                     if (channelId && !explicitGroup) {
                         addChannel(parentId || ensureDefaultGroup(), channelId);
                         return;
