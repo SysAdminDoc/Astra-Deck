@@ -43,7 +43,7 @@
                 for (var k = 0; k < h.attrs.length; k++) {
                     if (touched.has(h.attrs[k])) {
                         try { h.fn(); } catch (e) {
-                            // never let one feature's handler poison another
+                            // reason: never let one feature's handler poison another
                         }
                         break;
                     }
@@ -159,7 +159,7 @@
 
     function log() {
         if (!DEBUG) return;
-        try { console.log.apply(console, ['[Astra Deck quality]'].concat([].slice.call(arguments))); } catch (e) {}
+        try { console.log.apply(console, ['[Astra Deck quality]'].concat([].slice.call(arguments))); } catch (e) { /* reason: debug logging is best-effort */ }
     }
 
     function getPlayer() {
