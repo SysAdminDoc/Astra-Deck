@@ -6,6 +6,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.29 roadmap drain — deep audit follow-through.**
+  Implemented all programmatically fixable items from the v4.46.28 deep-audit
+  backlog. MAIN-world audio graph: cached MediaElementSourceNode per video in
+  a WeakMap and kept the AudioContext alive to prevent InvalidStateError on
+  reconnect (audio passthrough when idle). theaterAutoScroll/autoTheaterMode:
+  restricted to navigate events only (player-state was re-scrolling on every
+  play/pause). video-hider mutation batching: accumulated cards across observer
+  callbacks so cancelled batches no longer drop unprocessed items. Takeout
+  import: fixed double-count on ledger overflow (recompute totals from
+  surviving entries instead of accumulating before cap), raised file cap to
+  500 MB, added undo toast. navigation.js: capped pendingMutationRecords at
+  2000 with a 2s hidden-tab fallback drain. predicate-sandbox: added a
+  top-level-quantifier cap to reject group-free polynomial backtracking.
+  player task-manager: fixed retry delay off-by-one. OPML import: nodes with
+  both a channel ID and children are now traversed as groups. Expanded eslint
+  require-catch-reason to all shipped files. Popup: Reset PIN bypass fixed,
+  Export no longer truncates to import caps, capability probe routes through
+  background SW to bypass CSP. Side-panel: focus restored after toggles.
+  watchTimeTracker: cached sanitized stats to avoid per-tick ledger rebuild.
+  generate-locales: prefers mapped translations for current EN over stale
+  existing translations. Added 8 i18n keys for import/Takeout surfaces
+  across all 11 locales.
 - **Fix: v4.46.28 deep audit pass — correctness, teardown, and security.**
   Multi-pass engineering + product audit. Repaired: Subscription Groups init/
   destroy crashing with a `ReferenceError` (the peeled factory never received
