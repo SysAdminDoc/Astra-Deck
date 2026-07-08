@@ -30074,9 +30074,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._lastTodayKey = currentTodayKey;
                 const today = this._loadToday();
                 today.seconds = (today.seconds || 0) + 1;
-                // Batch saves every 30s to avoid thrashing chrome.storage.local
+                // Always advance the in-memory cache; batch storage writes to
+                // every 30s. (Updating the cache only on the else-branch froze
+                // the accumulator at 30s forever because _loadToday prefers the
+                // stale cache over the freshly-saved settings value.)
+                this._todayCache = today;
                 if (today.seconds % 30 === 0) this._saveToday(today);
-                else this._todayCache = today;
                 // NF34: use `??` so today.seconds === 0 (first tick of a
                 // new day) correctly initializes _sessionStart instead of
                 // letting the OR fall through to the next tick.
@@ -34539,6 +34542,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             removeNavigateRule,
             addMutationRule,
             removeMutationRule,
+            addScopedMutationRule,
+            removeScopedMutationRule,
             runBudgetedElementBatch,
             handleFileExport,
             isSafeObjectKey
@@ -34814,16 +34819,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const rows = ['Group,Channel,Handle,URL'];
                 for (const [id, group] of Object.entries(groups)) {
                     const name = group.name || id;
-                    const channels = Array.isArray(group.channels) ? group.channels : [];
-                    if (channels.length === 0) {
+                    // Groups persist membership as `channelIds` strings, not a
+                    // `channels` object array — derive handle/URL from the id.
+                    const channelIds = Array.isArray(group.channelIds) ? group.channelIds : [];
+                    if (channelIds.length === 0) {
                         rows.push(this._csvEscape(name) + ',,,');
                         continue;
                     }
-                    for (const ch of channels) {
-                        const chName = ch.name || '';
-                        const handle = ch.handle || '';
-                        const url = ch.url || (handle ? `https://www.youtube.com/${handle}` : '');
-                        rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                    for (const channelId of channelIds) {
+                        const cid = String(channelId || '').trim();
+                        if (!cid) continue;
+                        const handle = cid.startsWith('@') ? cid : '';
+                        const url = handle
+                            ? `https://www.youtube.com/${handle}`
+                            : `https://www.youtube.com/channel/${cid}`;
+                        rows.push([name, cid, handle, url].map(v => this._csvEscape(v)).join(','));
                     }
                 }
                 const csv = rows.join('\r\n') + '\r\n';
