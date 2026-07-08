@@ -435,9 +435,19 @@ async function loadSettings() {
 }
 
 async function writeSetting(key, value) {
-    _settingsState[key] = value;
     try {
-        await chrome.storage.local.set({ [SETTINGS_KEY]: _settingsState });
+        // Read-modify-write against live storage instead of persisting the
+        // module cache wholesale. The cache starts empty ({}) and is only
+        // filled at the end of refresh(); a toggle fired before that (or after
+        // a failed load) would otherwise overwrite the entire settings object
+        // with a single key. Merging a fresh read also avoids clobbering
+        // concurrent writes from the popup while both surfaces are open.
+        const data = await chrome.storage.local.get(SETTINGS_KEY);
+        const current = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
+            ? data[SETTINGS_KEY] : {};
+        current[key] = value;
+        _settingsState = current;
+        await chrome.storage.local.set({ [SETTINGS_KEY]: current });
         const tabs = await chrome.tabs.query({ url: ['*://*.youtube.com/*'] });
         for (const tab of tabs) {
             try {
@@ -510,12 +520,15 @@ function renderSettings(filter) {
             }
         });
     } else {
-        showEmpty(settingsEmpty, 'Open full Settings to manage every Astra Deck control.', 'idle', {
+        showEmpty(settingsEmpty, 'Quick settings could not load. Reload the panel, or use the toolbar popup on a YouTube tab to manage every Astra Deck control.', 'idle', {
             title: 'No quick settings available',
-            actionLabel: 'Open Settings',
-            actionAriaLabel: 'Open full Astra Deck settings',
+            actionLabel: 'Reload panel',
+            actionAriaLabel: 'Reload the Astra Deck panel',
+            // There is no options page (retired into the popup); reloading the
+            // panel re-runs the schema injection that this empty state implies
+            // failed. openOptionsPage() here was a silent no-op.
             action: () => {
-                try { chrome.runtime.openOptionsPage(); } catch (_) { /* reason: unavailable in static preview */ }
+                try { window.location.reload(); } catch (_) { /* reason: reload unavailable in static preview */ }
             }
         });
     }
@@ -628,7 +641,10 @@ if (settingsClear) {
 }
 
 if (chrome.storage?.onChanged) {
-    chrome.storage.onChanged.addListener((changes) => {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        // Settings live in local storage; ignore session/sync writes so a
+        // same-named key in another area can't clobber the cache.
+        if (areaName !== 'local') return;
         if (changes[SETTINGS_KEY]) {
             _settingsState = (changes[SETTINGS_KEY].newValue && typeof changes[SETTINGS_KEY].newValue === 'object')
                 ? changes[SETTINGS_KEY].newValue : {};
@@ -640,18 +656,25 @@ if (chrome.storage?.onChanged) {
 async function refresh() {
     setBusy(true);
     setRefreshStatus('Refreshing...', 'busy');
-    const tab = await getActiveYouTubeTab();
-    setContextState(tab ? 'YouTube tab' : 'Local only', tab ? 'ready' : 'warn');
-    await Promise.all([
-        renderPerf(tab),
-        renderSelectorHealth(tab),
-        renderExternalHealth(tab),
-        renderStorage()
-    ]);
-    await loadSettings();
-    renderSettings(settingsSearch?.value || '');
-    setRefreshStatus(tab ? 'Live diagnostics updated' : 'Open YouTube for live diagnostics', tab ? 'success' : 'warn');
-    setBusy(false);
+    try {
+        const tab = await getActiveYouTubeTab();
+        setContextState(tab ? 'YouTube tab' : 'Local only', tab ? 'ready' : 'warn');
+        await Promise.all([
+            renderPerf(tab),
+            renderSelectorHealth(tab),
+            renderExternalHealth(tab),
+            renderStorage()
+        ]);
+        await loadSettings();
+        renderSettings(settingsSearch?.value || '');
+        setRefreshStatus(tab ? 'Live diagnostics updated' : 'Open YouTube for live diagnostics', tab ? 'success' : 'warn');
+    } catch (_) {
+        // reason: an unexpected render failure must not strand the only
+        // recovery control disabled with a "Refreshing..." status forever.
+        setRefreshStatus('Refresh failed — try again', 'warn');
+    } finally {
+        setBusy(false);
+    }
 }
 
 if (refreshBtn) refreshBtn.addEventListener('click', () => { void refresh(); });
