@@ -77,6 +77,41 @@ for (const check of checks) {
     if (!pass) failures++;
 }
 
+// Drift guard: the ratios above are computed from the constants in this file,
+// not from popup.css. Without a coupling check, editing a color in popup.css
+// would leave this gate green forever. Verify each *solid* foreground/background
+// literal still appears in popup.css so a color rename desyncs the constants and
+// fails the gate (forcing a re-audit). The alpha-composited banner backgrounds
+// (#180f0a, #352511, #180c0c) are pre-computed blends, not literal in the CSS,
+// so they are excluded from this presence check.
+const fs = require('fs');
+const path = require('path');
+const composited = new Set(['healthBannerBg', 'healthCopyBtnBg', 'storageBannerBg']);
+const popupCssPath = path.join(__dirname, '..', 'extension', 'popup.css');
+let popupCss = '';
+try {
+    popupCss = fs.readFileSync(popupCssPath, 'utf8').toLowerCase();
+} catch (err) {
+    console.log(`\n✗ Could not read popup.css for the color-sync check: ${err.message}`);
+    failures++;
+}
+if (popupCss) {
+    const missing = [];
+    for (const [name, hex] of Object.entries(colors)) {
+        if (composited.has(name)) continue;
+        if (!popupCss.includes(hex.toLowerCase())) missing.push(`${name} (${hex})`);
+    }
+    if (missing.length) {
+        console.log('\n✗ Contrast constants out of sync with popup.css — these solid');
+        console.log('  colors are checked here but no longer present in popup.css:');
+        for (const m of missing) console.log(`    ${m}`);
+        console.log('  Re-audit the affected surface and update this file.');
+        failures += missing.length;
+    } else {
+        console.log('\n✓ Solid color constants are present in popup.css.');
+    }
+}
+
 if (failures > 0) {
     console.log(`\n⚠ ${failures} contrast issue(s) found.`);
     process.exit(1);

@@ -37,6 +37,8 @@ const SCAN_FILES = [
     'extension/ytkit-main.js',
     'extension/background.js',
     'extension/popup.js',
+    'extension/sidepanel.js',
+    'extension/sidebar.js',
     'YTKit.user.js',
     // Glob extension/core/**/*.js and extension/features/**/*.js
     ...walk(path.join(REPO_ROOT, 'extension', 'core'), '.js'),
