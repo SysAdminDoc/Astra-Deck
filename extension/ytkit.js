@@ -28498,6 +28498,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async _fetchSegments(videoId) {
+                const gen = this._generation;
                 const cats = this._getEnabledCategories();
                 if (!cats.length) return [];
                 const cached = this._getCachedSegments(videoId, cats);
@@ -28521,7 +28522,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const segments = match && Array.isArray(match.segments)
                         ? this._normalizeSegments(match.segments)
                         : [];
-                    this._rememberSegments(videoId, cats, segments);
+                    // Don't resurrect the destroy()-nulled cache or arm a persist
+                    // timer if the feature was torn down while this was in flight.
+                    if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
                     return segments;
                 } catch (error) {
                     const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
