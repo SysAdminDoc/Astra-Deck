@@ -43,10 +43,42 @@
         );
     }
 
+    // Detect whether we're in an extension popup/sidepanel context where
+    // the meta CSP blocks direct loopback fetches (connect-src 'self' does
+    // not cover 127.0.0.1). In that case, route through the background
+    // service worker via chrome.runtime.sendMessage.
+    function isExtensionPopupContext() {
+        try {
+            return typeof chrome !== 'undefined'
+                && chrome?.runtime?.sendMessage
+                && typeof document !== 'undefined'
+                && /^chrome-extension:|^moz-extension:/.test(document.location?.protocol || '');
+        } catch (_) { return false; }
+    }
+
+    function fetchViaBackground(url, ms) {
+        return new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(false), ms);
+            try {
+                chrome.runtime.sendMessage({
+                    type: 'EXT_FETCH',
+                    details: { method: 'GET', url, timeout: ms }
+                }, (resp) => {
+                    clearTimeout(timer);
+                    if (chrome.runtime.lastError) { resolve(false); return; }
+                    resolve(Boolean(resp && !resp.error && !resp.timeout));
+                });
+            } catch (_) {
+                clearTimeout(timer);
+                resolve(false);
+            }
+        });
+    }
+
     function fetchWithTimeout(url, ms) {
-        // AbortController-bounded fetch so a hung server doesn't pin
-        // the probe forever. Rejects with AbortError on timeout, which
-        // the caller treats as "not available".
+        // In extension popup/sidepanel, direct fetch to 127.0.0.1 is
+        // blocked by the meta CSP. Route through the background SW.
+        if (isExtensionPopupContext()) return fetchViaBackground(url, ms);
         return new Promise((resolve) => {
             const ctrl = new AbortController();
             const timer = setTimeout(() => {
