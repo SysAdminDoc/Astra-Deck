@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "重置已撤销 — 所有数据已恢复。"
   },
+  "statusSettingsImportUndone": {
+    "message": "导入已撤销。已恢复之前的设置和本地数据。"
+  },
+  "statusSettingsImportFailed": {
+    "message": "导入时应用数据失败，已恢复之前的状态。"
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "未找到可导入的设置或本地数据。"
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "文件中未找到已知的设置项。"
+  },
+  "statusTakeoutNoEntries": {
+    "message": "未找到有效的 YouTube Takeout 观看记录条目。"
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout 导入已撤销"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "导入历史记录"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "导入 YouTube Takeout 观看历史记录"
+  },
   "statusStorageReadFail": {
     "message": "存储读取失败"
   },

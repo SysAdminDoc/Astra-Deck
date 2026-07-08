@@ -162,7 +162,7 @@
     "message": "ダウンロード進捗を閉じる"
   },
   "dlProgressEtaPrefix": {
-    "message": "残り時間"
+    "message": "ETA"
   },
   "dlProgressFailureDefault": {
     "message": "Astra Downloader が失敗しました"
@@ -465,13 +465,13 @@
     "message": "字幕の自動有効化"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "動画を開いたとき自動的にシアター（ワイド）モードに切り替え"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
-    "message": "自動シアターモード"
+    "message": "自動シアター"
   },
   "feature_blueLightFilter_desc": {
-    "message": "ブルーライトを軽減するために暖色のフィルターを適用。強度を調整可能。"
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
     "message": "ブルーライトフィルター"
@@ -639,10 +639,10 @@
     "message": "クラシックプレーヤークローム"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "コピー/共有される YouTube リンクからトラッキングパラメータ (si, pp, feature) を除去"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
-    "message": "クリーンな共有 URL"
+    "message": "クリーンな URL"
   },
   "feature_cleanUiPreset_desc": {
     "message": "オーナープリセット: パネルブランディング、検索、カテゴリヘッダーを非表示にし、ナビゲーションを圧縮し、トースト通知を抑制し、登録チャンネルの再開バナーを非表示にします。デフォルトオフ。"
@@ -687,7 +687,7 @@
     "message": "コメントナビゲーター"
   },
   "feature_commentSearch_desc": {
-    "message": "コメントの上に検索バーを追加して特定のコメントを検索・フィルター"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
     "message": "コメント検索"
@@ -801,7 +801,7 @@
     "message": "DeArrow 投票"
   },
   "feature_deArrow_desc": {
-    "message": "釣りタイトルとサムネイルを DeArrow データベースのクラウドソース代替に置換"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,7 +813,7 @@
     "message": "DeArrow ピークボタン"
   },
   "feature_debugMode_desc": {
-    "message": "コンソールに詳細な診断ログを有効化"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
     "message": "デバッグモード"
@@ -831,22 +831,22 @@
     "message": "診断エラーログ"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "アクティブ再生 N 分ごとの休憩リマインダーと、任意の1日の視聴時間上限。タイマーは SPA ナビゲーション間で持続します。"
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
     "message": "デジタルウェルビーイング"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "現在の動画が終了したとき次の動画が自動的に再生されるのを防止"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "次の動画の自動再生を無効化"
+    "message": "自動再生なし"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "ホーム、検索、登録チャンネルページで無限スクロールを「もっと読み込む」ボタンに置換"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "無限スクロールを無効化"
+    "message": "スクロール制限"
   },
   "feature_disableLoudnessNormalization_desc": {
     "message": "YouTube による新規読み込み動画のダイナミックレンジ圧縮を停止。ベストエフォート — YouTube は公式にはサポートされていない movie_player API でゲインを制限します。"
@@ -1245,10 +1245,10 @@
     "message": "サムネイルの「キューに追加」を非表示"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "視聴ページの関連動画パネルを削除"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "関連動画を非表示"
+    "message": "関連を非表示"
   },
   "feature_hideSidebar_desc": {
     "message": "左ナビゲーションサイドバーを完全に削除"
@@ -1341,7 +1341,7 @@
     "message": "省電力プロファイル"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "動画を過ぎてスクロールしたときにフローティングミニプレーヤーバーを表示"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
     "message": "ミニプレーヤーバー"
@@ -1497,10 +1497,10 @@
     "message": "チャンネル別速度メモリ"
   },
   "feature_persistentSpeed_desc": {
-    "message": "優先する再生速度をグローバルに記憶し、すべての動画に自動適用"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
-    "message": "持続的な再生速度"
+    "message": "持続的な速度"
   },
   "feature_pipButton_desc": {
     "message": "ブラウザネイティブのピクチャーインピクチャー用にワンクリック PiP ボタンをプレーヤーコントロールに追加"
@@ -1659,7 +1659,7 @@
     "message": "音量を記憶"
   },
   "feature_removeAllShorts_desc": {
-    "message": "フィードとおすすめからすべての Shorts 動画を非表示"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
     "message": "Shorts を非表示"
@@ -1869,7 +1869,7 @@
     "message": "速度ステップ量"
   },
   "feature_sponsorBlock_desc": {
-    "message": "クラウドソースデータを使用して、スポンサーセグメント、イントロ、アウトロなどの非コンテンツ区間を自動スキップ"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,7 +1995,7 @@
     "message": "文字起こし → AI ワンクリック連携"
   },
   "feature_transcriptViewer_desc": {
-    "message": "タイムスタンプナビゲーションとエクスポート（txt/srt/クリップボード/LLM プロンプト）付きのクリック可能な文字起こしパネルをサイドバーに追加"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
@@ -2262,7 +2262,7 @@
     "message": "Deutsch (ドイツ語)"
   },
   "languageEn": {
-    "message": "English (英語)"
+    "message": "英語"
   },
   "languageEs": {
     "message": "Español (スペイン語)"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "検索をクリア"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "リセットを取り消しました — すべてのデータを復元しました。"
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "ストレージ読み取り失敗"
   },
@@ -2763,7 +2787,7 @@
     "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
   },
   "welcomePresetFocusTitle": {
-    "message": "Focus"
+    "message": "フォーカス"
   },
   "welcomePresetFocusDesc": {
     "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
