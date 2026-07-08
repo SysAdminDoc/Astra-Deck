@@ -89,12 +89,16 @@
                         if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                         el.classList.remove('da-replaced-thumb');
                     });
-                    if (!isWatchPagePath()) {
-                        self._resetTimer = setTimeout(() => {
-                            self._resetTimer = null;
-                            self._processPage();
-                        }, 1000);
-                    }
+                    // Run one pass on every page, including watch pages: the
+                    // related rail (ytd-compact-video-renderer) is the most
+                    // clickbait-heavy surface DeArrow targets. The churning
+                    // MutationObserver stays gated off watch pages below to
+                    // avoid reprocessing on player/comment DOM noise, so this
+                    // navigate-triggered pass is what covers the watch sidebar.
+                    self._resetTimer = setTimeout(() => {
+                        self._resetTimer = null;
+                        self._processPage();
+                    }, 1000);
                 };
                 addNavigateRule(this._navRuleId, resetAndProcess);
                 this._observer = new MutationObserver(() => {
