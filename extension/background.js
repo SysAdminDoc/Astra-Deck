@@ -379,11 +379,26 @@ function canForwardAuthorizationHeader(url) {
     return AUTH_HEADER_ALLOWED_ORIGINS.has(getRequestOrigin(url));
 }
 
+// Credential-bearing request headers. `Authorization` is the classic one, but
+// the BYO AI providers authenticate with vendor-specific key headers instead
+// (Anthropic: x-api-key; Google Gemini: x-goog-api-key; some proxies: api-key).
+// These must be treated exactly like Authorization for both origin scoping and
+// the redirect-leak guard — otherwise a 3xx from an allowlisted API host would
+// resend the key to every hop under the default redirect:'follow'.
+const SENSITIVE_AUTH_HEADERS = new Set([
+    'authorization', 'x-api-key', 'x-goog-api-key', 'api-key'
+]);
+
+function hasSensitiveAuthHeader(headers) {
+    if (!headers || typeof headers !== 'object') return false;
+    return Object.keys(headers).some((key) => SENSITIVE_AUTH_HEADERS.has(key.toLowerCase()));
+}
+
 function filterRequestHeaders(headers, url) {
     const filtered = filterHeaders(headers, ALWAYS_BLOCKED_REQUEST_HEADERS);
     if (!canForwardAuthorizationHeader(url)) {
         for (const key of Object.keys(filtered)) {
-            if (key.toLowerCase() === 'authorization') {
+            if (SENSITIVE_AUTH_HEADERS.has(key.toLowerCase())) {
                 delete filtered[key];
             }
         }
@@ -664,7 +679,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             // surfaces a 3xx as an opaqueredirect we reject outright, so secrets
             // never reach an unvalidated host. Non-credentialed requests keep
             // following redirects (no secret to leak).
-            if (sendsCredentials || hasHeader(filteredHeaders, 'authorization')) {
+            if (sendsCredentials || hasSensitiveAuthHeader(filteredHeaders)) {
                 fetchOpts.redirect = 'manual';
             }
             if (data !== null && data !== undefined && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
