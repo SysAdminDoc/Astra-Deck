@@ -3282,8 +3282,8 @@
 
             function retry(task, reason, token) {
                 if (task.attempt >= task.maxAttempts) return;
-                const delay = nextDelay(task);
                 task.attempt += 1;
+                const delay = nextDelay(task);
                 scheduleInternal(task, reason, delay, token);
             }
 
@@ -14693,7 +14693,8 @@
                         if (Object.keys(groups).length >= GROUP_LIMIT) return;
                         const attrs = node.attrs || {};
                         const channelId = this._extractOpmlChannelId(attrs);
-                        const explicitGroup = attrs['astra:type'] === 'group' || (!channelId && node.children?.length);
+                        const hasChildren = node.children?.length > 0;
+                        const explicitGroup = attrs['astra:type'] === 'group' || hasChildren;
                         if (channelId && !explicitGroup) {
                             addChannel(parentId || ensureDefaultGroup(), channelId);
                             return;
