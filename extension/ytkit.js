@@ -29150,12 +29150,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try { return await promise; } finally { delete this._pending[videoId]; }
             },
             async _doFetch(videoId) {
+                const gen = this._generation;
                 try {
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
                         timeout: 8000,
                     });
+                    // Feature torn down mid-flight — don't resurrect the cleared
+                    // cache or arm a persist timer that writes after destroy().
+                    if (gen !== this._generation) return data;
                     data._ts = Date.now();
                     const existing = this._cache[videoId];
                     if (existing && existing._ts && existing._ts > data._ts) return existing;
@@ -33738,13 +33742,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                this._destroyed = false;
                 this._ensureStyles();
-                addNavigateRule(this.id, () => { setTimeout(() => this._attach(), 1500); });
+                addNavigateRule(this.id, () => {
+                    if (this._navTimer) clearTimeout(this._navTimer);
+                    this._navTimer = setTimeout(() => {
+                        this._navTimer = null;
+                        if (this._destroyed) return;
+                        this._attach();
+                    }, 1500);
+                });
                 this._attach();
             },
 
             destroy() {
+                this._destroyed = true;
                 removeNavigateRule(this.id);
+                if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null; }
                 this._btn?.remove();
                 this._btn = null;
                 this._panel?.remove();
@@ -41051,11 +41065,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             badge.id = 'ytkit-whats-new-badge';
             badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
             versionSpan.appendChild(badge);
-            versionSpan.title = `New in v${YTKIT_VERSION}: Performance audit — fixed listener leaks, replaced polling with events, seek stutter fix`;
+            versionSpan.title = `Astra Deck updated to v${YTKIT_VERSION} — click for the changelog`;
             versionSpan.onclick = () => {
                 storageWrite('ytkit_last_seen_version', CURRENT_VER);
                 badge.remove();
-                showToast(`v${YTKIT_VERSION}: Fixed quality/codec selection — DOM click quality, MAIN world codec bridge`, '#3b82f6', { duration: 6 });
+                showToast(`Updated to v${YTKIT_VERSION}. See the changelog on GitHub for what's new.`, '#3b82f6', { duration: 6 });
             };
         }
 
