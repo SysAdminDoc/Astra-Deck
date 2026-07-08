@@ -81,8 +81,8 @@
 
         function retry(task, reason, token) {
             if (task.attempt >= task.maxAttempts) return;
-            const delay = nextDelay(task);
             task.attempt += 1;
+            const delay = nextDelay(task);
             scheduleInternal(task, reason, delay, token);
         }
 

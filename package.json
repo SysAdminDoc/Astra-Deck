@@ -35,7 +35,7 @@
     "audit:python": "node scripts/audit-python-deps.js",
     "check:versions": "node scripts/check-versions.js",
     "check:settings": "node scripts/check-settings.js",
-    "lint": "eslint extension/background.js extension/popup.js extension/core/*.js extension/ytkit.js",
+    "lint": "eslint extension/background.js extension/popup.js extension/core/*.js extension/core/selector-packs/*.js extension/features/**/*.js extension/sidepanel.js extension/sidebar.js extension/ytkit.js extension/ytkit-main.js",
     "check:firefox": "node scripts/check-firefox-webext.js",
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",

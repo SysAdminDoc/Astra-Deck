@@ -1836,7 +1836,13 @@
                     if (Object.keys(groups).length >= GROUP_LIMIT) return;
                     const attrs = node.attrs || {};
                     const channelId = this._extractOpmlChannelId(attrs);
-                    const explicitGroup = attrs['astra:type'] === 'group' || (!channelId && node.children?.length);
+                    // A node with children is always a group (its subtree must
+                    // be visited). If it also has a channel ID (some RSS readers
+                    // emit folder outlines with an xmlUrl), add the channel to
+                    // the group after creating it — don't silently drop the
+                    // entire subtree.
+                    const hasChildren = node.children?.length > 0;
+                    const explicitGroup = attrs['astra:type'] === 'group' || hasChildren;
                     if (channelId && !explicitGroup) {
                         addChannel(parentId || ensureDefaultGroup(), channelId);
                         return;
