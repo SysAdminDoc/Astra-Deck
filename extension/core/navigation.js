@@ -300,19 +300,40 @@
         }
     }
 
+    // Cap pending records so a hidden tab (where rAF never fires) doesn't
+    // grow the array indefinitely, pinning detached subtrees for hours.
+    var PENDING_MUTATION_CAP = 2000;
+    var mutationFallbackTimer = null;
+
+    function drainMutationRecords() {
+        mutationScheduled = false;
+        if (mutationFallbackTimer) { clearTimeout(mutationFallbackTimer); mutationFallbackTimer = null; }
+        const drained = pendingMutationRecords;
+        pendingMutationRecords = [];
+        runMutationRules(document.body, drained);
+    }
+
     function observerCallback(records) {
         if (records && records.length) {
-            // Accumulate records across batches delivered before the rAF drain.
             for (const record of records) pendingMutationRecords.push(record);
+            // Drop oldest records when the cap is exceeded — the alternative
+            // (unbounded growth) pins detached DOM subtrees for the entire
+            // background-tab lifetime and drains in one giant pass on refocus.
+            if (pendingMutationRecords.length > PENDING_MUTATION_CAP) {
+                pendingMutationRecords = pendingMutationRecords.slice(-PENDING_MUTATION_CAP);
+            }
         }
         if (mutationScheduled) return;
         mutationScheduled = true;
-        requestAnimationFrame(() => {
-            mutationScheduled = false;
-            const drained = pendingMutationRecords;
-            pendingMutationRecords = [];
-            runMutationRules(document.body, drained);
-        });
+        requestAnimationFrame(drainMutationRecords);
+        // Fallback drain for hidden tabs where rAF doesn't fire: setTimeout
+        // still runs (throttled to ~1 Hz) so records don't accumulate forever.
+        if (!mutationFallbackTimer) {
+            mutationFallbackTimer = setTimeout(() => {
+                mutationFallbackTimer = null;
+                if (mutationScheduled) drainMutationRecords();
+            }, 2000);
+        }
     }
 
     function startObserver() {

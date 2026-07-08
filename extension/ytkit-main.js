@@ -376,7 +376,12 @@
     var _boostGain = 1.0;
     var _normalizeEnabled = false;
     var _panValue = 0;
+    // Chrome permanently binds a MediaElement to its first
+    // MediaElementAudioSourceNode. Closing the AudioContext and recreating
+    // the source on the same <video> throws InvalidStateError — so the
+    // context is kept alive and source nodes are cached per element.
     var _ctx = null;
+    var _sourceCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
     var _source = null;
     var _monoMerge = null;
     var _compressor = null;
@@ -392,26 +397,39 @@
         return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled || Math.abs(_panValue) > 0.001;
     }
 
+    function ensureContext() {
+        if (!_ctx || _ctx.state === 'closed') _ctx = new AC();
+        return _ctx;
+    }
+
+    function getOrCreateSource(video) {
+        if (_sourceCache && _sourceCache.has(video)) return _sourceCache.get(video);
+        var ctx = ensureContext();
+        var src = ctx.createMediaElementSource(video);
+        if (_sourceCache) _sourceCache.set(video, src);
+        return src;
+    }
+
     function connect() {
         var video = getVideo();
         if (!video) return;
-        if (_connectedVideo === video && _ctx) {
+        if (_connectedVideo === video && _source) {
             syncGraph();
             return;
         }
-        cleanup();
+        disconnectProcessing();
         try {
-            _ctx = new AC();
-            _source = _ctx.createMediaElementSource(video);
-            _monoMerge = _ctx.createGain();
-            _compressor = _ctx.createDynamicsCompressor();
+            var ctx = ensureContext();
+            _source = getOrCreateSource(video);
+            _monoMerge = ctx.createGain();
+            _compressor = ctx.createDynamicsCompressor();
             _compressor.threshold.value = -24;
             _compressor.knee.value = 30;
             _compressor.ratio.value = 12;
             _compressor.attack.value = 0.003;
             _compressor.release.value = 0.25;
-            _panNode = _ctx.createStereoPanner ? _ctx.createStereoPanner() : null;
-            _gainNode = _ctx.createGain();
+            _panNode = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+            _gainNode = ctx.createGain();
             _source.connect(_monoMerge);
             _monoMerge.connect(_compressor);
             if (_panNode) {
@@ -420,11 +438,11 @@
             } else {
                 _compressor.connect(_gainNode);
             }
-            _gainNode.connect(_ctx.destination);
+            _gainNode.connect(ctx.destination);
             syncGraph();
             _connectedVideo = video;
         } catch (e) {
-            cleanup();
+            disconnectProcessing();
         }
     }
 
@@ -453,14 +471,18 @@
         }
     }
 
-    function cleanup() {
-        if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
+    function disconnectProcessing() {
+        // Disconnect the processing chain but keep the source node and context
+        // alive — Chrome binds media elements to their first source forever.
+        // Route source → destination as passthrough so audio is never muted.
+        if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } }
         if (_monoMerge) { try { _monoMerge.disconnect(); } catch (e) { /* reason: already disconnected */ } _monoMerge = null; }
         if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
         if (_panNode) { try { _panNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _panNode = null; }
         if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
-        if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
-        _ctx = null;
+        if (_source && _ctx) {
+            try { _source.connect(_ctx.destination); } catch (e) { /* reason: context may be suspended */ }
+        }
         _connectedVideo = null;
     }
 
@@ -470,7 +492,7 @@
         if (next === _monoEnabled) return;
         _monoEnabled = next;
         if (isActive()) connect();
-        else cleanup();
+        else disconnectProcessing();
     });
 
     _obsRegister(['data-ytkit-volume-boost'], function() {
@@ -480,14 +502,14 @@
         if (next > 10) next = 10;
         _boostGain = next;
         if (isActive()) connect();
-        else cleanup();
+        else disconnectProcessing();
     });
 
     _obsRegister(['data-ytkit-audio-normalize'], function() {
         var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
         _normalizeEnabled = val === '1';
         if (isActive()) connect();
-        else cleanup();
+        else disconnectProcessing();
     });
 
     _obsRegister(['data-ytkit-audio-pan'], function() {
@@ -496,7 +518,7 @@
         if (val > 1) val = 1;
         _panValue = val;
         if (isActive()) connect();
-        else cleanup();
+        else disconnectProcessing();
     });
 
     document.addEventListener('loadstart', function(e) {
