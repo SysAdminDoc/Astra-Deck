@@ -3812,7 +3812,12 @@ def create_api(config, dl_manager, history):
 
     @api.route('/provision-deno', methods=['POST'])
     def provision_deno_endpoint():
-        if request.headers.get('X-MDL-Token') != token:
+        # Constant-time comparison (was a plain != , the only mutating endpoint
+        # not using a timing-safe check). Keep the legacy X-MDL-Token header for
+        # client compatibility, but also accept the standard X-Auth-Token.
+        legacy = request.headers.get('X-MDL-Token', '')
+        legacy_ok = bool(token and legacy and hmac.compare_digest(str(legacy), str(token)))
+        if not (check_auth() or legacy_ok):
             return cors_response({"error": "Unauthorized"}, 403)
         result = provision_deno()
         if result:
