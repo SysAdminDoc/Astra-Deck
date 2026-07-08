@@ -1438,9 +1438,13 @@ for (const locale of Object.keys(T)) {
             ? existingLocale[key].message
             : '';
         const hasExistingTranslation = existingMsg && existingMsg !== enMsg;
-        const outMsg = hasExistingTranslation
-            ? existingMsg
-            : (hasMappedTranslation ? translationMap[enMsg] : (existingMsg || enMsg));
+        // When a mapped translation exists for the CURRENT EN text, prefer it
+        // over an existing locale string — the existing string may be a correct
+        // translation of a PREVIOUS EN wording that is now stale. Proofed
+        // overrides still win via the translationMap merge above.
+        const outMsg = hasMappedTranslation
+            ? translationMap[enMsg]
+            : (hasExistingTranslation ? existingMsg : (existingMsg || enMsg));
         const missingTerms = missingProtectedTerms(enMsg, outMsg);
         if (missingTerms.length) {
             throw new Error(`${locale}:${key} translation must preserve do-not-translate term(s): ${missingTerms.join(', ')}`);

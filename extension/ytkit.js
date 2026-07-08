@@ -6147,6 +6147,11 @@ return response;
                 DebugManager.log('Storage', `Bookmark refresh failed: ${error.message}`);
             }
         }
+
+        if (filteredChanges[STORAGE_KEYS.watchTime]) {
+            const tracker = getFeatureById('watchTimeTracker');
+            if (tracker?._invalidateStatsCache) tracker._invalidateStatsCache();
+        }
     }
 
     function attachExtensionBridgeListeners() {
@@ -22535,14 +22540,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _storageKey: STORAGE_KEYS.watchTime,
             _interval: null,
             _lastTick: null,
+            // Cache sanitized stats so the 10s tick doesn't re-sort/rebuild the
+            // imported ledger (up to 5000 entries) on every tick.
+            _statsCache: null,
 
-            _getStats() { return sanitizeWatchTimeStats(StorageManager.get(this._storageKey, { days: {}, total: 0 })); },
+            _getStats() {
+                if (this._statsCache) return this._statsCache;
+                const sanitized = sanitizeWatchTimeStats(StorageManager.get(this._storageKey, { days: {}, total: 0 }));
+                this._statsCache = sanitized;
+                return sanitized;
+            },
 
             _writeStats(stats) {
-                const capped = sanitizeWatchTimeStats(stats);
-                StorageManager.set(this._storageKey, capped);
-                return capped;
+                // Persist without re-sanitizing the imported ledger on every tick.
+                // The ledger was already sanitized when it was loaded (via _getStats)
+                // and only changes during a Takeout import (which invalidates the
+                // cache via storage change listener).
+                StorageManager.set(this._storageKey, stats);
+                this._statsCache = stats;
+                return stats;
             },
+
+            _invalidateStatsCache() { this._statsCache = null; },
 
             _todayKey() {
                 const d = new Date();
@@ -41602,18 +41621,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }
     }
 
-    function handleFileImport(callback) {
+    function handleFileImport(callback, options = {}) {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
-        fileInput.accept = '.json,application/json';
+        fileInput.accept = options.accept || '.json,application/json';
         fileInput.onchange = e => {
             const file = e.target.files?.[0];
             if (!file) return;
-            // Refuse oversize imports up-front so the whole renderer isn't
-            // blocked parsing a runaway JSON blob.
-            const IMPORT_MAX_BYTES = 10 * 1024 * 1024;
+            // Default 10 MB for settings imports; Takeout files are commonly
+            // 50-200 MB, so callers can raise via options.maxBytes.
+            const IMPORT_MAX_BYTES = options.maxBytes || (10 * 1024 * 1024);
             if (file.size > IMPORT_MAX_BYTES) {
-                showToast('Import file exceeds 10 MB limit', '#ef4444', { duration: 4 });
+                const sizeMB = Math.round(IMPORT_MAX_BYTES / (1024 * 1024));
+                showToast(`Import file exceeds ${sizeMB} MB limit`, '#ef4444', { duration: 4 });
                 return;
             }
             const reader = new FileReader();
@@ -41778,6 +41798,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return;
             }
             if (e.target.closest('#ytkit-import-history')) {
+                // Snapshot watch-time state for undo before import.
+                const preImportStats = StorageManager.get(STORAGE_KEYS.watchTime, null);
                 handleFileImport(async (content) => {
                     const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
                     if (result?.ok) {
@@ -41786,14 +41808,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
                             }, 'takeout-import', { forceApplyLocal: true });
                         }
-                        createToast(result.message, result.toastTone || result.tone || 'success');
+                        const undoAction = preImportStats !== null ? () => {
+                            StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);
+                            handleExternalStorageChanges({
+                                [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
+                            }, 'takeout-undo', { forceApplyLocal: true });
+                            createToast('Takeout import undone', 'success');
+                            setPanelStatus('Takeout import undone', 'success');
+                        } : null;
+                        createToast(result.message, result.toastTone || result.tone || 'success', undoAction ? { undoAction } : undefined);
                         setPanelStatus(result.message, result.statusTone || result.tone || 'success');
                     } else {
                         const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
                         createToast(message, 'error');
                         setPanelStatus(message, 'error');
                     }
-                });
+                }, { maxBytes: 500 * 1024 * 1024 });
             }
         });
 
