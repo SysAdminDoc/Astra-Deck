@@ -5054,7 +5054,7 @@ return response;
                     StorageManager.setSync(STORAGE_KEYS.allowedVideos, backup.allowedVideos);
                     StorageManager.setSync(STORAGE_KEYS.blockedChannels, backup.blockedChannels);
                     StorageManager.setSync(STORAGE_KEYS.bookmarks, backup.bookmarks);
-                    return { ok: false, message: 'Import failed while applying data; previous state was restored.' };
+                    return { ok: false, message: t('statusSettingsImportFailed', 'Import failed while applying data; previous state was restored.') };
                 }
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
@@ -5077,7 +5077,7 @@ return response;
             StorageManager.setSync(STORAGE_KEYS.bookmarks, backup.bookmarks);
             return {
                 ok: true,
-                message: 'Import undone. Previous settings and local data restored.',
+                message: t('statusSettingsImportUndone', 'Import undone. Previous settings and local data restored.'),
                 restored: backup
             };
         },
@@ -5092,7 +5092,7 @@ return response;
                         ok: false,
                         toastTone: 'error',
                         statusTone: 'error',
-                        message: 'No valid YouTube Takeout watch-history entries found.'
+                        message: t('statusTakeoutNoEntries', 'No valid YouTube Takeout watch-history entries found.')
                     };
                 }
                 if (result.imported > 0) {
@@ -41813,8 +41813,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             handleExternalStorageChanges({
                                 [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
                             }, 'takeout-undo', { forceApplyLocal: true });
-                            createToast('Takeout import undone', 'success');
-                            setPanelStatus('Takeout import undone', 'success');
+                            createToast(t('statusTakeoutImportUndone', 'Takeout import undone'), 'success');
+                            setPanelStatus(t('statusTakeoutImportUndone', 'Takeout import undone'), 'success');
                         } : null;
                         createToast(result.message, result.toastTone || result.tone || 'success', undoAction ? { undoAction } : undefined);
                         setPanelStatus(result.message, result.statusTone || result.tone || 'success');

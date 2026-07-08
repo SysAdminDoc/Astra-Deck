@@ -465,13 +465,13 @@
     "message": "Untertitel automatisch aktivieren"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Beim Öffnen eines Videos automatisch in den Theater-Modus (Breitbild) wechseln"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
-    "message": "Auto-Theater-Modus"
+    "message": "Auto-Kino"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warmen Farbton anwenden, um Blaulicht-Emissionen zu reduzieren. Einstellbare Intensität."
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
     "message": "Blaulichtfilter"
@@ -639,10 +639,10 @@
     "message": "Klassischer Player-Stil"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Tracking-Parameter (si, pp, feature) aus kopierten/geteilten YouTube-Links entfernen"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
-    "message": "Saubere Teilen-URLs"
+    "message": "Saubere URLs"
   },
   "feature_cleanUiPreset_desc": {
     "message": "Eigentümer-Voreinstellung: blendet Panel-Branding, Suche und Kategorie-Überschriften aus, komprimiert die Navigation, unterdrückt Toast-Benachrichtigungen und blendet das Abonnement-Fortsetzen-Banner aus. Standardmäßig aus."
@@ -687,7 +687,7 @@
     "message": "Kommentar-Navigator"
   },
   "feature_commentSearch_desc": {
-    "message": "Suchleiste über den Kommentaren hinzufügen, um bestimmte Kommentare zu filtern und zu finden"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
     "message": "Kommentarsuche"
@@ -801,7 +801,7 @@
     "message": "DeArrow-Abstimmung"
   },
   "feature_deArrow_desc": {
-    "message": "Clickbait-Titel und Thumbnails durch Community-Alternativen aus der DeArrow-Datenbank ersetzen"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,7 +813,7 @@
     "message": "DeArrow-Vorschau-Schaltfläche"
   },
   "feature_debugMode_desc": {
-    "message": "Ausführliche Diagnoseprotokollierung in der Konsole aktivieren"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
     "message": "Debug-Modus"
@@ -831,22 +831,22 @@
     "message": "Diagnose-Fehlerprotokoll"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Pausenerinnerungen alle N Minuten aktiver Wiedergabe + optionale tägliche Wiedergabezeit-Begrenzung. Timer bleiben über SPA-Navigation bestehen."
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
     "message": "Digitales Wohlbefinden"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Verhindert, dass das nächste Video automatisch abgespielt wird, wenn das aktuelle endet"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "Automatische Wiedergabe des nächsten Videos deaktivieren"
+    "message": "Keine automatische Wiedergabe"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Endloses Scrollen durch eine \"Mehr laden\"-Schaltfläche auf Start-, Such- und Abo-Seiten ersetzen"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "Endloses Scrollen deaktivieren"
+    "message": "Scrollen begrenzen"
   },
   "feature_disableLoudnessNormalization_desc": {
     "message": "Verhindert, dass YouTube den Dynamikbereich neu geladener Videos komprimiert. Best-Effort — YouTube regelt die Verstärkung über movie_player-APIs, die nicht offiziell unterstützt werden."
@@ -1245,10 +1245,10 @@
     "message": "\"Zur Warteschlange\" auf Thumbnails ausblenden"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Das Panel für ähnliche Videos auf Wiedergabeseiten entfernen"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "Ähnliche Videos ausblenden"
+    "message": "Verwandte ausblenden"
   },
   "feature_hideSidebar_desc": {
     "message": "Die linke Navigations-Seitenleiste vollständig entfernen"
@@ -1341,7 +1341,7 @@
     "message": "Energiesparprofil"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Zeigt eine schwebende Mini-Player-Leiste am unteren Rand, wenn am Video vorbeigescrollt wird"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
     "message": "Mini-Player-Leiste"
@@ -1497,10 +1497,10 @@
     "message": "Pro-Kanal-Geschwindigkeitsspeicher"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Bevorzugte Wiedergabegeschwindigkeit global merken und auf jedes Video automatisch anwenden"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
-    "message": "Dauerhafte Wiedergabegeschwindigkeit"
+    "message": "Dauerhafte Geschwindigkeit"
   },
   "feature_pipButton_desc": {
     "message": "Ein-Klick-PiP-Schaltfläche zu den Player-Steuerelementen für natives Browser-Picture-in-Picture hinzufügen"
@@ -1659,10 +1659,10 @@
     "message": "Lautstärke merken"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Alle Shorts-Videos aus Feeds und Empfehlungen ausblenden"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
-    "message": "Shorts entfernen"
+    "message": "Shorts ausblenden"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Lern-/Arbeitsmodus-Daten als Markdown oder CSV exportieren: Wiedergabezeit-Summen, Fokus-Modus-Status, Digitales-Wohlbefinden-Status und Zeitstempel-Lesezeichen mit Direktlinks."
@@ -1869,7 +1869,7 @@
     "message": "Geschwindigkeitsschrittweite"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Gesponserte Segmente, Intros, Outros und andere Nicht-Inhaltsabschnitte automatisch überspringen mittels Community-Daten"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,7 +1995,7 @@
     "message": "Transkript → AI Ein-Klick-Übergabe"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Klickbares Transkript-Panel in der Seitenleiste mit Zeitstempel-Navigation und Export (txt/srt/Zwischenablage/LLM-Prompt) hinzufügen"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
     "message": "Transkript-Seitenleiste"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "Suche löschen"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2397,7 +2397,7 @@
     "message": "Videos in der Theater-Ansicht öffnen"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Auto-Theater"
+    "message": "Auto-Kino"
   },
   "qt_blueLightFilter_desc": {
     "message": "Player für spätes Ansehen aufwärmen"
@@ -2451,7 +2451,7 @@
     "message": "Seitenleiste der Wiedergabeseite leeren"
   },
   "qt_hideRelatedVideos_name": {
-    "message": "Ähnliche ausblenden"
+    "message": "Verwandte ausblenden"
   },
   "qt_miniPlayerBar_desc": {
     "message": "Steuerelemente beim Scrollen sichtbar halten"
@@ -2616,10 +2616,10 @@
     "message": "Astra Downloader Installationsaufforderungen erneut aktiviert — einen YouTube-Tab neu laden, um sie zu sehen."
   },
   "statusOpenWorkspaceFail": {
-    "message": "Vollständiger Arbeitsbereich konnte nicht geöffnet werden. Versuche es erneut."
+    "message": "Vollständiger Arbeitsbereich konnte nicht geöffnet werden. Versuchen Sie es erneut."
   },
   "statusQuickCtrlLoadFail": {
-    "message": "Schnellsteuerungen konnten nicht geladen werden. Versuche, das Popup erneut zu öffnen."
+    "message": "Schnellsteuerungen konnten nicht geladen werden. Versuchen Sie, das Popup erneut zu öffnen."
   },
   "statusResetFail": {
     "message": "Zurücksetzen fehlgeschlagen"
@@ -2635,6 +2635,30 @@
   },
   "statusResetUndone": {
     "message": "Zurücksetzen rückgängig gemacht — alle Daten wiederhergestellt."
+  },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
   },
   "statusStorageReadFail": {
     "message": "Speicherlesevorgang fehlgeschlagen"
@@ -2661,7 +2685,7 @@
     "message": "Speicherstatistik"
   },
   "toastDlCmdCopied": {
-    "message": "Fallback-Installationsbefehl kopiert. Nur verwenden, wenn die heruntergeladene Setup-Datei nicht ausgeführt werden kann."
+    "message": "Fallback-Installationsbefehl kopiert. Verwenden Sie ihn nur, wenn Sie die heruntergeladene Setup-Datei nicht ausführen können."
   },
   "toastDlInProgress": {
     "message": "Ein Download läuft bereits."
@@ -2763,7 +2787,7 @@
     "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
   },
   "welcomePresetFocusTitle": {
-    "message": "Focus"
+    "message": "Fokus"
   },
   "welcomePresetFocusDesc": {
     "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."

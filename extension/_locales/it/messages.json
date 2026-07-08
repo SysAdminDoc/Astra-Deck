@@ -99,16 +99,16 @@
     "message": "Formato"
   },
   "dlPopupLoading": {
-    "message": "Caricamento..."
+    "message": "Caricamento…"
   },
   "dlPopupPickerUnavailable": {
     "message": "Selettore cartella non disponibile"
   },
   "dlPopupPicking": {
-    "message": "Selezione..."
+    "message": "Selezione…"
   },
   "dlPopupQuality": {
-    "message": "Qualita"
+    "message": "Qualità"
   },
   "dlPopupReset": {
     "message": "Reimposta"
@@ -183,7 +183,7 @@
     "message": "Contatto con Astra Downloader perso."
   },
   "dlProgressPreparing": {
-    "message": "Preparazione download..."
+    "message": "Preparazione download…"
   },
   "dlProgressQueue": {
     "message": "Coda"
@@ -195,10 +195,10 @@
     "message": "Breve interruzione con Astra Downloader -- nuovo tentativo automatico."
   },
   "dlProgressSkippedDefault": {
-    "message": "Gia scaricato -- saltato."
+    "message": "Già scaricato — saltato."
   },
   "dlProgressStateAlreadyDownloaded": {
-    "message": "Gia scaricato"
+    "message": "Già scaricato"
   },
   "dlProgressStateComplete": {
     "message": "Completato"
@@ -465,13 +465,13 @@
     "message": "Attivazione automatica sottotitoli"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Entra automaticamente nella modalita Theater (ampia) quando apri un video"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
-    "message": "Auto Teatro"
+    "message": "Auto teatro"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Applica una tonalita calda per ridurre l'emissione di luce blu. Intensita configurabile."
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
     "message": "Filtro luce blu"
@@ -639,10 +639,10 @@
     "message": "Aspetto Player classico"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Rimuovi i parametri di tracciamento (si, pp, feature) dai link YouTube copiati/condivisi"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
-    "message": "URL di condivisione puliti"
+    "message": "URL puliti"
   },
   "feature_cleanUiPreset_desc": {
     "message": "Preset proprietario: nasconde il branding del pannello, la ricerca e le intestazioni delle categorie, comprime la navigazione, silenzia le notifiche toast e nasconde il banner di ripresa delle iscrizioni. Disattivato per impostazione predefinita."
@@ -687,7 +687,7 @@
     "message": "Navigatore commenti"
   },
   "feature_commentSearch_desc": {
-    "message": "Aggiunge una barra di ricerca sopra i commenti per filtrare e trovare commenti specifici"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
     "message": "Ricerca commenti"
@@ -801,7 +801,7 @@
     "message": "Votazione DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Sostituisci titoli e Thumbnail acchiappa-clic con alternative dalla community tramite il database DeArrow"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,10 +813,10 @@
     "message": "Pulsante anteprima DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Attiva la registrazione diagnostica dettagliata nella console"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
-    "message": "Modalita debug"
+    "message": "Modalità debug"
   },
   "feature_denseMode_desc": {
     "message": "Riduce la spaziatura tra le righe, il padding e le metriche dei font sulle superfici iniettate da Astra. Non modifica il layout nativo di YouTube -- solo i nostri pannelli, chip, pill e barre strumenti."
@@ -831,22 +831,22 @@
     "message": "Registro errori diagnostici"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Promemoria di pausa ogni N minuti di riproduzione attiva + limite giornaliero opzionale del tempo di visione. I timer persistono nella navigazione SPA."
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
     "message": "Benessere digitale"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Impedisci la riproduzione automatica del video successivo al termine di quello corrente"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "Disattiva riproduzione automatica successiva"
+    "message": "No riproduzione automatica"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Sostituisci lo scorrimento infinito con un pulsante \"Carica altro\" nelle pagine home, ricerca e iscrizioni"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "Disattiva scorrimento infinito"
+    "message": "Limita scorrimento"
   },
   "feature_disableLoudnessNormalization_desc": {
     "message": "Impedisci a YouTube di comprimere la gamma dinamica dei video appena caricati. Approssimativo -- YouTube regola il guadagno tramite API movie_player non supportate ufficialmente."
@@ -1245,10 +1245,10 @@
     "message": "Nascondi \"Aggiungi alla coda\" sulle miniature"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Rimuovi il pannello dei video correlati nelle pagine di visione"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "Nascondi video correlati"
+    "message": "Nascondi correlati"
   },
   "feature_hideSidebar_desc": {
     "message": "Rimuovi completamente la barra di navigazione sinistra"
@@ -1341,10 +1341,10 @@
     "message": "Profilo basso consumo"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Mostra una barra mini-player mobile in basso quando scorri oltre il video"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
-    "message": "Barra mini Player"
+    "message": "Barra mini player"
   },
   "feature_monetizationIndicator_desc": {
     "message": "Aggiunge un indicatore sotto il titolo che mostra se il video e monetizzato (ha pubblicita / sovrapposizione sponsor) o meno. Euristico -- usa la sovrapposizione promozione a pagamento, la scheda sponsorizzazione e i dati delle categorie SponsorBlock quando disponibili."
@@ -1497,10 +1497,10 @@
     "message": "Memoria velocita per canale"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Ricorda la velocita di riproduzione preferita globalmente e applicala automaticamente a ogni video"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
-    "message": "Velocita di riproduzione persistente"
+    "message": "Velocità persistente"
   },
   "feature_pipButton_desc": {
     "message": "Aggiunge un pulsante PiP con un clic ai controlli del player per il Picture-in-Picture nativo del browser"
@@ -1659,10 +1659,10 @@
     "message": "Ricorda volume"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Nascondi tutti i video Shorts dai feed e dai suggerimenti"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
-    "message": "Rimuovi Shorts"
+    "message": "Nascondi Shorts"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Esporta i dati della modalita studio/lavoro in Markdown o CSV: totali tempo di visione, stato modalita concentrazione, stato benessere digitale e segnalibri con timestamp con link profondi."
@@ -1869,7 +1869,7 @@
     "message": "Incremento velocita"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Salta automaticamente i segmenti sponsorizzati, le introduzioni, le chiusure e altre sezioni non relative al contenuto usando dati crowdsourced"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,10 +1995,10 @@
     "message": "Trascrizione -> AI con un clic"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Aggiunge un pannello trascrizione cliccabile nella barra laterale con navigazione per timestamp ed esportazione (txt/srt/appunti/prompt LLM)"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
-    "message": "Barra laterale trascrizione"
+    "message": "Barra trascrizione"
   },
   "feature_uiStyleManager_desc": {
     "message": "Scegli elementi interfaccia arrotondati o quadrati"
@@ -2265,10 +2265,10 @@
     "message": "Inglese"
   },
   "languageEs": {
-    "message": "Espanol (Spagnolo)"
+    "message": "Español (Spagnolo)"
   },
   "languageFr": {
-    "message": "Francais (Francese)"
+    "message": "Français (Francese)"
   },
   "languageIt": {
     "message": "Italiano"
@@ -2280,7 +2280,7 @@
     "message": "한국어 (Coreano)"
   },
   "languagePtBr": {
-    "message": "Portugues (Portoghese brasiliano)"
+    "message": "Português (Portoghese brasiliano)"
   },
   "languageRu": {
     "message": "Русский (Russo)"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "Pulisci ricerca"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2388,7 +2388,7 @@
     "message": "Riproduzione"
   },
   "qtGroup_Utilities": {
-    "message": "Utilita"
+    "message": "Utilità"
   },
   "qtGroup_Watch_Flow": {
     "message": "Flusso visione"
@@ -2397,7 +2397,7 @@
     "message": "Apri video nella vista Theater"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Auto Teatro"
+    "message": "Auto teatro"
   },
   "qt_blueLightFilter_desc": {
     "message": "Riscalda il player per la visione notturna"
@@ -2427,7 +2427,7 @@
     "message": "Registra diagnostica locale dettagliata"
   },
   "qt_debugMode_name": {
-    "message": "Modalita debug"
+    "message": "Modalità debug"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Monitora pause e visione giornaliera"
@@ -2457,13 +2457,13 @@
     "message": "Mantieni i controlli visibili durante lo scorrimento"
   },
   "qt_miniPlayerBar_name": {
-    "message": "Barra mini Player"
+    "message": "Barra mini player"
   },
   "qt_persistentSpeed_desc": {
     "message": "Mantieni la velocita di riproduzione costante"
   },
   "qt_persistentSpeed_name": {
-    "message": "Velocita persistente"
+    "message": "Velocità persistente"
   },
   "qt_removeAllShorts_desc": {
     "message": "Rimuovi le sezioni e i link Shorts"
@@ -2481,7 +2481,7 @@
     "message": "Leggi, naviga ed esporta i sottotitoli"
   },
   "qt_transcriptViewer_name": {
-    "message": "Barra laterale trascrizione"
+    "message": "Barra trascrizione"
   },
   "quickTogglesAria": {
     "message": "Interruttori rapidi"
@@ -2550,10 +2550,10 @@
     "message": "Velocita di riproduzione predefinita: ... -- si applica a ogni video"
   },
   "speedPopupAria": {
-    "message": "Velocita di riproduzione predefinita"
+    "message": "Velocità di riproduzione predefinita"
   },
   "speedPopupHeader": {
-    "message": "Velocita predefinita"
+    "message": "Velocità predefinita"
   },
   "speedPopupSub": {
     "message": "Si applica a tutti i video fino alla modifica."
@@ -2586,7 +2586,7 @@
     "message": "Backup importato."
   },
   "statusClipboardUnavailable": {
-    "message": "Appunti non disponibili -- vedi la console del browser."
+    "message": "Appunti non disponibili — vedi la console del browser."
   },
   "statusDiagClearFail": {
     "message": "Impossibile pulire il registro"
@@ -2622,7 +2622,7 @@
     "message": "Impossibile caricare i controlli rapidi. Prova a riaprire il popup."
   },
   "statusResetFail": {
-    "message": "Ripristino fallito"
+    "message": "Reset fallito"
   },
   "statusResetSnapshotFail": {
     "message": "Ripristino annullato -- impossibile creare uno snapshot di annullamento (dati troppo grandi per un ripristino recuperabile). Esporta prima un backup."
@@ -2636,14 +2636,38 @@
   "statusResetUndone": {
     "message": "Ripristino annullato -- tutti i dati recuperati."
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "Lettura archiviazione fallita"
   },
   "storageBannerCorruptionTpl": {
-    "message": "Dati di archivio corrotti -- Ripristina per recuperare."
+    "message": "Dati di archivio corrotti — Ripristina per recuperare."
   },
   "storageBannerHardTpl": {
-    "message": "Archivio a {size} -- considera Ripristina."
+    "message": "Archivio a {size} — considera Ripristina."
   },
   "storageBannerReset": {
     "message": "Reimposta"
@@ -2652,7 +2676,7 @@
     "message": "Ripristina tutti i dati locali"
   },
   "storageBannerSoftTpl": {
-    "message": "Archivio a {size} -- ti avvicini al limite."
+    "message": "Archivio a {size} — ti avvicini al limite."
   },
   "storageBannerTitle": {
     "message": "Utilizzo archivio elevato"
@@ -2664,7 +2688,7 @@
     "message": "Comando di installazione di riserva copiato. Usalo solo se non puoi eseguire il file di setup scaricato."
   },
   "toastDlInProgress": {
-    "message": "Un download e gia in corso."
+    "message": "Un download è già in corso."
   },
   "toastDlInstallPrompt": {
     "message": "Installa Astra Downloader per attivare i download."
@@ -2676,13 +2700,13 @@
     "message": "Richiesta Astra Downloader fallita."
   },
   "toastDlRunning": {
-    "message": "Astra Downloader e in esecuzione!"
+    "message": "Astra Downloader è in esecuzione!"
   },
   "toastDlStarted": {
     "message": "Astra Downloader avviato!"
   },
   "toastDlStarting": {
-    "message": "Avvio di Astra Downloader..."
+    "message": "Avvio di Astra Downloader…"
   },
   "toastDlStopped": {
     "message": "Astra Downloader si e fermato. Riavvio in corso..."
