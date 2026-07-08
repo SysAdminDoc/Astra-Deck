@@ -465,13 +465,13 @@
     "message": "Activar subtítulos automáticamente"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Entrar automáticamente en modo Theater (ancho) al abrir un video"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
-    "message": "Modo Theater automático"
+    "message": "Auto cine"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Aplicar un tono cálido para reducir la emisión de luz azul. Intensidad configurable."
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
     "message": "Filtro de luz azul"
@@ -639,10 +639,10 @@
     "message": "Reproductor clásico"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Eliminar parámetros de rastreo (si, pp, feature) de los enlaces de YouTube copiados/compartidos"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
-    "message": "URLs limpias al compartir"
+    "message": "URLs limpias"
   },
   "feature_cleanUiPreset_desc": {
     "message": "Preset del propietario: oculta marcas del panel, búsqueda y encabezados de categoría, comprime la navegación, silencia notificaciones emergentes y oculta el banner de reanudación de suscripciones. Desactivado por defecto."
@@ -687,7 +687,7 @@
     "message": "Navegador de comentarios"
   },
   "feature_commentSearch_desc": {
-    "message": "Agrega una barra de búsqueda sobre los comentarios para filtrar y encontrar comentarios específicos"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
     "message": "Búsqueda de comentarios"
@@ -801,7 +801,7 @@
     "message": "Votación DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Reemplazar títulos y Thumbnails clickbait con alternativas colaborativas de la base de datos DeArrow"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,7 +813,7 @@
     "message": "Botón de vistazo DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Habilitar registro de diagnóstico detallado en la consola"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
     "message": "Modo depuración"
@@ -831,22 +831,22 @@
     "message": "Registro de errores de diagnóstico"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Recordatorios de descanso cada N minutos de reproducción activa + límite diario opcional de tiempo de visualización. Los temporizadores persisten entre navegaciones SPA."
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
     "message": "Bienestar digital"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Evita que el siguiente video se reproduzca automáticamente cuando el actual termina"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "Desactivar reproducción automática del siguiente video"
+    "message": "Sin reproducción automática"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Reemplazar el desplazamiento infinito con un botón \"Cargar más\" en las páginas de inicio, búsqueda y suscripciones"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "Desactivar desplazamiento infinito"
+    "message": "Limitar desplazamiento"
   },
   "feature_disableLoudnessNormalization_desc": {
     "message": "Evitar que YouTube comprima el rango dinámico de los videos recién cargados. Mejor esfuerzo — YouTube limita la ganancia mediante APIs de movie_player no soportadas oficialmente."
@@ -1245,10 +1245,10 @@
     "message": "Ocultar \"Agregar a la cola\" en miniaturas"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Eliminar el panel de videos relacionados en las páginas de visualización"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "Ocultar videos relacionados"
+    "message": "Ocultar relacionados"
   },
   "feature_hideSidebar_desc": {
     "message": "Eliminar completamente la barra lateral de navegación izquierda"
@@ -1341,10 +1341,10 @@
     "message": "Perfil de bajo consumo"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Muestra una barra flotante de mini reproductor en la parte inferior cuando te desplazas más allá del video"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
-    "message": "Barra de mini reproductor"
+    "message": "Barra de reproductor mini"
   },
   "feature_monetizationIndicator_desc": {
     "message": "Agrega una pastilla debajo del título mostrando si el video está monetizado (tiene anuncios / superposición de patrocinio) o no. Heurístico — usa la superposición de promoción pagada, tarjeta de patrocinio y datos de categoría de SponsorBlock cuando estén disponibles."
@@ -1497,10 +1497,10 @@
     "message": "Memoria de velocidad por canal"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Recordar tu velocidad de reproducción preferida globalmente y aplicarla automáticamente a cada video"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
-    "message": "Velocidad de reproducción persistente"
+    "message": "Velocidad persistente"
   },
   "feature_pipButton_desc": {
     "message": "Agrega un botón PiP de un solo clic a los controles del reproductor para Picture-in-Picture nativo del navegador"
@@ -1659,10 +1659,10 @@
     "message": "Recordar volumen"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Ocultar todos los videos Shorts de los feeds y recomendaciones"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
-    "message": "Eliminar Shorts"
+    "message": "Ocultar Shorts"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Exportar datos de modo estudio/trabajo a Markdown o CSV: totales de tiempo de visualización, estado de modo enfocado, estado de bienestar digital y marcadores de tiempo con enlaces profundos."
@@ -1869,7 +1869,7 @@
     "message": "Incremento de velocidad"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Saltar automáticamente segmentos patrocinados, intros, outros y otras secciones que no son contenido usando datos colaborativos"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,7 +1995,7 @@
     "message": "Transcripción → AI con un clic"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Agrega un panel de transcripción interactivo en la barra lateral con navegación por marcas de tiempo y exportación (txt/srt/portapapeles/prompt LLM)"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
     "message": "Barra lateral de transcripción"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "Limpiar búsqueda"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2397,7 +2397,7 @@
     "message": "Abrir videos en vista Theater"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Theater automático"
+    "message": "Auto cine"
   },
   "qt_blueLightFilter_desc": {
     "message": "Calentar el reproductor para visualización nocturna"
@@ -2457,7 +2457,7 @@
     "message": "Mantener controles visibles al desplazarse"
   },
   "qt_miniPlayerBar_name": {
-    "message": "Barra de mini reproductor"
+    "message": "Barra de reproductor mini"
   },
   "qt_persistentSpeed_desc": {
     "message": "Mantener velocidad de reproducción consistente"
@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "Restablecimiento deshecho — todos los datos restaurados."
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "Error al leer el almacenamiento"
   },
@@ -2763,7 +2787,7 @@
     "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
   },
   "welcomePresetFocusTitle": {
-    "message": "Focus"
+    "message": "Enfoque"
   },
   "welcomePresetFocusDesc": {
     "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."

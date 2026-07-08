@@ -465,16 +465,16 @@
     "message": "Ativar Legendas Automaticamente"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Entrar automaticamente no modo cinema (amplo) ao abrir um vídeo"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
-    "message": "Modo Cinema Automático"
+    "message": "Modo cinema auto"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Aplicar um tom quente para reduzir a emissão de luz azul. Intensidade configurável."
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
-    "message": "Filtro de Luz Azul"
+    "message": "Filtro de luz azul"
   },
   "feature_bulkCardActions_desc": {
     "message": "Ative o modo de seleção para escolher vários cards do feed, depois oculte, permita ou copie URLs em massa. Uma barra de ação flutuante aparece durante a seleção."
@@ -639,10 +639,10 @@
     "message": "Visual Clássico do Player"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remover parâmetros de rastreamento (si, pp, feature) de links copiados/compartilhados do YouTube"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
-    "message": "URLs de Compartilhamento Limpas"
+    "message": "URLs limpas"
   },
   "feature_cleanUiPreset_desc": {
     "message": "Predefinição do proprietário: oculta marca do painel, busca e cabeçalhos de categorias, comprime a navegação, silencia notificações toast e oculta o banner de retomada de inscrições. Desativado por padrão."
@@ -687,10 +687,10 @@
     "message": "Navegador de Comentários"
   },
   "feature_commentSearch_desc": {
-    "message": "Adiciona uma barra de pesquisa acima dos comentários para filtrar e encontrar comentários específicos"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
-    "message": "Pesquisa de Comentários"
+    "message": "Pesquisar comentários"
   },
   "feature_compactLayout_desc": {
     "message": "Reduzir espaçamento e preenchimento para uma interface mais densa"
@@ -801,7 +801,7 @@
     "message": "Votação do DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Substituir títulos e miniaturas clickbait por alternativas colaborativas do banco de dados DeArrow"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,10 +813,10 @@
     "message": "Botão de Espiar do DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Ativar registro de diagnóstico detalhado no console"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
-    "message": "Modo de Depuração"
+    "message": "Modo de depuração"
   },
   "feature_denseMode_desc": {
     "message": "Reduz espaçamento de linhas, preenchimento e métricas de fonte nas superfícies injetadas pelo Astra. Não altera o layout nativo do YouTube — apenas nossos próprios painéis, chips, pílulas e barras de ferramentas."
@@ -831,22 +831,22 @@
     "message": "Registro de Erros de Diagnóstico"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Lembretes de pausa a cada N minutos de reprodução ativa + limite diário opcional de tempo de exibição. Os temporizadores persistem durante a navegação SPA."
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
-    "message": "Bem-estar Digital"
+    "message": "Bem-estar digital"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Impede que o próximo vídeo seja reproduzido automaticamente quando o atual terminar"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "Desativar Reprodução Automática do Próximo Vídeo"
+    "message": "Sem reprodução automática"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Substituir a rolagem infinita por um botão \"Carregar Mais\" nas páginas inicial, de busca e de inscrições"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "Desativar Rolagem Infinita"
+    "message": "Limitar rolagem"
   },
   "feature_disableLoudnessNormalization_desc": {
     "message": "Impedir o YouTube de comprimir a faixa dinâmica de vídeos recém-carregados. Melhor esforço — o YouTube limita o ganho através de APIs do movie_player que não são oficialmente suportadas."
@@ -1245,10 +1245,10 @@
     "message": "Ocultar \"Adicionar à Fila\" nas Miniaturas"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Remover o painel de vídeos relacionados nas páginas de exibição"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "Ocultar Vídeos Relacionados"
+    "message": "Ocultar relacionados"
   },
   "feature_hideSidebar_desc": {
     "message": "Remover completamente a barra lateral de navegação à esquerda"
@@ -1341,10 +1341,10 @@
     "message": "Perfil de Baixo Consumo"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Exibe uma barra flutuante de mini player na parte inferior ao rolar para além do vídeo"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
-    "message": "Barra de Mini Player"
+    "message": "Barra de mini player"
   },
   "feature_monetizationIndicator_desc": {
     "message": "Adiciona uma pílula abaixo do título mostrando se o vídeo é monetizado (tem anúncios / sobreposição de patrocínio) ou não. Heurístico — usa sobreposição de promoção paga, card de patrocínio e dados de categoria do SponsorBlock quando disponíveis."
@@ -1497,10 +1497,10 @@
     "message": "Memória de Velocidade por Canal"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Lembrar sua velocidade de reprodução preferida globalmente e aplicá-la automaticamente a todos os vídeos"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
-    "message": "Velocidade de Reprodução Persistente"
+    "message": "Velocidade persistente"
   },
   "feature_pipButton_desc": {
     "message": "Adiciona um botão PiP com um clique nos controles do player para Picture-in-Picture nativo do navegador"
@@ -1659,10 +1659,10 @@
     "message": "Lembrar Volume"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Ocultar todos os vídeos Shorts dos feeds e recomendações"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
-    "message": "Remover Shorts"
+    "message": "Ocultar Shorts"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Exportar dados do modo estudo/trabalho para Markdown ou CSV: totais de tempo de exibição, estado do modo focado, estado de bem-estar digital e marcadores de timestamp com links diretos."
@@ -1869,7 +1869,7 @@
     "message": "Incremento de Velocidade"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Pular automaticamente segmentos patrocinados, intros, encerramentos e outras seções sem conteúdo usando dados colaborativos"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,10 +1995,10 @@
     "message": "Transcrição → IA com Um Clique"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Adiciona um painel clicável de transcrição na barra lateral com navegação por timestamp e exportação (txt/srt/área de transferência/prompt LLM)"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
-    "message": "Barra Lateral de Transcrição"
+    "message": "Barra lateral de transcrição"
   },
   "feature_uiStyleManager_desc": {
     "message": "Escolher elementos de interface arredondados ou quadrados"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "Limpar pesquisa"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2379,7 +2379,7 @@
     "message": "Astra Deck"
   },
   "qtGroup_Feed_Cleanup": {
-    "message": "Limpeza de Feed"
+    "message": "Limpeza de feed"
   },
   "qtGroup_Focus": {
     "message": "Foco"
@@ -2391,31 +2391,31 @@
     "message": "Utilitários"
   },
   "qtGroup_Watch_Flow": {
-    "message": "Fluxo de Visualização"
+    "message": "Fluxo de visualização"
   },
   "qt_autoTheaterMode_desc": {
     "message": "Abrir vídeos em modo cinema"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Modo Cinema Automático"
+    "message": "Modo cinema auto"
   },
   "qt_blueLightFilter_desc": {
     "message": "Aquecer o player para visualização noturna"
   },
   "qt_blueLightFilter_name": {
-    "message": "Filtro de Luz Azul"
+    "message": "Filtro de luz azul"
   },
   "qt_cleanShareUrls_desc": {
     "message": "Remover rastreamento dos links de compartilhamento"
   },
   "qt_cleanShareUrls_name": {
-    "message": "URLs Limpas"
+    "message": "URLs limpas"
   },
   "qt_commentSearch_desc": {
     "message": "Filtrar comentários da página de exibição"
   },
   "qt_commentSearch_name": {
-    "message": "Pesquisar Comentários"
+    "message": "Pesquisar comentários"
   },
   "qt_deArrow_desc": {
     "message": "Substituir títulos e miniaturas clickbait"
@@ -2427,43 +2427,43 @@
     "message": "Registrar diagnósticos locais detalhados"
   },
   "qt_debugMode_name": {
-    "message": "Modo de Depuração"
+    "message": "Modo de depuração"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Rastrear pausas e visualização diária"
   },
   "qt_digitalWellbeing_name": {
-    "message": "Bem-estar Digital"
+    "message": "Bem-estar digital"
   },
   "qt_disableAutoplayNext_desc": {
     "message": "Impedir o próximo vídeo de iniciar"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "Sem Reprodução Automática"
+    "message": "Sem reprodução automática"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Parar carregamento infinito do feed"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Limitar Rolagem"
+    "message": "Limitar rolagem"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Limpar a barra lateral da página de exibição"
   },
   "qt_hideRelatedVideos_name": {
-    "message": "Ocultar Relacionados"
+    "message": "Ocultar relacionados"
   },
   "qt_miniPlayerBar_desc": {
     "message": "Manter controles visíveis ao rolar"
   },
   "qt_miniPlayerBar_name": {
-    "message": "Barra de Mini Player"
+    "message": "Barra de mini player"
   },
   "qt_persistentSpeed_desc": {
     "message": "Manter velocidade de reprodução consistente"
   },
   "qt_persistentSpeed_name": {
-    "message": "Velocidade Persistente"
+    "message": "Velocidade persistente"
   },
   "qt_removeAllShorts_desc": {
     "message": "Remover prateleiras e links de Shorts"
@@ -2481,7 +2481,7 @@
     "message": "Ler, navegar e exportar legendas"
   },
   "qt_transcriptViewer_name": {
-    "message": "Barra Lateral de Transcrição"
+    "message": "Barra lateral de transcrição"
   },
   "quickTogglesAria": {
     "message": "Botões rápidos"
@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "Redefinição desfeita — todos os dados restaurados."
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "Falha ao ler armazenamento"
   },
@@ -2763,7 +2787,7 @@
     "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
   },
   "welcomePresetFocusTitle": {
-    "message": "Focus"
+    "message": "Foco"
   },
   "welcomePresetFocusDesc": {
     "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."

@@ -99,13 +99,13 @@
     "message": "Format"
   },
   "dlPopupLoading": {
-    "message": "Chargement..."
+    "message": "Chargement…"
   },
   "dlPopupPickerUnavailable": {
     "message": "Sélecteur de dossier indisponible"
   },
   "dlPopupPicking": {
-    "message": "Sélection..."
+    "message": "Sélection…"
   },
   "dlPopupQuality": {
     "message": "Qualité"
@@ -183,7 +183,7 @@
     "message": "Contact perdu avec Astra Downloader."
   },
   "dlProgressPreparing": {
-    "message": "Préparation du téléchargement..."
+    "message": "Préparation du téléchargement…"
   },
   "dlProgressQueue": {
     "message": "File"
@@ -465,13 +465,13 @@
     "message": "Activation automatique des sous-titres"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Passer automatiquement en mode Theater (large) à l'ouverture d'une vidéo"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
-    "message": "Mode Theater automatique"
+    "message": "Cinéma auto"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Appliquer une teinte chaude pour réduire la lumière bleue. Intensité configurable."
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
     "message": "Filtre lumière bleue"
@@ -639,10 +639,10 @@
     "message": "Apparence classique du Player"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Supprimer les paramètres de suivi (si, pp, feature) des liens YouTube copiés/partagés"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
-    "message": "URL de partage propres"
+    "message": "URL propres"
   },
   "feature_cleanUiPreset_desc": {
     "message": "Préréglage propriétaire : masque le branding du panneau, la recherche et les en-têtes de catégories, compresse la navigation, désactive les notifications toast et masque la bannière de reprise des abonnements. Désactivé par défaut."
@@ -687,10 +687,10 @@
     "message": "Navigateur de commentaires"
   },
   "feature_commentSearch_desc": {
-    "message": "Ajoute une barre de recherche au-dessus des commentaires pour filtrer et trouver des commentaires spécifiques"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
-    "message": "Recherche de commentaires"
+    "message": "Recherche commentaires"
   },
   "feature_compactLayout_desc": {
     "message": "Réduire l'espacement et les marges pour une interface plus dense"
@@ -801,7 +801,7 @@
     "message": "Vote DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Remplacer les titres et Thumbnails racoleurs par des alternatives participatives de la base de données DeArrow"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,7 +813,7 @@
     "message": "Bouton aperçu DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Activer la journalisation diagnostique détaillée dans la console"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
     "message": "Mode débogage"
@@ -831,22 +831,22 @@
     "message": "Journal d'erreurs de diagnostic"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Rappels de pause toutes les N minutes de lecture active + limite optionnelle de temps de visionnage quotidien. Les compteurs persistent lors de la navigation SPA."
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
     "message": "Bien-être numérique"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Empêcher la vidéo suivante de démarrer automatiquement à la fin de la vidéo en cours"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "Désactiver la lecture automatique suivante"
+    "message": "Pas de lecture auto"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Remplacer le défilement infini par un bouton \"Charger plus\" sur les pages d'accueil, de recherche et d'abonnements"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "Désactiver le défilement infini"
+    "message": "Limiter défilement"
   },
   "feature_disableLoudnessNormalization_desc": {
     "message": "Empêcher YouTube de compresser la plage dynamique des vidéos nouvellement chargées. Meilleur effort — YouTube contrôle le gain via des API movie_player non officiellement prises en charge."
@@ -1245,10 +1245,10 @@
     "message": "Masquer \"Ajouter à la file\" sur les miniatures"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Supprimer le panneau de vidéos suggérées sur les pages de visionnage"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "Masquer les vidéos suggérées"
+    "message": "Masquer suggestions"
   },
   "feature_hideSidebar_desc": {
     "message": "Supprimer complètement la barre de navigation latérale gauche"
@@ -1341,10 +1341,10 @@
     "message": "Profil basse consommation"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Affiche une barre de mini Player flottante en bas quand vous dépassez la vidéo en défilant"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
-    "message": "Barre de mini Player"
+    "message": "Mini lecteur"
   },
   "feature_monetizationIndicator_desc": {
     "message": "Ajoute une pilule sous le titre indiquant si la vidéo est monétisée (a des pubs / Overlay de sponsoring) ou non. Heuristique — utilise l'Overlay de promotion payée, la carte de sponsoring et les données de catégorie SponsorBlock lorsque disponibles."
@@ -1497,10 +1497,10 @@
     "message": "Vitesse mémorisée par chaîne"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Mémoriser votre vitesse de lecture préférée globalement et l'appliquer automatiquement à chaque vidéo"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
-    "message": "Vitesse de lecture persistante"
+    "message": "Vitesse persistante"
   },
   "feature_pipButton_desc": {
     "message": "Ajoute un bouton PiP en un clic aux commandes du Player pour le Picture-in-Picture natif du navigateur"
@@ -1659,10 +1659,10 @@
     "message": "Mémoriser le volume"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Masquer toutes les vidéos Shorts des flux et recommandations"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
-    "message": "Supprimer les Shorts"
+    "message": "Masquer Shorts"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Exporter les données du mode étude/travail en Markdown ou CSV : totaux de temps de visionnage, état du mode concentré, état du bien-être numérique, et signets horodatés avec liens profonds."
@@ -1869,7 +1869,7 @@
     "message": "Pas de vitesse"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Passer automatiquement les segments sponsorisés, intros, outros et autres sections non-contenu grâce aux données participatives"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,10 +1995,10 @@
     "message": "Transcription vers IA en un clic"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Ajoute un panneau de transcription cliquable dans la barre latérale avec navigation horodatée et export (txt/srt/presse-papiers/prompt LLM)"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
-    "message": "Barre latérale de transcription"
+    "message": "Barre transcription"
   },
   "feature_uiStyleManager_desc": {
     "message": "Choisir des éléments d'interface arrondis ou carrés"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "Effacer la recherche"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2382,7 +2382,7 @@
     "message": "Nettoyage du flux"
   },
   "qtGroup_Focus": {
-    "message": "Concentration"
+    "message": "Focus"
   },
   "qtGroup_Playback": {
     "message": "Lecture"
@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "Réinitialisation annulée — toutes les données restaurées."
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "Échec de lecture du stockage"
   },
@@ -2682,7 +2706,7 @@
     "message": "Astra Downloader démarré !"
   },
   "toastDlStarting": {
-    "message": "Démarrage d'Astra Downloader..."
+    "message": "Démarrage d'Astra Downloader…"
   },
   "toastDlStopped": {
     "message": "Astra Downloader arrêté. Redémarrage en cours..."
@@ -2697,7 +2721,7 @@
     "message": "Activé"
   },
   "toggleStateOnLower": {
-    "message": "activé"
+    "message": "activés"
   },
   "toggleUpdateFailTpl": {
     "message": "Impossible de mettre à jour .... Réessayez."

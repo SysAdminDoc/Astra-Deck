@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "Reset undone — all data restored."
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "Storage read failed"
   },

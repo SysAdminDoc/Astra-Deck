@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "تم التراجع عن إعادة التعيين — تم استعادة جميع البيانات."
   },
+  "statusSettingsImportUndone": {
+    "message": "تم التراجع عن الاستيراد. تمت استعادة الإعدادات والبيانات المحلية السابقة."
+  },
+  "statusSettingsImportFailed": {
+    "message": "فشل الاستيراد أثناء تطبيق البيانات؛ تمت استعادة الحالة السابقة."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "لم يتم العثور على إعدادات أو بيانات محلية قابلة للاستيراد."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "لم يتم العثور على إعدادات معروفة في الملف."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "لم يتم العثور على إدخالات صالحة في سجل المشاهدة من YouTube Takeout."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "تم التراجع عن استيراد Takeout"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "استيراد السجل"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "استيراد سجل المشاهدة من YouTube Takeout"
+  },
   "statusStorageReadFail": {
     "message": "فشل قراءة التخزين"
   },

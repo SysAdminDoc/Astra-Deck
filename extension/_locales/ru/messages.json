@@ -162,7 +162,7 @@
     "message": "Закрыть прогресс загрузки"
   },
   "dlProgressEtaPrefix": {
-    "message": "Осталось"
+    "message": "ETA"
   },
   "dlProgressFailureDefault": {
     "message": "Ошибка Astra Downloader"
@@ -465,13 +465,13 @@
     "message": "Автовключение субтитров"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Автоматически входить в режим Theater (широкий) при открытии видео"
+    "message": "Open videos in theater view"
   },
   "feature_autoTheaterMode_name": {
     "message": "Авто-театр"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Наложить тёплый оттенок для снижения синего света. Настраиваемая интенсивность."
+    "message": "Warm the player for late viewing"
   },
   "feature_blueLightFilter_name": {
     "message": "Фильтр синего света"
@@ -639,7 +639,7 @@
     "message": "Классический интерфейс плеера"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Удалять параметры отслеживания (si, pp, feature) из скопированных/общих ссылок YouTube"
+    "message": "Remove tracking from share links"
   },
   "feature_cleanShareUrls_name": {
     "message": "Чистые URL"
@@ -687,7 +687,7 @@
     "message": "Навигатор по комментариям"
   },
   "feature_commentSearch_desc": {
-    "message": "Добавляет строку поиска над комментариями для фильтрации и поиска конкретных комментариев"
+    "message": "Filter watch-page comments inline"
   },
   "feature_commentSearch_name": {
     "message": "Поиск в комментариях"
@@ -801,7 +801,7 @@
     "message": "Голосование DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Заменить кликбейтные заголовки и миниатюры краудсорсинговыми альтернативами из базы данных DeArrow"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -813,7 +813,7 @@
     "message": "Кнопка просмотра DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Включить подробное диагностическое логирование в консоль"
+    "message": "Record detailed local diagnostics"
   },
   "feature_debugMode_name": {
     "message": "Режим отладки"
@@ -831,19 +831,19 @@
     "message": "Журнал диагностических ошибок"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Напоминания о перерывах каждые N минут активного воспроизведения + необязательный дневной лимит просмотра. Таймеры сохраняются при навигации внутри SPA."
+    "message": "Track breaks and daily viewing"
   },
   "feature_digitalWellbeing_name": {
     "message": "Цифровое благополучие"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Запрещает автоматическое воспроизведение следующего видео после окончания текущего"
+    "message": "Stop the next video from starting"
   },
   "feature_disableAutoplayNext_name": {
     "message": "Без автовоспроизведения"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Заменить бесконечную прокрутку кнопкой «Загрузить ещё» на главной, в поиске и подписках"
+    "message": "Stop endless feed loading"
   },
   "feature_disableInfiniteScroll_name": {
     "message": "Ограничить прокрутку"
@@ -1245,7 +1245,7 @@
     "message": "Скрыть «Добавить в очередь» на миниатюрах"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Убрать панель похожих видео на страницах просмотра"
+    "message": "Clear the watch-page side rail"
   },
   "feature_hideRelatedVideos_name": {
     "message": "Скрыть похожие"
@@ -1341,7 +1341,7 @@
     "message": "Профиль низкого энергопотребления"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Показывает плавающую мини-панель плеера внизу при прокрутке ниже видео"
+    "message": "Keep controls visible while scrolling"
   },
   "feature_miniPlayerBar_name": {
     "message": "Мини-плеер"
@@ -1497,7 +1497,7 @@
     "message": "Память скорости по каналам"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Запоминать предпочтительную скорость воспроизведения глобально и автоматически применять к каждому видео"
+    "message": "Keep playback speed consistent"
   },
   "feature_persistentSpeed_name": {
     "message": "Постоянная скорость"
@@ -1659,7 +1659,7 @@
     "message": "Запоминание громкости"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Скрыть все видео Shorts из лент и рекомендаций"
+    "message": "Remove Shorts shelves and links"
   },
   "feature_removeAllShorts_name": {
     "message": "Скрыть Shorts"
@@ -1869,7 +1869,7 @@
     "message": "Шаг изменения скорости"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Автоматический пропуск спонсорских сегментов, вступлений, концовок и другого нетематического контента на основе краудсорсинговых данных"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -1995,7 +1995,7 @@
     "message": "Транскрипт → AI в один клик"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Добавляет кликабельную панель транскрипта на боковую панель с навигацией по таймкодам и экспортом (txt/srt/буфер обмена/промпт LLM)"
+    "message": "Read, jump, and export captions"
   },
   "feature_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
@@ -2349,7 +2349,7 @@
     "message": "Search"
   },
   "panelSearchStateClear": {
-    "message": "Clear search"
+    "message": "Очистить поиск"
   },
   "panelSearchStateCopy": {
     "message": "Type a control, page, or category to narrow the menu instantly."
@@ -2636,6 +2636,30 @@
   "statusResetUndone": {
     "message": "Сброс отменён — все данные восстановлены."
   },
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusSettingsImportFailed": {
+    "message": "Import failed while applying data; previous state was restored."
+  },
+  "statusSettingsImportNoEntries": {
+    "message": "No importable settings or local data found."
+  },
+  "statusSettingsImportNoKnown": {
+    "message": "No known settings found in file."
+  },
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusTakeoutImportUndone": {
+    "message": "Takeout import undone"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
   "statusStorageReadFail": {
     "message": "Ошибка чтения хранилища"
   },
@@ -2763,7 +2787,7 @@
     "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
   },
   "welcomePresetFocusTitle": {
-    "message": "Focus"
+    "message": "Фокус"
   },
   "welcomePresetFocusDesc": {
     "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
