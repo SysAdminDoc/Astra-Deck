@@ -1097,6 +1097,7 @@ return response;
         const cutoff = new Date(nowDate);
         cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
         const cutoffKey = formatLocalDateKey(cutoff);
+        const todayKey = formatLocalDateKey(nowDate);
         const entries = [];
         for (const [rawKey, raw] of Object.entries(value)) {
             if (!isSafeObjectKey(rawKey) || !isPlainObject(raw)) continue;
@@ -1107,7 +1108,10 @@ return response;
             const dayKey = /^\d{4}-\d{2}-\d{2}$/.test(raw.dayKey || '')
                 ? raw.dayKey
                 : formatLocalDateKey(new Date(watchedMs));
-            if (dayKey <= cutoffKey) continue;
+            // Reject days outside [cutoff, today]: future-dated entries (clock
+            // skew / malformed exports) would sort to the top and evict genuine
+            // recent days from the newest-90 slice below.
+            if (dayKey <= cutoffKey || dayKey > todayKey) continue;
             const seconds = Math.max(1, Math.min(24 * 60 * 60, Math.floor(Number(raw.seconds) || TAKEOUT_WATCH_SECONDS)));
             entries.push([`${videoId}@${watchedAt}`, {
                 videoId,
@@ -1127,9 +1131,10 @@ return response;
         const cutoff = new Date(nowDate);
         cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
         const cutoffKey = formatLocalDateKey(cutoff);
+        const todayKey = formatLocalDateKey(nowDate);
         const days = [];
         for (const [dayKey, rawSeconds] of Object.entries(rawDays)) {
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || dayKey <= cutoffKey) continue;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || dayKey <= cutoffKey || dayKey > todayKey) continue;
             const seconds = Number(rawSeconds);
             if (!Number.isFinite(seconds) || seconds <= 0) continue;
             days.push([dayKey, seconds]);
@@ -1149,13 +1154,16 @@ return response;
         const cutoff = new Date(nowDate);
         cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
         const cutoffKey = formatLocalDateKey(cutoff);
+        const todayKey = formatLocalDateKey(nowDate);
         const importedLedger = { ...(stats.imported || {}) };
         let imported = 0;
         let duplicates = 0;
         let skipped = 0;
 
         for (const entry of entries) {
-            if (entry.dayKey <= cutoffKey) {
+            // Skip days outside [cutoff, today] — future-dated entries would
+            // inflate totals and evict genuine recent days.
+            if (entry.dayKey <= cutoffKey || entry.dayKey > todayKey) {
                 skipped++;
                 continue;
             }
