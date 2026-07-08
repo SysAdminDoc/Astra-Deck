@@ -3141,7 +3141,15 @@
                 const chunkStartedAt = nowMs();
                 let processedInChunk = 0;
                 while (index < list.length && processedInChunk < chunkSize) {
-                    callback(list[index], index, list);
+                    // A throwing callback must not abandon the whole batch: that
+                    // would leave `promise` forever unsettled and strand callers
+                    // that gate cleanup on it. Skip the bad item and keep going.
+                    try {
+                        callback(list[index], index, list);
+                    } catch (e) {
+                        // reason: per-item batch failures are isolated so one bad
+                        // element cannot stall the scan or leak the pending promise.
+                    }
                     index += 1;
                     processedInChunk += 1;
                     if ((nowMs() - chunkStartedAt) >= budgetMs) break;
@@ -3417,6 +3425,14 @@
                 notify('visibility');
             }
 
+            // Named handlers (not inline arrows) so destroy() can actually remove
+            // them — otherwise each manager instance leaks these four window
+            // listeners and a destroy/install cycle stacks duplicate notify pumps.
+            function onNavigateFinish() { bumpRoute('navigate'); }
+            function onPageDataUpdated() { notify('page-data'); }
+            function onPlayerUpdated() { notify('player-state'); }
+            function onPlayerStateChange() { notify('player-state'); }
+
             function install() {
                 if (installed || !root?.addEventListener || !win?.addEventListener) return;
                 installed = true;
@@ -3426,10 +3442,10 @@
                 root.addEventListener('playing', onMediaEvent, true);
                 root.addEventListener('visibilitychange', onVisibilityChange, true);
                 win.addEventListener('yt-navigate-start', onNavigateStart);
-                win.addEventListener('yt-navigate-finish', () => bumpRoute('navigate'));
-                win.addEventListener('yt-page-data-updated', () => notify('page-data'));
-                win.addEventListener('yt-player-updated', () => notify('player-state'));
-                win.addEventListener('yt-player-state-change', () => notify('player-state'));
+                win.addEventListener('yt-navigate-finish', onNavigateFinish);
+                win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+                win.addEventListener('yt-player-updated', onPlayerUpdated);
+                win.addEventListener('yt-player-state-change', onPlayerStateChange);
             }
 
             function destroy() {
@@ -3442,6 +3458,10 @@
                 root.removeEventListener('playing', onMediaEvent, true);
                 root.removeEventListener('visibilitychange', onVisibilityChange, true);
                 win.removeEventListener('yt-navigate-start', onNavigateStart);
+                win.removeEventListener('yt-navigate-finish', onNavigateFinish);
+                win.removeEventListener('yt-page-data-updated', onPageDataUpdated);
+                win.removeEventListener('yt-player-updated', onPlayerUpdated);
+                win.removeEventListener('yt-player-state-change', onPlayerStateChange);
                 installed = false;
             }
 
@@ -13247,16 +13267,19 @@
                     const rows = ['Group,Channel,Handle,URL'];
                     for (const [id, group] of Object.entries(groups)) {
                         const name = group.name || id;
-                        const channels = Array.isArray(group.channels) ? group.channels : [];
-                        if (channels.length === 0) {
+                        const channelIds = Array.isArray(group.channelIds) ? group.channelIds : [];
+                        if (channelIds.length === 0) {
                             rows.push(this._csvEscape(name) + ',,,');
                             continue;
                         }
-                        for (const ch of channels) {
-                            const chName = ch.name || '';
-                            const handle = ch.handle || '';
-                            const url = ch.url || (handle ? `https://www.youtube.com/${handle}` : '');
-                            rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                        for (const channelId of channelIds) {
+                            const cid = String(channelId || '').trim();
+                            if (!cid) continue;
+                            const handle = cid.startsWith('@') ? cid : '';
+                            const url = handle
+                                ? `https://www.youtube.com/${handle}`
+                                : `https://www.youtube.com/channel/${cid}`;
+                            rows.push([name, cid, handle, url].map(v => this._csvEscape(v)).join(','));
                         }
                     }
                     const csv = rows.join('\r\n') + '\r\n';
@@ -14940,9 +14963,12 @@
                     this._lastTodayKey = currentTodayKey;
                     const today = this._loadToday();
                     today.seconds = (today.seconds || 0) + 1;
-                    // Batch saves every 30s to avoid thrashing chrome.storage.local
+                    // Always advance the in-memory cache; batch storage writes to
+                    // every 30s. (Updating the cache only on the else-branch froze
+                    // the accumulator at 30s forever because _loadToday prefers the
+                    // stale cache over the freshly-saved settings value.)
+                    this._todayCache = today;
                     if (today.seconds % 30 === 0) this._saveToday(today);
-                    else this._todayCache = today;
                     // NF34: use `??` so today.seconds === 0 (first tick of a
                     // new day) correctly initializes _sessionStart instead of
                     // letting the OR fall through to the next tick.
@@ -32191,16 +32217,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const rows = ['Group,Channel,Handle,URL'];
                 for (const [id, group] of Object.entries(groups)) {
                     const name = group.name || id;
-                    const channels = Array.isArray(group.channels) ? group.channels : [];
-                    if (channels.length === 0) {
+                    const channelIds = Array.isArray(group.channelIds) ? group.channelIds : [];
+                    if (channelIds.length === 0) {
                         rows.push(this._csvEscape(name) + ',,,');
                         continue;
                     }
-                    for (const ch of channels) {
-                        const chName = ch.name || '';
-                        const handle = ch.handle || '';
-                        const url = ch.url || (handle ? 'https://www.youtube.com/' + handle : '');
-                        rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                    for (const channelId of channelIds) {
+                        const cid = String(channelId || '').trim();
+                        if (!cid) continue;
+                        const handle = cid.startsWith('@') ? cid : '';
+                        const url = handle
+                            ? 'https://www.youtube.com/' + handle
+                            : 'https://www.youtube.com/channel/' + cid;
+                        rows.push([name, cid, handle, url].map(v => this._csvEscape(v)).join(','));
                     }
                 }
                 const csv = rows.join('\r\n') + '\r\n';

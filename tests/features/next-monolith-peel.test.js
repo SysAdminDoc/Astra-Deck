@@ -710,7 +710,62 @@ test('subscriptionGroups OPML import reports malformed files without overwriting
     assert.match(toasts[0][0], /OPML import failed/i);
 });
 
+test('subscriptionGroups factory wires the scoped mutation-rule helpers (init/destroy would ReferenceError otherwise)', () => {
+    const factorySource = require('fs').readFileSync(
+        require('path').join(__dirname, '../../extension/features/subscription-groups/index.js'), 'utf8');
+    assert.match(factorySource, /addScopedMutationRule\s*=\s*\(\)\s*=>\s*\{\}/,
+        'factory must destructure addScopedMutationRule from deps');
+    assert.match(factorySource, /removeScopedMutationRule\s*=\s*\(\)\s*=>\s*\{\}/,
+        'factory must destructure removeScopedMutationRule from deps');
+    const callSite = sources.ytkit.slice(
+        sources.ytkit.indexOf('createSubscriptionGroupsFeature?.({'));
+    const passedBlock = callSite.slice(0, callSite.indexOf('}) || {'));
+    assert.ok(/addScopedMutationRule/.test(passedBlock),
+        'monolith must pass addScopedMutationRule into the subscriptionGroups factory');
+    assert.ok(/removeScopedMutationRule/.test(passedBlock),
+        'monolith must pass removeScopedMutationRule into the subscriptionGroups factory');
+});
+
+test('subscriptionGroups CSV export reads channelIds, not the non-existent channels array', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const csvSource = String(mod.createSubscriptionGroupsFeature({})._exportGroupsCsv);
+    assert.ok(/group\.channelIds/.test(csvSource),
+        'CSV export must iterate group.channelIds');
+    assert.ok(!/Array\.isArray\(group\.channels\)/.test(csvSource),
+        'CSV export must not read the never-populated group.channels array');
+    assert.ok(/youtube\.com\/channel\//.test(csvSource),
+        'CSV export must build a canonical channel URL from each id');
+});
+
 // ── Digital Wellbeing peel ──
+
+test('digitalWellbeing watch-time accumulator advances past 30s (does not freeze on the save tick)', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/digital-wellbeing/index.js',
+        'digitalWellbeing'
+    );
+    const saves = [];
+    const feature = mod.createDigitalWellbeingFeature({
+        appState: { settings: { dwDailyCapMin: 0, dwBreakIntervalMin: 0 } },
+        settingsManager: { save: (s) => saves.push(s) },
+        DebugManager: { log() {} },
+    });
+    const priorDocument = global.document;
+    global.document = { querySelector: () => ({ paused: false }), hidden: false };
+    try {
+        for (let i = 0; i < 65; i++) feature._tick();
+    } finally {
+        if (priorDocument === undefined) delete global.document;
+        else global.document = priorDocument;
+    }
+    assert.equal(feature._loadToday().seconds, 65,
+        'accumulator must keep counting past the 30s batch-save boundary');
+    // Batched to every 30s: 65 ticks -> saves at 30 and 60 only.
+    assert.equal(saves.length, 2, 'storage writes must stay batched at 30s intervals');
+});
 
 test('digitalWellbeing module exports the runtime factory', () => {
     const { mod, exported } = loadFeatureModule(

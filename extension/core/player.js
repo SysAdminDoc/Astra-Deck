@@ -224,6 +224,14 @@
             notify('visibility');
         }
 
+        // Named handlers (not inline arrows) so destroy() can actually remove
+        // them — otherwise each manager instance leaks these four window
+        // listeners and a destroy/install cycle stacks duplicate notify pumps.
+        function onNavigateFinish() { bumpRoute('navigate'); }
+        function onPageDataUpdated() { notify('page-data'); }
+        function onPlayerUpdated() { notify('player-state'); }
+        function onPlayerStateChange() { notify('player-state'); }
+
         function install() {
             if (installed || !root?.addEventListener || !win?.addEventListener) return;
             installed = true;
@@ -233,10 +241,10 @@
             root.addEventListener('playing', onMediaEvent, true);
             root.addEventListener('visibilitychange', onVisibilityChange, true);
             win.addEventListener('yt-navigate-start', onNavigateStart);
-            win.addEventListener('yt-navigate-finish', () => bumpRoute('navigate'));
-            win.addEventListener('yt-page-data-updated', () => notify('page-data'));
-            win.addEventListener('yt-player-updated', () => notify('player-state'));
-            win.addEventListener('yt-player-state-change', () => notify('player-state'));
+            win.addEventListener('yt-navigate-finish', onNavigateFinish);
+            win.addEventListener('yt-page-data-updated', onPageDataUpdated);
+            win.addEventListener('yt-player-updated', onPlayerUpdated);
+            win.addEventListener('yt-player-state-change', onPlayerStateChange);
         }
 
         function destroy() {
@@ -249,6 +257,10 @@
             root.removeEventListener('playing', onMediaEvent, true);
             root.removeEventListener('visibilitychange', onVisibilityChange, true);
             win.removeEventListener('yt-navigate-start', onNavigateStart);
+            win.removeEventListener('yt-navigate-finish', onNavigateFinish);
+            win.removeEventListener('yt-page-data-updated', onPageDataUpdated);
+            win.removeEventListener('yt-player-updated', onPlayerUpdated);
+            win.removeEventListener('yt-player-state-change', onPlayerStateChange);
             installed = false;
         }
 
