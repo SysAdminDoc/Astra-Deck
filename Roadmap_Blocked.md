@@ -20,13 +20,13 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Requires manual AMO developer dashboard interaction (screenshots, listing copy, human review submission). Cannot be automated.
 
-- [ ] P1 — Companion binary release (PyInstaller freeze + SHA256 sidecar)
-  Why: README documents `AstraDownloader.exe` and `.sha256` as expected release assets, but no release has ever included them. Users must install Python 3.12 and run from source. This is the #1 onboarding friction for the download feature.
-  Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists.
-  Touches: `astra_downloader/build.py`, GitHub Release workflow, `scripts/stage-companion-release.js`
+- [ ] P1 — Companion release SHA256 sidecar + clean-machine verification
+  Why: Latest release `v4.46.4` includes `AstraDownloader.exe`, but the updater/setup flow also requires `AstraDownloader.exe.sha256`. Without the sidecar, users still cannot complete the one-click companion setup path.
+  Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists; `gh release view v4.46.4` reports `AstraDownloader.exe` with digest `sha256:c38c04adb5b829511cf4074e7af78318419bd572c324348e10c3b14a3e9c9066` but no `.sha256` asset.
+  Touches: `astra_downloader/build.py`, GitHub Release assets, `scripts/stage-companion-release.js`
   Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
   Complexity: M
-  Blocker: Requires PyInstaller freeze on a clean Windows machine with Python 3.12 + all Qt/Flask dependencies installed, plus manual verification that the EXE runs standalone. Build environment not available in this context.
+  Blocker: Requires maintainer GitHub authentication to upload the sidecar (`gh auth status` reports the SysAdminDoc token is invalid in this environment) plus manual clean Windows verification that the EXE runs standalone.
 
 ## P2 — Documentation
 
@@ -77,8 +77,8 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 - [ ] P2 — Visual regression testing for popup
   Why: The popup is the primary user-facing control surface. CSS changes, i18n string length variations, and Chrome version differences can cause visual regressions that unit tests cannot catch.
   Evidence: No visual regression tests in the codebase; popup has been through multiple redesigns (v3.11, v3.19, v4.x).
-  Touches: New `tests/visual/` directory, Puppeteer screenshot comparison, CI integration
-  Acceptance: CI captures popup screenshots in Chrome and Firefox; a baseline is committed; regressions fail the build with a diff image.
+  Touches: New `tests/visual/` directory, Puppeteer screenshot comparison, local visual test command
+  Acceptance: Local visual tests capture popup screenshots in Chrome and Firefox; a baseline is committed; regressions fail the local check with a diff image.
   Complexity: M
   Blocker: Requires headless Chrome/Firefox with Puppeteer installed to capture baseline screenshots. Browser binaries not available in this environment.
 
@@ -104,3 +104,63 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: Settings categories use `<details name="ytkit-settings">`.
   Complexity: S
   Blocker: The settings panel uses a sidebar-tab navigation model, not vertical collapsible sections. Adopting `<details name>` would require restructuring the panel's DOM architecture. Requires live browser verification of the new layout.
+
+## P1 — Security Product Decisions (2026-07-08 audit)
+
+- [ ] P1 — Companion `/health` echoes the auth token to any co-installed
+  extension by default
+  Why: `LegacyHealthTokenEcho` defaults on and `is_extension_origin` accepts any
+  `chrome-extension://` / `moz-extension://` origin (no ID allowlist), and CORS
+  reflects that origin — so any other installed extension can spoof the
+  `X-MDL-Client: MediaDL` header, read the reflected `token`, and drive
+  `/download`. Default the echo off once the native-messaging bootstrap is the
+  confirmed primary path for existing users, or gate on a configured extension-ID
+  allowlist. (Impact bounded: YouTube-only URL gate, output-dir confinement.)
+  Where: astra_downloader/astra_downloader.py (~3661-3810)
+  Blocker: Product decision — changing the default breaks any non-native-messaging
+  client that relies on the HTTP token echo. Needs confirmation that the
+  native-messaging bootstrap is the primary path before defaulting off.
+
+- [ ] P3 — Unauthenticated `/health` leaks recent log lines (local paths / errors)
+  Why: `recentErrors` (last 20 log messages, absolute paths and error text) is
+  in the fully-unauthenticated `/health` payload. Gate behind auth or redact.
+  Where: astra_downloader/astra_downloader.py (~3791)
+  Blocker: Product decision — gating /health output behind auth changes the API
+  surface used by extension diagnostics panels. Needs design decision on what
+  to expose vs gate.
+
+## P2 — Userscript Structural Drift (Browser-Gated)
+
+- [ ] P2 — Userscript bundle is stale; next sync will break Import
+  Why: `YTKit.user.js` still bundles the pre-4.46.26 settings-panel and
+  pre-4.46.27 subscription-groups modules, so the shipped userscript lacks the
+  Takeout import, import summaries/undo, and group import counters it claims by
+  version. The module sources now call `settingsManager.importAllSettingsDetailed`
+  and `importYouTubeTakeoutWatchHistory`, which the userscript monolith's
+  `settingsManager` does not implement — so `node sync-userscript.js` will ship
+  an Import button that throws `TypeError` on click. Port both methods (plus
+  their dozen helper functions) into the monolith `settingsManager` and mirror the
+  `deno-runtime-unsupported` recovery copy before regenerating the bundle.
+  Where: YTKit.user.js, extension/features/settings-panel/index.js, sync-userscript.js
+  Blocker: Porting requires adapting ~200 lines of extension-only storage API
+  calls (StorageManager.setSync, STORAGE_KEYS, IMPORT_LIMITS, estimateSerializedBytes,
+  etc.) to the userscript's GM_* storage shim, and verifying the result in a
+  Tampermonkey browser session. Cannot be verified without a running browser.
+
+- [ ] P2 — Side-panel toggles bypass optional-host permission + profile gating
+  Why: side-panel `writeSetting` does not call `requestOptionalHostsForSetting`,
+  so enabling an API-backed feature (SponsorBlock/DeArrow) reports success while
+  the feature silently no-ops without host access. Mirror the popup gating.
+  Where: extension/sidepanel.js (~437-453)
+  Blocker: Requires browser verification that `chrome.permissions.request()` works
+  from the side panel's user-gesture context. Cannot verify without a running browser.
+
+- [ ] P1 — MAIN-world audio graph reconnect needs browser verification
+  Why: The WeakMap-cached source node fix (shipped in v4.46.29) is architecturally
+  correct but needs verification that YouTube's persistent <video> element + SPA
+  navigation actually triggers the reconnect path and that audio passthrough
+  works correctly with the gain-bypass idle mode. Verify with any audio feature
+  (volume boost, mono-to-stereo, normalization) across two video navigations.
+  Where: extension/ytkit-main.js (~395-512)
+  Blocker: Requires loading the extension in Chrome/Edge with audio features
+  enabled and navigating between videos to verify audio continuity.
