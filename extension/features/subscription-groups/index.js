@@ -24,6 +24,8 @@
             removeNavigateRule = () => {},
             addMutationRule = () => {},
             removeMutationRule = () => {},
+            addScopedMutationRule = () => {},
+            removeScopedMutationRule = () => {},
             runBudgetedElementBatch = (items, callback) => {
                 const list = Array.from(items || []);
                 list.forEach(callback);
@@ -371,16 +373,23 @@
                 const rows = ['Group,Channel,Handle,URL'];
                 for (const [id, group] of Object.entries(groups)) {
                     const name = group.name || id;
-                    const channels = Array.isArray(group.channels) ? group.channels : [];
-                    if (channels.length === 0) {
+                    // Groups persist membership as `channelIds` (UC.../@handle
+                    // strings), never a `channels` object array. Derive the
+                    // handle column and canonical URL from the id so exports
+                    // actually carry channel data.
+                    const channelIds = Array.isArray(group.channelIds) ? group.channelIds : [];
+                    if (channelIds.length === 0) {
                         rows.push(this._csvEscape(name) + ',,,');
                         continue;
                     }
-                    for (const ch of channels) {
-                        const chName = ch.name || '';
-                        const handle = ch.handle || '';
-                        const url = ch.url || (handle ? `https://www.youtube.com/${handle}` : '');
-                        rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                    for (const channelId of channelIds) {
+                        const id = String(channelId || '').trim();
+                        if (!id) continue;
+                        const handle = id.startsWith('@') ? id : '';
+                        const url = handle
+                            ? `https://www.youtube.com/${handle}`
+                            : `https://www.youtube.com/channel/${id}`;
+                        rows.push([name, id, handle, url].map(v => this._csvEscape(v)).join(','));
                     }
                 }
                 const csv = rows.join('\r\n') + '\r\n';
