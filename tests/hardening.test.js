@@ -4445,8 +4445,6 @@ test('popup treats unavailable extension storage as preview mode, not corruption
         'static preview must get calm, actionable degraded-state copy');
     assert.match(popupSource, /if\s*\(\s*storageUnavailable\s*\)\s*\{[\s\S]*?storageBanner\.hidden\s*=\s*true[\s\S]*?showStatus\(getStorageUnavailableMessage\(\),\s*'info'/,
         'storage-unavailable reads must hide the reset banner and surface an info status');
-    assert.match(popupSource, /popupRequirePin\(\)\s*\{[\s\S]*?hasChromeStorageLocal\('get'\)/,
-        'PIN-gated actions must not throw when the popup is rendered outside an extension context');
 });
 
 test('popup CSS adapts to narrow public preview containers without horizontal overflow', () => {

@@ -3,38 +3,6 @@
 // (export, import, reset, storage stats) previously hosted by the
 // standalone options page.
 
-// ── Settings PIN gate (mirrors ytkit.js PIN logic) ──
-const PIN_STORAGE_KEY = 'ytkit_pin_hash';
-const PIN_SALT = 'ytkit-pin-salt-v1:';
-
-async function _popupHashPin(pin) {
-    const data = new TextEncoder().encode(PIN_SALT + pin);
-    const buf = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function popupRequirePin() {
-    if (!hasChromeStorageLocal('get')) {
-        showStatus(getStorageUnavailableMessage(), 'info', 4200);
-        return false;
-    }
-    let stored = null;
-    try {
-        const result = await chrome.storage.local.get(PIN_STORAGE_KEY);
-        stored = result[PIN_STORAGE_KEY];
-    } catch (error) {
-        if (isExtensionStorageUnavailable(error)) {
-            showStatus(getStorageUnavailableMessage(), 'info', 4200);
-            return false;
-        }
-        throw error;
-    }
-    if (!stored) return true;
-    const pin = prompt('Enter your Astra Deck PIN to continue:');
-    if (pin === null) return false;
-    return (await _popupHashPin(pin.trim())) === stored;
-}
-
 const QUICK_TOGGLES = [
     { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts shelves and links' },
     { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'Clear the watch-page side rail' },
@@ -4371,13 +4339,13 @@ function installWheelScrolling() {
         }
     }
 
-    exportButton.addEventListener('click', async () => { if (await popupRequirePin()) void exportSettings(); });
-    importButton.addEventListener('click', async () => { if (await popupRequirePin()) importFileInput.click(); });
+    exportButton.addEventListener('click', () => { void exportSettings(); });
+    importButton.addEventListener('click', () => { importFileInput.click(); });
     importFileInput.addEventListener('change', (event) => {
         const file = event.target.files?.[0];
         if (file) void importSettings(file);
     });
-    resetButton.addEventListener('click', async () => { if (await popupRequirePin()) void resetAllData(); });
+    resetButton.addEventListener('click', () => { void resetAllData(); });
     if (undoResetButton) {
         undoResetButton.addEventListener('click', () => { void undoResetAllData(); });
         // Boot visibility: surface the Undo button if a prior reset's snapshot
@@ -4405,5 +4373,5 @@ function installWheelScrolling() {
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
     // Route through the same PIN gate as the primary Reset to prevent
     // bypassing the PIN when the banner is showing.
-    if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', async () => { if (await popupRequirePin()) void resetAllData(); });
+    if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
 })();
