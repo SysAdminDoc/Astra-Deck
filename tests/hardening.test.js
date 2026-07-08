@@ -4021,6 +4021,8 @@ test('YouTube Takeout watch-history import feeds local analytics with dedupe led
         'settings-panel module must expose the Takeout import action');
     assert.doesNotMatch(ytkitSource, /importYouTubeTakeoutWatchHistory[\s\S]{0,2500}fetch\(/,
         'Takeout import must stay local-only and never fetch remote metadata');
+    assert.match(ytkitSource, /const todayKey = formatLocalDateKey\(nowDate\);[\s\S]{0,600}dayKey > todayKey/,
+        'Takeout merge must reject future-dated entries so they cannot evict genuine recent days');
 });
 
 test('localAiSummary checks for Chrome built-in Summarizer and never falls through to remote providers', () => {
