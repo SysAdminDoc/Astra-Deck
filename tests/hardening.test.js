@@ -4011,8 +4011,8 @@ test('YouTube Takeout watch-history import feeds local analytics with dedupe led
         'Takeout importer must merge into the existing watch-time stats shape');
     assert.match(ytkitSource, /const key = `\$\{entry\.videoId\}@\$\{entry\.watchedAt\}`;[\s\S]*if \(importedLedger\[key\]\)/,
         'Takeout duplicate handling must merge by video id plus watched timestamp');
-    assert.match(ytkitSource, /stats\.days\[entry\.dayKey\] = \(Number\(stats\.days\[entry\.dayKey\]\) \|\| 0\) \+ entry\.seconds;/,
-        'Takeout imports must feed the existing daily watch analytics bars');
+    assert.match(ytkitSource, /mergedDays\[entry\.dayKey\] = \(Number\(mergedDays\[entry\.dayKey\]\) \|\| 0\) \+ entry\.seconds;/,
+        'Takeout merge must rebuild daily totals from surviving imported entries');
     assert.match(ytkitSource, /StorageManager\.setSync\(STORAGE_KEYS\.watchTime, result\.stats\)/,
         'Takeout import must write only the local watch-time store');
     assert.match(ytkitSource, /id = 'ytkit-import-history'/,

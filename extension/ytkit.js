@@ -1161,8 +1161,6 @@ return response;
         let skipped = 0;
 
         for (const entry of entries) {
-            // Skip days outside [cutoff, today] — future-dated entries would
-            // inflate totals and evict genuine recent days.
             if (entry.dayKey <= cutoffKey || entry.dayKey > todayKey) {
                 skipped++;
                 continue;
@@ -1173,13 +1171,30 @@ return response;
                 continue;
             }
             importedLedger[key] = entry;
-            stats.days[entry.dayKey] = (Number(stats.days[entry.dayKey]) || 0) + entry.seconds;
-            stats.total = (Number(stats.total) || 0) + entry.seconds;
             imported++;
         }
 
+        // Sanitize the ledger BEFORE recomputing totals — this caps the
+        // ledger at STORAGE_CAPS.watchTimeImportedEntries. Computing
+        // days/total from the surviving entries ensures that a re-import
+        // of the same file cannot double-count seconds from entries that
+        // fell off the ledger cap.
+        const sanitizedResult = sanitizeWatchTimeStats({ ...stats, imported: importedLedger }, nowDate);
+        // Rebuild days + total from native organic tracking plus the
+        // surviving imported entries.
+        const organicDays = sanitizeWatchTimeStats(currentStats, nowDate).days;
+        const mergedDays = { ...organicDays };
+        for (const entry of Object.values(sanitizedResult.imported)) {
+            if (!entry || !entry.dayKey || !entry.seconds) continue;
+            mergedDays[entry.dayKey] = (Number(mergedDays[entry.dayKey]) || 0) + entry.seconds;
+        }
+        let mergedTotal = 0;
+        for (const v of Object.values(mergedDays)) mergedTotal += Number(v) || 0;
+        sanitizedResult.days = mergedDays;
+        sanitizedResult.total = mergedTotal;
+
         return {
-            stats: sanitizeWatchTimeStats({ ...stats, imported: importedLedger }, nowDate),
+            stats: sanitizedResult,
             imported,
             duplicates,
             skipped,
@@ -23831,7 +23846,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         delay,
                         needsVideo: false,
                         needsPlayer: true,
-                        events: ['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data'],
+                        // Only apply on navigation — NOT on player-state
+                        // (play/pause/buffer) which would re-force theater after
+                        // the user manually exits it mid-video.
+                        events: ['navigate', 'page-data'],
                         retryDelays: [0, 150, 400, 1000, 1800, 3000],
                         maxAttempts: 6
                     });
@@ -27851,7 +27869,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         delay,
                         needsVideo: false,
                         needsPlayer: true,
-                        events: ['loadedmetadata', 'player-state', 'navigate', 'page-data'],
+                        // Only re-scroll on navigation/page-data — NOT on
+                        // player-state (play/pause/buffer) which would yank the
+                        // viewport back while the user reads comments.
+                        events: ['navigate', 'page-data'],
                         retryDelays: [0, 150, 400, 1000, 1800],
                         maxAttempts: 5
                     });
