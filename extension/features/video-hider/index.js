@@ -1470,22 +1470,15 @@
                     this._updatePageActionButtons();
                 };
 
-                this._observer = new MutationObserver(mutations => {
-                    const addedCards = [];
-                    for (const m of mutations) {
-                        for (const node of m.addedNodes) {
-                            if (node.nodeType !== 1) continue;
-                            if (node.matches?.(selectors)) {
-                                addedCards.push(node);
-                            }
-                            node.querySelectorAll?.(selectors).forEach(el => {
-                                addedCards.push(el);
-                            });
-                        }
-                    }
-                    if (!addedCards.length) return;
-                    this._mutationBudgetHandle?.cancel?.();
-                    const handle = runBudgetedElementBatch(addedCards, (el) => {
+                // Accumulate mutation-discovered cards between batch runs so
+                // cancelling a prior batch for a new mutation flush does not
+                // drop unprocessed items.
+                let pendingMutationCards = [];
+                const scheduleMutationBatch = () => {
+                    if (!pendingMutationCards.length) return;
+                    const cards = pendingMutationCards;
+                    pendingMutationCards = [];
+                    const handle = runBudgetedElementBatch(cards, (el) => {
                         const wasHidden = this._processVideoElementWithResult(el);
                         batchBuffer.push({ element: el, hidden: wasHidden });
                     }, {
@@ -1502,6 +1495,24 @@
                         if (batchTimeout) clearTimeout(batchTimeout);
                         batchTimeout = setTimeout(processBatch, 300);
                     });
+                };
+                this._observer = new MutationObserver(mutations => {
+                    for (const m of mutations) {
+                        for (const node of m.addedNodes) {
+                            if (node.nodeType !== 1) continue;
+                            if (node.matches?.(selectors)) {
+                                pendingMutationCards.push(node);
+                            }
+                            node.querySelectorAll?.(selectors).forEach(el => {
+                                pendingMutationCards.push(el);
+                            });
+                        }
+                    }
+                    if (!pendingMutationCards.length) return;
+                    // Cancel the in-flight batch and re-schedule with ALL
+                    // pending cards (the accumulated ones plus the new ones).
+                    this._mutationBudgetHandle?.cancel?.();
+                    scheduleMutationBatch();
                 });
                 const observeTarget = document.querySelector('ytd-app') || document.body;
                 this._observer.observe(observeTarget, { childList: true, subtree: true });
