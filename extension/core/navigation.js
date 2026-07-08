@@ -440,7 +440,15 @@
             const chunkStartedAt = nowMs();
             let processedInChunk = 0;
             while (index < list.length && processedInChunk < chunkSize) {
-                callback(list[index], index, list);
+                // A throwing callback must not abandon the whole batch: that
+                // would leave `promise` forever unsettled and strand callers
+                // that gate cleanup on it. Skip the bad item and keep going.
+                try {
+                    callback(list[index], index, list);
+                } catch (e) {
+                    // reason: per-item batch failures are isolated so one bad
+                    // element cannot stall the scan or leak the pending promise.
+                }
                 index += 1;
                 processedInChunk += 1;
                 if ((nowMs() - chunkStartedAt) >= budgetMs) break;

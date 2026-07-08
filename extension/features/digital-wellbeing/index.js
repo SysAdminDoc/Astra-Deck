@@ -198,9 +198,12 @@
                 this._lastTodayKey = currentTodayKey;
                 const today = this._loadToday();
                 today.seconds = (today.seconds || 0) + 1;
-                // Batch saves every 30s to avoid thrashing chrome.storage.local
+                // Always advance the in-memory cache; batch storage writes to
+                // every 30s. (Updating the cache only on the else-branch froze
+                // the accumulator at 30s forever because _loadToday prefers the
+                // stale cache over the freshly-saved settings value.)
+                this._todayCache = today;
                 if (today.seconds % 30 === 0) this._saveToday(today);
-                else this._todayCache = today;
                 // NF34: use `??` so today.seconds === 0 (first tick of a
                 // new day) correctly initializes _sessionStart instead of
                 // letting the OR fall through to the next tick.
