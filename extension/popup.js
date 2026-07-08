@@ -3619,8 +3619,17 @@ function buildExportData(allStorage) {
         allStorage[STORAGE_KEYS.settings] || {},
         getLegacySidebarOrder(allStorage)
     );
-    const hiddenVideos = sanitizeImportedHiddenVideos(allStorage[STORAGE_KEYS.hiddenVideos]);
-    const allowedVideos = sanitizeImportedVideoIdList(allStorage[STORAGE_KEYS.allowedVideos], IMPORT_LIMITS.allowedVideos);
+    // Export the FULL live data — sanitizeImported* functions are import-time
+    // caps, not export caps. Truncating here silently loses data, which is
+    // dangerous because the reset flow recommends "export a backup first."
+    const rawHidden = allStorage[STORAGE_KEYS.hiddenVideos];
+    const hiddenVideos = Array.isArray(rawHidden) ? rawHidden.filter(v => typeof v === 'string' && v.trim()) : [];
+    const rawAllowed = allStorage[STORAGE_KEYS.allowedVideos];
+    const allowedVideos = Array.isArray(rawAllowed) ? rawAllowed.filter(v => typeof v === 'string' && v.trim()) : [];
+    const rawBlocked = allStorage[STORAGE_KEYS.blockedChannels];
+    const blockedChannels = Array.isArray(rawBlocked) ? rawBlocked.filter(v => v && typeof v === 'object') : [];
+    const rawBookmarks = allStorage[STORAGE_KEYS.bookmarks];
+    const bookmarks = (rawBookmarks && typeof rawBookmarks === 'object' && !Array.isArray(rawBookmarks)) ? rawBookmarks : {};
     const exportSettings = buildSchemaValidatedExportSettings(mergedSettings);
     return {
         astraDeckBackup: true,
@@ -3628,8 +3637,8 @@ function buildExportData(allStorage) {
         hiddenVideos,
         filteredVideoPosts: hiddenVideos,
         allowedVideos,
-        blockedChannels: sanitizeImportedBlockedChannels(allStorage[STORAGE_KEYS.blockedChannels]),
-        bookmarks: sanitizeImportedBookmarks(allStorage[STORAGE_KEYS.bookmarks]),
+        blockedChannels,
+        bookmarks,
         exportVersion: 4,
         backupSchemaVersion: 1,
         settingsSchemaVersion: SETTINGS_VERSION_FALLBACK,
@@ -4035,6 +4044,7 @@ async function resetAllData() {
     // bans confirmation dialogs in favor of this pattern.
     resetButton.setAttribute('aria-busy', 'true');
     resetButton.disabled = true;
+    if (storageBannerResetBtn) storageBannerResetBtn.disabled = true;
     try {
         // Snapshot everything in storage.local BEFORE clearing so an
         // Undo can restore byte-identical. Session storage is the right
@@ -4092,6 +4102,7 @@ async function resetAllData() {
     } finally {
         resetButton.removeAttribute('aria-busy');
         resetButton.disabled = false;
+        if (storageBannerResetBtn) storageBannerResetBtn.disabled = false;
     }
 }
 
@@ -4392,7 +4403,7 @@ function installWheelScrolling() {
         optionalHostGrantBtn.addEventListener('click', () => { void grantMissingOptionalHostPermissions(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
-    // storage-banner Reset shares the same destructive-confirm
-    // dialog as the primary Reset button so accidental clicks stay guarded.
-    if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
+    // Route through the same PIN gate as the primary Reset to prevent
+    // bypassing the PIN when the banner is showing.
+    if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', async () => { if (await popupRequirePin()) void resetAllData(); });
 })();

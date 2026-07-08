@@ -609,6 +609,12 @@ function renderSettings(filter) {
                     return;
                 }
                 renderSettings(settingsSearch?.value || '');
+                // Restore focus to the same setting row after re-render so
+                // keyboard users don't lose their position.
+                try {
+                    const refocusTarget = settingsList?.querySelector(`[title^="${CSS.escape(entry.key)} "]`);
+                    if (refocusTarget) refocusTarget.focus();
+                } catch (_) { /* reason: CSS.escape or querySelector may fail */ }
                 setRefreshStatus(`${humanName} ${next ? 'enabled' : 'disabled'}`, 'success');
             });
             row.addEventListener('keydown', (e) => {
@@ -648,7 +654,17 @@ if (chrome.storage?.onChanged) {
         if (changes[SETTINGS_KEY]) {
             _settingsState = (changes[SETTINGS_KEY].newValue && typeof changes[SETTINGS_KEY].newValue === 'object')
                 ? changes[SETTINGS_KEY].newValue : {};
+            // Preserve focus position across re-renders driven by external
+            // storage changes (e.g. popup writes while side panel is open).
+            const focused = document.activeElement;
+            const focusKey = focused?.title?.split(' (')?.[0];
             renderSettings(settingsSearch?.value || '');
+            if (focusKey && settingsList) {
+                try {
+                    const target = settingsList.querySelector(`[title^="${CSS.escape(focusKey)} "]`);
+                    if (target) target.focus();
+                } catch (_) { /* reason: focus restore is best-effort */ }
+            }
         }
     });
 }
