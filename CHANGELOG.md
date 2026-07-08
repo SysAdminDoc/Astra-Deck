@@ -6,6 +6,31 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: v4.46.28 deep audit pass — correctness, teardown, and security.**
+  Multi-pass engineering + product audit. Repaired: Subscription Groups init/
+  destroy crashing with a `ReferenceError` (the peeled factory never received
+  the scoped mutation-rule helpers, so the feature silently never filtered the
+  feed and left group-hidden cards stuck after disable); Subscription Groups
+  CSV export emitting header-only rows (read `group.channels`, which is never
+  populated — membership is stored as `channelIds`); the Digital Wellbeing
+  watch-time counter freezing at 30s forever (the tick cache advanced only on
+  the non-save branch, so break reminders and the daily cap could never fire and
+  storage wrote every second); the budgeted feed-scan runner leaving its promise
+  permanently unsettled when an item callback threw; the player task manager
+  leaking four window listeners on destroy and double-firing on reinstall; the
+  side-panel toggle path overwriting the entire settings object from an empty
+  cache and ignoring the storage `areaName`; DeArrow never processing the
+  clickbait-heavy watch-page related rail; DeArrow/SponsorBlock resurrecting
+  their caches after teardown; the download-history button re-attaching after
+  destroy; and the Takeout import accepting future-dated entries that evicted
+  genuine recent days. Security: the EXT_FETCH proxy now treats BYO API-key
+  headers (`x-api-key`, `x-goog-api-key`, `api-key`) as credentials — scoping
+  them to the AI-provider origin allowlist and forcing manual redirects so a
+  redirect from an allowlisted API host cannot leak the key; the companion
+  `/provision-deno` endpoint now uses a constant-time token comparison. Tooling:
+  `check-no-eval` now scans the side-panel/sidebar scripts it claimed to cover,
+  and `check-contrast` now fails when its color constants drift from popup.css.
+  Also refreshed the stale v3.x "What's New" changelog copy to be version-generic.
 - **Feat: v4.46.27 local import summaries and undo.** Settings imports now
   report changed settings, restored local lists, skipped entries, and duplicate
   rows with an immediate Undo toast; Subscription Groups JSON/OPML imports now
