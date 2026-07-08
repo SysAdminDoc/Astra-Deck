@@ -1894,13 +1894,23 @@
             },
 
             init() {
+                this._destroyed = false;
                 this._ensureStyles();
-                addNavigateRule(this.id, () => { setTimeout(() => this._attach(), 1500); });
+                addNavigateRule(this.id, () => {
+                    if (this._navTimer) clearTimeout(this._navTimer);
+                    this._navTimer = setTimeout(() => {
+                        this._navTimer = null;
+                        if (this._destroyed) return;
+                        this._attach();
+                    }, 1500);
+                });
                 this._attach();
             },
 
             destroy() {
+                this._destroyed = true;
                 removeNavigateRule(this.id);
+                if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null; }
                 this._btn?.remove();
                 this._btn = null;
                 this._panel?.remove();
