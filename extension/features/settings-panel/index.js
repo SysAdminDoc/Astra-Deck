@@ -2031,10 +2031,10 @@ function buildSettingsPanel() {
         historyImportBtn.type = 'button';
         historyImportBtn.className = 'ytkit-btn ytkit-btn-secondary';
         historyImportBtn.id = 'ytkit-import-history';
-        historyImportBtn.setAttribute('aria-label', 'Import YouTube Takeout watch history');
+        historyImportBtn.setAttribute('aria-label', t('settingsImportHistoryAriaLabel', 'Import YouTube Takeout watch history'));
         historyImportBtn.appendChild(ICONS.upload());
         const historyImportText = document.createElement('span');
-        historyImportText.textContent = 'Import History';
+        historyImportText.textContent = t('settingsImportHistoryLabel', 'Import History');
         historyImportBtn.appendChild(historyImportText);
 
         const importBtn = document.createElement('button');
