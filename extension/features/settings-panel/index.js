@@ -2004,11 +2004,11 @@ function buildSettingsPanel() {
             badge.id = 'ytkit-whats-new-badge';
             badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
             versionSpan.appendChild(badge);
-            versionSpan.title = `New in v${YTKIT_VERSION}: Performance audit — fixed listener leaks, replaced polling with events, seek stutter fix`;
+            versionSpan.title = `Astra Deck updated to v${YTKIT_VERSION} — click for the changelog`;
             versionSpan.onclick = () => {
                 storageWrite('ytkit_last_seen_version', CURRENT_VER);
                 badge.remove();
-                showToast(`v${YTKIT_VERSION}: Fixed quality/codec selection — DOM click quality, MAIN world codec bridge`, '#3b82f6', { duration: 6 });
+                showToast(`Updated to v${YTKIT_VERSION}. See the changelog on GitHub for what's new.`, '#3b82f6', { duration: 6 });
             };
         }
 

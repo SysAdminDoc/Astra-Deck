@@ -136,12 +136,17 @@
                 try { return await promise; } finally { delete this._pending[videoId]; }
             },
             async _doFetch(videoId) {
+                const gen = this._generation;
                 try {
                     const { data } = await extensionFetchJson({
                         method: 'GET',
                         url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
                         timeout: 8000,
                     });
+                    // Feature was torn down while this request was in flight —
+                    // do not resurrect the freshly-cleared cache or arm a persist
+                    // timer that would write after destroy().
+                    if (gen !== this._generation) return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
                     if (!data || typeof data !== 'object' || Array.isArray(data)) {
                         const payloadError = new Error('invalid DeArrow branding payload');
                         ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
