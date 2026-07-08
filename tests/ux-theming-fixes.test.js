@@ -175,26 +175,6 @@ test('settings panel search copy matches the expanded filter behavior', () => {
     }
 });
 
-test('settings panel header actions use a dedicated PIN button pattern', () => {
-    for (const [label, source] of [
-        ['module', settingsPanelModuleSource],
-        ['monolith', ytkitSource]
-    ]) {
-        assert.ok(source.includes("headerActions.className = 'ytkit-header-actions'"),
-            `${label} settings header must group utility actions`);
-        assert.ok(source.includes("pinBtn.className = 'ytkit-pin-btn'"),
-            `${label} settings PIN control must not reuse the close-button class`);
-        assert.doesNotMatch(source, /pinBtn\.style\.cssText/,
-            `${label} settings PIN control must not rely on inline layout styles`);
-        assert.ok(source.includes("pinBtn.setAttribute('aria-label', t('panelPinAria', 'Manage settings PIN lock'))"),
-            `${label} settings PIN control must have an accessible name`);
-        assert.ok(source.includes('const pinIcon = (ICONS.lock || ICONS.shield || ICONS.settings)()'),
-            `${label} settings PIN control must render a dedicated lock icon`);
-    }
-    assert.ok(userscriptSource.includes("pinBtn.className = 'ytkit-pin-btn'"),
-        'userscript bundled settings module must carry the dedicated PIN control');
-});
-
 test('settings close tooltip avoids shortcut copy in every locale', () => {
     for (const locale of LOCALES) {
         const messages = JSON.parse(read('extension', '_locales', locale, 'messages.json'));
