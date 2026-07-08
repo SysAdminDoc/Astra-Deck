@@ -2315,21 +2315,6 @@
   "panelLiveApplyBadge": {
     "message": "تطبيق فوري"
   },
-  "panelPinAria": {
-    "message": "Manage settings PIN lock"
-  },
-  "panelPinChangeTitle": {
-    "message": "Change or clear settings PIN"
-  },
-  "panelPinLabel": {
-    "message": "PIN"
-  },
-  "panelPinSetTitle": {
-    "message": "Set a settings PIN"
-  },
-  "panelPinTitle": {
-    "message": "Manage settings PIN"
-  },
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },

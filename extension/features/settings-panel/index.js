@@ -24,8 +24,6 @@
             StorageManager,
             YTKIT_VERSION,
             _i18n,
-            _showPinDialog,
-            _showPinManageDialog,
             appState,
             createBrandImage,
             createToast,
@@ -41,7 +39,6 @@
             initFeatureLifecycle,
             injectStyle,
             isBooleanFeature,
-            isPinSet,
             liveFeatureList,
             normalizeSelectOptions,
             openExternalUrl,
@@ -56,9 +53,6 @@
             t,
             trapFocusWithin
         } = deps;
-        const getPinSessionUnlocked = typeof deps.getPinSessionUnlocked === 'function'
-            ? deps.getPinSessionUnlocked
-            : () => false;
         const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
             ? deps.getPageModalOpen
             : () => false;
@@ -108,10 +102,6 @@ function setSettingsPanelOpen(open) {
 
 async function toggleSettingsPanel(force) {
         const wantOpen = force ?? !isSettingsPanelOpen();
-        if (wantOpen && !getPinSessionUnlocked() && await isPinSet()) {
-            _showPinDialog(() => setSettingsPanelOpen(true));
-            return false;
-        }
         return setSettingsPanelOpen(wantOpen);
     }
 
@@ -232,30 +222,8 @@ function buildSettingsPanel() {
         closeBtn.appendChild(ICONS.close());
         closeBtn.onclick = () => setSettingsPanelOpen(false);
 
-        const pinBtn = document.createElement('button');
-        pinBtn.className = 'ytkit-pin-btn';
-        pinBtn.type = 'button';
-        pinBtn.title = t('panelPinTitle', 'Manage settings PIN');
-        pinBtn.setAttribute('aria-label', t('panelPinAria', 'Manage settings PIN lock'));
-        const pinIcon = (ICONS.lock || ICONS.shield || ICONS.settings)();
-        pinIcon.setAttribute('aria-hidden', 'true');
-        const pinLabel = document.createElement('span');
-        pinLabel.className = 'ytkit-pin-label';
-        pinLabel.textContent = t('panelPinLabel', 'PIN');
-        pinBtn.appendChild(pinIcon);
-        pinBtn.appendChild(pinLabel);
-        (async () => {
-            const pinCopy = (await isPinSet())
-                ? t('panelPinChangeTitle', 'Change or clear settings PIN')
-                : t('panelPinSetTitle', 'Set a settings PIN');
-            pinBtn.title = pinCopy;
-            pinBtn.setAttribute('aria-label', pinCopy);
-        })();
-        pinBtn.onclick = () => _showPinManageDialog();
-
         const headerActions = document.createElement('div');
         headerActions.className = 'ytkit-header-actions';
-        headerActions.appendChild(pinBtn);
         headerActions.appendChild(closeBtn);
 
         header.appendChild(brand);
