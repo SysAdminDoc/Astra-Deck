@@ -159,6 +159,52 @@ test('background EXT_FETCH blocks an opaqueredirect on a credentialed request', 
     assert.match(response.error, /Blocked redirect/);
 });
 
+test('background EXT_FETCH forces manual redirect when a BYO x-api-key header is present', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://api.anthropic.com/v1/messages',
+            data: { model: 'x' },
+            headers: { 'x-api-key': 'sk-secret', 'anthropic-version': '2023-06-01' }
+        }
+    });
+
+    // api.anthropic.com is not a cookie origin, but the key header must still
+    // block auto-following cross-origin redirects that would leak the key.
+    assert.equal(capturedOptions?.redirect, 'manual');
+    assert.equal(capturedOptions?.headers?.['x-api-key'], 'sk-secret');
+});
+
+test('background EXT_FETCH strips BYO key headers when the origin is not an allowed AI provider', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'GET',
+            url: 'https://sponsor.ajay.app/api/skipSegments',
+            headers: { 'x-api-key': 'sk-secret' }
+        }
+    });
+
+    assert.equal(capturedOptions?.headers?.['x-api-key'], undefined);
+});
+
 test('background EXT_FETCH still follows redirects for non-credentialed requests', async () => {
     let capturedOptions = null;
     const { messageListener } = loadBackground({
