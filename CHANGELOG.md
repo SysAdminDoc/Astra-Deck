@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.47.1] - 2026-07-09
+
 - **Style: premium extension command surfaces.** The toolbar popup and
   Chrome/Firefox diagnostics sidebars now share a single graphite/ember design
   token layer, stricter radius scale, stronger focus treatment, and quieter
