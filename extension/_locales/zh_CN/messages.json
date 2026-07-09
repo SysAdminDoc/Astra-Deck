@@ -2168,6 +2168,12 @@
   "feature_watchLaterQuickAdd_name": {
     "message": "稍后观看快捷按钮"
   },
+  "feature_watchLaterWorkbench_desc": {
+    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+  },
+  "feature_watchLaterWorkbench_name": {
+    "message": "Watch Later Workbench"
+  },
   "feature_watchPageRestyle_desc": {
     "message": "为标题、描述和元数据提供高级观看页布局，不隐藏原生控件"
   },

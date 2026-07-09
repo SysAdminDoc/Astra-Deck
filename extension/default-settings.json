@@ -500,6 +500,7 @@
   "musicVideoSpeedLock": false,
   "playlistQuickRemove": false,
   "watchLaterCleanup": false,
+  "watchLaterWorkbench": false,
   "transcriptAiHandoff": false,
   "transcriptAiTarget": "notebooklm",
   "audioTrackLanguage": false,

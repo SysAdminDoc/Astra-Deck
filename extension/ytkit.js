@@ -4630,6 +4630,7 @@ return response;
             musicVideoSpeedLock: false,
             playlistQuickRemove: false,
             watchLaterCleanup: false,
+            watchLaterWorkbench: false,
             transcriptAiHandoff: false,
             transcriptAiTarget: 'notebooklm',   // 'notebooklm' | 'chatgpt' | 'claude' | 'gemini' | 'perplexity'
             audioTrackLanguage: false,
@@ -32591,6 +32592,302 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove(); this._btn = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._navRule = null;
+            }
+        },
+        {
+            id: 'watchLaterWorkbench',
+            name: 'Watch Later Workbench',
+            description: 'Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions',
+            group: 'Playlists',
+            icon: 'check-square',
+            pages: [PageTypes.PLAYLIST],
+            _LOG_KEY: 'ytkit-wl-removal-log',
+            _BATCH_LIMIT: 25,
+            _PACE_MS: 400,
+            _btn: null,
+            _panel: null,
+            _styleEl: null,
+            _navRule: null,
+            _running: false,
+
+            _isWatchLater() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get('list') === 'WL';
+                } catch (_) { return false; }
+            },
+
+            _parseDuration(text) {
+                const parts = String(text || '').trim().split(':').map(n => parseInt(n, 10));
+                if (parts.some(n => !Number.isFinite(n))) return 0;
+                return parts.reduce((acc, n) => acc * 60 + n, 0);
+            },
+
+            _scanRows() {
+                const rows = [];
+                document.querySelectorAll('ytd-playlist-video-renderer').forEach((row) => {
+                    const link = row.querySelector('a#video-title');
+                    const href = link?.href || '';
+                    const videoId = getVideoId(href) || '';
+                    const title = link?.textContent?.trim() || '';
+                    const channel = row.querySelector('ytd-channel-name a, ytd-channel-name #text')?.textContent?.trim() || '';
+                    const durationText = row.querySelector('ytd-thumbnail-overlay-time-status-renderer, .badge-shape-wiz__text')?.textContent?.trim() || '';
+                    const fill = row.querySelector('#progress');
+                    const watchedPct = fill ? (parseFloat(fill.style.width || '0') || 0) : 0;
+                    if (!videoId) return;
+                    rows.push({ row, videoId, title, channel, durationSec: this._parseDuration(durationText), watchedPct });
+                });
+                return rows;
+            },
+
+            _matches(entry, filters) {
+                if (filters.watched != null && entry.watchedPct < filters.watched) return false;
+                if (filters.channel && !entry.channel.toLowerCase().includes(filters.channel)) return false;
+                if (filters.title && !entry.title.toLowerCase().includes(filters.title)) return false;
+                return true;
+            },
+
+            _readFilters() {
+                const watchedRaw = this._panel?.querySelector('.ytkit-wlwb-watched')?.value ?? '';
+                const watched = watchedRaw === '' ? null : Math.max(0, Math.min(100, parseFloat(watchedRaw)));
+                return {
+                    watched: Number.isFinite(watched) ? watched : null,
+                    channel: (this._panel?.querySelector('.ytkit-wlwb-channel')?.value || '').trim().toLowerCase(),
+                    title: (this._panel?.querySelector('.ytkit-wlwb-title')?.value || '').trim().toLowerCase()
+                };
+            },
+
+            _refreshPreview() {
+                if (!this._panel) return;
+                const filters = this._readFilters();
+                const sortMode = this._panel.querySelector('.ytkit-wlwb-sort')?.value || 'playlist';
+                const entries = this._scanRows().filter(e => this._matches(e, filters));
+                if (sortMode === 'duration-asc') entries.sort((a, b) => a.durationSec - b.durationSec);
+                else if (sortMode === 'duration-desc') entries.sort((a, b) => b.durationSec - a.durationSec);
+                else if (sortMode === 'title') entries.sort((a, b) => a.title.localeCompare(b.title));
+                const list = this._panel.querySelector('.ytkit-wlwb-list');
+                list.replaceChildren();
+                entries.forEach((e) => {
+                    const rowEl = document.createElement('div');
+                    rowEl.className = 'ytkit-wlwb-row';
+                    const label = document.createElement('span');
+                    label.textContent = e.title;
+                    label.title = `${e.title} — ${e.channel} (${e.watchedPct.toFixed(0)}% watched)`;
+                    const meta = document.createElement('span');
+                    meta.className = 'ytkit-wlwb-meta';
+                    meta.textContent = `${e.watchedPct.toFixed(0)}%`;
+                    rowEl.appendChild(label);
+                    rowEl.appendChild(meta);
+                    list.appendChild(rowEl);
+                });
+                const status = this._panel.querySelector('.ytkit-wlwb-status');
+                const loaded = this._scanRows().length;
+                status.textContent = `${entries.length} of ${loaded} loaded videos match. Scroll the playlist to load more rows before running.`;
+                this._matched = entries;
+            },
+
+            _download(name, text, mime) {
+                const blob = new Blob([text], { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+            },
+            _csvEscape(value) {
+                const s = String(value ?? '');
+                return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+            },
+            _exportScan(format) {
+                const entries = this._scanRows().map(({ videoId, title, channel, durationSec, watchedPct }) => (
+                    { videoId, title, channel, durationSec, watchedPct, url: `https://www.youtube.com/watch?v=${videoId}` }
+                ));
+                const stamp = new Date().toISOString().slice(0, 10);
+                if (format === 'csv') {
+                    const head = 'videoId,title,channel,durationSec,watchedPct,url';
+                    const body = entries.map(e => [e.videoId, e.title, e.channel, e.durationSec, e.watchedPct, e.url].map(v => this._csvEscape(v)).join(','));
+                    this._download(`watch-later-${stamp}.csv`, [head, ...body].join('\n'), 'text/csv');
+                } else {
+                    this._download(`watch-later-${stamp}.json`, JSON.stringify({ exportVersion: 1, exportedAt: Date.now(), entries }, null, 2), 'application/json');
+                }
+                showToast(`Exported ${entries.length} loaded Watch Later entries`, '#22c55e', { duration: 3 });
+            },
+            _exportRemovalLog() {
+                const log = storageReadJSON(this._LOG_KEY, []);
+                if (!log.length) { showToast('Removal log is empty', '#f59e0b', { duration: 3, tone: 'warning' }); return; }
+                this._download(`watch-later-removed-${new Date().toISOString().slice(0, 10)}.json`,
+                    JSON.stringify({ exportVersion: 1, entries: log }, null, 2), 'application/json');
+            },
+            _appendLog(entries) {
+                const log = storageReadJSON(this._LOG_KEY, []);
+                for (const { videoId, title, channel } of entries) {
+                    log.push({ videoId, title, channel, removedAt: Date.now(), url: `https://www.youtube.com/watch?v=${videoId}` });
+                }
+                storageWriteJSON(this._LOG_KEY, log.slice(-500));
+            },
+
+            async _removeRow(entry) {
+                const menuBtn = entry.row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
+                if (!menuBtn) return false;
+                menuBtn.click();
+                await new Promise(r => setTimeout(r, 120));
+                const removeItem = [...document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item')]
+                    .find(n => /remove from/i.test(n.textContent || ''));
+                if (!removeItem) { document.body.click(); return false; }
+                removeItem.click();
+                await new Promise(r => setTimeout(r, this._PACE_MS));
+                return true;
+            },
+            async _runRemoval(runBtn) {
+                if (this._running) return;
+                const matched = this._matched || [];
+                if (!matched.length) { showToast('No matching rows to remove', '#f59e0b', { duration: 3, tone: 'warning' }); return; }
+                const batch = matched.slice(0, this._BATCH_LIMIT);
+                this._running = true;
+                runBtn.disabled = true;
+                const removed = [];
+                for (let i = 0; i < batch.length; i++) {
+                    runBtn.textContent = `Removing ${i + 1} / ${batch.length}…`;
+                    if (!batch[i].row.isConnected) continue;
+                    const ok = await this._removeRow(batch[i]);
+                    if (ok) removed.push(batch[i]);
+                }
+                this._appendLog(removed);
+                this._running = false;
+                runBtn.disabled = false;
+                runBtn.textContent = 'Remove matched (max 25/run)';
+                const remaining = matched.length - batch.length;
+                showToast(`Removed ${removed.length} video(s)${remaining > 0 ? ` — ${remaining} still match, run again` : ''}. Recovery list is in the removal log.`, '#22c55e', { duration: 5 });
+                this._refreshPreview();
+            },
+
+            _togglePanel() {
+                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-wlwb-panel';
+                panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', 'Watch Later workbench');
+
+                const header = document.createElement('div');
+                header.className = 'ytkit-wlwb-header';
+                const heading = document.createElement('span');
+                heading.textContent = 'Watch Later Workbench';
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.textContent = '✕';
+                close.setAttribute('aria-label', 'Close workbench');
+                close.addEventListener('click', () => this._togglePanel());
+                header.appendChild(heading);
+                header.appendChild(close);
+
+                const controls = document.createElement('div');
+                controls.className = 'ytkit-wlwb-controls';
+                const mkInput = (cls, type, placeholder, aria, value = '') => {
+                    const input = document.createElement('input');
+                    input.className = cls;
+                    input.type = type;
+                    input.placeholder = placeholder;
+                    input.setAttribute('aria-label', aria);
+                    input.value = value;
+                    input.addEventListener('input', () => this._refreshPreview());
+                    controls.appendChild(input);
+                    return input;
+                };
+                mkInput('ytkit-wlwb-watched', 'number', 'Watched ≥ % (e.g. 90)', 'Minimum watched percent filter');
+                mkInput('ytkit-wlwb-channel', 'text', 'Channel contains…', 'Channel name filter');
+                mkInput('ytkit-wlwb-title', 'text', 'Title contains…', 'Title filter');
+                const sort = document.createElement('select');
+                sort.className = 'ytkit-wlwb-sort';
+                sort.setAttribute('aria-label', 'Preview sort order');
+                [['playlist', 'Playlist order'], ['duration-asc', 'Shortest first'], ['duration-desc', 'Longest first'], ['title', 'Title A–Z']]
+                    .forEach(([value, label]) => {
+                        const opt = document.createElement('option');
+                        opt.value = value; opt.textContent = label;
+                        sort.appendChild(opt);
+                    });
+                sort.addEventListener('change', () => this._refreshPreview());
+                controls.appendChild(sort);
+
+                const status = document.createElement('div');
+                status.className = 'ytkit-wlwb-status';
+                const list = document.createElement('div');
+                list.className = 'ytkit-wlwb-list';
+
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-wlwb-actions';
+                const mkAction = (label, onClick) => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.textContent = label;
+                    b.addEventListener('click', onClick);
+                    actions.appendChild(b);
+                    return b;
+                };
+                const runBtn = mkAction('Remove matched (max 25/run)', () => this._runRemoval(runBtn));
+                mkAction('Export CSV', () => this._exportScan('csv'));
+                mkAction('Export JSON', () => this._exportScan('json'));
+                mkAction('Removal log', () => this._exportRemovalLog());
+
+                panel.appendChild(header);
+                panel.appendChild(controls);
+                panel.appendChild(status);
+                panel.appendChild(list);
+                panel.appendChild(actions);
+                document.body.appendChild(panel);
+                this._panel = panel;
+                this._refreshPreview();
+            },
+
+            _injectButton() {
+                if (!this._isWatchLater()) return;
+                if (document.getElementById('ytkit-wl-workbench')) return;
+                const host = document.querySelector(
+                    'ytd-playlist-header-renderer .metadata-action-bar, ' +
+                    'ytd-playlist-header-renderer #top-level-buttons-computed'
+                );
+                if (!host) return;
+                const btn = document.createElement('button');
+                btn.id = 'ytkit-wl-workbench';
+                btn.type = 'button';
+                btn.className = 'ytkit-wlwb-open';
+                btn.textContent = 'Workbench';
+                btn.setAttribute('aria-label', 'Open the Watch Later workbench');
+                btn.addEventListener('click', () => this._togglePanel());
+                host.appendChild(btn);
+                this._btn = btn;
+            },
+
+            init() {
+                this._styleEl = injectStyle(`
+                    .ytkit-wlwb-open { margin-left: 8px; padding: 8px 14px; background: #1f2430; color: #dbeafe; border: 1px solid #334155; border-radius: 6px; font: 600 13px/1 system-ui; cursor: pointer; }
+                    .ytkit-wlwb-open:hover { background: #334155; color: #fff; }
+                    .ytkit-wlwb-panel { position: fixed; right: 18px; bottom: 18px; z-index: 9999; width: 400px; max-height: 70vh; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; background: rgba(18, 18, 22, 0.97); color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+                    .ytkit-wlwb-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 600; }
+                    .ytkit-wlwb-header button { border: none; background: transparent; color: rgba(255, 255, 255, 0.7); cursor: pointer; font-size: 14px; }
+                    .ytkit-wlwb-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 12px; }
+                    .ytkit-wlwb-controls input, .ytkit-wlwb-controls select { padding: 6px 8px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 12px; }
+                    .ytkit-wlwb-status { padding: 0 12px 6px; font-size: 11.5px; color: rgba(255, 255, 255, 0.65); }
+                    .ytkit-wlwb-list { flex: 1; overflow-y: auto; padding: 4px 0; min-height: 60px; }
+                    .ytkit-wlwb-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 12px; font-size: 12px; }
+                    .ytkit-wlwb-row span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .ytkit-wlwb-meta { color: rgba(255, 255, 255, 0.55); }
+                    .ytkit-wlwb-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+                    .ytkit-wlwb-actions button { border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: transparent; color: #fff; font-size: 11.5px; padding: 5px 9px; cursor: pointer; }
+                    .ytkit-wlwb-actions button:hover:not(:disabled) { border-color: rgba(255, 143, 64, 0.7); }
+                    .ytkit-wlwb-actions button:disabled { opacity: 0.6; cursor: progress; }
+                `, this.id, true);
+                this._navRule = () => setTimeout(() => this._injectButton(), 1500);
+                addNavigateRule('watchLaterWorkbench', this._navRule);
+                this._navRule();
+            },
+            destroy() {
+                removeNavigateRule('watchLaterWorkbench');
+                this._btn?.remove(); this._btn = null;
+                this._panel?.remove(); this._panel = null;
+                this._styleEl?.remove(); this._styleEl = null;
+                this._navRule = null;
+                this._matched = null;
             }
         },
         {

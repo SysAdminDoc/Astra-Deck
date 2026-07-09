@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Watch Later Workbench.** New bulk-management panel on the Watch Later
+  playlist: filter loaded rows by watched %, channel, or title with a live
+  preview (sortable by duration or title), export the scan as CSV/JSON, and
+  remove matches through the native row menus in bounded sessions (25 per
+  run, 400ms pacing). Every removal is appended to a capped local recovery
+  log that exports as JSON. The status line discloses that only loaded rows
+  are covered — scroll the playlist to extend coverage.
 - **Scroll in Fullscreen.** New toggle that restores the removed native
   fullscreen-scroll layout: scroll down while fullscreen to read the
   description, comments, and related videos, scroll back up to return to the
