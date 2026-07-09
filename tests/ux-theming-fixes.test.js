@@ -188,14 +188,24 @@ test('settings close tooltip avoids shortcut copy in every locale', () => {
 test('settings modal premium refresh locks the desktop shell and row controls', () => {
     assert.ok(ytkitSource.includes('Settings modal premium refresh'),
         'settings modal must carry the later premium-refresh override layer');
-    assert.ok(userscriptSource.includes('Settings modal premium refresh'),
-        'userscript settings modal must carry the same premium-refresh intent');
-    assert.ok(ytkitSource.includes('grid-template-columns: clamp(320px, 28vw, 360px) minmax(0, 1fr) !important;'),
-        'desktop settings body must stay a composed sidebar/content grid');
+    assert.ok(settingsPanelModuleSource.includes("rail.className = 'ytkit-insights'"),
+        'extension settings module must render the premium right-side insights rail');
+    assert.ok(settingsPanelModuleSource.includes("id: 'ytkit-reset-active-section'"),
+        'extension settings module must route a visible reset action to the active section');
+    assert.ok(ytkitSource.includes('grid-template-columns: clamp(260px, 20vw, 300px) minmax(0, 1fr) clamp(260px, 21vw, 300px) !important;'),
+        'desktop settings body must stay a composed sidebar/content/insights grid');
+    assert.ok(ytkitSource.includes('grid-template-rows: auto auto auto !important;'),
+        'mobile settings body must scroll vertically through rail, content, and insights without hiding controls');
+    assert.ok(ytkitSource.includes('scroll-snap-type: x proximity !important;'),
+        'mobile settings navigation must stay a compact horizontal section rail');
     assert.ok(ytkitSource.includes('z-index: 2147483646 !important;'),
         'settings panel must sit above YouTube player chrome and ad overlays');
     assert.ok(ytkitSource.includes('grid-template-columns: minmax(0, 1fr) minmax(280px, 36%) !important;'),
         'select/range/color rows must keep controls aligned in a right column on desktop');
+    assert.ok(ytkitSource.includes('.ytkit-header-live'),
+        'premium header must expose live-apply status as a first-class control');
+    assert.ok(ytkitSource.includes('.ytkit-insights'),
+        'premium refresh CSS must style the right-side insights rail');
     assert.match(ytkitSource, /\.ytkit-search-input \{[\s\S]*?padding:\s*0 68px 0 40px !important;/,
         'search input must reserve exact space for icon and compact status chip');
     assert.match(ytkitSource, /\.ytkit-select-shell::after \{[\s\S]*?border-right:\s*2px solid/,
