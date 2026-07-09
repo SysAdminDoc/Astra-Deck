@@ -25,6 +25,7 @@
         } = deps;
 
         let _cache = null;
+        let _persistTimer = null;
         const _budgetWindow = { start: 0, count: 0 };
         const _BUDGET_PER_MIN = 100;
         let _styleElement = null;
@@ -72,7 +73,10 @@
                 keys.sort((a, b) => (_cache[a].ts || 0) - (_cache[b].ts || 0));
                 for (const k of keys.slice(0, keys.length - 500)) delete _cache[k];
             }
-            try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+            clearTimeout(_persistTimer);
+            _persistTimer = setTimeout(() => {
+                try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+            }, 2000);
         }
 
         function _allowFetch() {
@@ -267,6 +271,13 @@
                 document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
                 _styleElement?.remove();
                 _styleElement = null;
+                if (_persistTimer) {
+                    clearTimeout(_persistTimer);
+                    _persistTimer = null;
+                    if (_cache) {
+                        try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: final flush on teardown */ }
+                    }
+                }
                 _cache = null;
                 _budgetWindow.start = 0;
                 _budgetWindow.count = 0;

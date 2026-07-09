@@ -1240,13 +1240,10 @@
 
             _undoHideAll(videos, removedAllowed = []) {
                 const hidden = this._getHiddenVideos();
-                videos.forEach(v => {
-                    const idx = hidden.indexOf(v.id);
-                    if (idx > -1) hidden.splice(idx, 1);
-                    this._restoreRemovedVideoNodes(new Set([v.id]));
-                    v.element.classList.remove('ytkit-video-hidden');
-                });
-                this._setHiddenVideos(hidden);
+                const removeSet = new Set(videos.map(v => v.id));
+                this._restoreRemovedVideoNodes(removeSet);
+                videos.forEach(v => v.element.classList.remove('ytkit-video-hidden'));
+                this._setHiddenVideos(hidden.filter(id => !removeSet.has(id)));
                 if (removedAllowed.length > 0) this._addAllowedVideos(removedAllowed, { force: true });
                 this._updatePageActionButtons();
                 showToast('Restored all videos', '#22c55e');

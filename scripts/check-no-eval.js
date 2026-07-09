@@ -50,7 +50,8 @@ function walk(dir, ext) {
     if (!fs.existsSync(dir)) return out;
     for (const name of fs.readdirSync(dir)) {
         const full = path.join(dir, name);
-        const stat = fs.statSync(full);
+        const stat = fs.lstatSync(full);
+        if (stat.isSymbolicLink()) continue;
         if (stat.isDirectory()) {
             out.push(...walk(full, ext));
         } else if (full.endsWith(ext)) {

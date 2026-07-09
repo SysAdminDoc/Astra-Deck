@@ -4540,6 +4540,21 @@ test('popup.html ships inline CSP meta with the audited tightenings', () => {
         "frame-ancestors 'none' prevents popup clickjacking");
 });
 
+test('sidepanel.html and sidebar.html ship the same strict inline CSP as popup.html', () => {
+    const spSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.html'), 'utf8');
+    const sbSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidebar.html'), 'utf8');
+    for (const [label, src] of [['sidepanel', spSource], ['sidebar', sbSource]]) {
+        assert.match(src, /default-src 'none'/,
+            `${label}.html CSP must default-deny`);
+        assert.match(src, /frame-ancestors 'none'/,
+            `${label}.html CSP must block framing`);
+        assert.match(src, /connect-src 'self'/,
+            `${label}.html CSP connect-src must be self only`);
+    }
+});
+
 test('every locale matches the EN message key set (no drift, no orphans)', () => {
     // Audit pass: found 4 health-save keys had drifted out of all 9 non-EN
     // locales and zh_CN carried an orphan `languageEyebrow` with no EN

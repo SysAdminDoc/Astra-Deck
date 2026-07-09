@@ -117,7 +117,17 @@ function setBusy(isBusy) {
 }
 
 function isSupportedUrl(url) {
-    return typeof url === 'string' && /^https:\/\/(www\.)?youtube\.com\//i.test(url);
+    try {
+        const parsed = new URL(url);
+        const h = parsed.hostname;
+        if (h === 'm.youtube.com' || h === 'studio.youtube.com') return false;
+        if (parsed.pathname.startsWith('/live_chat')) return false;
+        return h === 'youtu.be'
+            || h === 'youtube.com'
+            || h === 'youtube-nocookie.com'
+            || h.endsWith('.youtube.com')
+            || h.endsWith('.youtube-nocookie.com');
+    } catch { return false; }
 }
 
 async function getActiveYouTubeTab() {

@@ -733,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.34';
+    const YTKIT_VERSION = '4.46.35';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -16187,11 +16187,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 intervalLabel.textContent = 'Interval';
                 this._intervalEl = document.createElement('input');
                 this._intervalEl.type = 'number';
-                this._intervalEl.min = '50';
+                this._intervalEl.min = String(this._INTERVAL_MIN_MS_FLOOR);
                 this._intervalEl.step = '50';
                 this._intervalEl.value = String(this._state.intervalMs);
                 this._intervalEl.addEventListener('change', () => {
-                    this._state.intervalMs = this._clampNumber(this._intervalEl.value, this._defaults.intervalMs, 50, 60000);
+                    this._state.intervalMs = this._clampNumber(this._intervalEl.value, this._defaults.intervalMs, this._INTERVAL_MIN_MS_FLOOR, 60000);
                     this._intervalEl.value = String(this._state.intervalMs);
                     this._saveState();
                 });
@@ -16321,7 +16321,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._clickReaction(pick);
                 }
                 this._paint();
-                this._timer = setTimeout(() => this._tick(), Math.max(50, this._state.intervalMs));
+                this._timer = setTimeout(() => this._tick(), Math.max(this._INTERVAL_MIN_MS_FLOOR, this._state.intervalMs));
             },
 
             _scheduleRender() {
@@ -29359,11 +29359,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!data || typeof data.profiles !== 'object') throw new Error('Invalid profile JSON');
                     // Sanitize each imported profile against known defaults
                     const importedProfiles = {};
+                    const internalKeys = getProfileInternalKeys();
+                    const secretKeys = getProfileSecretKeys();
                     for (const [pName, pSnap] of Object.entries(data.profiles)) {
                         if (!pName || typeof pSnap !== 'object' || pSnap === null || Array.isArray(pSnap)) continue;
                         const sanitized = {};
                         for (const [k, v] of Object.entries(pSnap)) {
-                            if (k in settingsManager.defaults) sanitized[k] = v;
+                            if (k in settingsManager.defaults && !internalKeys.has(k) && !secretKeys.has(k)) sanitized[k] = v;
                         }
                         importedProfiles[pName.trim() || 'imported'] = sanitized;
                     }

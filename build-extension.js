@@ -224,17 +224,16 @@ if (bumpType) {
     else if (bumpType === 'minor') { parts[1]++; parts[2] = 0; }
     else if (bumpType === 'patch') { parts[2]++; }
     version = parts.join('.');
-    manifest.version = version;
-    fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
-
-    // Update YTKIT_VERSION constant in ytkit.js — hard-fail if the regex no
-    // longer matches (e.g. string was refactored to template/backtick form),
-    // otherwise the built extension would ship with a stale embedded version.
+    // Validate regex BEFORE writing any files to avoid a half-bumped state
+    // where manifest.json is updated but ytkit.js is left at the old version.
     const versionRegex = /const YTKIT_VERSION = '[^']+';/;
     if (!versionRegex.test(ytkitSource)) {
         console.error('Could not find `const YTKIT_VERSION = \'...\';` in ytkit.js — refusing to bump with stale version.');
         process.exit(1);
     }
+
+    manifest.version = version;
+    fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
     ytkitSource = ytkitSource.replace(versionRegex, "const YTKIT_VERSION = '" + version + "';");
     fs.writeFileSync(YTKIT_JS, ytkitSource, 'utf8');
     console.log('Updated YTKIT_VERSION in ytkit.js');
@@ -405,7 +404,7 @@ function createZip(sourceDir, zipPath) {
         }
         execFileSync(bsdtar, ['-a', '-cf', zipPath, '-C', sourceDir, ...entries], { stdio: 'inherit' });
     } else {
-        execSync('cd "' + sourceDir + '" && zip -r "' + zipPath + '" .', { stdio: 'inherit' });
+        execFileSync('zip', ['-r', zipPath, '.'], { cwd: sourceDir, stdio: 'inherit' });
     }
     const size = fs.statSync(zipPath).size;
     return (size / 1024).toFixed(1);

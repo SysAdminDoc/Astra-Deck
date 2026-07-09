@@ -314,3 +314,48 @@ test('background DOWNLOAD_FILE sanitizes reserved Windows filenames', async () =
     assert.equal(capturedOptions?.filename, '_CON.txt');
     assert.equal(response.downloadId, 42);
 });
+
+test('background EXT_FETCH forwards x-goog-api-key to Gemini API', async () => {
+    let capturedHeaders = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedHeaders = options?.headers;
+            return new Response('{}', {
+                status: 200,
+                headers: { 'content-length': '2', 'content-type': 'application/json' }
+            });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': 'test-key-123' },
+            data: '{}'
+        }
+    });
+
+    assert.equal(capturedHeaders?.['x-goog-api-key'], 'test-key-123');
+});
+
+test('background EXT_FETCH rejects non-default ports on portless allowlist entries', async () => {
+    const { messageListener } = loadBackground({
+        fetchImpl: async () => new Response('{}', {
+            status: 200,
+            headers: { 'content-length': '2' }
+        })
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'GET',
+            url: 'https://sponsor.ajay.app:8443/api/test'
+        }
+    });
+
+    assert.ok(response.error, 'should reject non-standard port');
+    assert.match(response.error, /not in allowlist/i);
+});
