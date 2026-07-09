@@ -40,6 +40,7 @@
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "smoke:settings-overlay": "node scripts/smoke-settings-overlay.js",
+    "smoke:settings-overlay:fallback": "node scripts/smoke-settings-overlay.js --fallback-only",
     "audit:a11y": "node scripts/audit-popup-a11y.js",
     "audit:overlays": "node scripts/audit-overlays-a11y.js",
     "audit:contrast": "node scripts/check-contrast.js",

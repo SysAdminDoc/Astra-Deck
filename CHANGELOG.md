@@ -15,6 +15,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   The diagnostics dashboard removes its nested settings scroller, adds explicit
   refresh/loading/saving/error states, preserves two-line setting names, and
   becomes a two-column command grid when the panel is wide enough.
+- **Style: settings command center parity.** The in-page settings workspace now
+  targets its real feature-grid and switch markup, uses tone-specific saved /
+  warning / error feedback, restores readable light-mode inspector/footer
+  colors, bounds the mobile navigation rail and keeps footer actions in a
+  compact two-column layout. The rendered smoke now covers mobile light mode,
+  explicit RTL direction, mobile occlusion limits, and a fallback-only runtime;
+  the fallback also restores keyboard focus and a working Takeout-import Undo.
 
 ## [4.47.0] - 2026-07-09
 

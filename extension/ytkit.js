@@ -5924,7 +5924,8 @@ return response;
             requestAnimationFrame(() => {
                 const searchInput = document.getElementById('ytkit-search');
                 const fallbackTarget = getFocusableUiElements(panel)[0];
-                (searchInput || fallbackTarget)?.focus({ preventScroll: true });
+                const visibleSearch = searchInput?.getClientRects().length ? searchInput : null;
+                (visibleSearch || fallbackTarget)?.focus({ preventScroll: true });
             });
         } else if (wasOpen) {
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
@@ -39608,7 +39609,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
         if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
         if (profileValue) profileValue.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
-        if (savedValue) savedValue.textContent = 'Saved automatically';
+        if (savedValue) savedValue.textContent = 'Saved locally';
     }
 
     function injectSettingsButton() {
@@ -41552,9 +41553,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const statusHeroCopy = document.createElement('div');
             statusHeroCopy.className = 'ytkit-status-hero-copy';
             const statusHeroTitle = document.createElement('strong');
-            statusHeroTitle.textContent = 'Active';
+            statusHeroTitle.textContent = 'Ready';
             const statusHeroMeta = document.createElement('span');
-            statusHeroMeta.textContent = 'Astra Deck is running. All systems operational.';
+            statusHeroMeta.textContent = 'Controls are loaded. Service health appears beside affected features.';
             statusHeroCopy.appendChild(statusHeroTitle);
             statusHeroCopy.appendChild(statusHeroMeta);
             statusHero.appendChild(statusHeroIcon);
@@ -41593,7 +41594,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const backupSection = makeInsightSection('Sync & Backup');
             const backupCard = document.createElement('div');
             backupCard.className = 'ytkit-insight-card ytkit-backup-card';
-            backupCard.appendChild(makeStatusRow('Last save', 'Saved automatically', 'ok', 'ytkit-insight-saved-state'));
+            backupCard.appendChild(makeStatusRow('Last save', 'Saved locally', 'ok', 'ytkit-insight-saved-state'));
             const actionStack = document.createElement('div');
             actionStack.className = 'ytkit-action-stack';
             actionStack.appendChild(createPanelActionButton({
@@ -42385,15 +42386,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
                             }, 'takeout-import', { forceApplyLocal: true });
                         }
-                        const undoAction = preImportStats !== null ? () => {
-                            StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);
-                            handleExternalStorageChanges({
-                                [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
-                            }, 'takeout-undo', { forceApplyLocal: true });
-                            createToast(t('statusTakeoutImportUndone', 'Takeout import undone'), 'success');
-                            setPanelStatus(t('statusTakeoutImportUndone', 'Takeout import undone'), 'success');
-                        } : null;
-                        createToast(result.message, result.toastTone || result.tone || 'success', undoAction ? { undoAction } : undefined);
+                        if (preImportStats !== null) {
+                            showToast(result.message, '#22c55e', {
+                                duration: 8,
+                                action: {
+                                    text: 'Undo',
+                                    onClick: () => {
+                                        StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);
+                                        handleExternalStorageChanges({
+                                            [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
+                                        }, 'takeout-undo', { forceApplyLocal: true });
+                                        const undoMessage = t('statusTakeoutImportUndone', 'Takeout import undone');
+                                        createToast(undoMessage, 'success');
+                                        setPanelStatus(undoMessage, 'success');
+                                    }
+                                }
+                            });
+                        } else {
+                            createToast(result.message, result.toastTone || result.tone || 'success');
+                        }
                         setPanelStatus(result.message, result.statusTone || result.tone || 'success');
                     } else {
                         const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
@@ -53026,6 +53037,277 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
             .ytkit-footer-actions {
                 grid-template-columns: 1fr !important;
+            }
+        }
+    `);
+
+    appendStyleSheet(`
+        /* Premium command-deck correction layer. These selectors target the
+           renderer's live DOM and repair mobile/light/status cascade drift. */
+        #ytkit-settings-panel {
+            color-scheme: dark !important;
+            border-radius: 10px !important;
+        }
+
+        .ytkit-features-grid {
+            gap: 8px !important;
+        }
+
+        .ytkit-switch {
+            position: relative !important;
+            width: 44px !important;
+            height: 24px !important;
+            flex: 0 0 44px !important;
+            border: 0 !important;
+            border-radius: 6px !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .ytkit-switch .ytkit-switch-track {
+            position: absolute !important;
+            inset: 0 !important;
+            border: 1px solid rgba(255,255,255,0.16) !important;
+            border-radius: 6px !important;
+            background: rgba(255,255,255,0.08) !important;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.28) !important;
+        }
+
+        .ytkit-switch .ytkit-switch-thumb {
+            top: 3px !important;
+            left: 3px !important;
+            width: 18px !important;
+            height: 18px !important;
+            border: 0 !important;
+            background: #d7dee8 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+            transform: translateX(0) !important;
+        }
+
+        .ytkit-switch.active .ytkit-switch-track,
+        .ytkit-switch:has(input:checked) .ytkit-switch-track {
+            border-color: rgba(255,122,85,0.78) !important;
+            background: linear-gradient(180deg, #ff6a57, #df373f) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.22),
+                0 0 14px rgba(var(--ytkit-command-accent-rgb),0.2) !important;
+        }
+
+        .ytkit-switch.active .ytkit-switch-thumb,
+        .ytkit-switch:has(input:checked) .ytkit-switch-thumb {
+            transform: translateX(20px) !important;
+            background: #fff !important;
+        }
+
+        .ytkit-switch:focus-within .ytkit-switch-track {
+            border-color: #ff7777 !important;
+            box-shadow:
+                0 0 0 2px #07090d,
+                0 0 0 4px rgba(255,119,119,0.78) !important;
+        }
+
+        .ytkit-panel-status[data-tone="idle"]::before,
+        .ytkit-panel-status[data-tone="success"]::before {
+            content: '✓' !important;
+            border-color: rgba(85,225,122,0.74) !important;
+            background: rgba(34,197,94,0.12) !important;
+            color: #74f28f !important;
+        }
+
+        .ytkit-panel-status[data-tone="idle"]::after {
+            content: 'Changes save automatically' !important;
+        }
+
+        .ytkit-panel-status[data-tone="success"]::after {
+            content: 'Saved locally · just now' !important;
+        }
+
+        .ytkit-panel-status[data-tone="warn"]::before {
+            content: '!' !important;
+            border-color: rgba(246,184,99,0.76) !important;
+            background: rgba(246,184,99,0.12) !important;
+            color: #ffd18c !important;
+            box-shadow: 0 0 0 4px rgba(246,184,99,0.08) !important;
+        }
+
+        .ytkit-panel-status[data-tone="warn"]::after {
+            content: 'Review the message and try again' !important;
+            color: #f6c77d !important;
+        }
+
+        .ytkit-panel-status[data-tone="error"]::before {
+            content: '×' !important;
+            border-color: rgba(255,122,134,0.8) !important;
+            background: rgba(255,122,134,0.12) !important;
+            color: #ff9ba5 !important;
+            box-shadow: 0 0 0 4px rgba(255,122,134,0.08) !important;
+        }
+
+        .ytkit-panel-status[data-tone="error"]::after {
+            content: 'Changes were not saved' !important;
+            color: #ff9ba5 !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel {
+            color-scheme: light !important;
+            --ytkit-command-success: #16733a;
+        }
+
+        html:not([dark]) .ytkit-close,
+        html:not([dark]) .ytkit-nav-icon,
+        html:not([dark]) .ytkit-feature-glyph {
+            color: #475569 !important;
+        }
+
+        html:not([dark]) .ytkit-status-hero-copy strong {
+            color: #16733a !important;
+        }
+
+        html:not([dark]) .ytkit-status-hero-copy span,
+        html:not([dark]) .ytkit-status-label,
+        html:not([dark]) .ytkit-profile-meta,
+        html:not([dark]) .ytkit-recent-list dd,
+        html:not([dark]) .ytkit-panel-status::after {
+            color: #475569 !important;
+        }
+
+        html:not([dark]) .ytkit-insight-heading {
+            color: #64748b !important;
+        }
+
+        html:not([dark]) .ytkit-recent-list dt,
+        html:not([dark]) .ytkit-status-value {
+            color: #1f2937 !important;
+        }
+
+        html:not([dark]) .ytkit-status-hero-icon {
+            border-color: rgba(22,115,58,0.58) !important;
+            background: rgba(22,115,58,0.08) !important;
+            color: #16733a !important;
+            box-shadow: none !important;
+        }
+
+        html:not([dark]) .ytkit-insights,
+        html:not([dark]) .ytkit-sidebar {
+            border-color: rgba(15,23,42,0.14) !important;
+        }
+
+        html:not([dark]) .ytkit-profile-card,
+        html:not([dark]) .ytkit-rail-action,
+        html:not([dark]) .ytkit-nav-count,
+        html:not([dark]) .ytkit-pane-chip {
+            border-color: rgba(15,23,42,0.14) !important;
+            background: #fff !important;
+            color: #334155 !important;
+        }
+
+        html:not([dark]) .ytkit-switch .ytkit-switch-track {
+            border-color: rgba(15,23,42,0.28) !important;
+            background: #d8dee8 !important;
+            box-shadow: inset 0 1px 2px rgba(15,23,42,0.12) !important;
+        }
+
+        html:not([dark]) .ytkit-switch .ytkit-switch-thumb {
+            background: #fff !important;
+            box-shadow: 0 2px 5px rgba(15,23,42,0.26) !important;
+        }
+
+        html:not([dark]) .ytkit-footer-actions .ytkit-btn-primary {
+            border-color: #9f1f2d !important;
+            background: #b42332 !important;
+            color: #fff !important;
+            box-shadow: 0 8px 18px rgba(180,35,50,0.2) !important;
+        }
+
+        html:not([dark]) .ytkit-panel-status[data-tone="warn"]::after,
+        html:not([dark]) .ytkit-panel-status[data-tone="error"]::after {
+            color: currentColor !important;
+        }
+
+        @media (max-width: 900px) {
+            .ytkit-sidebar {
+                display: flex !important;
+                flex-direction: row !important;
+                grid-template-rows: none !important;
+                height: 74px !important;
+                min-height: 74px !important;
+                flex: 0 0 74px !important;
+                padding: 8px !important;
+                gap: 0 !important;
+                overflow: hidden !important;
+            }
+
+            .ytkit-nav-list {
+                flex: 0 0 58px !important;
+                height: 58px !important;
+                min-height: 58px !important;
+                grid-auto-columns: minmax(150px, 184px) !important;
+                gap: 6px !important;
+            }
+
+            .ytkit-nav-btn {
+                min-height: 50px !important;
+                padding: 6px 9px !important;
+            }
+
+            .ytkit-content {
+                padding: 14px !important;
+            }
+
+            .ytkit-footer {
+                gap: 8px !important;
+                min-height: 0 !important;
+                padding: 9px 12px 10px !important;
+            }
+
+            .ytkit-panel-status {
+                min-height: 34px !important;
+                grid-template-columns: 28px minmax(0, 1fr) !important;
+                column-gap: 8px !important;
+            }
+
+            .ytkit-panel-status::before {
+                width: 26px !important;
+                height: 26px !important;
+                border-radius: 8px !important;
+                font-size: 15px !important;
+            }
+
+            .ytkit-panel-status::after {
+                display: none !important;
+            }
+
+            .ytkit-footer-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+            }
+
+            .ytkit-footer-actions .ytkit-btn {
+                min-height: 40px !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .ytkit-footer-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .ytkit-footer-actions .ytkit-btn {
+                min-height: 38px !important;
+                padding: 0 10px !important;
+            }
+
+            .ytkit-feature-card {
+                min-height: 62px !important;
+            }
+        }
+
+        @media (pointer: coarse) {
+            #ytkit-settings-panel button,
+            #ytkit-settings-panel select,
+            #ytkit-settings-panel input[type="text"],
+            #ytkit-settings-panel input[type="search"] {
+                min-height: 44px;
             }
         }
     `);
