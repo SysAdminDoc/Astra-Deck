@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: install docs no longer hardcode stale latest-release claims.**
+  README and the native-messaging bootstrap doc claimed "latest release
+  v4.46.4 includes the EXE" while GitHub latest was v4.46.34 with no
+  companion assets at all. The copy is now tag-agnostic (points at the live
+  release page), and `check-versions.js` fails any active install doc that
+  reintroduces a hardcoded "latest release vX.Y.Z" claim.
 - **Fix: SemVer product-tag sanity gate.** `check-versions.js` (and with it
   `npm run check`), release readiness, and `release:verify-digests` now
   reject product-shaped git tags that version-sort ahead of the current

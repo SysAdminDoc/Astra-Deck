@@ -33,6 +33,7 @@ const ACTIVE_DOC_TRUTH_FILES = Object.freeze([
     path.join('docs', 'architecture.md'),
     path.join('docs', 'repo-settings.md'),
     path.join('docs', 'signing-keys.md'),
+    path.join('docs', 'native-messaging-token-bootstrap.md'),
 ]);
 
 function readPackageVersion() {
@@ -176,6 +177,12 @@ function checkActiveDocumentationTruth(productVersion) {
     const retiredRefs = [
         { re: /RESEARCH_REPORT\.md/g, label: 'retired RESEARCH_REPORT.md reference' },
         { re: /\.github\/workflows\/[A-Za-z0-9_.\/-]+/g, label: 'retired GitHub Actions workflow path' },
+        // "latest release vX.Y.Z" claims go stale the moment the next release
+        // ships; install docs must describe the live release state without
+        // hardcoding a tag (link to /releases/latest or tell the reader to
+        // check `gh release view` instead).
+        { re: /latest(?:\s+public)?\s+release\s+`?v\d+(?:\.\d+)+/gi, label: 'hardcoded latest-release version claim (derive from live release metadata)' },
+        { re: /\bLatest\s+`v\d+(?:\.\d+)+`/g, label: 'hardcoded latest-release version claim (derive from live release metadata)' },
     ];
     const currentVersionClaims = [
         { re: /today,\s+at\s+v(\d+\.\d+\.\d+)\+?/gi, label: '"today" architecture version claim' },
