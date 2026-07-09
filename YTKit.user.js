@@ -13084,6 +13084,7 @@
                 _styleElement: null,
                 _toolbar: null,
                 _digestPanel: null,
+                _healthPanel: null,
                 _membersPanel: null,
                 _activeGroupId: '',     // '' = all subscriptions
                 _observer: null,
@@ -13162,6 +13163,7 @@
                         .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
                         .ytkit-sub-toolbar button[data-action="scan-stale"]{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.32);color:#bfdbfe;}
                         .ytkit-sub-toolbar button[data-action="digest"]{background:rgba(14,165,233,0.12);border-color:rgba(14,165,233,0.32);color:#bae6fd;}
+                        .ytkit-sub-toolbar button[data-action="health"]{background:rgba(124,58,237,0.14);border-color:rgba(124,58,237,0.36);color:#ddd6fe;}
                         .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
                         .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
                         .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
@@ -13184,6 +13186,21 @@
                         .ytkit-sub-digest-count{font-variant-numeric:tabular-nums;color:#bae6fd;font-weight:700;}
                         .ytkit-sub-digest-muted{color:rgba(226,232,240,0.58);font-variant-numeric:tabular-nums;}
                         .ytkit-sub-digest-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
+                        .ytkit-sub-health-stats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+                        .ytkit-sub-health-stat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:rgba(226,232,240,0.78);font:600 11px/1.4 system-ui;}
+                        .ytkit-sub-health-stat b{color:#f8fafc;font-variant-numeric:tabular-nums;}
+                        .ytkit-sub-health-stat[data-tone="warn"] b{color:#fde68a;}
+                        .ytkit-sub-health-stat[data-tone="staged"] b{color:#bbf7d0;}
+                        .ytkit-sub-health-section{margin:12px 0 6px;color:rgba(226,232,240,0.66);font:700 11px/1.3 system-ui;text-transform:uppercase;letter-spacing:.05em;}
+                        .ytkit-sub-health-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
+                        .ytkit-sub-health-row button{min-height:26px;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                        .ytkit-sub-health-row button:hover{background:rgba(255,255,255,0.08);}
+                        .ytkit-sub-health-row button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
+                        .ytkit-sub-health-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+                        .ytkit-sub-health-actions button{min-height:28px;padding:5px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                        .ytkit-sub-health-actions button:hover{background:rgba(255,255,255,0.08);}
+                        .ytkit-sub-health-actions button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
+                        .ytkit-sub-health-error{padding:10px;border-radius:6px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#fecaca;}
                         .ytkit-sub-dead-card{outline:1px solid rgba(245,158,11,0.34);outline-offset:-1px;}
                         .ytkit-sub-staged-card{outline:1px solid rgba(34,197,94,0.42);outline-offset:-1px;}
                         .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
@@ -13212,6 +13229,7 @@
                         html:not([dark]) .ytkit-sub-toolbar button:hover{background:rgba(0,0,0,0.1);}
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="scan-stale"]{color:#1d4ed8;}
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="digest"]{color:#075985;}
+                        html:not([dark]) .ytkit-sub-toolbar button[data-action="health"]{color:#5b21b6;}
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{color:#92400e;}
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{color:#166534;}
                         html:not([dark]) .ytkit-sub-group-chip{background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.38);color:#5b21b6;}
@@ -13767,6 +13785,262 @@
                     this._renderDigestPanel();
                 },
 
+                _closeHealthPanel() {
+                    this._healthPanel?.remove();
+                    this._healthPanel = null;
+                },
+
+                _toggleHealthPanel() {
+                    if (this._healthPanel) {
+                        this._closeHealthPanel();
+                        return;
+                    }
+                    this._renderHealthPanel();
+                },
+
+                // One coherent subscriptions health/action center: stale-channel
+                // candidates, staged-unsubscribe recovery, new-since-last-visit
+                // counts, and export actions — all read from the same local data
+                // the toolbar actions already maintain. No YouTube unsubscribe
+                // controls are clicked from here; staging stays review-only.
+                _renderHealthPanel() {
+                    if (!this._toolbar?.isConnected) this._renderToolbar();
+                    if (!this._toolbar?.isConnected) return;
+                    this._closeHealthPanel();
+
+                    const panel = document.createElement('section');
+                    panel.className = 'ytkit-sub-digest-panel';
+                    panel.setAttribute('role', 'region');
+                    panel.setAttribute('aria-label', 'Subscription health center');
+
+                    const head = document.createElement('div');
+                    head.className = 'ytkit-sub-digest-head';
+                    const titleWrap = document.createElement('div');
+                    const title = document.createElement('h3');
+                    title.className = 'ytkit-sub-digest-title';
+                    title.textContent = 'Subscription Health';
+                    const meta = document.createElement('div');
+                    meta.className = 'ytkit-sub-digest-meta';
+                    titleWrap.append(title, meta);
+                    const headActions = document.createElement('div');
+                    const rescan = document.createElement('button');
+                    rescan.type = 'button';
+                    rescan.className = 'ytkit-sub-digest-close';
+                    rescan.textContent = 'Rescan';
+                    rescan.setAttribute('aria-label', 'Rescan the rendered feed for subscription health');
+                    rescan.addEventListener('click', () => this._renderHealthPanel());
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'ytkit-sub-digest-close';
+                    close.textContent = 'Close';
+                    close.setAttribute('aria-label', 'Close subscription health center');
+                    close.addEventListener('click', () => this._closeHealthPanel());
+                    headActions.append(rescan, ' ', close);
+                    head.append(titleWrap, headActions);
+                    panel.appendChild(head);
+
+                    try {
+                        const lastVisit = this._readLastVisit();
+                        const summaries = this._collectRenderedCardSummaries(lastVisit);
+                        const groups = this._readGroups();
+                        const candidates = this._renderDeadChannelMarkers();
+                        const staged = this._readUnsubscribeStaging();
+                        const stagedEntries = Object.values(staged);
+                        const newVideos = summaries.filter(item => item.isNew);
+                        const renderedChannels = new Set(summaries.map(item => item.channelId)).size;
+                        meta.textContent = `${renderedChannels} rendered channel${renderedChannels === 1 ? '' : 's'} · ${Object.keys(groups).length} group${Object.keys(groups).length === 1 ? '' : 's'}`;
+
+                        const stats = document.createElement('div');
+                        stats.className = 'ytkit-sub-health-stats';
+                        const addStat = (label, value, tone = '') => {
+                            const chip = document.createElement('span');
+                            chip.className = 'ytkit-sub-health-stat';
+                            if (tone) chip.dataset.tone = tone;
+                            const strong = document.createElement('b');
+                            strong.textContent = String(value);
+                            chip.append(strong, ` ${label}`);
+                            stats.appendChild(chip);
+                        };
+                        addStat('stale candidates', candidates.length, candidates.length ? 'warn' : '');
+                        addStat('staged for review', stagedEntries.length, stagedEntries.length ? 'staged' : '');
+                        addStat('new videos', newVideos.length);
+                        addStat(`new channel${new Set(newVideos.map(item => item.channelId)).size === 1 ? '' : 's'}`, new Set(newVideos.map(item => item.channelId)).size);
+                        panel.appendChild(stats);
+
+                        // ── Stale / dead-channel candidates ──
+                        const staleHeading = document.createElement('div');
+                        staleHeading.className = 'ytkit-sub-health-section';
+                        staleHeading.textContent = `Stale channels (≥${this._STALE_CHANNEL_MIN_AGE_DAYS} days, rendered feed)`;
+                        panel.appendChild(staleHeading);
+                        const staleList = document.createElement('div');
+                        staleList.className = 'ytkit-sub-digest-list';
+                        if (!candidates.length) {
+                            const empty = document.createElement('div');
+                            empty.className = 'ytkit-sub-digest-empty';
+                            empty.textContent = 'No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan.';
+                            staleList.appendChild(empty);
+                        } else {
+                            for (const candidate of candidates.slice(0, 12)) {
+                                const row = document.createElement('div');
+                                row.className = 'ytkit-sub-health-row';
+                                const name = document.createElement('div');
+                                name.className = 'ytkit-sub-digest-name';
+                                name.textContent = candidate.channelName || candidate.channelId;
+                                const age = document.createElement('div');
+                                age.className = 'ytkit-sub-digest-muted';
+                                age.textContent = `${candidate.ageDays}d`;
+                                const action = document.createElement('button');
+                                action.type = 'button';
+                                if (staged[candidate.channelId]) {
+                                    action.textContent = 'Undo stage';
+                                    action.setAttribute('aria-label', `Undo staged unsubscribe for ${name.textContent}`);
+                                    action.addEventListener('click', () => {
+                                        this._undoStagedUnsubscribes([candidate.channelId]);
+                                        this._renderHealthPanel();
+                                    });
+                                } else {
+                                    action.textContent = 'Stage';
+                                    action.setAttribute('aria-label', `Stage ${name.textContent} for unsubscribe review`);
+                                    action.addEventListener('click', () => {
+                                        const now = Date.now();
+                                        const next = { ...this._readUnsubscribeStaging() };
+                                        next[candidate.channelId] = {
+                                            channelId: candidate.channelId,
+                                            channelName: candidate.channelName || candidate.channelId,
+                                            ageDays: candidate.ageDays,
+                                            stagedAt: now,
+                                            undoUntil: now + this._UNSUB_STAGE_TTL_MS,
+                                            reason: `${candidate.ageDays} days since newest rendered upload`,
+                                            source: 'health-center'
+                                        };
+                                        this._writeUnsubscribeStaging(next);
+                                        this._renderDeadChannelMarkers();
+                                        this._renderHealthPanel();
+                                    });
+                                }
+                                row.append(name, age, action);
+                                staleList.appendChild(row);
+                            }
+                            if (candidates.length > 12) {
+                                const more = document.createElement('div');
+                                more.className = 'ytkit-sub-digest-empty';
+                                more.textContent = `+${candidates.length - 12} more — use Stage Stale in the toolbar to stage every candidate at once.`;
+                                staleList.appendChild(more);
+                            }
+                        }
+                        panel.appendChild(staleList);
+
+                        // ── Staged unsubscribe recovery ──
+                        const stagedHeading = document.createElement('div');
+                        stagedHeading.className = 'ytkit-sub-health-section';
+                        stagedHeading.textContent = 'Staged unsubscribes (review-only, 30-day undo window)';
+                        panel.appendChild(stagedHeading);
+                        const stagedList = document.createElement('div');
+                        stagedList.className = 'ytkit-sub-digest-list';
+                        if (!stagedEntries.length) {
+                            const empty = document.createElement('div');
+                            empty.className = 'ytkit-sub-digest-empty';
+                            empty.textContent = 'Nothing staged. Staging flags channels for your review — it never clicks YouTube unsubscribe controls.';
+                            stagedList.appendChild(empty);
+                        } else {
+                            for (const entry of stagedEntries.slice(0, 12)) {
+                                const row = document.createElement('div');
+                                row.className = 'ytkit-sub-health-row';
+                                const name = document.createElement('div');
+                                name.className = 'ytkit-sub-digest-name';
+                                name.textContent = entry.channelName || entry.channelId;
+                                name.title = entry.reason || '';
+                                const until = document.createElement('div');
+                                until.className = 'ytkit-sub-digest-muted';
+                                until.textContent = entry.undoUntil
+                                    ? `undo by ${new Date(entry.undoUntil).toLocaleDateString()}`
+                                    : 'staged';
+                                const undo = document.createElement('button');
+                                undo.type = 'button';
+                                undo.textContent = 'Undo';
+                                undo.setAttribute('aria-label', `Undo staged unsubscribe for ${name.textContent}`);
+                                undo.addEventListener('click', () => {
+                                    this._undoStagedUnsubscribes([entry.channelId]);
+                                    this._renderHealthPanel();
+                                });
+                                row.append(name, until, undo);
+                                stagedList.appendChild(row);
+                            }
+                            const undoAllWrap = document.createElement('div');
+                            undoAllWrap.className = 'ytkit-sub-health-actions';
+                            const undoAll = document.createElement('button');
+                            undoAll.type = 'button';
+                            undoAll.textContent = `Undo all staged (${stagedEntries.length})`;
+                            undoAll.setAttribute('aria-label', 'Undo every staged unsubscribe');
+                            undoAll.addEventListener('click', () => {
+                                this._undoStagedUnsubscribes(Object.keys(this._readUnsubscribeStaging()));
+                                this._renderHealthPanel();
+                            });
+                            undoAllWrap.appendChild(undoAll);
+                            stagedList.appendChild(undoAllWrap);
+                        }
+                        panel.appendChild(stagedList);
+
+                        // ── New since last visit ──
+                        const newHeading = document.createElement('div');
+                        newHeading.className = 'ytkit-sub-health-section';
+                        newHeading.textContent = 'New since last visit';
+                        panel.appendChild(newHeading);
+                        const newActions = document.createElement('div');
+                        newActions.className = 'ytkit-sub-health-actions';
+                        const newSummary = document.createElement('div');
+                        newSummary.className = 'ytkit-sub-digest-empty';
+                        newSummary.textContent = newVideos.length
+                            ? `${newVideos.length} new video${newVideos.length === 1 ? '' : 's'} from ${new Set(newVideos.map(item => item.channelId)).size} channel${new Set(newVideos.map(item => item.channelId)).size === 1 ? '' : 's'} since your last visit.`
+                            : 'Nothing new since your last visit stamp.';
+                        const openDigest = document.createElement('button');
+                        openDigest.type = 'button';
+                        openDigest.textContent = 'Open Digest';
+                        openDigest.setAttribute('aria-label', 'Open the per-group notifications digest');
+                        openDigest.addEventListener('click', () => this._renderDigestPanel());
+                        const markRead = document.createElement('button');
+                        markRead.type = 'button';
+                        markRead.textContent = 'Mark all read';
+                        markRead.disabled = newVideos.length === 0;
+                        markRead.setAttribute('aria-label', 'Mark every rendered channel as read');
+                        markRead.addEventListener('click', () => {
+                            this._markGroupDigestRead('');
+                            this._renderHealthPanel();
+                        });
+                        newActions.append(openDigest, markRead);
+                        panel.append(newSummary, newActions);
+
+                        // ── Export actions ──
+                        const exportHeading = document.createElement('div');
+                        exportHeading.className = 'ytkit-sub-health-section';
+                        exportHeading.textContent = 'Export';
+                        panel.appendChild(exportHeading);
+                        const exportActions = document.createElement('div');
+                        exportActions.className = 'ytkit-sub-health-actions';
+                        for (const [label, handler, aria] of [
+                            ['JSON', () => this._exportGroups(), 'Export subscription groups as JSON'],
+                            ['CSV', () => this._exportGroupsCsv(), 'Export subscription groups as CSV'],
+                            ['OPML', () => this._exportGroupsOpml(), 'Export subscription groups as OPML']
+                        ]) {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.textContent = label;
+                            btn.setAttribute('aria-label', aria);
+                            btn.addEventListener('click', handler);
+                            exportActions.appendChild(btn);
+                        }
+                        panel.appendChild(exportActions);
+                    } catch (err) {
+                        const errorBox = document.createElement('div');
+                        errorBox.className = 'ytkit-sub-health-error';
+                        errorBox.textContent = `Health scan failed: ${err?.message || 'unexpected error'}. The feed may still be loading — try Rescan.`;
+                        panel.appendChild(errorBox);
+                    }
+
+                    this._toolbar.insertAdjacentElement('afterend', panel);
+                    this._healthPanel = panel;
+                },
+
                 _renderDigestPanel() {
                     if (!this._toolbar?.isConnected) this._renderToolbar();
                     if (!this._toolbar?.isConnected) return;
@@ -14220,7 +14494,9 @@
                     const target = document.querySelector('ytd-rich-grid-renderer, ytd-section-list-renderer');
                     if (!target || !target.parentElement) return;
                     const hadDigestPanel = Boolean(this._digestPanel);
+                    const hadHealthPanel = Boolean(this._healthPanel);
                     this._closeDigestPanel();
+                    this._closeHealthPanel();
                     this._closeMembersPanel();
                     this._toolbar?.remove();
                     const bar = document.createElement('div');
@@ -14357,6 +14633,16 @@
                     });
                     bar.appendChild(sortSelect);
 
+                    const healthBtn = document.createElement('button');
+                    healthBtn.type = 'button';
+                    healthBtn.dataset.action = 'health';
+                    const healthStagedCount = Object.keys(stagedUnsubscribes).length;
+                    healthBtn.textContent = healthStagedCount > 0 ? `Health (${healthStagedCount})` : 'Health';
+                    healthBtn.title = 'Stale channels, staged unsubscribes, new-video counts, and exports in one panel.';
+                    healthBtn.setAttribute('aria-label', 'Open the subscription health center');
+                    healthBtn.addEventListener('click', () => this._toggleHealthPanel());
+                    bar.appendChild(healthBtn);
+
                     const digestBtn = document.createElement('button');
                     digestBtn.type = 'button';
                     digestBtn.dataset.action = 'digest';
@@ -14457,6 +14743,7 @@
                     target.parentElement.insertBefore(bar, target);
                     this._toolbar = bar;
                     if (hadDigestPanel) this._renderDigestPanel();
+                    if (hadHealthPanel) this._renderHealthPanel();
                 },
 
                 init() {
@@ -14513,6 +14800,7 @@
                     if (this._stampTimer) { clearTimeout(this._stampTimer); this._stampTimer = null; }
                     this._navRule = null;
                     this._closeDigestPanel();
+                    this._closeHealthPanel();
                     this._closeMembersPanel();
                     document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
                     this._toolbar?.remove();
