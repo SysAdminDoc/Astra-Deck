@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "ダブルクリックでフルスクリーン"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "ドキュメント本文に role=status / aria-live=polite の非表示コンテナを1つ配置。スクリーンリーダーが Astra の書き込み（トースト、フィルター結果、ダウンロード状態の変化）を読み上げます。"
   },

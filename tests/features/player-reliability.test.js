@@ -64,6 +64,16 @@ test('playbackErrorRecovery resume state is scoped, expiring, and cleaned up', (
         'destroy must remove the navigate rule');
 });
 
+test('fullscreenScroll restores body scroll and the columns layout in fullscreen only', () => {
+    const block = featureSlice('fullscreenScroll');
+    assert.match(block, /html:fullscreen body \{ overflow-y: auto !important; \}/,
+        'body scroll is restored only while the document is fullscreen');
+    assert.match(block, /ytd-app\[fullscreen\] ytd-watch-flexy\[fullscreen\] #columns \{ display: flex !important/,
+        'columns are re-shown only under fullscreen attribute gating');
+    assert.match(block, /--yt-spec-base-background/,
+        'columns get a theme-aware background so light theme stays readable');
+});
+
 test('autoExitFullscreen is registered off by default across catalog surfaces', () => {
     const defaults = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'default-settings.json'), 'utf8'));

@@ -62,7 +62,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Playback-error auto-recovery adds 1 boolean (30 bytes).
     // Persistent queue toggle + auto-advance add 2 booleans (58 bytes).
     // Shorts speed control + auto-advance add 2 booleans (53 bytes).
-    assert.equal(assessment.totalBytes, 178824);
+    // Scroll-in-fullscreen adds 1 boolean (25 bytes).
+    assert.equal(assessment.totalBytes, 178849);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

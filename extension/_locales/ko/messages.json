@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "더블 클릭 전체 화면"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "문서 본문 아래에 숨겨진 role=status / aria-live=polite 컨테이너를 마운트합니다. 스크린 리더가 Astra가 여기에 쓴 텍스트를 읽어줍니다 (토스트 내용, 필터 결과, 다운로드 상태 변경)."
   },

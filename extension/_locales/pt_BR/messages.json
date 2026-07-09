@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "Tela Cheia com Clique Duplo"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Monta um contêiner oculto role=status / aria-live=polite sob o corpo do documento. Leitores de tela anunciam qualquer texto que o Astra escrever nele (corpo de toasts, resultados de filtros, alterações de status de download)."
   },

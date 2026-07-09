@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Scroll in Fullscreen.** New toggle that restores the removed native
+  fullscreen-scroll layout: scroll down while fullscreen to read the
+  description, comments, and related videos, scroll back up to return to the
+  video. CSS-only, gated on the fullscreen attributes, verified against the
+  live 2026-07 watch-page DOM.
 - **Shorts Speed Control + Auto-Advance.** Two independent Shorts toggles:
   a click-to-cycle speed chip (0.5x-2x, seeded from Persistent Speed when
   enabled, re-applied per reel) and an auto-advance mode that stops Shorts

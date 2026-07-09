@@ -152,6 +152,7 @@
   "persistentQueueAutoAdvance": true,
   "shortsSpeedControl": false,
   "shortsAutoAdvance": false,
+  "fullscreenScroll": false,
   "showPlaylistDuration": false,
   "showTimeInTabTitle": false,
   "customProgressBarColor": "#ff0000",

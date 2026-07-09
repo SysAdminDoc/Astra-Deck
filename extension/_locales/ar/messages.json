@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "ملء الشاشة بالنقر المزدوج"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "يثبّت حاوية مخفية واحدة role=status / aria-live=polite تحت نص المستند. تعلن قارئات الشاشة أي نص يكتبه Astra فيها (نصوص التنبيهات، نتائج الفلاتر، تغييرات حالة التنزيل)."
   },
