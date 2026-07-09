@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P2 — Promote subscription groups into a health/action center
-  Why: PocketTube-level subscription management includes health status, dead-channel detection, bulk unsubscribe, mark-watched, notifications, and Deck-style triage; Astra already has the local data needed but not a unified workflow.
-  Evidence: PocketTube feature pages, `extension/features/subscription-groups/index.js`, `extension/core/settings-schema.js`.
-  Touches: `extension/features/subscription-groups/index.js`, `extension/features/settings-panel/index.js`, `extension/core/settings-schema.js`, `tests/features/`, `tests/hardening.test.js`.
-  Acceptance: Subscriptions page exposes one coherent health panel showing stale/dead candidates, new-since-last-visit counts, staged unsubscribe recovery, export actions, and clear empty/error states.
-  Complexity: L
-
 - [ ] P2 — Add recoverable recommendation scrub sessions
   Why: Research and YouTube help show "Not interested" and "Don't recommend channel" can tune recommendations, but users under-discover them and Astra only exposes one-off thumbnail actions today.
   Evidence: arXiv recommender study, YouTube Help recommendation controls, `notInterestedButton`, `extension/features/video-hider/index.js`.

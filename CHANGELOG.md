@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: subscription health center.** The subscriptions toolbar gains a
+  Health button (with staged-count badge) that opens one coherent panel:
+  overview stats, stale-channel candidates with per-row Stage/Undo, staged
+  unsubscribe recovery with per-row and bulk undo plus the 30-day undo
+  deadline, new-since-last-visit summary with Open Digest / Mark all read,
+  and JSON/CSV/OPML export actions. Every section has an explanatory empty
+  state, the panel renders an error state instead of blanking, and staging
+  remains review-only — no YouTube unsubscribe controls are ever clicked.
+  Shipped in both the peeled module and the ytkit.js fallback copy.
 - **Chore: lint ratchet + build-tool hardening.** ESLint upgraded to
   10.6 with `no-constant-binary-expression` (relational checks) enabled
   across all shipped extension JS — zero violations found.

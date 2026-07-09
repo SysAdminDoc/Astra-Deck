@@ -26,7 +26,7 @@ const defaultSettings = JSON.parse(
     fs.readFileSync(path.join(repoRoot, 'extension', 'default-settings.json'), 'utf8')
 );
 
-function featureBlock(id, length = 95000) {
+function featureBlock(id, length = 170000) {
     const start = ytkitSource.indexOf(`id: '${id}'`);
     assert.ok(start > -1, `feature '${id}' must exist in ytkit.js`);
     return ytkitSource.slice(start, start + length);
@@ -289,6 +289,42 @@ test('subscriptionGroups duration sort reads lockup badges and prefers the LAST 
 });
 
 // ── item 10: group membership editor + empty-state + honest description ──
+
+test('subscriptionGroups ships a unified health/action center in both copies', () => {
+    // The health center must exist in the peeled module (primary path) AND
+    // the ytkit.js inline fallback, mirroring the Edit Channels convention.
+    const moduleSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
+    for (const [label, src] of [['module', moduleSource], ['ytkit fallback', featureBlock('subscriptionGroups')]]) {
+        assert.match(src, /dataset\.action = 'health'/,
+            `${label}: toolbar must expose a Health action`);
+        const panelBlock = (() => {
+            const idx = src.indexOf('_renderHealthPanel() {');
+            assert.ok(idx > -1, `${label}: _renderHealthPanel must exist`);
+            return src.slice(idx, idx + 24000);
+        })();
+        assert.match(panelBlock, /Subscription Health/,
+            `${label}: panel must carry the health title`);
+        assert.match(panelBlock, /_collectRenderedCardSummaries\(lastVisit\)/,
+            `${label}: health center must reuse the digest's rendered-card summaries`);
+        assert.match(panelBlock, /_renderDeadChannelMarkers\(\)/,
+            `${label}: health center must reuse the stale-channel collector`);
+        assert.match(panelBlock, /No stale channels detected among the rendered cards/,
+            `${label}: stale section must have an explanatory empty state`);
+        assert.match(panelBlock, /Nothing staged\. Staging flags channels for your review/,
+            `${label}: staged section empty state must explain review-only semantics`);
+        assert.match(panelBlock, /Undo all staged/,
+            `${label}: staged section must expose bulk undo recovery`);
+        assert.match(panelBlock, /Health scan failed/,
+            `${label}: panel must render an error state instead of blanking`);
+        assert.match(panelBlock, /_exportGroupsOpml\(\)/,
+            `${label}: export actions must include OPML`);
+        assert.match(src, /if \(hadHealthPanel\) this\._renderHealthPanel\(\)/,
+            `${label}: toolbar re-render must restore an open health panel`);
+        assert.match(src, /this\._closeHealthPanel\(\);\s*\n\s*this\._closeMembersPanel\(\)/,
+            `${label}: destroy/rerender paths must close the health panel`);
+    }
+});
 
 test('subscriptionGroups ships an Edit Channels membership editor with empty-state notice', () => {
     const block = featureBlock('subscriptionGroups');
