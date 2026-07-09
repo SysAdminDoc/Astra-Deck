@@ -4454,11 +4454,15 @@ function installWheelScrolling() {
 
     const openSidePanelBtn = $('#openSidePanel');
     if (openSidePanelBtn) {
-        if (typeof chrome.sidePanel?.open === 'function') {
+        const sidePanelApi = chrome?.['sidePanel'];
+        const openSidePanel = sidePanelApi && typeof sidePanelApi['open'] === 'function'
+            ? sidePanelApi['open'].bind(sidePanelApi)
+            : null;
+        if (openSidePanel) {
             openSidePanelBtn.addEventListener('click', async () => {
                 try {
                     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-                    await chrome.sidePanel.open({ tabId: tab?.id });
+                    await openSidePanel({ tabId: tab?.id });
                     window.close();
                 } catch (err) {
                     showStatus(t('statusOpenDashboardFail', 'Could not open dashboard') + ': ' + err.message, 'error', 3000);
