@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- No unreleased changes.
+
+## [4.46.32] - 2026-07-09
+
 - **Fix: companion recent-download retention.** Astra Downloader now stamps
   terminal time on completed, failed, and cancelled downloads, so long-running
   items stay visible in Recent Activity for the intended five-minute window
