@@ -22,6 +22,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   compact two-column layout. The rendered smoke now covers mobile light mode,
   explicit RTL direction, mobile occlusion limits, and a fallback-only runtime;
   the fallback also restores keyboard focus and a working Takeout-import Undo.
+- **Style: premium companion command center.** Astra Downloader now uses the
+  same graphite, coral, amber, and teal system as the extension, with a branded
+  navigation rail, denser dashboard hierarchy, sharper control states, and a
+  right-side System Pulse for local API, yt-dlp, FFmpeg, Deno, PO-provider, and
+  SABR readiness. Toolchain probes run off the GUI thread, classified download
+  failures surface recovery guidance inside their activity card, and
+  `npm run smoke:companion-gui` renders all four native views offscreen for
+  deterministic visual review.
 
 ## [4.47.0] - 2026-07-09
 

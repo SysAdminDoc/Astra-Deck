@@ -86,6 +86,13 @@ return to YouTube and choose **Check again**. The toolbar popup also has
 recovery actions to re-enable the setup prompt and request an on-demand
 companion update from a running service.
 
+The native companion opens to a local command center with live queue metrics,
+server actions, and a System Pulse for yt-dlp, FFmpeg, Deno, PO-provider, and
+SABR readiness. Contributors can render the Dashboard, Downloads, History, and
+Settings views without activating a desktop window by running
+`npm run smoke:companion-gui`; captures are written under
+`build/companion-ui-smoke/`.
+
 The PO-token provider and Deno sections below are companion prerequisites. They
 improve downloader reliability after Astra Downloader itself is running; they
 are not browser extension install steps.

@@ -2573,6 +2573,107 @@ QToolTip {
 }
 """
 
+# Premium command-center layer. Kept after the foundation rules so the visual
+# system can evolve without disturbing behavior-specific selectors above.
+STYLESHEET += """
+QMainWindow, QWidget {
+    background-color: #080a0f;
+    color: #f5f1ed;
+}
+QLabel { color: #f5f1ed; background: transparent; }
+QLabel[class="title"] { font-size: 25px; font-weight: 750; color: #fffaf5; }
+QLabel[class="subtitle"] { color: #9ba3af; font-size: 12px; }
+QLabel[class="muted"], QLabel[class="fieldHint"] { color: #7f8997; }
+QLabel[class="secondary"] { color: #c2c8d0; }
+QLabel[class="section"] { color: #db9b6d; font-size: 10px; letter-spacing: 1.35px; }
+QLabel[class="badge"] { border-radius: 6px; padding: 3px 8px; }
+QLabel[class="badge"][tone="success"] { color: #b9f8dc; background: #102921; border-color: #225b49; }
+QLabel[class="badge"][tone="warning"] { color: #ffe2ad; background: #302315; border-color: #72502c; }
+QLabel[class="badge"][tone="danger"] { color: #ffd0cb; background: #34191a; border-color: #7b3735; }
+QLabel[class="badge"][tone="info"] { color: #c9e8ff; background: #14283a; border-color: #2c5874; }
+QLabel[class="badge"][tone="neutral"] { color: #b4bcc7; background: #131922; border-color: #2a3442; }
+QLabel[class="readinessValue"] { color: #f1ede9; font-size: 11px; font-weight: 700; }
+QLabel[class="readinessDot"][tone="success"] { color: #4cd6a2; }
+QLabel[class="readinessDot"][tone="warning"] { color: #f3ad62; }
+QLabel[class="readinessDot"][tone="danger"] { color: #ff7164; }
+QLabel[class="readinessDot"][tone="neutral"] { color: #697381; }
+QLabel[class="errorCallout"] {
+    color: #ffcbc5;
+    background: #2c1719;
+    border: 1px solid #6c3031;
+    border-radius: 6px;
+    padding: 9px 10px;
+}
+
+QPushButton {
+    background-color: #151a22;
+    color: #ddd8d3;
+    border-color: #2a3441;
+    border-radius: 6px;
+    min-height: 36px;
+}
+QPushButton:hover { background-color: #1c222c; border-color: #465262; color: #fffaf5; }
+QPushButton:focus { border-color: #ff7564; }
+QPushButton[class="primary"] {
+    background-color: #ff5f4b;
+    color: #170705;
+    border-color: #ff7867;
+}
+QPushButton[class="primary"]:hover { background-color: #ff7564; border-color: #ff8b7c; }
+QPushButton[class="secondary"] { background-color: #121821; color: #d3d8de; border-color: #303b49; }
+QPushButton[class="ghost"]:hover { background-color: #171d26; border-color: #303b49; }
+QPushButton[class="nav"] {
+    color: #929ba7;
+    padding: 11px 14px;
+    margin: 0 12px 5px 12px;
+    border-radius: 6px;
+}
+QPushButton[class="nav"]:hover { background-color: #141922; color: #f4efea; }
+QPushButton[class="nav"][active="true"] {
+    color: #fff3ed;
+    background-color: #291717;
+    border-color: #603027;
+}
+
+QLineEdit, QSpinBox, QComboBox {
+    background-color: #11161e;
+    color: #f1ede9;
+    border-color: #303a47;
+    border-radius: 6px;
+    selection-background-color: #ff5f4b;
+    selection-color: #170705;
+}
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus { border-color: #ff7564; background-color: #151b24; }
+QCheckBox::indicator:checked { background: #ff5f4b; border-color: #ff7564; }
+QCheckBox { background: transparent; }
+
+QFrame[class="sidebar"] { background-color: #07090d; border-right-color: #202733; }
+QFrame[class="card"], QFrame[class="stat"], QFrame[class="download"] {
+    background-color: #10151c;
+    border-color: #272f3b;
+    border-radius: 8px;
+}
+QFrame[class="readiness"] {
+    background-color: #0d1218;
+    border: 1px solid #2b333f;
+    border-radius: 8px;
+}
+QFrame[class="readinessRow"] {
+    background-color: transparent;
+    border-bottom: 1px solid #202832;
+}
+QFrame[class="download"][state="failed"] { border-color: #743632; background-color: #181214; }
+QFrame[class="download"][state="complete"] { border-color: #245948; background-color: #0e1916; }
+QFrame[class="empty"] { background-color: #0c1117; border-color: #303946; }
+QFrame[class="divider"] { background-color: #222a35; }
+QTextEdit { background-color: #0b1016; color: #aeb6c1; border-color: #27303b; }
+QProgressBar { background: #0c1117; border-color: #27313d; }
+QProgressBar::chunk { background: #ff5f4b; }
+QScrollBar::handle:vertical { background: #323b48; }
+QMenu { background-color: #11161e; border-color: #303a47; }
+QMenu::item:selected { background-color: #2b1919; }
+"""
+
 # ══════════════════════════════════════════════════════════════
 # CONFIG
 # ══════════════════════════════════════════════════════════════
@@ -4638,6 +4739,27 @@ def make_stat(label_text, value_text="0", hint_text=""):
         layout.addWidget(hint)
     return f, val
 
+
+class ReadinessProbe(QObject):
+    """Collect toolchain health away from the GUI thread."""
+
+    completed = pyqtSignal(dict)
+
+    def run(self):
+        try:
+            deno = probe_deno_runtime()
+            provider = probe_po_token_provider()
+            payload = {
+                "ytDlp": get_ytdlp_version() or "",
+                "ffmpeg": get_ffmpeg_version() or "",
+                "deno": deno or {},
+                "provider": provider or {},
+            }
+        except Exception as exc:
+            write_persistent_log(f"Readiness probe failed: {exc}")
+            payload = {"error": str(exc)}
+        self.completed.emit(payload)
+
 # ══════════════════════════════════════════════════════════════
 # MAIN WINDOW
 # ══════════════════════════════════════════════════════════════
@@ -4660,12 +4782,16 @@ class MainWindow(QMainWindow):
         self.instance_command.connect(self._handle_instance_command)
 
         self.setWindowTitle(APP_NAME)
-        self.setMinimumSize(760, 560)
-        self.resize(980, 680)
+        self.setMinimumSize(900, 620)
+        self.resize(1120, 760)
 
         # Icon
-        if ICON_PATH.exists():
-            self.setWindowIcon(QIcon(str(ICON_PATH)))
+        display_icon_path = ICON_PATH
+        source_icon_path = Path(__file__).resolve().parents[1] / "AstraDownloader.ico"
+        if not display_icon_path.exists() and source_icon_path.exists():
+            display_icon_path = source_icon_path
+        if display_icon_path.exists():
+            self.setWindowIcon(QIcon(str(display_icon_path)))
 
         # Central widget
         central = QWidget()
@@ -4677,22 +4803,39 @@ class MainWindow(QMainWindow):
         # Sidebar
         sidebar = QFrame()
         sidebar.setProperty("class", "sidebar")
-        sidebar.setFixedWidth(196)
+        sidebar.setFixedWidth(244)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
         # Brand
         brand = QWidget()
-        brand_layout = QVBoxLayout(brand)
-        brand_layout.setContentsMargins(18, 22, 18, 24)
-        brand_layout.setSpacing(3)
-        title_lbl = make_label(APP_NAME)
-        title_lbl.setStyleSheet("font-size: 16px; font-weight: 750; color: #f8fafc;")
-        ver_lbl = make_label(f"Companion service  v{APP_VERSION}", "muted")
-        ver_lbl.setStyleSheet("font-size: 10px; color: #7b8794;")
-        brand_layout.addWidget(title_lbl)
-        brand_layout.addWidget(ver_lbl)
+        brand_layout = QHBoxLayout(brand)
+        brand_layout.setContentsMargins(18, 22, 16, 24)
+        brand_layout.setSpacing(11)
+        brand_icon = QLabel()
+        brand_icon.setFixedSize(36, 36)
+        brand_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if display_icon_path.exists():
+            brand_pixmap = QIcon(str(display_icon_path)).pixmap(32, 32)
+            if not brand_pixmap.isNull():
+                brand_icon.setPixmap(brand_pixmap)
+        if brand_icon.pixmap().isNull():
+            brand_icon.setText("A")
+            brand_icon.setStyleSheet(
+                "background:#ff5f4b;color:#180706;border-radius:8px;"
+                "font-size:18px;font-weight:800;"
+            )
+        brand_copy = QVBoxLayout()
+        brand_copy.setSpacing(2)
+        title_lbl = make_label("ASTRA DOWNLOADER")
+        title_lbl.setStyleSheet("font-size: 13px; font-weight: 800; color: #fff8f2; letter-spacing: .7px;")
+        ver_lbl = make_label(f"LOCAL COMPANION  ·  v{APP_VERSION}", "muted")
+        ver_lbl.setStyleSheet("font-size: 9px; color: #737d8b;")
+        brand_copy.addWidget(title_lbl)
+        brand_copy.addWidget(ver_lbl)
+        brand_layout.addWidget(brand_icon)
+        brand_layout.addLayout(brand_copy, 1)
         sidebar_layout.addWidget(brand)
 
         # Nav buttons
@@ -4718,12 +4861,12 @@ class MainWindow(QMainWindow):
 
         # Status dot
         status_row = QHBoxLayout()
-        status_row.setContentsMargins(18, 0, 18, 18)
+        status_row.setContentsMargins(22, 0, 18, 20)
         status_row.setSpacing(8)
         self.status_dot = QLabel("\u2022")
-        self.status_dot.setStyleSheet("color: #7b8794; font-size: 20px;")
+        self.status_dot.setStyleSheet("color: #697381; font-size: 20px;")
         self.status_label = make_label("Stopped", "muted")
-        self.status_label.setStyleSheet("font-size: 11px; color: #7b8794;")
+        self.status_label.setStyleSheet("font-size: 11px; color: #7f8997; font-weight: 650;")
         status_row.addWidget(self.status_dot)
         status_row.addWidget(self.status_label)
         status_row.addStretch()
@@ -4782,9 +4925,12 @@ class MainWindow(QMainWindow):
         self.server_thread = None
         self.server_obj = None
         self.server_start_time = None
+        self.readiness_thread = None
+        self.readiness_worker = None
         self._instance_command_stop = threading.Event()
         self._instance_command_thread = None
         self._start_instance_command_listener()
+        self._start_readiness_probe()
 
         if start_minimized:
             QTimer.singleShot(100, self._minimize_to_tray)
@@ -4804,6 +4950,82 @@ class MainWindow(QMainWindow):
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setAccessibleName(text)
         return btn
+
+    def _make_readiness_row(self, key, label_text, value_text="Checking"):
+        row = QFrame()
+        row.setProperty("class", "readinessRow")
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 8, 0, 8)
+        row_layout.setSpacing(8)
+        dot = make_label("●", "readinessDot")
+        dot.setProperty("tone", "neutral")
+        dot.setFixedWidth(12)
+        row_layout.addWidget(dot)
+        row_layout.addWidget(make_label(label_text, "fieldHint"), 1)
+        value = make_label(value_text, "readinessValue")
+        value.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        row_layout.addWidget(value)
+        self.readiness_values[key] = (dot, value)
+        return row
+
+    def _set_readiness(self, key, text, tone="neutral"):
+        widgets = self.readiness_values.get(key)
+        if not widgets:
+            return
+        dot, value = widgets
+        dot.setProperty("tone", tone)
+        value.setText(text)
+        repolish(dot)
+
+    def _start_readiness_probe(self):
+        if self.readiness_thread is not None:
+            return
+        self.readiness_thread = QThread(self)
+        self.readiness_worker = ReadinessProbe()
+        self.readiness_worker.moveToThread(self.readiness_thread)
+        self.readiness_thread.started.connect(self.readiness_worker.run)
+        self.readiness_worker.completed.connect(self._apply_readiness)
+        self.readiness_worker.completed.connect(self.readiness_thread.quit)
+        self.readiness_thread.finished.connect(self.readiness_worker.deleteLater)
+        self.readiness_thread.finished.connect(self._readiness_probe_finished)
+        self.readiness_thread.start()
+
+    def _readiness_probe_finished(self):
+        thread = self.readiness_thread
+        self.readiness_worker = None
+        self.readiness_thread = None
+        if thread is not None:
+            thread.deleteLater()
+
+    def _apply_readiness(self, payload):
+        if payload.get("error"):
+            for key in ("ytDlp", "ffmpeg", "deno", "provider"):
+                self._set_readiness(key, "Unavailable", "danger")
+            return
+
+        yt_dlp = payload.get("ytDlp")
+        ffmpeg = payload.get("ffmpeg")
+        deno = payload.get("deno") or {}
+        provider = payload.get("provider") or {}
+        self._set_readiness("ytDlp", yt_dlp or "Missing", "success" if yt_dlp else "danger")
+        self._set_readiness("ffmpeg", ffmpeg or "Missing", "success" if ffmpeg else "danger")
+
+        deno_version = deno.get("version")
+        if deno.get("supported"):
+            self._set_readiness("deno", deno_version or "Ready", "success")
+        elif deno.get("installed"):
+            self._set_readiness("deno", deno_version or "Update", "warning")
+        elif deno.get("ytdlpNeedsRuntime"):
+            self._set_readiness("deno", "Required", "danger")
+        else:
+            self._set_readiness("deno", "Optional", "neutral")
+
+        if provider.get("ok") and provider.get("stale"):
+            self._set_readiness("provider", "Update", "warning")
+        elif provider.get("ok"):
+            self._set_readiness("provider", provider.get("version") or "Ready", "success")
+        else:
+            self._set_readiness("provider", "Optional", "neutral")
 
     def _build_dashboard(self):
         page = QWidget()
@@ -4862,13 +5084,35 @@ class MainWindow(QMainWindow):
         self.setup_progress.hide()
         ctrl_layout.addWidget(self.setup_status)
         ctrl_layout.addWidget(self.setup_progress)
-        layout.addWidget(ctrl)
+        self.readiness_values = {}
+        readiness = make_card("readiness")
+        readiness_layout = QVBoxLayout(readiness)
+        readiness_layout.setContentsMargins(17, 15, 17, 15)
+        readiness_layout.setSpacing(1)
+        readiness_header = QHBoxLayout()
+        readiness_header.addWidget(make_section_label("System pulse"))
+        readiness_header.addStretch()
+        readiness_header.addWidget(make_status_badge("Local", "neutral"))
+        readiness_layout.addLayout(readiness_header)
+        readiness_layout.addWidget(self._make_readiness_row("server", "Local API", "Stopped"))
+        readiness_layout.addWidget(self._make_readiness_row("ytDlp", "yt-dlp"))
+        readiness_layout.addWidget(self._make_readiness_row("ffmpeg", "FFmpeg"))
+        readiness_layout.addWidget(self._make_readiness_row("deno", "Deno runtime"))
+        readiness_layout.addWidget(self._make_readiness_row("provider", "PO provider"))
+        readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Limited"))
+        self._set_readiness("sabr", "Limited", "warning")
+
+        hero = QHBoxLayout()
+        hero.setSpacing(12)
+        hero.addWidget(ctrl, 3)
+        hero.addWidget(readiness, 2)
+        layout.addLayout(hero)
 
         # Stats — keep refs to frames (else Python GC deletes the underlying Qt objects)
         stats_layout = QHBoxLayout()
         stats_layout.setSpacing(10)
         self._stat_frame_active, self.stat_active = make_stat("Active", "0", "In progress")
-        self.stat_active.setStyleSheet("font-size: 25px; font-weight: 750; color: #61f09a;")
+        self.stat_active.setStyleSheet("font-size: 25px; font-weight: 750; color: #ff7c68;")
         self._stat_frame_completed, self.stat_completed = make_stat("Completed", "0", "This session")
         self._stat_frame_uptime, self.stat_uptime = make_stat("Uptime", "--", "Since launch")
         self._stat_frame_port, self.stat_port = make_stat("Port", str(self.config.get("ServerPort", SERVER_PORT)), "Local API")
@@ -5335,9 +5579,9 @@ class MainWindow(QMainWindow):
 
     def _update_server_ui(self):
         if self.server_running:
-            self.status_dot.setStyleSheet("color: #2dd36f; font-size: 20px;")
+            self.status_dot.setStyleSheet("color: #4cd6a2; font-size: 20px;")
             self.status_label.setText("Running")
-            self.status_label.setStyleSheet("color: #9ff3bd; font-size: 11px;")
+            self.status_label.setStyleSheet("color: #aef2d5; font-size: 11px; font-weight: 650;")
             self.dash_status.setText("Server running")
             self.dash_hint.setText("Ready for Astra Deck requests. The service only listens on this computer.")
             self.server_badge.setText("Running")
@@ -5347,10 +5591,11 @@ class MainWindow(QMainWindow):
             self.btn_startstop.setProperty("class", "secondary")
             self.tray_startstop.setText("Stop Server")
             self.tray.setToolTip(f"{APP_NAME} - Running")
+            self._set_readiness("server", "Running", "success")
         else:
-            self.status_dot.setStyleSheet("color: #7b8794; font-size: 20px;")
+            self.status_dot.setStyleSheet("color: #697381; font-size: 20px;")
             self.status_label.setText("Stopped")
-            self.status_label.setStyleSheet("color: #7b8794; font-size: 11px;")
+            self.status_label.setStyleSheet("color: #7f8997; font-size: 11px; font-weight: 650;")
             self.dash_status.setText("Server stopped")
             self.dash_hint.setText("Start the service before using download actions in Astra Deck.")
             self.server_badge.setText("Stopped")
@@ -5360,6 +5605,7 @@ class MainWindow(QMainWindow):
             self.btn_startstop.setProperty("class", "primary")
             self.tray_startstop.setText("Start Server")
             self.tray.setToolTip(f"{APP_NAME} - Stopped")
+            self._set_readiness("server", "Stopped", "neutral")
         repolish(self.btn_startstop)
         repolish(self.server_badge)
 
@@ -5422,6 +5668,11 @@ class MainWindow(QMainWindow):
             meta_parts.append(Path(dl.filename).name)
         meta = make_label("  /  ".join(meta_parts) if meta_parts else dl.url, "fieldHint", word_wrap=True)
         card_l.addWidget(meta)
+        if dl.error and dl.error_advice:
+            recovery = dl.error_advice
+            if dl.error_action:
+                recovery = f"{recovery}\nNext: {dl.error_action}"
+            card_l.addWidget(make_label(recovery, "errorCallout", word_wrap=True))
         return card
 
     def _update_ui(self):
@@ -5948,6 +6199,13 @@ class MainWindow(QMainWindow):
                 if not worker.wait(5000):
                     worker.terminate()
                     worker.wait()
+            readiness_thread = getattr(self, "readiness_thread", None)
+            if readiness_thread is not None and readiness_thread.isRunning():
+                readiness_thread.requestInterruption()
+                readiness_thread.quit()
+                if not readiness_thread.wait(5000):
+                    readiness_thread.terminate()
+                    readiness_thread.wait()
             self.tray.hide()
             self.update_timer.stop()
             self.cleanup_timer.stop()
