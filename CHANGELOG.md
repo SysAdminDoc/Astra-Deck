@@ -28,6 +28,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and smoke-test staging now share one secret-deny and symlink-safe copier, so
   `.env`, key stores, token files, SSH keys, and symlink/reparse targets cannot
   leak into built extension artifacts.
+- **Security: release readiness rejects unexpected assets.** Release manifest
+  generation and readiness checks now treat the artifact list as a closed set,
+  so debug ZIPs or other auxiliary build files cannot be blessed just by adding
+  them to `release-manifest.json` and `SHA256SUMS`.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed

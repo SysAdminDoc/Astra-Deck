@@ -6,7 +6,8 @@ const fs = require('fs');
 const path = require('path');
 
 const {
-    expectedReleaseNames
+    expectedReleaseNames,
+    unexpectedReleaseNames
 } = require('./generate-release-manifest');
 
 const REPO_ROOT = path.join(__dirname, '..');
@@ -235,6 +236,19 @@ function buildReadinessReport(options = {}) {
             'Expected release assets are present',
             missingExpected.length === 0 ? 'pass' : 'fail',
             missingExpected.length ? `missing: ${missingExpected.join(', ')}` : `${expectedAssets.length} expected asset(s)`
+        ));
+
+        const unexpectedAssets = unexpectedReleaseNames([
+            ...new Set([
+                ...buildFiles.filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME),
+                ...manifestAssetNames
+            ])
+        ], packageVersion || releaseManifest.version || '', { requireCompanion });
+        checks.push(check(
+            'unexpected-assets',
+            'No unexpected release assets are present or manifest-listed',
+            unexpectedAssets.length === 0 ? 'pass' : 'fail',
+            unexpectedAssets.length ? `unexpected: ${unexpectedAssets.join(', ')}` : 'release assets match the closed expected set'
         ));
 
         const manifestSet = new Set(manifestAssetNames);

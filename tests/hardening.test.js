@@ -2058,7 +2058,8 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     const {
         expectedReleaseNames,
         isCompanionReleaseRequired,
-        parseAssetName
+        parseAssetName,
+        unexpectedReleaseNames
     } = require('../scripts/generate-release-manifest');
 
     assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/,
@@ -2100,6 +2101,11 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'companion-required release set must include the Windows EXE');
     assert.ok(companionExpected.includes('AstraDownloader.exe.sha256'),
         'companion-required release set must include the EXE hash sidecar');
+    assert.deepEqual(
+        unexpectedReleaseNames([...expected, 'debug-extra.zip'], pkg.version),
+        ['debug-extra.zip'],
+        'release manifest generation must fail closed on top-level debug or auxiliary assets'
+    );
     assert.equal(
         isCompanionReleaseRequired(['node', 'generate-release-manifest.js', '--require-companion'], {}),
         true,

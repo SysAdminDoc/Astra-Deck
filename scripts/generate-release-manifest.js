@@ -116,6 +116,13 @@ function expectedReleaseNames(version, options = {}) {
     return names.sort();
 }
 
+function unexpectedReleaseNames(assetNames, version, options = {}) {
+    const allowed = new Set(expectedReleaseNames(version, options));
+    return (assetNames || [])
+        .filter((name) => !allowed.has(name))
+        .sort();
+}
+
 function listBuildAssets() {
     if (!fs.existsSync(BUILD_DIR)) {
         throw new Error('build/ does not exist. Run `npm run build:userscript` first.');
@@ -132,6 +139,10 @@ function assertExpectedAssets(assetNames, version, options = {}) {
     const missing = expectedReleaseNames(version, options).filter((name) => !present.has(name));
     if (missing.length) {
         throw new Error('missing release asset(s): ' + missing.join(', '));
+    }
+    const unexpected = unexpectedReleaseNames(assetNames, version, options);
+    if (unexpected.length) {
+        throw new Error('unexpected release asset(s): ' + unexpected.join(', '));
     }
 }
 
@@ -209,5 +220,6 @@ if (require.main === module) {
 module.exports = {
     expectedReleaseNames,
     isCompanionReleaseRequired,
-    parseAssetName
+    parseAssetName,
+    unexpectedReleaseNames
 };
