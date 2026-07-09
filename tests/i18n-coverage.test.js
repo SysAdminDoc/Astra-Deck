@@ -139,6 +139,26 @@ test('i18n policy names protected terms and detects over-translation', () => {
     );
 });
 
+test('README language table matches bundled locale directories', () => {
+    const repoRoot = path.join(__dirname, '..');
+    const localesDir = path.join(repoRoot, 'extension', '_locales');
+    const localeCodes = fs.readdirSync(localesDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort();
+    const readme = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
+    const languageStart = readme.indexOf('## Languages');
+    const languageEnd = readme.indexOf('## Compatibility');
+    assert.ok(languageStart > -1 && languageEnd > languageStart, 'README must have a Languages section before Compatibility');
+    const languageBlock = readme.slice(languageStart, languageEnd);
+    const documentedCodes = [...languageBlock.matchAll(/\| `([^`]+)` \|/g)]
+        .map((match) => match[1])
+        .sort();
+
+    assert.match(languageBlock, new RegExp(`ships with ${localeCodes.length} bundled UI locales`));
+    assert.deepEqual(documentedCodes, localeCodes);
+});
+
 test('i18n warning command is exposed through package scripts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     assert.equal(DEFAULT_FEATURE_WARNING_BASELINE, 582);
