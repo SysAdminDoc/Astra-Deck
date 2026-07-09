@@ -1514,6 +1514,12 @@
   "feature_pipButton_name": {
     "message": "ピクチャーインピクチャーボタン"
   },
+  "feature_playbackErrorRecovery_desc": {
+    "message": "When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)"
+  },
+  "feature_playbackErrorRecovery_name": {
+    "message": "Playback Error Auto-Recovery"
+  },
   "feature_playbackSpeedOSD_desc": {
     "message": "コーナーのトーストの代わりに、VLC のように動画プレーヤー上に速度オーバーレイを表示"
   },

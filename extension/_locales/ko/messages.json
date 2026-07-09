@@ -1514,6 +1514,12 @@
   "feature_pipButton_name": {
     "message": "PiP 버튼"
   },
+  "feature_playbackErrorRecovery_desc": {
+    "message": "When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)"
+  },
+  "feature_playbackErrorRecovery_name": {
+    "message": "Playback Error Auto-Recovery"
+  },
   "feature_playbackSpeedOSD_desc": {
     "message": "코너 토스트 대신 동영상 플레이어에 속도 오버레이 표시 (VLC 스타일)"
   },

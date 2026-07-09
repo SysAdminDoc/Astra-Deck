@@ -1514,6 +1514,12 @@
   "feature_pipButton_name": {
     "message": "画中画按钮"
   },
+  "feature_playbackErrorRecovery_desc": {
+    "message": "When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)"
+  },
+  "feature_playbackErrorRecovery_name": {
+    "message": "Playback Error Auto-Recovery"
+  },
   "feature_playbackSpeedOSD_desc": {
     "message": "在视频播放器上显示速度覆盖层（类似 VLC）而非角落通知"
   },

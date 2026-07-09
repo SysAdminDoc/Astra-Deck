@@ -12,12 +12,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-first; userscript parity intentionally excluded. Every mutation feature must reuse the bulkCardActions bounded-session + Undo pattern and external-api-health degradation surfaces.
 
 ### P1 — root-cause reliability + highest-demand gaps
-- [ ] P1 — Playback-error auto-recovery
-  Why: YouTube's player error screen ("An error occurred") strands playback; competitors auto-detect and reload with position/speed restored. Trust/reliability feature, small cost.
-  Evidence: "YouTube - Playback Fixer" (GF), Nova YouTube player plugins.
-  Where: `extension/core/player.js` (player task manager), `extension/ytkit.js` new feature block.
-  Acceptance: Injected error state on a fixture triggers a bounded reload that restores timestamp and playbackRate; retry capped (3 attempts) with diagnostic log entry; off by default.
-  Complexity: S
 - [ ] P1 — Watch Later workbench
   Why: WL is capped at 5,000 with no official API since 2016; bulk remove/sort/dedupe/export is the loudest sustained unmet demand (paid CWS tools exist). Astra already has watchLaterCleanup ("Remove Watched") to extend.
   Evidence: tidywl.com 5000-limit analysis; Watch-Later Playlist Nuker (GF); HN 39627895.

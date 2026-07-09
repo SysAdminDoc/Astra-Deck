@@ -92,6 +92,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     audioTrackLanguage: 'intentional-extension-only',
     autoDismissContentWarning: 'not-yet-ported',
     autoExitFullscreen: 'intentional-extension-only',
+    playbackErrorRecovery: 'intentional-extension-only',
     bulkCardActions: 'intentional-extension-only',
     chapterJumpButtons: 'not-yet-ported',
     classicLayoutProfile: 'intentional-extension-only',
