@@ -3384,6 +3384,35 @@ test('bulkCardActions destroy() removes its toggle button, action bar, and docum
         'destroy() must remove the action bar');
 });
 
+test('settings overlay rendered smoke exists, is wired, and fails on the audited defect classes', () => {
+    const smokePath = path.join(__dirname, '..', 'scripts', 'smoke-settings-overlay.js');
+    assert.ok(fs.existsSync(smokePath), 'scripts/smoke-settings-overlay.js must exist');
+    const smokeSrc = fs.readFileSync(smokePath, 'utf8');
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    assert.match(pkg.scripts['smoke:settings-overlay'] || '', /scripts\/smoke-settings-overlay\.js/,
+        'the rendered smoke must be wired as npm run smoke:settings-overlay');
+
+    // Captured states: desktop + narrow, dark/light/RTL.
+    for (const stateName of ['desktop-dark', 'desktop-light', 'desktop-rtl', 'mobile-dark']) {
+        assert.ok(smokeSrc.includes(`'${stateName}'`), `smoke must capture the ${stateName} state`);
+    }
+    // Headless only — never a foreground window on the maintainer desktop.
+    assert.match(smokeSrc, /--headless=new/, 'smoke must run the browser headless');
+    // The four audited failure classes.
+    assert.match(smokeSrc, /blank\/collapsed render/, 'smoke must fail on blank renders');
+    assert.match(smokeSrc, /horizontal overflow/, 'smoke must fail on overflow');
+    assert.match(smokeSrc, /no visible close target/, 'smoke must fail on a missing close target');
+    assert.match(smokeSrc, /primary control contrast/, 'smoke must fail on unreadable primary controls');
+    // It must exercise the REAL open path, not a bespoke panel build.
+    assert.match(smokeSrc, /YTKIT_OPEN_PANEL/, 'smoke must open the overlay through the real message path');
+    // The overlay root verified by the rendered smoke must stay in the
+    // selector pack's stable set.
+    const packSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'selector-packs', 'settingsOverlay.js'), 'utf8');
+    assert.match(packSrc, /#ytkit-settings-panel/,
+        'settingsOverlay selector pack must include the rendered overlay root');
+});
+
 test('bulkCardActions scrub sessions are bounded, paced, logged locally, and undoable', () => {
     const start = ytkitSource.indexOf("id: 'bulkCardActions'");
     const block = ytkitSource.slice(start, start + 28000);
@@ -8150,7 +8179,10 @@ test('v4.36.0 misc batch pack files exist with the v4.31.0 schema fields', () =>
 test('v4.36.0 misc batch surfaces now come from the pack registry', () => {
     const core = loadSelectorPackContext();
     const expectedLastVerified = {
-        settingsOverlay: '2026-05-19',
+        // settingsOverlay re-verified 2026-07-09 by the rendered smoke
+        // (scripts/smoke-settings-overlay.js) which found the live overlay
+        // root #ytkit-settings-panel missing from the stable set.
+        settingsOverlay: '2026-07-09',
         profile: '2026-06-05',
         channelProfile: '2026-06-05',
         notifications: '2026-05-19',
