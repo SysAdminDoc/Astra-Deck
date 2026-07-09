@@ -1514,6 +1514,12 @@
   "feature_pipButton_name": {
     "message": "Botón Picture-in-Picture"
   },
+  "feature_playbackErrorRecovery_desc": {
+    "message": "When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)"
+  },
+  "feature_playbackErrorRecovery_name": {
+    "message": "Playback Error Auto-Recovery"
+  },
   "feature_playbackSpeedOSD_desc": {
     "message": "Mostrar superposición de velocidad en el reproductor de video (como VLC) en lugar de notificación en esquina"
   },

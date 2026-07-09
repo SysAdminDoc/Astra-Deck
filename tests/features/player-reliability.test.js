@@ -11,7 +11,7 @@ const ytkitSource = fs.readFileSync(
 function featureSlice(id) {
     const start = ytkitSource.indexOf(`id: '${id}'`);
     assert.notEqual(start, -1, `feature ${id} must exist in ytkit.js`);
-    return ytkitSource.slice(start, start + 4000);
+    return ytkitSource.slice(start, start + 8000);
 }
 
 test('autoExitFullscreen exits fullscreen on ended and is playlist-aware', () => {
@@ -33,6 +33,34 @@ test('autoExitFullscreen cleans up its listener and navigate rule on destroy', (
     assert.match(block, /removeEventListener\('ended'/,
         'destroy must detach the ended listener');
     assert.match(block, /removeNavigateRule\('autoExitFullscreen'\)/,
+        'destroy must remove the navigate rule');
+});
+
+test('playbackErrorRecovery reloads on the player error screen with a bounded retry budget', () => {
+    const block = featureSlice('playbackErrorRecovery');
+    assert.match(block, /\.ytp-error/,
+        'must detect the player error screen element');
+    assert.match(block, /_MAX_ATTEMPTS:\s*3/,
+        'retry budget must be capped at 3 attempts');
+    assert.match(block, /attempts >= this\._MAX_ATTEMPTS/,
+        'must give up once the attempt budget is exhausted');
+    assert.match(block, /location\.reload\(\)/,
+        'recovery reloads the page');
+    assert.match(block, /playbackRate/,
+        'must restore playback speed after reload');
+    assert.match(block, /DebugManager\.log\('PlaybackRecovery'/,
+        'attempts and give-ups must leave diagnostic log entries');
+});
+
+test('playbackErrorRecovery resume state is scoped, expiring, and cleaned up', () => {
+    const block = featureSlice('playbackErrorRecovery');
+    assert.match(block, /state\.videoId !== this\._currentVideoId\(\)/,
+        'stale state for another video must be discarded');
+    assert.match(block, /60000/,
+        'resume records older than 60s must expire');
+    assert.match(block, /removeMutationRule\(this\.id\)/,
+        'destroy must remove the mutation rule');
+    assert.match(block, /removeNavigateRule\('playbackErrorRecovery'\)/,
         'destroy must remove the navigate rule');
 });
 

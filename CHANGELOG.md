@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Playback Error Auto-Recovery.** New reliability toggle: when YouTube's
+  player error screen appears, Astra reloads the page and restores the last
+  known position and playback speed. Capped at 3 attempts per video with
+  diagnostic log entries; the retry budget resets after 10 seconds of stable
+  playback. Recovery state lives in per-tab sessionStorage and expires in 60s.
 - **Auto-Exit Fullscreen at End.** New playback toggle that leaves fullscreen
   when a video finishes. Playlist-aware: when the playlist panel has a next
   entry queued, fullscreen is kept so continuous playback is not interrupted.

@@ -4288,6 +4288,7 @@ return response;
             remainingTimeCompact: false,
             remainingTimeHideFullscreen: false,
             autoExitFullscreen: false,
+            playbackErrorRecovery: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -20011,6 +20012,126 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._videoRef = null;
                 this._handler = null;
                 removeNavigateRule('autoExitFullscreen');
+            }
+        },
+        {
+            id: 'playbackErrorRecovery',
+            name: 'Playback Error Auto-Recovery',
+            description: 'When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video)',
+            group: 'Playback',
+            icon: 'activity',
+            pages: [PageTypes.WATCH],
+            _KEY: 'ytkit-playback-recovery',
+            _MAX_ATTEMPTS: 3,
+            _lastTime: 0,
+            _lastRate: 1,
+            _videoRef: null,
+            _timeHandler: null,
+            _resumeTimer: null,
+            _clearWatchHandler: null,
+
+            _currentVideoId() {
+                try { return new URLSearchParams(location.search).get('v') || ''; } catch { /* reason: malformed search string yields no video id */ return ''; }
+            },
+            _readState() {
+                try { return JSON.parse(sessionStorage.getItem(this._KEY)) || null; } catch { /* reason: privacy modes may deny sessionStorage; recovery degrades to plain reload */ return null; }
+            },
+            _writeState(state) {
+                try {
+                    if (state) sessionStorage.setItem(this._KEY, JSON.stringify(state));
+                    else sessionStorage.removeItem(this._KEY);
+                } catch { /* reason: privacy modes may deny sessionStorage; recovery degrades to plain reload */ }
+            },
+
+            _attach() {
+                const v = getMainVideoElement();
+                if (!v || v === this._videoRef) return;
+                if (this._videoRef && this._timeHandler) {
+                    this._videoRef.removeEventListener('timeupdate', this._timeHandler);
+                    this._videoRef.removeEventListener('ratechange', this._timeHandler);
+                }
+                this._videoRef = v;
+                v.addEventListener('timeupdate', this._timeHandler);
+                v.addEventListener('ratechange', this._timeHandler);
+            },
+
+            _detectError() {
+                if (!document.querySelector('#movie_player .ytp-error')) return;
+                const videoId = this._currentVideoId();
+                if (!videoId) return;
+                const prior = this._readState();
+                const attempts = (prior && prior.videoId === videoId) ? prior.attempts : 0;
+                if (attempts >= this._MAX_ATTEMPTS) {
+                    DebugManager.log('PlaybackRecovery', `Player error persists after ${attempts} reloads — giving up for ${videoId}`);
+                    return;
+                }
+                this._writeState({
+                    videoId,
+                    t: Math.max(0, Math.floor(this._lastTime)),
+                    rate: this._lastRate,
+                    attempts: attempts + 1,
+                    at: Date.now()
+                });
+                DebugManager.log('PlaybackRecovery', `Player error detected — reloading (attempt ${attempts + 1}/${this._MAX_ATTEMPTS})`);
+                location.reload();
+            },
+
+            _maybeResume(tries = 0) {
+                const state = this._readState();
+                if (!state) return;
+                if (state.videoId !== this._currentVideoId() || Date.now() - state.at > 60000) {
+                    this._writeState(null);
+                    return;
+                }
+                const v = getMainVideoElement();
+                if (!v || !v.duration) {
+                    if (tries < 20) this._resumeTimer = setTimeout(() => this._maybeResume(tries + 1), 500);
+                    return;
+                }
+                if (state.t > 1 && Math.abs(v.currentTime - state.t) > 2) v.currentTime = state.t;
+                if (state.rate && state.rate !== 1) v.playbackRate = state.rate;
+                showToast(`Playback recovered (attempt ${state.attempts}/${this._MAX_ATTEMPTS})`, '#22c55e', { duration: 4 });
+                // Keep the attempt counter until 10s of stable playback, then reset
+                // so a later error on the same video gets a fresh retry budget.
+                const clearAt = (state.t || 0) + 10;
+                this._clearWatchHandler = () => {
+                    if (v.currentTime > clearAt) {
+                        v.removeEventListener('timeupdate', this._clearWatchHandler);
+                        this._clearWatchHandler = null;
+                        this._writeState(null);
+                    }
+                };
+                v.addEventListener('timeupdate', this._clearWatchHandler);
+            },
+
+            init() {
+                this._timeHandler = () => {
+                    const v = this._videoRef;
+                    if (!v) return;
+                    if (v.currentTime > 0) this._lastTime = v.currentTime;
+                    this._lastRate = v.playbackRate || 1;
+                };
+                this._attach();
+                this._maybeResume();
+                addMutationRule(this.id, () => { this._attach(); this._detectError(); });
+                addNavigateRule('playbackErrorRecovery', () => { this._attach(); this._maybeResume(); });
+            },
+            destroy() {
+                if (this._resumeTimer) { clearTimeout(this._resumeTimer); this._resumeTimer = null; }
+                if (this._videoRef) {
+                    if (this._timeHandler) {
+                        this._videoRef.removeEventListener('timeupdate', this._timeHandler);
+                        this._videoRef.removeEventListener('ratechange', this._timeHandler);
+                    }
+                    if (this._clearWatchHandler) {
+                        this._videoRef.removeEventListener('timeupdate', this._clearWatchHandler);
+                        this._clearWatchHandler = null;
+                    }
+                }
+                this._videoRef = null;
+                this._timeHandler = null;
+                removeMutationRule(this.id);
+                removeNavigateRule('playbackErrorRecovery');
             }
         },
         {
