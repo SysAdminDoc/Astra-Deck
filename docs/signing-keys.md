@@ -219,6 +219,13 @@ The build script enforces this custody boundary:
   repo worktree.
 - Local validation builds can set `ASTRA_CRX_KEY_MODE=ephemeral` so ZIP/CRX/XPI
   artifacts stay useful for smoke testing without receiving the maintainer key.
+- Every build writes `build/crx-signing-provenance.json` recording the signing
+  mode. `npm run release:manifest` folds it into `release-manifest.json` as
+  `crxSigningMode`, and `npm run release:readiness -- --require-pass` **fails**
+  when CRX assets were validation-signed (`ephemeral`) unless the manifest was
+  explicitly labeled with `--validation-build` / `ASTRA_VALIDATION_RELEASE=1`.
+  A validation-labeled manifest passes readiness but is by definition not a
+  publishable public release.
 
 | Where | Why |
 |---|---|

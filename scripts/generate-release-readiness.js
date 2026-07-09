@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const {
+    CRX_SIGNING_PROVENANCE_NAME,
     expectedReleaseNames,
     unexpectedReleaseNames
 } = require('./generate-release-manifest');
@@ -186,6 +187,37 @@ function buildReadinessReport(options = {}) {
             releaseManifest.localSigningRequired === true ? 'pass' : 'fail',
             `localSigningRequired=${String(releaseManifest.localSigningRequired)}`
         ));
+
+        // Public releases must never ship validation-signed CRX assets: an
+        // ephemeral throwaway key means a throwaway extension ID, so users
+        // who installed a previous release would silently stop receiving
+        // updates — and a key that isn't custodied can't prove authorship
+        // (see the Cyberhaven / ShadyPanda extension supply-chain incidents).
+        const signingMode = releaseManifest.crxSigningMode;
+        const validationBuild = releaseManifest.validationBuild === true;
+        let signingStatus;
+        let signingDetails;
+        if (signingMode === 'external') {
+            signingStatus = 'pass';
+            signingDetails = 'CRX assets signed with the external maintainer key';
+        } else if (signingMode === 'ephemeral' && validationBuild) {
+            signingStatus = 'pass';
+            signingDetails = 'ephemeral validation signing on an explicitly labeled validation build — NOT publishable as a public release';
+        } else if (signingMode === 'ephemeral') {
+            signingStatus = 'fail';
+            signingDetails = 'CRX assets were validation-signed (ASTRA_CRX_KEY_MODE=ephemeral) without a validation-build label; '
+                + 'public releases require the external maintainer key, or pass --validation-build / ASTRA_VALIDATION_RELEASE=1 '
+                + 'to release:manifest for provenance-only artifacts';
+        } else {
+            signingStatus = 'fail';
+            signingDetails = `crxSigningMode=${String(signingMode)} — unknown CRX signing provenance; rebuild with the current build-extension.js so build/${CRX_SIGNING_PROVENANCE_NAME} is written`;
+        }
+        checks.push(check(
+            'crx-signing-mode',
+            'Public CRX artifacts use external maintainer signing',
+            signingStatus,
+            signingDetails
+        ));
     }
 
     const rootKeyPath = path.join(repoRoot, 'ytkit.pem');
@@ -240,7 +272,7 @@ function buildReadinessReport(options = {}) {
 
         const unexpectedAssets = unexpectedReleaseNames([
             ...new Set([
-                ...buildFiles.filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME),
+                ...buildFiles.filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME && name !== CRX_SIGNING_PROVENANCE_NAME),
                 ...manifestAssetNames
             ])
         ], packageVersion || releaseManifest.version || '', { requireCompanion });
@@ -253,7 +285,7 @@ function buildReadinessReport(options = {}) {
 
         const manifestSet = new Set(manifestAssetNames);
         const unmanifestedFiles = buildFiles
-            .filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME)
+            .filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME && name !== CRX_SIGNING_PROVENANCE_NAME)
             .filter((name) => !manifestSet.has(name));
         checks.push(check(
             'manifest-inventory',

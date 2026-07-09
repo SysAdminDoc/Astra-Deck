@@ -19,7 +19,7 @@ function sha256(filePath) {
     return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
-function writeFixtureRepo({ companionRequired = false } = {}) {
+function writeFixtureRepo({ companionRequired = false, crxSigningMode = 'external', validationBuild = false } = {}) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-release-ready-'));
     const buildDir = path.join(root, 'build');
     fs.mkdirSync(path.join(root, 'extension'), { recursive: true });
@@ -54,6 +54,8 @@ function writeFixtureRepo({ companionRequired = false } = {}) {
         product: 'Astra Deck',
         version,
         localSigningRequired: true,
+        crxSigningMode,
+        validationBuild,
         companionUpdateRequired: companionRequired,
         assets
     };
@@ -80,6 +82,79 @@ test('release readiness passes for a complete manifest, checksum, SBOM, and vers
     assert.equal(report.checks.every((item) => item.status === 'pass'), true);
     assert.match(renderMarkdown(report), /Release Readiness/);
     assert.match(renderMarkdown(report), /SHA256SUMS covers manifest assets/);
+});
+
+test('release readiness fails when CRX assets were validation-signed without a validation-build label', () => {
+    const { root, buildDir } = writeFixtureRepo({ crxSigningMode: 'ephemeral' });
+    const report = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        now: new Date('2026-06-06T12:00:00.000Z')
+    });
+    const signingCheck = report.checks.find((item) => item.id === 'crx-signing-mode');
+
+    assert.equal(report.status, 'fail');
+    assert.equal(signingCheck.status, 'fail');
+    assert.match(signingCheck.details, /validation-signed/);
+    assert.match(signingCheck.details, /external maintainer key/);
+});
+
+test('release readiness allows ephemeral signing only on explicitly labeled validation builds', () => {
+    const { root, buildDir } = writeFixtureRepo({ crxSigningMode: 'ephemeral', validationBuild: true });
+    const report = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        now: new Date('2026-06-06T12:00:00.000Z')
+    });
+    const signingCheck = report.checks.find((item) => item.id === 'crx-signing-mode');
+
+    assert.equal(signingCheck.status, 'pass');
+    assert.match(signingCheck.details, /NOT publishable/);
+});
+
+test('release readiness fails on unknown CRX signing provenance', () => {
+    const { root, buildDir } = writeFixtureRepo({ crxSigningMode: null });
+    const report = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        now: new Date('2026-06-06T12:00:00.000Z')
+    });
+    const signingCheck = report.checks.find((item) => item.id === 'crx-signing-mode');
+
+    assert.equal(report.status, 'fail');
+    assert.equal(signingCheck.status, 'fail');
+    assert.match(signingCheck.details, /unknown CRX signing provenance/);
+});
+
+test('release manifest module reads CRX signing provenance and validation labels', () => {
+    const {
+        CRX_SIGNING_PROVENANCE_NAME,
+        isValidationBuild,
+        readCrxSigningProvenance
+    } = require('../scripts/generate-release-manifest');
+
+    assert.equal(CRX_SIGNING_PROVENANCE_NAME, 'crx-signing-provenance.json');
+
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-crx-prov-'));
+    assert.equal(readCrxSigningProvenance(tmp), 'unknown', 'missing provenance file must read as unknown');
+    fs.writeFileSync(path.join(tmp, CRX_SIGNING_PROVENANCE_NAME), JSON.stringify({ schemaVersion: 1, mode: 'ephemeral' }));
+    assert.equal(readCrxSigningProvenance(tmp), 'ephemeral');
+    fs.writeFileSync(path.join(tmp, CRX_SIGNING_PROVENANCE_NAME), JSON.stringify({ schemaVersion: 1, mode: 'external' }));
+    assert.equal(readCrxSigningProvenance(tmp), 'external');
+    fs.writeFileSync(path.join(tmp, CRX_SIGNING_PROVENANCE_NAME), JSON.stringify({ schemaVersion: 1, mode: 'garbage' }));
+    assert.equal(readCrxSigningProvenance(tmp), 'unknown', 'unrecognized mode strings must not pass as trusted');
+
+    assert.equal(isValidationBuild(['node', 'x', '--validation-build'], {}), true);
+    assert.equal(isValidationBuild(['node', 'x'], { ASTRA_VALIDATION_RELEASE: '1' }), true);
+    assert.equal(isValidationBuild(['node', 'x'], {}), false);
+});
+
+test('build-extension writes the CRX signing provenance marker after artifact builds', () => {
+    const buildSource = fs.readFileSync(path.join(__dirname, '..', 'build-extension.js'), 'utf8');
+    assert.match(buildSource, /CRX_SIGNING_PROVENANCE_NAME = 'crx-signing-provenance\.json'/,
+        'build-extension.js must own the provenance marker name');
+    assert.match(buildSource, /mode: crxSigningConfig\.mode/,
+        'the provenance marker must record the actual signing mode used for this run');
 });
 
 test('release readiness fails when companion assets are present but manifest omits the companion release', () => {
