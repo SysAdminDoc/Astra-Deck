@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Polish: v4.46.31 extension settings command center.** Re-imagined the
+  in-page extension settings overlay from a fresh imagegen concept and pushed
+  the implementation closer to that mockup: taller full-viewport shell,
+  transparent Astra mark, compact command header, wider settings navigation
+  rail with completion indicators, amber-accented setting rows, expanded
+  status/profile/backup inspector, recent export/import rows, and a centered
+  saved-state footer.
+
 - **Fix: v4.46.29 roadmap drain — deep audit follow-through.**
   Implemented all programmatically fixable items from the v4.46.28 deep-audit
   backlog. MAIN-world audio graph: cached MediaElementSourceNode per video in
