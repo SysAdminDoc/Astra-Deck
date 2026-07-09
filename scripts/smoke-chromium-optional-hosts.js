@@ -8,7 +8,9 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const WebSocket = require('ws');
 const {
+    copyDir,
     patchManifestForBuildProfile,
+    shouldStageEntry,
 } = require('../build-extension.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
@@ -22,42 +24,6 @@ const POPUP_BOOT_SETTINGS = Object.freeze({
     downloadThumbnail: true,
     privacyDataFlowPanel: true,
 });
-
-const STAGE_SKIP_NAMES = new Set([
-    '.git',
-    '.DS_Store',
-    'Thumbs.db',
-    'node_modules',
-    '.claude-octopus',
-]);
-
-const STAGE_SKIP_SUFFIXES = [
-    '.map',
-    '.tmp',
-    '.bak',
-    '.orig',
-    '.rej',
-    // Keep in sync with build-extension.js — key material and logs must
-    // never reach a staged artifact.
-    '.pem',
-    '.log',
-];
-
-function shouldStageEntry(entryName) {
-    if (STAGE_SKIP_NAMES.has(entryName)) return false;
-    return !STAGE_SKIP_SUFFIXES.some((suffix) => entryName.endsWith(suffix));
-}
-
-function copyDir(src, dest) {
-    fs.mkdirSync(dest, { recursive: true });
-    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-        if (!shouldStageEntry(entry.name)) continue;
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-        if (entry.isDirectory()) copyDir(srcPath, destPath);
-        else fs.copyFileSync(srcPath, destPath);
-    }
-}
 
 function createChromiumStage(stageRoot) {
     const stageDir = path.join(stageRoot, 'store-safe-chromium-stage');
