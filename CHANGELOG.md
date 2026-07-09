@@ -43,6 +43,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   setup now refuses yt-dlp and ffmpeg helper downloads when their SHA-256
   sidecar is missing or malformed, and deletes the untrusted helper before
   retry.
+- **Security: pinned source bootstrap dependencies.** Astra Downloader source
+  runs now auto-install from `astra_downloader/requirements.txt` instead of
+  unpinned package names, so a missing PyQt/Flask/requests/waitress import
+  cannot pull an unreviewed major release.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed

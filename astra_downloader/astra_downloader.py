@@ -30,6 +30,9 @@ if sys.version_info < _MIN_PYTHON:
     sys.exit(1)
 
 # ── Bootstrap: auto-install dependencies ──
+REQUIREMENTS_PATH = Path(__file__).with_name("requirements.txt")
+
+
 def _bootstrap():
     """Install required packages before importing them."""
     if getattr(sys, "frozen", False):
@@ -45,17 +48,25 @@ def _bootstrap():
             missing.append(pkg)
     if not missing:
         return
+    if not REQUIREMENTS_PATH.exists():
+        sys.stderr.write(
+            f"[Astra Downloader] Failed to auto-install dependencies "
+            f"({', '.join(missing)}): requirements.txt not found at {REQUIREMENTS_PATH}\n"
+            f"Install manually with: pip install -r {REQUIREMENTS_PATH}\n"
+        )
+        return
     # v3.15.0: Keep the last failure's stderr so we can surface a useful error
     # if every strategy fails. Previously all three silently fell through and
     # the user saw a cryptic ImportError at line 43+ instead of the pip output.
     last_error = None
+    install_target = ['-r', str(REQUIREMENTS_PATH)]
     for strategy in [
         [sys.executable, '-m', 'pip', 'install', '--quiet'],
         [sys.executable, '-m', 'pip', 'install', '--quiet', '--user'],
         [sys.executable, '-m', 'pip', 'install', '--quiet', '--break-system-packages'],
     ]:
         try:
-            subprocess.check_call(strategy + missing, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.check_call(strategy + install_target, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return
         except FileNotFoundError as e:
             last_error = f"python/pip not on PATH ({e.filename or 'unknown'})"
@@ -71,7 +82,7 @@ def _bootstrap():
     sys.stderr.write(
         f"[Astra Downloader] Failed to auto-install dependencies "
         f"({', '.join(missing)}): {last_error}\n"
-        f"Install manually with: pip install {' '.join(missing)}\n"
+        f"Install manually with: pip install -r {REQUIREMENTS_PATH}\n"
     )
 
 _bootstrap()
