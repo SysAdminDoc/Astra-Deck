@@ -238,9 +238,9 @@ CORS_MAX_AGE_SECONDS = 600
 # the wire never carries the bloated content.
 MAX_REQUEST_BYTES = 1 * 1024 * 1024
 MAX_RESPONSE_BYTES = 10 * 1024 * 1024
-# v1.2.0: upstream publishes per-release checksum sidecars. We verify when
-# reachable and log + continue when the sidecar is missing so a sidecar
-# outage doesn't block legitimate installs.
+# v1.2.0: upstream publishes per-release checksum sidecars. Executable helper
+# downloads must fail closed when their sidecar is missing or malformed; using
+# an unverified yt-dlp/ffmpeg binary is worse than a blocked first-run setup.
 YTDLP_SHA256_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS"
 YTDLP_SHA256_ASSET = "yt-dlp.exe"
 FFMPEG_SHA256_URL = FFMPEG_URL + ".sha256"
@@ -513,7 +513,7 @@ def fetch_expected_sha256(sidecar_url, target_asset=None, timeout=15):
 
 def verify_file_sha256(path, expected_hex):
     """Raise RuntimeError on mismatch, return True on success, False when
-    expected_hex is missing (soft skip — upstream sidecar not reachable)."""
+    expected_hex is missing so callers can decide whether to fail closed."""
     if not expected_hex:
         return False
     expected = expected_hex.strip().lower()
@@ -4174,21 +4174,22 @@ class SetupWorker(QThread):
                 self.progress.emit(int(max(low, min(high, pct))))
         return cb
 
-    def _verify_or_warn(self, path, sidecar_url, asset_name=None, label=""):
-        """Fetch the SHA-256 sidecar and verify. Hard-fail on mismatch, soft-
-        fail (log + continue) when the sidecar is unreachable.
-
-        Hard-fail on mismatch is the correct default for something that will
-        run with user privileges forever — if upstream ships a checksum, a
-        mismatch means the download was tampered with or corrupted in transit.
-        Soft-fail on missing sidecar keeps us working when the sidecar URL is
-        rate-limited, 404s, or upstream stops publishing it.
-        """
+    def _verify_required_checksum(self, path, sidecar_url, asset_name=None, label=""):
+        """Fetch the SHA-256 sidecar and verify before trusting a helper exe."""
+        label = label or Path(path).name
         expected = fetch_expected_sha256(sidecar_url, target_asset=asset_name)
         if not expected:
-            self.log.emit(f"  {label} checksum sidecar unavailable — skipping verification")
-            write_persistent_log(f"SHA-256 sidecar missing for {label} ({sidecar_url})")
-            return False
+            message = (
+                f"{label} SHA-256 sidecar missing or malformed; "
+                "refusing to trust the downloaded helper."
+            )
+            self.log.emit(f"  {message}")
+            write_persistent_log(f"{message} ({sidecar_url})")
+            try:
+                Path(path).unlink(missing_ok=True)
+            except Exception:
+                pass
+            raise RuntimeError(message)
         try:
             verify_file_sha256(path, expected)
         except RuntimeError as e:
@@ -4219,7 +4220,7 @@ class SetupWorker(QThread):
                 # Verify against the release SHA-256 sidecar before trusting
                 # the binary — it'll be executed with user privileges for
                 # every download from now on.
-                self._verify_or_warn(
+                self._verify_required_checksum(
                     YTDLP_PATH, YTDLP_SHA256_URL,
                     asset_name=YTDLP_SHA256_ASSET, label="yt-dlp",
                 )
@@ -4274,7 +4275,7 @@ class SetupWorker(QThread):
                         raise RuntimeError("Downloaded ffmpeg archive was empty")
                     # Verify the zip before we crack it open.
                     try:
-                        self._verify_or_warn(
+                        self._verify_required_checksum(
                             tmp_zip, FFMPEG_SHA256_URL, label="ffmpeg",
                         )
                     except RuntimeError:

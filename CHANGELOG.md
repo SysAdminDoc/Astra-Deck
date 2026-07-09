@@ -39,6 +39,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   session-scoped undo snapshot before applying settings and local-data writes,
   surface an Undo Import action after success, and restore the prior payload if
   applying the import fails.
+- **Security: helper checksum fail-closed setup.** Astra Downloader first-run
+  setup now refuses yt-dlp and ffmpeg helper downloads when their SHA-256
+  sidecar is missing or malformed, and deletes the untrusted helper before
+  retry.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed
