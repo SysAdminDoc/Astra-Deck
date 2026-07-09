@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: rendered visual smoke for the in-page settings overlay.**
+  `npm run smoke:settings-overlay` stages the real ISOLATED-world script
+  stack onto a local fixture page with a chrome-API stub, opens the
+  overlay through the real `YTKIT_OPEN_PANEL` message path in a headless
+  Chromium, captures desktop/narrow screenshots for dark, light, and RTL
+  states, and fails on blank render, horizontal overflow, a missing
+  close/focus target, or primary-control contrast under 4.5:1. First run
+  found the settingsOverlay selector pack's stable set missing the live
+  overlay root `#ytkit-settings-panel` — now fixed and pinned.
 - **Feat: recoverable recommendation scrub sessions.** Bulk Card Actions
   select-mode gains "Not interested" and "Don't recommend channel"
   actions that apply YouTube's own feedback menu item to up to 25
