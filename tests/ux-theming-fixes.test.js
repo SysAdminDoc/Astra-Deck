@@ -25,6 +25,7 @@ const read = (...p) => fs.readFileSync(path.join(repoRoot, ...p), 'utf8');
 const earlyCss = read('extension', 'early.css');
 const ytkitSource = read('extension', 'ytkit.js');
 const settingsPanelModuleSource = read('extension', 'features', 'settings-panel', 'index.js');
+const settingsOverlaySmokeSource = read('scripts', 'smoke-settings-overlay.js');
 const userscriptSource = read('YTKit.user.js');
 const defaultSettings = JSON.parse(read('extension', 'default-settings.json'));
 const schemaModule = require('../extension/core/settings-schema.js');
@@ -424,4 +425,48 @@ test('feature preview tooltips trigger on focus-within and mirror into aria-desc
         'preview tooltip must also open via :focus-within for keyboard users');
     assert.ok(ytkitSource.includes("card.setAttribute('aria-description', previewText)"),
         'data-preview must be mirrored into aria-description for assistive tech');
+});
+
+// ── 10. Premium command-deck parity corrections ──
+
+test('settings command-deck correction targets the live grid and switch DOM', () => {
+    const start = ytkitSource.indexOf('/* Premium command-deck correction layer.');
+    assert.ok(start > -1, 'the final command-deck correction layer must exist');
+    const block = ytkitSource.slice(start, start + 15000);
+    assert.match(block, /\.ytkit-features-grid\s*\{/,
+        'the correction layer must target the live .ytkit-features-grid class');
+    assert.match(block, /\.ytkit-switch \.ytkit-switch-track\s*\{/,
+        'the correction layer must style the rendered switch track');
+    assert.match(block, /\.ytkit-switch \.ytkit-switch-thumb\s*\{/,
+        'the correction layer must style the rendered switch thumb');
+    assert.match(block, /\.ytkit-panel-status\[data-tone="warn"\]::before/,
+        'warning status must have a tone-specific icon treatment');
+    assert.match(block, /\.ytkit-panel-status\[data-tone="error"\]::after/,
+        'error status must not retain saved-state copy');
+});
+
+test('settings command-deck keeps mobile navigation and footer bounded', () => {
+    const start = ytkitSource.indexOf('/* Premium command-deck correction layer.');
+    const block = ytkitSource.slice(start, start + 15000);
+    assert.match(block, /height:\s*74px !important;[\s\S]*?min-height:\s*74px !important;/,
+        'mobile sidebar must replace the inherited 156px slab with a bounded rail');
+    assert.match(block, /\.ytkit-footer-actions\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,/,
+        'mobile footer actions must remain a compact two-column grid');
+    assert.match(settingsOverlaySmokeSource, /--fallback-only/,
+        'render smoke must expose a fallback-only mode');
+    assert.match(settingsOverlaySmokeSource, /mobile footer consumes/,
+        'render smoke must fail oversized mobile footers');
+    assert.match(settingsOverlaySmokeSource, /mobile navigation consumes/,
+        'render smoke must fail oversized mobile navigation');
+});
+
+test('fallback Takeout import exposes the same Undo toast contract as the module', () => {
+    const marker = "if (e.target.closest('#ytkit-import-history'))";
+    const fallbackStart = ytkitSource.indexOf(marker, ytkitSource.indexOf('function attachUIEventListeners'));
+    assert.ok(fallbackStart > -1, 'fallback Takeout handler must exist');
+    const fallbackBlock = ytkitSource.slice(fallbackStart, fallbackStart + 5000);
+    assert.match(fallbackBlock, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*'Undo'/,
+        'fallback Takeout success must use the action-capable toast API');
+    assert.match(settingsPanelModuleSource, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*'Undo'/,
+        'module Takeout success must retain the same action-capable toast API');
 });

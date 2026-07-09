@@ -37,14 +37,16 @@ const STATES = [
     // window.innerWidth really is 390 (mobile emulation without a viewport
     // meta falls back to a 980px layout viewport and hides real overflow).
     { name: 'mobile-dark', width: 390, height: 844, dark: true, dir: 'ltr', mobile: false },
+    { name: 'mobile-light', width: 390, height: 844, dark: false, dir: 'ltr', mobile: false },
 ];
 
 function parseArgs(argv) {
-    const opts = { browser: '', keepStage: false, timeoutMs: 45000 };
+    const opts = { browser: '', keepStage: false, fallbackOnly: false, timeoutMs: 45000 };
     for (let i = 0; i < argv.length; i += 1) {
         const arg = argv[i];
         if (arg === '--browser') { opts.browser = path.resolve(argv[++i] || ''); continue; }
         if (arg === '--keep-stage') { opts.keepStage = true; continue; }
+        if (arg === '--fallback-only') { opts.fallbackOnly = true; continue; }
         if (arg === '--timeout') { opts.timeoutMs = Number(argv[++i]) || opts.timeoutMs; continue; }
         throw new Error(`unknown argument: ${arg}`);
     }
@@ -170,6 +172,16 @@ const IN_PAGE_CHECKS = `(() => {
     if (document.documentElement.scrollWidth > window.innerWidth + 1) {
         failures.push('document horizontal overflow: scrollWidth ' + document.documentElement.scrollWidth + ' > viewport ' + window.innerWidth);
     }
+    if (window.innerWidth <= 560) {
+        const sidebarRect = panel.querySelector('.ytkit-sidebar')?.getBoundingClientRect();
+        const footerRect = panel.querySelector('.ytkit-footer')?.getBoundingClientRect();
+        const firstNavRect = panel.querySelector('.ytkit-nav-btn')?.getBoundingClientRect();
+        if (sidebarRect && sidebarRect.height > 96) failures.push('mobile navigation consumes ' + Math.round(sidebarRect.height) + 'px (>96px)');
+        if (footerRect && footerRect.height > 180) failures.push('mobile footer consumes ' + Math.round(footerRect.height) + 'px (>180px)');
+        if (firstNavRect && (firstNavRect.width < 140 || firstNavRect.height < 44)) {
+            failures.push('mobile navigation target is clipped at ' + Math.round(firstNavRect.width) + 'x' + Math.round(firstNavRect.height));
+        }
+    }
     const closeCandidates = Array.from(panel.querySelectorAll('button')).filter((btn) => {
         const label = ((btn.getAttribute('aria-label') || '') + ' ' + (btn.textContent || '')).toLowerCase();
         return label.includes('close');
@@ -221,14 +233,17 @@ const IN_PAGE_CHECKS = `(() => {
     return JSON.stringify({ failures, controls: controls.length, rect: { w: Math.round(rect.width), h: Math.round(rect.height) } });
 })()`;
 
-function buildFixture(stageDir) {
+function buildFixture(stageDir, { fallbackOnly = false } = {}) {
     copyDir(EXT_DIR, stageDir);
     fs.writeFileSync(path.join(stageDir, 'chrome-stub.js'), CHROME_STUB, 'utf8');
     const manifest = JSON.parse(fs.readFileSync(path.join(stageDir, 'manifest.json'), 'utf8'));
     const isolatedGroup = (manifest.content_scripts || []).find((group) =>
         Array.isArray(group.js) && group.js.includes('ytkit.js') && !group.js.includes('ytkit-main.js') && !group.all_frames);
     if (!isolatedGroup) throw new Error('could not locate the ISOLATED-world content-script group in manifest.json');
-    const scriptTags = ['chrome-stub.js', ...isolatedGroup.js]
+    const isolatedScripts = fallbackOnly
+        ? isolatedGroup.js.filter((src) => src !== 'features/settings-panel/index.js')
+        : isolatedGroup.js;
+    const scriptTags = ['chrome-stub.js', ...isolatedScripts]
         .map((src) => `    <script src="${src}"></script>`)
         .join('\n');
     const html = `<!DOCTYPE html>
@@ -325,9 +340,10 @@ async function main() {
 
     const stageDir = path.join(REPO_ROOT, 'build', 'settings-overlay-smoke-stage');
     fs.rmSync(stageDir, { recursive: true, force: true });
-    const fixturePath = buildFixture(stageDir);
-    fs.rmSync(OUT_DIR, { recursive: true, force: true });
-    fs.mkdirSync(OUT_DIR, { recursive: true });
+    const fixturePath = buildFixture(stageDir, opts);
+    const outDir = opts.fallbackOnly ? path.join(OUT_DIR, 'fallback') : OUT_DIR;
+    fs.rmSync(outDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
+    fs.mkdirSync(outDir, { recursive: true });
 
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-overlay-smoke-'));
     const fixtureUrl = 'file:///' + fixturePath.split(path.sep).join('/');
@@ -418,19 +434,28 @@ async function main() {
                 console.error(`[settings-overlay-smoke] diagnostics: ${diag}`);
                 throw err;
             }
+            await client.evaluate(`(() => {
+                const panel = document.querySelector(${JSON.stringify(PANEL_SELECTOR)});
+                if (panel) panel.setAttribute('dir', '${state.dir}');
+                return panel?.getAttribute('dir') || '';
+            })()`);
             await sleep(600); // let fonts/layout settle before measuring
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
             failuresByState[state.name] = report.failures || [];
 
             const shot = await client.send('Page.captureScreenshot', { format: 'png' });
-            fs.writeFileSync(path.join(OUT_DIR, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
-            console.log(`[settings-overlay-smoke] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${report.failures.length} failure(s)`);
+            fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${report.failures.length} failure(s)`);
         }
         ws.close();
     } finally {
+        const browserExit = browser.exitCode !== null
+            ? Promise.resolve()
+            : new Promise((resolve) => browser.once('exit', resolve));
         browser.kill();
-        if (!opts.keepStage) fs.rmSync(stageDir, { recursive: true, force: true });
-        fs.rmSync(profileDir, { recursive: true, force: true });
+        await Promise.race([browserExit, sleep(3000)]);
+        if (!opts.keepStage) fs.rmSync(stageDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
+        fs.rmSync(profileDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
     }
 
     let failed = false;
@@ -440,7 +465,7 @@ async function main() {
             console.error(`[settings-overlay-smoke] ${state}: ${failure}`);
         }
     }
-    console.log(`[settings-overlay-smoke] screenshots: ${path.relative(REPO_ROOT, OUT_DIR).replace(/\\/g, '/')}`);
+    console.log(`[settings-overlay-smoke] screenshots: ${path.relative(REPO_ROOT, outDir).replace(/\\/g, '/')}`);
     if (failed) process.exit(1);
     console.log('[settings-overlay-smoke] PASS — all states rendered with close/focus targets and readable primary controls');
 }
