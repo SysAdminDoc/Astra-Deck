@@ -3372,7 +3372,7 @@ test('bulkCardActions delegates hide/allow to videoHider rather than duplicating
 
 test('bulkCardActions destroy() removes its toggle button, action bar, and document click listener', () => {
     const start = ytkitSource.indexOf("id: 'bulkCardActions'");
-    const block = ytkitSource.slice(start, start + 16000);
+    const block = ytkitSource.slice(start, start + 28000);
     const destroyIdx = block.indexOf('destroy()');
     assert.ok(destroyIdx > -1, 'bulkCardActions must define destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
@@ -3382,6 +3382,31 @@ test('bulkCardActions destroy() removes its toggle button, action bar, and docum
         'destroy() must remove the toggle button');
     assert.match(destroyBlock, /_actionBar\?\.remove\(\)/,
         'destroy() must remove the action bar');
+});
+
+test('bulkCardActions scrub sessions are bounded, paced, logged locally, and undoable', () => {
+    const start = ytkitSource.indexOf("id: 'bulkCardActions'");
+    const block = ytkitSource.slice(start, start + 28000);
+
+    // Bounded: a session never fires more native clicks than the cap.
+    assert.match(block, /_SCRUB_CAP: 25/, 'scrub sessions must be capped per run');
+    assert.match(block, /\.slice\(0, this\._SCRUB_CAP\)/, 'the selection must be truncated to the cap');
+    // Paced: sequential clicks with a delay, not a burst.
+    assert.match(block, /await new Promise\(resolve => setTimeout\(resolve, 400\)\)/,
+        'native feedback clicks must be paced');
+    // Concurrent-session guard.
+    assert.match(block, /if \(this\._scrubRunning\)/, 'a second session must not start mid-run');
+    // Both native actions are supported.
+    assert.match(block, /'not interested'/, 'Not interested must be a native match target');
+    assert.match(block, /don't recommend channel/, "Don't recommend channel must be a native match target");
+    // Local-only capped log + export.
+    assert.match(block, /_SCRUB_LOG_KEY: 'ytkit-scrub-sessions'/, 'scrub log must have a stable storage key');
+    assert.match(block, /while \(log\.length > this\._SCRUB_LOG_MAX\) log\.shift\(\)/,
+        'the session log must be capped');
+    assert.match(block, /handleFileExport\(/, 'summary export must use the local file-download path');
+    // Recoverable: undo removes the local hides.
+    assert.match(block, /_removeHiddenVideos\?\.\(hiddenIds\)/, 'undo must remove the local hides');
+    assert.match(block, /native feedback stays applied/, 'undo copy must be honest that native feedback is not reverted');
 });
 
 // ── v3.25.0 P1: Feed Triage profile invariants ──

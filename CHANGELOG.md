@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: recoverable recommendation scrub sessions.** Bulk Card Actions
+  select-mode gains "Not interested" and "Don't recommend channel"
+  actions that apply YouTube's own feedback menu item to up to 25
+  selected cards per run (paced at 400 ms per card so a session never
+  looks like burst automation), hide the cards locally with a one-click
+  Undo that honestly notes native feedback stays applied, and record
+  each session in a capped local log exportable as JSON — nothing
+  leaves the device. Select-mode now also works on the watch page's
+  related rail.
 - **Feat: subscription health center.** The subscriptions toolbar gains a
   Health button (with staged-count badge) that opens one coherent panel:
   overview stats, stale-channel candidates with per-row Stage/Undo, staged
