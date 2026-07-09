@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- No unreleased changes.
+
+## [4.47.0] - 2026-07-09
+
 - **Feat: cross-browser extension API wrapper.** `core/browser-api.js`
   resolves the standards-track `browser.*` namespace (Firefox today,
   Chrome 148+) with a `chrome.*` fallback and exposes
