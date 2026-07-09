@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { parseSha256Sums } = require('./generate-release-readiness');
+const { findStrayProductTags } = require('./check-versions');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -183,6 +184,16 @@ function parseArgs(argv = process.argv.slice(2)) {
             continue;
         }
         throw new Error(`unknown argument: ${arg}`);
+    }
+    // Refuse tags that version-sort ahead of the current product version.
+    // A stray future-looking tag (e.g. v25.11) would otherwise be accepted
+    // as a "latest" candidate even though no such release can exist.
+    const stray = findStrayProductTags(version, [args.tag]);
+    if (stray.length) {
+        throw new Error(
+            `refusing tag ${args.tag}: it version-sorts ahead of the current product version v${version}; ` +
+            `if this is a stray tag, delete it (git tag -d ${args.tag} && git push origin :refs/tags/${args.tag})`
+        );
     }
     return args;
 }
