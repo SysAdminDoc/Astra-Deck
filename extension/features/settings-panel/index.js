@@ -357,6 +357,14 @@ function buildSettingsPanel() {
             countSpan.className = 'ytkit-nav-count';
             countSpan.textContent = countText;
             if (countTitle) countSpan.title = countTitle;
+            const stateSpan = document.createElement('span');
+            stateSpan.className = 'ytkit-nav-state';
+            stateSpan.setAttribute('aria-hidden', 'true');
+            const [enabledRaw, totalRaw] = String(countText).split('/').map((value) => Number(value));
+            const navTone = Number.isFinite(enabledRaw) && Number.isFinite(totalRaw)
+                ? (enabledRaw === 0 ? 'empty' : enabledRaw >= totalRaw ? 'complete' : 'partial')
+                : 'partial';
+            stateSpan.dataset.tone = navTone;
             const arrowSpan = document.createElement('span');
             arrowSpan.className = 'ytkit-nav-arrow';
             arrowSpan.appendChild(ICONS.chevronRight());
@@ -365,6 +373,7 @@ function buildSettingsPanel() {
             btn.appendChild(iconWrap);
             btn.appendChild(copyWrap);
             btn.appendChild(countSpan);
+            btn.appendChild(stateSpan);
             btn.appendChild(arrowSpan);
             return { btn, countSpan, catId };
         }
@@ -2093,7 +2102,9 @@ function buildSettingsPanel() {
             [
                 ['Active section', 'ytkit-insight-active-section', 'Video Player'],
                 ['Save mode', '', 'Instant'],
-                ['Recovery', '', 'Undo toasts']
+                ['Recovery', '', 'Undo toasts'],
+                ['Last export', '', 'Not yet'],
+                ['Last import', '', 'Not yet']
             ].forEach(([label, id, value]) => {
                 const term = document.createElement('dt');
                 term.textContent = label;
@@ -2474,6 +2485,10 @@ function updateAllToggleStates() {
             if (countEl) {
                 countEl.textContent = `${enabledCount}/${totalCount}`;
                 countEl.style.color = '';
+            }
+            const stateEl = btn.querySelector('.ytkit-nav-state');
+            if (stateEl) {
+                stateEl.dataset.tone = enabledCount === 0 ? 'empty' : enabledCount >= totalCount ? 'complete' : 'partial';
             }
             const paneEnabledChip = pane.querySelector('.ytkit-pane-chip[data-stat="enabled"]');
             if (paneEnabledChip) paneEnabledChip.textContent = `${enabledCount} On`;

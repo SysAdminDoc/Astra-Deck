@@ -188,14 +188,30 @@ test('settings close tooltip avoids shortcut copy in every locale', () => {
 test('settings modal premium refresh locks the desktop shell and row controls', () => {
     assert.ok(ytkitSource.includes('Settings modal premium refresh'),
         'settings modal must carry the later premium-refresh override layer');
+    assert.ok(ytkitSource.includes('Settings command-center concept parity'),
+        'settings modal must carry the command-center concept parity override layer');
     assert.ok(settingsPanelModuleSource.includes("rail.className = 'ytkit-insights'"),
         'extension settings module must render the premium right-side insights rail');
     assert.ok(ytkitSource.includes("rail.className = 'ytkit-insights'"),
         'extension settings monolith fallback must render the premium right-side insights rail');
+    assert.ok(settingsPanelModuleSource.includes("stateSpan.className = 'ytkit-nav-state'"),
+        'extension settings module must render nav completion indicators');
+    assert.ok(ytkitSource.includes("stateSpan.className = 'ytkit-nav-state'"),
+        'extension settings monolith fallback must render nav completion indicators');
     assert.ok(settingsPanelModuleSource.includes("id: 'ytkit-reset-active-section'"),
         'extension settings module must route a visible reset action to the active section');
     assert.ok(ytkitSource.includes("id: 'ytkit-reset-active-section'"),
         'extension settings monolith fallback must route a visible reset action to the active section');
+    assert.ok(settingsPanelModuleSource.includes("['Last import', '', 'Not yet']"),
+        'extension settings module must render the expanded recent activity rows');
+    assert.ok(ytkitSource.includes("['Last import', '', 'Not yet']"),
+        'extension settings monolith fallback must render the expanded recent activity rows');
+    assert.ok(ytkitSource.includes('top: 23px !important;'),
+        'command-center search adornments must stay anchored inside the search field');
+    assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-action-stack .ytkit-btn-primary'),
+        'light-theme sync/export actions must keep readable premium button styling');
+    assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-reset-group-btn'),
+        'light-theme pane reset controls must keep readable premium button styling');
     assert.ok(ytkitSource.includes('grid-template-columns: clamp(260px, 20vw, 300px) minmax(0, 1fr) clamp(260px, 21vw, 300px) !important;'),
         'desktop settings body must stay a composed sidebar/content/insights grid');
     assert.ok(ytkitSource.includes('grid-template-rows: auto auto auto !important;'),
