@@ -162,6 +162,25 @@ test('settings panel exposes persistent live status feedback for save/import/exp
         'userscript CSS must style successful footer status');
 });
 
+test('extension Takeout import keeps large-file and undo recovery parity', () => {
+    for (const [label, source] of [
+        ['settings module', settingsPanelModuleSource],
+        ['extension fallback', ytkitSource]
+    ]) {
+        const start = source.indexOf("if (e.target.closest('#ytkit-import-history'))");
+        assert.ok(start > -1, `${label} must handle Takeout import from the settings panel`);
+        const block = source.slice(start, start + 2500);
+        assert.match(block, /handleFileImport\([\s\S]*\{\s*maxBytes:\s*500\s*\*\s*1024\s*\*\s*1024\s*\}/,
+            `${label} must allow large YouTube Takeout history exports`);
+        assert.ok(block.includes('const preImportStats = StorageManager.get(STORAGE_KEYS.watchTime, null);'),
+            `${label} must snapshot watch-time state before import`);
+        assert.ok(block.includes('StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);'),
+            `${label} must restore the pre-import watch-time state from Undo`);
+        assert.ok(block.includes("'takeout-undo'") || block.includes('"takeout-undo"'),
+            `${label} undo must notify storage listeners with a distinct Takeout undo source`);
+    }
+});
+
 test('settings panel search copy matches the expanded filter behavior', () => {
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
     assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, controls...');
