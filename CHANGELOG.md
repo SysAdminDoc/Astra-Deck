@@ -32,6 +32,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   generation and readiness checks now treat the artifact list as a closed set,
   so debug ZIPs or other auxiliary build files cannot be blessed just by adding
   them to `release-manifest.json` and `SHA256SUMS`.
+- **Fix: popup update tab selection.** Popup yt-dlp and Astra Downloader update
+  actions now sort YouTube tab candidates and retry tabs with no content-script
+  response, so a stale first tab no longer hides a working YouTube tab.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed
