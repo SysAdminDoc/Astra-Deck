@@ -190,8 +190,12 @@ test('settings modal premium refresh locks the desktop shell and row controls', 
         'settings modal must carry the later premium-refresh override layer');
     assert.ok(settingsPanelModuleSource.includes("rail.className = 'ytkit-insights'"),
         'extension settings module must render the premium right-side insights rail');
+    assert.ok(ytkitSource.includes("rail.className = 'ytkit-insights'"),
+        'extension settings monolith fallback must render the premium right-side insights rail');
     assert.ok(settingsPanelModuleSource.includes("id: 'ytkit-reset-active-section'"),
         'extension settings module must route a visible reset action to the active section');
+    assert.ok(ytkitSource.includes("id: 'ytkit-reset-active-section'"),
+        'extension settings monolith fallback must route a visible reset action to the active section');
     assert.ok(ytkitSource.includes('grid-template-columns: clamp(260px, 20vw, 300px) minmax(0, 1fr) clamp(260px, 21vw, 300px) !important;'),
         'desktop settings body must stay a composed sidebar/content/insights grid');
     assert.ok(ytkitSource.includes('grid-template-rows: auto auto auto !important;'),
