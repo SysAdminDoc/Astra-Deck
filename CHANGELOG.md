@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Shorts Speed Control + Auto-Advance.** Two independent Shorts toggles:
+  a click-to-cycle speed chip (0.5x-2x, seeded from Persistent Speed when
+  enabled, re-applied per reel) and an auto-advance mode that stops Shorts
+  from looping and scrolls to the next Short when one finishes. Together with
+  the existing Shorts Player Controls (native seekbar/scrubbing) and Remember
+  Volume (already applies on Shorts) this completes in-Shorts player control.
 - **Persistent Queue.** Local play queue that survives tab close and browser
   restart. A hover button on every thumbnail adds videos; a floating
   `Queue · n` control opens a panel with reorder, remove, play-next, clear,

@@ -18,12 +18,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: `extension/ytkit.js` watchLaterCleanup block, new `extension/features/` module, reuse bulkCardActions session pattern.
   Acceptance: On ?list=WL — bulk remove by filter (watched %, age, channel, duplicate videoId), sort preview, JSON/CSV export; sessions bounded (25/run, paced) with Undo log; all local.
   Complexity: L
-- [ ] P1 — In-Shorts player controls
-  Why: Astra only redirects/hides Shorts; users who keep Shorts get no seekbar, volume, speed, or loop control. Biggest single UX gap vs the BYTS family.
-  Evidence: Better Youtube Shorts (Meriel Varen, 3.8k installs), BYTS (WaGi-Coding), Shorts progress-bar toggle in Control Panel for YouTube.
-  Where: new `extension/features/shorts-controls/`, selector pack additions for the Shorts player.
-  Acceptance: On /shorts/ — visible seekbar with scrubbing, volume slider (persisted with rememberVolume), speed control honoring persistentSpeed, stop-looping toggle, optional auto-advance; each independently toggleable, off by default.
-  Complexity: M
 - [ ] P1 — Scrollable fullscreen (comments under fullscreen video)
   Why: Reading comments/description without leaving fullscreen is a recurring ask YouTube removed; several scripts restore it.
   Evidence: "YouTube Restore Scrollable Fullscreen" (BK K), 4lrick variants.

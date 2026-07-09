@@ -4291,6 +4291,8 @@ return response;
             playbackErrorRecovery: false,
             persistentQueue: false,
             persistentQueueAutoAdvance: true,
+            shortsSpeedControl: false,
+            shortsAutoAdvance: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -28273,6 +28275,133 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const v = el.querySelector('video');
                     if (v) v.controls = false;
                 });
+            }
+        },
+        {
+            id: 'shortsSpeedControl',
+            name: 'Shorts Speed Control',
+            description: 'Adds a click-to-cycle playback speed chip to the Shorts player (0.5x-2x), honoring your persistent speed default',
+            group: 'Content',
+            icon: 'gauge',
+            pages: [PageTypes.SHORTS],
+            _SPEEDS: [0.5, 0.75, 1, 1.25, 1.5, 2],
+            _speed: null,
+            _chip: null,
+            _styleEl: null,
+            _applyTimer: null,
+
+            _activeVideo() {
+                return document.querySelector('ytd-reel-video-renderer[is-active] video')
+                    || document.querySelector('#shorts-player video');
+            },
+            _defaultSpeed() {
+                if (appState.settings.persistentSpeed) {
+                    const v = parseFloat(appState.settings.persistentSpeedValue);
+                    if (Number.isFinite(v) && v > 0) return v;
+                }
+                return 1;
+            },
+            _apply() {
+                if (!location.pathname.startsWith('/shorts/')) return;
+                const video = this._activeVideo();
+                if (!video) return;
+                if (this._speed == null) this._speed = this._defaultSpeed();
+                if (video.playbackRate !== this._speed) video.playbackRate = this._speed;
+                this._renderChip();
+            },
+            _scheduleApply(delay = 400) {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = setTimeout(() => {
+                    this._applyTimer = null;
+                    this._apply();
+                }, delay);
+            },
+            _cycle() {
+                const index = this._SPEEDS.indexOf(this._speed);
+                this._speed = this._SPEEDS[(index + 1) % this._SPEEDS.length] ?? 1;
+                this._apply();
+            },
+            _renderChip() {
+                if (!location.pathname.startsWith('/shorts/')) { this._chip?.remove(); this._chip = null; return; }
+                if (!this._chip || !this._chip.isConnected) {
+                    this._chip = document.createElement('button');
+                    this._chip.type = 'button';
+                    this._chip.className = 'ytkit-shorts-speed-chip';
+                    this._chip.setAttribute('translate', 'no');
+                    this._chip.addEventListener('click', () => this._cycle());
+                    document.body.appendChild(this._chip);
+                }
+                this._chip.textContent = `${this._speed}×`;
+                this._chip.setAttribute('aria-label', `Shorts playback speed ${this._speed}x — click to cycle`);
+            },
+
+            init() {
+                this._styleEl = injectStyle(`
+                    .ytkit-shorts-speed-chip { position: fixed; right: 18px; bottom: 130px; z-index: 9998; min-width: 44px; padding: 6px 10px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px; background: rgba(18, 18, 22, 0.92); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+                    .ytkit-shorts-speed-chip:hover { border-color: rgba(255, 143, 64, 0.7); }
+                `, this.id, true);
+                this._apply();
+                addMutationRule(this.id, () => this._scheduleApply(400));
+                addNavigateRule('shortsSpeedControl', () => this._scheduleApply(600));
+            },
+            destroy() {
+                if (this._applyTimer) { clearTimeout(this._applyTimer); this._applyTimer = null; }
+                removeMutationRule(this.id);
+                removeNavigateRule('shortsSpeedControl');
+                const video = this._activeVideo();
+                if (video && this._speed != null && this._speed !== 1) video.playbackRate = 1;
+                this._chip?.remove(); this._chip = null;
+                this._styleEl?.remove(); this._styleEl = null;
+                this._speed = null;
+            }
+        },
+        {
+            id: 'shortsAutoAdvance',
+            name: 'Shorts Auto-Advance',
+            description: 'Stop Shorts from looping and scroll to the next Short automatically when one finishes',
+            group: 'Content',
+            icon: 'fast-forward',
+            pages: [PageTypes.SHORTS],
+            _endedHandler: null,
+            _videoRef: null,
+            _attachTimer: null,
+
+            _attach() {
+                if (!location.pathname.startsWith('/shorts/')) return;
+                const video = document.querySelector('ytd-reel-video-renderer[is-active] video')
+                    || document.querySelector('#shorts-player video');
+                if (!video) return;
+                video.loop = false;
+                video.removeAttribute('loop');
+                if (video === this._videoRef) return;
+                if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
+                this._videoRef = video;
+                video.addEventListener('ended', this._endedHandler);
+            },
+            _scheduleAttach(delay = 400) {
+                if (this._attachTimer) clearTimeout(this._attachTimer);
+                this._attachTimer = setTimeout(() => {
+                    this._attachTimer = null;
+                    this._attach();
+                }, delay);
+            },
+
+            init() {
+                this._endedHandler = () => {
+                    const nextBtn = document.querySelector('#navigation-button-down button, [aria-label="Next video"]');
+                    if (nextBtn) nextBtn.click();
+                };
+                this._attach();
+                addMutationRule(this.id, () => this._scheduleAttach(400));
+                addNavigateRule('shortsAutoAdvance', () => this._scheduleAttach(600));
+            },
+            destroy() {
+                if (this._attachTimer) { clearTimeout(this._attachTimer); this._attachTimer = null; }
+                if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
+                this._videoRef = null;
+                this._endedHandler = null;
+                removeMutationRule(this.id);
+                removeNavigateRule('shortsAutoAdvance');
             }
         },
 

@@ -94,6 +94,8 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     autoExitFullscreen: 'intentional-extension-only',
     persistentQueue: 'intentional-extension-only',
     playbackErrorRecovery: 'intentional-extension-only',
+    shortsAutoAdvance: 'intentional-extension-only',
+    shortsSpeedControl: 'intentional-extension-only',
     bulkCardActions: 'intentional-extension-only',
     chapterJumpButtons: 'not-yet-ported',
     classicLayoutProfile: 'intentional-extension-only',

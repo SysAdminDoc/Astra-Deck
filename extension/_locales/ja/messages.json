@@ -1850,6 +1850,18 @@
   "feature_shortsAsRegularVideo_name": {
     "message": "Shorts プレーヤーコントロール"
   },
+  "feature_shortsAutoAdvance_desc": {
+    "message": "Stop Shorts from looping and scroll to the next Short automatically when one finishes"
+  },
+  "feature_shortsAutoAdvance_name": {
+    "message": "Shorts Auto-Advance"
+  },
+  "feature_shortsSpeedControl_desc": {
+    "message": "Adds a click-to-cycle playback speed chip to the Shorts player (0.5x-2x), honoring your persistent speed default"
+  },
+  "feature_shortsSpeedControl_name": {
+    "message": "Shorts Speed Control"
+  },
   "feature_showChannelVideoCount_desc": {
     "message": "視聴ページのチャンネル名横にアップロード動画の合計数を表示"
   },
