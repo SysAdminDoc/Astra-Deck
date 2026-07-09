@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: cross-browser extension API wrapper.** `core/browser-api.js`
+  resolves the standards-track `browser.*` namespace (Firefox today,
+  Chrome 148+) with a `chrome.*` fallback and exposes
+  `globalThis.YTKitBrowser` plus a scope-injectable factory. It loads
+  before every other ISOLATED-world script and on the popup, side panel,
+  and sidebar pages. sidepanel.js is the first fully migrated batch —
+  zero direct `chrome.*` API calls remain there; popup.js and
+  background.js follow in later bounded batches (tracked on the
+  roadmap).
 - **Feat: rendered visual smoke for the in-page settings overlay.**
   `npm run smoke:settings-overlay` stages the real ISOLATED-world script
   stack onto a local fixture page with a chrome-API stub, opens the
