@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P2 — Add recoverable recommendation scrub sessions
-  Why: Research and YouTube help show "Not interested" and "Don't recommend channel" can tune recommendations, but users under-discover them and Astra only exposes one-off thumbnail actions today.
-  Evidence: arXiv recommender study, YouTube Help recommendation controls, `notInterestedButton`, `extension/features/video-hider/index.js`.
-  Touches: `extension/features/video-hider/index.js`, `extension/features/settings-panel/index.js`, `extension/core/settings-schema.js`, `tests/features/`, `tests/hardening.test.js`.
-  Acceptance: Users can start a bounded scrub session from Home/Watch recommendations, review queued cards/channels, apply native "Not interested" or "Don't recommend channel" actions where available, undo local hides, and export a scrub summary without sending data off-device.
-  Complexity: L
-
 - [ ] P2 — Add rendered visual smoke coverage for the in-page settings overlay
   Why: Static a11y/theme audits cannot prove the large settings window actually renders as premium software across desktop/mobile, theme, RTL, and nested modal states.
   Evidence: `extension/features/settings-panel/index.js`, `scripts/audit-overlays-a11y.js`, `tests/ux-theming-fixes.test.js`, prior settings command-deck polish commits.

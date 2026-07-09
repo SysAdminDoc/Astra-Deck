@@ -32336,23 +32336,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'bulkCardActions',
             name: 'Bulk Card Actions',
-            description: 'Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting.',
+            description: 'Toggle select-mode to multi-pick feed cards, then bulk hide, allow, copy URLs, or run a bounded recommendation scrub ("Not interested" / "Don\'t recommend channel") with a local session log and undo.',
             group: 'Content',
             icon: 'check-square',
-            pages: [PageTypes.HOME, PageTypes.SUBSCRIPTIONS, PageTypes.SEARCH, PageTypes.CHANNEL],
+            pages: [PageTypes.HOME, PageTypes.SUBSCRIPTIONS, PageTypes.SEARCH, PageTypes.CHANNEL, PageTypes.WATCH],
             _styleElement: null,
             _selectMode: false,
             _selected: null,
             _toggleBtn: null,
             _actionBar: null,
             _clickHandler: null,
+            // Recommendation scrub sessions: bounded per run so a large
+            // selection can't fire an automation-shaped burst of native
+            // feedback clicks; the log stays local and capped.
+            _SCRUB_CAP: 25,
+            _SCRUB_LOG_KEY: 'ytkit-scrub-sessions',
+            _SCRUB_LOG_MAX: 20,
+            _scrubRunning: false,
 
             _injectStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
                     .ytkit-bulk-toggle{position:fixed;right:16px;bottom:16px;z-index:9000;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:#1f1f24;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);}
                     .ytkit-bulk-toggle[data-active="1"]{background:#7c3aed;border-color:#a78bfa;}
-                    .ytkit-bulk-bar{position:fixed;right:16px;bottom:64px;z-index:9000;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:#0f0f10;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+                    .ytkit-bulk-bar{position:fixed;right:16px;bottom:64px;z-index:9000;display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:420px;padding:10px 12px;border-radius:10px;background:#0f0f10;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
                     .ytkit-bulk-bar button{padding:8px 10px;border-radius:6px;border:1px solid #3f3f46;background:#1f1f24;color:#f4f4f5;cursor:pointer;font:inherit;}
                     .ytkit-bulk-bar button:hover{background:#27272a;}
                     .ytkit-bulk-bar .ytkit-bulk-count{padding:0 6px;color:#a78bfa;}
@@ -32401,11 +32408,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 copyBtn.type = 'button';
                 copyBtn.textContent = 'Copy URLs';
                 copyBtn.addEventListener('click', () => this._bulkCopy());
+                const scrubNiBtn = document.createElement('button');
+                scrubNiBtn.type = 'button';
+                scrubNiBtn.textContent = 'Not interested';
+                scrubNiBtn.title = `Apply YouTube's native "Not interested" to up to ${this._SCRUB_CAP} selected cards, hide them locally, and log the session.`;
+                scrubNiBtn.addEventListener('click', () => this._runScrubSession('not-interested'));
+                const scrubDrBtn = document.createElement('button');
+                scrubDrBtn.type = 'button';
+                scrubDrBtn.textContent = "Don't recommend";
+                scrubDrBtn.title = `Apply YouTube's native "Don't recommend channel" to up to ${this._SCRUB_CAP} selected cards, hide them locally, and log the session.`;
+                scrubDrBtn.addEventListener('click', () => this._runScrubSession('dont-recommend'));
+                const exportBtn = document.createElement('button');
+                exportBtn.type = 'button';
+                exportBtn.textContent = 'Export log';
+                exportBtn.title = 'Download the local scrub-session summary as JSON. Nothing leaves this device.';
+                exportBtn.addEventListener('click', () => this._exportScrubSummary());
                 const clearBtn = document.createElement('button');
                 clearBtn.type = 'button';
                 clearBtn.textContent = 'Clear';
                 clearBtn.addEventListener('click', () => this._clearSelection());
-                this._actionBar.append(count, hideBtn, allowBtn, copyBtn, clearBtn);
+                this._actionBar.append(count, hideBtn, allowBtn, copyBtn, scrubNiBtn, scrubDrBtn, exportBtn, clearBtn);
                 document.body.appendChild(this._actionBar);
                 this._actionBar.hidden = true;
                 return this._actionBar;
@@ -32488,6 +32510,132 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         () => typeof showToast === 'function' && showToast('Copy failed', '#ef4444')
                     );
                 }
+            },
+
+            // Open a card's three-dot menu and click the native feedback item
+            // whose label contains one of matchTexts. Same DOM path as the
+            // notInterestedButton feature; menu items render async so the
+            // lookup retries once after a short delay.
+            _applyNativeCardAction(card, matchTexts) {
+                return new Promise((resolve) => {
+                    const menuBtn = card.querySelector('ytd-menu-renderer yt-icon-button, ytd-menu-renderer button');
+                    if (!menuBtn) { resolve(false); return; }
+                    menuBtn.click();
+                    const tryClick = (attempt) => {
+                        const items = document.querySelectorAll('ytd-menu-service-item-renderer yt-formatted-string, tp-yt-paper-listbox ytd-menu-service-item-renderer yt-formatted-string');
+                        for (const item of items) {
+                            const text = (item.textContent || '').toLowerCase();
+                            if (matchTexts.some(match => text.includes(match))) {
+                                item.closest('ytd-menu-service-item-renderer')?.click();
+                                resolve(true);
+                                return;
+                            }
+                        }
+                        if (attempt < 2) {
+                            setTimeout(() => tryClick(attempt + 1), 250);
+                            return;
+                        }
+                        // Close the orphaned menu so the page isn't left with a
+                        // dangling dropdown when the item doesn't exist here.
+                        document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')?.setAttribute('aria-hidden', 'true');
+                        resolve(false);
+                    };
+                    setTimeout(() => tryClick(0), 250);
+                });
+            },
+
+            _readScrubLog() {
+                const log = storageReadJSON(this._SCRUB_LOG_KEY, []);
+                return Array.isArray(log) ? log : [];
+            },
+
+            _appendScrubSession(session) {
+                const log = this._readScrubLog();
+                log.push(session);
+                while (log.length > this._SCRUB_LOG_MAX) log.shift();
+                try { storageWriteJSON(this._SCRUB_LOG_KEY, log); } catch { /* reason: scrub log is best-effort local history */ }
+            },
+
+            async _runScrubSession(kind) {
+                if (this._scrubRunning) {
+                    if (typeof showToast === 'function') showToast('A scrub session is already running.', '#f59e0b');
+                    return;
+                }
+                if (!this._selected?.size) {
+                    if (typeof showToast === 'function') showToast('Select cards to scrub first.', '#6b7280');
+                    return;
+                }
+                const matchTexts = kind === 'dont-recommend'
+                    ? ["don't recommend channel", 'don’t recommend channel']
+                    : ['not interested'];
+                const picked = Array.from(this._selected.entries()).slice(0, this._SCRUB_CAP);
+                const skipped = this._selected.size - picked.length;
+                this._scrubRunning = true;
+                const results = [];
+                try {
+                    for (const [videoId, card] of picked) {
+                        if (!card.isConnected) {
+                            results.push({ videoId, applied: false, reason: 'card-gone' });
+                            continue;
+                        }
+                        const applied = await this._applyNativeCardAction(card, matchTexts);
+                        results.push({ videoId, applied });
+                        // Pace native feedback clicks so a session doesn't look
+                        // like scripted burst traffic to YouTube's heuristics.
+                        await new Promise(resolve => setTimeout(resolve, 400));
+                    }
+                } finally {
+                    this._scrubRunning = false;
+                }
+
+                // Local hide is the recoverable half: it applies regardless of
+                // whether the native menu item existed, and Undo removes it.
+                const hiddenIds = results.map(entry => entry.videoId);
+                const vh = getFeatureById('hideVideosFromHome');
+                if (vh?._addHiddenVideos && hiddenIds.length) {
+                    vh._addHiddenVideos(hiddenIds);
+                    vh._processAllVideos?.();
+                }
+                for (const [, card] of picked) delete card.dataset.ytkitBulkSelected;
+                for (const [id] of picked) this._selected.delete(id);
+                this._renderActionBar();
+
+                const appliedCount = results.filter(entry => entry.applied).length;
+                this._appendScrubSession({
+                    ts: Date.now(),
+                    kind,
+                    requested: picked.length,
+                    nativeApplied: appliedCount,
+                    skippedOverCap: skipped,
+                    videoIds: hiddenIds
+                });
+                if (typeof showToast === 'function') {
+                    const capNote = skipped > 0 ? ` (${skipped} over the ${this._SCRUB_CAP}-per-run cap left selected)` : '';
+                    showToast(`Scrubbed ${picked.length}: ${appliedCount} native, ${picked.length} hidden locally${capNote}`, '#22c55e', {
+                        duration: 8,
+                        action: {
+                            text: 'Undo hides',
+                            onClick: () => {
+                                vh?._removeHiddenVideos?.(hiddenIds);
+                                vh?._processAllVideos?.();
+                                if (typeof showToast === 'function') showToast(`Restored ${hiddenIds.length} local hide${hiddenIds.length === 1 ? '' : 's'} (native feedback stays applied)`, '#6b7280');
+                            }
+                        }
+                    });
+                }
+            },
+
+            _exportScrubSummary() {
+                const log = this._readScrubLog();
+                if (!log.length) {
+                    if (typeof showToast === 'function') showToast('No scrub sessions recorded yet.', '#6b7280');
+                    return;
+                }
+                handleFileExport(
+                    `ytkit-scrub-summary-${new Date().toISOString().slice(0, 10)}.json`,
+                    JSON.stringify({ exportedAt: new Date().toISOString(), sessions: log }, null, 2)
+                );
+                if (typeof showToast === 'function') showToast(`Exported ${log.length} scrub session${log.length === 1 ? '' : 's'}`, '#22c55e');
             },
 
             _enterSelectMode() {
