@@ -1,0 +1,110 @@
+:root {
+  color-scheme: dark;
+  --astra-canvas: #07090d;
+  --astra-surface: #0d1118;
+  --astra-surface-raised: #121822;
+  --astra-surface-inset: #090d13;
+  --astra-surface-hover: #18202c;
+  --astra-border: #28313e;
+  --astra-border-subtle: #1c2430;
+  --astra-text: #f4f6fa;
+  --astra-text-secondary: #c7d0dc;
+  --astra-text-muted: #909baa;
+  --astra-accent: #ff5d4a;
+  --astra-accent-strong: #ff7a55;
+  --astra-accent-soft: rgba(255, 93, 74, 0.13);
+  --astra-amber: #f6a23c;
+  --astra-info: #69a9ff;
+  --astra-success: #54d681;
+  --astra-warning: #f6b863;
+  --astra-error: #ff7a86;
+  --astra-focus: 0 0 0 2px var(--astra-canvas), 0 0 0 4px rgba(255, 122, 85, 0.72);
+  --astra-shadow-low: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --astra-shadow-high: 0 24px 64px rgba(0, 0, 0, 0.42);
+  --astra-radius-1: 4px;
+  --astra-radius-2: 6px;
+  --astra-radius-3: 8px;
+  --astra-radius-4: 10px;
+
+  /* Compatibility aliases used by both extension-owned surfaces. */
+  --bg: var(--astra-canvas);
+  --page-bg: var(--astra-canvas);
+  --surface: var(--astra-surface);
+  --surface-strong: var(--astra-surface);
+  --surface-raised: var(--astra-surface-raised);
+  --surface-hover: var(--astra-surface-hover);
+  --surface-inset: var(--astra-surface-inset);
+  --border: var(--astra-border);
+  --border-subtle: var(--astra-border-subtle);
+  --border-hover: #394657;
+  --border-strong: #4c5a6d;
+  --text-primary: var(--astra-text);
+  --text-secondary: var(--astra-text-secondary);
+  --text-muted: var(--astra-text-muted);
+  --text-subtle: #8490a1;
+  --accent: var(--astra-accent);
+  --accent-mid: var(--astra-accent-strong);
+  --accent-strong: var(--astra-accent-strong);
+  --accent-soft: var(--astra-accent-soft);
+  --accent-softer: rgba(255, 93, 74, 0.07);
+  --accent-border: rgba(255, 93, 74, 0.42);
+  --info: var(--astra-info);
+  --warning: var(--astra-warning);
+  --success: var(--astra-success);
+  --error: var(--astra-error);
+  --radius-tight: var(--astra-radius-1);
+  --radius-chip: var(--astra-radius-2);
+  --radius-xs: var(--astra-radius-3);
+  --radius-sm: var(--astra-radius-4);
+  --radius-md: var(--astra-radius-4);
+  --radius-lg: var(--astra-radius-4);
+  --radius-xl: var(--astra-radius-4);
+  --focus-ring: var(--astra-focus);
+}
+
+* {
+  scrollbar-color: #394454 transparent;
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--astra-focus);
+}
+
+body {
+  background:
+    linear-gradient(150deg, rgba(255, 93, 74, 0.045), transparent 28%),
+    var(--astra-canvas);
+}
+
+button,
+input,
+select,
+summary {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button:active:not(:disabled),
+summary:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --astra-focus: 0 0 0 2px Highlight;
+  }
+}

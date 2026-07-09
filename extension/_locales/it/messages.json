@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "Attiva richieste Downloader"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "Reimposta"
   },
