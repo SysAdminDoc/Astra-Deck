@@ -564,7 +564,28 @@ class ApiSecurityTests(unittest.TestCase):
                 ad._bootstrap()
         stderr = buf.getvalue()
         self.assertIn("Failed to auto-install", stderr)
-        self.assertIn("pip install", stderr)
+        self.assertIn("pip install -r", stderr)
+
+    def test_bootstrap_installs_from_requirements_file(self):
+        import unittest.mock as mock
+        with tempfile.TemporaryDirectory() as tmp:
+            requirements_path = Path(tmp) / "requirements.txt"
+            requirements_path.write_text("PyQt6>=6.6.0,<7\n", encoding="utf-8")
+            with mock.patch.object(ad, "subprocess") as fake_subproc, \
+                 mock.patch.object(ad.os.environ, "get", return_value=None), \
+                 mock.patch.object(ad.sys, "frozen", False, create=True), \
+                 mock.patch.object(ad, "REQUIREMENTS_PATH", requirements_path), \
+                 mock.patch("builtins.__import__", side_effect=ImportError):
+                fake_subproc.check_call.return_value = None
+                ad._bootstrap()
+
+        args = fake_subproc.check_call.call_args.args[0]
+        self.assertIn("-r", args)
+        self.assertIn(str(requirements_path), args)
+        self.assertNotIn("PyQt6", args)
+        self.assertNotIn("flask", args)
+        self.assertNotIn("requests", args)
+        self.assertNotIn("waitress", args)
 
 
 class CookieJarTests(unittest.TestCase):
