@@ -11,6 +11,10 @@ const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const MANIFEST_NAME = 'release-manifest.json';
 const SHA256SUMS_NAME = 'SHA256SUMS';
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
+// Local-only signing provenance marker written by build-extension.js.
+// Never listed as a release asset; its `mode` field is folded into the
+// manifest as `crxSigningMode` so release readiness can gate on it.
+const CRX_SIGNING_PROVENANCE_NAME = 'crx-signing-provenance.json';
 
 function readJson(relPath) {
     return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8'));
@@ -130,8 +134,22 @@ function listBuildAssets() {
     return fs.readdirSync(BUILD_DIR, { withFileTypes: true })
         .filter((entry) => entry.isFile())
         .map((entry) => entry.name)
-        .filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME)
+        .filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME && name !== CRX_SIGNING_PROVENANCE_NAME)
         .sort();
+}
+
+function readCrxSigningProvenance(buildDir = BUILD_DIR) {
+    try {
+        const raw = JSON.parse(fs.readFileSync(path.join(buildDir, CRX_SIGNING_PROVENANCE_NAME), 'utf8'));
+        const mode = raw && typeof raw.mode === 'string' ? raw.mode : null;
+        return mode === 'external' || mode === 'ephemeral' ? mode : 'unknown';
+    } catch (_) {
+        return 'unknown';
+    }
+}
+
+function isValidationBuild(argv = process.argv, env = process.env) {
+    return argv.includes('--validation-build') || env.ASTRA_VALIDATION_RELEASE === '1';
 }
 
 function assertExpectedAssets(assetNames, version, options = {}) {
@@ -191,6 +209,8 @@ function main() {
         generatedAt,
         localSigningRequired: true,
         signingKeyPolicy: 'Public CRX artifacts must be built locally with ASTRA_CRX_KEY_PATH or the default external key store; CI build artifacts use ephemeral CRX signing for validation/provenance only.',
+        crxSigningMode: readCrxSigningProvenance(),
+        validationBuild: isValidationBuild(),
         companionUpdateRequired: requireCompanion,
         assets
     };
@@ -218,8 +238,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+    CRX_SIGNING_PROVENANCE_NAME,
     expectedReleaseNames,
     isCompanionReleaseRequired,
+    isValidationBuild,
     parseAssetName,
+    readCrxSigningProvenance,
     unexpectedReleaseNames
 };

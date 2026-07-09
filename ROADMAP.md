@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P1 — Block public release when CRX artifacts use validation signing
-  Why: Public CRX uploads must never be validation-signed with a throwaway extension ID.
-  Evidence: `build-extension.js`, `scripts/generate-release-manifest.js`, `docs/signing-keys.md`, Cyberhaven/ShadyPanda extension supply-chain incidents.
-  Touches: `build-extension.js`, `scripts/generate-release-manifest.js`, `scripts/generate-release-readiness.js`, `tests/hardening.test.js`, `docs/signing-keys.md`.
-  Acceptance: Release readiness fails for public release builds when CRX assets were produced with `ASTRA_CRX_KEY_MODE=ephemeral`; validation builds remain allowed only when explicitly labeled validation/provenance artifacts.
-  Complexity: M
-
 - [ ] P1 — Add SemVer product-tag sanity gate before release/digest checks
   Why: A stray `v25.11` git tag sorts ahead of `v4.46.34` and can poison any workflow that infers latest by version sort.
   Evidence: `git tag --sort=-version:refname`, `scripts/check-versions.js`, `scripts/compare-release-digests.js`.

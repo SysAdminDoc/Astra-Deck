@@ -6,7 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
-- No unreleased changes.
+- **Security: release readiness blocks validation-signed public CRX
+  artifacts.** Every build now writes `build/crx-signing-provenance.json`
+  recording whether CRX assets were signed with the external maintainer key
+  or an ephemeral validation key. The release manifest folds that in as
+  `crxSigningMode`, and `release:readiness --require-pass` fails
+  ephemeral-signed builds unless the manifest was explicitly labeled with
+  `--validation-build` / `ASTRA_VALIDATION_RELEASE=1` — a throwaway CRX key
+  means a throwaway extension ID, so a validation-signed public upload would
+  strand every existing install off the update path.
 
 ## [4.46.35] - 2026-07-09
 

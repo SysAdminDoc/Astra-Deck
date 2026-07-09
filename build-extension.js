@@ -28,6 +28,11 @@ const USERSCRIPT_BASENAME = getUserscriptBasename(__dirname);
 const CRX_KEY_PATH_ENV = 'ASTRA_CRX_KEY_PATH';
 const CRX_KEY_MODE_ENV = 'ASTRA_CRX_KEY_MODE';
 const CRX_KEY_MODES = Object.freeze(['external', 'ephemeral']);
+// Local-only signing provenance marker. generate-release-manifest.js reads
+// this to stamp `crxSigningMode` into release-manifest.json so release
+// readiness can refuse public releases built with validation (ephemeral)
+// signing. Never uploaded as a release asset.
+const CRX_SIGNING_PROVENANCE_NAME = 'crx-signing-provenance.json';
 
 const BUILD_PROFILE_IDS = Object.freeze(['store-safe', 'github-full']);
 const BUILD_PROFILES = Object.freeze({
@@ -640,6 +645,19 @@ async function build() {
         }
     }
 
+    // Record how this run's CRX assets were signed so downstream release
+    // tooling can distinguish publishable external-key builds from
+    // validation-only ephemeral builds.
+    fs.writeFileSync(
+        path.join(BUILD_DIR, CRX_SIGNING_PROVENANCE_NAME),
+        JSON.stringify({
+            schemaVersion: 1,
+            mode: crxSigningConfig.mode,
+            generatedAt: new Date().toISOString()
+        }, null, 2) + '\n',
+        'utf8'
+    );
+
     // ── Optional Userscript Build Artifact ──
     if (INCLUDE_USERSCRIPT) {
         const userscriptDestName = 'ytkit-v' + version + '.user.js';
@@ -733,6 +751,7 @@ module.exports = {
     BUILD_PROFILES,
     buildExtensionPagesCsp,
     copyDir,
+    CRX_SIGNING_PROVENANCE_NAME,
     defaultCrxKeyPath,
     expandBuildProfileSelection,
     getArtifactBaseName,
