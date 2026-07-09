@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- No unreleased changes.
+
+## [4.46.33] - 2026-07-09
+
 - **Fix: optional-host smoke timeout hardening.** The Chromium optional-host
   release smoke now bounds stalled DevTools HTTP requests, so a wedged
   browser endpoint fails fast instead of hanging local release verification.
