@@ -8,48 +8,14 @@ const { spawnSync } = require('child_process');
 const { patchManifestForFirefox } = require('./manifest-patch');
 const {
     BUILD_PROFILE_IDS,
+    copyDir,
     patchManifestForBuildProfile,
+    shouldStageEntry,
 } = require('../build-extension.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const EXT_DIR = path.join(REPO_ROOT, 'extension');
 const WEB_EXT_BIN = path.join(REPO_ROOT, 'node_modules', 'web-ext', 'bin', 'web-ext.js');
-
-const STAGE_SKIP_NAMES = new Set([
-    '.git',
-    '.DS_Store',
-    'Thumbs.db',
-    'node_modules',
-    '.claude-octopus',
-]);
-
-const STAGE_SKIP_SUFFIXES = [
-    '.map',
-    '.tmp',
-    '.bak',
-    '.orig',
-    '.rej',
-    // Keep in sync with build-extension.js — key material and logs must
-    // never reach a staged artifact.
-    '.pem',
-    '.log',
-];
-
-function shouldStageEntry(entryName) {
-    if (STAGE_SKIP_NAMES.has(entryName)) return false;
-    return !STAGE_SKIP_SUFFIXES.some((suffix) => entryName.endsWith(suffix));
-}
-
-function copyDir(src, dest) {
-    fs.mkdirSync(dest, { recursive: true });
-    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-        if (!shouldStageEntry(entry.name)) continue;
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-        if (entry.isDirectory()) copyDir(srcPath, destPath);
-        else fs.copyFileSync(srcPath, destPath);
-    }
-}
 
 function createFirefoxStage(profile, stageRoot) {
     if (!BUILD_PROFILE_IDS.includes(profile)) {

@@ -13,6 +13,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -41,21 +42,66 @@ test('ISOLATED content_scripts blocks declare deep-equal js bundles', () => {
         'live_chat ISOLATED bundle must match the main-pages bundle');
 });
 
-test('build-extension shouldStageEntry refuses .pem and .log files', () => {
+test('build-extension shouldStageEntry refuses key, token, and log files', () => {
     const { shouldStageEntry } = require('../build-extension.js');
-    assert.equal(shouldStageEntry('ytkit.pem'), false, '.pem must never be staged into artifacts');
-    assert.equal(shouldStageEntry('debug.log'), false, '.log must never be staged into artifacts');
+    for (const name of [
+        '.env',
+        '.env.local',
+        'cert.p12',
+        'debug.log',
+        'id_rsa',
+        'private.key',
+        'token.txt',
+        'tokens.json',
+        'ytkit.pem'
+    ]) {
+        assert.equal(shouldStageEntry(name), false, `${name} must never be staged into artifacts`);
+    }
     assert.equal(shouldStageEntry('manifest.json'), true, 'real extension files must still stage');
     assert.equal(shouldStageEntry('ytkit.js'), true, 'real extension files must still stage');
 });
 
-test('duplicate staging skip-lists in scripts/ stay in sync on .pem/.log', () => {
+test('staging scripts reuse the shared build copier and filter', () => {
     for (const rel of ['scripts/check-firefox-webext.js', 'scripts/smoke-chromium-optional-hosts.js']) {
         const src = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
-        const listMatch = src.match(/STAGE_SKIP_SUFFIXES = \[[^\]]+\]/);
-        assert.ok(listMatch, rel + ' must declare STAGE_SKIP_SUFFIXES');
-        assert.match(listMatch[0], /'\.pem'/, rel + ' skip-list must include .pem');
-        assert.match(listMatch[0], /'\.log'/, rel + ' skip-list must include .log');
+        assert.doesNotMatch(src, /STAGE_SKIP_SUFFIXES|STAGE_SECRET_SUFFIXES|function copyDir\(/,
+            rel + ' must not keep a duplicate staging implementation');
+        assert.match(src, /copyDir,/,
+            rel + ' must import the shared build copier');
+        assert.match(src, /shouldStageEntry,/,
+            rel + ' must re-export the shared stage filter for tests');
+    }
+});
+
+test('extension staging refuses symlinked entries before copying target bytes', (t) => {
+    const { copyDir } = require('../build-extension.js');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-stage-symlink-'));
+    try {
+        const source = path.join(root, 'extension');
+        const stage = path.join(root, 'stage');
+        const outsideSecret = path.join(root, 'outside-secret.txt');
+        const symlinkPath = path.join(source, 'public.png');
+        fs.mkdirSync(source);
+        fs.writeFileSync(path.join(source, 'manifest.json'), '{}\n', 'utf8');
+        fs.writeFileSync(outsideSecret, 'do-not-package', 'utf8');
+        try {
+            fs.symlinkSync(outsideSecret, symlinkPath, 'file');
+        } catch (error) {
+            if (error && (error.code === 'EPERM' || error.code === 'EACCES')) {
+                t.skip('filesystem does not permit symlink creation for this user');
+                return;
+            }
+            throw error;
+        }
+        assert.throws(
+            () => copyDir(source, stage),
+            /Refusing to stage symlink or reparse point/,
+            'staging must fail closed on symlinked extension entries'
+        );
+        assert.equal(fs.existsSync(path.join(stage, 'public.png')), false,
+            'symlink target bytes must not be copied into the stage directory');
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
     }
 });
 

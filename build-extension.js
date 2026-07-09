@@ -313,22 +313,77 @@ const STAGE_SKIP_SUFFIXES = [
     '.log'
 ];
 
+const STAGE_SECRET_NAMES = new Set([
+    '.env',
+    '.npmrc',
+    '.pypirc',
+    '.netrc',
+    'cert.p12',
+    'client_secret.json',
+    'credentials.json',
+    'id_dsa',
+    'id_ecdsa',
+    'id_ed25519',
+    'id_rsa',
+    'private.key',
+    'secret.txt',
+    'secrets.json',
+    'token.txt',
+    'tokens.json'
+]);
+
+const STAGE_SECRET_SUFFIXES = [
+    '.key',
+    '.p12',
+    '.pfx',
+    '.jks',
+    '.keystore'
+];
+
 function shouldStageEntry(entryName) {
-    if (STAGE_SKIP_NAMES.has(entryName)) return false;
-    return !STAGE_SKIP_SUFFIXES.some(suffix => entryName.endsWith(suffix));
+    const name = String(entryName || '');
+    const lower = name.toLowerCase();
+    if (!name) return false;
+    if (STAGE_SKIP_NAMES.has(name) || STAGE_SKIP_NAMES.has(lower)) return false;
+    if (STAGE_SECRET_NAMES.has(lower) || lower.startsWith('.env.')) return false;
+    return ![...STAGE_SKIP_SUFFIXES, ...STAGE_SECRET_SUFFIXES].some(suffix => lower.endsWith(suffix));
+}
+
+function assertPathInsideRoot(candidate, root, label = 'stage path') {
+    const relative = path.relative(root, candidate);
+    if (!relative) return;
+    if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) return;
+    throw new Error(`${label} escapes extension root: ${candidate}`);
+}
+
+function realpathInsideRoot(candidate, rootReal, label) {
+    const real = fs.realpathSync(candidate);
+    assertPathInsideRoot(real, rootReal, label);
+    return real;
 }
 
 // Copy extension files while skipping temp/editor artifacts
-function copyDir(src, dest) {
+function copyDir(src, dest, options = {}) {
+    const root = options.root || src;
+    const rootReal = options.rootReal || fs.realpathSync(root);
+    realpathInsideRoot(src, rootReal, 'stage source directory');
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
         if (!shouldStageEntry(entry.name)) continue;
         const srcPath = path.join(src, entry.name);
         const destPath = path.join(dest, entry.name);
+        const relativePath = path.relative(root, srcPath);
+        const stat = fs.lstatSync(srcPath);
+        if (stat.isSymbolicLink()) {
+            throw new Error(`Refusing to stage symlink or reparse point: ${relativePath}`);
+        }
+        realpathInsideRoot(srcPath, rootReal, `stage entry ${relativePath}`);
         if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
-        } else {
+            copyDir(srcPath, destPath, { root, rootReal });
+        } else if (stat.isFile()) {
             fs.copyFileSync(srcPath, destPath);
+        } else {
+            throw new Error(`Refusing to stage non-file entry: ${relativePath}`);
         }
     }
 }
@@ -459,16 +514,27 @@ function patchStagedManifest(stageDir, profile, browser) {
 }
 
 // Collect all files in a directory recursively (relative paths)
-function listFiles(dir, base) {
+function listFiles(dir, base, options = {}) {
     base = base || dir;
+    const root = options.root || base;
+    const rootReal = options.rootReal || fs.realpathSync(root);
+    realpathInsideRoot(dir, rootReal, 'stage file list directory');
     let files = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         if (!shouldStageEntry(entry.name)) continue;
         const full = path.join(dir, entry.name);
+        const relativePath = path.relative(root, full);
+        const stat = fs.lstatSync(full);
+        if (stat.isSymbolicLink()) {
+            throw new Error(`Refusing to list staged symlink or reparse point: ${relativePath}`);
+        }
+        realpathInsideRoot(full, rootReal, `staged file entry ${relativePath}`);
         if (entry.isDirectory()) {
-            files = files.concat(listFiles(full, base));
-        } else {
+            files = files.concat(listFiles(full, base, { root, rootReal }));
+        } else if (stat.isFile()) {
             files.push(full);
+        } else {
+            throw new Error(`Refusing to list non-file staged entry: ${relativePath}`);
         }
     }
     return files;
@@ -667,12 +733,14 @@ module.exports = {
     BUILD_PROFILE_IDS,
     BUILD_PROFILES,
     buildExtensionPagesCsp,
+    copyDir,
     defaultCrxKeyPath,
     expandBuildProfileSelection,
     getArtifactBaseName,
     getManifestProfileHostPermissions,
     getManifestProfileOptionalHostPermissions,
     getManifestWebAccessibleResources,
+    listFiles,
     patchManifestForBuildProfile,
     resolveCrxSigningConfig,
     shouldStageEntry,
