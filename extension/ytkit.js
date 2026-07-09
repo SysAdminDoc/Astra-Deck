@@ -4294,6 +4294,9 @@ return response;
             shortsSpeedControl: false,
             shortsAutoAdvance: false,
             fullscreenScroll: false,
+            autoSubtitlesWhenMuted: false,
+            subtitlesOnRewind: false,
+            liveSpeedReset: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -25161,6 +25164,177 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._enableTimer) clearTimeout(this._enableTimer);
                 this._enableTimer = null;
                 removeNavigateRule('autoSubtitles');
+            }
+        },
+        {
+            id: 'autoSubtitlesWhenMuted',
+            name: 'Subtitles While Muted',
+            description: 'Turn captions on automatically while the video is muted and restore the previous caption state on unmute',
+            group: 'Playback',
+            icon: 'subtitles',
+            pages: [PageTypes.WATCH],
+            _videoRef: null,
+            _handler: null,
+            _weEnabled: false,
+
+            _ccButton() { return document.querySelector('#movie_player .ytp-subtitles-button'); },
+            _ccOn() { return this._ccButton()?.getAttribute('aria-pressed') === 'true'; },
+
+            _sync() {
+                const v = this._videoRef;
+                if (!v) return;
+                const muted = v.muted || v.volume === 0;
+                if (muted && !this._ccOn()) {
+                    this._ccButton()?.click();
+                    this._weEnabled = true;
+                } else if (!muted && this._weEnabled && this._ccOn()) {
+                    this._ccButton()?.click();
+                    this._weEnabled = false;
+                }
+            },
+            _attach() {
+                const v = getMainVideoElement();
+                if (!v || v === this._videoRef) return;
+                if (this._videoRef && this._handler) this._videoRef.removeEventListener('volumechange', this._handler);
+                this._videoRef = v;
+                v.addEventListener('volumechange', this._handler);
+            },
+
+            init() {
+                this._handler = () => this._sync();
+                this._attach();
+                addNavigateRule('autoSubtitlesWhenMuted', () => { this._weEnabled = false; this._attach(); });
+            },
+            destroy() {
+                if (this._videoRef && this._handler) this._videoRef.removeEventListener('volumechange', this._handler);
+                this._videoRef = null;
+                this._handler = null;
+                this._weEnabled = false;
+                removeNavigateRule('autoSubtitlesWhenMuted');
+            }
+        },
+        {
+            id: 'subtitlesOnRewind',
+            name: 'Subtitles on Rewind',
+            description: 'After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state',
+            group: 'Playback',
+            icon: 'subtitles',
+            pages: [PageTypes.WATCH],
+            _videoRef: null,
+            _seekHandler: null,
+            _lastTime: 0,
+            _timeHandler: null,
+            _restoreTimer: null,
+            _weEnabled: false,
+
+            _ccButton() { return document.querySelector('#movie_player .ytp-subtitles-button'); },
+            _ccOn() { return this._ccButton()?.getAttribute('aria-pressed') === 'true'; },
+
+            _onSeeked() {
+                const v = this._videoRef;
+                if (!v) return;
+                const isRewind = v.currentTime < this._lastTime - 1;
+                this._lastTime = v.currentTime;
+                if (!isRewind) return;
+                if (!this._ccOn()) {
+                    this._ccButton()?.click();
+                    this._weEnabled = true;
+                }
+                if (this._weEnabled) {
+                    if (this._restoreTimer) clearTimeout(this._restoreTimer);
+                    this._restoreTimer = setTimeout(() => {
+                        this._restoreTimer = null;
+                        if (this._weEnabled && this._ccOn()) this._ccButton()?.click();
+                        this._weEnabled = false;
+                    }, 10000);
+                }
+            },
+            _attach() {
+                const v = getMainVideoElement();
+                if (!v || v === this._videoRef) return;
+                if (this._videoRef) {
+                    this._videoRef.removeEventListener('seeked', this._seekHandler);
+                    this._videoRef.removeEventListener('timeupdate', this._timeHandler);
+                }
+                this._videoRef = v;
+                v.addEventListener('seeked', this._seekHandler);
+                v.addEventListener('timeupdate', this._timeHandler);
+            },
+
+            init() {
+                this._seekHandler = () => this._onSeeked();
+                this._timeHandler = () => {
+                    const v = this._videoRef;
+                    // Only advance the marker during normal playback so a seek
+                    // event still sees the pre-seek position.
+                    if (v && !v.seeking) this._lastTime = v.currentTime;
+                };
+                this._attach();
+                addNavigateRule('subtitlesOnRewind', () => { this._weEnabled = false; this._lastTime = 0; this._attach(); });
+            },
+            destroy() {
+                if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
+                if (this._videoRef) {
+                    this._videoRef.removeEventListener('seeked', this._seekHandler);
+                    this._videoRef.removeEventListener('timeupdate', this._timeHandler);
+                }
+                this._videoRef = null;
+                this._seekHandler = null;
+                this._timeHandler = null;
+                this._weEnabled = false;
+                removeNavigateRule('subtitlesOnRewind');
+            }
+        },
+        {
+            id: 'liveSpeedReset',
+            name: 'Live Catch-Up Speed Reset',
+            description: 'When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge',
+            group: 'Playback',
+            icon: 'gauge',
+            pages: [PageTypes.WATCH],
+            _videoRef: null,
+            _handler: null,
+            _priorRate: null,
+
+            _isLive() { return !!document.querySelector('#movie_player.ytp-live'); },
+            _latency(v) {
+                try {
+                    if (!v.seekable || !v.seekable.length) return Infinity;
+                    return v.seekable.end(v.seekable.length - 1) - v.currentTime;
+                } catch { /* reason: seekable ranges can throw during teardown; treat as not-at-edge */ return Infinity; }
+            },
+            _tick() {
+                const v = this._videoRef;
+                if (!v || !this._isLive()) return;
+                const latency = this._latency(v);
+                if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
+                    this._priorRate = v.playbackRate;
+                    v.playbackRate = 1;
+                    showToast('Caught up to live — speed reset to 1×', '#22c55e', { duration: 3 });
+                } else if (this._priorRate != null && latency > 15) {
+                    v.playbackRate = this._priorRate;
+                    this._priorRate = null;
+                }
+            },
+            _attach() {
+                const v = getMainVideoElement();
+                if (!v || v === this._videoRef) return;
+                if (this._videoRef && this._handler) this._videoRef.removeEventListener('timeupdate', this._handler);
+                this._videoRef = v;
+                v.addEventListener('timeupdate', this._handler);
+            },
+
+            init() {
+                this._handler = () => this._tick();
+                this._attach();
+                addNavigateRule('liveSpeedReset', () => { this._priorRate = null; this._attach(); });
+            },
+            destroy() {
+                if (this._videoRef && this._handler) this._videoRef.removeEventListener('timeupdate', this._handler);
+                this._videoRef = null;
+                this._handler = null;
+                this._priorRate = null;
+                removeNavigateRule('liveSpeedReset');
             }
         },
         {

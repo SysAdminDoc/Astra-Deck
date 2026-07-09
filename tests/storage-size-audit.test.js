@@ -64,7 +64,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Shorts speed control + auto-advance add 2 booleans (53 bytes).
     // Scroll-in-fullscreen adds 1 boolean (25 bytes).
     // Watch Later workbench adds 1 boolean (28 bytes).
-    assert.equal(assessment.totalBytes, 178877);
+    // Muted/rewind caption triggers + live-edge speed reset add 3 booleans (80 bytes).
+    assert.equal(assessment.totalBytes, 178957);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Contextual caption triggers.** Two new subtitle toggles: Subtitles While
+  Muted turns captions on while the video is muted and restores the previous
+  caption state on unmute; Subtitles on Rewind flashes captions for 10 seconds
+  after a backwards seek so the missed line is readable. Both only ever undo
+  caption state they set themselves.
+- **Live Catch-Up Speed Reset.** When a live stream watched above 1x reaches
+  the live edge, playback resets to 1x (with a toast); seeking back more than
+  15 seconds behind the edge restores your previous speed.
 - **Watch Later Workbench.** New bulk-management panel on the Watch Later
   playlist: filter loaded rows by watched %, channel, or title with a live
   preview (sortable by duration or title), export the scan as CSV/JSON, and

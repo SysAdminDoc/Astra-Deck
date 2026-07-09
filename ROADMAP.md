@@ -20,12 +20,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: MAIN-world bridge `extension/ytkit-main.js` (player-response interception); risk review for store-safe.
   Acceptance: On a DVR-disabled live fixture, seekbar becomes scrubable; feature off by default with degradation note when player-response shape drifts.
   Complexity: M
-- [ ] P2 — Live-edge speed reset
-  Why: With persistentSpeed >1x on a live stream, playback hits the live edge and stalls; competitor userscript auto-resets to 1x when caught up.
-  Evidence: competitor userscript v10.16.
-  Where: persistentSpeed / player task manager in `extension/core/player.js`.
-  Acceptance: Speed >1x on live content reverts to 1x within 2s of reaching live edge; resumes user speed when they seek back; unit test on mocked live progress.
-  Complexity: S
 - [ ] P2 — Floating live chat in fullscreen
   Why: Live viewers lose chat in fullscreen; an overlay chat panel (draggable, opacity slider) is a proven ask.
   Evidence: CY Fung "Floating Chat Window on Fullscreen"; Bunnelby chat stylizer.
@@ -38,12 +32,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: new `extension/features/` module, chat replay frame observation, canvas sparkline over progress bar.
   Acceptance: On VODs with chat replay, a density sparkline renders above the progress bar; clicking a spike seeks there; sampling budgeted/cancellable per navigation rules.
   Complexity: L
-- [ ] P2 — Subtitles: auto-enable while muted + flash-on-rewind
-  Why: Contextual caption triggers (muted → captions on; rewind → captions for 10s) are smart defaults competitor userscript shipped in v11; complements autoSubtitles.
-  Evidence: competitor userscript v11.0.
-  Where: autoSubtitles block, volume/mute + seek event handlers.
-  Acceptance: Muting enables CC and unmuting restores prior CC state; rewind shows CC for 10s then restores; both independent toggles, off by default.
-  Complexity: S
 - [ ] P2 — Dual-language subtitles
   Why: Simultaneous two-track captions is a ~30k-install userscript niche (language learners, international viewers) absent from every major suite.
   Evidence: YtDLS (CY Fung, 2.4k), Youtube dual subtitle (0xjax, 12.9k), vanadis bilingual persist (15.4k).
