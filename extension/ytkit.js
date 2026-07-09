@@ -4293,6 +4293,7 @@ return response;
             persistentQueueAutoAdvance: true,
             shortsSpeedControl: false,
             shortsAutoAdvance: false,
+            fullscreenScroll: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -30175,6 +30176,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         cssFeature('squareAvatars', 'Square Avatars', 'Make channel avatars square instead of round', 'Theme', 'user',
             'yt-img-shadow, #avatar-link, #author-thumbnail, ytd-channel-avatar-editor img, yt-img-shadow img, .yt-spec-avatar-shape--circle { border-radius: 0 !important; }'),
+
+        // ── Scroll in Fullscreen ──
+        {
+            id: 'fullscreenScroll',
+            name: 'Scroll in Fullscreen',
+            description: 'Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video',
+            group: 'Video Player',
+            icon: 'arrow-down',
+            pages: [PageTypes.WATCH],
+            _styleEl: null,
+            init() {
+                // Verified against the live 2026-07 watch DOM: fullscreen is
+                // requested on <html>, ytd-app gains [fullscreen] and body gets
+                // overflow:hidden while #columns is display:none. Restoring
+                // both re-enables the pre-2024 native fullscreen-scroll layout.
+                this._styleEl = injectStyle(`
+                    html:fullscreen body { overflow-y: auto !important; }
+                    ytd-app[fullscreen] ytd-watch-flexy[fullscreen] #columns { display: flex !important; background: var(--yt-spec-base-background, #0f0f0f); }
+                `, this.id, true);
+            },
+            destroy() {
+                this._styleEl?.remove(); this._styleEl = null;
+            }
+        },
 
         // ── Fit Player to Window ──
         {

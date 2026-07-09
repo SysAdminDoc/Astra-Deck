@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "Plein écran au double-clic"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Monte un conteneur unique masqué role=status / aria-live=polite sous le body du document. Les lecteurs d'écran annoncent tout texte qu'Astra y écrit (corps des toasts, résultats de filtrage, changements d'état de téléchargement)."
   },

@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "双击全屏"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "在文档正文下挂载一个隐藏的 role=status / aria-live=polite 容器。屏幕阅读器会朗读 Astra 写入其中的任何文本（通知内容、过滤结果、下载状态变更）。"
   },

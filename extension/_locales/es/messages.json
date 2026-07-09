@@ -1034,6 +1034,12 @@
   "feature_fullscreenOnDoubleClick_name": {
     "message": "Pantalla completa con doble clic"
   },
+  "feature_fullscreenScroll_desc": {
+    "message": "Scroll down while fullscreen to read the description, comments, and related videos; scroll back up to return to the video"
+  },
+  "feature_fullscreenScroll_name": {
+    "message": "Scroll in Fullscreen"
+  },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Monta un contenedor oculto con role=status / aria-live=polite bajo el cuerpo del documento. Los lectores de pantalla anuncian cualquier texto que Astra escriba en él (cuerpo de notificaciones, resultados de filtros, cambios de estado de descarga)."
   },
