@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.48.0] - 2026-07-09
+
 - **Contextual caption triggers.** Two new subtitle toggles: Subtitles While
   Muted turns captions on while the video is muted and restores the previous
   caption state on unmute; Subtitles on Rewind flashes captions for 10 seconds
