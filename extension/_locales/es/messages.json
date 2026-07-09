@@ -410,6 +410,12 @@
   "feature_autoDownloadOnVisit_name": {
     "message": "Descarga automática de videos"
   },
+  "feature_autoExitFullscreen_desc": {
+    "message": "Leave fullscreen automatically when a video finishes, unless a playlist or queue advances to a next video"
+  },
+  "feature_autoExitFullscreen_name": {
+    "message": "Auto-Exit Fullscreen at End"
+  },
   "feature_autoExpandComments_desc": {
     "message": "Expandir automáticamente los comentarios truncados para que el texto completo siempre sea visible"
   },

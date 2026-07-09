@@ -91,6 +91,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     audioPan: 'intentional-extension-only',
     audioTrackLanguage: 'intentional-extension-only',
     autoDismissContentWarning: 'not-yet-ported',
+    autoExitFullscreen: 'intentional-extension-only',
     bulkCardActions: 'intentional-extension-only',
     chapterJumpButtons: 'not-yet-ported',
     classicLayoutProfile: 'intentional-extension-only',

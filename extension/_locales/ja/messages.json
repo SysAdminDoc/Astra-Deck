@@ -410,6 +410,12 @@
   "feature_autoDownloadOnVisit_name": {
     "message": "動画の自動ダウンロード"
   },
+  "feature_autoExitFullscreen_desc": {
+    "message": "Leave fullscreen automatically when a video finishes, unless a playlist or queue advances to a next video"
+  },
+  "feature_autoExitFullscreen_name": {
+    "message": "Auto-Exit Fullscreen at End"
+  },
   "feature_autoExpandComments_desc": {
     "message": "省略されたコメントを自動展開し、全文を常に表示"
   },
