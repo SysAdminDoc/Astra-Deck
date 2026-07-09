@@ -13,6 +13,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Fix: README language inventory drift.** The language table now includes
   the shipped Arabic locale and an i18n regression test checks the README
   count/table against the live `extension/_locales` directories.
+- **Fix: extension settings Takeout import recovery.** The modular extension
+  settings overlay now matches the extension fallback for large YouTube Takeout
+  imports: 500 MB cap, pre-import watch-time snapshot, immediate panel refresh,
+  and an Undo action that restores the prior local watch-time store.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed

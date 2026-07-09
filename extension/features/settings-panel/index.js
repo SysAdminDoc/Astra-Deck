@@ -2651,6 +2651,7 @@ function attachUIEventListeners() {
                 return;
             }
             if (e.target.closest('#ytkit-import-history')) {
+                const preImportStats = StorageManager.get(STORAGE_KEYS.watchTime, null);
                 handleFileImport(async (content) => {
                     const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
                     if (result?.ok) {
@@ -2659,14 +2660,32 @@ function attachUIEventListeners() {
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
                             }, 'takeout-import', { forceApplyLocal: true });
                         }
-                        createToast(result.message, result.toastTone || result.tone || 'success');
+                        if (preImportStats !== null) {
+                            showToast(result.message, '#22c55e', {
+                                duration: 8,
+                                action: {
+                                    text: 'Undo',
+                                    onClick: () => {
+                                        StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);
+                                        handleExternalStorageChanges({
+                                            [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
+                                        }, 'takeout-undo', { forceApplyLocal: true });
+                                        const undoMessage = t('statusTakeoutImportUndone', 'Takeout import undone');
+                                        createToast(undoMessage, 'success');
+                                        setPanelStatus(undoMessage, 'success');
+                                    }
+                                }
+                            });
+                        } else {
+                            createToast(result.message, result.toastTone || result.tone || 'success');
+                        }
                         setPanelStatus(result.message, result.statusTone || result.tone || 'success');
                     } else {
                         const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
                         createToast(message, 'error');
                         setPanelStatus(message, 'error');
                     }
-                });
+                }, { maxBytes: 500 * 1024 * 1024 });
             }
         });
 
