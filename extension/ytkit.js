@@ -15798,6 +15798,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _collapseBtn: null,
             _launcherButton: null,
             _observer: null,
+            _observerThrottle: null,
             _renderFrame: 0,
             _readyTimer: null,
             _timer: null,
@@ -16649,9 +16650,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (document.body) this._buildLauncher();
                 else this._readyTimer = setTimeout(() => this._buildLauncher(), 100);
 
+                // Trailing-edge throttle: live chat mutates hundreds of times
+                // per second and _restoreReactionButton runs querySelectorAll
+                // synchronously — collapse each burst into at most one pass
+                // per 250 ms window.
                 this._observer = new MutationObserver(() => {
-                    this._restoreReactionButton();
-                    this._scheduleRender();
+                    if (this._observerThrottle) return;
+                    this._observerThrottle = setTimeout(() => {
+                        this._observerThrottle = null;
+                        this._restoreReactionButton();
+                        this._scheduleRender();
+                    }, 250);
                 });
                 this._observer.observe(document.documentElement, { childList: true, subtree: true });
 
@@ -16668,6 +16677,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._renderFrame) {
                     cancelAnimationFrame(this._renderFrame);
                     this._renderFrame = 0;
+                }
+                if (this._observerThrottle) {
+                    clearTimeout(this._observerThrottle);
+                    this._observerThrottle = null;
                 }
                 this._observer?.disconnect();
                 this._observer = null;
@@ -22361,6 +22374,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Cache sanitized stats so the 10s tick doesn't re-sort/rebuild the
             // imported ledger (up to 5000 entries) on every tick.
             _statsCache: null,
+            // chrome.storage.local write throughput is a budget shared by every
+            // feature; persisting on every 10s tick burned 6 writes/min on
+            // stats alone. Accumulate in memory and persist at most once per
+            // minute, flushing on pause, teardown, and pagehide.
+            _PERSIST_INTERVAL_MS: 60000,
+            _lastPersist: 0,
+            _dirty: false,
+            _flushHandler: null,
 
             _getStats() {
                 if (this._statsCache) return this._statsCache;
@@ -22374,12 +22395,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // The ledger was already sanitized when it was loaded (via _getStats)
                 // and only changes during a Takeout import (which invalidates the
                 // cache via storage change listener).
-                StorageManager.set(this._storageKey, stats);
                 this._statsCache = stats;
+                const now = Date.now();
+                if (this._lastPersist && now - this._lastPersist < this._PERSIST_INTERVAL_MS) {
+                    this._dirty = true;
+                    return stats;
+                }
+                StorageManager.set(this._storageKey, stats);
+                this._lastPersist = now;
+                this._dirty = false;
                 return stats;
             },
 
-            _invalidateStatsCache() { this._statsCache = null; },
+            _flushStats() {
+                if (this._dirty && this._statsCache) {
+                    StorageManager.set(this._storageKey, this._statsCache);
+                    this._lastPersist = Date.now();
+                    this._dirty = false;
+                }
+            },
+
+            _invalidateStatsCache() {
+                // External storage change (Takeout import) supersedes any
+                // unpersisted in-memory delta — drop it rather than clobber
+                // the freshly imported ledger with stale cache.
+                this._statsCache = null;
+                this._dirty = false;
+            },
 
             _todayKey() {
                 const d = new Date();
@@ -22388,7 +22430,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _tick() {
                 const video = document.querySelector('video.html5-main-video');
-                if (!video || video.paused || video.ended) { this._lastTick = null; return; }
+                if (!video || video.paused || video.ended) {
+                    this._lastTick = null;
+                    // Playback stopped — persist the accumulated delta now so
+                    // the throttle window can't strand active-session minutes.
+                    this._flushStats();
+                    return;
+                }
                 const now = Date.now();
                 if (this._lastTick) {
                     const elapsed = Math.min((now - this._lastTick) / 1000, 15);
@@ -22426,10 +22474,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 if (this._interval) clearInterval(this._interval);
                 this._interval = setInterval(() => this._tick(), 10000);
+                if (!this._flushHandler) {
+                    this._flushHandler = () => this._flushStats();
+                    window.addEventListener('pagehide', this._flushHandler);
+                }
             },
             destroy() {
                 if (this._interval) { clearInterval(this._interval); this._interval = null; }
                 this._lastTick = null;
+                this._flushStats();
+                if (this._flushHandler) {
+                    window.removeEventListener('pagehide', this._flushHandler);
+                    this._flushHandler = null;
+                }
             }
         },
         cssFeature('alwaysShowProgressBar', 'Always Show Progress Bar', 'Keep the video progress bar visible at all times instead of hiding on idle', 'Watch Page', 'minus',

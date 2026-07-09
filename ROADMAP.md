@@ -46,18 +46,6 @@
 
 ## Audit Backlog (v4.46.35)
 
-- [ ] P2 — Throttle watchTimeTracker storage writes
-  Why: The watch time tracker writes to chrome.storage.local every 10 seconds while any video plays (6 writes/min). chrome.storage.local has a throughput limit of ~120 writes/min, and this consumes 5% of the budget for a single feature.
-  Where: `extension/ytkit.js` (watchTimeTracker._tick)
-
-- [ ] P2 — Throttle Reaction Spammer mutation observer
-  Why: The full-document MutationObserver calls `_restoreReactionButton()` + `_scheduleRender()` on every DOM mutation with no throttle. On busy live chat pages this fires hundreds of times per second.
-  Where: `extension/ytkit.js` (reactionSpammer observer)
-
-- [ ] P2 — Reduce video-hider _removedVideoNodes DOM retention
-  Why: Up to 500 detached DOM subtrees (including thumbnails and metadata) are held in memory via strong references. `nextSibling` references can anchor entire subsequent card subtrees.
-  Where: `extension/features/video-hider/index.js` (_removedVideoNodes)
-
 - [ ] P3 — Guard sync-userscript against bundled modules containing END marker
   Why: If any module in V5_BUNDLE_MODULES contains the END marker string, the next sync run's regex would match a truncated region, corrupting the userscript.
   Where: `sync-userscript.js`
