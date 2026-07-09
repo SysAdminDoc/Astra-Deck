@@ -415,6 +415,7 @@ function countStoredItems(value) {
 // Settings panel
 let _settingsSchema = null;
 let _settingsState = {};
+let _settingsLoadError = '';
 
 function getSchema() {
     if (_settingsSchema) return _settingsSchema;
@@ -431,7 +432,13 @@ async function loadSettings() {
         const data = await chrome.storage.local.get(SETTINGS_KEY);
         _settingsState = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
             ? data[SETTINGS_KEY] : {};
-    } catch (_) { _settingsState = {}; }
+        _settingsLoadError = '';
+        return true;
+    } catch (error) {
+        _settingsState = {};
+        _settingsLoadError = error?.message || 'Storage unavailable';
+        return false;
+    }
 }
 
 async function writeSetting(key, value) {
@@ -489,6 +496,21 @@ function renderSettings(filter) {
     settingsList.textContent = '';
     const schema = getSchema();
     const query = (filter || '').toLowerCase().trim();
+    if (_settingsLoadError) {
+        setText(overviewSettings, String(schema.length));
+        setText(overviewEnabled, '--');
+        if (settingsCount) settingsCount.textContent = 'Unavailable';
+        if (settingsClear) settingsClear.hidden = !query;
+        showEmpty(settingsEmpty, 'Quick settings could not load because browser storage is unavailable. Reload the panel, or use the toolbar popup after the extension context is ready.', 'error', {
+            title: 'Quick settings unavailable',
+            actionLabel: 'Reload panel',
+            actionAriaLabel: 'Reload the Astra Deck panel',
+            action: () => {
+                try { window.location.reload(); } catch (_) { /* reason: reload unavailable in static preview */ }
+            }
+        });
+        return;
+    }
     const visible = schema.filter(entry => {
         if (!query) return true;
         const humanName = formatHumanName(entry.key);
@@ -652,6 +674,7 @@ if (chrome.storage?.onChanged) {
         // same-named key in another area can't clobber the cache.
         if (areaName !== 'local') return;
         if (changes[SETTINGS_KEY]) {
+            _settingsLoadError = '';
             _settingsState = (changes[SETTINGS_KEY].newValue && typeof changes[SETTINGS_KEY].newValue === 'object')
                 ? changes[SETTINGS_KEY].newValue : {};
             // Preserve focus position across re-renders driven by external
@@ -681,9 +704,13 @@ async function refresh() {
             renderExternalHealth(tab),
             renderStorage()
         ]);
-        await loadSettings();
+        const settingsLoaded = await loadSettings();
         renderSettings(settingsSearch?.value || '');
-        setRefreshStatus(tab ? 'Live diagnostics updated' : 'Open YouTube for live diagnostics', tab ? 'success' : 'warn');
+        if (!settingsLoaded) {
+            setRefreshStatus('Diagnostics updated; quick settings could not load', 'warn');
+        } else {
+            setRefreshStatus(tab ? 'Live diagnostics updated' : 'Open YouTube for live diagnostics', tab ? 'success' : 'warn');
+        }
     } catch (_) {
         // reason: an unexpected render failure must not strand the only
         // recovery control disabled with a "Refreshing..." status forever.

@@ -11418,6 +11418,12 @@ test('sidepanel quick settings are grouped, searchable, and failure-aware', () =
         'setting rows must expose failed-save state');
     assert.match(src, /Could not save setting/,
         'failed saves must produce a human-readable status update');
+    assert.match(src, /let _settingsLoadError\s*=\s*''/,
+        'failed settings loads must keep explicit state instead of rendering default-looking toggles');
+    assert.match(src, /Quick settings could not load because browser storage is unavailable/,
+        'failed settings loads must render a structured recovery empty state');
+    assert.match(src, /Diagnostics updated; quick settings could not load/,
+        'refresh status must not claim full success when settings storage failed');
 });
 
 test('sidepanel.css has focus-visible styles for interactive elements', () => {
