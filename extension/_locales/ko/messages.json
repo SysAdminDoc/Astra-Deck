@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "다운로더 프롬프트 활성화"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "재설정"
   },

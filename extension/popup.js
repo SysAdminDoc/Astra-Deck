@@ -1154,7 +1154,8 @@ function getTabContext(tab) {
             label: t('contextStateYouTube', 'YouTube'),
             note: t('contextNoteInlinePanel', 'Open the full workspace on this tab; quick toggles apply immediately.'),
             openLabel: t('openFullSettings', 'Open Full Settings'),
-            mode: 'inline-panel'
+            mode: 'inline-panel',
+            state: 'ready'
         };
     }
     if (isAnyYouTubeUrl(url)) {
@@ -1162,14 +1163,16 @@ function getTabContext(tab) {
             label: t('contextStateYouTube', 'YouTube'),
             note: t('contextNoteLaunch', 'Open a watchable YouTube tab to use the full in-page workspace.'),
             openLabel: t('openYouTube', 'Open YouTube'),
-            mode: 'launch'
+            mode: 'launch',
+            state: 'warn'
         };
     }
     return {
         label: t('contextStateAnyTab', 'Any Tab'),
         note: t('contextNoteAnyTab', 'Quick toggles are saved now and sync when YouTube is open.'),
         openLabel: t('openYouTube', 'Open YouTube'),
-        mode: 'launch'
+        mode: 'launch',
+        state: 'local'
     };
 }
 
@@ -1177,6 +1180,7 @@ function updateContext(tab) {
     popupState.activeTab = tab || null;
     const nextContext = getTabContext(tab);
     contextState.textContent = nextContext.label;
+    contextState.dataset.state = nextContext.state;
     supportNote.textContent = nextContext.note;
     openPanelButton.textContent = nextContext.openLabel;
 }

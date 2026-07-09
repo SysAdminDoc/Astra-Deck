@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "Включить подсказки загрузчика"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "Сбросить"
   },

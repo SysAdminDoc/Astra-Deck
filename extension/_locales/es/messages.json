@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "Activar avisos del descargador"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "Restablecer"
   },

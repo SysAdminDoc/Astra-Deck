@@ -6,7 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
-- No unreleased changes.
+- **Style: premium extension command surfaces.** The toolbar popup and
+  Chrome/Firefox diagnostics sidebars now share a single graphite/ember design
+  token layer, stricter radius scale, stronger focus treatment, and quieter
+  elevation. The popup uses one reliable scroll owner, collapses recovery and
+  update tools under an accessible Maintenance disclosure, exposes truthful
+  tab-context tones, and keeps compact data actions available at narrow widths.
+  The diagnostics dashboard removes its nested settings scroller, adds explicit
+  refresh/loading/saving/error states, preserves two-line setting names, and
+  becomes a two-column command grid when the panel is wide enough.
 
 ## [4.47.0] - 2026-07-09
 

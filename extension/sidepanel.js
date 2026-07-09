@@ -117,9 +117,12 @@ function hideEmpty(el) {
 }
 
 function setBusy(isBusy) {
-    if (!refreshBtn) return;
-    refreshBtn.disabled = isBusy;
-    refreshBtn.setAttribute('aria-busy', String(isBusy));
+    document.body.dataset.loading = String(isBusy);
+    document.querySelector('.sp-main')?.setAttribute('aria-busy', String(isBusy));
+    if (refreshBtn) {
+        refreshBtn.disabled = isBusy;
+        refreshBtn.setAttribute('aria-busy', String(isBusy));
+    }
 }
 
 function isSupportedUrl(url) {
@@ -713,6 +716,7 @@ async function refresh() {
     setRefreshStatus('Refreshing...', 'busy');
     try {
         const tab = await getActiveYouTubeTab();
+        document.body.dataset.context = tab ? 'ready' : 'local';
         setContextState(tab ? 'YouTube tab' : 'Local only', tab ? 'ready' : 'warn');
         await Promise.all([
             renderPerf(tab),
@@ -730,7 +734,7 @@ async function refresh() {
     } catch (_) {
         // reason: an unexpected render failure must not strand the only
         // recovery control disabled with a "Refreshing..." status forever.
-        setRefreshStatus('Refresh failed — try again', 'warn');
+        setRefreshStatus('Refresh failed — try again', 'error');
     } finally {
         setBusy(false);
     }

@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "ダウンローダープロンプトを有効化"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "リセット"
   },

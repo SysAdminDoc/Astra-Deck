@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "Activer les invites du téléchargeur"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "Réinitialiser"
   },

@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "启用下载器提示"
   },
+  "maintenanceMenu": {
+    "message": "维护"
+  },
   "resetBtn": {
     "message": "重置"
   },

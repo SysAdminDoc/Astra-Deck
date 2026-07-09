@@ -2480,6 +2480,9 @@
   "reenableMediadlBtn": {
     "message": "Ativar Prompts do Downloader"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
   "resetBtn": {
     "message": "Redefinir"
   },
