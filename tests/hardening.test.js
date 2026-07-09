@@ -1380,6 +1380,16 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         'sidebar_action patch must remain idempotent across re-runs');
 });
 
+test('popup side-panel launcher avoids static unsupported Firefox API references', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8');
+    assert.doesNotMatch(src, /chrome\.sidePanel/,
+        'popup must not contain static chrome.sidePanel references because AMO flags unsupported APIs even behind guards');
+    assert.match(src, /chrome\?\.\['sidePanel'\]/,
+        'popup must feature-detect the Chrome-only sidePanel API dynamically');
+    assert.match(src, /sidePanelApi\['open'\]\.bind\(sidePanelApi\)/,
+        'popup must bind the dynamic sidePanel.open method before invoking it');
+});
+
 test('manifest PNG icons are square at declared sizes for AMO lint', () => {
     const manifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'),
