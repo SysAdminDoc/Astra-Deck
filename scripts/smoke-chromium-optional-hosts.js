@@ -16,6 +16,7 @@ const {
 const REPO_ROOT = path.join(__dirname, '..');
 const EXT_DIR = path.join(REPO_ROOT, 'extension');
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
+const DEVTOOLS_FETCH_TIMEOUT_MS = 2000;
 const POPUP_BOOT_SETTINGS = Object.freeze({
     sponsorBlock: true,
     returnDislike: true,
@@ -170,11 +171,22 @@ function devToolsUrl(port, route) {
     return `http://127.0.0.1:${port}${route}`;
 }
 
-async function fetchJsonFromDevTools(port, route, options) {
+async function fetchJsonFromDevTools(port, route, options = {}, timeoutMs = DEVTOOLS_FETCH_TIMEOUT_MS) {
     const url = devToolsUrl(port, route);
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}`);
-    return response.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}`);
+        return response.json();
+    } catch (error) {
+        if (error && error.name === 'AbortError') {
+            throw new Error(`Timed out waiting for Chromium DevTools response from ${url}.`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 async function waitForDevTools(port, timeoutMs) {
@@ -681,6 +693,7 @@ module.exports = {
     browserCandidates,
     chromiumArgs,
     createChromiumStage,
+    fetchJsonFromDevTools,
     hasLoadExtensionPolicyBlock,
     missingValues,
     parseArgs,

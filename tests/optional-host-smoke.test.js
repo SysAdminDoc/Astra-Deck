@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
@@ -78,6 +79,26 @@ test('optional-host Chromium smoke exposes headed denial and revoke modes', () =
         'smoke must report the denied prompt state explicitly');
     assert.match(smokeSource, /optional host revoke completed/,
         'smoke must report the post-revoke prompt state explicitly');
+});
+
+test('optional-host Chromium smoke bounds stalled DevTools HTTP requests', async () => {
+    const server = http.createServer(() => {
+        // Intentionally hold the response open to simulate a wedged DevTools endpoint.
+    });
+    await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', resolve);
+    });
+    const port = server.address().port;
+
+    try {
+        await assert.rejects(
+            () => smoke.fetchJsonFromDevTools(port, '/json/version', {}, 25),
+            /Timed out waiting for Chromium DevTools response/
+        );
+    } finally {
+        server.close();
+    }
 });
 
 test('optional-host smoke helper validates missing values and prompt readiness', () => {
