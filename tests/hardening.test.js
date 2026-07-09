@@ -9905,8 +9905,14 @@ test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pa
     // wiping so Undo Reset can restore byte-identical. This test
     // belongs to EI2 conceptually but we pin it here too so the NF14
     // pass can't silently remove the snapshot path.
-    assert.match(resetFnBody, /chrome\.storage\.local\.get\(null/,
+    assert.match(resetFnBody, /readLocalStorageSnapshot\(\)/,
         'resetAllData must snapshot all local storage before wiping (EI2 Undo path)');
+    assert.match(popupJs, /function readLocalStorageSnapshot|async function readLocalStorageSnapshot/,
+        'popup.js must keep the shared local-storage snapshot helper');
+    const snapshotHelperStart = popupJs.indexOf('async function readLocalStorageSnapshot');
+    const snapshotHelperBody = popupJs.slice(snapshotHelperStart, snapshotHelperStart + 500);
+    assert.match(snapshotHelperBody, /chrome\.storage\.local\.get\(null/,
+        'readLocalStorageSnapshot must capture the full local storage payload');
 
     const clearFnStart = popupJs.indexOf('async function clearDiagnosticLog');
     assert.ok(clearFnStart > -1, 'clearDiagnosticLog must still exist');
