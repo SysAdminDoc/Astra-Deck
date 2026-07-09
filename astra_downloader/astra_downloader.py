@@ -1146,6 +1146,7 @@ _FFMPEG_MIN_MAJOR = 7  # ffmpeg 8.x is current as of 2026; 7.x is the
                        # acceptable floor (covers most distros' bundles
                        # without forcing immediate refresh).
 _ffmpeg_capabilities_cache = {'value': None, 'checked_at': 0.0}
+_FFMPEG_CAPABILITIES_LOCK = threading.Lock()
 _FFMPEG_CAPABILITIES_TTL_SECONDS = 3600
 
 
@@ -1180,44 +1181,43 @@ def check_ffmpeg_capabilities(force=False):
     polls are cheap; force=True bypasses the cache (used after a re-pull
     of ffmpeg.exe).
     """
-    cache = _ffmpeg_capabilities_cache
-    now = time.time()
-    if not force and cache['value'] and (now - cache['checked_at']) < _FFMPEG_CAPABILITIES_TTL_SECONDS:
-        return cache['value']
-    version = get_ffmpeg_version()
-    major = parse_ffmpeg_major(version)
-    if major is None:
-        # No ffmpeg installed yet, or a git/snapshot build whose version
-        # is non-numeric. Treat as "current = unknown" rather than
-        # "stale" to avoid false alarms during first-run bootstrap.
-        result = {
-            'majorVersion': None,
-            'current': None,
-            'message': 'ffmpeg version not detected (first-run bootstrap or snapshot build)',
-        }
-    else:
-        current = major >= _FFMPEG_MIN_MAJOR
-        if current:
-            message = f'ffmpeg {major}.x meets the {_FFMPEG_MIN_MAJOR}+ floor'
+    with _FFMPEG_CAPABILITIES_LOCK:
+        cache = _ffmpeg_capabilities_cache
+        now = time.time()
+        if not force and cache['value'] and (now - cache['checked_at']) < _FFMPEG_CAPABILITIES_TTL_SECONDS:
+            return cache['value']
+        version = get_ffmpeg_version()
+        major = parse_ffmpeg_major(version)
+        if major is None:
+            result = {
+                'majorVersion': None,
+                'current': None,
+                'message': 'ffmpeg version not detected (first-run bootstrap or snapshot build)',
+            }
         else:
-            message = (
-                f'ffmpeg {major}.x is below the {_FFMPEG_MIN_MAJOR}+ floor; '
-                f'consider re-downloading via the bundled bootstrap'
-            )
-        result = {
-            'majorVersion': major,
-            'current': current,
-            'message': message,
-        }
-    cache['value'] = result
-    cache['checked_at'] = now
-    return result
+            current = major >= _FFMPEG_MIN_MAJOR
+            if current:
+                message = f'ffmpeg {major}.x meets the {_FFMPEG_MIN_MAJOR}+ floor'
+            else:
+                message = (
+                    f'ffmpeg {major}.x is below the {_FFMPEG_MIN_MAJOR}+ floor; '
+                    f'consider re-downloading via the bundled bootstrap'
+                )
+            result = {
+                'majorVersion': major,
+                'current': current,
+                'message': message,
+            }
+        cache['value'] = result
+        cache['checked_at'] = now
+        return result
 
 
 def reset_ffmpeg_capabilities_cache():
     """Test hook + post-ffmpeg-refresh re-check trigger."""
-    _ffmpeg_capabilities_cache['value'] = None
-    _ffmpeg_capabilities_cache['checked_at'] = 0.0
+    with _FFMPEG_CAPABILITIES_LOCK:
+        _ffmpeg_capabilities_cache['value'] = None
+        _ffmpeg_capabilities_cache['checked_at'] = 0.0
 
 
 # ── v1.2.0: throttled yt-dlp auto-update helpers ──

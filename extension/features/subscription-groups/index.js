@@ -978,7 +978,9 @@
                     if (!stamped.length) return;
                     cards.sort((a, b) =>
                         (Number(a.dataset.ytkitOrigIdx) || 0) - (Number(b.dataset.ytkitOrigIdx) || 0));
-                    cards.forEach(card => container.appendChild(card));
+                    const frag = document.createDocumentFragment();
+                    cards.forEach(card => frag.appendChild(card));
+                    container.appendChild(frag);
                     return;
                 }
                 // Stamp original DOM order once per card so 'default' can be
@@ -1035,7 +1037,9 @@
                     return 0;
                 };
                 cards.sort((a, b) => score(a) - score(b));
-                cards.forEach(card => container.appendChild(card));
+                const sortFrag = document.createDocumentFragment();
+                cards.forEach(card => sortFrag.appendChild(card));
+                container.appendChild(sortFrag);
             },
 
             _readAiTagData() {
