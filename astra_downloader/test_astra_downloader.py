@@ -193,6 +193,37 @@ class DownloadManagerTests(unittest.TestCase):
         self.assertFalse(manager.cancel(dl.id))
         self.assertEqual(dl.status, "complete")
 
+    def test_cancel_stamps_terminal_time(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        dl = ad.Download("active", "https://example.com/active")
+        manager.downloads[dl.id] = dl
+
+        self.assertTrue(manager.cancel(dl.id))
+        self.assertEqual(dl.status, "cancelled")
+        self.assertIsNotNone(dl.finished_time)
+
+    def test_cleanup_old_uses_finished_time_not_start_time(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        now = time.time()
+
+        recent_long_download = ad.Download("recent-long", "https://example.com/recent-long")
+        recent_long_download.status = "complete"
+        recent_long_download.start_time = now - 3600
+        recent_long_download.finished_time = now
+
+        old_terminal = ad.Download("old-terminal", "https://example.com/old-terminal")
+        old_terminal.status = "failed"
+        old_terminal.start_time = now - 3600
+        old_terminal.finished_time = now - 360
+
+        manager.downloads[recent_long_download.id] = recent_long_download
+        manager.downloads[old_terminal.id] = old_terminal
+
+        manager.cleanup_old()
+
+        self.assertIn(recent_long_download.id, manager.downloads)
+        self.assertNotIn(old_terminal.id, manager.downloads)
+
 
 class DownloadFailureClassifierTests(unittest.TestCase):
     def test_classifies_recoverable_youtube_failures(self):
