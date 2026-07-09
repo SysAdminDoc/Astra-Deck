@@ -1646,11 +1646,23 @@
   "feature_reducedMotion_name": {
     "message": "تقليل الحركة (قوي)"
   },
+  "feature_remainingTimeCompact_desc": {
+    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+  },
+  "feature_remainingTimeCompact_name": {
+    "message": "Compact Remaining Time"
+  },
   "feature_remainingTimeDisplay_desc": {
     "message": "عرض الوقت المتبقي بجانب الوقت الحالي في المشغّل، معدّل لسرعة التشغيل"
   },
   "feature_remainingTimeDisplay_name": {
     "message": "عرض الوقت المتبقي"
+  },
+  "feature_remainingTimeHideFullscreen_desc": {
+    "message": "Hide the remaining time readout while the player is fullscreen"
+  },
+  "feature_remainingTimeHideFullscreen_name": {
+    "message": "Hide in Fullscreen"
   },
   "feature_rememberVolume_desc": {
     "message": "حفظ مستوى الصوت عبر الفيديوهات والجلسات"
@@ -2729,14 +2741,14 @@
   "toggleUpdateFailTpl": {
     "message": "تعذّر تحديث …. حاول مرة أخرى."
   },
+  "undoResetAria": {
+    "message": "استعادة البيانات من آخر إعادة تعيين"
+  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
   "undoImportBtn": {
     "message": "Undo Import"
-  },
-  "undoResetAria": {
-    "message": "استعادة البيانات من آخر إعادة تعيين"
   },
   "undoResetBtn": {
     "message": "تراجع عن إعادة التعيين"

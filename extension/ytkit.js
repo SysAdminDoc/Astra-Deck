@@ -4285,6 +4285,8 @@ return response;
             // v3.2.0 features
             autoDismissStillWatching: false,
             remainingTimeDisplay: false,
+            remainingTimeCompact: false,
+            remainingTimeHideFullscreen: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -19875,6 +19877,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const h = Math.floor(secs / 3600);
                 const m = Math.floor((secs % 3600) / 60);
                 const s = secs % 60;
+                if (appState?.settings?.remainingTimeCompact) {
+                    // Compact: minute granularity once >= 60s, second granularity below
+                    if (secs < 60) return (neg ? '-' : '') + `${s}s`;
+                    const totalMin = Math.round(secs / 60);
+                    const ch = Math.floor(totalMin / 60);
+                    const cm = totalMin % 60;
+                    const ts = ch > 0 ? `${ch}h${String(cm).padStart(2, '0')}m` : `${cm}m`;
+                    return (neg ? '-' : '') + ts;
+                }
                 const ts = h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
                 return (neg ? '-' : '') + ts;
             },
@@ -19901,7 +19912,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._el.className = 'ytkit-remaining-time';
                     timeDisplay.appendChild(this._el);
                 }
-                this._el.textContent = `(-${this._formatTime(remaining)})`;
+                const hideFs = appState?.settings?.remainingTimeHideFullscreen && document.fullscreenElement;
+                this._el.style.display = hideFs ? 'none' : '';
+                if (!hideFs) this._el.textContent = `(-${this._formatTime(remaining)})`;
             },
 
             init() {
@@ -19927,6 +19940,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._update();
                 };
                 this._attach();
+                this._fullscreenHandler = () => this._update();
+                document.addEventListener('fullscreenchange', this._fullscreenHandler);
                 addNavigateRule('remainTime', () => {
                     this._el = null;
                     this._scheduleUpdate(2000);
@@ -19939,6 +19954,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._videoRef.removeEventListener('timeupdate', this._handler);
                     this._videoRef.removeEventListener('ratechange', this._handler);
                 }
+                if (this._fullscreenHandler) {
+                    document.removeEventListener('fullscreenchange', this._fullscreenHandler);
+                    this._fullscreenHandler = null;
+                }
                 this._videoRef = null;
                 this._handler = null;
                 this._attach = null;
@@ -19946,6 +19965,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._el?.remove(); this._el = null;
             }
         },
+        // Remaining Time sub-features
+        { id: 'remainingTimeCompact', name: 'Compact Remaining Time', description: 'Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss', group: 'Playback', icon: 'clock', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
+        { id: 'remainingTimeHideFullscreen', name: 'Hide in Fullscreen', description: 'Hide the remaining time readout while the player is fullscreen', group: 'Playback', icon: 'eye-off', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
         {
             id: 'showPlaylistDuration',
             name: 'Show Playlist Duration',

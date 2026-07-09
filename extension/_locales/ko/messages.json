@@ -1646,11 +1646,23 @@
   "feature_reducedMotion_name": {
     "message": "모션 감소 (강력)"
   },
+  "feature_remainingTimeCompact_desc": {
+    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+  },
+  "feature_remainingTimeCompact_name": {
+    "message": "Compact Remaining Time"
+  },
   "feature_remainingTimeDisplay_desc": {
     "message": "플레이어에서 현재 시간 옆에 재생 속도를 반영한 남은 시간 표시"
   },
   "feature_remainingTimeDisplay_name": {
     "message": "남은 시간 표시"
+  },
+  "feature_remainingTimeHideFullscreen_desc": {
+    "message": "Hide the remaining time readout while the player is fullscreen"
+  },
+  "feature_remainingTimeHideFullscreen_name": {
+    "message": "Hide in Fullscreen"
   },
   "feature_rememberVolume_desc": {
     "message": "동영상과 세션 간에 볼륨 수준 유지"

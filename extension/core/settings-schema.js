@@ -274,6 +274,8 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── playback-audio ───
     Object.freeze({ key: "autoDismissStillWatching", category: "playback-audio", type: "boolean", defaultValue: false, risk: "store-risk", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "remainingTimeDisplay", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "remainingTimeCompact", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.48.0" }),
+    Object.freeze({ key: "remainingTimeHideFullscreen", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.48.0" }),
     Object.freeze({ key: "showPlaylistDuration", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "showTimeInTabTitle", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
