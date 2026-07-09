@@ -8,6 +8,68 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - No unreleased changes.
 
+## [4.46.35] - 2026-07-09
+
+- **Security: harden sidepanel/sidebar inline CSP.** Both extension
+  side surfaces now match popup.html's strict `default-src 'none'`
+  belt-and-suspenders CSP, closing a gap where the manifest CSP was
+  the sole defense in detached or tear-off window contexts.
+- **Security: close EXT_FETCH proxy port-matching bypass.** The
+  `isUrlAllowed` check now requires portless allowlist entries (HTTPS
+  default-port origins like SponsorBlock, DeArrow) to match only the
+  default port, preventing non-standard-port requests from bypassing
+  the fetch allowlist.
+- **Fix: forward Gemini API key through EXT_FETCH proxy.** Added
+  `generativelanguage.googleapis.com` to `AUTH_HEADER_ALLOWED_ORIGINS`
+  so the `x-goog-api-key` header is no longer stripped on Gemini API
+  requests, unblocking BYO-key Gemini AI summary.
+- **Fix: clear fetch timeout on response body read error.** The
+  background.js `readErr` catch path now clears the abort timer,
+  matching every other terminal path and preventing the service worker
+  from staying alive for up to 60 seconds after a read failure.
+- **Fix: sidepanel dashboard on YouTube Music tabs.** Widened
+  `isSupportedUrl` to match the same YouTube domain set as the popup
+  (music.youtube.com, youtube-nocookie.com, youtu.be), so the
+  dashboard no longer shows "Local only" for tabs the content script
+  is actively running on.
+- **Fix: Reaction Spammer 500 ms safety floor enforced everywhere.**
+  The UI input handler and tick scheduler now both clamp to the
+  documented 500 ms `_INTERVAL_MIN_MS_FLOOR` instead of allowing
+  50 ms via the panel input, preventing intervals fast enough to
+  trigger YouTube's automated-behavior detection.
+- **Fix: Settings profile import strips internal/secret keys.** The
+  `importJson` path now filters imported profiles against
+  `getProfileInternalKeys()` and `getProfileSecretKeys()`, matching
+  the export sanitizer and preventing crafted imports from overwriting
+  `_profiles`, `_settingsVersion`, or `aiSummaryApiKey`.
+- **Perf: debounce Return YouTube Dislike cache storage writes.** The
+  RYD module now coalesces cache writes with a 2-second debounce timer
+  instead of writing the full 500-entry cache on every API response,
+  and flushes on feature teardown.
+- **Perf: batch subscription sort DOM reflow.** `_applySort` now uses
+  `DocumentFragment` to batch card re-appends, eliminating per-card
+  layout reflows on the subscriptions feed.
+- **Perf: O(n) undo-all for video hider.** `_undoHideAll` now uses a
+  Set-based filter pass instead of per-video `indexOf` + `splice`,
+  reducing algorithmic complexity from O(n²) to O(n) for large hidden
+  lists.
+- **Fix: build system validates version regex before writing files.**
+  The `--bump` flag now checks the `YTKIT_VERSION` regex in ytkit.js
+  before writing any version files, preventing a half-bumped state
+  where manifest.json is updated but ytkit.js is left at the old
+  version.
+- **Security: build zip uses execFileSync on Unix.** Replaced the
+  `execSync` shell-interpolated zip command with `execFileSync` and an
+  args array, matching the Windows path and closing a theoretical
+  shell-injection vector through crafted manifest versions.
+- **Fix: Python companion ffmpeg cache thread safety.** Added
+  `_FFMPEG_CAPABILITIES_LOCK` to guard `check_ffmpeg_capabilities()`
+  and `reset_ffmpeg_capabilities_cache()`, matching the locking pattern
+  of the PO-token, Deno, and version caches.
+- **Fix: check-no-eval walk skips symlinks.** The eval scanner now
+  uses `lstatSync` and skips symbolic links, preventing scan of
+  unintended targets outside the repo tree.
+
 ## [4.46.34] - 2026-07-09
 
 - **Polish: extension settings executive command deck.** Re-imagined the

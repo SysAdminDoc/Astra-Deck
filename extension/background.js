@@ -257,7 +257,7 @@ function isUrlAllowed(url) {
             const allowed = new URL(origin);
             return parsed.protocol === allowed.protocol
                 && parsed.hostname === allowed.hostname
-                && (allowed.port === '' || parsed.port === allowed.port);
+                && (allowed.port === '' ? parsed.port === '' : parsed.port === allowed.port);
         });
     } catch {
         return false;
@@ -356,6 +356,7 @@ function filterHeaders(headers, blocklist) {
 const AUTH_HEADER_ALLOWED_ORIGINS = new Set([
     'https://api.openai.com',
     'https://api.anthropic.com',
+    'https://generativelanguage.googleapis.com',
     // Local-only services — see SECURITY NOTE above for why `localhost` is omitted.
     'http://127.0.0.1:9751',
     'http://127.0.0.1:9761',
@@ -796,6 +797,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             } catch (readErr) {
                 if (responded) return;
                 responded = true;
+                if (timer) { clearTimeout(timer); timer = null; }
                 sendResponse({ error: readErr.message || 'Failed to read response body' });
                 return;
             }
