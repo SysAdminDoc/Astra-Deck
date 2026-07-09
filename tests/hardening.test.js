@@ -8966,14 +8966,22 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
 
     assert.match(popupSource, /const updateCompanionButton = \$\('#update-companion-btn'\)/,
         'popup.js must capture update-companion-btn');
+    assert.match(popupSource, /async function sendPopupBridgeMessageToYouTubeTabs\(messageType\)/,
+        'popup update actions must use the shared multi-tab bridge helper');
+    const popupBridgeStart = popupSource.indexOf('async function sendPopupBridgeMessageToYouTubeTabs');
+    const popupBridgeBlock = popupSource.slice(popupBridgeStart, popupBridgeStart + 1800);
+    assert.match(popupBridgeBlock, /for \(const tab of tabs\)/,
+        'popup update bridge must try more than the first candidate tab');
+    assert.match(popupBridgeBlock, /result\?\.ok \|\| \(result && result\.status !== 0\)/,
+        'popup update bridge must keep retrying only no-response tabs');
     assert.match(popupSource, /async function updateCompanionNow\(\)/,
         'popup.js must define updateCompanionNow');
     const popupHandlerStart = popupSource.indexOf('async function updateCompanionNow');
     const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
-    assert.match(popupHandlerBlock, /YOUTUBE_TAB_URLS/,
+    assert.match(popupSource, /chrome\.tabs\.query\(\{ url: YOUTUBE_TAB_URLS \}\)/,
         'updateCompanionNow must query YouTube tabs for a loaded content script');
-    assert.match(popupHandlerBlock, /type:\s*['"]YTKIT_UPDATE_COMPANION['"]/,
-        'updateCompanionNow must send YTKIT_UPDATE_COMPANION');
+    assert.match(popupHandlerBlock, /sendPopupBridgeMessageToYouTubeTabs\('YTKIT_UPDATE_COMPANION'\)/,
+        'updateCompanionNow must send YTKIT_UPDATE_COMPANION through the retry bridge');
     assert.match(popupHandlerBlock, /current_version/,
         'updateCompanionNow must surface current_version');
     assert.match(popupHandlerBlock, /latest_version/,
@@ -10719,12 +10727,16 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
     // version_after on success).
     assert.match(popupSource, /async function updateYtdlpNow\(\)/,
         'popup.js must define updateYtdlpNow handler');
+    assert.match(popupSource, /function sortPopupBridgeTabs\(tabs\)/,
+        'popup update handlers must sort candidate tabs before messaging');
+    assert.match(popupSource, /rankPopupBridgeTab\(a\) - rankPopupBridgeTab\(b\)/,
+        'popup bridge must prefer active/current YouTube tabs');
     const popupHandlerStart = popupSource.indexOf('async function updateYtdlpNow');
     const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
-    assert.match(popupHandlerBlock, /YOUTUBE_TAB_URLS/,
+    assert.match(popupSource, /chrome\.tabs\.query\(\{ url: YOUTUBE_TAB_URLS \}\)/,
         'updateYtdlpNow must query YouTube tabs to find a MediaDLManager-loaded content script');
-    assert.match(popupHandlerBlock, /type:\s*['"]YTKIT_UPDATE_YTDLP['"]/,
-        'updateYtdlpNow must send the YTKIT_UPDATE_YTDLP message');
+    assert.match(popupHandlerBlock, /sendPopupBridgeMessageToYouTubeTabs\('YTKIT_UPDATE_YTDLP'\)/,
+        'updateYtdlpNow must send the YTKIT_UPDATE_YTDLP message through the retry bridge');
     assert.match(popupHandlerBlock, /version_before/,
         'updateYtdlpNow must surface the version_before field in the status message');
     assert.match(popupHandlerBlock, /version_after/,
