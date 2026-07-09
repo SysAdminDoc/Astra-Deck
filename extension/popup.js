@@ -441,6 +441,7 @@ const openPanelButton = $('#openPanel');
 const exportButton = $('#export-btn');
 const importButton = $('#import-btn');
 const importFileInput = $('#import-file');
+const undoImportButton = $('#undo-import-btn');
 const resetButton = $('#reset-btn');
 const statKeys = $('#stat-keys');
 const statSize = $('#stat-size');
@@ -3726,7 +3727,29 @@ async function importSettings(file) {
         if (Object.keys(writes).length === 0) throw new Error('No valid settings found in file');
         if (estimateSerializedBytes(writes) > IMPORT_LIMITS.totalBytes) throw new Error('Import data is too large for extension storage');
 
-        await chrome.storage.local.set(writes);
+        const snapshot = await readLocalStorageSnapshot();
+        const snapped = await writeImportSnapshot(snapshot);
+        if (!snapped && sessionStorageAvailable()) {
+            showStatus(t('statusImportSnapshotFail',
+                'Import aborted - could not stage an undo snapshot. Export a backup first.'),
+                'error', 6000);
+            return;
+        }
+        const undoAvailable = snapped && sessionStorageAvailable();
+        try {
+            await chrome.storage.local.set(writes);
+        } catch (error) {
+            if (snapped) {
+                await restoreLocalStorageSnapshot(snapshot);
+                await clearImportSnapshot();
+                await refreshUndoImportVisibility();
+                showStatus(t('statusSettingsImportFailed',
+                    'Import failed while applying data; previous state was restored.'),
+                    'error', 6000);
+                return;
+            }
+            throw error;
+        }
         if (writes[STORAGE_KEYS.settings]) {
             await chrome.storage.local.remove(STORAGE_KEYS.legacySidebarOrder).catch(() => { /* reason: legacy key may not exist */ });
         }
@@ -3740,13 +3763,54 @@ async function importSettings(file) {
         if (writes[STORAGE_KEYS.settings]) {
             void broadcastSettingsReplaced(writes[STORAGE_KEYS.settings]);
         }
-        showStatus(t('statusBackupImported', 'Backup imported.'), 'success');
+        await refreshUndoImportVisibility();
+        showStatus(undoAvailable
+            ? t('statusBackupImportedUndo',
+                'Backup imported. Click Undo Import to restore the previous state until you close the browser.')
+            : t('statusBackupImportedNoUndo',
+                'Backup imported. Undo is unavailable on this browser.'),
+            'success', 6000);
     } catch (error) {
         showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
     } finally {
         importFileInput.value = '';
         importButton.removeAttribute('aria-busy');
         importButton.disabled = false;
+    }
+}
+
+async function undoImportSettings() {
+    if (!undoImportButton) return;
+    undoImportButton.setAttribute('aria-busy', 'true');
+    undoImportButton.disabled = true;
+    try {
+        const snap = await readImportSnapshot();
+        if (!snap || Object.keys(snap).length === 0) {
+            setUndoImportVisible(false);
+            showStatus(t('statusImportUndoExpired',
+                'Undo Import is no longer available - the browser session snapshot expired.'),
+                'error', 4200);
+            return;
+        }
+        await restoreLocalStorageSnapshot(snap);
+        await clearImportSnapshot();
+        await renderStorageInfo();
+        await loadSettings();
+        render(popupState.settings, q.value);
+        renderDataFlowPanel();
+        renderSchemaOverview();
+        if (snap[STORAGE_KEYS.settings]) {
+            void broadcastSettingsReplaced(snap[STORAGE_KEYS.settings]);
+        }
+        setUndoImportVisible(false);
+        showStatus(t('statusSettingsImportUndone',
+            'Import undone. Previous settings and local data restored.'),
+            'success', 4200);
+    } catch (error) {
+        showStatus(t('statusImportUndoFail', 'Undo Import failed') + ': ' + error.message, 'error', 4200);
+    } finally {
+        undoImportButton.removeAttribute('aria-busy');
+        undoImportButton.disabled = false;
     }
 }
 
@@ -3966,6 +4030,7 @@ async function updateCompanionNow() {
 // previous behaviour wiped everything with no path back. The undo
 // button is auto-shown when a snapshot exists and auto-hidden when
 // it's consumed or absent.
+const IMPORT_SNAPSHOT_KEY = '_importSnapshot';
 const RESET_SNAPSHOT_KEY = '_resetSnapshot';
 const undoResetButton = $('#undo-reset-btn');
 
@@ -3973,13 +4038,41 @@ function sessionStorageAvailable() {
     return !!(chrome && chrome.storage && chrome.storage.session);
 }
 
-async function readResetSnapshot() {
+async function readLocalStorageSnapshot() {
+    return new Promise((resolve, reject) => {
+        try {
+            chrome.storage.local.get(null, (items) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(items || {});
+                }
+            });
+        } catch (err) { reject(err); }
+    });
+}
+
+async function restoreLocalStorageSnapshot(snapshot) {
+    await storageClear();
+    if (snapshot && Object.keys(snapshot).length > 0) {
+        await new Promise((resolve, reject) => {
+            try {
+                chrome.storage.local.set(snapshot, () => {
+                    if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+                    else resolve();
+                });
+            } catch (err) { reject(err); }
+        });
+    }
+}
+
+async function readSessionSnapshot(key) {
     if (!sessionStorageAvailable()) return null;
     return new Promise((resolve) => {
         try {
-            chrome.storage.session.get(RESET_SNAPSHOT_KEY, (items) => {
+            chrome.storage.session.get(key, (items) => {
                 if (chrome.runtime.lastError) { resolve(null); return; }
-                const snap = items && items[RESET_SNAPSHOT_KEY];
+                const snap = items && items[key];
                 resolve(snap && typeof snap === 'object' ? snap : null);
             });
         } catch (_) {
@@ -3989,11 +4082,11 @@ async function readResetSnapshot() {
     });
 }
 
-async function writeResetSnapshot(snapshot) {
+async function writeSessionSnapshot(key, snapshot) {
     if (!sessionStorageAvailable()) return false;
     return new Promise((resolve) => {
         try {
-            chrome.storage.session.set({ [RESET_SNAPSHOT_KEY]: snapshot }, () => {
+            chrome.storage.session.set({ [key]: snapshot }, () => {
                 resolve(!chrome.runtime.lastError);
             });
         } catch (_) {
@@ -4003,16 +4096,50 @@ async function writeResetSnapshot(snapshot) {
     });
 }
 
-async function clearResetSnapshot() {
+async function clearSessionSnapshot(key) {
     if (!sessionStorageAvailable()) return;
     return new Promise((resolve) => {
         try {
-            chrome.storage.session.remove(RESET_SNAPSHOT_KEY, () => resolve());
+            chrome.storage.session.remove(key, () => resolve());
         } catch (_) {
-            // reason: session.remove failure is benign — snapshot evicts on browser close
+            // reason: session.remove failure is benign; snapshot evicts on browser close
             resolve();
         }
     });
+}
+
+async function readImportSnapshot() {
+    return readSessionSnapshot(IMPORT_SNAPSHOT_KEY);
+}
+
+async function writeImportSnapshot(snapshot) {
+    return writeSessionSnapshot(IMPORT_SNAPSHOT_KEY, snapshot);
+}
+
+async function clearImportSnapshot() {
+    return clearSessionSnapshot(IMPORT_SNAPSHOT_KEY);
+}
+
+async function readResetSnapshot() {
+    return readSessionSnapshot(RESET_SNAPSHOT_KEY);
+}
+
+async function writeResetSnapshot(snapshot) {
+    return writeSessionSnapshot(RESET_SNAPSHOT_KEY, snapshot);
+}
+
+async function clearResetSnapshot() {
+    return clearSessionSnapshot(RESET_SNAPSHOT_KEY);
+}
+
+function setUndoImportVisible(visible) {
+    if (!undoImportButton) return;
+    undoImportButton.hidden = !visible;
+}
+
+async function refreshUndoImportVisibility() {
+    const snap = await readImportSnapshot();
+    setUndoImportVisible(!!snap && Object.keys(snap).length > 0);
 }
 
 function setUndoResetVisible(visible) {
@@ -4041,17 +4168,7 @@ async function resetAllData() {
         // would let stale snapshots overwrite later real edits) but
         // must survive a popup close/reopen so the user sees the Undo
         // button on the next launch.
-        const snapshot = await new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.get(null, (items) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else {
-                        resolve(items || {});
-                    }
-                });
-            } catch (err) { reject(err); }
-        });
+        const snapshot = await readLocalStorageSnapshot();
         const snapped = await writeResetSnapshot(snapshot);
         if (!snapped && sessionStorageAvailable()) {
             // Session API exists but the snapshot write failed (e.g. data too
@@ -4113,15 +4230,7 @@ async function undoResetAllData() {
         // Wipe-and-replace so any new keys added between reset and undo
         // don't pollute the restored payload. The snapshot is the
         // single source of truth.
-        await storageClear();
-        await new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.set(snap, () => {
-                    if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-                    else resolve();
-                });
-            } catch (err) { reject(err); }
-        });
+        await restoreLocalStorageSnapshot(snap);
         await clearResetSnapshot();
         await renderStorageInfo();
         await loadSettings();
@@ -4366,6 +4475,10 @@ function installWheelScrolling() {
         const file = event.target.files?.[0];
         if (file) void importSettings(file);
     });
+    if (undoImportButton) {
+        undoImportButton.addEventListener('click', () => { void undoImportSettings(); });
+        void refreshUndoImportVisibility();
+    }
     resetButton.addEventListener('click', () => { void resetAllData(); });
     if (undoResetButton) {
         undoResetButton.addEventListener('click', () => { void undoResetAllData(); });

@@ -2570,6 +2570,12 @@
   "statusBackupImported": {
     "message": "تم استيراد النسخة الاحتياطية."
   },
+  "statusBackupImportedNoUndo": {
+    "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedUndo": {
+    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+  },
   "statusClipboardUnavailable": {
     "message": "الحافظة غير متاحة — انظر وحدة تحكم المتصفح."
   },
@@ -2593,6 +2599,15 @@
   },
   "statusImportFail": {
     "message": "فشل الاستيراد"
+  },
+  "statusImportSnapshotFail": {
+    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+  },
+  "statusImportUndoExpired": {
+    "message": "Undo Import is no longer available - the browser session snapshot expired."
+  },
+  "statusImportUndoFail": {
+    "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
     "message": "تعذّر إعادة تفعيل مطالبات Astra Downloader. افتح chrome://extensions وأعِد التحميل."
@@ -2710,6 +2725,12 @@
   },
   "toggleUpdateFailTpl": {
     "message": "تعذّر تحديث …. حاول مرة أخرى."
+  },
+  "undoImportAria": {
+    "message": "Restore data from the most recent Import"
+  },
+  "undoImportBtn": {
+    "message": "Undo Import"
   },
   "undoResetAria": {
     "message": "استعادة البيانات من آخر إعادة تعيين"

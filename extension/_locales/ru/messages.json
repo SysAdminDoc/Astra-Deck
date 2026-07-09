@@ -2570,6 +2570,12 @@
   "statusBackupImported": {
     "message": "Резервная копия импортирована."
   },
+  "statusBackupImportedNoUndo": {
+    "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedUndo": {
+    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+  },
   "statusClipboardUnavailable": {
     "message": "Буфер обмена недоступен — см. консоль браузера."
   },
@@ -2593,6 +2599,15 @@
   },
   "statusImportFail": {
     "message": "Ошибка импорта"
+  },
+  "statusImportSnapshotFail": {
+    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+  },
+  "statusImportUndoExpired": {
+    "message": "Undo Import is no longer available - the browser session snapshot expired."
+  },
+  "statusImportUndoFail": {
+    "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
     "message": "Не удалось повторно включить подсказки Astra Downloader. Откройте chrome://extensions и перезагрузите."
@@ -2713,6 +2728,12 @@
   },
   "undoResetAria": {
     "message": "Восстановить данные из последнего сброса"
+  },
+  "undoImportAria": {
+    "message": "Restore data from the most recent Import"
+  },
+  "undoImportBtn": {
+    "message": "Undo Import"
   },
   "undoResetBtn": {
     "message": "Отменить сброс"
