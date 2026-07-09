@@ -5152,10 +5152,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Mono-to-stereo added 1 boolean (378 → 379).
     // Auto-dismiss content warning added 1 boolean (379 → 380).
     // Remaining-time compact + hide-in-fullscreen added 2 booleans (386 → 388).
+    // Auto-exit fullscreen at video end added 1 boolean (388 → 389).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 388,
-        'SETTINGS_SCHEMA must cover all 388 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 389,
+        'SETTINGS_SCHEMA must cover all 389 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Auto-Exit Fullscreen at End.** New playback toggle that leaves fullscreen
+  when a video finishes. Playlist-aware: when the playlist panel has a next
+  entry queued, fullscreen is kept so continuous playback is not interrupted.
 - **Remaining Time Display v2.** Two new sub-toggles: Compact Remaining Time
   renders the readout as minutes (`-1h24m` / `-23m` / `-45s`) instead of full
   `h:mm:ss`, and Hide in Fullscreen suppresses the readout while the player is

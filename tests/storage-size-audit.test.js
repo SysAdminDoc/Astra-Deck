@@ -58,7 +58,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Auto-dismiss content warning adds 1 boolean (default true).
     // Volume boost adds boolean + number level. Audio normalization adds boolean.
     // Remaining-time compact + hide-in-fullscreen add 2 booleans (65 bytes).
-    assert.equal(assessment.totalBytes, 178656);
+    // Auto-exit fullscreen adds 1 boolean (27 bytes).
+    assert.equal(assessment.totalBytes, 178683);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -410,6 +410,12 @@
   "feature_autoDownloadOnVisit_name": {
     "message": "自动下载视频"
   },
+  "feature_autoExitFullscreen_desc": {
+    "message": "Leave fullscreen automatically when a video finishes, unless a playlist or queue advances to a next video"
+  },
+  "feature_autoExitFullscreen_name": {
+    "message": "Auto-Exit Fullscreen at End"
+  },
   "feature_autoExpandComments_desc": {
     "message": "自动展开被截断的评论，始终显示完整文本"
   },

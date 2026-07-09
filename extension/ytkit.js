@@ -4287,6 +4287,7 @@ return response;
             remainingTimeDisplay: false,
             remainingTimeCompact: false,
             remainingTimeHideFullscreen: false,
+            autoExitFullscreen: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -19968,6 +19969,50 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // Remaining Time sub-features
         { id: 'remainingTimeCompact', name: 'Compact Remaining Time', description: 'Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss', group: 'Playback', icon: 'clock', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
         { id: 'remainingTimeHideFullscreen', name: 'Hide in Fullscreen', description: 'Hide the remaining time readout while the player is fullscreen', group: 'Playback', icon: 'eye-off', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
+        {
+            id: 'autoExitFullscreen',
+            name: 'Auto-Exit Fullscreen at End',
+            description: 'Leave fullscreen automatically when a video finishes, unless a playlist or queue advances to a next video',
+            group: 'Playback',
+            icon: 'fullscreen',
+            pages: [PageTypes.WATCH],
+            _handler: null,
+            _videoRef: null,
+
+            _hasUpNext() {
+                // Playlist/queue-aware: keep fullscreen when another entry plays next.
+                const panel = document.querySelector('ytd-playlist-panel-renderer#playlist:not([hidden])');
+                if (!panel) return false;
+                const items = panel.querySelectorAll('ytd-playlist-panel-video-renderer');
+                if (!items.length) return false;
+                const selected = Array.prototype.findIndex.call(items, el => el.hasAttribute('selected'));
+                return selected !== -1 && selected < items.length - 1;
+            },
+
+            _attach() {
+                const v = getMainVideoElement();
+                if (!v || v === this._videoRef) return;
+                if (this._videoRef && this._handler) this._videoRef.removeEventListener('ended', this._handler);
+                this._videoRef = v;
+                v.addEventListener('ended', this._handler);
+            },
+
+            init() {
+                this._handler = () => {
+                    if (!document.fullscreenElement) return;
+                    if (this._hasUpNext()) return;
+                    try { document.exitFullscreen?.(); } catch { /* reason: exitFullscreen throws if the document lost fullscreen between check and call */ }
+                };
+                this._attach();
+                addNavigateRule('autoExitFullscreen', () => this._attach());
+            },
+            destroy() {
+                if (this._videoRef && this._handler) this._videoRef.removeEventListener('ended', this._handler);
+                this._videoRef = null;
+                this._handler = null;
+                removeNavigateRule('autoExitFullscreen');
+            }
+        },
         {
             id: 'showPlaylistDuration',
             name: 'Show Playlist Duration',

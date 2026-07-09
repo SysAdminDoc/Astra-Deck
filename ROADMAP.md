@@ -42,12 +42,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: `extension/ytkit.js` new CSS/behaviour feature; conflict-guard against stickyVideo and fitPlayerToWindow.
   Acceptance: In fullscreen, wheel scroll reveals page content below the video (video stays pinned); Escape and fullscreen exit restore normal state.
   Complexity: M
-- [ ] P1 — Auto-exit fullscreen at video end (playlist-aware)
-  Why: Common QoL toggle Astra lacks; pairs with autoDismissStillWatching for unattended viewing.
-  Evidence: competitor userscript; xdpirate (GF); CY Fung playlist-aware mod.
-  Where: `extension/core/player.js` ended-event handling.
-  Acceptance: On ended, exit fullscreen unless a playlist/queue advances to a next video; off by default.
-  Complexity: S
 
 ### P2 — live tooling, subtitles, filtering, hygiene
 - [ ] P2 — Force DVR on live streams
