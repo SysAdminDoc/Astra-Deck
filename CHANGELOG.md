@@ -24,6 +24,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Fix: companion postprocessor failure status.** Non-zero `yt-dlp` exits now
   fail even after 99-100% progress, so late ffmpeg/postprocessor errors no
   longer create false-success history entries.
+- **Security: extension artifact staging hardening.** Chrome/Firefox packaging
+  and smoke-test staging now share one secret-deny and symlink-safe copier, so
+  `.env`, key stores, token files, SSH keys, and symlink/reparse targets cannot
+  leak into built extension artifacts.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed
