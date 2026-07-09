@@ -2903,7 +2903,12 @@ class Download:
         self.error_advice = ""
         self.error_action = ""
         self.start_time = time.time()
+        self.finished_time = None
         self.process = None
+
+    def mark_terminal(self):
+        if self.status in DOWNLOAD_TERMINAL_STATES and self.finished_time is None:
+            self.finished_time = time.time()
 
     def to_dict(self):
         payload = {
@@ -3501,6 +3506,7 @@ class DownloadManager(QObject):
                     pass
                 dl.cookies_file = None
 
+        dl.mark_terminal()
         if dl.status == "complete":
             self.total_completed += 1
             duration = int(time.time() - dl.start_time)
@@ -3524,6 +3530,7 @@ class DownloadManager(QObject):
             return False
         dl.status = "cancelled"
         dl.error = "Cancelled by user."
+        dl.mark_terminal()
         proc = dl.process
         if proc and proc.poll() is None:
             def terminate():
@@ -3538,6 +3545,7 @@ class DownloadManager(QObject):
         for dl in active:
             dl.status = "cancelled"
             dl.error = "Cancelled (app shutdown)."
+            dl.mark_terminal()
             proc = dl.process
             if proc and proc.poll() is None:
                 try:
@@ -3558,7 +3566,8 @@ class DownloadManager(QObject):
         cutoff = time.time() - 300  # 5 min
         with self._lock:
             to_remove = [k for k, d in self.downloads.items()
-                         if d.status in DOWNLOAD_TERMINAL_STATES and d.start_time < cutoff]
+                         if d.status in DOWNLOAD_TERMINAL_STATES
+                         and (getattr(d, 'finished_time', None) or d.start_time) < cutoff]
             for k in to_remove:
                 del self.downloads[k]
 

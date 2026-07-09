@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: companion recent-download retention.** Astra Downloader now stamps
+  terminal time on completed, failed, and cancelled downloads, so long-running
+  items stay visible in Recent Activity for the intended five-minute window
+  after they finish instead of being pruned by their start time.
+
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed
   the implementation closer to that mockup: taller full-viewport shell,
