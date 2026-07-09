@@ -102,6 +102,13 @@ if (BUNDLE_BEGIN_RE.test(userscriptText)) {
             process.exit(1);
         }
         const body = fs.readFileSync(full, 'utf8').replace(/\s+$/, '');
+        // A module containing either bundle marker would truncate the region
+        // the next sync run's regex matches, silently corrupting the
+        // userscript. Refuse to bundle rather than write a poisoned bundle.
+        if (/── (?:BEGIN|END) v5\.0\.0 bundled core modules ──/.test(body)) {
+            console.error('Refusing to bundle ' + rel + ': module source contains a v5.0.0 bundle marker, which would corrupt the next sync run.');
+            process.exit(1);
+        }
         parts.push('    // ── bundled module: ' + rel + ' ──');
         // Indent each line by 4 spaces so the bundled module sits cleanly
         // inside the userscript's outer IIFE (cosmetic — JS doesn't care).
