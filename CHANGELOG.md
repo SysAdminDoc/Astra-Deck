@@ -35,6 +35,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Fix: popup update tab selection.** Popup yt-dlp and Astra Downloader update
   actions now sort YouTube tab candidates and retry tabs with no content-script
   response, so a stale first tab no longer hides a working YouTube tab.
+- **Fix: popup import recovery.** Popup backup imports now stage a
+  session-scoped undo snapshot before applying settings and local-data writes,
+  surface an Undo Import action after success, and restore the prior payload if
+  applying the import fails.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed

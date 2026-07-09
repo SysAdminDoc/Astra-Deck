@@ -2570,6 +2570,12 @@
   "statusBackupImported": {
     "message": "Copia de seguridad importada."
   },
+  "statusBackupImportedNoUndo": {
+    "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedUndo": {
+    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+  },
   "statusClipboardUnavailable": {
     "message": "Portapapeles no disponible — consulta la consola del navegador."
   },
@@ -2593,6 +2599,15 @@
   },
   "statusImportFail": {
     "message": "Error al importar"
+  },
+  "statusImportSnapshotFail": {
+    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+  },
+  "statusImportUndoExpired": {
+    "message": "Undo Import is no longer available - the browser session snapshot expired."
+  },
+  "statusImportUndoFail": {
+    "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
     "message": "No se pudieron reactivar los avisos de Astra Downloader. Abre chrome://extensions y recarga."
@@ -2713,6 +2728,12 @@
   },
   "undoResetAria": {
     "message": "Restaurar datos del restablecimiento más reciente"
+  },
+  "undoImportAria": {
+    "message": "Restore data from the most recent Import"
+  },
+  "undoImportBtn": {
+    "message": "Undo Import"
   },
   "undoResetBtn": {
     "message": "Deshacer restablecimiento"
