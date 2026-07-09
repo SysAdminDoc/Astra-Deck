@@ -17,6 +17,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   settings overlay now matches the extension fallback for large YouTube Takeout
   imports: 500 MB cap, pre-import watch-time snapshot, immediate panel refresh,
   and an Undo action that restores the prior local watch-time store.
+- **Security: companion `/health` token bootstrap hardening.** Astra Downloader
+  now defaults legacy `/health` token echo off, reflects CORS only for configured
+  legacy extension origins, and preserves native-messaging token callers without
+  leaking bearer tokens to arbitrary installed extensions.
+- **Fix: companion postprocessor failure status.** Non-zero `yt-dlp` exits now
+  fail even after 99-100% progress, so late ffmpeg/postprocessor errors no
+  longer create false-success history entries.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed

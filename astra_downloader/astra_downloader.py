@@ -175,7 +175,8 @@ DEFAULT_CONFIG = {
     "AudioDownloadPath": "",
     "ServerPort": SERVER_PORT,
     "ServerToken": "",
-    "LegacyHealthTokenEcho": env_bool("ASTRA_LEGACY_HEALTH_TOKEN_ECHO", True),
+    "LegacyHealthTokenEcho": env_bool("ASTRA_LEGACY_HEALTH_TOKEN_ECHO", False),
+    "LegacyHealthTokenOrigins": os.environ.get("ASTRA_LEGACY_HEALTH_TOKEN_ORIGINS", ""),
     "EmbedMetadata": True,
     "EmbedThumbnail": True,
     "EmbedChapters": True,
@@ -1944,6 +1945,7 @@ def sanitize_config(raw):
     data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
     data["NativeChromeExtensionIds"] = clean_text(data.get("NativeChromeExtensionIds"), "", 2048)
     data["NativeFirefoxExtensionIds"] = clean_text(data.get("NativeFirefoxExtensionIds"), "", 2048)
+    data["LegacyHealthTokenOrigins"] = clean_text(data.get("LegacyHealthTokenOrigins"), "", 2048)
     extra = data.get("ExtraOutputRoots")
     if not isinstance(extra, list):
         extra = []
@@ -2267,6 +2269,41 @@ def parse_native_extension_ids(value, fallback=()):
         if text and text not in out:
             out.append(text)
     return out
+
+
+def normalize_extension_origin(origin):
+    try:
+        parsed = urlparse(str(origin or "").strip().rstrip("/"))
+    except Exception:
+        return ""
+    scheme = (parsed.scheme or "").lower()
+    host = (parsed.netloc or "").strip().lower()
+    if scheme not in {"chrome-extension", "moz-extension"} or not host:
+        return ""
+    return f"{scheme}://{host}"
+
+
+def parse_legacy_health_token_origins(value):
+    origins = []
+    for item in parse_native_extension_ids(value):
+        normalized = normalize_extension_origin(item)
+        if not normalized and re.fullmatch(r"[a-z]{8,64}", item.strip().lower()):
+            normalized = normalize_extension_origin(f"chrome-extension://{item.strip().lower()}")
+        if normalized and normalized not in origins:
+            origins.append(normalized)
+    return origins
+
+
+def legacy_health_token_origin_allowlist(config):
+    origins = []
+    for chrome_id in parse_native_extension_ids(config.get("NativeChromeExtensionIds", "")):
+        normalized = normalize_extension_origin(f"chrome-extension://{chrome_id.strip().lower()}")
+        if normalized and normalized not in origins:
+            origins.append(normalized)
+    for origin in parse_legacy_health_token_origins(config.get("LegacyHealthTokenOrigins", "")):
+        if origin not in origins:
+            origins.append(origin)
+    return frozenset(origins)
 
 
 def register_native_host_registry_value(key_path, manifest_path):
@@ -3302,7 +3339,7 @@ class DownloadManager(QObject):
                         f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
                     )
                     apply_download_failure_classification(dl, 'network-unreachable')
-                elif proc.returncode == 0 or dl.progress >= 99:
+                elif proc.returncode == 0:
                     dl.status = "complete"
                     dl.progress = 100
                 else:
@@ -3431,7 +3468,7 @@ class DownloadManager(QObject):
                                 f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
                             )
                             apply_download_failure_classification(dl, 'network-unreachable')
-                        elif proc.returncode == 0 or dl.progress >= 99:
+                        elif proc.returncode == 0:
                             dl.status = "complete"
                             dl.progress = 100
                         else:
@@ -3651,6 +3688,7 @@ def create_api(config, dl_manager, history):
         config.get("LegacyHealthTokenEcho", DEFAULT_CONFIG["LegacyHealthTokenEcho"]),
         DEFAULT_CONFIG["LegacyHealthTokenEcho"],
     )
+    legacy_health_token_origins = legacy_health_token_origin_allowlist(config)
     # v1.2.0: token-bucket rate limit on /download. Other endpoints are
     # cheap and read-only; we don't limit them (local-only service, no
     # realistic DoS vector beyond /download work queue).
@@ -3667,12 +3705,9 @@ def create_api(config, dl_manager, history):
         provided = request.headers.get("X-Auth-Token", "")
         return bool(token and provided and hmac.compare_digest(str(provided), str(token)))
 
-    def is_extension_origin(origin):
-        try:
-            parsed = urlparse(origin or "")
-            return parsed.scheme in {"chrome-extension", "moz-extension"} and bool(parsed.netloc)
-        except Exception:
-            return False
+    def is_allowed_extension_origin(origin):
+        normalized = normalize_extension_origin(origin)
+        return bool(normalized and normalized in legacy_health_token_origins)
 
     # v3.15.0: DNS-rebinding defense. A browser visiting attacker.com that
     # rebinds the host to 127.0.0.1 will send `Host: attacker.com` — legitimate
@@ -3713,7 +3748,7 @@ def create_api(config, dl_manager, history):
             })
             resp.status_code = 413
         origin = request.headers.get("Origin", "")
-        if is_extension_origin(origin):
+        if is_allowed_extension_origin(origin):
             resp.headers["Access-Control-Allow-Origin"] = origin
             resp.headers["Vary"] = "Origin"
         resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
@@ -3799,13 +3834,9 @@ def create_api(config, dl_manager, history):
             },
             "recentErrors": get_recent_log_entries(),
         }
-        # v3.15.0: Token disclosure is now gated by the Host check at
-        # `guard_request()` — DNS-rebinding attacks send `Host: attacker.com`
-        # and are rejected before reaching this handler. Any request that
-        # gets here proves it targeted 127.0.0.1/localhost directly, which is
-        # either the extension (extension Origin) or a local-machine tool
-        # (no Origin). Keeping both paths so local dev tooling (curl, the
-        # downloader GUI's own self-test) can still probe the service.
+        # Legacy token echo is an explicit compatibility path only. Browser
+        # extension origins must be configured first; arbitrary installed
+        # extensions must not be able to bootstrap the bearer token.
         origin = request.headers.get("Origin", "")
         token_source = clean_text(request.headers.get("X-MDL-Token-Source", ""), "", 32)
         if token_source:
@@ -3814,7 +3845,7 @@ def create_api(config, dl_manager, history):
             legacy_health_token_echo
             and token_source != "native"
             and request.headers.get("X-MDL-Client") == "MediaDL"
-            and (not origin or is_extension_origin(origin))
+            and (not origin or is_allowed_extension_origin(origin))
         ):
             resp["token"] = token
         return cors_response(resp)
@@ -6019,18 +6050,13 @@ def check_single_instance(startup_command=''):
 # ──────────────────────────────────────────────────────────────────────────
 # Native-messaging token bootstrap (browser-pinned channel)
 #
-# The HTTP /health endpoint discloses the auth token to any local process that
-# sends `X-MDL-Client: MediaDL` with no Origin (the background service worker's
-# bootstrap path) — so the token provides little protection against other local
-# code. Chrome native messaging fixes this: the host manifest's allowed_origins
-# pins exactly which extension IDs may launch this process, and the browser
-# delivers the message over a private stdio pipe no other process can read.
+# Native messaging is the primary token bootstrap path: the host manifest's
+# allowed_origins pins exactly which extension IDs may launch this process, and
+# the browser delivers the message over a private stdio pipe no other process
+# can read. The old HTTP /health echo remains behind an explicit compatibility
+# switch plus extension-origin allowlist for older local installs.
 #
-# These functions are the testable core of that design. The full cutover
-# (registering the host manifest in the registry, adding "nativeMessaging" to
-# the extension manifest, and switching the extension's bootstrap from
-# fetch('/health') to chrome.runtime.connectNative) is tracked in
-# docs/native-messaging-token-bootstrap.md and requires on-device validation.
+# These functions are the testable core of that design.
 # ──────────────────────────────────────────────────────────────────────────
 
 NATIVE_HOST_NAME = "com.astra.deck.downloader"
