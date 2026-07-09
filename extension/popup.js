@@ -3849,30 +3849,62 @@ async function reenableMediadlPrompts() {
 // - 503 ok:false (no yt-dlp)   -> "Astra Downloader has no yt-dlp yet"
 // - 500 ok:false (exit code)   -> "yt-dlp -U failed: <stderr>"
 // - status=0  (no MediaDL/SW)  -> "Start Astra Downloader and try again"
+function rankPopupBridgeTab(tab) {
+    return (tab?.active ? 0 : 4)
+        + (tab?.currentWindow ? 0 : 2)
+        + (tab?.highlighted ? 0 : 1);
+}
+
+function sortPopupBridgeTabs(tabs) {
+    return [...(tabs || [])].sort((a, b) =>
+        rankPopupBridgeTab(a) - rankPopupBridgeTab(b)
+        || Number(a?.index || 0) - Number(b?.index || 0)
+        || Number(a?.id || 0) - Number(b?.id || 0)
+    );
+}
+
+async function sendPopupBridgeMessageToYouTubeTabs(messageType) {
+    let tabs = [];
+    try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
+    catch (_) { /* reason: extension suspended or tabs API unavailable */ }
+    tabs = sortPopupBridgeTabs(tabs).filter((tab) =>
+        tab && typeof tab.id !== 'undefined' && Number.isFinite(Number(tab.id)));
+    if (!tabs.length) {
+        return { ok: false, status: 0, noYouTubeTab: true, error: 'No YouTube tab is open.' };
+    }
+
+    let lastNoResponse = null;
+    for (const tab of tabs) {
+        const result = await new Promise((resolve) => {
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: messageType }, (r) => {
+                    const lastError = chrome.runtime.lastError;
+                    if (lastError) {
+                        resolve({ ok: false, status: 0, error: lastError.message || 'No response from the YouTube tab.' });
+                        return;
+                    }
+                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
+                });
+            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
+        });
+        if (result?.ok || (result && result.status !== 0)) return result;
+        lastNoResponse = result;
+    }
+    return lastNoResponse || { ok: false, status: 0, error: 'No response from any YouTube tab.' };
+}
+
 async function updateYtdlpNow() {
     if (!updateYtdlpButton) return;
     updateYtdlpButton.setAttribute('aria-busy', 'true');
     updateYtdlpButton.disabled = true;
     try {
-        // Find any YouTube tab where MediaDLManager is loaded.
-        let tabs = [];
-        try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
-        catch (_) { /* reason: extension suspended or tabs API unavailable */ }
-        if (!tabs || tabs.length === 0) {
+        const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_UPDATE_YTDLP');
+        if (result?.noYouTubeTab) {
             showStatus(t('statusUpdateYtdlpNoTab',
                 'Open a YouTube tab first — the popup needs it to reach the Astra Downloader.'),
                 'error', 5200);
             return;
         }
-        const tab = tabs[0];
-        const result = await new Promise((resolve) => {
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_UPDATE_YTDLP' }, (r) => {
-                    void chrome.runtime.lastError;
-                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
-                });
-            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
-        });
         if (result && result.ok) {
             const before = result.version_before || '';
             const after = result.version_after || '';
@@ -3904,22 +3936,11 @@ async function updateCompanionNow() {
     updateCompanionButton.setAttribute('aria-busy', 'true');
     updateCompanionButton.disabled = true;
     try {
-        let tabs = [];
-        try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
-        catch (_) { /* reason: extension suspended or tabs API unavailable */ }
-        if (!tabs || tabs.length === 0) {
+        const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_UPDATE_COMPANION');
+        if (result?.noYouTubeTab) {
             showStatus('Open a YouTube tab first — the popup needs it to reach the Astra Downloader.', 'error', 5200);
             return;
         }
-        const tab = tabs[0];
-        const result = await new Promise((resolve) => {
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_UPDATE_COMPANION' }, (r) => {
-                    void chrome.runtime.lastError;
-                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
-                });
-            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
-        });
         if (result && result.ok) {
             const current = result.current_version || '';
             const latest = result.latest_version || '';
