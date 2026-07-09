@@ -62,11 +62,14 @@ Astra Deck and Astra Downloader are separate installs. The browser extension can
 be installed from the release ZIP/XPI or userscript path above; video and audio
 downloads need the local Astra Downloader companion running on this device.
 
-Current public release state: latest release `v4.46.4` includes
-`AstraDownloader.exe` but does **not** include `AstraDownloader.exe.sha256`.
-The in-page setup prompt, toolbar recovery action, and companion update button
-are already wired to the release asset path, but the public download cannot
-complete until a release attaches the hash sidecar next to the EXE.
+Current public release state: the latest release ships extension and
+userscript artifacts only — `AstraDownloader.exe` and
+`AstraDownloader.exe.sha256` are **not** attached yet. The in-page setup
+prompt, toolbar recovery action, and companion update button are already wired
+to the release asset path, but the public download cannot complete until a
+release attaches both companion assets. Check the
+[latest release page](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+for the live asset list.
 
 For current source-checkout testing on Windows:
 
@@ -435,9 +438,9 @@ Outputs in `build/`:
 
 Companion release assets are intentionally separate from the default extension
 build output. Only a companion release/staging pass should add
-`AstraDownloader.exe` and `AstraDownloader.exe.sha256` to `build/`. The current
-latest release `v4.46.4` includes the EXE but still needs the `.sha256`
-sidecar attached.
+`AstraDownloader.exe` and `AstraDownloader.exe.sha256` to `build/`. No
+published release attaches the companion asset pair yet; verify the live
+release asset list before promising the one-click setup path.
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
 
