@@ -2817,3 +2817,225 @@ textarea:focus-visible {
     box-shadow: none;
   }
 }
+
+/* Premium command-surface layer. The popup owns one scroll container so
+   onboarding, health, and recovery states cannot clip quick controls. */
+.page-shell {
+  padding: 10px 10px 0;
+}
+
+.app-bar {
+  min-height: 38px;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid var(--astra-border-subtle);
+}
+
+.brand-name {
+  letter-spacing: -0.01em;
+}
+
+.app-status {
+  min-height: 28px;
+  border-color: var(--astra-border);
+  background: var(--astra-surface-raised);
+}
+
+.app-status::before {
+  background: var(--astra-text-muted);
+  box-shadow: none;
+  animation: none;
+}
+
+.app-status[data-state="ready"]::before {
+  background: var(--astra-success);
+  box-shadow: 0 0 0 3px rgba(84, 214, 129, 0.12);
+}
+
+.app-status[data-state="warn"]::before {
+  background: var(--astra-warning);
+}
+
+.app-status[data-state="local"]::before {
+  background: var(--astra-info);
+}
+
+.options-workspace {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 10px 2px 12px;
+}
+
+.workspace-command {
+  min-height: 76px;
+  padding: 12px;
+  border-color: var(--astra-border);
+  background:
+    linear-gradient(120deg, rgba(255, 93, 74, 0.1), transparent 45%),
+    var(--astra-surface);
+  box-shadow: var(--astra-shadow-low);
+}
+
+.workspace-command::before {
+  left: 12px;
+  right: auto;
+  width: 3px;
+  bottom: 12px;
+  background: var(--astra-accent);
+}
+
+.workspace-title {
+  font-size: 17px;
+  letter-spacing: -0.025em;
+}
+
+.storage-overview,
+.schema-overview,
+.actions-row,
+.quick-toggles-section {
+  border-color: var(--astra-border);
+  box-shadow: none;
+}
+
+.stat-card {
+  min-height: 52px;
+  background: var(--astra-surface-raised);
+}
+
+.welcome-preset-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.actions-row {
+  align-items: center;
+  padding: 7px;
+  background: var(--astra-surface);
+}
+
+.button-row {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.maintenance-menu {
+  position: relative;
+  margin-left: auto;
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+.maintenance-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--astra-border);
+  border-radius: var(--astra-radius-2);
+  color: var(--astra-text-secondary);
+  background: var(--astra-surface-raised);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+
+.maintenance-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.maintenance-menu > summary::marker {
+  content: "";
+}
+
+.maintenance-menu[open] > summary {
+  color: var(--astra-text);
+  border-color: var(--astra-accent);
+  background: var(--astra-accent-soft);
+}
+
+.maintenance-menu .actions-end {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  width: min(270px, calc(100vw - 32px));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--astra-border);
+  border-radius: var(--astra-radius-3);
+  background: var(--astra-surface-raised);
+  box-shadow: var(--astra-shadow-high);
+}
+
+.maintenance-menu .actions-end button {
+  width: 100%;
+  min-height: 36px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.status {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  min-height: 36px;
+  align-items: center;
+  box-shadow: var(--astra-shadow-low);
+}
+
+.status.success,
+.status.error,
+.status.info {
+  display: flex;
+}
+
+.quick-toggles-section {
+  min-height: 340px;
+  background: var(--astra-surface);
+}
+
+.toggles {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding-bottom: 12px;
+}
+
+.toggle {
+  min-height: 48px;
+  border-color: transparent;
+}
+
+.toggle:hover {
+  border-color: var(--astra-border);
+  background: var(--astra-surface-hover);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 400px) {
+  .actions-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .button-row .language-inline {
+    grid-column: 1 / -1;
+  }
+
+  .maintenance-menu {
+    margin-left: 0;
+    align-self: start;
+  }
+
+  .maintenance-menu .actions-end {
+    right: 0;
+  }
+}
