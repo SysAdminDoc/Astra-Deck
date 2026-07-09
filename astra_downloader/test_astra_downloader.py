@@ -271,12 +271,17 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(body["service"], ad.SERVICE_ID)
         self.assertEqual(body["api"], ad.SERVICE_API_VERSION)
         self.assertTrue(body["token_required"])
-        self.assertTrue(body["legacyTokenEcho"])
-        self.assertFalse(body["nativeChannelRequired"])
-        self.assertEqual(body["token"], "a" * 32)
+        self.assertFalse(body["legacyTokenEcho"])
+        self.assertTrue(body["nativeChannelRequired"])
+        self.assertNotIn("token", body)
 
-    def test_health_token_is_not_exposed_to_null_origin_pages(self):
-        config = FakeConfig({"ServerToken": "a" * 32})
+    def test_health_legacy_token_echo_is_origin_allowlisted(self):
+        trusted_origin = "chrome-extension://trustedlegacyid"
+        config = FakeConfig({
+            "ServerToken": "a" * 32,
+            "LegacyHealthTokenEcho": True,
+            "LegacyHealthTokenOrigins": trusted_origin,
+        })
         manager = ad.DownloadManager(config, FakeHistory())
         api = ad.create_api(config, manager, FakeHistory())
         client = api.test_client()
@@ -288,13 +293,20 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn("Access-Control-Allow-Origin", null_origin.headers)
         self.assertNotIn("token", null_origin.get_json())
 
-        extension_origin = "chrome-extension://abcdefghijklmnop"
-        extension_resp = client.get("/health", headers={
-            "Origin": extension_origin,
+        arbitrary_origin = "chrome-extension://abcdefghijklmnop"
+        arbitrary_resp = client.get("/health", headers={
+            "Origin": arbitrary_origin,
             "X-MDL-Client": "MediaDL",
         })
-        self.assertEqual(extension_resp.headers.get("Access-Control-Allow-Origin"), extension_origin)
-        self.assertEqual(extension_resp.get_json()["token"], "a" * 32)
+        self.assertNotIn("Access-Control-Allow-Origin", arbitrary_resp.headers)
+        self.assertNotIn("token", arbitrary_resp.get_json())
+
+        trusted_resp = client.get("/health", headers={
+            "Origin": trusted_origin,
+            "X-MDL-Client": "MediaDL",
+        })
+        self.assertEqual(trusted_resp.headers.get("Access-Control-Allow-Origin"), trusted_origin)
+        self.assertEqual(trusted_resp.get_json()["token"], "a" * 32)
 
         background_resp = client.get("/health", headers={"X-MDL-Client": "MediaDL"})
         self.assertEqual(background_resp.get_json()["token"], "a" * 32)
@@ -307,11 +319,29 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(native_body["tokenSource"], "native")
         self.assertNotIn("token", native_body)
 
+    def test_health_legacy_echo_allows_configured_native_chrome_id(self):
+        extension_origin = "chrome-extension://configuredchromeid"
+        config = FakeConfig({
+            "ServerToken": "c" * 32,
+            "LegacyHealthTokenEcho": True,
+            "NativeChromeExtensionIds": "configuredchromeid",
+        })
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().get("/health", headers={
+            "Origin": extension_origin,
+            "X-MDL-Client": "MediaDL",
+        })
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), extension_origin)
+        self.assertEqual(resp.get_json()["token"], "c" * 32)
+
     def test_health_legacy_token_echo_can_be_disabled(self):
         token = "b" * 32
+        extension_origin = "chrome-extension://trustedlegacyid"
         config = FakeConfig({
             "ServerToken": token,
             "LegacyHealthTokenEcho": False,
+            "LegacyHealthTokenOrigins": extension_origin,
         })
         manager = ad.DownloadManager(config, FakeHistory())
         api = ad.create_api(config, manager, FakeHistory())
@@ -324,7 +354,6 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertTrue(background_body["nativeChannelRequired"])
         self.assertNotIn("token", background_body)
 
-        extension_origin = "chrome-extension://abcdefghijklmnop"
         extension_resp = client.get("/health", headers={
             "Origin": extension_origin,
             "X-MDL-Client": "MediaDL",
@@ -878,14 +907,18 @@ class CorsHeaderTests(unittest.TestCase):
         # The Origin-allow path adds "Vary: Origin"; the no-store + Cookie
         # token must compose with it, not overwrite it.
         token = "p" * 32
-        config = FakeConfig({"ServerToken": token})
+        extension_origin = "chrome-extension://trustedlegacyid"
+        config = FakeConfig({
+            "ServerToken": token,
+            "LegacyHealthTokenOrigins": extension_origin,
+        })
         manager = ad.DownloadManager(config, FakeHistory())
         api = ad.create_api(config, manager, FakeHistory())
         resp = api.test_client().get(
             "/health",
             headers={
                 "X-MDL-Client": "MediaDL",
-                "Origin": "chrome-extension://abcdefghijklmnop",
+                "Origin": extension_origin,
             },
         )
         self.assertEqual(resp.headers.get("Cache-Control"), "no-store")
@@ -2117,6 +2150,42 @@ class EndToEndDownloadTests(unittest.TestCase):
                 "status payload must expose the matching recovery action")
             self.assertEqual(len(history.entries), 0,
                 "failed download must NOT write a history entry")
+
+    def test_yt_dlp_nonzero_exit_after_full_progress_still_marks_failed(self):
+        token = "p" * 32
+        fake_lines = [
+            'MDLP_JSON {"downloaded_bytes": 10000, "total_bytes": 10000, "_speed_str": "1.2MiB/s", "_eta_str": "00:00"}',
+            'ERROR: Postprocessing: ffmpeg exited with code 1',
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "ServerToken": token,
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+            })
+            history = FakeHistory()
+            manager = ad.DownloadManager(config, history)
+            popen_factory = self._make_fake_popen(fake_lines, returncode=1)
+            with mock.patch.object(ad.subprocess, 'Popen', popen_factory), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                dl_id, err = manager.start_download(
+                    url="https://www.youtube.com/watch?v=postProcessFail",
+                )
+                self.assertIsNone(err)
+                dl = manager.downloads[dl_id]
+                self.assertTrue(self._wait_for_terminal(dl))
+
+        self.assertEqual(dl.status, "failed",
+            f"non-zero exit after full progress must fail; got {dl.status}")
+        self.assertEqual(dl.progress, 100,
+            "the parsed progress can remain complete, but status must not")
+        self.assertEqual(dl.error_code, "ffmpeg-missing-or-stale",
+            "late ffmpeg failures must expose the recovery code")
+        self.assertEqual(dl.to_dict().get("next_action"), "refresh-ffmpeg",
+            "status payload must expose the matching recovery action")
+        self.assertEqual(len(history.entries), 0,
+            "failed postprocessor exit must NOT write a history entry")
 
     def test_parse_loop_crash_terminates_orphan_and_purges_cookie_jar(self):
         """Audit fix: an unexpected exception inside the output-parsing loop
