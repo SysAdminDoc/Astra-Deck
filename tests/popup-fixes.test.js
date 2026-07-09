@@ -21,6 +21,10 @@ const popupSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'popup.js'),
     'utf8'
 );
+const popupHtmlSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'popup.html'),
+    'utf8'
+);
 
 // ── Extraction helper ──
 // Same pattern as the hardening suite's extractNormalizeFn: slice the
@@ -132,6 +136,62 @@ test('popup importer threads the backup settingsSchemaVersion into the migration
     assert.match(popupSource,
         /function mergeImportedSettingsWithDefaults\(settings, defaults, settingsVersion, source, options = \{\}\)/,
         'mergeImportedSettingsWithDefaults must accept and forward the options bag');
+});
+
+test('popup import stages a session undo snapshot before applying backup data', () => {
+    assert.match(popupHtmlSource, /id="undo-import-btn"/,
+        'popup.html must declare the Undo Import button');
+    assert.match(popupHtmlSource, /aria-label="Restore data from the most recent Import"/,
+        'Undo Import must carry an accessible label');
+    assert.match(popupHtmlSource, /data-i18n="undoImportBtn"/,
+        'Undo Import must carry an i18n key');
+    assert.match(popupSource, /const IMPORT_SNAPSHOT_KEY = '_importSnapshot'/,
+        'popup.js must use a dedicated import snapshot key');
+    assert.match(popupSource, /async function writeImportSnapshot\(snapshot\)/,
+        'popup.js must expose an import snapshot writer');
+
+    const importStart = popupSource.indexOf('async function importSettings(file)');
+    const importEnd = popupSource.indexOf('\n}\n\nasync function undoImportSettings', importStart);
+    assert.ok(importStart > -1 && importEnd > importStart,
+        'importSettings block must be found');
+    const importBlock = popupSource.slice(importStart, importEnd);
+    const snapshotPos = importBlock.indexOf('writeImportSnapshot(snapshot)');
+    const applyPos = importBlock.indexOf('chrome.storage.local.set(writes)');
+    assert.ok(snapshotPos > -1 && applyPos > -1 && snapshotPos < applyPos,
+        'importSettings must stage the undo snapshot before writing imported data');
+    assert.match(importBlock, /restoreLocalStorageSnapshot\(snapshot\)/,
+        'failed import apply must restore the pre-import storage snapshot');
+    assert.match(importBlock, /statusBackupImportedUndo/,
+        'successful import must tell users the Undo Import recovery is available');
+
+    const undoStart = popupSource.indexOf('async function undoImportSettings()');
+    const undoEnd = popupSource.indexOf('\n}\n\n// v4.47.0 NF6', undoStart);
+    assert.ok(undoStart > -1 && undoEnd > undoStart,
+        'undoImportSettings block must be found');
+    const undoBlock = popupSource.slice(undoStart, undoEnd);
+    assert.match(undoBlock, /readImportSnapshot\(\)/,
+        'Undo Import must read the session snapshot');
+    assert.match(undoBlock, /restoreLocalStorageSnapshot\(snap\)/,
+        'Undo Import must wipe and replace local storage from the snapshot');
+    assert.match(undoBlock, /clearImportSnapshot\(\)/,
+        'Undo Import must clear the snapshot after restoration');
+    assert.match(undoBlock, /broadcastSettingsReplaced\(snap\[STORAGE_KEYS\.settings\]\)/,
+        'Undo Import must notify open YouTube tabs when settings are restored');
+
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const key of [
+        'undoImportAria',
+        'undoImportBtn',
+        'statusBackupImportedUndo',
+        'statusBackupImportedNoUndo',
+        'statusImportSnapshotFail',
+        'statusImportUndoExpired',
+        'statusImportUndoFail',
+    ]) {
+        assert.ok(enMessages[key]?.message, `EN locale must declare ${key}`);
+    }
 });
 
 // ── 2. Corruption-diagnostic dedupe ──

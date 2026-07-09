@@ -261,6 +261,11 @@
         </label>
       </div>
       <div class="actions-end">
+        <!-- Import recovery mirrors Reset recovery: hidden until a
+             `_importSnapshot` exists in chrome.storage.session, then restores
+             the exact pre-import local storage payload for this browser
+             session. -->
+        <button id="undo-import-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="undoImportAria" aria-label="Restore data from the most recent Import" data-i18n="undoImportBtn">Undo Import</button>
         <!-- v4.47.0 EI2: undo grace period for Reset. Hidden by default;
              unhid when a `_resetSnapshot` exists in chrome.storage.session
              (set by resetAllData, cleared on Undo or browser-close). -->
