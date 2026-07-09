@@ -794,6 +794,51 @@ class Sha256VerifyTests(unittest.TestCase):
         self.assertEqual(ad._parse_sha256_sums(f"{digest}\n"), digest)
 
 
+class SetupChecksumTests(unittest.TestCase):
+    def test_setup_worker_rejects_missing_helper_checksum_sidecar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "yt-dlp.exe"
+            path.write_bytes(b"helper")
+            worker = ad.SetupWorker()
+            with mock.patch.object(ad, 'fetch_expected_sha256', return_value=None), \
+                    mock.patch.object(ad, 'write_persistent_log') as log:
+                with self.assertRaises(RuntimeError) as ctx:
+                    worker._verify_required_checksum(
+                        path, "https://example.invalid/SHA2-256SUMS",
+                        asset_name="yt-dlp.exe", label="yt-dlp",
+                    )
+            self.assertIn("sidecar", str(ctx.exception))
+            self.assertFalse(path.exists())
+            log.assert_called()
+
+    def test_setup_worker_accepts_matching_helper_checksum(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "yt-dlp.exe"
+            payload = b"helper"
+            path.write_bytes(payload)
+            expected = hashlib.sha256(payload).hexdigest()
+            worker = ad.SetupWorker()
+            with mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected):
+                self.assertTrue(worker._verify_required_checksum(
+                    path, "https://example.invalid/SHA2-256SUMS",
+                    asset_name="yt-dlp.exe", label="yt-dlp",
+                ))
+            self.assertTrue(path.exists())
+
+    def test_setup_worker_deletes_helper_on_checksum_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ffmpeg.zip"
+            path.write_bytes(b"wrong")
+            worker = ad.SetupWorker()
+            with mock.patch.object(ad, 'fetch_expected_sha256', return_value="0" * 64):
+                with self.assertRaises(RuntimeError):
+                    worker._verify_required_checksum(
+                        path, "https://example.invalid/ffmpeg.zip.sha256",
+                        label="ffmpeg",
+                    )
+            self.assertFalse(path.exists())
+
+
 class CookieJarSweepTests(unittest.TestCase):
     """v1.2.0 S4 — orphaned .cookies.*.txt cleanup on server start.
 
