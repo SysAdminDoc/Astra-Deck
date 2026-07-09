@@ -47,6 +47,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   runs now auto-install from `astra_downloader/requirements.txt` instead of
   unpinned package names, so a missing PyQt/Flask/requests/waitress import
   cannot pull an unreviewed major release.
+- **Fix: companion non-blocking settings recovery.** Astra Downloader removed
+  blocking message boxes from settings, server-start failure, and uninstall
+  paths; history clearing now offers an inline Undo action, connection changes
+  auto-restart the local server after Save, and helper/token maintenance reports
+  through status text, tray notifications, and logs.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed

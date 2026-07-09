@@ -90,7 +90,7 @@ _bootstrap()
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QTabWidget, QScrollArea, QFrame, QCheckBox, QLineEdit,
-    QFileDialog, QSystemTrayIcon, QMenu, QMessageBox, QProgressBar, QTextEdit,
+    QFileDialog, QSystemTrayIcon, QMenu, QProgressBar, QTextEdit,
     QSpinBox, QComboBox, QGraphicsOpacityEffect, QStyle
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread, QSize, QPropertyAnimation, QEasingCurve
@@ -2571,7 +2571,6 @@ QToolTip {
     border-radius: 6px;
     padding: 6px 8px;
 }
-QMessageBox { background-color: #0b0f14; }
 """
 
 # ══════════════════════════════════════════════════════════════
@@ -2636,6 +2635,10 @@ class History:
     def clear(self):
         with self._lock:
             self._write_unlocked([])
+
+    def replace(self, entries):
+        with self._lock:
+            self._write_unlocked(entries)
 
     def _write(self, data):
         with self._lock:
@@ -4415,15 +4418,7 @@ class SetupWorker(QThread):
 # UNINSTALL
 # ══════════════════════════════════════════════════════════════
 def run_uninstall():
-    app = QApplication(sys.argv)
-    result = QMessageBox.question(
-        None, "Uninstall Astra Downloader",
-        "Remove Astra Downloader and all server components?\n\n"
-        "Your downloaded videos will NOT be deleted.",
-        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-    )
-    if result != QMessageBox.StandardButton.Yes:
-        sys.exit(0)
+    write_persistent_log("Uninstall requested; removing Astra Downloader components.")
 
     # Kill processes
     if sys.platform == 'win32':
@@ -4483,8 +4478,9 @@ def run_uninstall():
             if is_frozen_app():
                 spawn_delayed_install_dir_removal(INSTALL_DIR)
 
-    QMessageBox.information(None, "Uninstall Complete",
-                            "Astra Downloader has been uninstalled.\nYour downloaded videos were not removed.")
+    message = "Astra Downloader has been uninstalled. Downloaded videos were not removed."
+    write_persistent_log(message)
+    print(message)
     sys.exit(0)
 
 
@@ -4658,6 +4654,7 @@ class MainWindow(QMainWindow):
         self._page_anim = None
         self._setup_running = False
         self._tray_hint_shown = False
+        self._cleared_history_snapshot = []
         self._downloads_signature = None
         self.log_message.connect(self._append_log)
         self.instance_command.connect(self._handle_instance_command)
@@ -4933,6 +4930,11 @@ class MainWindow(QMainWindow):
         btn_clear = self._make_tool_button("Clear History", QStyle.StandardPixmap.SP_TrashIcon, "danger")
         btn_clear.clicked.connect(self._clear_history)
         header.addWidget(btn_clear, 0, Qt.AlignmentFlag.AlignTop)
+        self.btn_undo_clear_history = self._make_tool_button("Undo Clear", QStyle.StandardPixmap.SP_ArrowBack, "ghost")
+        self.btn_undo_clear_history.setToolTip("Restore the history entries cleared in this session.")
+        self.btn_undo_clear_history.clicked.connect(self._undo_clear_history)
+        self.btn_undo_clear_history.hide()
+        header.addWidget(self.btn_undo_clear_history, 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(header)
 
         scroll = QScrollArea()
@@ -5518,21 +5520,28 @@ class MainWindow(QMainWindow):
         self.history_container.addStretch()
 
     def _clear_history(self):
-        if not self.history_mgr.load():
+        snapshot = self.history_mgr.load()
+        if not snapshot:
             self._refresh_history()
+            self._append_log("Download history is already clear")
             return
-        result = QMessageBox.question(
-            self,
-            "Clear Download History",
-            "Clear the saved download history?\n\nDownloaded files will stay on disk.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        if result != QMessageBox.StandardButton.Yes:
-            return
+        self._cleared_history_snapshot = snapshot
         self.history_mgr.clear()
         self._refresh_history()
-        self._append_log("Download history cleared")
+        self.btn_undo_clear_history.show()
+        self._append_log("Download history cleared. Downloaded files were not removed.")
+
+    def _undo_clear_history(self):
+        if not self._cleared_history_snapshot:
+            self.btn_undo_clear_history.hide()
+            self._append_log("No cleared history entries to restore")
+            return
+        self.history_mgr.replace(self._cleared_history_snapshot)
+        restored = len(self._cleared_history_snapshot)
+        self._cleared_history_snapshot = []
+        self.btn_undo_clear_history.hide()
+        self._refresh_history()
+        self._append_log(f"Restored {restored} download history entr{'y' if restored == 1 else 'ies'}")
 
     def _retry_download(self, dl):
         dl_id, err = self.dl_manager.start_download(
@@ -5631,20 +5640,16 @@ class MainWindow(QMainWindow):
     def _reinstall_ffmpeg(self):
         """Delete the installed ffmpeg.exe and re-run the setup download path
         so integrity verification re-runs from scratch."""
+        if self._setup_running:
+            self._append_log("Setup is already running; wait for it to finish before reinstalling ffmpeg.")
+            self._show_settings_status("Setup is already running.", "warning")
+            return
         if not FFMPEG_PATH.exists():
             # Still reasonable to trigger: lets the user install ffmpeg from
             # the Settings page without having to exit and re-launch.
             pass
-        result = QMessageBox.question(
-            self,
-            "Reinstall ffmpeg",
-            "Delete the installed ffmpeg and re-download it from source?\n\n"
-            "The download is verified against the upstream checksum before being trusted.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        if result != QMessageBox.StandardButton.Yes:
-            return
+        self._append_log("Reinstalling ffmpeg from source with checksum verification.")
+        self._show_settings_status("Reinstalling ffmpeg. Verification will run before it is trusted.", "warning")
         try:
             if FFMPEG_PATH.exists():
                 FFMPEG_PATH.unlink()
@@ -5711,26 +5716,10 @@ class MainWindow(QMainWindow):
             return
 
         connection_changed = new_port != old_port or new_token != old_token
-        restart_now = False
-        connection_change_blocked = False
-        if connection_changed and self.server_running:
-            result = QMessageBox.question(
-                self,
-                "Restart Server",
-                "Connection settings changed.\n\nRestart the local server now so Astra Deck can use the updated values?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes,
-            )
-            restart_now = result == QMessageBox.StandardButton.Yes
-            if not restart_now:
-                new_port = old_port
-                new_token = old_token
-                self.cfg_port.setValue(old_port)
-                self.cfg_token.setText(old_token)
-                connection_changed = False
-                connection_change_blocked = True
+        restart_now = connection_changed and self.server_running
 
         if restart_now:
+            self._append_log("Connection settings changed; restarting local server.")
             self._stop_server()
 
         self.cfg_dl_path.setText(dl_path)
@@ -5761,8 +5750,6 @@ class MainWindow(QMainWindow):
         if restart_now:
             self._start_server()
             self._show_settings_status("Settings saved and server restarted.", "success")
-        elif connection_change_blocked:
-            self._show_settings_status("Other settings saved. Stop or restart the server before changing connection details.", "warning")
         else:
             self._show_settings_status("Settings saved.", "success")
         self.btn_save.setText("Saved")
@@ -5813,16 +5800,8 @@ class MainWindow(QMainWindow):
         self.btn_token_reveal.setText("Reveal" if showing else "Hide")
 
     def _regenerate_token(self):
-        result = QMessageBox.question(
-            self,
-            "Regenerate Private Token",
-            "Generate a new private token?\n\nExisting extension requests will need the refreshed token after you save.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        if result != QMessageBox.StandardButton.Yes:
-            return
         self.cfg_token.setText(uuid.uuid4().hex)
+        self._append_log("New server token generated. Save settings to apply it.")
         self._show_settings_status("New token ready. Save settings to apply it.", "warning")
 
     def _open_folder(self):
@@ -5844,12 +5823,19 @@ class MainWindow(QMainWindow):
         self.log_text.setTextCursor(cursor)
 
     def _show_server_error(self, msg):
-        """Show a blocking error dialog and ensure the main window is visible."""
+        """Report startup failures without stealing focus from the active desktop."""
         try:
-            self.show()
-            self.raise_()
-            self.activateWindow()
-            QMessageBox.warning(self, "Astra Downloader — Server failed to start", msg)
+            self._append_log(f"Server failed to start: {msg}")
+            self.status_label.setText("Server error")
+            self.status_label.setStyleSheet("color: #ffb8b8; font-size: 11px;")
+            self.dash_hint.setText("Server failed to start. Check the log for details.")
+            if self.tray.isVisible():
+                self.tray.showMessage(
+                    "Astra Downloader",
+                    "Server failed to start. Check the log for details.",
+                    QSystemTrayIcon.MessageIcon.Warning,
+                    6000,
+                )
         except Exception:
             pass
 

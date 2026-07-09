@@ -110,6 +110,45 @@ class PersistenceTests(unittest.TestCase):
             finally:
                 ad.HISTORY_PATH = original
 
+    def test_history_replace_restores_cleared_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original = ad.HISTORY_PATH
+            try:
+                ad.HISTORY_PATH = Path(tmp) / "history.json"
+                history = ad.History()
+                snapshot = [
+                    {"id": "1", "url": "https://example.com/1", "title": "One"},
+                    {"id": "2", "url": "https://example.com/2", "title": "Two"},
+                ]
+                expected = ad.sanitize_history_entries(snapshot)
+                history.replace(snapshot)
+                self.assertEqual(history.load(), expected)
+
+                history.clear()
+                self.assertEqual(history.load(), [])
+
+                history.replace(snapshot)
+                self.assertEqual(history.load(), expected)
+            finally:
+                ad.HISTORY_PATH = original
+
+
+class CompanionGuiPolicyTests(unittest.TestCase):
+    def test_companion_settings_flows_do_not_use_blocking_message_boxes(self):
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        import inspect
+        server_error_src = inspect.getsource(ad.MainWindow._show_server_error)
+        self.assertNotIn(
+            "QMessageBox",
+            src,
+            "Companion settings/uninstall flows must report through in-window status, tray toasts, and logs.",
+        )
+        self.assertIn("self.btn_undo_clear_history.show()", src)
+        self.assertIn("self.history_mgr.replace(self._cleared_history_snapshot)", src)
+        self.assertIn("restart_now = connection_changed and self.server_running", src)
+        self.assertNotIn("raise_()", server_error_src)
+        self.assertNotIn("activateWindow()", server_error_src)
+
 
 class InstanceCommandTests(unittest.TestCase):
     def test_startup_command_detects_protocol_launches(self):
