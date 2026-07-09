@@ -10,6 +10,7 @@ const {
     expectedReleaseNames,
     unexpectedReleaseNames
 } = require('./generate-release-manifest');
+const { findStrayProductTags } = require('./check-versions');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -128,6 +129,20 @@ function listPemFiles(dir, repoRoot) {
     return out;
 }
 
+function listGitTags(repoRoot) {
+    try {
+        const { execFileSync } = require('child_process');
+        const out = execFileSync('git', ['tag', '--list', 'v*'], {
+            cwd: repoRoot,
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        });
+        return out.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    } catch (_) {
+        return null; // not a git repo / git unavailable — skip the tag check
+    }
+}
+
 function listBuildFiles(buildDir = BUILD_DIR) {
     try {
         return fs.readdirSync(buildDir, { withFileTypes: true })
@@ -164,6 +179,21 @@ function buildReadinessReport(options = {}) {
         buildFiles ? 'pass' : 'fail',
         buildFiles ? `${buildFiles.length} top-level file(s)` : 'build/ is missing; run npm run build:userscript before release readiness'
     ));
+
+    // Stray tags that version-sort ahead of the current product version
+    // poison any latest-by-version-sort inference downstream.
+    const gitTags = options.gitTags !== undefined ? options.gitTags : listGitTags(repoRoot);
+    if (gitTags !== null) {
+        const strayTags = findStrayProductTags(packageVersion || '', gitTags);
+        checks.push(check(
+            'product-tag-sanity',
+            'No product tags version-sort ahead of the current version',
+            strayTags.length ? 'fail' : 'pass',
+            strayTags.length
+                ? `stray tag(s): ${strayTags.join(', ')} — delete with git tag -d <tag> && git push origin :refs/tags/<tag>`
+                : 'latest-by-version-sort resolves to the current product line'
+        ));
+    }
 
     const releaseManifestPath = path.join(buildDir, MANIFEST_NAME);
     const releaseManifest = readJsonIfExists(releaseManifestPath);

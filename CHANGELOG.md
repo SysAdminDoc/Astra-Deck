@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Fix: SemVer product-tag sanity gate.** `check-versions.js` (and with it
+  `npm run check`), release readiness, and `release:verify-digests` now
+  reject product-shaped git tags that version-sort ahead of the current
+  package version, printing the offending tag with a delete remediation.
+  The stray `v25.11` tag (no release attached) that outranked every
+  `v4.46.x` tag in `git tag --sort=-version:refname` was deleted locally
+  and on the remote.
 - **Security: release readiness blocks validation-signed public CRX
   artifacts.** Every build now writes `build/crx-signing-provenance.json`
   recording whether CRX assets were signed with the external maintainer key

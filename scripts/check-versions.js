@@ -92,6 +92,68 @@ function readSettingsMetaVersion() {
     return { source: 'extension/settings-meta.json (settingsVersion)', value: String(meta.settingsVersion || '') };
 }
 
+function parseProductTagSegments(tag) {
+    const m = String(tag || '').match(/^v(\d+(?:\.\d+)*)$/);
+    if (!m) return null;
+    return m[1].split('.').map(Number);
+}
+
+function compareVersionSegments(a, b) {
+    const len = Math.max(a.length, b.length);
+    for (let i = 0; i < len; i += 1) {
+        const av = a[i] || 0;
+        const bv = b[i] || 0;
+        if (av !== bv) return av - bv;
+    }
+    return 0;
+}
+
+// Tags shaped like product tags (v<digits[.digits...]>) that version-sort
+// AHEAD of the current product version poison any tooling that infers
+// "latest" by version sort — a stray v25.11 outranks every v4.46.x tag in
+// `git tag --sort=-version:refname`. Nothing should ever be tagged ahead of
+// the version in package.json.
+function findStrayProductTags(productVersion, tags) {
+    const current = parseProductTagSegments(`v${productVersion}`);
+    if (!current) return [];
+    return (tags || []).filter((tag) => {
+        const segments = parseProductTagSegments(String(tag).trim());
+        return segments !== null && compareVersionSegments(segments, current) > 0;
+    });
+}
+
+function listLocalProductTags() {
+    try {
+        const out = require('child_process').execFileSync('git', ['tag', '--list', 'v*'], {
+            cwd: REPO_ROOT,
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        });
+        return out.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    } catch (_) {
+        return null; // git unavailable — skip the gate rather than false-fail
+    }
+}
+
+function checkProductTagSanity(productVersion) {
+    const tags = listLocalProductTags();
+    if (tags === null) {
+        console.log('[check-versions] Product-tag sanity: skipped (git unavailable)');
+        return true;
+    }
+    const stray = findStrayProductTags(productVersion, tags);
+    if (!stray.length) {
+        console.log(`[check-versions] Product-tag sanity: no tags version-sort ahead of v${productVersion}`);
+        return true;
+    }
+    console.error('[check-versions] Stray product tag(s) version-sort ahead of the current version and can poison latest-by-version-sort tooling:');
+    for (const tag of stray) console.error(`  ${tag} (current product version is v${productVersion})`);
+    console.error('');
+    console.error('Remediate by deleting each stray tag locally and on the remote:');
+    for (const tag of stray) console.error(`  git tag -d ${tag} && git push origin :refs/tags/${tag}`);
+    return false;
+}
+
 function parseTagFlag(argv) {
     const idx = argv.indexOf('--tag');
     if (idx === -1) return null;
@@ -215,8 +277,9 @@ function main(argv) {
     }
 
     const docsOk = productOk && checkActiveDocumentationTruth(sources[0].value);
+    const tagsOk = !productOk || checkProductTagSanity(sources[0].value);
 
-    process.exit(productOk && settingsOk && docsOk ? 0 : 1);
+    process.exit(productOk && settingsOk && docsOk && tagsOk ? 0 : 1);
 }
 
 if (require.main === module) {
@@ -227,3 +290,9 @@ if (require.main === module) {
         process.exit(2);
     }
 }
+
+module.exports = {
+    compareVersionSegments,
+    findStrayProductTags,
+    parseProductTagSegments
+};

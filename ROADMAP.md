@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P1 — Add SemVer product-tag sanity gate before release/digest checks
-  Why: A stray `v25.11` git tag sorts ahead of `v4.46.34` and can poison any workflow that infers latest by version sort.
-  Evidence: `git tag --sort=-version:refname`, `scripts/check-versions.js`, `scripts/compare-release-digests.js`.
-  Touches: `scripts/check-versions.js`, `scripts/compare-release-digests.js`, `scripts/generate-release-readiness.js`, `tests/hardening.test.js`.
-  Acceptance: Local release checks reject non-`v<package.version>` product tags as current/latest candidates and print the offending tag with a safe remediation note.
-  Complexity: S
-
 - [ ] P1 — Generate companion install/release-state copy from live release metadata
   Why: README and companion docs still hardcode latest release `v4.46.4` even though GitHub latest is `v4.46.34`, weakening installer trust.
   Evidence: `README.md`, `docs/native-messaging-token-bootstrap.md`, `docs/signing-keys.md`, `gh release list --limit 10`.
