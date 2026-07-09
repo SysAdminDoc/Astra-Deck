@@ -356,11 +356,12 @@ Use at your own risk.
 
 ## Languages
 
-Astra Deck ships with 10 bundled UI locales:
+Astra Deck ships with 11 bundled UI locales:
 
 | Code | Language |
 |------|----------|
 | `en` | English (default) |
+| `ar` | العربية |
 | `de` | Deutsch |
 | `es` | Español |
 | `fr` | Français |
