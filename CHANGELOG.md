@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Persistent Queue.** Local play queue that survives tab close and browser
+  restart. A hover button on every thumbnail adds videos; a floating
+  `Queue · n` control opens a panel with reorder, remove, play-next, clear,
+  and JSON export/import (dedup + id validation). Auto-advance plays the next
+  entry when the current video ends (sub-toggle), and Auto-Exit Fullscreen
+  treats a pending queue entry as up-next so fullscreen is preserved. Capped
+  at 200 entries, all data local.
 - **Playback Error Auto-Recovery.** New reliability toggle: when YouTube's
   player error screen appears, Astra reloads the page and restores the last
   known position and playback speed. Capped at 3 attempts per video with

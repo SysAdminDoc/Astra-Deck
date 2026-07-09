@@ -4289,6 +4289,8 @@ return response;
             remainingTimeHideFullscreen: false,
             autoExitFullscreen: false,
             playbackErrorRecovery: false,
+            persistentQueue: false,
+            persistentQueueAutoAdvance: true,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -19982,6 +19984,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _hasUpNext() {
                 // Playlist/queue-aware: keep fullscreen when another entry plays next.
+                if (appState?.settings?.persistentQueue && appState?.settings?.persistentQueueAutoAdvance !== false) {
+                    const queue = storageReadJSON('ytkit-queue', null);
+                    if (queue?.items?.length) return true;
+                }
                 const panel = document.querySelector('ytd-playlist-panel-renderer#playlist:not([hidden])');
                 if (!panel) return false;
                 const items = panel.querySelectorAll('ytd-playlist-panel-video-renderer');
@@ -25456,6 +25462,304 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-thumb-action-host').forEach(t => t.classList.remove('ytkit-thumb-action-host'));
             }
         },
+        {
+            id: 'persistentQueue',
+            name: 'Persistent Queue',
+            description: 'Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance',
+            group: 'Content',
+            icon: 'list',
+            _KEY: 'ytkit-queue',
+            _MAX_ITEMS: 200,
+            _styleEl: null,
+            _pill: null,
+            _panel: null,
+            _addButtonsTimer: null,
+            _videoRef: null,
+            _endedHandler: null,
+            _docClickHandler: null,
+
+            _read() {
+                const q = storageReadJSON(this._KEY, null);
+                return (q && Array.isArray(q.items)) ? q : { v: 1, items: [] };
+            },
+            _write(queue) {
+                queue.items = queue.items.slice(0, this._MAX_ITEMS);
+                queue.updatedAt = Date.now();
+                storageWriteJSON(this._KEY, queue);
+                this._renderPill();
+                if (this._panel) this._renderPanelRows();
+            },
+            _hasNext() { return this._read().items.length > 0; },
+
+            _add(videoId, title, channel) {
+                const queue = this._read();
+                if (queue.items.some(it => it.id === videoId)) {
+                    showToast('Already in queue', '#f59e0b', { duration: 2, tone: 'warning' });
+                    return false;
+                }
+                if (queue.items.length >= this._MAX_ITEMS) {
+                    showToast(`Queue is full (${this._MAX_ITEMS})`, '#f59e0b', { duration: 3, tone: 'warning' });
+                    return false;
+                }
+                queue.items.push({ id: videoId, title: title || videoId, channel: channel || '', addedAt: Date.now() });
+                this._write(queue);
+                showToast('Added to queue', '#22c55e', { duration: 2 });
+                return true;
+            },
+            _removeAt(index) {
+                const queue = this._read();
+                queue.items.splice(index, 1);
+                this._write(queue);
+            },
+            _move(index, delta) {
+                const queue = this._read();
+                const target = index + delta;
+                if (target < 0 || target >= queue.items.length) return;
+                const [item] = queue.items.splice(index, 1);
+                queue.items.splice(target, 0, item);
+                this._write(queue);
+            },
+            _playNext() {
+                const queue = this._read();
+                const next = queue.items.shift();
+                if (!next) return;
+                this._write(queue);
+                location.href = `https://www.youtube.com/watch?v=${next.id}`;
+            },
+
+            _exportJson() {
+                const queue = this._read();
+                const blob = new Blob([JSON.stringify({ exportVersion: 1, ...queue }, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `astra-queue-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+            },
+            _importJson() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json,.json';
+                input.addEventListener('change', () => {
+                    const file = input.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try {
+                            const data = JSON.parse(String(reader.result));
+                            const items = Array.isArray(data.items) ? data.items : [];
+                            const clean = items
+                                .filter(it => it && typeof it.id === 'string' && /^[\w-]{11}$/.test(it.id))
+                                .map(it => ({ id: it.id, title: String(it.title || it.id).slice(0, 200), channel: String(it.channel || '').slice(0, 120), addedAt: Number(it.addedAt) || Date.now() }));
+                            const queue = this._read();
+                            const existing = new Set(queue.items.map(it => it.id));
+                            let added = 0;
+                            for (const it of clean) {
+                                if (existing.has(it.id)) continue;
+                                queue.items.push(it);
+                                existing.add(it.id);
+                                added += 1;
+                            }
+                            this._write(queue);
+                            showToast(`Queue import: ${added} added, ${clean.length - added} duplicate(s) skipped`, '#22c55e', { duration: 4 });
+                        } catch {
+                            // reason: malformed user-picked JSON must fail with feedback, not a crash.
+                            showToast('Import failed: not a valid queue JSON file', '#ef4444', { duration: 4, tone: 'error' });
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+                input.click();
+            },
+
+            _renderPill() {
+                const count = this._read().items.length;
+                if (!count) {
+                    this._pill?.remove(); this._pill = null;
+                    if (this._panel) { this._panel.remove(); this._panel = null; }
+                    return;
+                }
+                if (!this._pill || !this._pill.isConnected) {
+                    this._pill = document.createElement('button');
+                    this._pill.type = 'button';
+                    this._pill.className = 'ytkit-queue-pill';
+                    this._pill.setAttribute('translate', 'no');
+                    this._pill.addEventListener('click', () => this._togglePanel());
+                    document.body.appendChild(this._pill);
+                }
+                this._pill.textContent = `Queue · ${count}`;
+                this._pill.setAttribute('aria-label', `Open Astra queue (${count} item${count === 1 ? '' : 's'})`);
+            },
+
+            _renderPanelRows() {
+                const list = this._panel?.querySelector('.ytkit-queue-list');
+                if (!list) return;
+                const items = this._read().items;
+                list.replaceChildren();
+                items.forEach((it, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-queue-row';
+                    const title = document.createElement('a');
+                    title.className = 'ytkit-queue-title';
+                    title.href = `https://www.youtube.com/watch?v=${it.id}`;
+                    title.textContent = it.title;
+                    title.title = it.channel ? `${it.title} — ${it.channel}` : it.title;
+                    const actions = document.createElement('div');
+                    actions.className = 'ytkit-queue-row-actions';
+                    const mk = (label, aria, onClick, disabled = false) => {
+                        const b = document.createElement('button');
+                        b.type = 'button';
+                        b.textContent = label;
+                        b.setAttribute('aria-label', aria);
+                        b.disabled = disabled;
+                        b.addEventListener('click', onClick);
+                        actions.appendChild(b);
+                    };
+                    mk('↑', `Move up: ${it.title}`, () => this._move(i, -1), i === 0);
+                    mk('↓', `Move down: ${it.title}`, () => this._move(i, 1), i === items.length - 1);
+                    mk('✕', `Remove from queue: ${it.title}`, () => this._removeAt(i));
+                    row.appendChild(title);
+                    row.appendChild(actions);
+                    list.appendChild(row);
+                });
+            },
+
+            _togglePanel() {
+                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-queue-panel';
+                panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', 'Astra persistent queue');
+                const header = document.createElement('div');
+                header.className = 'ytkit-queue-header';
+                const heading = document.createElement('span');
+                heading.textContent = 'Persistent Queue';
+                header.appendChild(heading);
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-queue-actions';
+                const mk = (label, onClick) => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.textContent = label;
+                    b.addEventListener('click', onClick);
+                    actions.appendChild(b);
+                };
+                mk('Play next', () => this._playNext());
+                mk('Export', () => this._exportJson());
+                mk('Import', () => this._importJson());
+                mk('Clear', () => { this._write({ v: 1, items: [] }); showToast('Queue cleared', '#22c55e', { duration: 2 }); });
+                header.appendChild(actions);
+                const list = document.createElement('div');
+                list.className = 'ytkit-queue-list';
+                panel.appendChild(header);
+                panel.appendChild(list);
+                document.body.appendChild(panel);
+                this._panel = panel;
+                this._renderPanelRows();
+            },
+
+            _attachEnded() {
+                const v = getMainVideoElement();
+                if (!v || v === this._videoRef) return;
+                if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
+                this._videoRef = v;
+                v.addEventListener('ended', this._endedHandler);
+            },
+
+            _addButtons() {
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
+                cards.forEach(item => {
+                    if (item.querySelector('.ytkit-queue-btn')) return;
+                    const thumb = item.querySelector('ytd-thumbnail, #thumbnail');
+                    if (!thumb) return;
+                    const link = item.querySelector('a#thumbnail, a.yt-simple-endpoint[href*="/watch"]');
+                    const href = link?.href;
+                    if (!href) return;
+                    const videoId = getVideoId(href);
+                    if (!videoId) return;
+                    const container = thumb.querySelector('#overlays') || thumb;
+                    thumb.classList.add('ytkit-thumb-action-host');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'ytkit-queue-btn';
+                    btn.setAttribute('translate', 'no');
+                    btn.textContent = '+';
+                    btn.title = 'Add to Astra queue';
+                    btn.setAttribute('aria-label', 'Add to Astra queue');
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const title = item.querySelector('#video-title')?.textContent?.trim() || '';
+                        const channel = item.querySelector('ytd-channel-name #text, .ytd-channel-name a')?.textContent?.trim() || '';
+                        this._add(videoId, title, channel);
+                    });
+                    container.appendChild(btn);
+                });
+            },
+            _scheduleAddButtons(delay = 1500) {
+                if (this._addButtonsTimer) clearTimeout(this._addButtonsTimer);
+                this._addButtonsTimer = setTimeout(() => {
+                    this._addButtonsTimer = null;
+                    this._addButtons();
+                }, delay);
+            },
+
+            init() {
+                this._styleEl = injectStyle(`
+                    .ytkit-queue-btn { position: absolute; top: 4px; left: 4px; z-index: 12; width: 26px; height: 26px; border: none; border-radius: 6px; background: rgba(15, 15, 18, 0.86); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.15s ease; }
+                    .ytkit-thumb-action-host:hover .ytkit-queue-btn { opacity: 1; }
+                    .ytkit-queue-btn:hover { background: rgba(255, 143, 64, 0.92); }
+                    .ytkit-queue-pill { position: fixed; right: 18px; bottom: 76px; z-index: 9998; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px; background: rgba(18, 18, 22, 0.94); color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+                    .ytkit-queue-pill:hover { border-color: rgba(255, 143, 64, 0.7); }
+                    .ytkit-queue-panel { position: fixed; right: 18px; bottom: 122px; z-index: 9999; width: 360px; max-height: 55vh; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; background: rgba(18, 18, 22, 0.97); color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+                    .ytkit-queue-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 600; }
+                    .ytkit-queue-actions { display: flex; gap: 6px; }
+                    .ytkit-queue-actions button { border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: transparent; color: #fff; font-size: 11px; padding: 4px 8px; cursor: pointer; }
+                    .ytkit-queue-actions button:hover { border-color: rgba(255, 143, 64, 0.7); }
+                    .ytkit-queue-list { overflow-y: auto; padding: 6px 0; }
+                    .ytkit-queue-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; }
+                    .ytkit-queue-row:hover { background: rgba(255, 255, 255, 0.05); }
+                    .ytkit-queue-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; text-decoration: none; font-size: 12.5px; }
+                    .ytkit-queue-row-actions { display: flex; gap: 4px; }
+                    .ytkit-queue-row-actions button { border: none; border-radius: 4px; background: transparent; color: rgba(255, 255, 255, 0.7); font-size: 12px; width: 22px; height: 22px; cursor: pointer; }
+                    .ytkit-queue-row-actions button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); color: #fff; }
+                    .ytkit-queue-row-actions button:disabled { opacity: 0.3; cursor: default; }
+                `, this.id, true);
+                this._endedHandler = () => {
+                    if (appState.settings.persistentQueueAutoAdvance === false) return;
+                    if (!this._hasNext()) return;
+                    this._playNext();
+                };
+                this._attachEnded();
+                this._renderPill();
+                this._scheduleAddButtons(1500);
+                addNavigateRule('persistentQueue', () => {
+                    this._attachEnded();
+                    this._renderPill();
+                    this._scheduleAddButtons(1500);
+                });
+                addScopedMutationRule(
+                    'persistentQueue',
+                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer',
+                    () => this._scheduleAddButtons(800)
+                );
+            },
+            destroy() {
+                if (this._addButtonsTimer) { clearTimeout(this._addButtonsTimer); this._addButtonsTimer = null; }
+                if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
+                this._videoRef = null;
+                this._endedHandler = null;
+                removeNavigateRule('persistentQueue');
+                removeScopedMutationRule('persistentQueue');
+                this._styleEl?.remove(); this._styleEl = null;
+                this._pill?.remove(); this._pill = null;
+                this._panel?.remove(); this._panel = null;
+                document.querySelectorAll('.ytkit-queue-btn').forEach(b => b.remove());
+            }
+        },
+        // Persistent Queue sub-features
+        { id: 'persistentQueueAutoAdvance', name: 'Queue Auto-Advance', description: 'Play the next queue entry automatically when the current video ends', group: 'Content', icon: 'fast-forward', isSubFeature: true, parentId: 'persistentQueue', init(){}, destroy(){} },
         {
             id: 'playlistEnhancer',
             name: 'Playlist Enhancer',
