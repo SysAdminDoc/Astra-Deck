@@ -61,6 +61,89 @@ test('ytkit exposes external API health message handler and passes tracker into 
     }
 });
 
+function loadHealthCore() {
+    const originalCore = globalThis.YTKitCore;
+    delete require.cache[require.resolve('../extension/core/external-api-health.js')];
+    globalThis.YTKitCore = {};
+    require('../extension/core/external-api-health.js');
+    const core = globalThis.YTKitCore;
+    globalThis.YTKitCore = originalCore;
+    return core;
+}
+
+test('describeDegradation stays silent for healthy services and describes degraded ones', () => {
+    const core = loadHealthCore();
+    const health = core.createExternalApiHealth({ now: () => 1000000 });
+
+    // Healthy / unknown → no in-page feedback.
+    assert.equal(core.describeExternalApiDegradation(null), null);
+    const okRec = health.recordSuccess('sponsorBlock', { ts: 999000 });
+    assert.equal(health.describeDegradation(okRec), null);
+
+    // Rate-limited with a budget reset → retry reason in the copy.
+    const limited = health.recordFailure('returnDislike', null, {
+        errorClass: 'rate-limited',
+        requestBudget: { limit: 100, used: 100, resetMs: 40000 }
+    });
+    const limitedDesc = health.describeDegradation(limited);
+    assert.equal(limitedDesc.feature, 'returnDislike');
+    assert.match(limitedDesc.text, /rate limited — retrying in 40s/);
+
+    // Stale-cache fallback → cache age in the copy.
+    health.recordSuccess('deArrow', { ts: 1000000 - 12 * 60000 });
+    const degraded = health.recordCacheFallback('deArrow', new Error('network offline'));
+    const degradedDesc = health.describeDegradation(degraded, 1000000);
+    assert.equal(degradedDesc.state, 'degraded');
+    assert.match(degradedDesc.text, /showing 12m-old cache/);
+
+    // Plain error → human reason, not a raw error class token.
+    const errored = health.recordFailure('sponsorBlock', new Error('fetch failed'));
+    const erroredDesc = health.describeDegradation(errored);
+    assert.match(erroredDesc.text, /SponsorBlock: network error/);
+});
+
+test('health subscribers are notified on every record mutation and recovery', () => {
+    const core = loadHealthCore();
+    const health = core.createExternalApiHealth({ now: () => 5000 });
+    const seen = [];
+    const unsubscribe = health.subscribe((rec) => seen.push({ id: rec.id, state: rec.state }));
+
+    health.recordFailure('sponsorBlock', new Error('boom'));
+    health.recordCacheFallback('deArrow', new Error('boom'));
+    health.recordSuccess('sponsorBlock');
+
+    assert.deepEqual(seen[0], { id: 'sponsorBlock', state: 'error' });
+    assert.equal(seen[seen.length - 1].id, 'sponsorBlock');
+    assert.equal(seen[seen.length - 1].state, 'ok');
+    // recordCacheFallback notifies through recordFailure AND after the
+    // degraded-state rewrite; the final notification must carry 'degraded'.
+    assert.ok(seen.some((entry) => entry.id === 'deArrow' && entry.state === 'degraded'));
+
+    unsubscribe();
+    health.recordFailure('returnDislike', new Error('boom'));
+    assert.equal(seen.some((entry) => entry.id === 'returnDislike'), false,
+        'unsubscribed listeners must not fire');
+
+    // A throwing subscriber must never poison the fetch path.
+    health.subscribe(() => { throw new Error('bad listener'); });
+    assert.doesNotThrow(() => health.recordFailure('sponsorBlock', new Error('boom')));
+});
+
+test('ytkit renders the in-page degraded-state strip with theme and motion safeguards', () => {
+    const src = sources.ytkit;
+    assert.match(src, /ServiceStateStrip/, 'ytkit must define the service-state strip');
+    assert.match(src, /ExternalApiHealth\.subscribe\(\(record\) => ServiceStateStrip\.update\(record\)\)/,
+        'the strip must subscribe to health record mutations');
+    assert.match(src, /appState\?\.settings\?\.\[desc\.feature\]/,
+        'pills must only render while the owning feature is enabled');
+    assert.match(src, /prefers-reduced-motion: reduce/,
+        'strip styling must respect reduced motion');
+    assert.match(src, /html:not\(\[dark\]\) \.ytkit-service-state-pill/,
+        'strip styling must carry a light-theme override');
+    assert.match(src, /setAttribute\('role', 'status'\)/,
+        'the strip container must be a polite live region');
+});
+
 test('SponsorBlock reports stale-cache fallback to ExternalApiHealth', async () => {
     const { mod } = loadFeatureModule(
         '../extension/features/sponsorblock/index.js',

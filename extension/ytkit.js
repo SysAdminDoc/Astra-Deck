@@ -535,6 +535,89 @@
         };
     })();
 
+    // In-page degraded-state strip: compact bottom-left pills that appear only
+    // while SponsorBlock / DeArrow / Return YouTube Dislike are actionably
+    // degraded (rate-limited, serving stale cache, or erroring) AND the owning
+    // feature is enabled. Each pill carries the retry reason / cache age from
+    // describeDegradation() and disappears on the service's next recorded
+    // success (or after a 90s quiet window so a one-off blip can't linger).
+    const ServiceStateStrip = (function () {
+        const AUTO_EXPIRE_MS = 90000;
+        const pills = new Map(); // service id -> { el, timer }
+        let container = null;
+        let styleEl = null;
+
+        function ensureStyles() {
+            if (styleEl && styleEl.isConnected) return;
+            styleEl = injectStyle(`
+                #ytkit-service-state-strip{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+                .ytkit-service-state-pill{display:inline-flex;align-items:center;gap:7px;max-width:340px;padding:5px 10px;border-radius:8px;background:rgba(15,15,15,0.92);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88);font:500 11.5px/1.35 "Roboto","Segoe UI",sans-serif;pointer-events:auto;transition:opacity .18s ease;}
+                .ytkit-service-state-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:#f59e0b;flex:none;}
+                .ytkit-service-state-pill[data-tone="error"]::before{background:#f87171;}
+                html:not([dark]) .ytkit-service-state-pill{background:rgba(255,255,255,0.97);border-color:rgba(0,0,0,0.22);color:#1f1f1f;}
+                @media (prefers-reduced-motion: reduce){.ytkit-service-state-pill{transition:none;}}
+            `, 'service-state-strip');
+        }
+
+        function ensureContainer() {
+            ensureStyles();
+            if (container && container.isConnected) return container;
+            container = document.createElement('div');
+            container.id = 'ytkit-service-state-strip';
+            container.setAttribute('role', 'status');
+            container.setAttribute('aria-live', 'polite');
+            (document.body || document.documentElement).appendChild(container);
+            return container;
+        }
+
+        function remove(id) {
+            const pill = pills.get(id);
+            if (!pill) return;
+            clearTimeout(pill.timer);
+            pill.el.remove();
+            pills.delete(id);
+            if (container && !pills.size) {
+                container.remove();
+                container = null;
+            }
+        }
+
+        function update(record) {
+            try {
+                if (!record || !isTopLevelFrame()) return;
+                const desc = typeof ExternalApiHealth.describeDegradation === 'function'
+                    ? ExternalApiHealth.describeDegradation(record)
+                    : null;
+                if (!desc || !appState?.settings?.[desc.feature]) {
+                    remove(record.id);
+                    return;
+                }
+                const host = ensureContainer();
+                let pill = pills.get(desc.id);
+                if (!pill) {
+                    const el = document.createElement('div');
+                    el.className = 'ytkit-service-state-pill';
+                    host.appendChild(el);
+                    pill = { el, timer: 0 };
+                    pills.set(desc.id, pill);
+                }
+                pill.el.dataset.tone = desc.state === 'error' ? 'error' : 'warn';
+                pill.el.textContent = desc.text;
+                pill.el.title = record.lastErrorMessage || desc.text;
+                clearTimeout(pill.timer);
+                pill.timer = setTimeout(() => remove(desc.id), AUTO_EXPIRE_MS);
+            } catch (_) {
+                // reason: the indicator is best-effort chrome; it must never break a fetch path
+            }
+        }
+
+        return { update, remove };
+    })();
+
+    if (typeof ExternalApiHealth.subscribe === 'function') {
+        ExternalApiHealth.subscribe((record) => ServiceStateStrip.update(record));
+    }
+
     window.addEventListener('ytkit-selector-miss', (event) => {
         const detail = event?.detail || {};
         const surface = String(detail.surface || 'unknown').slice(0, 80);

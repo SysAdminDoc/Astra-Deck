@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feat: in-page degraded-state pills for SponsorBlock, DeArrow, and
+  Return YouTube Dislike.** The external-API health tracker now supports
+  subscriptions and produces compact degradation copy (retry reason,
+  request-budget reset, cache age). While a service is rate-limited,
+  serving stale cache, or erroring — and the owning feature is enabled —
+  a small bottom-left pill explains the state, then disappears on the
+  next successful request (or after a 90-second quiet window). Pills are
+  a polite ARIA live region, carry a light-theme override, and respect
+  reduced motion.
 - **Perf: watch time tracker persists once per minute.** The 10-second
   tick now accumulates in memory and writes to `chrome.storage.local` at
   most once per minute, flushing immediately on pause, teardown, and

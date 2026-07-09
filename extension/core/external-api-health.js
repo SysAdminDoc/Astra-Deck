@@ -76,15 +76,71 @@
         };
     }
 
+    function formatAge(ms) {
+        if (!Number.isFinite(ms) || ms < 0) return '';
+        if (ms < 60000) return `${Math.max(1, Math.round(ms / 1000))}s`;
+        if (ms < 3600000) return `${Math.round(ms / 60000)}m`;
+        if (ms < 86400000) return `${Math.round(ms / 3600000)}h`;
+        return `${Math.round(ms / 86400000)}d`;
+    }
+
+    const ERROR_CLASS_COPY = Object.freeze({
+        'rate-limited': 'rate limited',
+        'server-error': 'server error',
+        'client-error': 'request rejected',
+        'invalid-payload': 'unexpected response',
+        'network-error': 'network error',
+        'unknown-error': 'unavailable'
+    });
+
+    // Pure helper for compact in-page degraded-state copy. Returns null when
+    // the record is NOT actionably degraded (ok/unknown states stay silent).
+    function describeDegradation(record, nowTs = Date.now()) {
+        if (!record || record.state === 'ok' || record.state === 'unknown') return null;
+        const reason = ERROR_CLASS_COPY[record.lastErrorClass] || ERROR_CLASS_COPY['unknown-error'];
+        const parts = [];
+        if (record.state === 'rate-limited') {
+            const resetMs = record.requestBudget?.resetMs;
+            parts.push(Number.isFinite(resetMs) && resetMs > 0
+                ? `rate limited — retrying in ${formatAge(resetMs)}`
+                : 'rate limited');
+        } else {
+            parts.push(reason);
+        }
+        if (record.state === 'degraded' && record.lastSuccessTs > 0) {
+            parts.push(`showing ${formatAge(nowTs - record.lastSuccessTs)}-old cache`);
+        } else if (record.cacheState === 'stale' && record.lastSuccessTs > 0) {
+            parts.push(`cache is ${formatAge(nowTs - record.lastSuccessTs)} old`);
+        }
+        return {
+            id: record.id,
+            label: record.label,
+            feature: record.feature,
+            state: record.state,
+            text: `${record.label}: ${parts.join(' · ')}`
+        };
+    }
+
     function createExternalApiHealth(options = {}) {
         const now = typeof options.now === 'function' ? options.now : () => Date.now();
         const diagnosticLog = options.DiagnosticLog || options.diagnosticLog || null;
         const records = Object.create(null);
+        const listeners = new Set();
 
         function ensure(id) {
             const key = cleanText(id, 'unknown') || 'unknown';
             if (!records[key]) records[key] = createRecord(key);
             return records[key];
+        }
+
+        function notify(rec) {
+            for (const listener of listeners) {
+                try {
+                    listener({ ...rec });
+                } catch (_) {
+                    // reason: a broken indicator subscriber must never poison feature fetch paths
+                }
+            }
         }
 
         function recordSuccess(id, detail = {}) {
@@ -96,6 +152,7 @@
             rec.cacheState = cleanText(detail.cacheState || (detail.source === 'cache' ? 'fresh' : 'refreshed'), 'unknown');
             rec.fallbackState = cleanText(detail.fallbackState || '');
             rec.requestBudget = normalizeBudget(detail.requestBudget);
+            notify(rec);
             return rec;
         }
 
@@ -119,6 +176,7 @@
             } catch (_) {
                 // reason: diagnostics must never break a feature fetch path
             }
+            notify(rec);
             return rec;
         }
 
@@ -132,6 +190,7 @@
             rec.cacheState = cleanText(detail.cacheState || 'stale');
             rec.fallbackState = cleanText(detail.fallbackState || 'stale-cache');
             rec.lastCacheFallbackTs = now();
+            notify(rec);
             return rec;
         }
 
@@ -140,17 +199,26 @@
             return [...ids].map((id) => ({ ...ensure(id) }));
         }
 
+        function subscribe(listener) {
+            if (typeof listener !== 'function') return () => {};
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+        }
+
         return {
             recordSuccess,
             recordFailure,
             recordCacheFallback,
             snapshot,
-            classifyFailure
+            subscribe,
+            classifyFailure,
+            describeDegradation
         };
     }
 
     Object.assign(core, {
         EXTERNAL_API_HEALTH_SERVICES: SERVICE_META,
-        createExternalApiHealth
+        createExternalApiHealth,
+        describeExternalApiDegradation: describeDegradation
     });
 })();

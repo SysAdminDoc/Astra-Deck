@@ -23,13 +23,6 @@
   Acceptance: A local smoke opens the extension settings overlay in a browser-backed YouTube/fixture surface, captures desktop and mobile screenshots for dark/light/RTL states, and fails on blank render, overflow, missing close/focus target, or unreadable primary controls.
   Complexity: M
 
-- [ ] P2 — Surface in-page degraded states for SponsorBlock, DeArrow, and RYD
-  Why: Popup and sidepanel expose external API health, but users watching a video need immediate context when skips, title replacements, or dislike estimates are cached, stale, rate-limited, or unavailable.
-  Evidence: SponsorBlock/DeArrow/RYD competitors, `extension/core/external-api-health.js`, `extension/features/sponsorblock/index.js`, `extension/features/dearrow/index.js`, `extension/features/return-dislike/index.js`.
-  Touches: `extension/core/external-api-health.js`, `extension/features/sponsorblock/index.js`, `extension/features/dearrow/index.js`, `extension/features/return-dislike/index.js`, `tests/external-api-health.test.js`.
-  Acceptance: Watch-page UI shows compact service-state feedback only when actionably degraded, includes cache age/retry reason, respects reduced-motion and theme contrast, and disappears after recovery.
-  Complexity: M
-
 - [ ] P2 — Introduce a cross-browser extension API wrapper
   Why: Chrome 148 adds `browser.*` while Firefox already uses it, but Astra still calls `chrome.*` directly across popup, sidepanel, background, and core modules.
   Evidence: Chrome browser namespace docs, MDN Chrome incompatibilities, `extension/popup.js`, `extension/sidepanel.js`, `extension/background.js`.
