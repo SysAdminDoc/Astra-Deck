@@ -464,6 +464,12 @@
   "feature_autoSkipChapters_name": {
     "message": "Saltar capítulos automáticamente"
   },
+  "feature_autoSubtitlesWhenMuted_desc": {
+    "message": "Turn captions on automatically while the video is muted and restore the previous caption state on unmute"
+  },
+  "feature_autoSubtitlesWhenMuted_name": {
+    "message": "Subtitles While Muted"
+  },
   "feature_autoSubtitles_desc": {
     "message": "Activa automáticamente los subtítulos cuando un video comienza a reproducirse"
   },
@@ -1328,6 +1334,12 @@
   "feature_likeViewRatio_name": {
     "message": "Relación me gusta/vistas"
   },
+  "feature_liveSpeedReset_desc": {
+    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
+  },
+  "feature_liveSpeedReset_name": {
+    "message": "Live Catch-Up Speed Reset"
+  },
   "feature_localAiSummary_desc": {
     "message": "Usa la API de resumen integrada de Chrome cuando esté disponible. Recurre a un mensaje claro de \"no disponible\" — nunca enruta silenciosamente a un proveedor remoto. Agrega un botón \"Resumen local\" junto al botón de resumen AI existente."
   },
@@ -1987,6 +1999,12 @@
   },
   "feature_subtitleStyling_name": {
     "message": "Estilo de subtítulos"
+  },
+  "feature_subtitlesOnRewind_desc": {
+    "message": "After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state"
+  },
+  "feature_subtitlesOnRewind_name": {
+    "message": "Subtitles on Rewind"
   },
   "feature_theaterAutoScroll_desc": {
     "message": "Desplazar el video a vista completa cuando se activa el modo Theater"

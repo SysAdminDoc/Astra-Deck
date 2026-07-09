@@ -464,6 +464,12 @@
   "feature_autoSkipChapters_name": {
     "message": "チャプター自動スキップ"
   },
+  "feature_autoSubtitlesWhenMuted_desc": {
+    "message": "Turn captions on automatically while the video is muted and restore the previous caption state on unmute"
+  },
+  "feature_autoSubtitlesWhenMuted_name": {
+    "message": "Subtitles While Muted"
+  },
   "feature_autoSubtitles_desc": {
     "message": "動画の再生開始時に字幕を自動でオン"
   },
@@ -1328,6 +1334,12 @@
   "feature_likeViewRatio_name": {
     "message": "高評価/再生回数比"
   },
+  "feature_liveSpeedReset_desc": {
+    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
+  },
+  "feature_liveSpeedReset_name": {
+    "message": "Live Catch-Up Speed Reset"
+  },
   "feature_localAiSummary_desc": {
     "message": "利用可能な場合に Chrome 内蔵の Summarizer API を使用。利用不可時は明確なメッセージを表示し、リモートプロバイダーに暗黙でルーティングしません。既存の AI 要約ボタンの横に「ローカル要約」ボタンを追加。"
   },
@@ -1987,6 +1999,12 @@
   },
   "feature_subtitleStyling_name": {
     "message": "字幕スタイリング"
+  },
+  "feature_subtitlesOnRewind_desc": {
+    "message": "After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state"
+  },
+  "feature_subtitlesOnRewind_name": {
+    "message": "Subtitles on Rewind"
   },
   "feature_theaterAutoScroll_desc": {
     "message": "シアターモードが有効になったとき動画を全画面表示にスクロール"

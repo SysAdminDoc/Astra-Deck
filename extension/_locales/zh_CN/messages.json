@@ -464,6 +464,12 @@
   "feature_autoSkipChapters_name": {
     "message": "自动跳过章节"
   },
+  "feature_autoSubtitlesWhenMuted_desc": {
+    "message": "Turn captions on automatically while the video is muted and restore the previous caption state on unmute"
+  },
+  "feature_autoSubtitlesWhenMuted_name": {
+    "message": "Subtitles While Muted"
+  },
   "feature_autoSubtitles_desc": {
     "message": "视频开始播放时自动开启字幕"
   },
@@ -1328,6 +1334,12 @@
   "feature_likeViewRatio_name": {
     "message": "点赞播放比"
   },
+  "feature_liveSpeedReset_desc": {
+    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
+  },
+  "feature_liveSpeedReset_name": {
+    "message": "Live Catch-Up Speed Reset"
+  },
   "feature_localAiSummary_desc": {
     "message": "可用时使用 Chrome 内置的 Summarizer API。不可用时显示明确的「不可用」消息 — 绝不静默路由到远程提供商。在现有 AI 摘要按钮旁添加「本地摘要」按钮。"
   },
@@ -1987,6 +1999,12 @@
   },
   "feature_subtitleStyling_name": {
     "message": "字幕样式"
+  },
+  "feature_subtitlesOnRewind_desc": {
+    "message": "After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state"
+  },
+  "feature_subtitlesOnRewind_name": {
+    "message": "Subtitles on Rewind"
   },
   "feature_theaterAutoScroll_desc": {
     "message": "Theater 模式激活时将视频滚动到完全可见"
