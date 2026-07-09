@@ -733,7 +733,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.29';
+    const YTKIT_VERSION = '4.46.30';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -39005,6 +39005,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         status.dataset.tone = tone;
     }
 
+    function getActiveSettingsProfileLabel() {
+        const presets = [
+            ['presetFocus', 'Focus'],
+            ['presetPowerUser', 'Power User'],
+            ['presetResearcher', 'Researcher'],
+            ['presetPrivacy', 'Privacy']
+        ];
+        const active = presets.find(([key]) => !!appState.settings?.[key]);
+        return active ? active[1] : 'Custom';
+    }
+
+    function updatePanelInsightState() {
+        const topLevelFeatures = liveFeatureList.filter((feature) => !feature.isSubFeature);
+        const activeNav = document.querySelector('.ytkit-nav-btn.active .ytkit-nav-label');
+        const enabledCount = countEnabledToggleFeatures(topLevelFeatures);
+        const enabledValue = document.getElementById('ytkit-insight-enabled-count');
+        const sectionValue = document.getElementById('ytkit-insight-section-count');
+        const activeSectionValue = document.getElementById('ytkit-insight-active-section');
+        const profileValue = document.getElementById('ytkit-insight-profile-name');
+        const savedValue = document.getElementById('ytkit-insight-saved-state');
+
+        if (enabledValue) enabledValue.textContent = `${enabledCount}/${topLevelFeatures.length}`;
+        if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
+        if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
+        if (profileValue) profileValue.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
+        if (savedValue) savedValue.textContent = 'Saved automatically';
+    }
+
     function injectSettingsButton() {
         const handleDisplay = () => {
             const isWatchPage = window.location.pathname.startsWith('/watch');
@@ -39165,6 +39193,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const headerActions = document.createElement('div');
         headerActions.className = 'ytkit-header-actions';
+        const liveBadge = document.createElement('span');
+        liveBadge.className = 'ytkit-header-live';
+        liveBadge.setAttribute('aria-label', t('panelLiveApplyBadge', 'Live apply'));
+        const liveDot = document.createElement('span');
+        liveDot.className = 'ytkit-header-live-dot';
+        liveDot.setAttribute('aria-hidden', 'true');
+        const liveCopy = document.createElement('span');
+        liveCopy.textContent = t('panelLiveApplyBadge', 'Live apply');
+        liveBadge.appendChild(liveDot);
+        liveBadge.appendChild(liveCopy);
+        headerActions.appendChild(liveBadge);
         headerActions.appendChild(closeBtn);
 
         header.appendChild(brand);
@@ -40864,8 +40903,159 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             content.appendChild(pane);
         });
 
+        function createPanelActionButton({ id, label, icon, variant = 'secondary', ariaLabel }) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `ytkit-btn ytkit-btn-${variant}`;
+            button.id = id;
+            button.setAttribute('aria-label', ariaLabel || label);
+            if (icon && typeof ICONS[icon] === 'function') button.appendChild(ICONS[icon]());
+            const text = document.createElement('span');
+            text.textContent = label;
+            button.appendChild(text);
+            return button;
+        }
+
+        function makeInsightSection(title) {
+            const section = document.createElement('section');
+            section.className = 'ytkit-insight-section';
+            const heading = document.createElement('h2');
+            heading.className = 'ytkit-insight-heading';
+            heading.textContent = title;
+            section.appendChild(heading);
+            return section;
+        }
+
+        function makeStatusRow(label, value, tone = 'neutral', id = '') {
+            const row = document.createElement('div');
+            row.className = 'ytkit-status-row';
+            row.dataset.tone = tone;
+            const dot = document.createElement('span');
+            dot.className = 'ytkit-status-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            const labelEl = document.createElement('span');
+            labelEl.className = 'ytkit-status-label';
+            labelEl.textContent = label;
+            const valueEl = document.createElement('span');
+            valueEl.className = 'ytkit-status-value';
+            if (id) valueEl.id = id;
+            valueEl.textContent = value;
+            row.appendChild(dot);
+            row.appendChild(labelEl);
+            row.appendChild(valueEl);
+            return row;
+        }
+
+        function buildPanelInsightsRail() {
+            const topLevelFeatures = liveFeatureList.filter((feature) => !feature.isSubFeature);
+            const populatedSections = categoryOrder.filter((cat) => (featuresByCategory[cat] || []).length > 0).length;
+            const rail = document.createElement('aside');
+            rail.className = 'ytkit-insights';
+            rail.setAttribute('aria-label', 'Settings status and backup actions');
+
+            const statusSection = makeInsightSection('Status');
+            const statusCard = document.createElement('div');
+            statusCard.className = 'ytkit-insight-card ytkit-status-card';
+            statusCard.appendChild(makeStatusRow('Extension', `v${YTKIT_VERSION}`, 'ok'));
+            statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok'));
+            statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count'));
+            statusCard.appendChild(makeStatusRow('Sections', String(populatedSections), 'neutral', 'ytkit-insight-section-count'));
+            statusSection.appendChild(statusCard);
+            rail.appendChild(statusSection);
+
+            const profileSection = makeInsightSection('Profile');
+            const profileCard = document.createElement('div');
+            profileCard.className = 'ytkit-insight-card ytkit-profile-card';
+            const profileIcon = document.createElement('div');
+            profileIcon.className = 'ytkit-profile-icon';
+            profileIcon.setAttribute('aria-hidden', 'true');
+            profileIcon.appendChild(ICONS.settings());
+            const profileCopy = document.createElement('div');
+            profileCopy.className = 'ytkit-profile-copy';
+            const profileTitle = document.createElement('div');
+            profileTitle.className = 'ytkit-profile-title';
+            profileTitle.id = 'ytkit-insight-profile-name';
+            profileTitle.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
+            const profileMeta = document.createElement('p');
+            profileMeta.className = 'ytkit-profile-meta';
+            profileMeta.textContent = 'Local profile model. Presets apply instantly and keep export/import recoverable.';
+            profileCopy.appendChild(profileTitle);
+            profileCopy.appendChild(profileMeta);
+            profileCard.appendChild(profileIcon);
+            profileCard.appendChild(profileCopy);
+            profileSection.appendChild(profileCard);
+            rail.appendChild(profileSection);
+
+            const backupSection = makeInsightSection('Sync & Backup');
+            const backupCard = document.createElement('div');
+            backupCard.className = 'ytkit-insight-card ytkit-backup-card';
+            backupCard.appendChild(makeStatusRow('Last save', 'Saved automatically', 'ok', 'ytkit-insight-saved-state'));
+            const actionStack = document.createElement('div');
+            actionStack.className = 'ytkit-action-stack';
+            actionStack.appendChild(createPanelActionButton({
+                id: 'ytkit-export',
+                label: 'Export',
+                icon: 'download',
+                variant: 'primary',
+                ariaLabel: `Export ${BRAND.name} settings`
+            }));
+            actionStack.appendChild(createPanelActionButton({
+                id: 'ytkit-import',
+                label: 'Import',
+                icon: 'upload',
+                variant: 'secondary',
+                ariaLabel: `Import ${BRAND.name} settings`
+            }));
+            const historyImportAction = createPanelActionButton({
+                id: 'ytkit-import-history',
+                label: 'Import History',
+                icon: 'upload',
+                variant: 'secondary',
+                ariaLabel: 'Import YouTube Takeout watch history'
+            });
+            historyImportAction.id = 'ytkit-import-history';
+            actionStack.appendChild(historyImportAction);
+            actionStack.appendChild(createPanelActionButton({
+                id: 'ytkit-reset-active-section',
+                label: 'Reset section',
+                icon: 'settings',
+                variant: 'danger',
+                ariaLabel: 'Reset the active settings section to defaults'
+            }));
+            backupCard.appendChild(actionStack);
+            backupSection.appendChild(backupCard);
+            rail.appendChild(backupSection);
+
+            const changesSection = makeInsightSection('Recent');
+            const changesCard = document.createElement('div');
+            changesCard.className = 'ytkit-insight-card';
+            const recentList = document.createElement('dl');
+            recentList.className = 'ytkit-recent-list';
+            [
+                ['Active section', 'ytkit-insight-active-section', 'Video Player'],
+                ['Save mode', '', 'Instant'],
+                ['Recovery', '', 'Undo toasts']
+            ].forEach(([label, id, value]) => {
+                const term = document.createElement('dt');
+                term.textContent = label;
+                const desc = document.createElement('dd');
+                if (id) desc.id = id;
+                desc.textContent = value;
+                recentList.appendChild(term);
+                recentList.appendChild(desc);
+            });
+            changesCard.appendChild(recentList);
+            changesSection.appendChild(changesCard);
+            rail.appendChild(changesSection);
+
+            return rail;
+        }
+
+        const insights = buildPanelInsightsRail();
+
         body.appendChild(sidebar);
         body.appendChild(content);
+        body.appendChild(insights);
 
         // Footer
         const footer = document.createElement('footer');
@@ -40936,40 +41126,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
 
-        const historyImportBtn = document.createElement('button');
-        historyImportBtn.type = 'button';
-        historyImportBtn.className = 'ytkit-btn ytkit-btn-secondary';
-        historyImportBtn.id = 'ytkit-import-history';
-        historyImportBtn.setAttribute('aria-label', 'Import YouTube Takeout watch history');
-        historyImportBtn.appendChild(ICONS.upload());
-        const historyImportText = document.createElement('span');
-        historyImportText.textContent = 'Import History';
-        historyImportBtn.appendChild(historyImportText);
-
-        const importBtn = document.createElement('button');
-        importBtn.type = 'button';
-        importBtn.className = 'ytkit-btn ytkit-btn-secondary';
-        importBtn.id = 'ytkit-import';
-        importBtn.setAttribute('aria-label', `Import ${BRAND.name} settings`);
-        importBtn.appendChild(ICONS.upload());
-        const importText = document.createElement('span');
-        importText.textContent = 'Import';
-        importBtn.appendChild(importText);
-
-        const exportBtn = document.createElement('button');
-        exportBtn.type = 'button';
-        exportBtn.className = 'ytkit-btn ytkit-btn-primary';
-        exportBtn.id = 'ytkit-export';
-        exportBtn.setAttribute('aria-label', `Export ${BRAND.name} settings`);
-        exportBtn.appendChild(ICONS.download());
-        const exportText = document.createElement('span');
-        exportText.textContent = 'Export';
-        exportBtn.appendChild(exportText);
-
-        footerRight.appendChild(historyImportBtn);
-        footerRight.appendChild(importBtn);
-        footerRight.appendChild(exportBtn);
-
         footer.appendChild(footerLeft);
         footer.appendChild(footerStatus);
         footer.appendChild(footerRight);
@@ -40993,6 +41149,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         attachUIEventListeners();
         updateAllToggleStates();
+        updatePanelInsightState();
     }
 
     function normalizeSelectOptions(options) {
@@ -41415,6 +41572,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         if (activeSearchInput?.value.trim() && typeof _panelSearchUpdater === 'function') {
             _panelSearchUpdater(activeSearchInput.value, { preserveScroll: true });
         }
+        updatePanelInsightState();
     }
 
     function handleFileImport(callback, options = {}) {
@@ -41533,11 +41691,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 const contentArea = doc.querySelector('.ytkit-content');
                 if (contentArea) contentArea.scrollTop = 0;
+                updatePanelInsightState();
                 // Clear search on tab click
                 const searchInput = doc.getElementById('ytkit-search');
                 if (searchInput && searchInput.value) {
                     searchInput.value = '';
                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                return;
+            }
+            if (e.target.closest('#ytkit-reset-active-section')) {
+                const activePane = doc.querySelector('.ytkit-pane.active');
+                const activeName = doc.querySelector('.ytkit-nav-btn.active .ytkit-nav-label')?.textContent || 'active section';
+                const sectionReset = activePane?.querySelector('.ytkit-reset-group-btn');
+                if (sectionReset) {
+                    sectionReset.click();
+                    setPanelStatus(`${activeName} reset to defaults. Undo is available in the toast.`, 'warn');
+                } else {
+                    setPanelStatus('Choose a settings section before resetting.', 'warn');
                 }
                 return;
             }
