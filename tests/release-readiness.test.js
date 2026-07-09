@@ -100,6 +100,36 @@ test('release readiness fails when companion assets are present but manifest omi
     assert.equal(inventoryCheck.status, 'fail');
 });
 
+test('release readiness fails when unexpected assets are present and manifest-listed', () => {
+    const { root, buildDir } = writeFixtureRepo();
+    const extraName = 'debug-extra.zip';
+    const extraPath = path.join(buildDir, extraName);
+    fs.writeFileSync(extraPath, 'debug fixture\n', 'utf8');
+
+    const manifestPath = path.join(buildDir, 'release-manifest.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    manifest.assets.push({
+        name: extraName,
+        size: fs.statSync(extraPath).size,
+        sha256: sha256(extraPath)
+    });
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+
+    const checksumPath = path.join(buildDir, 'SHA256SUMS');
+    fs.appendFileSync(checksumPath, `${sha256(extraPath)}  ${extraName}\n`);
+
+    const report = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        now: new Date('2026-06-06T12:00:00.000Z')
+    });
+    const unexpectedCheck = report.checks.find((item) => item.id === 'unexpected-assets');
+
+    assert.equal(report.status, 'fail');
+    assert.equal(unexpectedCheck.status, 'fail');
+    assert.match(unexpectedCheck.details, /debug-extra\.zip/);
+});
+
 test('release readiness helpers parse checksums and CLI options strictly', () => {
     const entries = parseSha256Sums(`${'a'.repeat(64)}  build.zip\n`);
     assert.equal(entries.get('build.zip'), 'a'.repeat(64));
