@@ -551,7 +551,8 @@
                     }
                     if (record.parent?.isConnected) {
                         delete record.element.dataset.ytkitRemoved;
-                        if (record.nextSibling?.parentNode === record.parent) record.parent.insertBefore(record.element, record.nextSibling);
+                        const anchor = record.nextSibling?.deref?.();
+                        if (anchor && anchor.parentNode === record.parent) record.parent.insertBefore(record.element, anchor);
                         else record.parent.appendChild(record.element);
                         restored++;
                     }
@@ -569,10 +570,14 @@
                     videoId,
                     element,
                     parent: element.parentNode,
-                    nextSibling: element.nextSibling
+                    // WeakRef: the ex-sibling is only an ordering anchor for
+                    // restore. A strong ref would pin the whole sibling subtree
+                    // in memory if it is later detached itself; when the anchor
+                    // is gone, restore falls back to appendChild.
+                    nextSibling: element.nextSibling ? new WeakRef(element.nextSibling) : null
                 });
-                if (this._removedVideoNodes.length > 500) {
-                    this._removedVideoNodes.splice(0, this._removedVideoNodes.length - 500);
+                if (this._removedVideoNodes.length > 200) {
+                    this._removedVideoNodes.splice(0, this._removedVideoNodes.length - 200);
                 }
                 element.dataset.ytkitRemoved = 'true';
                 element.remove();
