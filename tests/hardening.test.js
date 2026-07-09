@@ -5157,10 +5157,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Persistent queue + auto-advance added 2 booleans (390 → 392).
     // Shorts speed control + auto-advance added 2 booleans (392 → 394).
     // Scroll-in-fullscreen added 1 boolean (394 → 395).
+    // Watch Later workbench added 1 boolean (395 → 396).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 395,
-        'SETTINGS_SCHEMA must cover all 395 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 396,
+        'SETTINGS_SCHEMA must cover all 396 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

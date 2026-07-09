@@ -2168,6 +2168,12 @@
   "feature_watchLaterQuickAdd_name": {
     "message": "Bouton rapide À regarder plus tard"
   },
+  "feature_watchLaterWorkbench_desc": {
+    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+  },
+  "feature_watchLaterWorkbench_name": {
+    "message": "Watch Later Workbench"
+  },
   "feature_watchPageRestyle_desc": {
     "message": "Mise en page premium de la page de visionnage pour le titre, la description et les métadonnées sans masquer les commandes natives"
   },

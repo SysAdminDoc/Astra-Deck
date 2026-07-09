@@ -2168,6 +2168,12 @@
   "feature_watchLaterQuickAdd_name": {
     "message": "나중에 보기 빠른 버튼"
   },
+  "feature_watchLaterWorkbench_desc": {
+    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+  },
+  "feature_watchLaterWorkbench_name": {
+    "message": "Watch Later Workbench"
+  },
   "feature_watchPageRestyle_desc": {
     "message": "기본 컨트롤을 숨기지 않으면서 제목, 설명, 메타데이터를 위한 프리미엄 시청 페이지 레이아웃"
   },

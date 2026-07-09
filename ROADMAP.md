@@ -12,12 +12,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-first; userscript parity intentionally excluded. Every mutation feature must reuse the bulkCardActions bounded-session + Undo pattern and external-api-health degradation surfaces.
 
 ### P1 — root-cause reliability + highest-demand gaps
-- [ ] P1 — Watch Later workbench
-  Why: WL is capped at 5,000 with no official API since 2016; bulk remove/sort/dedupe/export is the loudest sustained unmet demand (paid CWS tools exist). Astra already has watchLaterCleanup ("Remove Watched") to extend.
-  Evidence: tidywl.com 5000-limit analysis; Watch-Later Playlist Nuker (GF); HN 39627895.
-  Where: `extension/ytkit.js` watchLaterCleanup block, new `extension/features/` module, reuse bulkCardActions session pattern.
-  Acceptance: On ?list=WL — bulk remove by filter (watched %, age, channel, duplicate videoId), sort preview, JSON/CSV export; sessions bounded (25/run, paced) with Undo log; all local.
-  Complexity: L
 
 ### P2 — live tooling, subtitles, filtering, hygiene
 - [ ] P2 — Force DVR on live streams
