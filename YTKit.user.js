@@ -1463,7 +1463,6 @@
                 // the broad coverage doesn't cause false positives.
                 /^auth/i,
                 /[a-z]Auth/,
-                /pinHash/i,
                 /^ytkit-da-user-id$/,
             ]);
 
@@ -3001,19 +3000,40 @@
             }
         }
 
+        // Cap pending records so a hidden tab (where rAF never fires) doesn't
+        // grow the array indefinitely, pinning detached subtrees for hours.
+        var PENDING_MUTATION_CAP = 2000;
+        var mutationFallbackTimer = null;
+
+        function drainMutationRecords() {
+            mutationScheduled = false;
+            if (mutationFallbackTimer) { clearTimeout(mutationFallbackTimer); mutationFallbackTimer = null; }
+            const drained = pendingMutationRecords;
+            pendingMutationRecords = [];
+            runMutationRules(document.body, drained);
+        }
+
         function observerCallback(records) {
             if (records && records.length) {
-                // Accumulate records across batches delivered before the rAF drain.
                 for (const record of records) pendingMutationRecords.push(record);
+                // Drop oldest records when the cap is exceeded — the alternative
+                // (unbounded growth) pins detached DOM subtrees for the entire
+                // background-tab lifetime and drains in one giant pass on refocus.
+                if (pendingMutationRecords.length > PENDING_MUTATION_CAP) {
+                    pendingMutationRecords = pendingMutationRecords.slice(-PENDING_MUTATION_CAP);
+                }
             }
             if (mutationScheduled) return;
             mutationScheduled = true;
-            requestAnimationFrame(() => {
-                mutationScheduled = false;
-                const drained = pendingMutationRecords;
-                pendingMutationRecords = [];
-                runMutationRules(document.body, drained);
-            });
+            requestAnimationFrame(drainMutationRecords);
+            // Fallback drain for hidden tabs where rAF doesn't fire: setTimeout
+            // still runs (throttled to ~1 Hz) so records don't accumulate forever.
+            if (!mutationFallbackTimer) {
+                mutationFallbackTimer = setTimeout(() => {
+                    mutationFallbackTimer = null;
+                    if (mutationScheduled) drainMutationRecords();
+                }, 2000);
+            }
         }
 
         function startObserver() {
@@ -3612,10 +3632,42 @@
             );
         }
 
+        // Detect whether we're in an extension popup/sidepanel context where
+        // the meta CSP blocks direct loopback fetches (connect-src 'self' does
+        // not cover 127.0.0.1). In that case, route through the background
+        // service worker via chrome.runtime.sendMessage.
+        function isExtensionPopupContext() {
+            try {
+                return typeof chrome !== 'undefined'
+                    && chrome?.runtime?.sendMessage
+                    && typeof document !== 'undefined'
+                    && /^chrome-extension:|^moz-extension:/.test(document.location?.protocol || '');
+            } catch (_) { return false; }
+        }
+
+        function fetchViaBackground(url, ms) {
+            return new Promise((resolve) => {
+                const timer = setTimeout(() => resolve(false), ms);
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'EXT_FETCH',
+                        details: { method: 'GET', url, timeout: ms }
+                    }, (resp) => {
+                        clearTimeout(timer);
+                        if (chrome.runtime.lastError) { resolve(false); return; }
+                        resolve(Boolean(resp && !resp.error && !resp.timeout));
+                    });
+                } catch (_) {
+                    clearTimeout(timer);
+                    resolve(false);
+                }
+            });
+        }
+
         function fetchWithTimeout(url, ms) {
-            // AbortController-bounded fetch so a hung server doesn't pin
-            // the probe forever. Rejects with AbortError on timeout, which
-            // the caller treats as "not available".
+            // In extension popup/sidepanel, direct fetch to 127.0.0.1 is
+            // blocked by the meta CSP. Route through the background SW.
+            if (isExtensionPopupContext()) return fetchViaBackground(url, ms);
             return new Promise((resolve) => {
                 const ctrl = new AbortController();
                 const timer = setTimeout(() => {
@@ -11494,7 +11546,8 @@
                         }
                         if (record.parent?.isConnected) {
                             delete record.element.dataset.ytkitRemoved;
-                            if (record.nextSibling?.parentNode === record.parent) record.parent.insertBefore(record.element, record.nextSibling);
+                            const anchor = record.nextSibling?.deref?.();
+                            if (anchor && anchor.parentNode === record.parent) record.parent.insertBefore(record.element, anchor);
                             else record.parent.appendChild(record.element);
                             restored++;
                         }
@@ -11512,10 +11565,14 @@
                         videoId,
                         element,
                         parent: element.parentNode,
-                        nextSibling: element.nextSibling
+                        // WeakRef: the ex-sibling is only an ordering anchor for
+                        // restore. A strong ref would pin the whole sibling subtree
+                        // in memory if it is later detached itself; when the anchor
+                        // is gone, restore falls back to appendChild.
+                        nextSibling: element.nextSibling ? new WeakRef(element.nextSibling) : null
                     });
-                    if (this._removedVideoNodes.length > 500) {
-                        this._removedVideoNodes.splice(0, this._removedVideoNodes.length - 500);
+                    if (this._removedVideoNodes.length > 200) {
+                        this._removedVideoNodes.splice(0, this._removedVideoNodes.length - 200);
                     }
                     element.dataset.ytkitRemoved = 'true';
                     element.remove();
@@ -12183,13 +12240,10 @@
 
                 _undoHideAll(videos, removedAllowed = []) {
                     const hidden = this._getHiddenVideos();
-                    videos.forEach(v => {
-                        const idx = hidden.indexOf(v.id);
-                        if (idx > -1) hidden.splice(idx, 1);
-                        this._restoreRemovedVideoNodes(new Set([v.id]));
-                        v.element.classList.remove('ytkit-video-hidden');
-                    });
-                    this._setHiddenVideos(hidden);
+                    const removeSet = new Set(videos.map(v => v.id));
+                    this._restoreRemovedVideoNodes(removeSet);
+                    videos.forEach(v => v.element.classList.remove('ytkit-video-hidden'));
+                    this._setHiddenVideos(hidden.filter(id => !removeSet.has(id)));
                     if (removedAllowed.length > 0) this._addAllowedVideos(removedAllowed, { force: true });
                     this._updatePageActionButtons();
                     showToast('Restored all videos', '#22c55e');
@@ -12413,22 +12467,15 @@
                         this._updatePageActionButtons();
                     };
 
-                    this._observer = new MutationObserver(mutations => {
-                        const addedCards = [];
-                        for (const m of mutations) {
-                            for (const node of m.addedNodes) {
-                                if (node.nodeType !== 1) continue;
-                                if (node.matches?.(selectors)) {
-                                    addedCards.push(node);
-                                }
-                                node.querySelectorAll?.(selectors).forEach(el => {
-                                    addedCards.push(el);
-                                });
-                            }
-                        }
-                        if (!addedCards.length) return;
-                        this._mutationBudgetHandle?.cancel?.();
-                        const handle = runBudgetedElementBatch(addedCards, (el) => {
+                    // Accumulate mutation-discovered cards between batch runs so
+                    // cancelling a prior batch for a new mutation flush does not
+                    // drop unprocessed items.
+                    let pendingMutationCards = [];
+                    const scheduleMutationBatch = () => {
+                        if (!pendingMutationCards.length) return;
+                        const cards = pendingMutationCards;
+                        pendingMutationCards = [];
+                        const handle = runBudgetedElementBatch(cards, (el) => {
                             const wasHidden = this._processVideoElementWithResult(el);
                             batchBuffer.push({ element: el, hidden: wasHidden });
                         }, {
@@ -12445,6 +12492,24 @@
                             if (batchTimeout) clearTimeout(batchTimeout);
                             batchTimeout = setTimeout(processBatch, 300);
                         });
+                    };
+                    this._observer = new MutationObserver(mutations => {
+                        for (const m of mutations) {
+                            for (const node of m.addedNodes) {
+                                if (node.nodeType !== 1) continue;
+                                if (node.matches?.(selectors)) {
+                                    pendingMutationCards.push(node);
+                                }
+                                node.querySelectorAll?.(selectors).forEach(el => {
+                                    pendingMutationCards.push(el);
+                                });
+                            }
+                        }
+                        if (!pendingMutationCards.length) return;
+                        // Cancel the in-flight batch and re-schedule with ALL
+                        // pending cards (the accumulated ones plus the new ones).
+                        this._mutationBudgetHandle?.cancel?.();
+                        scheduleMutationBatch();
                     });
                     const observeTarget = document.querySelector('ytd-app') || document.body;
                     this._observer.observe(observeTarget, { childList: true, subtree: true });
@@ -12920,6 +12985,8 @@
                 removeNavigateRule = () => {},
                 addMutationRule = () => {},
                 removeMutationRule = () => {},
+                addScopedMutationRule = () => {},
+                removeScopedMutationRule = () => {},
                 runBudgetedElementBatch = (items, callback) => {
                     const list = Array.from(items || []);
                     list.forEach(callback);
@@ -13267,19 +13334,23 @@
                     const rows = ['Group,Channel,Handle,URL'];
                     for (const [id, group] of Object.entries(groups)) {
                         const name = group.name || id;
+                        // Groups persist membership as `channelIds` (UC.../@handle
+                        // strings), never a `channels` object array. Derive the
+                        // handle column and canonical URL from the id so exports
+                        // actually carry channel data.
                         const channelIds = Array.isArray(group.channelIds) ? group.channelIds : [];
                         if (channelIds.length === 0) {
                             rows.push(this._csvEscape(name) + ',,,');
                             continue;
                         }
                         for (const channelId of channelIds) {
-                            const cid = String(channelId || '').trim();
-                            if (!cid) continue;
-                            const handle = cid.startsWith('@') ? cid : '';
+                            const id = String(channelId || '').trim();
+                            if (!id) continue;
+                            const handle = id.startsWith('@') ? id : '';
                             const url = handle
                                 ? `https://www.youtube.com/${handle}`
-                                : `https://www.youtube.com/channel/${cid}`;
-                            rows.push([name, cid, handle, url].map(v => this._csvEscape(v)).join(','));
+                                : `https://www.youtube.com/channel/${id}`;
+                            rows.push([name, id, handle, url].map(v => this._csvEscape(v)).join(','));
                         }
                     }
                     const csv = rows.join('\r\n') + '\r\n';
@@ -13312,14 +13383,42 @@
                         if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
                         const sanitized = {};
                         const rawParentById = {};
+                        let skippedGroups = 0;
+                        let skippedChannels = 0;
+                        let duplicateChannels = 0;
+                        let importedChannels = 0;
                         for (const [id, raw] of Object.entries(data.groups)) {
-                            if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) continue;
-                            if (!raw || typeof raw !== 'object') continue;
+                            if (typeof id !== 'string' || id.length > 64 || !isSafeObjectKey(id)) {
+                                skippedGroups++;
+                                continue;
+                            }
+                            if (!raw || typeof raw !== 'object') {
+                                skippedGroups++;
+                                continue;
+                            }
                             const name = String(raw.name || '').slice(0, 80);
                             const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
-                            const channelIds = Array.isArray(raw.channelIds)
-                                ? raw.channelIds.filter(s => typeof s === 'string' && s.length < 64).slice(0, 1000)
-                                : [];
+                            const rawChannelIds = Array.isArray(raw.channelIds) ? raw.channelIds : [];
+                            const channelIds = [];
+                            const seenChannels = new Set();
+                            for (let i = 0; i < rawChannelIds.length; i++) {
+                                if (channelIds.length >= 1000) {
+                                    skippedChannels += rawChannelIds.length - i;
+                                    break;
+                                }
+                                const channelId = typeof rawChannelIds[i] === 'string' ? rawChannelIds[i].trim() : '';
+                                if (!channelId || channelId.length >= 64) {
+                                    skippedChannels++;
+                                    continue;
+                                }
+                                if (seenChannels.has(channelId)) {
+                                    duplicateChannels++;
+                                    continue;
+                                }
+                                seenChannels.add(channelId);
+                                channelIds.push(channelId);
+                                importedChannels++;
+                            }
                             sanitized[id] = {
                                 name,
                                 color,
@@ -13336,7 +13435,12 @@
                                 sanitized[id].parentId = parentId;
                             }
                         }
-                        return this._commitImportedGroups(sanitized, 'JSON');
+                        return this._commitImportedGroups(sanitized, 'JSON', {
+                            skippedGroups,
+                            skippedChannels,
+                            duplicateChannels,
+                            importedChannels
+                        });
                     } catch (e) {
                         if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
                         return { ok: false, error: e.message };
@@ -13835,7 +13939,9 @@
                         if (!stamped.length) return;
                         cards.sort((a, b) =>
                             (Number(a.dataset.ytkitOrigIdx) || 0) - (Number(b.dataset.ytkitOrigIdx) || 0));
-                        cards.forEach(card => container.appendChild(card));
+                        const frag = document.createDocumentFragment();
+                        cards.forEach(card => frag.appendChild(card));
+                        container.appendChild(frag);
                         return;
                     }
                     // Stamp original DOM order once per card so 'default' can be
@@ -13892,7 +13998,9 @@
                         return 0;
                     };
                     cards.sort((a, b) => score(a) - score(b));
-                    cards.forEach(card => container.appendChild(card));
+                    const sortFrag = document.createDocumentFragment();
+                    cards.forEach(card => sortFrag.appendChild(card));
+                    container.appendChild(sortFrag);
                 },
 
                 _readAiTagData() {
@@ -14693,6 +14801,11 @@
                         if (Object.keys(groups).length >= GROUP_LIMIT) return;
                         const attrs = node.attrs || {};
                         const channelId = this._extractOpmlChannelId(attrs);
+                        // A node with children is always a group (its subtree must
+                        // be visited). If it also has a channel ID (some RSS readers
+                        // emit folder outlines with an xmlUrl), add the channel to
+                        // the group after creating it — don't silently drop the
+                        // entire subtree.
                         const hasChildren = node.children?.length > 0;
                         const explicitGroup = attrs['astra:type'] === 'group' || hasChildren;
                         if (channelId && !explicitGroup) {
@@ -14726,10 +14839,36 @@
                 _commitImportedGroups(groups, label, meta = {}) {
                     const previous = this._readGroups();
                     this._writeGroups(groups);
-                    const count = Object.keys(groups).length;
-                    const duplicateText = meta.duplicateChannels ? `; skipped ${meta.duplicateChannels} duplicate channel${meta.duplicateChannels === 1 ? '' : 's'}` : '';
+                    const ids = Object.keys(groups);
+                    const previousIds = Object.keys(previous);
+                    const count = ids.length;
+                    const createdGroups = ids.filter(id => !Object.prototype.hasOwnProperty.call(previous, id)).length;
+                    const updatedGroups = ids.filter(id => (
+                        Object.prototype.hasOwnProperty.call(previous, id) &&
+                        JSON.stringify(previous[id]) !== JSON.stringify(groups[id])
+                    )).length;
+                    const removedGroups = previousIds.filter(id => !Object.prototype.hasOwnProperty.call(groups, id)).length;
+                    const totalChannels = ids.reduce((total, id) => {
+                        const channelIds = groups[id]?.channelIds;
+                        return total + (Array.isArray(channelIds) ? channelIds.length : 0);
+                    }, 0);
+                    const importedChannels = Number.isFinite(Number(meta.importedChannels)) ? Number(meta.importedChannels) : totalChannels;
+                    const skippedGroups = Math.max(0, Number(meta.skippedGroups) || 0);
+                    const skippedChannels = Math.max(0, Number(meta.skippedChannels) || 0);
+                    const duplicateChannels = Math.max(0, Number(meta.duplicateChannels) || 0);
+                    const detailParts = [
+                        `${createdGroups} new`,
+                        `${updatedGroups} updated`,
+                        `${importedChannels} channel${importedChannels === 1 ? '' : 's'}`
+                    ];
+                    if (removedGroups) detailParts.push(`${removedGroups} removed`);
+                    const skipParts = [];
+                    if (skippedGroups) skipParts.push(`${skippedGroups} skipped group${skippedGroups === 1 ? '' : 's'}`);
+                    if (skippedChannels) skipParts.push(`${skippedChannels} skipped channel${skippedChannels === 1 ? '' : 's'}`);
+                    if (duplicateChannels) skipParts.push(`skipped ${duplicateChannels} duplicate channel${duplicateChannels === 1 ? '' : 's'}`);
+                    const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
                     if (typeof showToast === 'function') {
-                        showToast(`Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label}${duplicateText}`, '#22c55e', {
+                        showToast(message, '#22c55e', {
                             duration: 6,
                             action: {
                                 text: 'Undo',
@@ -14746,7 +14885,17 @@
                     this._renderToolbar();
                     this._applyGroupFilter();
                     this._renderDeadChannelMarkers();
-                    return { ok: true, importedGroups: count, ...meta };
+                    return {
+                        ok: true,
+                        importedGroups: count,
+                        createdGroups,
+                        updatedGroups,
+                        removedGroups,
+                        importedChannels,
+                        skippedGroups,
+                        skippedChannels,
+                        duplicateChannels
+                    };
                 },
             };
         }
@@ -15209,8 +15358,6 @@
                 StorageManager,
                 YTKIT_VERSION,
                 _i18n,
-                _showPinDialog,
-                _showPinManageDialog,
                 appState,
                 createBrandImage,
                 createToast,
@@ -15226,7 +15373,6 @@
                 initFeatureLifecycle,
                 injectStyle,
                 isBooleanFeature,
-                isPinSet,
                 liveFeatureList,
                 normalizeSelectOptions,
                 openExternalUrl,
@@ -15241,9 +15387,6 @@
                 t,
                 trapFocusWithin
             } = deps;
-            const getPinSessionUnlocked = typeof deps.getPinSessionUnlocked === 'function'
-                ? deps.getPinSessionUnlocked
-                : () => false;
             const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
                 ? deps.getPageModalOpen
                 : () => false;
@@ -15293,10 +15436,6 @@
 
     async function toggleSettingsPanel(force) {
             const wantOpen = force ?? !isSettingsPanelOpen();
-            if (wantOpen && !getPinSessionUnlocked() && await isPinSet()) {
-                _showPinDialog(() => setSettingsPanelOpen(true));
-                return false;
-            }
             return setSettingsPanelOpen(wantOpen);
         }
 
@@ -15309,6 +15448,34 @@
             if (!status) return;
             status.textContent = message;
             status.dataset.tone = tone;
+        }
+
+    function getActiveSettingsProfileLabel() {
+            const presets = [
+                ['presetFocus', 'Focus'],
+                ['presetPowerUser', 'Power User'],
+                ['presetResearcher', 'Researcher'],
+                ['presetPrivacy', 'Privacy']
+            ];
+            const active = presets.find(([key]) => !!appState.settings?.[key]);
+            return active ? active[1] : 'Custom';
+        }
+
+    function updatePanelInsightState() {
+            const topLevelFeatures = liveFeatureList.filter((feature) => !feature.isSubFeature);
+            const activeNav = document.querySelector('.ytkit-nav-btn.active .ytkit-nav-label');
+            const enabledCount = countEnabledToggleFeatures(topLevelFeatures);
+            const enabledValue = document.getElementById('ytkit-insight-enabled-count');
+            const sectionValue = document.getElementById('ytkit-insight-section-count');
+            const activeSectionValue = document.getElementById('ytkit-insight-active-section');
+            const profileValue = document.getElementById('ytkit-insight-profile-name');
+            const savedValue = document.getElementById('ytkit-insight-saved-state');
+
+            if (enabledValue) enabledValue.textContent = `${enabledCount}/${topLevelFeatures.length}`;
+            if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
+            if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
+            if (profileValue) profileValue.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
+            if (savedValue) savedValue.textContent = 'Saved automatically';
         }
 
     function buildSettingsPanel() {
@@ -15385,7 +15552,7 @@
 
             const brandIntro = document.createElement('p');
             brandIntro.className = 'ytkit-brand-intro';
-            brandIntro.textContent = t('panelIntro', 'Search, tune, and apply YouTube controls live without leaving the page.');
+            brandIntro.textContent = t('panelIntro', 'Control YouTube from a focused professional command surface.');
 
             const brandBadges = document.createElement('div');
             brandBadges.className = 'ytkit-brand-badges';
@@ -15417,30 +15584,19 @@
             closeBtn.appendChild(ICONS.close());
             closeBtn.onclick = () => setSettingsPanelOpen(false);
 
-            const pinBtn = document.createElement('button');
-            pinBtn.className = 'ytkit-pin-btn';
-            pinBtn.type = 'button';
-            pinBtn.title = t('panelPinTitle', 'Manage settings PIN');
-            pinBtn.setAttribute('aria-label', t('panelPinAria', 'Manage settings PIN lock'));
-            const pinIcon = (ICONS.lock || ICONS.shield || ICONS.settings)();
-            pinIcon.setAttribute('aria-hidden', 'true');
-            const pinLabel = document.createElement('span');
-            pinLabel.className = 'ytkit-pin-label';
-            pinLabel.textContent = t('panelPinLabel', 'PIN');
-            pinBtn.appendChild(pinIcon);
-            pinBtn.appendChild(pinLabel);
-            (async () => {
-                const pinCopy = (await isPinSet())
-                    ? t('panelPinChangeTitle', 'Change or clear settings PIN')
-                    : t('panelPinSetTitle', 'Set a settings PIN');
-                pinBtn.title = pinCopy;
-                pinBtn.setAttribute('aria-label', pinCopy);
-            })();
-            pinBtn.onclick = () => _showPinManageDialog();
-
             const headerActions = document.createElement('div');
             headerActions.className = 'ytkit-header-actions';
-            headerActions.appendChild(pinBtn);
+            const liveBadge = document.createElement('span');
+            liveBadge.className = 'ytkit-header-live';
+            liveBadge.setAttribute('aria-label', t('panelLiveApplyBadge', 'Live apply'));
+            const liveDot = document.createElement('span');
+            liveDot.className = 'ytkit-header-live-dot';
+            liveDot.setAttribute('aria-hidden', 'true');
+            const liveCopy = document.createElement('span');
+            liveCopy.textContent = t('panelLiveApplyBadge', 'Live apply');
+            liveBadge.appendChild(liveDot);
+            liveBadge.appendChild(liveCopy);
+            headerActions.appendChild(liveBadge);
             headerActions.appendChild(closeBtn);
 
             header.appendChild(brand);
@@ -15498,11 +15654,13 @@
             searchActions.appendChild(searchClearBtn);
             searchActions.appendChild(searchMeta);
             searchContainer.appendChild(searchActions);
-            sidebarTop.appendChild(searchContainer);
+            searchContainer.classList.add('ytkit-command-search');
+            header.insertBefore(searchContainer, headerActions);
 
             const searchHint = document.createElement('p');
             searchHint.className = 'ytkit-search-hint';
             searchHint.textContent = t('panelSearchHint', 'Search by name, page, category, control type, or description.');
+            searchHint.hidden = true;
             sidebarTop.appendChild(searchHint);
             sidebar.appendChild(sidebarTop);
 
@@ -15535,6 +15693,14 @@
                 countSpan.className = 'ytkit-nav-count';
                 countSpan.textContent = countText;
                 if (countTitle) countSpan.title = countTitle;
+                const stateSpan = document.createElement('span');
+                stateSpan.className = 'ytkit-nav-state';
+                stateSpan.setAttribute('aria-hidden', 'true');
+                const [enabledRaw, totalRaw] = String(countText).split('/').map((value) => Number(value));
+                const navTone = Number.isFinite(enabledRaw) && Number.isFinite(totalRaw)
+                    ? (enabledRaw === 0 ? 'empty' : enabledRaw >= totalRaw ? 'complete' : 'partial')
+                    : 'partial';
+                stateSpan.dataset.tone = navTone;
                 const arrowSpan = document.createElement('span');
                 arrowSpan.className = 'ytkit-nav-arrow';
                 arrowSpan.appendChild(ICONS.chevronRight());
@@ -15543,6 +15709,7 @@
                 btn.appendChild(iconWrap);
                 btn.appendChild(copyWrap);
                 btn.appendChild(countSpan);
+                btn.appendChild(stateSpan);
                 btn.appendChild(arrowSpan);
                 return { btn, countSpan, catId };
             }
@@ -17140,8 +17307,157 @@
                 content.appendChild(pane);
             });
 
+            function createPanelActionButton({ id, label, icon, variant = 'secondary', ariaLabel }) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `ytkit-btn ytkit-btn-${variant}`;
+                button.id = id;
+                button.setAttribute('aria-label', ariaLabel || label);
+                if (icon && typeof ICONS[icon] === 'function') button.appendChild(ICONS[icon]());
+                const text = document.createElement('span');
+                text.textContent = label;
+                button.appendChild(text);
+                return button;
+            }
+
+            function makeInsightSection(title) {
+                const section = document.createElement('section');
+                section.className = 'ytkit-insight-section';
+                const heading = document.createElement('h2');
+                heading.className = 'ytkit-insight-heading';
+                heading.textContent = title;
+                section.appendChild(heading);
+                return section;
+            }
+
+            function makeStatusRow(label, value, tone = 'neutral', id = '') {
+                const row = document.createElement('div');
+                row.className = 'ytkit-status-row';
+                row.dataset.tone = tone;
+                const dot = document.createElement('span');
+                dot.className = 'ytkit-status-dot';
+                dot.setAttribute('aria-hidden', 'true');
+                const labelEl = document.createElement('span');
+                labelEl.className = 'ytkit-status-label';
+                labelEl.textContent = label;
+                const valueEl = document.createElement('span');
+                valueEl.className = 'ytkit-status-value';
+                if (id) valueEl.id = id;
+                valueEl.textContent = value;
+                row.appendChild(dot);
+                row.appendChild(labelEl);
+                row.appendChild(valueEl);
+                return row;
+            }
+
+            function buildPanelInsightsRail() {
+                const topLevelFeatures = liveFeatureList.filter((feature) => !feature.isSubFeature);
+                const populatedSections = categoryOrder.filter((cat) => (featuresByCategory[cat] || []).length > 0).length;
+                const rail = document.createElement('aside');
+                rail.className = 'ytkit-insights';
+                rail.setAttribute('aria-label', 'Settings status and backup actions');
+
+                const statusSection = makeInsightSection('Status');
+                const statusCard = document.createElement('div');
+                statusCard.className = 'ytkit-insight-card ytkit-status-card';
+                const statusHero = document.createElement('div');
+                statusHero.className = 'ytkit-status-hero';
+                const statusHeroIcon = document.createElement('div');
+                statusHeroIcon.className = 'ytkit-status-hero-icon';
+                statusHeroIcon.setAttribute('aria-hidden', 'true');
+                statusHeroIcon.appendChild(ICONS.check());
+                const statusHeroCopy = document.createElement('div');
+                statusHeroCopy.className = 'ytkit-status-hero-copy';
+                const statusHeroTitle = document.createElement('strong');
+                statusHeroTitle.textContent = 'Active';
+                const statusHeroMeta = document.createElement('span');
+                statusHeroMeta.textContent = 'Astra Deck is running. All systems operational.';
+                statusHeroCopy.appendChild(statusHeroTitle);
+                statusHeroCopy.appendChild(statusHeroMeta);
+                statusHero.appendChild(statusHeroIcon);
+                statusHero.appendChild(statusHeroCopy);
+                statusCard.appendChild(statusHero);
+                statusCard.appendChild(makeStatusRow('Extension', `v${YTKIT_VERSION}`, 'ok'));
+                statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok'));
+                statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count'));
+                statusCard.appendChild(makeStatusRow('Sections', String(populatedSections), 'neutral', 'ytkit-insight-section-count'));
+                statusSection.appendChild(statusCard);
+                rail.appendChild(statusSection);
+
+                const profileSection = makeInsightSection('Profile');
+                const profileCard = document.createElement('div');
+                profileCard.className = 'ytkit-insight-card ytkit-profile-card';
+                const profileIcon = document.createElement('div');
+                profileIcon.className = 'ytkit-profile-icon';
+                profileIcon.setAttribute('aria-hidden', 'true');
+                profileIcon.appendChild(ICONS.settings());
+                const profileCopy = document.createElement('div');
+                profileCopy.className = 'ytkit-profile-copy';
+                const profileTitle = document.createElement('div');
+                profileTitle.className = 'ytkit-profile-title';
+                profileTitle.id = 'ytkit-insight-profile-name';
+                profileTitle.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
+                const profileMeta = document.createElement('p');
+                profileMeta.className = 'ytkit-profile-meta';
+                profileMeta.textContent = 'Local profile model. Presets apply instantly and keep export/import recoverable.';
+                profileCopy.appendChild(profileTitle);
+                profileCopy.appendChild(profileMeta);
+                profileCard.appendChild(profileIcon);
+                profileCard.appendChild(profileCopy);
+                profileSection.appendChild(profileCard);
+                rail.appendChild(profileSection);
+
+                const backupSection = makeInsightSection('Health');
+                const backupCard = document.createElement('div');
+                backupCard.className = 'ytkit-insight-card ytkit-backup-card';
+                backupCard.appendChild(makeStatusRow('Last save', 'Saved automatically', 'ok', 'ytkit-insight-saved-state'));
+                backupCard.appendChild(makeStatusRow('Rule engine', 'OK', 'ok'));
+                backupCard.appendChild(makeStatusRow('Recovery', 'Undo toasts', 'info'));
+                const historyImportAction = createPanelActionButton({
+                    id: 'ytkit-import-history',
+                    label: t('settingsImportHistoryLabel', 'Import History'),
+                    icon: 'upload',
+                    variant: 'secondary',
+                    ariaLabel: t('settingsImportHistoryAriaLabel', 'Import YouTube Takeout watch history')
+                });
+                historyImportAction.id = 'ytkit-import-history';
+                historyImportAction.classList.add('ytkit-rail-action');
+                backupCard.appendChild(historyImportAction);
+                backupSection.appendChild(backupCard);
+                rail.appendChild(backupSection);
+
+                const changesSection = makeInsightSection('Recent');
+                const changesCard = document.createElement('div');
+                changesCard.className = 'ytkit-insight-card';
+                const recentList = document.createElement('dl');
+                recentList.className = 'ytkit-recent-list';
+                [
+                    ['Active section', 'ytkit-insight-active-section', 'Video Player'],
+                    ['Save mode', '', 'Instant'],
+                    ['Recovery', '', 'Undo toasts'],
+                    ['Last export', '', 'Not yet'],
+                    ['Last import', '', 'Not yet']
+                ].forEach(([label, id, value]) => {
+                    const term = document.createElement('dt');
+                    term.textContent = label;
+                    const desc = document.createElement('dd');
+                    if (id) desc.id = id;
+                    desc.textContent = value;
+                    recentList.appendChild(term);
+                    recentList.appendChild(desc);
+                });
+                changesCard.appendChild(recentList);
+                changesSection.appendChild(changesCard);
+                rail.appendChild(changesSection);
+
+                return rail;
+            }
+
+            const insights = buildPanelInsightsRail();
+
             body.appendChild(sidebar);
             body.appendChild(content);
+            body.appendChild(insights);
 
             // Footer
             const footer = document.createElement('footer');
@@ -17162,11 +17478,12 @@
             const ytToolsBtn = document.createElement('button');
             ytToolsBtn.type = 'button';
             ytToolsBtn.className = 'ytkit-github';
+            ytToolsBtn.classList.add('ytkit-downloader-link');
             ytToolsBtn.title = 'Download the Astra Deck downloader setup file';
             ytToolsBtn.setAttribute('aria-label', 'Download the Astra Deck downloader setup file');
-            ytToolsBtn.style.cssText = 'background: linear-gradient(135deg, #f97316, #22c55e) !important; border: none; cursor: pointer;';
+            ytToolsBtn.style.cssText = 'cursor: pointer;';
             const dlIcon = ICONS.download();
-            dlIcon.style.color = 'white';
+            dlIcon.style.color = 'currentColor';
             ytToolsBtn.appendChild(dlIcon);
 
             ytToolsBtn.addEventListener('click', () => {
@@ -17200,6 +17517,8 @@
             footerLeft.appendChild(githubLink);
             footerLeft.appendChild(ytToolsLink);
             footerLeft.appendChild(versionSpan);
+            footerLeft.classList.add('ytkit-sidebar-footer');
+            sidebar.appendChild(footerLeft);
 
             const footerStatus = document.createElement('span');
             footerStatus.className = 'ytkit-panel-status';
@@ -17211,31 +17530,38 @@
 
             const footerRight = document.createElement('div');
             footerRight.className = 'ytkit-footer-right';
+            const footerActions = document.createElement('div');
+            footerActions.className = 'ytkit-action-stack ytkit-footer-actions';
+            footerActions.appendChild(createPanelActionButton({
+                id: 'ytkit-export',
+                label: 'Export',
+                icon: 'download',
+                variant: 'secondary',
+                ariaLabel: `Export ${BRAND.name} settings`
+            }));
+            footerActions.appendChild(createPanelActionButton({
+                id: 'ytkit-import',
+                label: 'Import',
+                icon: 'upload',
+                variant: 'secondary',
+                ariaLabel: `Import ${BRAND.name} settings`
+            }));
+            footerActions.appendChild(createPanelActionButton({
+                id: 'ytkit-reset-active-section',
+                label: 'Reset',
+                icon: 'settings',
+                variant: 'danger',
+                ariaLabel: 'Reset the active settings section to defaults'
+            }));
+            footerActions.appendChild(createPanelActionButton({
+                id: 'ytkit-close-footer',
+                label: 'Close',
+                icon: 'close',
+                variant: 'primary',
+                ariaLabel: t('panelCloseAria', 'Close settings')
+            }));
+            footerRight.appendChild(footerActions);
 
-            const importBtn = document.createElement('button');
-            importBtn.type = 'button';
-            importBtn.className = 'ytkit-btn ytkit-btn-secondary';
-            importBtn.id = 'ytkit-import';
-            importBtn.setAttribute('aria-label', `Import ${BRAND.name} settings`);
-            importBtn.appendChild(ICONS.upload());
-            const importText = document.createElement('span');
-            importText.textContent = 'Import';
-            importBtn.appendChild(importText);
-
-            const exportBtn = document.createElement('button');
-            exportBtn.type = 'button';
-            exportBtn.className = 'ytkit-btn ytkit-btn-primary';
-            exportBtn.id = 'ytkit-export';
-            exportBtn.setAttribute('aria-label', `Export ${BRAND.name} settings`);
-            exportBtn.appendChild(ICONS.download());
-            const exportText = document.createElement('span');
-            exportText.textContent = 'Export';
-            exportBtn.appendChild(exportText);
-
-            footerRight.appendChild(importBtn);
-            footerRight.appendChild(exportBtn);
-
-            footer.appendChild(footerLeft);
             footer.appendChild(footerStatus);
             footer.appendChild(footerRight);
 
@@ -17258,6 +17584,7 @@
 
             attachUIEventListeners();
             updateAllToggleStates();
+            updatePanelInsightState();
         }
 
     function buildFeatureCard(f, accentColor, isSubFeature = false) {
@@ -17524,6 +17851,10 @@
                     countEl.textContent = `${enabledCount}/${totalCount}`;
                     countEl.style.color = '';
                 }
+                const stateEl = btn.querySelector('.ytkit-nav-state');
+                if (stateEl) {
+                    stateEl.dataset.tone = enabledCount === 0 ? 'empty' : enabledCount >= totalCount ? 'complete' : 'partial';
+                }
                 const paneEnabledChip = pane.querySelector('.ytkit-pane-chip[data-stat="enabled"]');
                 if (paneEnabledChip) paneEnabledChip.textContent = `${enabledCount} On`;
             });
@@ -17538,6 +17869,7 @@
             if (activeSearchInput?.value.trim() && typeof _panelSearchUpdater === 'function') {
                 _panelSearchUpdater(activeSearchInput.value, { preserveScroll: true });
             }
+            updatePanelInsightState();
         }
 
     function attachUIEventListeners() {
@@ -17590,7 +17922,7 @@
             // Close panel + Tab navigation (single delegated handler)
             doc.addEventListener('click', (e) => {
                 if (!isSettingsPanelOpen()) return;
-                if (e.target.closest('.ytkit-close') || e.target.matches('#ytkit-overlay')) {
+                if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer') || e.target.matches('#ytkit-overlay')) {
                     setSettingsPanelOpen(false);
                     return;
                 }
@@ -17610,6 +17942,7 @@
                     }
                     const contentArea = doc.querySelector('.ytkit-content');
                     if (contentArea) contentArea.scrollTop = 0;
+                    updatePanelInsightState();
                     // Clear search on tab click
                     const searchInput = doc.getElementById('ytkit-search');
                     if (searchInput && searchInput.value) {
@@ -17626,10 +17959,22 @@
                     setPanelStatus('Settings exported. The download is ready.', 'success');
                     return;
                 }
+                if (e.target.closest('#ytkit-reset-active-section')) {
+                    const activePane = doc.querySelector('.ytkit-pane.active');
+                    const activeName = doc.querySelector('.ytkit-nav-btn.active .ytkit-nav-label')?.textContent || 'active section';
+                    const sectionReset = activePane?.querySelector('.ytkit-reset-group-btn');
+                    if (sectionReset) {
+                        sectionReset.click();
+                        setPanelStatus(`${activeName} reset to defaults. Undo is available in the toast.`, 'warn');
+                    } else {
+                        setPanelStatus('Choose a settings section before resetting.', 'warn');
+                    }
+                    return;
+                }
                 if (e.target.closest('#ytkit-import')) {
                     handleFileImport(async (content) => {
-                        const success = settingsManager.importAllSettings(content);
-                        if (success) {
+                        const result = settingsManager.importAllSettingsDetailed(content);
+                        if (result?.ok) {
                             handleExternalStorageChanges({
                                 [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
                                 [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
@@ -17637,13 +17982,75 @@
                                 [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                                 [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                             }, 'import', { forceApplyLocal: true });
-                            createToast('Settings imported. Changes applied live.', 'success');
-                            setPanelStatus('Settings imported. Changes applied live.', 'success');
+                            showToast(result.message, '#22c55e', {
+                                duration: 8,
+                                action: {
+                                    text: 'Undo',
+                                    onClick: () => {
+                                        const undo = settingsManager.undoLastSettingsImport();
+                                        if (undo?.ok) {
+                                            handleExternalStorageChanges({
+                                                [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
+                                                [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
+                                                [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
+                                                [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
+                                                [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
+                                            }, 'import-undo', { forceApplyLocal: true });
+                                            showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });
+                                            setPanelStatus(undo.message, 'warn');
+                                        } else {
+                                            const message = undo?.message || 'Import undo is no longer available.';
+                                            showToast(message, '#f59e0b', { duration: 4, tone: 'warning' });
+                                            setPanelStatus(message, 'warn');
+                                        }
+                                    }
+                                }
+                            });
+                            setPanelStatus(`${result.message} Undo is available in the toast.`, 'success');
                         } else {
-                            createToast('Import failed. Invalid file format.', 'error');
-                            setPanelStatus('Import failed. Choose a valid Astra Deck settings export.', 'error');
+                            const message = result?.message || 'Import failed. Choose a valid Astra Deck settings export.';
+                            createToast(message, 'error');
+                            setPanelStatus(message, 'error');
                         }
                     });
+                    return;
+                }
+                if (e.target.closest('#ytkit-import-history')) {
+                    const preImportStats = StorageManager.get(STORAGE_KEYS.watchTime, null);
+                    handleFileImport(async (content) => {
+                        const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
+                        if (result?.ok) {
+                            if (result.changed) {
+                                handleExternalStorageChanges({
+                                    [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
+                                }, 'takeout-import', { forceApplyLocal: true });
+                            }
+                            if (preImportStats !== null) {
+                                showToast(result.message, '#22c55e', {
+                                    duration: 8,
+                                    action: {
+                                        text: 'Undo',
+                                        onClick: () => {
+                                            StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);
+                                            handleExternalStorageChanges({
+                                                [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
+                                            }, 'takeout-undo', { forceApplyLocal: true });
+                                            const undoMessage = t('statusTakeoutImportUndone', 'Takeout import undone');
+                                            createToast(undoMessage, 'success');
+                                            setPanelStatus(undoMessage, 'success');
+                                        }
+                                    }
+                                });
+                            } else {
+                                createToast(result.message, result.toastTone || result.tone || 'success');
+                            }
+                            setPanelStatus(result.message, result.statusTone || result.tone || 'success');
+                        } else {
+                            const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
+                            createToast(message, 'error');
+                            setPanelStatus(message, 'error');
+                        }
+                    }, { maxBytes: 500 * 1024 * 1024 });
                 }
             });
 
@@ -18756,6 +19163,7 @@
             } = deps;
 
             let _cache = null;
+            let _persistTimer = null;
             const _budgetWindow = { start: 0, count: 0 };
             const _BUDGET_PER_MIN = 100;
             let _styleElement = null;
@@ -18803,7 +19211,10 @@
                     keys.sort((a, b) => (_cache[a].ts || 0) - (_cache[b].ts || 0));
                     for (const k of keys.slice(0, keys.length - 500)) delete _cache[k];
                 }
-                try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+                clearTimeout(_persistTimer);
+                _persistTimer = setTimeout(() => {
+                    try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+                }, 2000);
             }
 
             function _allowFetch() {
@@ -18998,6 +19409,13 @@
                     document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
                     _styleElement?.remove();
                     _styleElement = null;
+                    if (_persistTimer) {
+                        clearTimeout(_persistTimer);
+                        _persistTimer = null;
+                        if (_cache) {
+                            try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: final flush on teardown */ }
+                        }
+                    }
                     _cache = null;
                     _budgetWindow.start = 0;
                     _budgetWindow.count = 0;
@@ -19303,8 +19721,8 @@
                         const segments = match && Array.isArray(match.segments)
                             ? this._normalizeSegments(match.segments)
                             : [];
-                        // Don't resurrect the destroy()-nulled cache or arm a
-                        // persist timer if the feature was torn down mid-flight.
+                        // Don't resurrect the destroy()-nulled cache or arm a persist
+                        // timer if the feature was torn down while this was in flight.
                         if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
                         ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
                             source: 'network',
@@ -19666,7 +20084,8 @@
                         // related rail (ytd-compact-video-renderer) is the most
                         // clickbait-heavy surface DeArrow targets. The churning
                         // MutationObserver stays gated off watch pages below to
-                        // avoid reprocessing on player/comment DOM noise.
+                        // avoid reprocessing on player/comment DOM noise, so this
+                        // navigate-triggered pass is what covers the watch sidebar.
                         self._resetTimer = setTimeout(() => {
                             self._resetTimer = null;
                             self._processPage();
@@ -19715,8 +20134,9 @@
                             url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
                             timeout: 8000,
                         });
-                        // Feature torn down mid-flight — don't resurrect the
-                        // cleared cache or arm a persist timer post-destroy.
+                        // Feature was torn down while this request was in flight —
+                        // do not resurrect the freshly-cleared cache or arm a persist
+                        // timer that would write after destroy().
                         if (gen !== this._generation) return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
                         if (!data || typeof data !== 'object' || Array.isArray(data)) {
                             const payloadError = new Error('invalid DeArrow branding payload');

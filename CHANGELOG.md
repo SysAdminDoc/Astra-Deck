@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Perf: watch time tracker persists once per minute.** The 10-second
+  tick now accumulates in memory and writes to `chrome.storage.local` at
+  most once per minute, flushing immediately on pause, teardown, and
+  pagehide — the old cadence burned 6 of the shared ~120 writes/min
+  budget on stats alone.
+- **Perf: Reaction Spammer observer throttled.** The full-document
+  MutationObserver now collapses each mutation burst into at most one
+  restore/render pass per 250 ms window instead of running
+  `querySelectorAll` synchronously on every live-chat mutation.
+- **Perf: video hider retains fewer detached cards.** Removed-card undo
+  records now cap at 200 (was 500) and hold the reinsertion anchor via
+  `WeakRef`, so a later-detached sibling subtree can be garbage collected
+  instead of being pinned as an ordering anchor.
 - **Fix: install docs no longer hardcode stale latest-release claims.**
   README and the native-messaging bootstrap doc claimed "latest release
   v4.46.4 includes the EXE" while GitHub latest was v4.46.34 with no
