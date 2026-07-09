@@ -30,19 +30,3 @@
   Acceptance: New code imports a small wrapper for storage/runtime/tabs/permissions/downloads, existing direct calls are migrated in bounded batches, and tests cover Chrome-only and Firefox-style namespace availability.
   Complexity: L
 
-- [ ] P3 — Enable ESLint constant-binary-expression relational checks
-  Why: ESLint 10.6.0 can catch always-constant relational comparisons, a low-cost correctness ratchet for Astra's large plain-JS codebase.
-  Evidence: ESLint 10.6.0 release notes, `eslint.config.js`, `package.json`.
-  Touches: `package.json`, `package-lock.json`, `eslint.config.js`, `tests/hardening.test.js`.
-  Acceptance: Lint enables `no-constant-binary-expression` with `checkRelationalComparisons`, the suite stays green, and any newly discovered constant comparisons are fixed rather than suppressed.
-  Complexity: S
-
-## Audit Backlog (v4.46.35)
-
-- [ ] P3 — Guard sync-userscript against bundled modules containing END marker
-  Why: If any module in V5_BUNDLE_MODULES contains the END marker string, the next sync run's regex would match a truncated region, corrupting the userscript.
-  Where: `sync-userscript.js`
-
-- [ ] P3 — Handle template literal expressions in check-no-eval scanner
-  Why: `stripStringLiteralContents` treats backtick strings as simple quotes, so `eval()` inside `${}` template expressions would be missed.
-  Where: `scripts/check-no-eval.js`

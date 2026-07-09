@@ -85,15 +85,39 @@ const PATTERNS = [
 function stripStringLiteralContents(lineText) {
     let out = '';
     let quote = null;
+    // Depth of nested `${ … }` template expressions. Code inside a template
+    // expression is live JavaScript — an `eval(` there must NOT be stripped
+    // with the surrounding string content or the scanner goes blind to it.
+    let exprDepth = 0;
     for (let i = 0; i < lineText.length; i += 1) {
         const ch = lineText[i];
         if (quote) {
             if (ch === '\\') { i += 1; continue; }
+            if (quote === '`' && ch === '$' && lineText[i + 1] === '{') {
+                // Enter a template expression: keep its content visible.
+                exprDepth = 1;
+                quote = null;
+                out += '${';
+                i += 1;
+                continue;
+            }
             if (ch === quote) {
                 quote = null;
                 out += ch;
             }
             continue;
+        }
+        if (exprDepth > 0) {
+            if (ch === '{') exprDepth += 1;
+            else if (ch === '}') {
+                exprDepth -= 1;
+                if (exprDepth === 0) {
+                    // Back inside the enclosing template literal body.
+                    quote = '`';
+                    out += ch;
+                    continue;
+                }
+            }
         }
         if (ch === '"' || ch === "'" || ch === '`') {
             quote = ch;

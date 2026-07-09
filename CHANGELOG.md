@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chore: lint ratchet + build-tool hardening.** ESLint upgraded to
+  10.6 with `no-constant-binary-expression` (relational checks) enabled
+  across all shipped extension JS — zero violations found.
+  `sync-userscript.js` now refuses to bundle a module whose source
+  contains a v5.0.0 bundle marker (which would corrupt the next sync
+  run's regex region), and the `check-no-eval` scanner keeps template
+  `${}` expression code visible while still stripping literal text, so
+  eval-shaped code inside template expressions cannot hide from the
+  comment-suppression pass.
 - **Feat: in-page degraded-state pills for SponsorBlock, DeArrow, and
   Return YouTube Dislike.** The external-API health tracker now supports
   subscriptions and produces compact degradation copy (retry reason,
