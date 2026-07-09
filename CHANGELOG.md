@@ -10,6 +10,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   terminal time on completed, failed, and cancelled downloads, so long-running
   items stay visible in Recent Activity for the intended five-minute window
   after they finish instead of being pruned by their start time.
+- **Fix: README language inventory drift.** The language table now includes
+  the shipped Arabic locale and an i18n regression test checks the README
+  count/table against the live `extension/_locales` directories.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed
