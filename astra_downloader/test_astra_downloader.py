@@ -149,6 +149,21 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertNotIn("raise_()", server_error_src)
         self.assertNotIn("activateWindow()", server_error_src)
 
+    def test_companion_uses_premium_command_center_and_async_readiness(self):
+        import inspect
+
+        source = Path(ad.__file__).read_text(encoding="utf-8")
+        probe_source = inspect.getsource(ad.ReadinessProbe.run)
+        download_card_source = inspect.getsource(ad.MainWindow._download_card)
+        self.assertIn("#ff5f4b", ad.STYLESHEET)
+        self.assertIn('QFrame[class="readiness"]', ad.STYLESHEET)
+        self.assertIn('QLabel[class="errorCallout"]', ad.STYLESHEET)
+        self.assertIn("probe_deno_runtime", probe_source)
+        self.assertIn("probe_po_token_provider", probe_source)
+        self.assertIn("self.readiness_worker.moveToThread", source)
+        self.assertIn("dl.error_advice", download_card_source)
+        self.assertTrue((Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py").exists())
+
 
 class InstanceCommandTests(unittest.TestCase):
     def test_startup_command_detects_protocol_launches(self):
