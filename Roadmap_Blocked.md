@@ -20,9 +20,9 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Requires manual AMO developer dashboard interaction (screenshots, listing copy, human review submission). Cannot be automated.
 
-- [ ] P1 — Companion release SHA256 sidecar + clean-machine verification
-  Why: Latest release `v4.46.4` includes `AstraDownloader.exe`, but the updater/setup flow also requires `AstraDownloader.exe.sha256`. Without the sidecar, users still cannot complete the one-click companion setup path.
-  Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists; `gh release view v4.46.4` reports `AstraDownloader.exe` with digest `sha256:c38c04adb5b829511cf4074e7af78318419bd572c324348e10c3b14a3e9c9066` but no `.sha256` asset.
+- [ ] P1 — Companion release EXE + SHA256 sidecar + clean-machine verification
+  Why: The updater/setup flow requires both `AstraDownloader.exe` and `AstraDownloader.exe.sha256` on the latest GitHub release. The current latest release ships extension/userscript artifacts only, so users cannot complete the one-click companion setup path.
+  Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists; `gh release view --json assets` on the latest release lists no companion assets.
   Touches: `astra_downloader/build.py`, GitHub Release assets, `scripts/stage-companion-release.js`
   Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
   Complexity: M

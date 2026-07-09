@@ -81,7 +81,8 @@ UI health-pill assertions.
    window once legacy clients have migrated.
 4. **Release packaging.** The companion setup path still requires both
    `AstraDownloader.exe` and `AstraDownloader.exe.sha256` on the GitHub release.
-   Latest `v4.46.4` includes the EXE but is missing the hash sidecar.
+   No published release attaches the companion asset pair yet — check
+   `gh release view --json assets` for the live state.
 
 Until the legacy branch is removed, native-capable clients get the stronger
 browser-pinned token channel while controlled deployments can disable the

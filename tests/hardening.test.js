@@ -2150,8 +2150,10 @@ test('README documents Astra Downloader companion setup and pending release asse
 
     assert.match(readme, /### Astra Downloader Companion Setup/,
         'README must give the companion its own setup section');
-    assert.match(readme, /latest release `v4\.46\.4` includes\s+`AstraDownloader\.exe` but does \*\*not\*\* include `AstraDownloader\.exe\.sha256`/,
-        'README must disclose the current companion EXE and missing hash sidecar state');
+    assert.match(readme, /`AstraDownloader\.exe` and\s+`AstraDownloader\.exe\.sha256` are \*\*not\*\* attached yet/,
+        'README must disclose that companion release assets are pending without hardcoding a tag');
+    assert.match(readme, /releases\/latest\)\s*\nfor the live asset list/,
+        'README must point readers at the live release page instead of a hardcoded version claim');
     assert.match(readme, /py -3\.12 -m pip install -r astra_downloader\/requirements\.txt/,
         'README must document the current source-checkout companion path');
     assert.match(readme, /py -3\.12 astra_downloader\/astra_downloader\.py/,
@@ -10537,6 +10539,33 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
     // so a future code reviewer sees the invariant at the constant.
     assert.match(popupSrc, /NF25.*ytkit\.js#SETTINGS_VERSION/s,
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
+});
+
+test('active install docs never hardcode a "latest release vX.Y.Z" claim', () => {
+    // Hardcoded latest-release versions go stale the moment the next release
+    // ships (README carried "latest release v4.46.4" while GitHub latest was
+    // v4.46.34). check-versions.js gates this; the pin here proves both the
+    // gate pattern and the clean state of the docs it watches.
+    const checkSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'check-versions.js'), 'utf8'
+    );
+    assert.match(checkSrc, /hardcoded latest-release version claim/,
+        'check-versions.js must flag hardcoded latest-release claims in active docs');
+    assert.match(checkSrc, /native-messaging-token-bootstrap\.md/,
+        'the companion install doc must be in the active-doc truth file set');
+
+    const claimPatterns = [
+        /latest(?:\s+public)?\s+release\s+`?v\d+(?:\.\d+)+/gi,
+        /\bLatest\s+`v\d+(?:\.\d+)+`/g
+    ];
+    for (const relPath of ['README.md', path.join('docs', 'native-messaging-token-bootstrap.md')]) {
+        const text = fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+        for (const re of claimPatterns) {
+            const match = text.match(re);
+            assert.equal(match, null,
+                `${relPath} must not hardcode a latest-release version claim (found: ${match && match[0]})`);
+        }
+    }
 });
 
 test('v4.47.0 R3 — chrome.downloads.show failures log to console + SW lifecycle ring instead of silent swallow', () => {

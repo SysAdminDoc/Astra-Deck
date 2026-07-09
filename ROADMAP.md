@@ -2,13 +2,6 @@
 
 ## Research-Driven Additions
 
-- [ ] P1 — Generate companion install/release-state copy from live release metadata
-  Why: README and companion docs still hardcode latest release `v4.46.4` even though GitHub latest is `v4.46.34`, weakening installer trust.
-  Evidence: `README.md`, `docs/native-messaging-token-bootstrap.md`, `docs/signing-keys.md`, `gh release list --limit 10`.
-  Touches: `README.md`, `docs/native-messaging-token-bootstrap.md`, `scripts/check-versions.js`, `scripts/generate-release-readiness.js`, `tests/hardening.test.js`.
-  Acceptance: No active install doc hardcodes stale "latest release" claims; a local check fails if README companion release-state text disagrees with the current release manifest or GitHub latest metadata.
-  Complexity: M
-
 - [ ] P2 — Promote subscription groups into a health/action center
   Why: PocketTube-level subscription management includes health status, dead-channel detection, bulk unsubscribe, mark-watched, notifications, and Deck-style triage; Astra already has the local data needed but not a unified workflow.
   Evidence: PocketTube feature pages, `extension/features/subscription-groups/index.js`, `extension/core/settings-schema.js`.
