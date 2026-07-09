@@ -5154,10 +5154,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Remaining-time compact + hide-in-fullscreen added 2 booleans (386 → 388).
     // Auto-exit fullscreen at video end added 1 boolean (388 → 389).
     // Playback-error auto-recovery added 1 boolean (389 → 390).
+    // Persistent queue + auto-advance added 2 booleans (390 → 392).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 390,
-        'SETTINGS_SCHEMA must cover all 390 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 392,
+        'SETTINGS_SCHEMA must cover all 392 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

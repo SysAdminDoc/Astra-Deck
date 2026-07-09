@@ -18,12 +18,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: `extension/ytkit.js` watchLaterCleanup block, new `extension/features/` module, reuse bulkCardActions session pattern.
   Acceptance: On ?list=WL — bulk remove by filter (watched %, age, channel, duplicate videoId), sort preview, JSON/CSV export; sessions bounded (25/run, paced) with Undo log; all local.
   Complexity: L
-- [ ] P1 — Persistent local queue
-  Why: YouTube's queue dies with the tab; a storage-backed queue that survives restart replicates a top Premium-adjacent ask with pure local state.
-  Evidence: Streamline (HN 46391925); HN 39627895 queue complaints.
-  Where: new `extension/features/persistent-queue/`, thumbnail overlay button alongside watchLaterQuickAdd, storage with quota LRU.
-  Acceptance: Add-to-queue overlay on cards; queue panel with reorder/remove/clear; auto-advance plays next queue entry on video end; queue persists across browser restart; export/import JSON.
-  Complexity: M
 - [ ] P1 — In-Shorts player controls
   Why: Astra only redirects/hides Shorts; users who keep Shorts get no seekbar, volume, speed, or loop control. Biggest single UX gap vs the BYTS family.
   Evidence: Better Youtube Shorts (Meriel Varen, 3.8k installs), BYTS (WaGi-Coding), Shorts progress-bar toggle in Control Panel for YouTube.

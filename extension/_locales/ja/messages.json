@@ -1502,6 +1502,18 @@
   "feature_perChannelSpeed_name": {
     "message": "チャンネル別速度メモリ"
   },
+  "feature_persistentQueueAutoAdvance_desc": {
+    "message": "Play the next queue entry automatically when the current video ends"
+  },
+  "feature_persistentQueueAutoAdvance_name": {
+    "message": "Queue Auto-Advance"
+  },
+  "feature_persistentQueue_desc": {
+    "message": "Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance"
+  },
+  "feature_persistentQueue_name": {
+    "message": "Persistent Queue"
+  },
   "feature_persistentSpeed_desc": {
     "message": "Keep playback speed consistent"
   },
