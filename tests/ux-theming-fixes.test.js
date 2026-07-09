@@ -209,10 +209,22 @@ test('settings modal premium refresh locks the desktop shell and row controls', 
         'settings modal must carry the later premium-refresh override layer');
     assert.ok(ytkitSource.includes('Settings command-center concept parity'),
         'settings modal must carry the command-center concept parity override layer');
+    assert.ok(ytkitSource.includes('Settings executive command-deck mockup parity'),
+        'settings modal must carry the imagegen command-deck mockup parity override layer');
+    assert.ok(settingsPanelModuleSource.includes("searchContainer.classList.add('ytkit-command-search')"),
+        'extension settings search must live in the top command bar like the mockup');
+    assert.ok(settingsPanelModuleSource.includes("footerActions.className = 'ytkit-action-stack ytkit-footer-actions'"),
+        'extension settings module must render the mockup-style bottom action bar');
+    assert.ok(settingsPanelModuleSource.includes("id: 'ytkit-close-footer'"),
+        'bottom command bar must expose the prominent Close action from the mockup');
     assert.ok(settingsPanelModuleSource.includes("rail.className = 'ytkit-insights'"),
         'extension settings module must render the premium right-side insights rail');
+    assert.ok(settingsPanelModuleSource.includes("statusHero.className = 'ytkit-status-hero'"),
+        'extension settings module must render the mockup-style status hero in the inspector rail');
     assert.ok(ytkitSource.includes("rail.className = 'ytkit-insights'"),
         'extension settings monolith fallback must render the premium right-side insights rail');
+    assert.ok(ytkitSource.includes('.ytkit-status-hero-icon'),
+        'settings inspector status hero must carry the green operational badge from the mockup');
     assert.ok(settingsPanelModuleSource.includes("stateSpan.className = 'ytkit-nav-state'"),
         'extension settings module must render nav completion indicators');
     assert.ok(ytkitSource.includes("stateSpan.className = 'ytkit-nav-state'"),
@@ -231,6 +243,12 @@ test('settings modal premium refresh locks the desktop shell and row controls', 
         'light-theme sync/export actions must keep readable premium button styling');
     assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-reset-group-btn'),
         'light-theme pane reset controls must keep readable premium button styling');
+    assert.ok(ytkitSource.includes('grid-template-columns: 246px minmax(0, 1fr) 262px !important;'),
+        'desktop settings body must match the command-deck nav/content/inspector proportions');
+    assert.ok(ytkitSource.includes('border: 1px solid rgba(var(--ytkit-command-accent-rgb),0.7) !important;'),
+        'command-deck shell must carry the red premium modal hairline from the mockup');
+    assert.ok(ytkitSource.includes('.ytkit-footer-actions .ytkit-btn-primary'),
+        'bottom Close action must use the premium filled red button treatment');
     assert.ok(ytkitSource.includes('grid-template-columns: clamp(260px, 20vw, 300px) minmax(0, 1fr) clamp(260px, 21vw, 300px) !important;'),
         'desktop settings body must stay a composed sidebar/content/insights grid');
     assert.ok(ytkitSource.includes('grid-template-rows: auto auto auto !important;'),
