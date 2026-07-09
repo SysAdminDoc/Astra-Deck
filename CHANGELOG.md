@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - No unreleased changes.
 
+## [4.46.34] - 2026-07-09
+
+- **Polish: extension settings executive command deck.** Re-imagined the
+  in-page extension settings overlay from a fresh imagegen mockup and pushed
+  the extension implementation toward that design: red hairline modal shell,
+  top command search, compact left navigation rail, denser premium setting
+  rows, right-side operational status/profile/health inspector, and a persistent
+  bottom saved/action bar with Export, Import, Reset, and Close.
+
 ## [4.46.33] - 2026-07-09
 
 - **Fix: optional-host smoke timeout hardening.** The Chromium optional-host

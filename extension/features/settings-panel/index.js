@@ -218,7 +218,7 @@ function buildSettingsPanel() {
 
         const brandIntro = document.createElement('p');
         brandIntro.className = 'ytkit-brand-intro';
-        brandIntro.textContent = t('panelIntro', 'Search, tune, and apply YouTube controls live without leaving the page.');
+        brandIntro.textContent = t('panelIntro', 'Control YouTube from a focused professional command surface.');
 
         const brandBadges = document.createElement('div');
         brandBadges.className = 'ytkit-brand-badges';
@@ -320,11 +320,13 @@ function buildSettingsPanel() {
         searchActions.appendChild(searchClearBtn);
         searchActions.appendChild(searchMeta);
         searchContainer.appendChild(searchActions);
-        sidebarTop.appendChild(searchContainer);
+        searchContainer.classList.add('ytkit-command-search');
+        header.insertBefore(searchContainer, headerActions);
 
         const searchHint = document.createElement('p');
         searchHint.className = 'ytkit-search-hint';
         searchHint.textContent = t('panelSearchHint', 'Search by name, page, category, control type, or description.');
+        searchHint.hidden = true;
         sidebarTop.appendChild(searchHint);
         sidebar.appendChild(sidebarTop);
 
@@ -2024,6 +2026,23 @@ function buildSettingsPanel() {
             const statusSection = makeInsightSection('Status');
             const statusCard = document.createElement('div');
             statusCard.className = 'ytkit-insight-card ytkit-status-card';
+            const statusHero = document.createElement('div');
+            statusHero.className = 'ytkit-status-hero';
+            const statusHeroIcon = document.createElement('div');
+            statusHeroIcon.className = 'ytkit-status-hero-icon';
+            statusHeroIcon.setAttribute('aria-hidden', 'true');
+            statusHeroIcon.appendChild(ICONS.check());
+            const statusHeroCopy = document.createElement('div');
+            statusHeroCopy.className = 'ytkit-status-hero-copy';
+            const statusHeroTitle = document.createElement('strong');
+            statusHeroTitle.textContent = 'Active';
+            const statusHeroMeta = document.createElement('span');
+            statusHeroMeta.textContent = 'Astra Deck is running. All systems operational.';
+            statusHeroCopy.appendChild(statusHeroTitle);
+            statusHeroCopy.appendChild(statusHeroMeta);
+            statusHero.appendChild(statusHeroIcon);
+            statusHero.appendChild(statusHeroCopy);
+            statusCard.appendChild(statusHero);
             statusCard.appendChild(makeStatusRow('Extension', `v${YTKIT_VERSION}`, 'ok'));
             statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok'));
             statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count'));
@@ -2054,26 +2073,12 @@ function buildSettingsPanel() {
             profileSection.appendChild(profileCard);
             rail.appendChild(profileSection);
 
-            const backupSection = makeInsightSection('Sync & Backup');
+            const backupSection = makeInsightSection('Health');
             const backupCard = document.createElement('div');
             backupCard.className = 'ytkit-insight-card ytkit-backup-card';
             backupCard.appendChild(makeStatusRow('Last save', 'Saved automatically', 'ok', 'ytkit-insight-saved-state'));
-            const actionStack = document.createElement('div');
-            actionStack.className = 'ytkit-action-stack';
-            actionStack.appendChild(createPanelActionButton({
-                id: 'ytkit-export',
-                label: 'Export',
-                icon: 'download',
-                variant: 'primary',
-                ariaLabel: `Export ${BRAND.name} settings`
-            }));
-            actionStack.appendChild(createPanelActionButton({
-                id: 'ytkit-import',
-                label: 'Import',
-                icon: 'upload',
-                variant: 'secondary',
-                ariaLabel: `Import ${BRAND.name} settings`
-            }));
+            backupCard.appendChild(makeStatusRow('Rule engine', 'OK', 'ok'));
+            backupCard.appendChild(makeStatusRow('Recovery', 'Undo toasts', 'info'));
             const historyImportAction = createPanelActionButton({
                 id: 'ytkit-import-history',
                 label: t('settingsImportHistoryLabel', 'Import History'),
@@ -2082,15 +2087,8 @@ function buildSettingsPanel() {
                 ariaLabel: t('settingsImportHistoryAriaLabel', 'Import YouTube Takeout watch history')
             });
             historyImportAction.id = 'ytkit-import-history';
-            actionStack.appendChild(historyImportAction);
-            actionStack.appendChild(createPanelActionButton({
-                id: 'ytkit-reset-active-section',
-                label: 'Reset section',
-                icon: 'settings',
-                variant: 'danger',
-                ariaLabel: 'Reset the active settings section to defaults'
-            }));
-            backupCard.appendChild(actionStack);
+            historyImportAction.classList.add('ytkit-rail-action');
+            backupCard.appendChild(historyImportAction);
             backupSection.appendChild(backupCard);
             rail.appendChild(backupSection);
 
@@ -2146,11 +2144,12 @@ function buildSettingsPanel() {
         const ytToolsBtn = document.createElement('button');
         ytToolsBtn.type = 'button';
         ytToolsBtn.className = 'ytkit-github';
+        ytToolsBtn.classList.add('ytkit-downloader-link');
         ytToolsBtn.title = 'Download the Astra Deck downloader setup file';
         ytToolsBtn.setAttribute('aria-label', 'Download the Astra Deck downloader setup file');
-        ytToolsBtn.style.cssText = 'background: linear-gradient(135deg, #f97316, #22c55e) !important; border: none; cursor: pointer;';
+        ytToolsBtn.style.cssText = 'cursor: pointer;';
         const dlIcon = ICONS.download();
-        dlIcon.style.color = 'white';
+        dlIcon.style.color = 'currentColor';
         ytToolsBtn.appendChild(dlIcon);
 
         ytToolsBtn.addEventListener('click', () => {
@@ -2184,6 +2183,8 @@ function buildSettingsPanel() {
         footerLeft.appendChild(githubLink);
         footerLeft.appendChild(ytToolsLink);
         footerLeft.appendChild(versionSpan);
+        footerLeft.classList.add('ytkit-sidebar-footer');
+        sidebar.appendChild(footerLeft);
 
         const footerStatus = document.createElement('span');
         footerStatus.className = 'ytkit-panel-status';
@@ -2195,8 +2196,38 @@ function buildSettingsPanel() {
 
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
+        const footerActions = document.createElement('div');
+        footerActions.className = 'ytkit-action-stack ytkit-footer-actions';
+        footerActions.appendChild(createPanelActionButton({
+            id: 'ytkit-export',
+            label: 'Export',
+            icon: 'download',
+            variant: 'secondary',
+            ariaLabel: `Export ${BRAND.name} settings`
+        }));
+        footerActions.appendChild(createPanelActionButton({
+            id: 'ytkit-import',
+            label: 'Import',
+            icon: 'upload',
+            variant: 'secondary',
+            ariaLabel: `Import ${BRAND.name} settings`
+        }));
+        footerActions.appendChild(createPanelActionButton({
+            id: 'ytkit-reset-active-section',
+            label: 'Reset',
+            icon: 'settings',
+            variant: 'danger',
+            ariaLabel: 'Reset the active settings section to defaults'
+        }));
+        footerActions.appendChild(createPanelActionButton({
+            id: 'ytkit-close-footer',
+            label: 'Close',
+            icon: 'close',
+            variant: 'primary',
+            ariaLabel: t('panelCloseAria', 'Close settings')
+        }));
+        footerRight.appendChild(footerActions);
 
-        footer.appendChild(footerLeft);
         footer.appendChild(footerStatus);
         footer.appendChild(footerRight);
 
@@ -2557,7 +2588,7 @@ function attachUIEventListeners() {
         // Close panel + Tab navigation (single delegated handler)
         doc.addEventListener('click', (e) => {
             if (!isSettingsPanelOpen()) return;
-            if (e.target.closest('.ytkit-close') || e.target.matches('#ytkit-overlay')) {
+            if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer') || e.target.matches('#ytkit-overlay')) {
                 setSettingsPanelOpen(false);
                 return;
             }
