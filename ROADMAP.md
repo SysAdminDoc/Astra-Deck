@@ -42,12 +42,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: `extension/ytkit.js` new CSS/behaviour feature; conflict-guard against stickyVideo and fitPlayerToWindow.
   Acceptance: In fullscreen, wheel scroll reveals page content below the video (video stays pinned); Escape and fullscreen exit restore normal state.
   Complexity: M
-- [ ] P1 — Remaining-time display v2 (speed + SponsorBlock aware)
-  Why: Existing remainingTimeDisplay ignores playbackRate and SB skips; competitor userscript's version subtracts both — strictly better math on a feature Astra already ships.
-  Evidence: competitor userscript v11 remaining-time feature.
-  Where: remainingTimeDisplay block in `extension/ytkit.js`, SponsorBlock segment cache.
-  Acceptance: Displayed remaining time = (duration - position - unskipped SB segment time) / playbackRate; compact format option; optional hide-in-fullscreen; updates on rate/segment changes.
-  Complexity: S
 - [ ] P1 — Auto-exit fullscreen at video end (playlist-aware)
   Why: Common QoL toggle Astra lacks; pairs with autoDismissStillWatching for unattended viewing.
   Evidence: competitor userscript; xdpirate (GF); CY Fung playlist-aware mod.

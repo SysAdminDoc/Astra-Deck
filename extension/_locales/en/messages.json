@@ -1646,11 +1646,23 @@
   "feature_reducedMotion_name": {
     "message": "Reduced Motion (strong)"
   },
+  "feature_remainingTimeCompact_desc": {
+    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+  },
+  "feature_remainingTimeCompact_name": {
+    "message": "Compact Remaining Time"
+  },
   "feature_remainingTimeDisplay_desc": {
     "message": "Show time remaining next to current time in the player, adjusted for playback speed"
   },
   "feature_remainingTimeDisplay_name": {
     "message": "Remaining Time Display"
+  },
+  "feature_remainingTimeHideFullscreen_desc": {
+    "message": "Hide the remaining time readout while the player is fullscreen"
+  },
+  "feature_remainingTimeHideFullscreen_name": {
+    "message": "Hide in Fullscreen"
   },
   "feature_rememberVolume_desc": {
     "message": "Persist your volume level across videos and sessions"

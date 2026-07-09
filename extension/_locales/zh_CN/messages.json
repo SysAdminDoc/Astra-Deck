@@ -1646,11 +1646,23 @@
   "feature_reducedMotion_name": {
     "message": "减少动效（强）"
   },
+  "feature_remainingTimeCompact_desc": {
+    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+  },
+  "feature_remainingTimeCompact_name": {
+    "message": "Compact Remaining Time"
+  },
   "feature_remainingTimeDisplay_desc": {
     "message": "在播放器中当前时间旁显示剩余时间，根据播放速度调整"
   },
   "feature_remainingTimeDisplay_name": {
     "message": "剩余时间显示"
+  },
+  "feature_remainingTimeHideFullscreen_desc": {
+    "message": "Hide the remaining time readout while the player is fullscreen"
+  },
+  "feature_remainingTimeHideFullscreen_name": {
+    "message": "Hide in Fullscreen"
   },
   "feature_rememberVolume_desc": {
     "message": "跨视频和会话保持音量级别"
@@ -2729,14 +2741,14 @@
   "toggleUpdateFailTpl": {
     "message": "无法更新 {name}。请重试。"
   },
+  "undoResetAria": {
+    "message": "从最近一次重置中恢复数据"
+  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
   "undoImportBtn": {
     "message": "Undo Import"
-  },
-  "undoResetAria": {
-    "message": "从最近一次重置中恢复数据"
   },
   "undoResetBtn": {
     "message": "撤销重置"

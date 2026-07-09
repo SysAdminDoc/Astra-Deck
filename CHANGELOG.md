@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Remaining Time Display v2.** Two new sub-toggles: Compact Remaining Time
+  renders the readout as minutes (`-1h24m` / `-23m` / `-45s`) instead of full
+  `h:mm:ss`, and Hide in Fullscreen suppresses the readout while the player is
+  fullscreen (re-shown on exit via a `fullscreenchange` rebind). The remaining
+  math was already playback-speed- and SponsorBlock-aware.
+
 ## [4.47.1] - 2026-07-09
 
 - **Style: premium extension command surfaces.** The toolbar popup and

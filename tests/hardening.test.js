@@ -5151,10 +5151,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Subscription content-type filter added 2 booleans (376 → 378).
     // Mono-to-stereo added 1 boolean (378 → 379).
     // Auto-dismiss content warning added 1 boolean (379 → 380).
+    // Remaining-time compact + hide-in-fullscreen added 2 booleans (386 → 388).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 386,
-        'SETTINGS_SCHEMA must cover all 386 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 388,
+        'SETTINGS_SCHEMA must cover all 388 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
