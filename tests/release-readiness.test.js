@@ -157,6 +157,59 @@ test('build-extension writes the CRX signing provenance marker after artifact bu
         'the provenance marker must record the actual signing mode used for this run');
 });
 
+test('stray product tags that version-sort ahead of the current version are detected', () => {
+    const { findStrayProductTags, parseProductTagSegments, compareVersionSegments } = require('../scripts/check-versions');
+
+    assert.deepEqual(parseProductTagSegments('v4.46.35'), [4, 46, 35]);
+    assert.deepEqual(parseProductTagSegments('v25.11'), [25, 11]);
+    assert.equal(parseProductTagSegments('release-4'), null);
+    assert.equal(parseProductTagSegments('v4.46.35-rc1'), null,
+        'suffixed tags are not product-tag shaped');
+
+    assert.ok(compareVersionSegments([25, 11], [4, 46, 35]) > 0, 'v25.11 sorts ahead of v4.46.35');
+    assert.ok(compareVersionSegments([4, 46, 4], [4, 46, 35]) < 0);
+    assert.equal(compareVersionSegments([4, 46], [4, 46, 0]), 0, 'missing segments compare as zero');
+
+    const tags = ['v25.11', 'v4.46.34', 'v4.46.4', 'v4.5.0', 'not-a-version'];
+    assert.deepEqual(findStrayProductTags('4.46.35', tags), ['v25.11']);
+    assert.deepEqual(findStrayProductTags('4.46.35', ['v4.46.35', 'v4.46.34']), [],
+        'the current tag and older tags are not stray');
+    assert.deepEqual(findStrayProductTags('', tags), [],
+        'unparseable product version disables the check rather than false-failing');
+});
+
+test('release readiness fails when a stray product tag outranks the current version', () => {
+    const { root, buildDir } = writeFixtureRepo();
+    const report = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        gitTags: ['v25.11', 'v1.2.3', 'v1.2.2'],
+        now: new Date('2026-06-06T12:00:00.000Z')
+    });
+    const tagCheck = report.checks.find((item) => item.id === 'product-tag-sanity');
+
+    assert.equal(report.status, 'fail');
+    assert.equal(tagCheck.status, 'fail');
+    assert.match(tagCheck.details, /v25\.11/);
+    assert.match(tagCheck.details, /git tag -d/);
+
+    const cleanReport = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        gitTags: ['v1.2.3', 'v1.2.2'],
+        now: new Date('2026-06-06T12:00:00.000Z')
+    });
+    const cleanTagCheck = cleanReport.checks.find((item) => item.id === 'product-tag-sanity');
+    assert.equal(cleanTagCheck.status, 'pass');
+});
+
+test('compare-release-digests refuses tags that version-sort ahead of the product version', () => {
+    const { parseArgs: parseDigestArgs } = require('../scripts/compare-release-digests');
+    assert.throws(() => parseDigestArgs(['--tag', 'v99.0']), /version-sorts ahead of the current product version/);
+    assert.doesNotThrow(() => parseDigestArgs(['--tag', 'v0.0.1']),
+        'older release tags remain valid digest-comparison targets');
+});
+
 test('release readiness fails when companion assets are present but manifest omits the companion release', () => {
     const { root, buildDir } = writeFixtureRepo();
     fs.writeFileSync(path.join(buildDir, 'AstraDownloader.exe'), Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048)]));
