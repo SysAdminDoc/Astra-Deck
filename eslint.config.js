@@ -68,6 +68,7 @@ module.exports = [
         rules: {
             'local/no-post-await-addlistener': 'error',
             'local/require-catch-reason': 'error',
+            'no-constant-binary-expression': ['error', { checkRelationalComparisons: true }],
         },
         languageOptions: sharedLanguageOptions,
     },
@@ -85,6 +86,7 @@ module.exports = [
         plugins: { local: localPlugin },
         rules: {
             'local/require-catch-reason': 'error',
+            'no-constant-binary-expression': ['error', { checkRelationalComparisons: true }],
         },
         languageOptions: sharedLanguageOptions,
     },
