@@ -56,6 +56,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   now treats failed settings storage reads as an explicit recovery state instead
   of rendering default-looking toggles, and the refresh banner no longer claims
   full success when quick settings could not load.
+- **Fix: Firefox side-panel lint readiness.** The popup now feature-detects
+  Chrome's side-panel API through guarded dynamic access, keeping the dashboard
+  launcher functional on Chrome while removing Firefox AMO unsupported-API
+  warnings from both build profiles.
 
 - **Polish: v4.46.31 extension settings command center.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen concept and pushed
