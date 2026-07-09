@@ -141,7 +141,7 @@ function updatePanelInsightState() {
         if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
         if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
         if (profileValue) profileValue.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
-        if (savedValue) savedValue.textContent = 'Saved automatically';
+        if (savedValue) savedValue.textContent = 'Saved locally';
     }
 
 function buildSettingsPanel() {
@@ -2035,9 +2035,9 @@ function buildSettingsPanel() {
             const statusHeroCopy = document.createElement('div');
             statusHeroCopy.className = 'ytkit-status-hero-copy';
             const statusHeroTitle = document.createElement('strong');
-            statusHeroTitle.textContent = 'Active';
+            statusHeroTitle.textContent = 'Ready';
             const statusHeroMeta = document.createElement('span');
-            statusHeroMeta.textContent = 'Astra Deck is running. All systems operational.';
+            statusHeroMeta.textContent = 'Controls are loaded. Service health appears beside affected features.';
             statusHeroCopy.appendChild(statusHeroTitle);
             statusHeroCopy.appendChild(statusHeroMeta);
             statusHero.appendChild(statusHeroIcon);
@@ -2076,8 +2076,8 @@ function buildSettingsPanel() {
             const backupSection = makeInsightSection('Health');
             const backupCard = document.createElement('div');
             backupCard.className = 'ytkit-insight-card ytkit-backup-card';
-            backupCard.appendChild(makeStatusRow('Last save', 'Saved automatically', 'ok', 'ytkit-insight-saved-state'));
-            backupCard.appendChild(makeStatusRow('Rule engine', 'OK', 'ok'));
+            backupCard.appendChild(makeStatusRow('Last save', 'Saved locally', 'ok', 'ytkit-insight-saved-state'));
+            backupCard.appendChild(makeStatusRow('Rule engine', 'Ready', 'ok'));
             backupCard.appendChild(makeStatusRow('Recovery', 'Undo toasts', 'info'));
             const historyImportAction = createPanelActionButton({
                 id: 'ytkit-import-history',
