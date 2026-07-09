@@ -1,5 +1,13 @@
 'use strict';
 
+// Cross-browser extension namespace via core/browser-api.js (loaded first
+// by sidepanel.html / sidebar.html). Prefers the standards-track `browser`
+// namespace, falls back to `chrome`; the trailing chrome fallback keeps
+// static previews working if the wrapper script tag was stripped.
+const ext = globalThis.YTKitBrowser?.hasNamespace
+    ? globalThis.YTKitBrowser.ns
+    : (typeof chrome !== 'undefined' ? chrome : null);
+
 const $ = (sel) => document.querySelector(sel);
 
 const versionEl = $('#sp-version');
@@ -27,7 +35,7 @@ const settingsClear = $('#sp-settings-clear');
 const SETTINGS_KEY = 'ytSuiteSettings';
 
 try {
-    const manifest = chrome.runtime.getManifest();
+    const manifest = ext.runtime.getManifest();
     setText(versionEl, manifest.version ? 'v' + manifest.version : '');
 } catch (_) { /* reason: manifest unavailable */ }
 
@@ -57,15 +65,13 @@ function emptyTitleForState(state) {
     return 'Waiting for signal';
 }
 
-function hasChromeTabsCreate() {
-    return typeof chrome !== 'undefined'
-        && chrome?.tabs
-        && typeof chrome.tabs.create === 'function';
+function hasTabsCreate() {
+    return typeof ext?.tabs?.create === 'function';
 }
 
 function openYouTubeTab() {
-    if (!hasChromeTabsCreate()) return;
-    try { chrome.tabs.create({ url: 'https://www.youtube.com/' }); } catch (_) { /* reason: optional in static preview */ }
+    if (!hasTabsCreate()) return;
+    try { ext.tabs.create({ url: 'https://www.youtube.com/' }); } catch (_) { /* reason: optional in static preview */ }
 }
 
 function showEmpty(el, message, state = 'idle', options = {}) {
@@ -132,7 +138,7 @@ function isSupportedUrl(url) {
 
 async function getActiveYouTubeTab() {
     try {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const [tab] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab && tab.id && isSupportedUrl(tab.url || '')) return tab;
     } catch (_) { /* reason: tabs query failed */ }
     return null;
@@ -142,9 +148,9 @@ function sendToTab(tabId, message) {
     return new Promise((resolve) => {
         const timer = setTimeout(() => resolve(null), 2000);
         try {
-            chrome.tabs.sendMessage(tabId, message, (msg) => {
+            ext.tabs.sendMessage(tabId, message, (msg) => {
                 clearTimeout(timer);
-                if (chrome.runtime.lastError) { resolve(null); return; }
+                if (ext.runtime.lastError) { resolve(null); return; }
                 resolve(msg);
             });
         } catch (_) { clearTimeout(timer); resolve(null); }
@@ -196,7 +202,7 @@ async function renderPerf(tab) {
     if (!tab) {
         showEmpty(perfEmpty, 'Open YouTube in the active tab, then refresh to measure startup timing.', 'idle', {
             title: 'Open YouTube to measure startup',
-            actionLabel: hasChromeTabsCreate() ? 'Open YouTube' : '',
+            actionLabel: hasTabsCreate() ? 'Open YouTube' : '',
             action: openYouTubeTab
         });
         return;
@@ -247,7 +253,7 @@ async function renderSelectorHealth(tab) {
     if (!tab) {
         showEmpty(selectorEmpty, 'Open YouTube in the active tab to check whether page selectors still fit.', 'idle', {
             title: 'Open YouTube to check page fit',
-            actionLabel: hasChromeTabsCreate() ? 'Open YouTube' : '',
+            actionLabel: hasTabsCreate() ? 'Open YouTube' : '',
             action: openYouTubeTab
         });
         return;
@@ -329,7 +335,7 @@ async function renderExternalHealth(tab) {
     if (!tab) {
         showEmpty(externalEmpty, 'Open YouTube to see SponsorBlock, DeArrow, and RYD request health.', 'idle', {
             title: 'Open YouTube to check integrations',
-            actionLabel: hasChromeTabsCreate() ? 'Open YouTube' : '',
+            actionLabel: hasTabsCreate() ? 'Open YouTube' : '',
             action: openYouTubeTab
         });
         return;
@@ -373,7 +379,7 @@ async function renderStorage() {
     if (!storageStats) return;
     storageStats.textContent = '';
     try {
-        const data = await chrome.storage.local.get(null);
+        const data = await ext.storage.local.get(null);
         const keys = Object.keys(data);
         const bytes = new TextEncoder().encode(JSON.stringify(data)).length;
         const settings = data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object'
@@ -439,7 +445,7 @@ function getSchema() {
 
 async function loadSettings() {
     try {
-        const data = await chrome.storage.local.get(SETTINGS_KEY);
+        const data = await ext.storage.local.get(SETTINGS_KEY);
         _settingsState = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
             ? data[SETTINGS_KEY] : {};
         _settingsLoadError = '';
@@ -459,17 +465,17 @@ async function writeSetting(key, value) {
         // a failed load) would otherwise overwrite the entire settings object
         // with a single key. Merging a fresh read also avoids clobbering
         // concurrent writes from the popup while both surfaces are open.
-        const data = await chrome.storage.local.get(SETTINGS_KEY);
+        const data = await ext.storage.local.get(SETTINGS_KEY);
         const current = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
             ? data[SETTINGS_KEY] : {};
         current[key] = value;
         _settingsState = current;
-        await chrome.storage.local.set({ [SETTINGS_KEY]: current });
-        const tabs = await chrome.tabs.query({ url: ['*://*.youtube.com/*'] });
+        await ext.storage.local.set({ [SETTINGS_KEY]: current });
+        const tabs = await ext.tabs.query({ url: ['*://*.youtube.com/*'] });
         for (const tab of tabs) {
             try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTING_CHANGED', key, value }, () => {
-                    void chrome.runtime.lastError;
+                ext.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTING_CHANGED', key, value }, () => {
+                    void ext.runtime.lastError;
                 });
             } catch (_) { /* reason: tab may be closing */ }
         }
@@ -678,8 +684,8 @@ if (settingsClear) {
     });
 }
 
-if (chrome.storage?.onChanged) {
-    chrome.storage.onChanged.addListener((changes, areaName) => {
+if (ext?.storage?.onChanged) {
+    ext.storage.onChanged.addListener((changes, areaName) => {
         // Settings live in local storage; ignore session/sync writes so a
         // same-named key in another area can't clobber the cache.
         if (areaName !== 'local') return;

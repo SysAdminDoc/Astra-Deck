@@ -11497,7 +11497,7 @@ test('sidepanel dashboard empty and unavailable states are structured', () => {
         'empty states must render an icon lane instead of plain centered text');
     assert.match(src, /className\s*=\s*'sp-empty-action'/,
         'empty states must support an action CTA for recoverable states');
-    assert.match(src, /hasChromeTabsCreate/,
+    assert.match(src, /hasTabsCreate/,
         'Open YouTube actions must be capability-gated for static preview and Firefox surfaces');
     assert.match(src, /classList\?\.contains\('sp-section-meta'\)/,
         'empty section metadata pills must be hidden by the shared text helper');

@@ -1,11 +1,9 @@
 # Roadmap - Astra Deck
 
-## Research-Driven Additions
+No actionable items. Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
-- [ ] P2 — Introduce a cross-browser extension API wrapper
-  Why: Chrome 148 adds `browser.*` while Firefox already uses it, but Astra still calls `chrome.*` directly across popup, sidepanel, background, and core modules.
-  Evidence: Chrome browser namespace docs, MDN Chrome incompatibilities, `extension/popup.js`, `extension/sidepanel.js`, `extension/background.js`.
-  Touches: `extension/core/`, `extension/popup.js`, `extension/sidepanel.js`, `extension/background.js`, `tests/hardening.test.js`, `eslint.config.js`.
-  Acceptance: New code imports a small wrapper for storage/runtime/tabs/permissions/downloads, existing direct calls are migrated in bounded batches, and tests cover Chrome-only and Firefox-style namespace availability.
-  Complexity: L
-
+- [ ] P3 — Migrate popup.js and background.js onto the cross-browser API wrapper (next bounded batches)
+  Why: `core/browser-api.js` shipped with sidepanel.js as the first migrated batch; popup.js (~112 direct `chrome.*` call sites) and background.js (~42) still call the vendor namespace directly.
+  Where: `extension/popup.js`, `extension/background.js`, `tests/browser-api.test.js`.
+  Acceptance: Each batch routes one surface's calls through the wrapper (background.js needs an inline resolver — the SW cannot load core scripts), with the existing Chrome-only/Firefox-style namespace tests extended to the migrated surface.
+  Complexity: M
