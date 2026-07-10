@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Settings command center v2 parity.** A second image-generated target now
+  drives the in-page workspace: the desktop header uses a horizontal brand
+  lockup and live-connection badge, the shell has a quieter frame and wider
+  System Pulse rail, Recent Activity records export/import actions, and mobile
+  category navigation no longer collapses to icon width. Module and monolith
+  fallback now share the same header search, health rail, sidebar tools, and
+  footer actions. Category tabs expose selected/tabpanel semantics with arrow
+  navigation, disabled child settings are removed from keyboard interaction,
+  and the rendered smoke rebuilds dark/light/RTL/mobile states while enforcing
+  those parity and accessibility contracts.
+
 ## [4.48.0] - 2026-07-09
 
 - **Contextual caption triggers.** Two new subtitle toggles: Subtitles While
