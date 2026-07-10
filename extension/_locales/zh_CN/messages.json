@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "蓝光过滤"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "开启选择模式批量选取信息流卡片，然后批量隐藏、允许或复制 URL。选择时会出现悬浮操作栏。"
   },

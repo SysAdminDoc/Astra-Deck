@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "فلتر الضوء الأزرق"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "تفعيل وضع التحديد لاختيار بطاقات خلاصة متعددة، ثم إخفاء أو سماح أو نسخ الروابط بشكل جماعي. يظهر شريط إجراءات عائم أثناء التحديد."
   },

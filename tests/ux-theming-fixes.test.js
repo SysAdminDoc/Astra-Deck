@@ -462,6 +462,35 @@ test('settings command-deck keeps mobile navigation and footer bounded', () => {
         'render smoke must fail oversized mobile navigation');
 });
 
+test('blue light filter stays opt-in with a master toggle and nested intensity control', () => {
+    assert.equal(defaultSettings.blueLightFilter, false,
+        'Blue Light Filter must remain disabled on clean installs');
+    assert.equal(defaultSettings.blueLightIntensity, 30,
+        'Blue Light Filter must retain its conservative default intensity');
+
+    for (const [label, source] of [
+        ['extension', ytkitSource],
+        ['userscript', userscriptSource]
+    ]) {
+        const masterStart = source.indexOf("id: 'blueLightFilter'");
+        const intensityStart = source.indexOf("id: 'blueLightIntensity'", masterStart);
+        const nextFeatureStart = source.indexOf("id: 'disableInfiniteScroll'", intensityStart);
+        assert.ok(masterStart > -1 && intensityStart > masterStart && nextFeatureStart > intensityStart,
+            `${label} must define the Blue Light Filter toggle before its intensity sub-feature`);
+
+        const masterBlock = source.slice(masterStart, intensityStart);
+        const intensityBlock = source.slice(intensityStart, nextFeatureStart);
+        assert.doesNotMatch(masterBlock, /type:\s*'range'/,
+            `${label} master feature must render as a boolean toggle`);
+        assert.match(intensityBlock, /type:\s*'range'/,
+            `${label} intensity sub-feature must render as a range control`);
+        assert.match(intensityBlock, /parentId:\s*'blueLightFilter'/,
+            `${label} intensity control must be nested under the master toggle`);
+        assert.match(intensityBlock, /min:\s*10[\s\S]*max:\s*80[\s\S]*step:\s*5/,
+            `${label} intensity control must keep the audited 10-80 range`);
+    }
+});
+
 test('fallback Takeout import exposes the same Undo toast contract as the module', () => {
     const marker = "if (e.target.closest('#ytkit-import-history'))";
     const fallbackStart = ytkitSource.indexOf(marker, ytkitSource.indexOf('function attachUIEventListeners'));

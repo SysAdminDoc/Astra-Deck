@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.48.2] - 2026-07-10
+
+- **Blue-light control clarity.** Blue Light Filter remains disabled on clean
+  installs and now appears in the main settings overlay as an explicit master
+  switch. Its 10-80% intensity slider is nested beneath that switch and stays
+  non-interactive until the warm tint is enabled. Extension and userscript
+  surfaces share the same hierarchy, with rendered module/fallback smoke
+  coverage pinning the off-by-default state.
+
 ## [4.48.1] - 2026-07-09
 
 - **Companion interaction finish.** The native companion now uses checkable,

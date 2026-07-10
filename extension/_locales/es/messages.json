@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "Filtro de luz azul"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "Activa el modo de selección para elegir múltiples tarjetas del feed, luego oculta, permite o copia URLs en lote. Una barra de acciones flotante aparece durante la selección."
   },

@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.48.1
+// @name         YTKit v4.48.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.48.1
+// @version      4.48.2
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -20891,7 +20891,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.48.1';
+    const YTKIT_VERSION = '4.48.2';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -29262,11 +29262,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Apply a warm tint to reduce blue light emission. Configurable intensity.',
             group: 'Theme',
             icon: 'sun',
-            type: 'range',
-            rangeMin: 10,
-            rangeMax: 80,
-            rangeStep: 5,
-            settingKey: 'blueLightIntensity',
             _overlay: null,
 
             _apply() {
@@ -29290,6 +29285,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
                 this._overlay?.remove(); this._overlay = null;
             }
+        },
+        {
+            id: 'blueLightIntensity',
+            name: 'Blue Light Intensity',
+            description: 'Set the strength of the warm tint when Blue Light Filter is enabled.',
+            group: 'Theme',
+            icon: 'sun',
+            type: 'range',
+            min: 10,
+            max: 80,
+            step: 5,
+            formatValue: value => `${value}%`,
+            isSubFeature: true,
+            parentId: 'blueLightFilter',
+            init() {},
+            destroy() {}
         },
         {
             id: 'disableInfiniteScroll',
