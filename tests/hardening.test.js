@@ -11547,6 +11547,38 @@ test('sidepanel quick settings are grouped, searchable, and failure-aware', () =
         'refresh status must not claim full success when settings storage failed');
 });
 
+test('premium compact surfaces prioritize exceptional metadata and balanced layouts', () => {
+    const sidepanelJs = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8'
+    );
+    const sidepanelCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
+    );
+    const popupHtml = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    const quickSettings = sidepanelJs.slice(
+        sidepanelJs.indexOf('const QUICK_SETTINGS'),
+        sidepanelJs.indexOf('function getSchema')
+    );
+
+    assert.doesNotMatch(quickSettings, /safeStoreProfile|githubFullProfile/,
+        'mutually-exclusive profile flags must not render as independent sidepanel switches');
+    assert.match(sidepanelJs, /const exceptionalMeta = \[\]/,
+        'routine safe, global, and both metadata must collapse away');
+    assert.match(sidepanelCss, /#sp-external,[\s\S]*grid-column:\s*1\s*\/\s*-1/,
+        'wide external health must span the command grid instead of leaving an orphan column');
+    assert.match(sidepanelCss, /sp-skeleton/,
+        'loading diagnostics must reserve a visible skeleton state');
+    assert.match(popupHtml, /<details class="search-help">/,
+        'advanced popup filter grammar must live behind a disclosure');
+    assert.match(popupCss, /\.stat-card:last-child \.stat-card-label/,
+        'the longest storage label must have a compact no-clip treatment');
+});
+
 test('sidepanel.css has focus-visible styles for interactive elements', () => {
     const css = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'

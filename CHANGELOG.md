@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Compact surface hierarchy.** The diagnostics side panel now hides routine
+  safe/global/both metadata, removes duplicate Open YouTube calls to action,
+  reserves stable skeletons while refreshing, balances External API Health
+  across the wide grid, and no longer exposes mutually-exclusive profile flags
+  as independent switches. The popup puts advanced filter grammar behind a
+  disclosure, uses a calm search placeholder, removes hover affordance from
+  read-only stats, and keeps the Bookmarks label readable at 420 px.
+
 - **Settings command center v2 parity.** A second image-generated target now
   drives the in-page workspace: the desktop header uses a horizontal brand
   lockup and live-connection badge, the shell has a quieter frame and wider
