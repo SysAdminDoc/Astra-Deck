@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "Blaulichtfilter"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "Auswahlmodus aktivieren, um mehrere Feed-Karten auszuwählen, dann gesammelt ausblenden, erlauben oder URLs kopieren. Eine schwebende Aktionsleiste erscheint während der Auswahl."
   },

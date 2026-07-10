@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "ブルーライトフィルター"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "選択モードに切り替えてフィードカードを複数選択し、一括で非表示・許可・URL コピーが可能。選択中はフローティングアクションバーが表示されます。"
   },

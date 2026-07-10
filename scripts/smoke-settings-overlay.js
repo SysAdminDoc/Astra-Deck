@@ -188,6 +188,18 @@ const IN_PAGE_CHECKS = `(() => {
     for (const id of ['ytkit-export', 'ytkit-import', 'ytkit-import-history', 'ytkit-reset-active-section', 'ytkit-close-footer']) {
         if (panel.querySelectorAll('#' + id).length !== 1) failures.push(id + ' must render exactly once');
     }
+    const blueLightToggle = panel.querySelector('#ytkit-toggle-blueLightFilter');
+    const blueLightIntensity = panel.querySelector('#ytkit-range-blueLightIntensity');
+    const blueLightSubFeatures = blueLightIntensity?.closest('.ytkit-sub-features');
+    if (!blueLightToggle) failures.push('Blue Light Filter master toggle is missing from the main settings overlay');
+    if (!blueLightIntensity) failures.push('Blue Light Intensity range is missing from the main settings overlay');
+    if (blueLightToggle?.checked) failures.push('Blue Light Filter must render disabled by default');
+    if (blueLightSubFeatures?.dataset.parentId !== 'blueLightFilter') {
+        failures.push('Blue Light Intensity must be nested under the Blue Light Filter toggle');
+    }
+    if (blueLightIntensity && !blueLightIntensity.disabled) {
+        failures.push('Blue Light Intensity must stay disabled while the master toggle is off');
+    }
     const activeTab = panel.querySelector('.ytkit-nav-btn.active');
     const activePane = activeTab ? panel.querySelector('#ytkit-pane-' + activeTab.dataset.tab) : null;
     if (!activeTab || activeTab.getAttribute('role') !== 'tab' || activeTab.getAttribute('aria-selected') !== 'true') {
@@ -481,6 +493,22 @@ async function main() {
 
             const shot = await client.send('Page.captureScreenshot', { format: 'png' });
             fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
+                const featureReady = await client.evaluate(`(() => {
+                    const toggle = document.getElementById('ytkit-toggle-blueLightFilter');
+                    const intensity = document.getElementById('ytkit-range-blueLightIntensity');
+                    const pane = toggle?.closest('.ytkit-pane');
+                    const tab = pane ? document.querySelector('.ytkit-nav-btn[data-tab="' + pane.id.replace('ytkit-pane-', '') + '"]') : null;
+                    if (!toggle || !intensity || !tab) return false;
+                    tab.click();
+                    toggle.closest('.ytkit-feature-card')?.scrollIntoView({ block: 'center' });
+                    return true;
+                })()`);
+                if (!featureReady) failuresByState[state.name].push('could not stage the Blue Light Filter visual proof');
+                await sleep(300);
+                const featureShot = await client.send('Page.captureScreenshot', { format: 'png' });
+                fs.writeFileSync(path.join(outDir, 'blue-light-default.png'), Buffer.from(featureShot.data, 'base64'));
+            }
             console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
         }
         ws.close();

@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "Blue Light Filter"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
   },

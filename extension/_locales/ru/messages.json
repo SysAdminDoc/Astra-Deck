@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "Фильтр синего света"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "Включите режим выделения для множественного выбора карточек ленты, затем массово скройте, разрешите или скопируйте URL. Плавающая панель действий появляется при выделении."
   },

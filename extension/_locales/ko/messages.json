@@ -488,6 +488,12 @@
   "feature_blueLightFilter_name": {
     "message": "블루라이트 필터"
   },
+  "feature_blueLightIntensity_desc": {
+    "message": "Set the strength of the warm tint when Blue Light Filter is enabled."
+  },
+  "feature_blueLightIntensity_name": {
+    "message": "Blue Light Intensity"
+  },
   "feature_bulkCardActions_desc": {
     "message": "선택 모드를 켜서 피드 카드를 여러 개 선택한 후 일괄 숨기기, 허용 또는 URL 복사. 선택 중에는 플로팅 액션 바가 나타납니다."
   },
