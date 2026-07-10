@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.48.1] - 2026-07-09
+
 - **Companion interaction finish.** The native companion now uses checkable,
   mutually-exclusive navigation with distinct keyboard focus, announces its
   page stack to assistive technology, surfaces unsaved settings immediately,
