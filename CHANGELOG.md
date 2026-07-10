@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Companion interaction finish.** The native companion now uses checkable,
+  mutually-exclusive navigation with distinct keyboard focus, announces its
+  page stack to assistive technology, surfaces unsaved settings immediately,
+  and gives empty Downloads and History views an actionable starting point.
+  Its offscreen visual smoke now rebuilds every page in a fresh window,
+  verifies the active destination and full rail, and works around Qt viewport
+  compositing so the four captured views are reliable review evidence.
+
 - **Compact surface hierarchy.** The diagnostics side panel now hides routine
   safe/global/both metadata, removes duplicate Open YouTube calls to action,
   reserves stable skeletons while refreshing, balances External API Health

@@ -162,7 +162,15 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn("probe_po_token_provider", probe_source)
         self.assertIn("self.readiness_worker.moveToThread", source)
         self.assertIn("dl.error_advice", download_card_source)
-        self.assertTrue((Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py").exists())
+        renderer_path = Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py"
+        self.assertTrue(renderer_path.exists())
+        renderer_source = renderer_path.read_text(encoding="utf-8")
+        self.assertIn("btn.setCheckable(True)", source)
+        self.assertIn("btn.setAutoExclusive(True)", source)
+        self.assertIn("Unsaved changes. Save when ready.", source)
+        self.assertIn('make_section_label("Ready when you are")', source)
+        self.assertIn("window.render(pixmap)", renderer_source)
+        self.assertIn("Companion navigation rail is incomplete", renderer_source)
 
 
 class InstanceCommandTests(unittest.TestCase):
