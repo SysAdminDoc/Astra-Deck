@@ -127,6 +127,46 @@ function getActiveSettingsProfileLabel() {
         return active ? active[1] : 'Custom';
     }
 
+function setSubFeatureAvailability(container, enabled) {
+        if (!container) return;
+        const disabled = !enabled;
+        container.style.opacity = enabled ? '' : '0.35';
+        container.style.pointerEvents = enabled ? '' : 'none';
+        container.toggleAttribute('inert', disabled);
+        container.setAttribute('aria-disabled', String(disabled));
+        container.querySelectorAll('input, select, textarea, button').forEach((control) => {
+            if (disabled) {
+                if (!control.hasAttribute('data-ytkit-parent-disabled')) {
+                    control.dataset.ytkitParentDisabled = control.disabled ? '1' : '0';
+                }
+                control.disabled = true;
+            } else if (control.hasAttribute('data-ytkit-parent-disabled')) {
+                control.disabled = control.dataset.ytkitParentDisabled === '1';
+                delete control.dataset.ytkitParentDisabled;
+            }
+        });
+    }
+
+function syncPanelCategorySelection(activeButton) {
+        const activeId = activeButton?.dataset?.tab || '';
+        document.querySelectorAll('.ytkit-nav-btn').forEach((button) => {
+            const selected = button === activeButton;
+            button.classList.toggle('active', selected);
+            button.setAttribute('role', 'tab');
+            button.setAttribute('aria-selected', String(selected));
+            button.setAttribute('aria-current', selected ? 'page' : 'false');
+            button.setAttribute('aria-controls', `ytkit-pane-${button.dataset.tab}`);
+            button.tabIndex = selected ? 0 : -1;
+        });
+        document.querySelectorAll('.ytkit-pane').forEach((pane) => {
+            const selected = pane.id === `ytkit-pane-${activeId}`;
+            pane.classList.toggle('active', selected);
+            pane.setAttribute('role', 'tabpanel');
+            pane.setAttribute('aria-hidden', String(!selected));
+            pane.setAttribute('aria-labelledby', `ytkit-tab-${pane.id.replace('ytkit-pane-', '')}`);
+        });
+    }
+
 function updatePanelInsightState() {
         const topLevelFeatures = liveFeatureList.filter((feature) => !feature.isSubFeature);
         const activeNav = document.querySelector('.ytkit-nav-btn.active .ytkit-nav-label');
@@ -140,7 +180,7 @@ function updatePanelInsightState() {
         if (enabledValue) enabledValue.textContent = `${enabledCount}/${topLevelFeatures.length}`;
         if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
         if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
-        if (profileValue) profileValue.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
+        if (profileValue) profileValue.textContent = getActiveSettingsProfileLabel();
         if (savedValue) savedValue.textContent = 'Saved locally';
     }
 
@@ -332,6 +372,24 @@ function buildSettingsPanel() {
 
         const navList = document.createElement('div');
         navList.className = 'ytkit-nav-list';
+        navList.setAttribute('role', 'tablist');
+        navList.setAttribute('aria-label', t('panelSidebarAria', 'Settings categories'));
+        navList.addEventListener('keydown', (event) => {
+            const current = event.target.closest('.ytkit-nav-btn');
+            if (!current || !['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+            const tabs = Array.from(navList.querySelectorAll('.ytkit-nav-btn'));
+            const currentIndex = tabs.indexOf(current);
+            if (currentIndex < 0 || tabs.length === 0) return;
+            event.preventDefault();
+            const forward = event.key === 'ArrowDown' || event.key === 'ArrowRight';
+            const nextIndex = event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                    ? tabs.length - 1
+                    : (currentIndex + (forward ? 1 : -1) + tabs.length) % tabs.length;
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
+        });
         sidebar.appendChild(navList);
 
         // Helper: create a sidebar nav button
@@ -341,6 +399,11 @@ function buildSettingsPanel() {
             btn.type = 'button';
             btn.className = 'ytkit-nav-btn' + (extraClass || '');
             btn.dataset.tab = catId;
+            btn.id = `ytkit-tab-${catId}`;
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-controls', `ytkit-pane-${catId}`);
+            btn.setAttribute('aria-selected', String((extraClass || '').includes('active')));
+            btn.tabIndex = (extraClass || '').includes('active') ? 0 : -1;
             btn.setAttribute('aria-label', `${cat}. ${CATEGORY_META[cat]?.summary || ''}`);
             const iconWrap = document.createElement('span');
             iconWrap.className = 'ytkit-nav-icon';
@@ -1961,10 +2024,10 @@ function buildSettingsPanel() {
                     const subContainer = document.createElement('div');
                     subContainer.className = 'ytkit-sub-features';
                     subContainer.dataset.parentId = f.id;
-                    if (!appState.settings[f.id]) { subContainer.style.opacity = '0.35'; subContainer.style.pointerEvents = 'none'; }
                     children.forEach(sf => {
                         subContainer.appendChild(buildFeatureCard(sf, config.color, true));
                     });
+                    setSubFeatureAvailability(subContainer, !!appState.settings[f.id]);
                     grid.appendChild(subContainer);
                 }
             });
@@ -2047,31 +2110,9 @@ function buildSettingsPanel() {
             statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok'));
             statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count'));
             statusCard.appendChild(makeStatusRow('Sections', String(populatedSections), 'neutral', 'ytkit-insight-section-count'));
+            statusCard.appendChild(makeStatusRow('Profile', getActiveSettingsProfileLabel(), 'neutral', 'ytkit-insight-profile-name'));
             statusSection.appendChild(statusCard);
             rail.appendChild(statusSection);
-
-            const profileSection = makeInsightSection('Profile');
-            const profileCard = document.createElement('div');
-            profileCard.className = 'ytkit-insight-card ytkit-profile-card';
-            const profileIcon = document.createElement('div');
-            profileIcon.className = 'ytkit-profile-icon';
-            profileIcon.setAttribute('aria-hidden', 'true');
-            profileIcon.appendChild(ICONS.settings());
-            const profileCopy = document.createElement('div');
-            profileCopy.className = 'ytkit-profile-copy';
-            const profileTitle = document.createElement('div');
-            profileTitle.className = 'ytkit-profile-title';
-            profileTitle.id = 'ytkit-insight-profile-name';
-            profileTitle.textContent = `Profile: ${getActiveSettingsProfileLabel()}`;
-            const profileMeta = document.createElement('p');
-            profileMeta.className = 'ytkit-profile-meta';
-            profileMeta.textContent = 'Local profile model. Presets apply instantly and keep export/import recoverable.';
-            profileCopy.appendChild(profileTitle);
-            profileCopy.appendChild(profileMeta);
-            profileCard.appendChild(profileIcon);
-            profileCard.appendChild(profileCopy);
-            profileSection.appendChild(profileCard);
-            rail.appendChild(profileSection);
 
             const backupSection = makeInsightSection('Health');
             const backupCard = document.createElement('div');
@@ -2092,7 +2133,7 @@ function buildSettingsPanel() {
             backupSection.appendChild(backupCard);
             rail.appendChild(backupSection);
 
-            const changesSection = makeInsightSection('Recent');
+            const changesSection = makeInsightSection('Recent Activity');
             const changesCard = document.createElement('div');
             changesCard.className = 'ytkit-insight-card';
             const recentList = document.createElement('dl');
@@ -2101,8 +2142,8 @@ function buildSettingsPanel() {
                 ['Active section', 'ytkit-insight-active-section', 'Video Player'],
                 ['Save mode', '', 'Instant'],
                 ['Recovery', '', 'Undo toasts'],
-                ['Last export', '', 'Not yet'],
-                ['Last import', '', 'Not yet']
+                ['Last export', 'ytkit-insight-last-export', 'Not yet'],
+                ['Last import', 'ytkit-insight-last-import', 'Not yet']
             ].forEach(([label, id, value]) => {
                 const term = document.createElement('dt');
                 term.textContent = label;
@@ -2237,6 +2278,8 @@ function buildSettingsPanel() {
 
         document.body.appendChild(overlay);
         document.body.appendChild(panel);
+
+        syncPanelCategorySelection(panel.querySelector('.ytkit-nav-btn.active') || panel.querySelector('.ytkit-nav-btn'));
 
         if (panel.dir === 'rtl') {
             injectStyle(`
@@ -2598,12 +2641,9 @@ function attachUIEventListeners() {
             }
             const navBtn = e.target.closest('.ytkit-nav-btn');
             if (navBtn) {
-                doc.querySelectorAll('.ytkit-nav-btn').forEach(btn => btn.classList.remove('active'));
-                doc.querySelectorAll('.ytkit-pane').forEach(pane => pane.classList.remove('active'));
-                navBtn.classList.add('active');
+                syncPanelCategorySelection(navBtn);
                 const pane = doc.querySelector(`#ytkit-pane-${navBtn.dataset.tab}`);
                 if (pane) {
-                    pane.classList.add('active');
                     pane.scrollTop = 0;
                 }
                 const contentArea = doc.querySelector('.ytkit-content');
@@ -2623,6 +2663,8 @@ function attachUIEventListeners() {
                 handleFileExport('astra_deck_settings.json', configString);
                 createToast('Settings exported successfully', 'success');
                 setPanelStatus('Settings exported. The download is ready.', 'success');
+                const lastExport = doc.getElementById('ytkit-insight-last-export');
+                if (lastExport) lastExport.textContent = 'Just now';
                 return;
             }
             if (e.target.closest('#ytkit-reset-active-section')) {
@@ -2673,6 +2715,8 @@ function attachUIEventListeners() {
                             }
                         });
                         setPanelStatus(`${result.message} Undo is available in the toast.`, 'success');
+                        const lastImport = doc.getElementById('ytkit-insight-last-import');
+                        if (lastImport) lastImport.textContent = 'Just now';
                     } else {
                         const message = result?.message || 'Import failed. Choose a valid Astra Deck settings export.';
                         createToast(message, 'error');
@@ -2686,6 +2730,8 @@ function attachUIEventListeners() {
                 handleFileImport(async (content) => {
                     const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
                     if (result?.ok) {
+                        const lastImport = doc.getElementById('ytkit-insight-last-import');
+                        if (lastImport) lastImport.textContent = 'Just now';
                         if (result.changed) {
                             handleExternalStorageChanges({
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
@@ -2797,22 +2843,28 @@ function attachUIEventListeners() {
                     sub.style.display = '';
                     const parentId = sub.dataset.parentId;
                     const enabled = appState.settings[parentId];
-                    sub.style.opacity = enabled ? '' : '0.35';
-                    sub.style.pointerEvents = enabled ? '' : 'none';
+                    setSubFeatureAvailability(sub, !!enabled);
                 });
                 // Restore normal tab behavior
                 if (!doc.querySelector('.ytkit-pane.active')) {
                     allPanes[0]?.classList.add('active');
                     allNavBtns[0]?.classList.add('active');
                 }
+                syncPanelCategorySelection(doc.querySelector('.ytkit-nav-btn.active') || allNavBtns[0]);
                 updateSearchState('', '', 0, 0);
                 updateAllToggleStates();
                 return;
             }
 
             // Show all panes for searching
-            allPanes.forEach(pane => pane.classList.add('ytkit-search-active'));
-            doc.querySelectorAll('.ytkit-sub-features').forEach(sub => { sub.style.opacity = ''; sub.style.pointerEvents = ''; });
+            allPanes.forEach(pane => {
+                pane.classList.add('ytkit-search-active');
+                pane.setAttribute('aria-hidden', 'false');
+            });
+            doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
+                sub.style.opacity = '';
+                sub.style.pointerEvents = '';
+            });
 
             // Helper to highlight text matches
             const highlightText = (el, q) => {
@@ -2996,8 +3048,7 @@ function attachUIEventListeners() {
                 // Toggle sub-features visibility (greyed out, not hidden)
                 const subContainer = doc.querySelector(`.ytkit-sub-features[data-parent-id="${featureId}"]`);
                 if (subContainer) {
-                    subContainer.style.opacity = isEnabled ? '' : '0.35';
-                    subContainer.style.pointerEvents = isEnabled ? '' : 'none';
+                    setSubFeatureAvailability(subContainer, isEnabled);
                 }
 
                 updateAllToggleStates();

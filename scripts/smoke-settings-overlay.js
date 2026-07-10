@@ -19,7 +19,7 @@ const fs = require('fs');
 const http = require('http');
 const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const WebSocket = require('ws');
 const { copyDir } = require('../build-extension.js');
 
@@ -132,7 +132,10 @@ const CHROME_STUB = `'use strict';
             },
             onChanged: { addListener: (fn) => changeListeners.push(fn) }
         },
-        i18n: { getMessage: () => '' },
+        i18n: {
+            getMessage: () => '',
+            getUILanguage: () => document.documentElement.dir === 'rtl' ? 'ar' : 'en'
+        },
         permissions: {
             contains: (_p, cb) => { if (typeof cb === 'function') cb(false); },
             onAdded: { addListener() {} },
@@ -172,13 +175,44 @@ const IN_PAGE_CHECKS = `(() => {
     if (document.documentElement.scrollWidth > window.innerWidth + 1) {
         failures.push('document horizontal overflow: scrollWidth ' + document.documentElement.scrollWidth + ' > viewport ' + window.innerWidth);
     }
+    const headerSearch = panel.querySelector('.ytkit-header > .ytkit-command-search #ytkit-search');
+    const liveBadge = panel.querySelector('.ytkit-header-live');
+    const sidebarFooter = panel.querySelector('.ytkit-sidebar > .ytkit-sidebar-footer');
+    const footerActions = panel.querySelectorAll('.ytkit-footer-actions > button');
+    const historyImport = panel.querySelector('.ytkit-insights #ytkit-import-history');
+    if (!headerSearch) failures.push('command search is not mounted in the header');
+    if (!liveBadge || getComputedStyle(liveBadge).display === 'none') failures.push('live connection badge is not visible');
+    if (!sidebarFooter) failures.push('version and project tools are not mounted in the sidebar footer');
+    if (footerActions.length !== 4) failures.push('footer action parity expected 4 buttons, found ' + footerActions.length);
+    if (!historyImport) failures.push('history import action is not mounted in the insights rail');
+    for (const id of ['ytkit-export', 'ytkit-import', 'ytkit-import-history', 'ytkit-reset-active-section', 'ytkit-close-footer']) {
+        if (panel.querySelectorAll('#' + id).length !== 1) failures.push(id + ' must render exactly once');
+    }
+    const activeTab = panel.querySelector('.ytkit-nav-btn.active');
+    const activePane = activeTab ? panel.querySelector('#ytkit-pane-' + activeTab.dataset.tab) : null;
+    if (!activeTab || activeTab.getAttribute('role') !== 'tab' || activeTab.getAttribute('aria-selected') !== 'true') {
+        failures.push('active category does not expose selected tab semantics');
+    }
+    if (!activePane || activePane.getAttribute('role') !== 'tabpanel' || activePane.getAttribute('aria-hidden') !== 'false') {
+        failures.push('active settings pane does not expose visible tabpanel semantics');
+    }
+    const disabledSubFeatures = panel.querySelector('.ytkit-sub-features[aria-disabled="true"]');
+    if (!disabledSubFeatures || !disabledSubFeatures.hasAttribute('inert')) {
+        failures.push('disabled sub-features are not removed from keyboard interaction');
+    } else if (Array.from(disabledSubFeatures.querySelectorAll('input, select, textarea, button')).some((control) => !control.disabled)) {
+        failures.push('disabled sub-feature controls remain operable');
+    }
     if (window.innerWidth <= 560) {
         const sidebarRect = panel.querySelector('.ytkit-sidebar')?.getBoundingClientRect();
+        const navListRect = panel.querySelector('.ytkit-nav-list')?.getBoundingClientRect();
         const footerRect = panel.querySelector('.ytkit-footer')?.getBoundingClientRect();
         const firstNavRect = panel.querySelector('.ytkit-nav-btn')?.getBoundingClientRect();
         if (sidebarRect && sidebarRect.height > 96) failures.push('mobile navigation consumes ' + Math.round(sidebarRect.height) + 'px (>96px)');
+        if (navListRect && navListRect.width < Math.min(320, panel.clientWidth - 24)) {
+            failures.push('mobile navigation viewport collapses to ' + Math.round(navListRect.width) + 'px');
+        }
         if (footerRect && footerRect.height > 180) failures.push('mobile footer consumes ' + Math.round(footerRect.height) + 'px (>180px)');
-        if (firstNavRect && (firstNavRect.width < 140 || firstNavRect.height < 44)) {
+        if (firstNavRect && (firstNavRect.width < 140 || firstNavRect.height < 44 || firstNavRect.right <= 96)) {
             failures.push('mobile navigation target is clipped at ' + Math.round(firstNavRect.width) + 'x' + Math.round(firstNavRect.height));
         }
     }
@@ -411,6 +445,9 @@ async function main() {
                 mobile: state.mobile
             });
             await client.evaluate(`(() => {
+                document.querySelector(${JSON.stringify(PANEL_SELECTOR)})?.remove();
+                document.getElementById('ytkit-overlay')?.remove();
+                document.body.classList.remove('ytkit-panel-open');
                 document.documentElement.toggleAttribute('dark', ${state.dark});
                 document.documentElement.setAttribute('dir', '${state.dir}');
                 return true;
@@ -434,18 +471,17 @@ async function main() {
                 console.error(`[settings-overlay-smoke] diagnostics: ${diag}`);
                 throw err;
             }
-            await client.evaluate(`(() => {
-                const panel = document.querySelector(${JSON.stringify(PANEL_SELECTOR)});
-                if (panel) panel.setAttribute('dir', '${state.dir}');
-                return panel?.getAttribute('dir') || '';
-            })()`);
+            const renderedDir = await client.evaluate(`document.querySelector(${JSON.stringify(PANEL_SELECTOR)})?.getAttribute('dir') || ''`);
+            const directionFailures = renderedDir === state.dir
+                ? []
+                : [`panel direction ${renderedDir || 'missing'} != ${state.dir}`];
             await sleep(600); // let fonts/layout settle before measuring
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
-            failuresByState[state.name] = report.failures || [];
+            failuresByState[state.name] = [...directionFailures, ...(report.failures || [])];
 
             const shot = await client.send('Page.captureScreenshot', { format: 'png' });
             fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
-            console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${report.failures.length} failure(s)`);
+            console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
         }
         ws.close();
     } finally {
@@ -454,6 +490,16 @@ async function main() {
             : new Promise((resolve) => browser.once('exit', resolve));
         browser.kill();
         await Promise.race([browserExit, sleep(3000)]);
+        if (browser.exitCode === null && browser.pid) {
+            if (process.platform === 'win32') {
+                try {
+                    execFileSync('taskkill', ['/PID', String(browser.pid), '/T', '/F'], { stdio: 'ignore' });
+                } catch (_) { /* reason: browser may have exited between the state check and taskkill */ }
+            } else {
+                browser.kill('SIGKILL');
+            }
+            await Promise.race([browserExit, sleep(2000)]);
+        }
         if (!opts.keepStage) fs.rmSync(stageDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
         fs.rmSync(profileDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
     }
