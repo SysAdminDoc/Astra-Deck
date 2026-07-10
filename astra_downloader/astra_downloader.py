@@ -2634,6 +2634,15 @@ QPushButton[class="nav"][active="true"] {
     background-color: #291717;
     border-color: #603027;
 }
+QPushButton[class="nav"]:focus {
+    color: #f4efea;
+    background-color: #141922;
+    border-color: #465262;
+}
+QPushButton[class="nav"][active="true"]:focus {
+    background-color: #321919;
+    border-color: #9a4637;
+}
 
 QLineEdit, QSpinBox, QComboBox {
     background-color: #11161e;
@@ -4716,6 +4725,7 @@ def make_empty_state(title, body):
     layout = QVBoxLayout(frame)
     layout.setContentsMargins(18, 18, 18, 18)
     layout.setSpacing(6)
+    layout.addWidget(make_section_label("Ready when you are"))
     layout.addWidget(make_label(title, "emptyTitle"))
     layout.addWidget(make_label(body, "emptyBody", word_wrap=True))
     return frame
@@ -4804,12 +4814,14 @@ class MainWindow(QMainWindow):
         sidebar = QFrame()
         sidebar.setProperty("class", "sidebar")
         sidebar.setFixedWidth(244)
+        self.sidebar = sidebar
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
         # Brand
         brand = QWidget()
+        self.brand_widget = brand
         brand_layout = QHBoxLayout(brand)
         brand_layout.setContentsMargins(18, 22, 16, 24)
         brand_layout.setSpacing(11)
@@ -4849,6 +4861,9 @@ class MainWindow(QMainWindow):
         for name in ["Dashboard", "Downloads", "History", "Settings"]:
             btn = QPushButton(name)
             btn.setProperty("class", "nav")
+            btn.setCheckable(True)
+            btn.setAutoExclusive(True)
+            btn.setAccessibleName(f"{name} page")
             btn.setIcon(self.style().standardIcon(nav_icons[name]))
             btn.setIconSize(QSize(15, 15))
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -4877,6 +4892,7 @@ class MainWindow(QMainWindow):
         # Tab stack
         self.tabs = QTabWidget()
         self.tabs.tabBar().hide()
+        self.tabs.setAccessibleName("Companion pages")
         main_layout.addWidget(self.tabs)
 
         self._build_dashboard()
@@ -5422,12 +5438,33 @@ class MainWindow(QMainWindow):
         save_row = QHBoxLayout()
         self.settings_status = make_label("", "fieldHint")
         save_row.addWidget(self.settings_status, 1)
-        btn_save = self._make_tool_button("Save Settings", QStyle.StandardPixmap.SP_DialogSaveButton, "primary")
+        btn_save = self._make_tool_button("Save Changes", QStyle.StandardPixmap.SP_DialogSaveButton, "primary")
         btn_save.clicked.connect(self._save_settings)
         self.btn_save = btn_save
         save_row.addWidget(btn_save)
         layout.addLayout(save_row)
         layout.addStretch()
+
+        for signal in (
+            self.cfg_port.valueChanged,
+            self.cfg_token.textChanged,
+            self.cfg_dl_path.textChanged,
+            self.cfg_audio_path.textChanged,
+            self.cfg_metadata.toggled,
+            self.cfg_thumbnail.toggled,
+            self.cfg_chapters.toggled,
+            self.cfg_subs.toggled,
+            self.cfg_sublangs.textChanged,
+            self.cfg_sponsorblock.toggled,
+            self.cfg_sb_action.currentIndexChanged,
+            self.cfg_fragments.valueChanged,
+            self.cfg_ratelimit.textChanged,
+            self.cfg_proxy.textChanged,
+            self.cfg_autoupdate.toggled,
+            self.cfg_closetotray.toggled,
+            self.cfg_startmin.toggled,
+        ):
+            signal.connect(self._mark_settings_dirty)
 
         self.tabs.addTab(scroll, "Settings")
 
@@ -5436,6 +5473,7 @@ class MainWindow(QMainWindow):
         idx = ["Dashboard", "Downloads", "History", "Settings"].index(name)
         self.tabs.setCurrentIndex(idx)
         for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == idx)
             btn.setProperty("active", "true" if i == idx else "false")
             repolish(btn)
         self._animate_page()
@@ -5717,7 +5755,7 @@ class MainWindow(QMainWindow):
         if not active and not recent:
             self.downloads_list_layout.addWidget(make_empty_state(
                 "Queue is clear",
-                "Downloads sent from Astra Deck will appear here with progress, speed, and failure details."
+                "Start the local server, then use Astra Deck's download action on YouTube. Active jobs will show progress, speed, and recovery guidance here."
             ))
         if active:
             self.downloads_list_layout.addWidget(make_section_label("In progress"))
@@ -5736,7 +5774,7 @@ class MainWindow(QMainWindow):
         if not data:
             self.history_container.addWidget(make_empty_state(
                 "No downloads yet",
-                "Completed downloads will be listed here with format, quality, and duration."
+                "Completed jobs appear here with format, quality, duration, and a direct path back to the saved file."
             ))
             self.history_container.addStretch()
             return
@@ -5837,6 +5875,12 @@ class MainWindow(QMainWindow):
         }
         self.settings_status.setText(message)
         self.settings_status.setStyleSheet(f"color: {colors.get(tone, colors['neutral'])}; font-size: 11px;")
+
+    def _mark_settings_dirty(self, *_args):
+        if not hasattr(self, "settings_status") or not hasattr(self, "btn_save"):
+            return
+        self._show_settings_status("Unsaved changes. Save when ready.", "warning")
+        self.btn_save.setText("Save Changes")
 
     def _sync_connection_ui(self):
         port = clamp_int(self.config.get("ServerPort", SERVER_PORT), SERVER_PORT, 1024, 65535)
@@ -6004,7 +6048,7 @@ class MainWindow(QMainWindow):
         else:
             self._show_settings_status("Settings saved.", "success")
         self.btn_save.setText("Saved")
-        QTimer.singleShot(1500, lambda: self.btn_save.setText("Save Settings"))
+        QTimer.singleShot(1500, lambda: self.btn_save.setText("Save Changes"))
         QTimer.singleShot(3200, lambda: self._show_settings_status(""))
 
     def _browse(self, line_edit):
