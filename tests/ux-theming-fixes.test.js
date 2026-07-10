@@ -170,7 +170,9 @@ test('extension Takeout import keeps large-file and undo recovery parity', () =>
     ]) {
         const start = source.indexOf("if (e.target.closest('#ytkit-import-history'))");
         assert.ok(start > -1, `${label} must handle Takeout import from the settings panel`);
-        const block = source.slice(start, start + 2500);
+        // Keep the complete handler in view as recovery/status details grow;
+        // the previous 2.5 KB window truncated the maxBytes policy itself.
+        const block = source.slice(start, start + 3500);
         assert.match(block, /handleFileImport\([\s\S]*\{\s*maxBytes:\s*500\s*\*\s*1024\s*\*\s*1024\s*\}/,
             `${label} must allow large YouTube Takeout history exports`);
         assert.ok(block.includes('const preImportStats = StorageManager.get(STORAGE_KEYS.watchTime, null);'),
@@ -234,24 +236,24 @@ test('settings modal premium refresh locks the desktop shell and row controls', 
         'extension settings module must route a visible reset action to the active section');
     assert.ok(ytkitSource.includes("id: 'ytkit-reset-active-section'"),
         'extension settings monolith fallback must route a visible reset action to the active section');
-    assert.ok(settingsPanelModuleSource.includes("['Last import', '', 'Not yet']"),
+    assert.ok(settingsPanelModuleSource.includes("['Last import', 'ytkit-insight-last-import', 'Not yet']"),
         'extension settings module must render the expanded recent activity rows');
-    assert.ok(ytkitSource.includes("['Last import', '', 'Not yet']"),
+    assert.ok(ytkitSource.includes("['Last import', 'ytkit-insight-last-import', 'Not yet']"),
         'extension settings monolith fallback must render the expanded recent activity rows');
-    assert.ok(ytkitSource.includes('top: 23px !important;'),
+    assert.ok(ytkitSource.includes('top: 20px !important;'),
         'command-center search adornments must stay anchored inside the search field');
     assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-action-stack .ytkit-btn-primary'),
         'light-theme sync/export actions must keep readable premium button styling');
     assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-reset-group-btn'),
         'light-theme pane reset controls must keep readable premium button styling');
-    assert.ok(ytkitSource.includes('grid-template-columns: 246px minmax(0, 1fr) 262px !important;'),
+    assert.ok(ytkitSource.includes('grid-template-columns: 252px minmax(0, 1fr) 286px !important;'),
         'desktop settings body must match the command-deck nav/content/inspector proportions');
-    assert.ok(ytkitSource.includes('border: 1px solid rgba(var(--ytkit-command-accent-rgb),0.7) !important;'),
-        'command-deck shell must carry the red premium modal hairline from the mockup');
+    assert.ok(ytkitSource.includes('border: 1px solid rgba(208,220,236,0.16) !important;'),
+        'command-deck shell must keep the quieter neutral premium frame from the v2 mockup');
     assert.ok(ytkitSource.includes('.ytkit-footer-actions .ytkit-btn-primary'),
         'bottom Close action must use the premium filled red button treatment');
-    assert.ok(ytkitSource.includes('grid-template-columns: clamp(260px, 20vw, 300px) minmax(0, 1fr) clamp(260px, 21vw, 300px) !important;'),
-        'desktop settings body must stay a composed sidebar/content/insights grid');
+    assert.ok(ytkitSource.includes('grid-template-columns: 300px minmax(0, 1fr) 288px !important;'),
+        'wide settings body must stay a composed sidebar/content/insights grid');
     assert.ok(ytkitSource.includes('grid-template-rows: auto auto auto !important;'),
         'mobile settings body must scroll vertically through rail, content, and insights without hiding controls');
     assert.ok(ytkitSource.includes('scroll-snap-type: x proximity !important;'),
