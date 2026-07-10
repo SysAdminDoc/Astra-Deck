@@ -44,26 +44,35 @@
         success: 'Done'
     });
 
-    // Legacy colour input → tone bucket. Preserves the byte-for-byte
-    // mapping from ytkit.js's inferToastTone() — any unknown colour
-    // resolves to 'success' so a feature passing an arbitrary hex
-    // doesn't end up with a default-empty badge.
+    const TONE_ALIASES = Object.freeze({ warn: 'warning', danger: 'error' });
+
+    function normalizeToastTone(tone, fallback = 'neutral') {
+        const normalized = TONE_ALIASES[String(tone || '').toLowerCase()]
+            || String(tone || '').toLowerCase();
+        return Object.prototype.hasOwnProperty.call(TONE_RGB, normalized)
+            ? normalized
+            : fallback;
+    }
+
+    // Legacy colour input → tone bucket. Unknown accent colours are neutral:
+    // an arbitrary hex must never announce an operation as successful.
     function inferToastTone(color) {
         const normalised = String(color || '').toLowerCase();
         if (normalised === '#ef4444') return 'error';
         if (normalised === '#f59e0b' || normalised === '#f97316') return 'warning';
         if (normalised === '#3b82f6') return 'info';
         if (normalised === '#6b7280') return 'neutral';
-        return 'success';
+        if (normalised === '#22c55e' || normalised === '#35c77f') return 'success';
+        return 'neutral';
     }
 
     function getToastRgb(tone) {
-        const key = TONE_RGB[tone] ? tone : 'success';
+        const key = normalizeToastTone(tone);
         return TONE_RGB[key];
     }
 
     function getToastBadgeLabel(tone) {
-        const key = TONE_BADGE[tone] ? tone : 'success';
+        const key = normalizeToastTone(tone);
         return TONE_BADGE[key];
     }
 
@@ -72,12 +81,13 @@
     // channel isn't flooded by routine confirmations. Returned as a
     // small bag so callers can spread it onto an element in one line.
     function getToastAriaDefaults(tone) {
-        if (tone === 'error') return { role: 'alert', ariaLive: 'assertive' };
+        if (normalizeToastTone(tone) === 'error') return { role: 'alert', ariaLive: 'assertive' };
         return { role: 'status', ariaLive: 'polite' };
     }
 
     core.toast = Object.freeze({
         inferToastTone,
+        normalizeToastTone,
         getToastRgb,
         getToastBadgeLabel,
         getToastAriaDefaults,
@@ -87,7 +97,7 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            inferToastTone, getToastRgb, getToastBadgeLabel,
+            inferToastTone, normalizeToastTone, getToastRgb, getToastBadgeLabel,
             getToastAriaDefaults, TONE_RGB, TONE_BADGE
         };
     }

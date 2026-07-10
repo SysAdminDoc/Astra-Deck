@@ -26,6 +26,23 @@
 
     function createBrowserApi(scope = globalThis) {
         const ns = resolveBrowserNamespace(scope);
+        async function sendTabMessage(tabId, message, options = {}) {
+            if (!ns?.tabs?.sendMessage || !tabId) return null;
+            const timeoutMs = Math.max(250, Number(options.timeoutMs) || 2000);
+            let timeoutId;
+            const timeout = new Promise((resolve) => {
+                timeoutId = setTimeout(() => resolve(null), timeoutMs);
+            });
+            try {
+                const response = await Promise.race([
+                    Promise.resolve().then(() => ns.tabs.sendMessage(tabId, message)).catch(() => null),
+                    timeout
+                ]);
+                return response ?? null;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
         return Object.freeze({
             ns,
             hasNamespace: Boolean(ns),
@@ -34,7 +51,8 @@
             tabs: ns?.tabs ?? null,
             permissions: ns?.permissions ?? null,
             downloads: ns?.downloads ?? null,
-            i18n: ns?.i18n ?? null
+            i18n: ns?.i18n ?? null,
+            sendTabMessage
         });
     }
 

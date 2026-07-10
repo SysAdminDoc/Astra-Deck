@@ -1202,7 +1202,7 @@
                 if (typeof showToast === 'function') {
                     showToast(`Staged ${stagedIds.length} stale channel${stagedIds.length === 1 ? '' : 's'} for unsubscribe review`, '#f59e0b', {
                         duration: 8,
-                        tone: 'warn',
+                        tone: 'warning',
                         action: {
                             text: 'Undo',
                             onClick: () => this._undoStagedUnsubscribes(stagedIds)

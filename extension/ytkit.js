@@ -2183,7 +2183,23 @@ return response;
         if (normalized === '#f59e0b' || normalized === '#f97316') return 'warning';
         if (normalized === '#3b82f6') return 'info';
         if (normalized === '#6b7280') return 'neutral';
-        return 'success';
+        if (normalized === '#22c55e' || normalized === '#35c77f') return 'success';
+        return 'neutral';
+    }
+
+    function normalizeToastTone(tone, fallback = 'neutral') {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.normalizeToastTone === 'function') {
+            return mod.normalizeToastTone(tone, fallback);
+        }
+        const aliases = { warn: 'warning', danger: 'error' };
+        const normalized = aliases[String(tone || '').toLowerCase()]
+            || String(tone || '').toLowerCase();
+        return ['error', 'warning', 'info', 'neutral', 'success'].includes(normalized)
+            ? normalized
+            : fallback;
     }
 
     function getToastRgb(tone) {
@@ -2193,12 +2209,13 @@ return response;
         if (mod && typeof mod.getToastRgb === 'function') {
             return mod.getToastRgb(tone);
         }
-        switch (tone) {
+        switch (normalizeToastTone(tone)) {
             case 'error':   return '255,116,128'; // --error  #ff7480
             case 'warning': return '255,190,122'; // --warning #ffbe7a
             case 'info':    return '106,169,255'; // --info   #6aa9ff
             case 'neutral': return '139,151,171'; // --text-muted
-            default:        return '53,199,127';  // --success #35c77f
+            case 'success': return '53,199,127';  // --success #35c77f
+            default:        return '139,151,171'; // --text-muted
         }
     }
 
@@ -2209,12 +2226,13 @@ return response;
         if (mod && typeof mod.getToastBadgeLabel === 'function') {
             return mod.getToastBadgeLabel(tone);
         }
-        switch (tone) {
+        switch (normalizeToastTone(tone)) {
             case 'error': return 'Issue';
             case 'warning': return 'Heads Up';
             case 'info': return 'Update';
             case 'neutral': return 'Notice';
-            default: return 'Done';
+            case 'success': return 'Done';
+            default: return 'Notice';
         }
     }
 
@@ -2235,8 +2253,12 @@ return response;
             _toastSystem = mod({
                 zIndex: Z.TOAST,
                 inferToastTone,
+                normalizeToastTone,
                 getToastRgb,
-                getToastBadgeLabel
+                getToastBadgeLabel,
+                getToastAriaDefaults: (tone) => normalizeToastTone(tone) === 'error'
+                    ? { role: 'alert', ariaLive: 'assertive' }
+                    : { role: 'status', ariaLive: 'polite' }
             });
         } catch (_) {
             // reason: factory failure must never break the page.
@@ -2339,7 +2361,10 @@ return response;
         const existingToast = document.querySelector('.ytkit-global-toast');
         if (existingToast) dismissToast(existingToast, true);
 
-        const tone = options.tone || inferToastTone(color);
+        const tone = normalizeToastTone(options.tone || inferToastTone(color));
+        const ariaDefaults = tone === 'error'
+            ? { role: 'alert', ariaLive: 'assertive' }
+            : { role: 'status', ariaLive: 'polite' };
         const actions = [
             ...(Array.isArray(options.actions) ? options.actions : []),
             ...(options.action ? [options.action] : [])
@@ -2351,8 +2376,8 @@ return response;
         toast.dataset.tone = tone;
         toast.style.setProperty('--ytkit-toast-rgb', getToastRgb(tone));
         toast.style.setProperty('--ytkit-toast-z', String(Z.TOAST));
-        toast.setAttribute('role', options.role || (color === '#ef4444' ? 'alert' : 'status'));
-        toast.setAttribute('aria-live', options.ariaLive || (color === '#ef4444' ? 'assertive' : 'polite'));
+        toast.setAttribute('role', options.role || ariaDefaults.role);
+        toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive);
         toast.setAttribute('aria-atomic', 'true');
         toast.tabIndex = -1;
 
@@ -23469,7 +23494,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _translateTranscript() {
                 if (!this._hasTranslatorApi()) {
-                    if (typeof showToast === 'function') showToast('Chrome Translator API not available in this browser', '#f59e0b', { tone: 'warn' });
+                    if (typeof showToast === 'function') showToast('Chrome Translator API not available in this browser', '#f59e0b', { tone: 'warning' });
                     return;
                 }
                 if (this._showingTranslation && this._translatedCues) {
@@ -28705,7 +28730,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const dir = e.deltaY < 0 ? 1 : -1;
                     const newSpeed = Math.round(Math.max(0.1, Math.min(16, video.playbackRate + dir * step)) * 100) / 100;
                     video.playbackRate = newSpeed;
-                    showToast(`Speed: ${newSpeed}x`, '#3b82f6', { duration: 1000 });
+                    showToast(`Speed: ${newSpeed}x`, '#3b82f6', { duration: 1 });
                 };
                 document.addEventListener('wheel', this._wheelHandler, { passive: false, capture: true });
             },
@@ -36938,7 +36963,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (typeof showToast === 'function') {
                     showToast(`Staged ${stagedIds.length} stale channel${stagedIds.length === 1 ? '' : 's'} for unsubscribe review`, '#f59e0b', {
                         duration: 8,
-                        tone: 'warn',
+                        tone: 'warning',
                         action: {
                             text: 'Undo',
                             onClick: () => this._undoStagedUnsubscribes(stagedIds)

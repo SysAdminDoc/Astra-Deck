@@ -261,12 +261,12 @@ function audit(sources = readSources(), { quiet = false } = {}) {
 
     // Toast DOM and inline fallback.
     add('Toast DOM role switches error to alert and default to status',
-        toastDom.includes("color === '#ef4444' ? 'alert' : 'status'") &&
-        ytkit.includes("color === '#ef4444' ? 'alert' : 'status'"),
+        toastDom.includes("toast.setAttribute('role', options.role || ariaDefaults.role)") &&
+        ytkit.includes("toast.setAttribute('role', options.role || ariaDefaults.role)"),
         'Toast role must switch errors to alert and default to status in both DOM builders');
     add('Toast DOM aria-live switches error to assertive and default to polite',
-        toastDom.includes("color === '#ef4444' ? 'assertive' : 'polite'") &&
-        ytkit.includes("color === '#ef4444' ? 'assertive' : 'polite'"),
+        toastDom.includes("toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive)") &&
+        ytkit.includes("toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive)"),
         'Toast aria-live must switch errors to assertive and default to polite in both DOM builders');
     add('Toast DOM uses aria-atomic',
         toastDom.includes("toast.setAttribute('aria-atomic', 'true')") &&

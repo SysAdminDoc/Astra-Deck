@@ -29,8 +29,13 @@
     function createToastSystem(deps = {}) {
         const zIndex = deps.zIndex || 70000;
         const inferToastTone = deps.inferToastTone || (() => 'success');
+        const normalizeToastTone = deps.normalizeToastTone || ((tone) => tone || 'neutral');
         const getToastRgb = deps.getToastRgb || (() => '53,199,127');
         const getToastBadgeLabel = deps.getToastBadgeLabel || (() => 'Done');
+        const getToastAriaDefaults = deps.getToastAriaDefaults
+            || ((tone) => tone === 'error'
+                ? { role: 'alert', ariaLive: 'assertive' }
+                : { role: 'status', ariaLive: 'polite' });
 
         function dismissToast(toast, immediate = false) {
             if (!toast) return;
@@ -61,7 +66,8 @@
             const existingToast = document.querySelector('.ytkit-global-toast');
             if (existingToast) dismissToast(existingToast, true);
 
-            const tone = options.tone || inferToastTone(color);
+            const tone = normalizeToastTone(options.tone || inferToastTone(color));
+            const ariaDefaults = getToastAriaDefaults(tone);
             const actions = [
                 ...(Array.isArray(options.actions) ? options.actions : []),
                 ...(options.action ? [options.action] : [])
@@ -73,8 +79,8 @@
             toast.dataset.tone = tone;
             toast.style.setProperty('--ytkit-toast-rgb', getToastRgb(tone));
             toast.style.setProperty('--ytkit-toast-z', String(zIndex));
-            toast.setAttribute('role', options.role || (color === '#ef4444' ? 'alert' : 'status'));
-            toast.setAttribute('aria-live', options.ariaLive || (color === '#ef4444' ? 'assertive' : 'polite'));
+            toast.setAttribute('role', options.role || ariaDefaults.role);
+            toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive);
             toast.setAttribute('aria-atomic', 'true');
             toast.tabIndex = -1;
 
