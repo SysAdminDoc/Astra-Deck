@@ -345,10 +345,7 @@ body {
 }
 
 .stat-card:hover {
-  border-color: var(--border-hover);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
-    rgba(14, 19, 28, 0.8);
+  border-color: var(--border);
 }
 
 .stat-card-value {
@@ -373,6 +370,46 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1;
+}
+
+.stat-card:last-child .stat-card-label {
+  font-size: 8.5px;
+  letter-spacing: 0.025em;
+}
+
+.search-help {
+  margin: -2px 0 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.search-help > summary {
+  width: fit-content;
+  margin-left: auto;
+  padding: 2px 0;
+  color: var(--text-muted);
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+
+.search-help > summary::-webkit-details-marker { display: none; }
+
+.search-help > summary::before {
+  content: "+";
+  display: inline-block;
+  margin-right: 5px;
+  color: var(--accent-mid);
+}
+
+.search-help[open] > summary::before { content: "−"; }
+
+.search-help .search-hint {
+  margin: 4px 0 2px;
+  padding: 7px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-tight);
+  background: var(--surface-inset);
 }
 
 /* ── Health banner (TrustedTypes / diagnostic alerts) ── */

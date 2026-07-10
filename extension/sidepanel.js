@@ -251,9 +251,7 @@ async function renderSelectorHealth(tab) {
     setText(selectorTotal, '');
     if (!tab) {
         showEmpty(selectorEmpty, 'Open YouTube in the active tab to check whether page selectors still fit.', 'idle', {
-            title: 'Open YouTube to check page fit',
-            actionLabel: hasTabsCreate() ? 'Open YouTube' : '',
-            action: openYouTubeTab
+            title: 'Open YouTube to check page fit'
         });
         return;
     }
@@ -333,9 +331,7 @@ async function renderExternalHealth(tab) {
     setText(externalTotal, '');
     if (!tab) {
         showEmpty(externalEmpty, 'Open YouTube to see SponsorBlock, DeArrow, and RYD request health.', 'idle', {
-            title: 'Open YouTube to check integrations',
-            actionLabel: hasTabsCreate() ? 'Open YouTube' : '',
-            action: openYouTubeTab
+            title: 'Open YouTube to check integrations'
         });
         return;
     }
@@ -447,9 +443,7 @@ const QUICK_SETTINGS = Object.freeze({
     cleanShareUrls: ['Clean Share URLs', 'Remove tracking parameters from copied links.'],
     transcriptViewer: ['Transcript Sidebar', 'Read, jump through, and export captions.'],
     debugMode: ['Diagnostic Logging', 'Record detailed local diagnostics for troubleshooting.'],
-    privacyDataFlowPanel: ['Data-Flow Panel', 'Review every service Astra Deck can contact.'],
-    safeStoreProfile: ['Store-Safe Profile', 'Keep only browser-store-safe features visible.'],
-    githubFullProfile: ['Full Profile', 'Enable companion and advanced integration controls.']
+    privacyDataFlowPanel: ['Data-Flow Panel', 'Review every service Astra Deck can contact.']
 });
 
 function getSchema() {
@@ -636,17 +630,18 @@ function renderSettings(filter) {
             description.textContent = entry.quickDescription || '';
             const meta = document.createElement('span');
             meta.className = 'sp-setting-meta';
-            for (const [label, tone] of [
-                [entry.risk || 'safe', entry.risk || 'safe'],
-                [entry.scope || 'global', 'scope'],
-                [entry.profile || 'both', 'profile']
-            ]) {
+            const exceptionalMeta = [];
+            if (entry.risk && entry.risk !== 'safe') exceptionalMeta.push([entry.risk, entry.risk]);
+            if (entry.scope && entry.scope !== 'global') exceptionalMeta.push([entry.scope, 'scope']);
+            if (entry.profile && entry.profile !== 'both') exceptionalMeta.push([entry.profile, 'profile']);
+            for (const [label, tone] of exceptionalMeta) {
                 const chip = document.createElement('span');
                 chip.className = 'sp-setting-chip';
                 chip.dataset.tone = tone;
                 chip.textContent = formatMeta(label);
                 meta.appendChild(chip);
             }
+            meta.hidden = exceptionalMeta.length === 0;
             copy.appendChild(name);
             copy.appendChild(description);
             copy.appendChild(meta);

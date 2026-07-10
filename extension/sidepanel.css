@@ -1176,6 +1176,23 @@ body[data-loading="true"] .sp-section:not(.sp-section--hero) {
   opacity: 0.68;
 }
 
+body[data-loading="true"] :is(.sp-perf-list, .sp-selector-list, .sp-external-list):empty::before,
+body[data-loading="true"] .sp-settings-list:empty::before {
+  content: "";
+  display: block;
+  min-height: 68px;
+  border: 1px solid var(--astra-border-subtle);
+  border-radius: var(--astra-radius-3);
+  background:
+    linear-gradient(90deg, transparent 0 28%, rgba(255,255,255,0.055) 42%, transparent 58%) 0 0 / 220% 100%,
+    repeating-linear-gradient(180deg, var(--astra-surface-raised) 0 14px, transparent 14px 22px);
+  animation: sp-skeleton 1.15s ease-in-out infinite;
+}
+
+@keyframes sp-skeleton {
+  to { background-position: -220% 0, 0 0; }
+}
+
 @keyframes sp-pulse {
   to { box-shadow: 0 0 0 4px rgba(105, 169, 255, 0.16); }
 }
@@ -1188,6 +1205,7 @@ body[data-loading="true"] .sp-section:not(.sp-section--hero) {
   }
 
   #sp-overview,
+  #sp-external,
   #sp-settings,
   #sp-storage {
     grid-column: 1 / -1;

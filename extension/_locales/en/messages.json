@@ -2292,7 +2292,7 @@
     "message": "Filter quick toggles"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter — try risk:api or category:downloads"
+    "message": "Filter controls..."
   },
   "groupQuickControls": {
     "message": "Quick Controls"
