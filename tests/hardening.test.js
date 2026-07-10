@@ -6398,7 +6398,7 @@ function loadToastModule() {
 test('v4.14.0 core/toast exports the full helper surface', () => {
     const core = loadToastModule();
     assert.ok(core.toast, 'core.toast must be present after module load');
-    for (const name of ['inferToastTone', 'getToastRgb', 'getToastBadgeLabel', 'getToastAriaDefaults', 'TONE_RGB', 'TONE_BADGE']) {
+    for (const name of ['inferToastTone', 'normalizeToastTone', 'getToastRgb', 'getToastBadgeLabel', 'getToastAriaDefaults', 'TONE_RGB', 'TONE_BADGE']) {
         assert.ok(name in core.toast, 'core.toast must export ' + name);
     }
 });
@@ -6411,12 +6411,13 @@ test('v4.14.0 inferToastTone maps the legacy colour palette deterministically', 
     assert.equal(inferToastTone('#f97316'), 'warning');
     assert.equal(inferToastTone('#3b82f6'), 'info');
     assert.equal(inferToastTone('#6b7280'), 'neutral');
-    // Unknown colours fall back to success — preserving the previous
-    // in-monolith behaviour so a feature passing an arbitrary brand
-    // colour doesn't render with an empty badge.
+    // Known success colours stay successful; arbitrary brand colours are
+    // neutral so visual accent usage never falsely announces completion.
     assert.equal(inferToastTone('#22c55e'), 'success');
-    assert.equal(inferToastTone(''), 'success');
-    assert.equal(inferToastTone(undefined), 'success');
+    assert.equal(inferToastTone('#35c77f'), 'success');
+    assert.equal(inferToastTone('#7c3aed'), 'neutral');
+    assert.equal(inferToastTone(''), 'neutral');
+    assert.equal(inferToastTone(undefined), 'neutral');
 });
 
 test('v4.14.0 getToastRgb + getToastBadgeLabel agree with the inline monolith fallback', () => {
@@ -6427,13 +6428,14 @@ test('v4.14.0 getToastRgb + getToastBadgeLabel agree with the inline monolith fa
     assert.equal(getToastRgb('info'),    '106,169,255');
     assert.equal(getToastRgb('neutral'), '139,151,171');
     assert.equal(getToastRgb('success'), '53,199,127');
-    // Unknown tone → success default.
-    assert.equal(getToastRgb('chartreuse'), '53,199,127');
+    // Unknown tone → neutral default.
+    assert.equal(getToastRgb('chartreuse'), '139,151,171');
     assert.equal(getToastBadgeLabel('error'),   'Issue');
     assert.equal(getToastBadgeLabel('warning'), 'Heads Up');
     assert.equal(getToastBadgeLabel('info'),    'Update');
     assert.equal(getToastBadgeLabel('neutral'), 'Notice');
     assert.equal(getToastBadgeLabel('success'), 'Done');
+    assert.equal(getToastBadgeLabel('chartreuse'), 'Notice');
 });
 
 test('v4.14.0 getToastAriaDefaults uses assertive role only for the error tone', () => {

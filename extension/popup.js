@@ -1111,8 +1111,8 @@ async function writeSetting(key, value) {
     await requestOptionalHostsForSetting(key, value);
     const task = _pendingWriteChain.catch(() => undefined).then(async () => {
         const nextSettings = { ...popupState.settings, [key]: value };
-        popupState.settings = nextSettings;
         await storageSet({ [SETTINGS_STORAGE_KEY]: nextSettings });
+        popupState.settings = nextSettings;
         await refreshOptionalHostGrantState({ render: false });
         return nextSettings;
     });
@@ -1262,6 +1262,13 @@ function focusInitialPopupControl() {
 function handlePopupDialogKeydown(event) {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Escape') {
+        const openMaintenance = document.querySelector('.maintenance-menu[open]');
+        if (openMaintenance) {
+            event.preventDefault();
+            openMaintenance.open = false;
+            openMaintenance.querySelector('summary')?.focus?.({ preventScroll: true });
+            return;
+        }
         event.preventDefault();
         window.close();
         return;
@@ -1328,6 +1335,7 @@ function updateResultsState(totalCount, visibleCount, filter) {
 // ── Toggle render ──
 
 function renderLoading() {
+    list.setAttribute('aria-busy', 'true');
     list.textContent = '';
     resultsState.textContent = t('loadingState', 'Loading');
     resultsState.removeAttribute('title');
@@ -1454,6 +1462,7 @@ function createSchemaRiskBadge(key) {
 }
 
 function render(settings, filter) {
+    list.setAttribute('aria-busy', 'false');
     // The Astra Downloader companion is a github-full-only feature. Hide the
     // "Update Companion" / "Update yt-dlp" actions for store-safe users instead
     // of surfacing buttons that only error ("open a YouTube tab first") against
@@ -4139,6 +4148,7 @@ async function clearResetSnapshot() {
 function setUndoImportVisible(visible) {
     if (!undoImportButton) return;
     undoImportButton.hidden = !visible;
+    if (visible) undoImportButton.closest('details')?.setAttribute('open', '');
 }
 
 async function refreshUndoImportVisibility() {
@@ -4149,6 +4159,7 @@ async function refreshUndoImportVisibility() {
 function setUndoResetVisible(visible) {
     if (!undoResetButton) return;
     undoResetButton.hidden = !visible;
+    if (visible) undoResetButton.closest('details')?.setAttribute('open', '');
 }
 
 async function refreshUndoResetVisibility() {
@@ -4174,7 +4185,7 @@ async function resetAllData() {
         // button on the next launch.
         const snapshot = await readLocalStorageSnapshot();
         const snapped = await writeResetSnapshot(snapshot);
-        if (!snapped && sessionStorageAvailable()) {
+        if (!snapped) {
             // Session API exists but the snapshot write failed (e.g. data too
             // large) — abort so we never clear without a recoverable snapshot.
             showStatus(t('statusResetSnapshotFail',
@@ -4182,12 +4193,7 @@ async function resetAllData() {
                 'error', 6000);
             return;
         }
-        // When chrome.storage.session is entirely unavailable (older Firefox),
-        // writeResetSnapshot returns false up front and there is no Undo path.
-        // Proceed with the reset (the user asked for it, and policy bans
-        // confirmation dialogs) but report honestly rather than promising an
-        // Undo button that will never appear.
-        const undoAvailable = snapped && sessionStorageAvailable();
+        const undoAvailable = true;
         await storageClear();
         // Re-stamp the first-run / what's-new sentinels that storageClear()
         // just wiped, so a reset doesn't re-trigger the welcome/onboarding
@@ -4201,6 +4207,7 @@ async function resetAllData() {
         await loadSettings();
         render(popupState.settings, q.value);
         await refreshUndoResetVisibility();
+        undoResetButton?.focus?.({ preventScroll: true });
         showStatus(undoAvailable
             ? t('statusAllDataClearedUndo',
                 'All data cleared. Click Undo Reset to restore (until you close the browser).')

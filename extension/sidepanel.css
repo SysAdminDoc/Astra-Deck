@@ -49,13 +49,13 @@
 }
 
 html {
-  min-width: 280px;
+  min-width: 240px;
   background: var(--bg);
 }
 
 body {
   margin: 0;
-  min-width: 280px;
+  min-width: 240px;
   font-family: var(--font);
   color: var(--text-primary);
   background:
@@ -159,6 +159,7 @@ button {
 }
 
 .sp-title {
+  margin: 0;
   color: var(--text-primary);
   font-size: 14px;
   font-weight: 850;
@@ -803,6 +804,12 @@ button {
   white-space: nowrap;
 }
 
+.sp-setting-description {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .sp-setting-row[aria-checked="true"] .sp-setting-name {
   color: #ffd8cc;
 }
@@ -812,7 +819,7 @@ button {
   flex-wrap: wrap;
   gap: 3px 5px;
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 760;
   line-height: 1.2;
   text-transform: uppercase;

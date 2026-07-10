@@ -123,6 +123,11 @@ function setBusy(isBusy) {
         refreshBtn.disabled = isBusy;
         refreshBtn.setAttribute('aria-busy', String(isBusy));
     }
+    if (settingsList) {
+        settingsList.setAttribute('aria-busy', String(isBusy));
+        if (isBusy) settingsList.setAttribute('inert', '');
+        else settingsList.removeAttribute('inert');
+    }
 }
 
 function isSupportedUrl(url) {
@@ -148,16 +153,7 @@ async function getActiveYouTubeTab() {
 }
 
 function sendToTab(tabId, message) {
-    return new Promise((resolve) => {
-        const timer = setTimeout(() => resolve(null), 2000);
-        try {
-            ext.tabs.sendMessage(tabId, message, (msg) => {
-                clearTimeout(timer);
-                if (ext.runtime.lastError) { resolve(null); return; }
-                resolve(msg);
-            });
-        } catch (_) { clearTimeout(timer); resolve(null); }
-    });
+    return globalThis.YTKitBrowser.sendTabMessage(tabId, message, { timeoutMs: 2000 });
 }
 
 function formatBytes(bytes) {
@@ -435,14 +431,38 @@ function countStoredItems(value) {
 let _settingsSchema = null;
 let _settingsState = {};
 let _settingsLoadError = '';
+const QUICK_SETTINGS = Object.freeze({
+    removeAllShorts: ['Hide Shorts', 'Remove Shorts shelves and navigation links.'],
+    hideRelatedVideos: ['Hide Related Videos', 'Clear the watch-page side rail.'],
+    disableInfiniteScroll: ['Cap Infinite Scroll', 'Stop feeds from loading forever.'],
+    sponsorBlock: ['SponsorBlock', 'Skip crowd-marked sponsor segments.'],
+    deArrow: ['DeArrow', 'Replace clickbait titles and thumbnails.'],
+    commentSearch: ['Comment Search', 'Filter watch-page comments inline.'],
+    disableAutoplayNext: ['Disable Autoplay', 'Stop the next video from starting automatically.'],
+    persistentSpeed: ['Persistent Speed', 'Keep playback speed consistent between videos.'],
+    autoTheaterMode: ['Auto Theater Mode', 'Open videos in theater view.'],
+    blueLightFilter: ['Blue-Light Filter', 'Warm the player for late viewing.'],
+    miniPlayerBar: ['Mini Player Bar', 'Keep essential controls visible while scrolling.'],
+    digitalWellbeing: ['Digital Wellbeing', 'Track breaks and daily viewing time.'],
+    cleanShareUrls: ['Clean Share URLs', 'Remove tracking parameters from copied links.'],
+    transcriptViewer: ['Transcript Sidebar', 'Read, jump through, and export captions.'],
+    debugMode: ['Diagnostic Logging', 'Record detailed local diagnostics for troubleshooting.'],
+    privacyDataFlowPanel: ['Data-Flow Panel', 'Review every service Astra Deck can contact.'],
+    safeStoreProfile: ['Store-Safe Profile', 'Keep only browser-store-safe features visible.'],
+    githubFullProfile: ['Full Profile', 'Enable companion and advanced integration controls.']
+});
 
 function getSchema() {
     if (_settingsSchema) return _settingsSchema;
     const scope = typeof window !== 'undefined' && window.__YTKIT_SETTINGS_SCHEMA__;
     if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return [];
-    _settingsSchema = scope.SETTINGS_SCHEMA.filter(e =>
-        e.type === 'boolean' && !e.internal && e.key !== '_settingsVersion'
-    );
+    _settingsSchema = scope.SETTINGS_SCHEMA
+        .filter(entry => entry.type === 'boolean' && QUICK_SETTINGS[entry.key])
+        .map(entry => ({
+            ...entry,
+            quickLabel: QUICK_SETTINGS[entry.key][0],
+            quickDescription: QUICK_SETTINGS[entry.key][1]
+        }));
     return _settingsSchema;
 }
 
@@ -471,16 +491,16 @@ async function writeSetting(key, value) {
         const data = await ext.storage.local.get(SETTINGS_KEY);
         const current = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
             ? data[SETTINGS_KEY] : {};
-        current[key] = value;
-        _settingsState = current;
-        await ext.storage.local.set({ [SETTINGS_KEY]: current });
+        const nextSettings = { ...current, [key]: value };
+        await ext.storage.local.set({ [SETTINGS_KEY]: nextSettings });
+        _settingsState = nextSettings;
         const tabs = await ext.tabs.query({ url: ['*://*.youtube.com/*'] });
         for (const tab of tabs) {
-            try {
-                ext.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTING_CHANGED', key, value }, () => {
-                    void ext.runtime.lastError;
-                });
-            } catch (_) { /* reason: tab may be closing */ }
+            void globalThis.YTKitBrowser.sendTabMessage(
+                tab.id,
+                { type: 'YTKIT_SETTING_CHANGED', key, value },
+                { timeoutMs: 1000 }
+            );
         }
         return true;
     } catch (_) {
@@ -496,7 +516,8 @@ function settingSearchHaystack(entry, humanName) {
         entry.risk,
         entry.scope,
         entry.profile,
-        entry.vehicle
+        entry.vehicle,
+        entry.quickDescription
     ].filter(Boolean).join(' ').toLowerCase();
 }
 
@@ -532,7 +553,7 @@ function renderSettings(filter) {
     }
     const visible = schema.filter(entry => {
         if (!query) return true;
-        const humanName = formatHumanName(entry.key);
+        const humanName = entry.quickLabel || formatHumanName(entry.key);
         return settingSearchHaystack(entry, humanName).includes(query);
     });
     const enabled = schema.filter(entry => Boolean(_settingsState[entry.key] ?? entry.defaultValue)).length;
@@ -595,7 +616,7 @@ function renderSettings(filter) {
 
         for (const entry of entries) {
             const on = Boolean(_settingsState[entry.key] ?? entry.defaultValue);
-            const humanName = formatHumanName(entry.key);
+            const humanName = entry.quickLabel || formatHumanName(entry.key);
             const row = document.createElement('div');
             row.className = 'sp-setting-row';
             row.setAttribute('role', 'switch');
@@ -610,6 +631,9 @@ function renderSettings(filter) {
             const name = document.createElement('span');
             name.className = 'sp-setting-name';
             name.textContent = humanName;
+            const description = document.createElement('span');
+            description.className = 'sp-setting-description';
+            description.textContent = entry.quickDescription || '';
             const meta = document.createElement('span');
             meta.className = 'sp-setting-meta';
             for (const [label, tone] of [
@@ -624,6 +648,7 @@ function renderSettings(filter) {
                 meta.appendChild(chip);
             }
             copy.appendChild(name);
+            copy.appendChild(description);
             copy.appendChild(meta);
 
             const sw = document.createElement('span');
@@ -637,11 +662,15 @@ function renderSettings(filter) {
                 if (row.dataset.saving === 'true') return;
                 const next = !Boolean(_settingsState[entry.key] ?? entry.defaultValue);
                 row.dataset.saving = 'true';
+                row.setAttribute('aria-busy', 'true');
+                row.setAttribute('aria-disabled', 'true');
                 row.removeAttribute('data-error');
                 row.setAttribute('aria-checked', String(next));
                 row.setAttribute('aria-description', rowLabel(humanName, next, entry));
                 const saved = await writeSetting(entry.key, next);
                 row.dataset.saving = 'false';
+                row.removeAttribute('aria-busy');
+                row.removeAttribute('aria-disabled');
                 if (!saved) {
                     row.dataset.error = 'true';
                     row.setAttribute('aria-checked', String(!next));

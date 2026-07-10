@@ -65,6 +65,25 @@ test('browser-api exposes a scope-injectable factory on YTKitCore', () => {
     assert.equal(empty.hasNamespace, false);
 });
 
+test('browser-api normalizes Promise-based Firefox tab messaging', async () => {
+    const browser = {
+        runtime: { id: 'firefox' },
+        tabs: { sendMessage: async (tabId, message) => ({ tabId, type: message.type, ok: true }) }
+    };
+    const ctx = loadWrapper({ browser, setTimeout, clearTimeout, Promise });
+    const result = await ctx.YTKitBrowser.sendTabMessage(7, { type: 'PING' });
+    assert.deepEqual({ ...result }, { tabId: 7, type: 'PING', ok: true });
+});
+
+test('browser-api tab messaging resolves null on rejection instead of leaking an error', async () => {
+    const chrome = {
+        runtime: { id: 'chrome' },
+        tabs: { sendMessage: async () => { throw new Error('No receiver'); } }
+    };
+    const ctx = loadWrapper({ chrome, setTimeout, clearTimeout, Promise });
+    assert.equal(await ctx.YTKitBrowser.sendTabMessage(8, { type: 'PING' }), null);
+});
+
 test('browser-api loads first in every content-script group and every extension page', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
     for (const group of manifest.content_scripts) {
