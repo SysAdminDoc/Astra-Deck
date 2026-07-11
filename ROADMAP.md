@@ -86,15 +86,9 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: early.css + hide-feature CSS blocks, selector packs.
   Acceptance: Independent toggles hide Ask/AI-summary surfaces, Gemini buttons, and context/clarification panels; selector canaries added to fixtures.
   Complexity: S
-- [ ] P2 — Guide sidebar per-item hiding
-  Why: sidebarOrder reorders but cannot hide individual You/Explore entries (History, Playlists, Trending, Music, ...); competitor userscript v11 does per-item granularity.
-  Evidence: competitor userscript v11.0 guide-sidebar controls.
-  Where: sidebarOrder feature block, settings panel list UI.
-  Acceptance: Checklist hides any individual guide entry or whole section; composes with sidebarOrder; survives SPA nav.
-  Complexity: S
 - [ ] P2 — Notification menu controls: cap count + hide read
   Why: chronologicalNotifications exists; capping the list and hiding read entries completes the cluster.
-  Evidence: competitor userscript notification options.
+  Evidence: competitor notification options.
   Where: chronologicalNotifications block.
   Acceptance: Options limit rendered notifications to N and hide read ones; menu perf unaffected (no re-render loops).
   Complexity: S
@@ -105,14 +99,14 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Acceptance: Test pins the bypass path against a recorded restricted player-response fixture; degradation produces a diagnostic + settings-panel warning instead of silent failure.
   Complexity: S
 - [ ] P2 — Transcript modern-panel fallback pinning
-  Why: YouTube is rolling out a modern transcript panel (data-target-id PAmodern_transcript_view); competitor userscript v11.3-11.4 supports both variants — Astra's TranscriptService should too before it breaks.
-  Evidence: competitor userscript v11.4 changelog.
+  Why: YouTube is rolling out a modern transcript panel (data-target-id PAmodern_transcript_view); some userscripts support both variants — Astra's TranscriptService should too before it breaks.
+  Evidence: competitor userscript transcript handling.
   Where: TranscriptService, transcriptViewer, selector packs + `tests/fixtures/selector-surface-matches.json`.
   Acceptance: Transcript features work against both panel variants (fixture per variant); selector canaries fail loudly on drift.
   Complexity: S
 - [ ] P2 — Per-page CSS injection scoping
-  Why: Most feature CSS is injected globally; competitor userscript v11 cut perf cost by toggling CSS per page type. Astra's style lifecycle specs can carry a page-scope field.
-  Evidence: competitor userscript v11.0 per-page CSS toggling; `extension/core/styles.js` lifecycle specs.
+  Why: Most feature CSS is injected globally; some userscripts cut perf cost by toggling CSS per page type. Astra's style lifecycle specs can carry a page-scope field.
+  Evidence: competitor per-page CSS toggling; `extension/core/styles.js` lifecycle specs.
   Where: `extension/core/styles.js`, cssFeature() registrations, navigation events.
   Acceptance: Style specs declare page scopes (watch/home/subs/all); non-matching pages do not carry the style; long-session test confirms no leak/flicker on SPA nav.
   Complexity: M

@@ -8,8 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [4.49.0] - 2026-07-11
 
-- **Wave 11 — competitor userscript ingestion (all off by default).** A first wave of
-  features ported after reviewing the competitor userscript userscript, chosen for
+- **Wave 11 — external-userscript feature ingestion (all off by default).** A
+  first wave of features added after a competitive userscript review, chosen for
   being conflict-free and stable:
   - **Hide Guide Elements.** A granular left-navigation (Guide) hider that
     mirrors the Hide Chat Elements manager: a master toggle plus per-item
@@ -891,7 +891,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **SponsorBlock-adjusted remaining time:** when both `remainingTimeDisplay`
   and `sponsorBlock` are enabled, the remaining time display now subtracts
   the total duration of auto-skip segments ahead of the current playback
-  position. Matches competitor userscript's adjusted-remaining-time behavior.
+  position. Matches the common adjusted-remaining-time behavior.
 - **SABR download failure diagnostic:** when yt-dlp fails because all available
   formats were SABR-only, the download progress panel now shows a clear error
   message explaining the limitation instead of a generic failure. The download
@@ -1764,7 +1764,7 @@ companion app, build system, and CI.
     clean (lint + syntax + version parity + schema + no-eval +
     a11y + contrast + audit:deps).
 
-- **Quick Links menu caps at 10 slots (competitor userscript parity).**
+- **Quick Links menu caps at 10 slots.**
   Closes the P3/S backlog item. The launcher's add-form previously
   had no cap, so a stored `quickLinkItems` setting with 50 entries
   could overflow the dropdown. The fix introduces

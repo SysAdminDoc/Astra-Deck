@@ -27357,7 +27357,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
 
 
-        // userscript-inspired FEATURES
+        // USERSCRIPT-INSPIRED FEATURES
         {
             id: 'quickLinkMenu',
             name: 'Logo Quick Links',
