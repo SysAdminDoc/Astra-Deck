@@ -6,6 +6,27 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.0] - 2026-07-11
+
+- **Wave 11 — competitor userscript ingestion (all off by default).** A first wave of
+  features ported after reviewing the competitor userscript userscript, chosen for
+  being conflict-free and stable:
+  - **Hide Guide Elements.** A granular left-navigation (Guide) hider that
+    mirrors the Hide Chat Elements manager: a master toggle plus per-item
+    checkboxes for Home, Subscriptions, History, Playlists, Your Videos, Watch
+    Later, Liked Videos, Trending, Music, Movies & TV, Live, Gaming, News,
+    Sports, Learning, YouTube Premium, YouTube Studio, Settings, Report History,
+    Help, and the Guide footer. Row matching is `:has()`-based and href-anchored
+    where stable so it survives locale changes. It auto-disables (and is
+    auto-disabled by) **Hide Sidebar**, since hiding the whole rail makes
+    per-item hiding moot.
+  - **Stable CSS toggles:** Hide Own Avatar, Hide Search Sidebar, Hide Scrubber
+    Handle, Soften Bottom Gradient, Hide Comment Composer, Hide Comment Reply
+    Button.
+  - **UI Font Size.** Optional base interface font-size override (0 = YouTube
+    default, otherwise clamped 8–20px).
+  - Schema grows 399 → 408 keys; feature copy is seeded across all 11 locales.
+
 ## [4.48.2] - 2026-07-10
 
 - **Blue-light control clarity.** Blue Light Filter remains disabled on clean

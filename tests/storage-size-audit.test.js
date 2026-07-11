@@ -65,7 +65,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // Scroll-in-fullscreen adds 1 boolean (25 bytes).
     // Watch Later workbench adds 1 boolean (28 bytes).
     // Muted/rewind caption triggers + live-edge speed reset add 3 booleans (80 bytes).
-    assert.equal(assessment.totalBytes, 178957);
+    // v4.49.0 Wave 11 competitor userscript ingestion adds the Guide-element manager (bool +
+    // empty array) + 6 CSS-toggle booleans + uiFontSize number (232 bytes).
+    assert.equal(assessment.totalBytes, 179189);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

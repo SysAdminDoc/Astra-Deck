@@ -272,6 +272,51 @@
     "message": "Astra Deck",
     "description": "The extension name displayed in the browser UI."
   },
+  "externalHealthAria": {
+    "message": "External API health"
+  },
+  "externalHealthCopyAria": {
+    "message": "Copy external API health report to clipboard"
+  },
+  "externalHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "externalHealthCopyDone": {
+    "message": "Copied."
+  },
+  "externalHealthCopyFail": {
+    "message": "Could not copy."
+  },
+  "externalHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "externalHealthCopyPending": {
+    "message": "Building report..."
+  },
+  "externalHealthDetailEmpty": {
+    "message": "No requests observed in this tab yet."
+  },
+  "externalHealthEmpty": {
+    "message": "No external API services tracked yet."
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
+  },
+  "externalHealthTotalTpl": {
+    "message": "{count} services"
+  },
+  "featurePerfAria": {
+    "message": "Feature performance"
+  },
+  "featurePerfEmpty": {
+    "message": "No features initialized yet."
+  },
+  "featurePerfTitle": {
+    "message": "Feature init timing"
+  },
+  "featurePerfTotalTpl": {
+    "message": "{count} features measured"
+  },
   "feature_abHide_ask_desc": {
     "message": "동영상 아래의 질문/AI 버튼 숨기기"
   },
@@ -379,6 +424,12 @@
   },
   "feature_audioNormalization_name": {
     "message": "오디오 정규화"
+  },
+  "feature_audioPan_desc": {
+    "message": "오디오 밸런스를 좌우로 조절합니다. 범위: -1(왼쪽)~1(오른쪽), 0이 중앙."
+  },
+  "feature_audioPan_name": {
+    "message": "오디오 팬"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "YouTube 설정을 열지 않고 선호하는 오디오 언어를 저장합니다. 스크립트가 네이티브 메뉴를 통해 오디오 트랙을 전환하면 YouTube가 재생을 다시 시작합니다."
@@ -806,6 +857,12 @@
   "feature_daTitleFormat_name": {
     "message": "제목 형식"
   },
+  "feature_deArrowCasualMode_desc": {
+    "message": "설명적인 제목은 유지 — 커뮤니티가 제출한 DeArrow 대안만 교체"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "캐주얼 모드"
+  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "시청 페이지의 채널 이름 옆에 작은 DeArrow 모드 칩을 추가합니다. 클릭할 때마다 DeArrow → 원본 → 끄기 → DeArrow 순으로 전환됩니다. 채널 ID별로 설정이 유지됩니다."
   },
@@ -1064,6 +1121,132 @@
   "feature_grayscaleThumbnails_name": {
     "message": "흑백 썸네일"
   },
+  "feature_guideHide_footer_desc": {
+    "message": "Hide the Guide footer links"
+  },
+  "feature_guideHide_footer_name": {
+    "message": "Footer"
+  },
+  "feature_guideHide_gaming_desc": {
+    "message": "Hide the Gaming entry"
+  },
+  "feature_guideHide_gaming_name": {
+    "message": "Gaming"
+  },
+  "feature_guideHide_help_desc": {
+    "message": "Hide the Help entry"
+  },
+  "feature_guideHide_help_name": {
+    "message": "Help"
+  },
+  "feature_guideHide_history_desc": {
+    "message": "Hide the History entry"
+  },
+  "feature_guideHide_history_name": {
+    "message": "History"
+  },
+  "feature_guideHide_home_desc": {
+    "message": "Hide the Home entry in the Guide"
+  },
+  "feature_guideHide_home_name": {
+    "message": "Home"
+  },
+  "feature_guideHide_learning_desc": {
+    "message": "Hide the Learning topic entry"
+  },
+  "feature_guideHide_learning_name": {
+    "message": "Learning"
+  },
+  "feature_guideHide_likedVideos_desc": {
+    "message": "Hide the Liked Videos entry"
+  },
+  "feature_guideHide_likedVideos_name": {
+    "message": "Liked Videos"
+  },
+  "feature_guideHide_live_desc": {
+    "message": "Hide the Live topic entry"
+  },
+  "feature_guideHide_live_name": {
+    "message": "Live"
+  },
+  "feature_guideHide_movies_desc": {
+    "message": "Hide the Movies & TV entry"
+  },
+  "feature_guideHide_movies_name": {
+    "message": "Movies & TV"
+  },
+  "feature_guideHide_music_desc": {
+    "message": "Hide the Music topic entry"
+  },
+  "feature_guideHide_music_name": {
+    "message": "Music"
+  },
+  "feature_guideHide_news_desc": {
+    "message": "Hide the News topic entry"
+  },
+  "feature_guideHide_news_name": {
+    "message": "News"
+  },
+  "feature_guideHide_playlists_desc": {
+    "message": "Hide the Playlists entry"
+  },
+  "feature_guideHide_playlists_name": {
+    "message": "Playlists"
+  },
+  "feature_guideHide_premium_desc": {
+    "message": "Hide the YouTube Premium entry"
+  },
+  "feature_guideHide_premium_name": {
+    "message": "YouTube Premium"
+  },
+  "feature_guideHide_reportHistory_desc": {
+    "message": "Hide the Report History entry"
+  },
+  "feature_guideHide_reportHistory_name": {
+    "message": "Report History"
+  },
+  "feature_guideHide_settings_desc": {
+    "message": "Hide the Settings entry"
+  },
+  "feature_guideHide_settings_name": {
+    "message": "설정"
+  },
+  "feature_guideHide_sports_desc": {
+    "message": "Hide the Sports topic entry"
+  },
+  "feature_guideHide_sports_name": {
+    "message": "Sports"
+  },
+  "feature_guideHide_studio_desc": {
+    "message": "Hide the YouTube Studio entry"
+  },
+  "feature_guideHide_studio_name": {
+    "message": "YouTube Studio"
+  },
+  "feature_guideHide_subscriptions_desc": {
+    "message": "Hide the Subscriptions entry"
+  },
+  "feature_guideHide_subscriptions_name": {
+    "message": "Subscriptions"
+  },
+  "feature_guideHide_trending_desc": {
+    "message": "Hide the Trending entry"
+  },
+  "feature_guideHide_trending_name": {
+    "message": "Trending"
+  },
+  "feature_guideHide_watchLater_desc": {
+    "message": "Hide the Watch Later entry"
+  },
+  "feature_guideHide_watchLater_name": {
+    "message": "Watch Later"
+  },
+  "feature_guideHide_yourVideos_desc": {
+    "message": "Hide the Your Videos / Studio entry"
+  },
+  "feature_guideHide_yourVideos_name": {
+    "message": "Your Videos"
+  },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "동영상 아래에서 숨길 액션 버튼 선택"
   },
@@ -1075,6 +1258,12 @@
   },
   "feature_hiddenChatElementsManager_name": {
     "message": "채팅 요소 숨기기"
+  },
+  "feature_hiddenGuideElementsManager_desc": {
+    "message": "Choose individual left-navigation (Guide) entries to hide"
+  },
+  "feature_hiddenGuideElementsManager_name": {
+    "message": "Hide Guide Elements"
   },
   "feature_hiddenPlayerControlsManager_desc": {
     "message": "숨길 플레이어 컨트롤 버튼 선택"
@@ -1124,11 +1313,23 @@
   "feature_hideCommentActionMenu_name": {
     "message": "댓글 액션 숨기기"
   },
+  "feature_hideCommentComposer_desc": {
+    "message": "Remove the \"Add a comment\" text field above comments"
+  },
+  "feature_hideCommentComposer_name": {
+    "message": "Hide Comment Composer"
+  },
   "feature_hideCommentDislikeButton_desc": {
     "message": "유용한 피드백을 제공하지 않는 댓글 싫어요 버튼 제거"
   },
   "feature_hideCommentDislikeButton_name": {
     "message": "댓글 싫어요 숨기기"
+  },
+  "feature_hideCommentReplyButton_desc": {
+    "message": "Remove the Reply button on individual comments"
+  },
+  "feature_hideCommentReplyButton_name": {
+    "message": "Hide Comment Reply Button"
   },
   "feature_hideCommentTeaser_desc": {
     "message": "시청 페이지의 \"댓글을 보려면 스크롤\" 프롬프트 제거"
@@ -1232,6 +1433,12 @@
   "feature_hideNotificationButton_name": {
     "message": "알림 종 숨기기"
   },
+  "feature_hideOwnAvatar_desc": {
+    "message": "Remove your account avatar button from the header"
+  },
+  "feature_hideOwnAvatar_name": {
+    "message": "Hide Own Avatar"
+  },
   "feature_hidePaidContentOverlay_desc": {
     "message": "썸네일과 시청 페이지에서 \"유료 프로모션 포함\" 오버레이 제거"
   },
@@ -1273,6 +1480,12 @@
   },
   "feature_hideRelatedVideos_name": {
     "message": "관련 동영상 숨기기"
+  },
+  "feature_hideSearchSidebar_desc": {
+    "message": "Remove the right-hand sidebar on search results pages"
+  },
+  "feature_hideSearchSidebar_name": {
+    "message": "Hide Search Sidebar"
   },
   "feature_hideSidebar_desc": {
     "message": "왼쪽 탐색 사이드바 완전히 제거"
@@ -1610,6 +1823,12 @@
   "feature_premiumLiveChat_name": {
     "message": "프리미엄 실시간 채팅"
   },
+  "feature_presetFocus_desc": {
+    "message": "방해 없는 시청: Shorts, 관련 동영상, 무한 스크롤, 알림, 자동 재생 숨김. 젠 모드와 디지털 웰빙 추적 활성화."
+  },
+  "feature_presetFocus_name": {
+    "message": "집중 프리셋"
+  },
   "feature_presetPowerUser_desc": {
     "message": "최대 기능 밀도: 재생 통계, 속도 유지, 미세 속도 제어, 재생 위치 복원, 미니 플레이어 바, 집중 모드, A-B 반복. 끄면 이전 값이 복원됩니다."
   },
@@ -1723,6 +1942,12 @@
   },
   "feature_removeAllShorts_name": {
     "message": "Shorts 숨기기"
+  },
+  "feature_removeScrubber_desc": {
+    "message": "Remove the round scrubber handle from the video progress bar"
+  },
+  "feature_removeScrubber_name": {
+    "message": "Hide Scrubber Handle"
   },
   "feature_researchSpacedReview_desc": {
     "message": "학습/작업 모드 데이터를 마크다운 또는 CSV로 내보내기: 시청 시간 총계, 집중 모드 상태, 디지털 웰빙 상태, 딥 링크가 포함된 타임스탬프 북마크."
@@ -1922,6 +2147,12 @@
   "feature_sleepTimer_name": {
     "message": "수면 타이머"
   },
+  "feature_softBottomGradient_desc": {
+    "message": "Reduce the dark gradient behind the player control bar"
+  },
+  "feature_softBottomGradient_name": {
+    "message": "Soften Bottom Gradient"
+  },
   "feature_sortCommentsNewest_desc": {
     "message": "모든 동영상에서 댓글 정렬 순서를 \"최신순\"으로 자동 전환"
   },
@@ -2077,6 +2308,12 @@
   },
   "feature_transcriptViewer_name": {
     "message": "대본 사이드바"
+  },
+  "feature_uiFontSize_desc": {
+    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+  },
+  "feature_uiFontSize_name": {
+    "message": "UI Font Size"
   },
   "feature_uiStyleManager_desc": {
     "message": "둥근 또는 사각형 UI 요소 선택"
@@ -2381,6 +2618,12 @@
   "loadingState": {
     "message": "로드 중"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
+  "openDashboard": {
+    "message": "Dashboard"
+  },
   "openFullSettings": {
     "message": "전체 설정 열기"
   },
@@ -2402,14 +2645,14 @@
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },
-  "panelSearchHint": {
-    "message": "Search by name, page, category, control type, or description."
-  },
   "panelSearchClearAria": {
     "message": "설정 검색 지우기"
   },
   "panelSearchClearTitle": {
     "message": "검색 지우기"
+  },
+  "panelSearchHint": {
+    "message": "Search by name, page, category, control type, or description."
   },
   "panelSearchPlaceholder": {
     "message": "Search settings, pages, controls..."
@@ -2564,9 +2807,6 @@
   "reenableMediadlBtn": {
     "message": "다운로더 프롬프트 활성화"
   },
-  "maintenanceMenu": {
-    "message": "Maintenance"
-  },
   "resetBtn": {
     "message": "재설정"
   },
@@ -2614,6 +2854,12 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count}개 표면 추적 중"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
   },
   "speedBtnAriaTpl": {
     "message": "기본 재생 속도 …. 클릭하여 변경."
@@ -2702,6 +2948,9 @@
   "statusMediadlReenabled": {
     "message": "Astra Downloader 설치 프롬프트가 다시 활성화되었습니다 — YouTube 탭을 새로고침하면 표시됩니다."
   },
+  "statusOpenDashboardFail": {
+    "message": "Could not open dashboard"
+  },
   "statusOpenWorkspaceFail": {
     "message": "전체 작업 공간을 열 수 없습니다. 다시 시도하세요."
   },
@@ -2723,9 +2972,6 @@
   "statusResetUndone": {
     "message": "재설정 취소됨 — 모든 데이터가 복원되었습니다."
   },
-  "statusSettingsImportUndone": {
-    "message": "Import undone. Previous settings and local data restored."
-  },
   "statusSettingsImportFailed": {
     "message": "Import failed while applying data; previous state was restored."
   },
@@ -2735,20 +2981,20 @@
   "statusSettingsImportNoKnown": {
     "message": "No known settings found in file."
   },
-  "statusTakeoutNoEntries": {
-    "message": "No valid YouTube Takeout watch-history entries found."
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusStorageReadFail": {
+    "message": "스토리지 읽기 실패"
   },
   "statusTakeoutImportUndone": {
     "message": "Takeout import undone"
   },
-  "settingsImportHistoryLabel": {
-    "message": "Import History"
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
   },
-  "settingsImportHistoryAriaLabel": {
-    "message": "Import YouTube Takeout watch history"
-  },
-  "statusStorageReadFail": {
-    "message": "스토리지 읽기 실패"
+  "statusWelcomePresetFail": {
+    "message": "Could not apply preset"
   },
   "storageBannerCorruptionTpl": {
     "message": "저장 공간 데이터가 손상됨 — 초기화하여 복구하세요."
@@ -2813,17 +3059,59 @@
   "toggleUpdateFailTpl": {
     "message": "…을(를) 업데이트할 수 없습니다. 다시 시도하세요."
   },
-  "undoResetAria": {
-    "message": "가장 최근 재설정에서 데이터 복원"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
   "undoImportBtn": {
     "message": "Undo Import"
   },
+  "undoResetAria": {
+    "message": "가장 최근 재설정에서 데이터 복원"
+  },
   "undoResetBtn": {
     "message": "재설정 취소"
+  },
+  "updateCompanionAria": {
+    "message": "Update Astra Downloader companion"
+  },
+  "updateCompanionBtn": {
+    "message": "Update Astra Downloader"
+  },
+  "welcomePresetBody": {
+    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+  },
+  "welcomePresetFocusDesc": {
+    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+  },
+  "welcomePresetFocusTitle": {
+    "message": "집중"
+  },
+  "welcomePresetGroupAria": {
+    "message": "Pick a usage preset"
+  },
+  "welcomePresetPowerDesc": {
+    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+  },
+  "welcomePresetPowerTitle": {
+    "message": "Power User"
+  },
+  "welcomePresetPrivacyDesc": {
+    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+  },
+  "welcomePresetPrivacyTitle": {
+    "message": "Privacy"
+  },
+  "welcomePresetResearcherDesc": {
+    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+  },
+  "welcomePresetResearcherTitle": {
+    "message": "Researcher"
+  },
+  "welcomePresetSkip": {
+    "message": "Skip - configure manually"
+  },
+  "welcomeProfileGroupAria": {
+    "message": "Pick a starting profile"
   },
   "workspaceEyebrow": {
     "message": "설정 작업 공간"
@@ -2833,119 +3121,5 @@
   },
   "workspaceTitle": {
     "message": "컨트롤 및 백업"
-  },
-  "feature_deArrowCasualMode_name": {
-    "message": "캐주얼 모드"
-  },
-  "feature_deArrowCasualMode_desc": {
-    "message": "설명적인 제목은 유지 — 커뮤니티가 제출한 DeArrow 대안만 교체"
-  },
-  "feature_presetFocus_name": {
-    "message": "집중 프리셋"
-  },
-  "feature_presetFocus_desc": {
-    "message": "방해 없는 시청: Shorts, 관련 동영상, 무한 스크롤, 알림, 자동 재생 숨김. 젠 모드와 디지털 웰빙 추적 활성화."
-  },
-  "feature_audioPan_name": {
-    "message": "오디오 팬"
-  },
-  "feature_audioPan_desc": {
-    "message": "오디오 밸런스를 좌우로 조절합니다. 범위: -1(왼쪽)~1(오른쪽), 0이 중앙."
-  },
-  "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
-  },
-  "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
-  },
-  "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
-  },
-  "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
-  },
-  "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
-  },
-  "welcomePresetResearcherTitle": {
-    "message": "Researcher"
-  },
-  "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
-  },
-  "welcomePresetPowerTitle": {
-    "message": "Power User"
-  },
-  "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
-  },
-  "welcomePresetFocusTitle": {
-    "message": "집중"
-  },
-  "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
-  },
-  "welcomePresetSkip": {
-    "message": "Skip - configure manually"
-  },
-  "openDashboard": {
-    "message": "Dashboard"
-  },
-  "externalHealthAria": {
-    "message": "External API health"
-  },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
-  "externalHealthCopyAria": {
-    "message": "Copy external API health report to clipboard"
-  },
-  "externalHealthCopyBtn": {
-    "message": "Copy report"
-  },
-  "externalHealthCopyPending": {
-    "message": "Building report..."
-  },
-  "externalHealthCopyDone": {
-    "message": "Copied."
-  },
-  "externalHealthCopyFail": {
-    "message": "Could not copy."
-  },
-  "externalHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
-  },
-  "externalHealthDetailEmpty": {
-    "message": "No requests observed in this tab yet."
-  },
-  "externalHealthEmpty": {
-    "message": "No external API services tracked yet."
-  },
-  "externalHealthTotalTpl": {
-    "message": "{count} services"
-  },
-  "featurePerfAria": {
-    "message": "Feature performance"
-  },
-  "featurePerfTitle": {
-    "message": "Feature init timing"
-  },
-  "featurePerfEmpty": {
-    "message": "No features initialized yet."
-  },
-  "featurePerfTotalTpl": {
-    "message": "{count} features measured"
-  },
-  "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
-  },
-  "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
-  },
-  "statusWelcomePresetFail": {
-    "message": "Could not apply preset"
-  },
-  "statusOpenDashboardFail": {
-    "message": "Could not open dashboard"
   }
 }

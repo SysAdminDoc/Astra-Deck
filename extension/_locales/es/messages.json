@@ -272,6 +272,51 @@
     "message": "Astra Deck",
     "description": "The extension name displayed in the browser UI."
   },
+  "externalHealthAria": {
+    "message": "External API health"
+  },
+  "externalHealthCopyAria": {
+    "message": "Copy external API health report to clipboard"
+  },
+  "externalHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "externalHealthCopyDone": {
+    "message": "Copied."
+  },
+  "externalHealthCopyFail": {
+    "message": "Could not copy."
+  },
+  "externalHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "externalHealthCopyPending": {
+    "message": "Building report..."
+  },
+  "externalHealthDetailEmpty": {
+    "message": "No requests observed in this tab yet."
+  },
+  "externalHealthEmpty": {
+    "message": "No external API services tracked yet."
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
+  },
+  "externalHealthTotalTpl": {
+    "message": "{count} services"
+  },
+  "featurePerfAria": {
+    "message": "Feature performance"
+  },
+  "featurePerfEmpty": {
+    "message": "No features initialized yet."
+  },
+  "featurePerfTitle": {
+    "message": "Feature init timing"
+  },
+  "featurePerfTotalTpl": {
+    "message": "{count} features measured"
+  },
   "feature_abHide_ask_desc": {
     "message": "Ocultar el botón Preguntar o AI debajo de los videos"
   },
@@ -379,6 +424,12 @@
   },
   "feature_audioNormalization_name": {
     "message": "Normalizacion de audio"
+  },
+  "feature_audioPan_desc": {
+    "message": "Desplazar el balance de audio a la izquierda o derecha. Rango -1 (izquierda) a 1 (derecha), 0 es centro."
+  },
+  "feature_audioPan_name": {
+    "message": "Balance de audio"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "Guarda tu idioma de audio preferido sin abrir la configuración de YouTube automáticamente. YouTube reinicia la reproducción cuando los scripts cambian pistas de audio a través del menú nativo."
@@ -806,6 +857,12 @@
   "feature_daTitleFormat_name": {
     "message": "Formato de título"
   },
+  "feature_deArrowCasualMode_desc": {
+    "message": "Mantener los títulos descriptivos sin cambios — solo reemplazar con alternativas de DeArrow enviadas por la comunidad"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "Modo casual"
+  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "Agrega un pequeño chip de modo DeArrow junto al nombre del canal en la página de visualización. Cicla entre DeArrow → Original → Desactivado → DeArrow por clic. Las anulaciones persisten en deArrowChannelOverrides por ID de canal."
   },
@@ -1064,6 +1121,132 @@
   "feature_grayscaleThumbnails_name": {
     "message": "Miniaturas en escala de grises"
   },
+  "feature_guideHide_footer_desc": {
+    "message": "Hide the Guide footer links"
+  },
+  "feature_guideHide_footer_name": {
+    "message": "Footer"
+  },
+  "feature_guideHide_gaming_desc": {
+    "message": "Hide the Gaming entry"
+  },
+  "feature_guideHide_gaming_name": {
+    "message": "Gaming"
+  },
+  "feature_guideHide_help_desc": {
+    "message": "Hide the Help entry"
+  },
+  "feature_guideHide_help_name": {
+    "message": "Help"
+  },
+  "feature_guideHide_history_desc": {
+    "message": "Hide the History entry"
+  },
+  "feature_guideHide_history_name": {
+    "message": "History"
+  },
+  "feature_guideHide_home_desc": {
+    "message": "Hide the Home entry in the Guide"
+  },
+  "feature_guideHide_home_name": {
+    "message": "Home"
+  },
+  "feature_guideHide_learning_desc": {
+    "message": "Hide the Learning topic entry"
+  },
+  "feature_guideHide_learning_name": {
+    "message": "Learning"
+  },
+  "feature_guideHide_likedVideos_desc": {
+    "message": "Hide the Liked Videos entry"
+  },
+  "feature_guideHide_likedVideos_name": {
+    "message": "Liked Videos"
+  },
+  "feature_guideHide_live_desc": {
+    "message": "Hide the Live topic entry"
+  },
+  "feature_guideHide_live_name": {
+    "message": "Live"
+  },
+  "feature_guideHide_movies_desc": {
+    "message": "Hide the Movies & TV entry"
+  },
+  "feature_guideHide_movies_name": {
+    "message": "Movies & TV"
+  },
+  "feature_guideHide_music_desc": {
+    "message": "Hide the Music topic entry"
+  },
+  "feature_guideHide_music_name": {
+    "message": "Music"
+  },
+  "feature_guideHide_news_desc": {
+    "message": "Hide the News topic entry"
+  },
+  "feature_guideHide_news_name": {
+    "message": "News"
+  },
+  "feature_guideHide_playlists_desc": {
+    "message": "Hide the Playlists entry"
+  },
+  "feature_guideHide_playlists_name": {
+    "message": "Playlists"
+  },
+  "feature_guideHide_premium_desc": {
+    "message": "Hide the YouTube Premium entry"
+  },
+  "feature_guideHide_premium_name": {
+    "message": "YouTube Premium"
+  },
+  "feature_guideHide_reportHistory_desc": {
+    "message": "Hide the Report History entry"
+  },
+  "feature_guideHide_reportHistory_name": {
+    "message": "Report History"
+  },
+  "feature_guideHide_settings_desc": {
+    "message": "Hide the Settings entry"
+  },
+  "feature_guideHide_settings_name": {
+    "message": "Configuración"
+  },
+  "feature_guideHide_sports_desc": {
+    "message": "Hide the Sports topic entry"
+  },
+  "feature_guideHide_sports_name": {
+    "message": "Sports"
+  },
+  "feature_guideHide_studio_desc": {
+    "message": "Hide the YouTube Studio entry"
+  },
+  "feature_guideHide_studio_name": {
+    "message": "YouTube Studio"
+  },
+  "feature_guideHide_subscriptions_desc": {
+    "message": "Hide the Subscriptions entry"
+  },
+  "feature_guideHide_subscriptions_name": {
+    "message": "Subscriptions"
+  },
+  "feature_guideHide_trending_desc": {
+    "message": "Hide the Trending entry"
+  },
+  "feature_guideHide_trending_name": {
+    "message": "Trending"
+  },
+  "feature_guideHide_watchLater_desc": {
+    "message": "Hide the Watch Later entry"
+  },
+  "feature_guideHide_watchLater_name": {
+    "message": "Watch Later"
+  },
+  "feature_guideHide_yourVideos_desc": {
+    "message": "Hide the Your Videos / Studio entry"
+  },
+  "feature_guideHide_yourVideos_name": {
+    "message": "Your Videos"
+  },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "Elige qué botones de acción ocultar debajo de los videos"
   },
@@ -1075,6 +1258,12 @@
   },
   "feature_hiddenChatElementsManager_name": {
     "message": "Ocultar elementos del chat"
+  },
+  "feature_hiddenGuideElementsManager_desc": {
+    "message": "Choose individual left-navigation (Guide) entries to hide"
+  },
+  "feature_hiddenGuideElementsManager_name": {
+    "message": "Hide Guide Elements"
   },
   "feature_hiddenPlayerControlsManager_desc": {
     "message": "Elige qué botones de control del reproductor ocultar"
@@ -1124,11 +1313,23 @@
   "feature_hideCommentActionMenu_name": {
     "message": "Ocultar acciones de comentarios"
   },
+  "feature_hideCommentComposer_desc": {
+    "message": "Remove the \"Add a comment\" text field above comments"
+  },
+  "feature_hideCommentComposer_name": {
+    "message": "Hide Comment Composer"
+  },
   "feature_hideCommentDislikeButton_desc": {
     "message": "Eliminar el botón de no me gusta de las acciones de comentario ya que no aporta retroalimentación útil"
   },
   "feature_hideCommentDislikeButton_name": {
     "message": "Ocultar no me gusta en comentarios"
+  },
+  "feature_hideCommentReplyButton_desc": {
+    "message": "Remove the Reply button on individual comments"
+  },
+  "feature_hideCommentReplyButton_name": {
+    "message": "Hide Comment Reply Button"
   },
   "feature_hideCommentTeaser_desc": {
     "message": "Eliminar el aviso de \"Desplázate para ver comentarios\" en las páginas de visualización"
@@ -1232,6 +1433,12 @@
   "feature_hideNotificationButton_name": {
     "message": "Ocultar campana de notificaciones"
   },
+  "feature_hideOwnAvatar_desc": {
+    "message": "Remove your account avatar button from the header"
+  },
+  "feature_hideOwnAvatar_name": {
+    "message": "Hide Own Avatar"
+  },
   "feature_hidePaidContentOverlay_desc": {
     "message": "Eliminar las superposiciones de \"Incluye promoción pagada\" en miniaturas y páginas de visualización"
   },
@@ -1273,6 +1480,12 @@
   },
   "feature_hideRelatedVideos_name": {
     "message": "Ocultar relacionados"
+  },
+  "feature_hideSearchSidebar_desc": {
+    "message": "Remove the right-hand sidebar on search results pages"
+  },
+  "feature_hideSearchSidebar_name": {
+    "message": "Hide Search Sidebar"
   },
   "feature_hideSidebar_desc": {
     "message": "Eliminar completamente la barra lateral de navegación izquierda"
@@ -1610,6 +1823,12 @@
   "feature_premiumLiveChat_name": {
     "message": "Chat en vivo premium"
   },
+  "feature_presetFocus_desc": {
+    "message": "Visualización sin distracciones: oculta Shorts, videos relacionados, scroll infinito, notificaciones y autoplay. Activa modo Zen y seguimiento de bienestar digital."
+  },
+  "feature_presetFocus_name": {
+    "message": "Preset de enfoque"
+  },
   "feature_presetPowerUser_desc": {
     "message": "Máxima densidad de funciones: estadísticas de reproducción, velocidad persistente, control de velocidad preciso, reanudar reproducción, barra de mini reproductor, modo enfocado, bucle A-B. Desactivar restaura los valores anteriores."
   },
@@ -1723,6 +1942,12 @@
   },
   "feature_removeAllShorts_name": {
     "message": "Ocultar Shorts"
+  },
+  "feature_removeScrubber_desc": {
+    "message": "Remove the round scrubber handle from the video progress bar"
+  },
+  "feature_removeScrubber_name": {
+    "message": "Hide Scrubber Handle"
   },
   "feature_researchSpacedReview_desc": {
     "message": "Exportar datos de modo estudio/trabajo a Markdown o CSV: totales de tiempo de visualización, estado de modo enfocado, estado de bienestar digital y marcadores de tiempo con enlaces profundos."
@@ -1922,6 +2147,12 @@
   "feature_sleepTimer_name": {
     "message": "Timer de sueño"
   },
+  "feature_softBottomGradient_desc": {
+    "message": "Reduce the dark gradient behind the player control bar"
+  },
+  "feature_softBottomGradient_name": {
+    "message": "Soften Bottom Gradient"
+  },
   "feature_sortCommentsNewest_desc": {
     "message": "Cambiar automáticamente el orden de comentarios a \"Más recientes primero\" en cada video"
   },
@@ -2077,6 +2308,12 @@
   },
   "feature_transcriptViewer_name": {
     "message": "Barra lateral de transcripción"
+  },
+  "feature_uiFontSize_desc": {
+    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+  },
+  "feature_uiFontSize_name": {
+    "message": "UI Font Size"
   },
   "feature_uiStyleManager_desc": {
     "message": "Elegir elementos de interfaz redondeados o cuadrados"
@@ -2381,6 +2618,12 @@
   "loadingState": {
     "message": "Cargando"
   },
+  "maintenanceMenu": {
+    "message": "Maintenance"
+  },
+  "openDashboard": {
+    "message": "Dashboard"
+  },
   "openFullSettings": {
     "message": "Abrir configuración completa"
   },
@@ -2402,14 +2645,14 @@
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },
-  "panelSearchHint": {
-    "message": "Search by name, page, category, control type, or description."
-  },
   "panelSearchClearAria": {
     "message": "Limpiar búsqueda de configuración"
   },
   "panelSearchClearTitle": {
     "message": "Limpiar búsqueda"
+  },
+  "panelSearchHint": {
+    "message": "Search by name, page, category, control type, or description."
   },
   "panelSearchPlaceholder": {
     "message": "Search settings, pages, controls..."
@@ -2564,9 +2807,6 @@
   "reenableMediadlBtn": {
     "message": "Activar avisos del descargador"
   },
-  "maintenanceMenu": {
-    "message": "Maintenance"
-  },
   "resetBtn": {
     "message": "Restablecer"
   },
@@ -2614,6 +2854,12 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count} superficies rastreadas"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "Import YouTube Takeout watch history"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "Import History"
   },
   "speedBtnAriaTpl": {
     "message": "Velocidad de reproducción predeterminada …. Haz clic para cambiar."
@@ -2702,6 +2948,9 @@
   "statusMediadlReenabled": {
     "message": "Avisos de instalación de Astra Downloader reactivados — recarga una pestaña de YouTube para verlos."
   },
+  "statusOpenDashboardFail": {
+    "message": "Could not open dashboard"
+  },
   "statusOpenWorkspaceFail": {
     "message": "No se pudo abrir el espacio de trabajo completo. Inténtalo de nuevo."
   },
@@ -2723,9 +2972,6 @@
   "statusResetUndone": {
     "message": "Restablecimiento deshecho — todos los datos restaurados."
   },
-  "statusSettingsImportUndone": {
-    "message": "Import undone. Previous settings and local data restored."
-  },
   "statusSettingsImportFailed": {
     "message": "Import failed while applying data; previous state was restored."
   },
@@ -2735,20 +2981,20 @@
   "statusSettingsImportNoKnown": {
     "message": "No known settings found in file."
   },
-  "statusTakeoutNoEntries": {
-    "message": "No valid YouTube Takeout watch-history entries found."
+  "statusSettingsImportUndone": {
+    "message": "Import undone. Previous settings and local data restored."
+  },
+  "statusStorageReadFail": {
+    "message": "Error al leer el almacenamiento"
   },
   "statusTakeoutImportUndone": {
     "message": "Takeout import undone"
   },
-  "settingsImportHistoryLabel": {
-    "message": "Import History"
+  "statusTakeoutNoEntries": {
+    "message": "No valid YouTube Takeout watch-history entries found."
   },
-  "settingsImportHistoryAriaLabel": {
-    "message": "Import YouTube Takeout watch history"
-  },
-  "statusStorageReadFail": {
-    "message": "Error al leer el almacenamiento"
+  "statusWelcomePresetFail": {
+    "message": "Could not apply preset"
   },
   "storageBannerCorruptionTpl": {
     "message": "Datos de almacenamiento corruptos — Restablecer para recuperar."
@@ -2813,17 +3059,59 @@
   "toggleUpdateFailTpl": {
     "message": "No se pudo actualizar …. Inténtalo de nuevo."
   },
-  "undoResetAria": {
-    "message": "Restaurar datos del restablecimiento más reciente"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
   "undoImportBtn": {
     "message": "Undo Import"
   },
+  "undoResetAria": {
+    "message": "Restaurar datos del restablecimiento más reciente"
+  },
   "undoResetBtn": {
     "message": "Deshacer restablecimiento"
+  },
+  "updateCompanionAria": {
+    "message": "Update Astra Downloader companion"
+  },
+  "updateCompanionBtn": {
+    "message": "Update Astra Downloader"
+  },
+  "welcomePresetBody": {
+    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+  },
+  "welcomePresetFocusDesc": {
+    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+  },
+  "welcomePresetFocusTitle": {
+    "message": "Enfoque"
+  },
+  "welcomePresetGroupAria": {
+    "message": "Pick a usage preset"
+  },
+  "welcomePresetPowerDesc": {
+    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+  },
+  "welcomePresetPowerTitle": {
+    "message": "Power User"
+  },
+  "welcomePresetPrivacyDesc": {
+    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+  },
+  "welcomePresetPrivacyTitle": {
+    "message": "Privacy"
+  },
+  "welcomePresetResearcherDesc": {
+    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+  },
+  "welcomePresetResearcherTitle": {
+    "message": "Researcher"
+  },
+  "welcomePresetSkip": {
+    "message": "Skip - configure manually"
+  },
+  "welcomeProfileGroupAria": {
+    "message": "Pick a starting profile"
   },
   "workspaceEyebrow": {
     "message": "Espacio de configuración"
@@ -2833,119 +3121,5 @@
   },
   "workspaceTitle": {
     "message": "Controles y copias de seguridad"
-  },
-  "feature_deArrowCasualMode_name": {
-    "message": "Modo casual"
-  },
-  "feature_deArrowCasualMode_desc": {
-    "message": "Mantener los títulos descriptivos sin cambios — solo reemplazar con alternativas de DeArrow enviadas por la comunidad"
-  },
-  "feature_presetFocus_name": {
-    "message": "Preset de enfoque"
-  },
-  "feature_presetFocus_desc": {
-    "message": "Visualización sin distracciones: oculta Shorts, videos relacionados, scroll infinito, notificaciones y autoplay. Activa modo Zen y seguimiento de bienestar digital."
-  },
-  "feature_audioPan_name": {
-    "message": "Balance de audio"
-  },
-  "feature_audioPan_desc": {
-    "message": "Desplazar el balance de audio a la izquierda o derecha. Rango -1 (izquierda) a 1 (derecha), 0 es centro."
-  },
-  "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
-  },
-  "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
-  },
-  "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
-  },
-  "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
-  },
-  "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
-  },
-  "welcomePresetResearcherTitle": {
-    "message": "Researcher"
-  },
-  "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
-  },
-  "welcomePresetPowerTitle": {
-    "message": "Power User"
-  },
-  "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
-  },
-  "welcomePresetFocusTitle": {
-    "message": "Enfoque"
-  },
-  "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
-  },
-  "welcomePresetSkip": {
-    "message": "Skip - configure manually"
-  },
-  "openDashboard": {
-    "message": "Dashboard"
-  },
-  "externalHealthAria": {
-    "message": "External API health"
-  },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
-  "externalHealthCopyAria": {
-    "message": "Copy external API health report to clipboard"
-  },
-  "externalHealthCopyBtn": {
-    "message": "Copy report"
-  },
-  "externalHealthCopyPending": {
-    "message": "Building report..."
-  },
-  "externalHealthCopyDone": {
-    "message": "Copied."
-  },
-  "externalHealthCopyFail": {
-    "message": "Could not copy."
-  },
-  "externalHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
-  },
-  "externalHealthDetailEmpty": {
-    "message": "No requests observed in this tab yet."
-  },
-  "externalHealthEmpty": {
-    "message": "No external API services tracked yet."
-  },
-  "externalHealthTotalTpl": {
-    "message": "{count} services"
-  },
-  "featurePerfAria": {
-    "message": "Feature performance"
-  },
-  "featurePerfTitle": {
-    "message": "Feature init timing"
-  },
-  "featurePerfEmpty": {
-    "message": "No features initialized yet."
-  },
-  "featurePerfTotalTpl": {
-    "message": "{count} features measured"
-  },
-  "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
-  },
-  "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
-  },
-  "statusWelcomePresetFail": {
-    "message": "Could not apply preset"
-  },
-  "statusOpenDashboardFail": {
-    "message": "Could not open dashboard"
   }
 }

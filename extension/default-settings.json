@@ -511,5 +511,14 @@
   "notifyAutoDubbedAudio": false,
   "sleepTimer": false,
   "restoreNativeYouTubeUi": false,
-  "cleanUiPreset": false
+  "cleanUiPreset": false,
+  "hiddenGuideElementsManager": false,
+  "hiddenGuideElements": [],
+  "hideOwnAvatar": false,
+  "hideSearchSidebar": false,
+  "removeScrubber": false,
+  "softBottomGradient": false,
+  "hideCommentComposer": false,
+  "hideCommentReplyButton": false,
+  "uiFontSize": 0
 }

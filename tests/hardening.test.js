@@ -5159,10 +5159,13 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Scroll-in-fullscreen added 1 boolean (394 → 395).
     // Watch Later workbench added 1 boolean (395 → 396).
     // Muted/rewind caption triggers + live-edge speed reset added 3 booleans (396 → 399).
+    // v4.49.0 Wave 11 competitor userscript ingestion added the Guide-element manager (bool +
+    // array) plus hideOwnAvatar/hideSearchSidebar/removeScrubber/softBottomGradient/
+    // hideCommentComposer/hideCommentReplyButton and the uiFontSize number (399 → 408).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 399,
-        'SETTINGS_SCHEMA must cover all 399 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 408,
+        'SETTINGS_SCHEMA must cover all 408 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
