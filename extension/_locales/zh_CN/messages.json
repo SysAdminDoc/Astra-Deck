@@ -272,6 +272,51 @@
     "message": "Astra Deck",
     "description": "The extension name displayed in the browser UI."
   },
+  "externalHealthAria": {
+    "message": "External API health"
+  },
+  "externalHealthCopyAria": {
+    "message": "Copy external API health report to clipboard"
+  },
+  "externalHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "externalHealthCopyDone": {
+    "message": "Copied."
+  },
+  "externalHealthCopyFail": {
+    "message": "Could not copy."
+  },
+  "externalHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "externalHealthCopyPending": {
+    "message": "Building report..."
+  },
+  "externalHealthDetailEmpty": {
+    "message": "No requests observed in this tab yet."
+  },
+  "externalHealthEmpty": {
+    "message": "No external API services tracked yet."
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
+  },
+  "externalHealthTotalTpl": {
+    "message": "{count} services"
+  },
+  "featurePerfAria": {
+    "message": "Feature performance"
+  },
+  "featurePerfEmpty": {
+    "message": "No features initialized yet."
+  },
+  "featurePerfTitle": {
+    "message": "Feature init timing"
+  },
+  "featurePerfTotalTpl": {
+    "message": "{count} features measured"
+  },
   "feature_abHide_ask_desc": {
     "message": "隐藏视频下方的提问/AI 按钮"
   },
@@ -379,6 +424,12 @@
   },
   "feature_audioNormalization_name": {
     "message": "音频标准化"
+  },
+  "feature_audioPan_desc": {
+    "message": "向左或向右移动音频平衡。范围：-1（全左）到 1（全右），0 为居中。"
+  },
+  "feature_audioPan_name": {
+    "message": "音频平衡"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "存储首选音频语言，无需自动打开 YouTube 设置。通过原生菜单切换音轨时 YouTube 会重新开始播放。"
@@ -806,6 +857,12 @@
   "feature_daTitleFormat_name": {
     "message": "标题格式"
   },
+  "feature_deArrowCasualMode_desc": {
+    "message": "保留描述性标题不变 — 仅替换为社区提交的 DeArrow 替代标题"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "休闲模式"
+  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "在观看页频道名旁添加小型 DeArrow 模式标签。每次点击可在 DeArrow → 原始 → 关闭 → DeArrow 之间循环切换。覆盖设置按频道 ID 保存在 deArrowChannelOverrides 中。"
   },
@@ -1064,6 +1121,132 @@
   "feature_grayscaleThumbnails_name": {
     "message": "灰度缩略图"
   },
+  "feature_guideHide_footer_desc": {
+    "message": "Hide the Guide footer links"
+  },
+  "feature_guideHide_footer_name": {
+    "message": "Footer"
+  },
+  "feature_guideHide_gaming_desc": {
+    "message": "Hide the Gaming entry"
+  },
+  "feature_guideHide_gaming_name": {
+    "message": "Gaming"
+  },
+  "feature_guideHide_help_desc": {
+    "message": "Hide the Help entry"
+  },
+  "feature_guideHide_help_name": {
+    "message": "Help"
+  },
+  "feature_guideHide_history_desc": {
+    "message": "Hide the History entry"
+  },
+  "feature_guideHide_history_name": {
+    "message": "History"
+  },
+  "feature_guideHide_home_desc": {
+    "message": "Hide the Home entry in the Guide"
+  },
+  "feature_guideHide_home_name": {
+    "message": "Home"
+  },
+  "feature_guideHide_learning_desc": {
+    "message": "Hide the Learning topic entry"
+  },
+  "feature_guideHide_learning_name": {
+    "message": "Learning"
+  },
+  "feature_guideHide_likedVideos_desc": {
+    "message": "Hide the Liked Videos entry"
+  },
+  "feature_guideHide_likedVideos_name": {
+    "message": "Liked Videos"
+  },
+  "feature_guideHide_live_desc": {
+    "message": "Hide the Live topic entry"
+  },
+  "feature_guideHide_live_name": {
+    "message": "Live"
+  },
+  "feature_guideHide_movies_desc": {
+    "message": "Hide the Movies & TV entry"
+  },
+  "feature_guideHide_movies_name": {
+    "message": "Movies & TV"
+  },
+  "feature_guideHide_music_desc": {
+    "message": "Hide the Music topic entry"
+  },
+  "feature_guideHide_music_name": {
+    "message": "Music"
+  },
+  "feature_guideHide_news_desc": {
+    "message": "Hide the News topic entry"
+  },
+  "feature_guideHide_news_name": {
+    "message": "News"
+  },
+  "feature_guideHide_playlists_desc": {
+    "message": "Hide the Playlists entry"
+  },
+  "feature_guideHide_playlists_name": {
+    "message": "Playlists"
+  },
+  "feature_guideHide_premium_desc": {
+    "message": "Hide the YouTube Premium entry"
+  },
+  "feature_guideHide_premium_name": {
+    "message": "YouTube Premium"
+  },
+  "feature_guideHide_reportHistory_desc": {
+    "message": "Hide the Report History entry"
+  },
+  "feature_guideHide_reportHistory_name": {
+    "message": "Report History"
+  },
+  "feature_guideHide_settings_desc": {
+    "message": "Hide the Settings entry"
+  },
+  "feature_guideHide_settings_name": {
+    "message": "Settings"
+  },
+  "feature_guideHide_sports_desc": {
+    "message": "Hide the Sports topic entry"
+  },
+  "feature_guideHide_sports_name": {
+    "message": "Sports"
+  },
+  "feature_guideHide_studio_desc": {
+    "message": "Hide the YouTube Studio entry"
+  },
+  "feature_guideHide_studio_name": {
+    "message": "YouTube Studio"
+  },
+  "feature_guideHide_subscriptions_desc": {
+    "message": "Hide the Subscriptions entry"
+  },
+  "feature_guideHide_subscriptions_name": {
+    "message": "Subscriptions"
+  },
+  "feature_guideHide_trending_desc": {
+    "message": "Hide the Trending entry"
+  },
+  "feature_guideHide_trending_name": {
+    "message": "Trending"
+  },
+  "feature_guideHide_watchLater_desc": {
+    "message": "Hide the Watch Later entry"
+  },
+  "feature_guideHide_watchLater_name": {
+    "message": "Watch Later"
+  },
+  "feature_guideHide_yourVideos_desc": {
+    "message": "Hide the Your Videos / Studio entry"
+  },
+  "feature_guideHide_yourVideos_name": {
+    "message": "Your Videos"
+  },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "选择隐藏视频下方的哪些操作按钮"
   },
@@ -1075,6 +1258,12 @@
   },
   "feature_hiddenChatElementsManager_name": {
     "message": "隐藏聊天元素"
+  },
+  "feature_hiddenGuideElementsManager_desc": {
+    "message": "Choose individual left-navigation (Guide) entries to hide"
+  },
+  "feature_hiddenGuideElementsManager_name": {
+    "message": "Hide Guide Elements"
   },
   "feature_hiddenPlayerControlsManager_desc": {
     "message": "选择隐藏播放器的哪些控制按钮"
@@ -1124,11 +1313,23 @@
   "feature_hideCommentActionMenu_name": {
     "message": "隐藏评论操作"
   },
+  "feature_hideCommentComposer_desc": {
+    "message": "Remove the \"Add a comment\" text field above comments"
+  },
+  "feature_hideCommentComposer_name": {
+    "message": "Hide Comment Composer"
+  },
   "feature_hideCommentDislikeButton_desc": {
     "message": "移除评论操作中的踩按钮，因其不提供有用的反馈"
   },
   "feature_hideCommentDislikeButton_name": {
     "message": "隐藏评论踩按钮"
+  },
+  "feature_hideCommentReplyButton_desc": {
+    "message": "Remove the Reply button on individual comments"
+  },
+  "feature_hideCommentReplyButton_name": {
+    "message": "Hide Comment Reply Button"
   },
   "feature_hideCommentTeaser_desc": {
     "message": "移除观看页上的「滚动查看评论」提示"
@@ -1232,6 +1433,12 @@
   "feature_hideNotificationButton_name": {
     "message": "隐藏通知铃铛"
   },
+  "feature_hideOwnAvatar_desc": {
+    "message": "Remove your account avatar button from the header"
+  },
+  "feature_hideOwnAvatar_name": {
+    "message": "Hide Own Avatar"
+  },
   "feature_hidePaidContentOverlay_desc": {
     "message": "移除缩略图和观看页上的「包含付费推广」覆盖层"
   },
@@ -1273,6 +1480,12 @@
   },
   "feature_hideRelatedVideos_name": {
     "message": "隐藏相关视频"
+  },
+  "feature_hideSearchSidebar_desc": {
+    "message": "Remove the right-hand sidebar on search results pages"
+  },
+  "feature_hideSearchSidebar_name": {
+    "message": "Hide Search Sidebar"
   },
   "feature_hideSidebar_desc": {
     "message": "完全移除左侧导航侧边栏"
@@ -1610,6 +1823,12 @@
   "feature_premiumLiveChat_name": {
     "message": "高级直播聊天"
   },
+  "feature_presetFocus_desc": {
+    "message": "无干扰观看：隐藏 Shorts、相关视频、无限滚动、通知和自动播放。启用禅模式和数字健康追踪。"
+  },
+  "feature_presetFocus_name": {
+    "message": "专注预设"
+  },
   "feature_presetPowerUser_desc": {
     "message": "最大功能密度：播放统计、持久速度、精细速度控制、恢复播放、迷你播放器栏、专注模式、A-B 循环。关闭后恢复之前的值。"
   },
@@ -1723,6 +1942,12 @@
   },
   "feature_removeAllShorts_name": {
     "message": "隐藏 Shorts"
+  },
+  "feature_removeScrubber_desc": {
+    "message": "Remove the round scrubber handle from the video progress bar"
+  },
+  "feature_removeScrubber_name": {
+    "message": "Hide Scrubber Handle"
   },
   "feature_researchSpacedReview_desc": {
     "message": "将学习/工作模式数据导出为 Markdown 或 CSV：观看时间汇总、专注模式状态、数字健康状态以及带深层链接的时间戳书签。"
@@ -1922,6 +2147,12 @@
   "feature_sleepTimer_name": {
     "message": "睡眠定时器"
   },
+  "feature_softBottomGradient_desc": {
+    "message": "Reduce the dark gradient behind the player control bar"
+  },
+  "feature_softBottomGradient_name": {
+    "message": "Soften Bottom Gradient"
+  },
   "feature_sortCommentsNewest_desc": {
     "message": "在每个视频上自动将评论排序切换为「最新在前」"
   },
@@ -2077,6 +2308,12 @@
   },
   "feature_transcriptViewer_name": {
     "message": "字幕侧边栏"
+  },
+  "feature_uiFontSize_desc": {
+    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+  },
+  "feature_uiFontSize_name": {
+    "message": "UI Font Size"
   },
   "feature_uiStyleManager_desc": {
     "message": "选择圆角或方角界面元素"
@@ -2381,6 +2618,12 @@
   "loadingState": {
     "message": "加载中"
   },
+  "maintenanceMenu": {
+    "message": "维护"
+  },
+  "openDashboard": {
+    "message": "Dashboard"
+  },
   "openFullSettings": {
     "message": "打开完整设置"
   },
@@ -2402,14 +2645,14 @@
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },
-  "panelSearchHint": {
-    "message": "Search by name, page, category, control type, or description."
-  },
   "panelSearchClearAria": {
     "message": "清除设置搜索"
   },
   "panelSearchClearTitle": {
     "message": "清除搜索"
+  },
+  "panelSearchHint": {
+    "message": "Search by name, page, category, control type, or description."
   },
   "panelSearchPlaceholder": {
     "message": "Search settings, pages, controls..."
@@ -2564,9 +2807,6 @@
   "reenableMediadlBtn": {
     "message": "启用下载器提示"
   },
-  "maintenanceMenu": {
-    "message": "维护"
-  },
   "resetBtn": {
     "message": "重置"
   },
@@ -2614,6 +2854,12 @@
   },
   "selectorHealthTotalTpl": {
     "message": "已跟踪 {count} 个表面"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "导入 YouTube Takeout 观看历史记录"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "导入历史记录"
   },
   "speedBtnAriaTpl": {
     "message": "默认播放速度 {speed}。点击更改。"
@@ -2702,6 +2948,9 @@
   "statusMediadlReenabled": {
     "message": "Astra Downloader 安装提示已重新启用 — 重新加载 YouTube 标签页即可看到。"
   },
+  "statusOpenDashboardFail": {
+    "message": "Could not open dashboard"
+  },
   "statusOpenWorkspaceFail": {
     "message": "无法打开完整工作区。请重试。"
   },
@@ -2723,9 +2972,6 @@
   "statusResetUndone": {
     "message": "重置已撤销 — 所有数据已恢复。"
   },
-  "statusSettingsImportUndone": {
-    "message": "导入已撤销。已恢复之前的设置和本地数据。"
-  },
   "statusSettingsImportFailed": {
     "message": "导入时应用数据失败，已恢复之前的状态。"
   },
@@ -2735,20 +2981,20 @@
   "statusSettingsImportNoKnown": {
     "message": "文件中未找到已知的设置项。"
   },
-  "statusTakeoutNoEntries": {
-    "message": "未找到有效的 YouTube Takeout 观看记录条目。"
+  "statusSettingsImportUndone": {
+    "message": "导入已撤销。已恢复之前的设置和本地数据。"
+  },
+  "statusStorageReadFail": {
+    "message": "存储读取失败"
   },
   "statusTakeoutImportUndone": {
     "message": "Takeout 导入已撤销"
   },
-  "settingsImportHistoryLabel": {
-    "message": "导入历史记录"
+  "statusTakeoutNoEntries": {
+    "message": "未找到有效的 YouTube Takeout 观看记录条目。"
   },
-  "settingsImportHistoryAriaLabel": {
-    "message": "导入 YouTube Takeout 观看历史记录"
-  },
-  "statusStorageReadFail": {
-    "message": "存储读取失败"
+  "statusWelcomePresetFail": {
+    "message": "Could not apply preset"
   },
   "storageBannerCorruptionTpl": {
     "message": "存储数据损坏 — 重置以恢复。"
@@ -2813,17 +3059,59 @@
   "toggleUpdateFailTpl": {
     "message": "无法更新 {name}。请重试。"
   },
-  "undoResetAria": {
-    "message": "从最近一次重置中恢复数据"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
   "undoImportBtn": {
     "message": "Undo Import"
   },
+  "undoResetAria": {
+    "message": "从最近一次重置中恢复数据"
+  },
   "undoResetBtn": {
     "message": "撤销重置"
+  },
+  "updateCompanionAria": {
+    "message": "Update Astra Downloader companion"
+  },
+  "updateCompanionBtn": {
+    "message": "Update Astra Downloader"
+  },
+  "welcomePresetBody": {
+    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+  },
+  "welcomePresetFocusDesc": {
+    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+  },
+  "welcomePresetFocusTitle": {
+    "message": "Focus"
+  },
+  "welcomePresetGroupAria": {
+    "message": "Pick a usage preset"
+  },
+  "welcomePresetPowerDesc": {
+    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+  },
+  "welcomePresetPowerTitle": {
+    "message": "Power User"
+  },
+  "welcomePresetPrivacyDesc": {
+    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+  },
+  "welcomePresetPrivacyTitle": {
+    "message": "Privacy"
+  },
+  "welcomePresetResearcherDesc": {
+    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+  },
+  "welcomePresetResearcherTitle": {
+    "message": "Researcher"
+  },
+  "welcomePresetSkip": {
+    "message": "Skip - configure manually"
+  },
+  "welcomeProfileGroupAria": {
+    "message": "Pick a starting profile"
   },
   "workspaceEyebrow": {
     "message": "设置工作区"
@@ -2833,119 +3121,5 @@
   },
   "workspaceTitle": {
     "message": "控件与本地数据"
-  },
-  "feature_deArrowCasualMode_name": {
-    "message": "休闲模式"
-  },
-  "feature_deArrowCasualMode_desc": {
-    "message": "保留描述性标题不变 — 仅替换为社区提交的 DeArrow 替代标题"
-  },
-  "feature_presetFocus_name": {
-    "message": "专注预设"
-  },
-  "feature_presetFocus_desc": {
-    "message": "无干扰观看：隐藏 Shorts、相关视频、无限滚动、通知和自动播放。启用禅模式和数字健康追踪。"
-  },
-  "feature_audioPan_name": {
-    "message": "音频平衡"
-  },
-  "feature_audioPan_desc": {
-    "message": "向左或向右移动音频平衡。范围：-1（全左）到 1（全右），0 为居中。"
-  },
-  "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
-  },
-  "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
-  },
-  "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
-  },
-  "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
-  },
-  "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
-  },
-  "welcomePresetResearcherTitle": {
-    "message": "Researcher"
-  },
-  "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
-  },
-  "welcomePresetPowerTitle": {
-    "message": "Power User"
-  },
-  "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
-  },
-  "welcomePresetFocusTitle": {
-    "message": "Focus"
-  },
-  "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
-  },
-  "welcomePresetSkip": {
-    "message": "Skip - configure manually"
-  },
-  "openDashboard": {
-    "message": "Dashboard"
-  },
-  "externalHealthAria": {
-    "message": "External API health"
-  },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
-  "externalHealthCopyAria": {
-    "message": "Copy external API health report to clipboard"
-  },
-  "externalHealthCopyBtn": {
-    "message": "Copy report"
-  },
-  "externalHealthCopyPending": {
-    "message": "Building report..."
-  },
-  "externalHealthCopyDone": {
-    "message": "Copied."
-  },
-  "externalHealthCopyFail": {
-    "message": "Could not copy."
-  },
-  "externalHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
-  },
-  "externalHealthDetailEmpty": {
-    "message": "No requests observed in this tab yet."
-  },
-  "externalHealthEmpty": {
-    "message": "No external API services tracked yet."
-  },
-  "externalHealthTotalTpl": {
-    "message": "{count} services"
-  },
-  "featurePerfAria": {
-    "message": "Feature performance"
-  },
-  "featurePerfTitle": {
-    "message": "Feature init timing"
-  },
-  "featurePerfEmpty": {
-    "message": "No features initialized yet."
-  },
-  "featurePerfTotalTpl": {
-    "message": "{count} features measured"
-  },
-  "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
-  },
-  "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
-  },
-  "statusWelcomePresetFail": {
-    "message": "Could not apply preset"
-  },
-  "statusOpenDashboardFail": {
-    "message": "Could not open dashboard"
   }
 }

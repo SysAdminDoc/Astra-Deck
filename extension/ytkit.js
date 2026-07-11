@@ -816,7 +816,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.48.2';
+    const YTKIT_VERSION = '4.49.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4645,6 +4645,20 @@ return response;
             copyChapterMarkdown: false,
             chapterJumpButtons: false,
 
+            // v4.49.0 — Wave 11: competitor userscript ingestion (all default OFF).
+            // Granular Guide/left-nav item hiding (competitor userscript `lnb*`) as a
+            // multi-select manager mirroring hiddenChatElementsManager, plus a
+            // pack of stable CSS hide toggles and a global UI font-size knob.
+            hiddenGuideElementsManager: false,
+            hiddenGuideElements: [],            // opt-in list; knownValues in settings-schema
+            hideOwnAvatar: false,
+            removeScrubber: false,
+            softBottomGradient: false,
+            hideCommentComposer: false,
+            hideCommentReplyButton: false,
+            hideSearchSidebar: false,
+            uiFontSize: 0,                      // 0 = YouTube default; else 8-20px base font
+
             // v3.17.0 — userscript-inspired additions (all default OFF so existing
             // setups are untouched; users opt in one-by-one from Settings)
             hideAirplayButton: false,
@@ -6315,7 +6329,7 @@ return response;
     // in tests/hardening.test.js.
     const CONFLICT_MAP = {
         hideRelatedVideos: { conflicts: [], note: 'expandVideoWidth depends on this' },
-        hideSidebar: { conflicts: ['hiddenChatElementsManager'], reason: 'Sidebar hidden removes chat access' },
+        hideSidebar: { conflicts: ['hiddenChatElementsManager', 'hiddenGuideElementsManager'], reason: 'Sidebar hidden removes chat access and makes per-Guide-item hiding moot' },
         removeAllShorts: { conflicts: ['redirectShorts'], reason: 'Removed shorts cannot be redirected' },
         persistentSpeed: { conflicts: ['perChannelSpeed'], reason: 'Global speed overrides per-channel speed' },
         perChannelSpeed: { conflicts: ['persistentSpeed'], reason: 'Per-channel speed overrides global speed' },
@@ -6440,6 +6454,96 @@ return response;
         cssFeature('widenSearchBar', 'Widen Search Bar', 'Expand the search bar to use more available space', 'Home / Subscriptions', 'search',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildWidenSearchBarCss && globalThis.YTKitFeatures.homeSubsCss.buildWidenSearchBarCss())
             || `ytd-masthead yt-searchbox { margin-left: -180px; margin-right: -300px; }`),
+
+        // ─── v4.49.0 Wave 11 — competitor userscript ingestion ───
+        // Granular Guide (left-nav) item hiding. Mirrors hiddenChatElementsManager:
+        // a parent toggle + array of opt-in keys, with per-item sub-features
+        // auto-generated inline (invisible to the drift ID extractor, like
+        // chatHide_*). CSS-only via :has() row matching; href-anchored where
+        // stable so it survives locale changes. Conflicts with hideSidebar
+        // (the whole rail is gone) — see CONFLICT_MAP.
+        {
+            id: 'hiddenGuideElementsManager',
+            name: 'Hide Guide Elements',
+            description: 'Choose individual left-navigation (Guide) entries to hide',
+            group: 'Home / Subscriptions',
+            icon: 'sidebar',
+            isParent: true,
+            _styleElement: null,
+            _selectors: {
+                home: 'ytd-guide-entry-renderer:has(> a#endpoint[href="/"]), ytd-mini-guide-entry-renderer:has(> a[href="/"])',
+                subscriptions: 'ytd-guide-entry-renderer:has(a[href="/feed/subscriptions"]), ytd-mini-guide-entry-renderer:has(a[href="/feed/subscriptions"])',
+                history: 'ytd-guide-entry-renderer:has(a[href="/feed/history"])',
+                playlists: 'ytd-guide-entry-renderer:has(a[href="/feed/playlists"])',
+                yourVideos: 'ytd-guide-entry-renderer:has(a[href^="/feed/library"]), ytd-guide-entry-renderer:has(a[href^="https://studio.youtube.com"])',
+                watchLater: 'ytd-guide-entry-renderer:has(a[href^="/playlist?list=WL"])',
+                likedVideos: 'ytd-guide-entry-renderer:has(a[href^="/playlist?list=LL"])',
+                trending: 'ytd-guide-entry-renderer:has(a[href^="/feed/trending"])',
+                music: 'ytd-guide-entry-renderer:has(a[href^="/channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ"])',
+                movies: 'ytd-guide-entry-renderer:has(a[href^="/feed/storefront"]), ytd-guide-entry-renderer:has(a[href^="/movies"])',
+                live: 'ytd-guide-entry-renderer:has(a[href^="/channel/UC4R8DWoMoI7CAwX8_LjQHig"])',
+                gaming: 'ytd-guide-entry-renderer:has(a[href^="/gaming"])',
+                news: 'ytd-guide-entry-renderer:has(a[href^="/channel/UCYfdidRxbB8Qhf0Nx7ioOYw"])',
+                sports: 'ytd-guide-entry-renderer:has(a[href^="/channel/UCEgdi0XIXXZ-qJOFPf4JSKw"])',
+                learning: 'ytd-guide-entry-renderer:has(a[href^="/channel/UCtFRv9O2AHqOZjjynzrv-xg"])',
+                premium: 'ytd-guide-entry-renderer:has(a[href^="/premium"])',
+                studio: 'ytd-guide-entry-renderer:has(a[href^="https://studio.youtube.com"])',
+                settings: 'ytd-guide-entry-renderer:has(a[href^="/account"])',
+                reportHistory: 'ytd-guide-entry-renderer:has(a[href^="/reporthistory"])',
+                help: 'ytd-guide-entry-renderer:has(a[href^="https://support.google.com"])',
+                footer: 'ytd-guide-renderer #footer, tp-yt-app-drawer #footer, ytd-guide-renderer ytd-guide-signin-promo-renderer'
+            },
+            init() {
+                const hidden = appState.settings.hiddenGuideElements || [];
+                const selectors = hidden
+                    .map(key => this._selectors[key])
+                    .filter(Boolean)
+                    .join(', ');
+                if (selectors) {
+                    this._styleElement = injectStyle(selectors, this.id);
+                }
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // Auto-generated Guide sub-features (parent toggles array membership)
+        ...([['home','Home','Hide the Home entry in the Guide'],['subscriptions','Subscriptions','Hide the Subscriptions entry'],['history','History','Hide the History entry'],['playlists','Playlists','Hide the Playlists entry'],['yourVideos','Your Videos','Hide the Your Videos / Studio entry'],['watchLater','Watch Later','Hide the Watch Later entry'],['likedVideos','Liked Videos','Hide the Liked Videos entry'],['trending','Trending','Hide the Trending entry'],['music','Music','Hide the Music topic entry'],['movies','Movies & TV','Hide the Movies & TV entry'],['live','Live','Hide the Live topic entry'],['gaming','Gaming','Hide the Gaming entry'],['news','News','Hide the News topic entry'],['sports','Sports','Hide the Sports topic entry'],['learning','Learning','Hide the Learning topic entry'],['premium','YouTube Premium','Hide the YouTube Premium entry'],['studio','YouTube Studio','Hide the YouTube Studio entry'],['settings','Settings','Hide the Settings entry'],['reportHistory','Report History','Hide the Report History entry'],['help','Help','Hide the Help entry'],['footer','Footer','Hide the Guide footer links']].map(([v,n,d])=>({id:'guideHide_'+v,name:n,description:d,group:'Home / Subscriptions',icon:'sidebar',isSubFeature:true,parentId:'hiddenGuideElementsManager',_arrayKey:'hiddenGuideElements',_arrayValue:v,init(){},destroy(){}}))),
+        cssFeature('hideOwnAvatar', 'Hide Own Avatar', 'Remove your account avatar button from the header', 'Home / Subscriptions', 'user-x',
+            'ytd-masthead #avatar-btn, ytd-masthead #buttons #avatar-btn'),
+        cssFeature('hideSearchSidebar', 'Hide Search Sidebar', 'Remove the right-hand sidebar on search results pages', 'Home / Subscriptions', 'panel-right-close',
+            'ytd-search #secondary'),
+        cssFeature('removeScrubber', 'Hide Scrubber Handle', 'Remove the round scrubber handle from the video progress bar', 'Watch Page', 'circle-off',
+            '.ytp-scrubber-container { display: none !important; }'),
+        cssFeature('softBottomGradient', 'Soften Bottom Gradient', 'Reduce the dark gradient behind the player control bar', 'Watch Page', 'gauge',
+            '.ytp-gradient-bottom { opacity: 0.45 !important; }'),
+        cssFeature('hideCommentComposer', 'Hide Comment Composer', 'Remove the "Add a comment" text field above comments', 'Comments', 'message-square-off',
+            'ytd-comments#comments ytd-comment-simplebox-renderer'),
+        cssFeature('hideCommentReplyButton', 'Hide Comment Reply Button', 'Remove the Reply button on individual comments', 'Comments', 'reply',
+            'ytd-comment-view-model #reply-button-end, ytd-comment-replies-renderer #reply-button-end'),
+        {
+            id: 'uiFontSize',
+            name: 'UI Font Size',
+            description: 'Override the base interface font size (0 = YouTube default, otherwise 8–20px)',
+            group: 'Theme',
+            icon: 'type',
+            _styleElement: null,
+            _apply() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+                const raw = Number(getSetting('uiFontSize', 0));
+                if (!Number.isFinite(raw) || raw <= 0) return;
+                const px = Math.min(20, Math.max(8, Math.round(raw)));
+                this._styleElement = injectStyle(
+                    `html { font-size: ${px}px !important; }`,
+                    this.id,
+                    true
+                );
+            },
+            init() { this._apply(); },
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+        },
         {
             id: 'subscriptionsGrid',
             name: 'Subscriptions Grid',

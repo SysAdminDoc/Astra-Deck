@@ -787,6 +787,17 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "sleepTimer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
     Object.freeze({ key: "cleanUiPreset", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.3" }),
+
+    // ─── v4.49.0 Wave 11 — competitor userscript ingestion ───
+    Object.freeze({ key: "hiddenGuideElementsManager", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "hiddenGuideElements", category: "nav", type: "array", defaultValue: [], knownValues: Object.freeze(["home","subscriptions","history","playlists","yourVideos","watchLater","likedVideos","trending","music","movies","live","gaming","news","sports","learning","premium","studio","settings","reportHistory","help","footer"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "hideOwnAvatar", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "hideSearchSidebar", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "removeScrubber", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "softBottomGradient", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "hideCommentComposer", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "hideCommentReplyButton", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+    Object.freeze({ key: "uiFontSize", category: "shell", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
 ]);
 
 // Build a {key: defaultValue} map for chrome.storage.local seeding +

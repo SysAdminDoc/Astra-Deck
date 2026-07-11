@@ -177,6 +177,11 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     watchPageTabs: 'not-yet-ported',
     wheelSeek: 'not-yet-ported',
     zenMode: 'not-yet-ported',
+    // v4.49.0 Wave 11 — competitor userscript ingestion (object-literal features only; the
+    // cssFeature() toggles carry their id as a positional arg and are invisible
+    // to the id-extractor, so they need no classification here).
+    hiddenGuideElementsManager: 'intentional-extension-only',
+    uiFontSize: 'intentional-extension-only',
 });
 
 for (const [featureId, parityClass] of Object.entries(EXTENSION_ONLY_FEATURE_CLASSIFICATIONS)) {

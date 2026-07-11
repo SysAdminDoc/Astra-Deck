@@ -272,6 +272,51 @@
     "message": "Astra Deck",
     "description": "The extension name displayed in the browser UI."
   },
+  "externalHealthAria": {
+    "message": "External API health"
+  },
+  "externalHealthCopyAria": {
+    "message": "Copy external API health report to clipboard"
+  },
+  "externalHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "externalHealthCopyDone": {
+    "message": "Copied."
+  },
+  "externalHealthCopyFail": {
+    "message": "Could not copy."
+  },
+  "externalHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "externalHealthCopyPending": {
+    "message": "Building report..."
+  },
+  "externalHealthDetailEmpty": {
+    "message": "No requests observed in this tab yet."
+  },
+  "externalHealthEmpty": {
+    "message": "No external API services tracked yet."
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
+  },
+  "externalHealthTotalTpl": {
+    "message": "{count} services"
+  },
+  "featurePerfAria": {
+    "message": "Feature performance"
+  },
+  "featurePerfEmpty": {
+    "message": "No features initialized yet."
+  },
+  "featurePerfTitle": {
+    "message": "Feature init timing"
+  },
+  "featurePerfTotalTpl": {
+    "message": "{count} features measured"
+  },
   "feature_abHide_ask_desc": {
     "message": "إخفاء زر السؤال أو الذكاء الاصطناعي أسفل الفيديوهات"
   },
@@ -379,6 +424,12 @@
   },
   "feature_audioNormalization_name": {
     "message": "تطبيع الصوت"
+  },
+  "feature_audioPan_desc": {
+    "message": "إزاحة توازن الصوت يساراً أو يميناً. النطاق من -1 (يسار بالكامل) إلى 1 (يمين بالكامل)، 0 هو المركز."
+  },
+  "feature_audioPan_name": {
+    "message": "توازن الصوت"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "يحفظ لغة الصوت المفضلة دون فتح إعدادات YouTube تلقائياً. يعيد YouTube تشغيل الفيديو عند تبديل المسارات الصوتية عبر القائمة الأصلية."
@@ -806,6 +857,12 @@
   "feature_daTitleFormat_name": {
     "message": "تنسيق العنوان"
   },
+  "feature_deArrowCasualMode_desc": {
+    "message": "الاحتفاظ بالعناوين الوصفية كما هي — استبدال العناوين فقط ببدائل DeArrow المقترحة من المجتمع"
+  },
+  "feature_deArrowCasualMode_name": {
+    "message": "الوضع العادي"
+  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "يضيف شريحة وضع DeArrow صغيرة بجانب اسم القناة في صفحة المشاهدة. يتنقل بين DeArrow ← الأصلي ← إيقاف ← DeArrow بكل نقرة. تُحفظ التخصيصات حسب معرّف القناة."
   },
@@ -1064,6 +1121,132 @@
   "feature_grayscaleThumbnails_name": {
     "message": "صور مصغرة بتدرج رمادي"
   },
+  "feature_guideHide_footer_desc": {
+    "message": "Hide the Guide footer links"
+  },
+  "feature_guideHide_footer_name": {
+    "message": "Footer"
+  },
+  "feature_guideHide_gaming_desc": {
+    "message": "Hide the Gaming entry"
+  },
+  "feature_guideHide_gaming_name": {
+    "message": "Gaming"
+  },
+  "feature_guideHide_help_desc": {
+    "message": "Hide the Help entry"
+  },
+  "feature_guideHide_help_name": {
+    "message": "Help"
+  },
+  "feature_guideHide_history_desc": {
+    "message": "Hide the History entry"
+  },
+  "feature_guideHide_history_name": {
+    "message": "History"
+  },
+  "feature_guideHide_home_desc": {
+    "message": "Hide the Home entry in the Guide"
+  },
+  "feature_guideHide_home_name": {
+    "message": "Home"
+  },
+  "feature_guideHide_learning_desc": {
+    "message": "Hide the Learning topic entry"
+  },
+  "feature_guideHide_learning_name": {
+    "message": "Learning"
+  },
+  "feature_guideHide_likedVideos_desc": {
+    "message": "Hide the Liked Videos entry"
+  },
+  "feature_guideHide_likedVideos_name": {
+    "message": "Liked Videos"
+  },
+  "feature_guideHide_live_desc": {
+    "message": "Hide the Live topic entry"
+  },
+  "feature_guideHide_live_name": {
+    "message": "Live"
+  },
+  "feature_guideHide_movies_desc": {
+    "message": "Hide the Movies & TV entry"
+  },
+  "feature_guideHide_movies_name": {
+    "message": "Movies & TV"
+  },
+  "feature_guideHide_music_desc": {
+    "message": "Hide the Music topic entry"
+  },
+  "feature_guideHide_music_name": {
+    "message": "Music"
+  },
+  "feature_guideHide_news_desc": {
+    "message": "Hide the News topic entry"
+  },
+  "feature_guideHide_news_name": {
+    "message": "News"
+  },
+  "feature_guideHide_playlists_desc": {
+    "message": "Hide the Playlists entry"
+  },
+  "feature_guideHide_playlists_name": {
+    "message": "Playlists"
+  },
+  "feature_guideHide_premium_desc": {
+    "message": "Hide the YouTube Premium entry"
+  },
+  "feature_guideHide_premium_name": {
+    "message": "YouTube Premium"
+  },
+  "feature_guideHide_reportHistory_desc": {
+    "message": "Hide the Report History entry"
+  },
+  "feature_guideHide_reportHistory_name": {
+    "message": "Report History"
+  },
+  "feature_guideHide_settings_desc": {
+    "message": "Hide the Settings entry"
+  },
+  "feature_guideHide_settings_name": {
+    "message": "Settings"
+  },
+  "feature_guideHide_sports_desc": {
+    "message": "Hide the Sports topic entry"
+  },
+  "feature_guideHide_sports_name": {
+    "message": "Sports"
+  },
+  "feature_guideHide_studio_desc": {
+    "message": "Hide the YouTube Studio entry"
+  },
+  "feature_guideHide_studio_name": {
+    "message": "YouTube Studio"
+  },
+  "feature_guideHide_subscriptions_desc": {
+    "message": "Hide the Subscriptions entry"
+  },
+  "feature_guideHide_subscriptions_name": {
+    "message": "Subscriptions"
+  },
+  "feature_guideHide_trending_desc": {
+    "message": "Hide the Trending entry"
+  },
+  "feature_guideHide_trending_name": {
+    "message": "Trending"
+  },
+  "feature_guideHide_watchLater_desc": {
+    "message": "Hide the Watch Later entry"
+  },
+  "feature_guideHide_watchLater_name": {
+    "message": "Watch Later"
+  },
+  "feature_guideHide_yourVideos_desc": {
+    "message": "Hide the Your Videos / Studio entry"
+  },
+  "feature_guideHide_yourVideos_name": {
+    "message": "Your Videos"
+  },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "اختر أزرار الإجراءات المراد إخفاؤها أسفل الفيديوهات"
   },
@@ -1075,6 +1258,12 @@
   },
   "feature_hiddenChatElementsManager_name": {
     "message": "إخفاء عناصر الدردشة"
+  },
+  "feature_hiddenGuideElementsManager_desc": {
+    "message": "Choose individual left-navigation (Guide) entries to hide"
+  },
+  "feature_hiddenGuideElementsManager_name": {
+    "message": "Hide Guide Elements"
   },
   "feature_hiddenPlayerControlsManager_desc": {
     "message": "اختر أزرار تحكم المشغّل المراد إخفاؤها"
@@ -1124,11 +1313,23 @@
   "feature_hideCommentActionMenu_name": {
     "message": "إخفاء إجراءات التعليقات"
   },
+  "feature_hideCommentComposer_desc": {
+    "message": "Remove the \"Add a comment\" text field above comments"
+  },
+  "feature_hideCommentComposer_name": {
+    "message": "Hide Comment Composer"
+  },
   "feature_hideCommentDislikeButton_desc": {
     "message": "إزالة زر عدم الإعجاب من إجراءات التعليقات لأنه لا يقدم ملاحظات مفيدة"
   },
   "feature_hideCommentDislikeButton_name": {
     "message": "إخفاء عدم الإعجاب بالتعليق"
+  },
+  "feature_hideCommentReplyButton_desc": {
+    "message": "Remove the Reply button on individual comments"
+  },
+  "feature_hideCommentReplyButton_name": {
+    "message": "Hide Comment Reply Button"
   },
   "feature_hideCommentTeaser_desc": {
     "message": "إزالة رسالة \"مرّر لرؤية التعليقات\" من صفحات المشاهدة"
@@ -1232,6 +1433,12 @@
   "feature_hideNotificationButton_name": {
     "message": "إخفاء جرس الإشعارات"
   },
+  "feature_hideOwnAvatar_desc": {
+    "message": "Remove your account avatar button from the header"
+  },
+  "feature_hideOwnAvatar_name": {
+    "message": "Hide Own Avatar"
+  },
   "feature_hidePaidContentOverlay_desc": {
     "message": "إزالة تراكبات \"يتضمن ترويجاً مدفوعاً\" على الصور المصغرة وصفحات المشاهدة"
   },
@@ -1273,6 +1480,12 @@
   },
   "feature_hideRelatedVideos_name": {
     "message": "إخفاء الفيديوهات ذات الصلة"
+  },
+  "feature_hideSearchSidebar_desc": {
+    "message": "Remove the right-hand sidebar on search results pages"
+  },
+  "feature_hideSearchSidebar_name": {
+    "message": "Hide Search Sidebar"
   },
   "feature_hideSidebar_desc": {
     "message": "إزالة الشريط الجانبي للتنقل الأيسر بالكامل"
@@ -1610,6 +1823,12 @@
   "feature_premiumLiveChat_name": {
     "message": "الدردشة المباشرة المتميزة"
   },
+  "feature_presetFocus_desc": {
+    "message": "مشاهدة بدون إلهاء: إخفاء Shorts والفيديوهات ذات الصلة والتمرير اللانهائي والإشعارات والتشغيل التلقائي. تفعيل وضع Zen وتتبع الرفاهية الرقمية."
+  },
+  "feature_presetFocus_name": {
+    "message": "إعداد التركيز"
+  },
   "feature_presetPowerUser_desc": {
     "message": "أقصى كثافة للميزات: إحصائيات التشغيل، سرعة ثابتة، تحكم دقيق بالسرعة، استئناف التشغيل، شريط المشغّل المصغّر، وضع التركيز، تكرار A-B. التعطيل يستعيد القيم السابقة."
   },
@@ -1723,6 +1942,12 @@
   },
   "feature_removeAllShorts_name": {
     "message": "إزالة Shorts"
+  },
+  "feature_removeScrubber_desc": {
+    "message": "Remove the round scrubber handle from the video progress bar"
+  },
+  "feature_removeScrubber_name": {
+    "message": "Hide Scrubber Handle"
   },
   "feature_researchSpacedReview_desc": {
     "message": "تصدير بيانات وضع الدراسة/العمل إلى Markdown أو CSV: إجماليات وقت المشاهدة، حالة وضع التركيز، حالة الصحة الرقمية، وإشارات الطوابع الزمنية مع روابط عميقة."
@@ -1922,6 +2147,12 @@
   "feature_sleepTimer_name": {
     "message": "مؤقت النوم"
   },
+  "feature_softBottomGradient_desc": {
+    "message": "Reduce the dark gradient behind the player control bar"
+  },
+  "feature_softBottomGradient_name": {
+    "message": "Soften Bottom Gradient"
+  },
   "feature_sortCommentsNewest_desc": {
     "message": "تبديل ترتيب التعليقات تلقائياً إلى \"الأحدث أولاً\" في كل فيديو"
   },
@@ -2077,6 +2308,12 @@
   },
   "feature_transcriptViewer_name": {
     "message": "الشريط الجانبي للنص"
+  },
+  "feature_uiFontSize_desc": {
+    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+  },
+  "feature_uiFontSize_name": {
+    "message": "UI Font Size"
   },
   "feature_uiStyleManager_desc": {
     "message": "اختيار عناصر واجهة مستديرة أو مربعة"
@@ -2381,6 +2618,12 @@
   "loadingState": {
     "message": "جارٍ التحميل"
   },
+  "maintenanceMenu": {
+    "message": "صيانة"
+  },
+  "openDashboard": {
+    "message": "Dashboard"
+  },
   "openFullSettings": {
     "message": "فتح الإعدادات الكاملة"
   },
@@ -2402,14 +2645,14 @@
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },
-  "panelSearchHint": {
-    "message": "Search by name, page, category, control type, or description."
-  },
   "panelSearchClearAria": {
     "message": "مسح البحث في الإعدادات"
   },
   "panelSearchClearTitle": {
     "message": "مسح البحث"
+  },
+  "panelSearchHint": {
+    "message": "Search by name, page, category, control type, or description."
   },
   "panelSearchPlaceholder": {
     "message": "Search settings, pages, controls..."
@@ -2564,9 +2807,6 @@
   "reenableMediadlBtn": {
     "message": "تفعيل مطالبات المُنزِّل"
   },
-  "maintenanceMenu": {
-    "message": "صيانة"
-  },
   "resetBtn": {
     "message": "إعادة تعيين"
   },
@@ -2614,6 +2854,12 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count} سطح مُتتبَّع"
+  },
+  "settingsImportHistoryAriaLabel": {
+    "message": "استيراد سجل المشاهدة من YouTube Takeout"
+  },
+  "settingsImportHistoryLabel": {
+    "message": "استيراد السجل"
   },
   "speedBtnAriaTpl": {
     "message": "سرعة التشغيل الافتراضية …. انقر للتغيير."
@@ -2702,6 +2948,9 @@
   "statusMediadlReenabled": {
     "message": "تم إعادة تفعيل مطالبات تثبيت Astra Downloader — أعِد تحميل تبويبة YouTube لرؤيتها."
   },
+  "statusOpenDashboardFail": {
+    "message": "Could not open dashboard"
+  },
   "statusOpenWorkspaceFail": {
     "message": "تعذّر فتح مساحة العمل الكاملة. حاول مرة أخرى."
   },
@@ -2723,9 +2972,6 @@
   "statusResetUndone": {
     "message": "تم التراجع عن إعادة التعيين — تم استعادة جميع البيانات."
   },
-  "statusSettingsImportUndone": {
-    "message": "تم التراجع عن الاستيراد. تمت استعادة الإعدادات والبيانات المحلية السابقة."
-  },
   "statusSettingsImportFailed": {
     "message": "فشل الاستيراد أثناء تطبيق البيانات؛ تمت استعادة الحالة السابقة."
   },
@@ -2735,20 +2981,20 @@
   "statusSettingsImportNoKnown": {
     "message": "لم يتم العثور على إعدادات معروفة في الملف."
   },
-  "statusTakeoutNoEntries": {
-    "message": "لم يتم العثور على إدخالات صالحة في سجل المشاهدة من YouTube Takeout."
+  "statusSettingsImportUndone": {
+    "message": "تم التراجع عن الاستيراد. تمت استعادة الإعدادات والبيانات المحلية السابقة."
+  },
+  "statusStorageReadFail": {
+    "message": "فشل قراءة التخزين"
   },
   "statusTakeoutImportUndone": {
     "message": "تم التراجع عن استيراد Takeout"
   },
-  "settingsImportHistoryLabel": {
-    "message": "استيراد السجل"
+  "statusTakeoutNoEntries": {
+    "message": "لم يتم العثور على إدخالات صالحة في سجل المشاهدة من YouTube Takeout."
   },
-  "settingsImportHistoryAriaLabel": {
-    "message": "استيراد سجل المشاهدة من YouTube Takeout"
-  },
-  "statusStorageReadFail": {
-    "message": "فشل قراءة التخزين"
+  "statusWelcomePresetFail": {
+    "message": "Could not apply preset"
   },
   "storageBannerCorruptionTpl": {
     "message": "بيانات التخزين تالفة — أعِد التعيين للاسترداد."
@@ -2813,17 +3059,59 @@
   "toggleUpdateFailTpl": {
     "message": "تعذّر تحديث …. حاول مرة أخرى."
   },
-  "undoResetAria": {
-    "message": "استعادة البيانات من آخر إعادة تعيين"
-  },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
   },
   "undoImportBtn": {
     "message": "Undo Import"
   },
+  "undoResetAria": {
+    "message": "استعادة البيانات من آخر إعادة تعيين"
+  },
   "undoResetBtn": {
     "message": "تراجع عن إعادة التعيين"
+  },
+  "updateCompanionAria": {
+    "message": "Update Astra Downloader companion"
+  },
+  "updateCompanionBtn": {
+    "message": "Update Astra Downloader"
+  },
+  "welcomePresetBody": {
+    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
+  },
+  "welcomePresetFocusDesc": {
+    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
+  },
+  "welcomePresetFocusTitle": {
+    "message": "Focus"
+  },
+  "welcomePresetGroupAria": {
+    "message": "Pick a usage preset"
+  },
+  "welcomePresetPowerDesc": {
+    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
+  },
+  "welcomePresetPowerTitle": {
+    "message": "Power User"
+  },
+  "welcomePresetPrivacyDesc": {
+    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
+  },
+  "welcomePresetPrivacyTitle": {
+    "message": "Privacy"
+  },
+  "welcomePresetResearcherDesc": {
+    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
+  },
+  "welcomePresetResearcherTitle": {
+    "message": "Researcher"
+  },
+  "welcomePresetSkip": {
+    "message": "Skip - configure manually"
+  },
+  "welcomeProfileGroupAria": {
+    "message": "Pick a starting profile"
   },
   "workspaceEyebrow": {
     "message": "مساحة عمل الإعدادات"
@@ -2833,119 +3121,5 @@
   },
   "workspaceTitle": {
     "message": "عناصر التحكم والنسخ الاحتياطية"
-  },
-  "feature_deArrowCasualMode_name": {
-    "message": "الوضع العادي"
-  },
-  "feature_deArrowCasualMode_desc": {
-    "message": "الاحتفاظ بالعناوين الوصفية كما هي — استبدال العناوين فقط ببدائل DeArrow المقترحة من المجتمع"
-  },
-  "feature_presetFocus_name": {
-    "message": "إعداد التركيز"
-  },
-  "feature_presetFocus_desc": {
-    "message": "مشاهدة بدون إلهاء: إخفاء Shorts والفيديوهات ذات الصلة والتمرير اللانهائي والإشعارات والتشغيل التلقائي. تفعيل وضع Zen وتتبع الرفاهية الرقمية."
-  },
-  "feature_audioPan_name": {
-    "message": "توازن الصوت"
-  },
-  "feature_audioPan_desc": {
-    "message": "إزاحة توازن الصوت يساراً أو يميناً. النطاق من -1 (يسار بالكامل) إلى 1 (يمين بالكامل)، 0 هو المركز."
-  },
-  "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
-  },
-  "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
-  },
-  "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
-  },
-  "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
-  },
-  "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
-  },
-  "welcomePresetResearcherTitle": {
-    "message": "Researcher"
-  },
-  "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
-  },
-  "welcomePresetPowerTitle": {
-    "message": "Power User"
-  },
-  "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
-  },
-  "welcomePresetFocusTitle": {
-    "message": "Focus"
-  },
-  "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
-  },
-  "welcomePresetSkip": {
-    "message": "Skip - configure manually"
-  },
-  "openDashboard": {
-    "message": "Dashboard"
-  },
-  "externalHealthAria": {
-    "message": "External API health"
-  },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
-  "externalHealthCopyAria": {
-    "message": "Copy external API health report to clipboard"
-  },
-  "externalHealthCopyBtn": {
-    "message": "Copy report"
-  },
-  "externalHealthCopyPending": {
-    "message": "Building report..."
-  },
-  "externalHealthCopyDone": {
-    "message": "Copied."
-  },
-  "externalHealthCopyFail": {
-    "message": "Could not copy."
-  },
-  "externalHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
-  },
-  "externalHealthDetailEmpty": {
-    "message": "No requests observed in this tab yet."
-  },
-  "externalHealthEmpty": {
-    "message": "No external API services tracked yet."
-  },
-  "externalHealthTotalTpl": {
-    "message": "{count} services"
-  },
-  "featurePerfAria": {
-    "message": "Feature performance"
-  },
-  "featurePerfTitle": {
-    "message": "Feature init timing"
-  },
-  "featurePerfEmpty": {
-    "message": "No features initialized yet."
-  },
-  "featurePerfTotalTpl": {
-    "message": "{count} features measured"
-  },
-  "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
-  },
-  "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
-  },
-  "statusWelcomePresetFail": {
-    "message": "Could not apply preset"
-  },
-  "statusOpenDashboardFail": {
-    "message": "Could not open dashboard"
   }
 }
