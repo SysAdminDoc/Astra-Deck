@@ -5094,7 +5094,7 @@
             }
         },
 
-        // userscript-inspired FEATURES
+        // USERSCRIPT-INSPIRED FEATURES
         {
             id: 'quickLinkMenu',
             name: 'Logo Quick Links',

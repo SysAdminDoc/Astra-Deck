@@ -37,8 +37,8 @@ Is this feature shipped by any of these competitors? Linking to
 their docs / source is the fastest way for the maintainer to spec
 the behavior:
 SponsorBlock, DeArrow, Return YouTube Dislike, Enhancer for YouTube,
-Improve YouTube, Unhook, BlockTube, PocketTube, UnTrap, YouTube
-competitor userscript, YouTube Tweaks, Tweaks for YouTube, Video Speed Controller,
+Improve YouTube, Unhook, BlockTube, PocketTube, UnTrap,
+YouTube Tweaks, Tweaks for YouTube, Video Speed Controller,
 Iridium for YouTube, Control Panel for YouTube. (Full competitor
 table in `ROADMAP.md` § Phase 1.)
 

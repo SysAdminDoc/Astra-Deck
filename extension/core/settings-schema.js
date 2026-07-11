@@ -788,7 +788,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
     Object.freeze({ key: "cleanUiPreset", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.3" }),
 
-    // ─── v4.49.0 Wave 11 — competitor userscript ingestion ───
+    // ─── v4.49.0 Wave 11 — external-userscript feature ingestion ───
     Object.freeze({ key: "hiddenGuideElementsManager", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
     Object.freeze({ key: "hiddenGuideElements", category: "nav", type: "array", defaultValue: [], knownValues: Object.freeze(["home","subscriptions","history","playlists","yourVideos","watchLater","likedVideos","trending","music","movies","live","gaming","news","sports","learning","premium","studio","settings","reportHistory","help","footer"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.49.0" }),
     Object.freeze({ key: "hideOwnAvatar", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),

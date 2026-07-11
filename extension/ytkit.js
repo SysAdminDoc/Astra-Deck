@@ -4645,8 +4645,8 @@ return response;
             copyChapterMarkdown: false,
             chapterJumpButtons: false,
 
-            // v4.49.0 — Wave 11: competitor userscript ingestion (all default OFF).
-            // Granular Guide/left-nav item hiding (competitor userscript `lnb*`) as a
+            // v4.49.0 — Wave 11: external-userscript feature ingestion (all default OFF).
+            // Granular Guide/left-nav item hiding as a
             // multi-select manager mirroring hiddenChatElementsManager, plus a
             // pack of stable CSS hide toggles and a global UI font-size knob.
             hiddenGuideElementsManager: false,
@@ -4716,7 +4716,7 @@ return response;
                 return s;
             },
             5: (s) => {
-                // v3.17.0 competitor userscript-imported features. All added defaults are
+                // v3.17.0 userscript-imported features. All added defaults are
                 // `false` (or inert values for sub-settings), so the merge
                 // during `load()` already seeds them. This migration is a
                 // no-op marker so `_settingsVersion` advances cleanly and
@@ -6455,7 +6455,7 @@ return response;
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildWidenSearchBarCss && globalThis.YTKitFeatures.homeSubsCss.buildWidenSearchBarCss())
             || `ytd-masthead yt-searchbox { margin-left: -180px; margin-right: -300px; }`),
 
-        // ─── v4.49.0 Wave 11 — competitor userscript ingestion ───
+        // ─── v4.49.0 Wave 11 — external-userscript feature ingestion ───
         // Granular Guide (left-nav) item hiding. Mirrors hiddenChatElementsManager:
         // a parent toggle + array of opt-in keys, with per-item sub-features
         // auto-generated inline (invisible to the drift ID extractor, like
@@ -18903,7 +18903,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
 
 
-        // userscript-inspired FEATURES
+        // USERSCRIPT-INSPIRED FEATURES
         {
             id: 'quickLinkMenu',
             name: 'Quick Links',
@@ -18911,7 +18911,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Home / Subscriptions',
             icon: 'menu',
             // v4.47.0: cap the quick-links list at 10 slots to match
-            // competitor userscript's header-links UX. The cap protects the
+            // a compact header-links UX. The cap protects the
             // launcher's visual budget (10 rows fits cleanly in the
             // dropdown without scrolling on a 720p viewport) and gives
             // the add-form a clear "you're full" state. Excess entries
@@ -19258,7 +19258,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const name = nameInput.value.trim();
                                 const url = urlInput.value.trim();
                                 const isValidUrl = !url || url.startsWith('/') || /^https?:\/\//i.test(url);
-                                // v4.47.0: enforce the 10-slot competitor userscript-parity cap.
+                                // v4.47.0: enforce the 10-slot cap.
                                 // When the user is at the limit, disable the
                                 // Add button and surface a "Limit reached"
                                 // message instead of the standard path-hint
@@ -32559,7 +32559,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
 
         // ═══════════════════════════════════════════════════════════════
-        // ═══ WAVE 10 — userscript-inspired additions (v3.17.0) ════════════
+        // ═══ WAVE 10 — userscript-inspired additions (v3.17.0) ═════════
         // ═══════════════════════════════════════════════════════════════
         // All features in this block default OFF. They were imported from a
         // competitor review where each offered a small but distinct value-add

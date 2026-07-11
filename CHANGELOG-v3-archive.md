@@ -1236,8 +1236,8 @@ nothing to flash.
 
 ## [3.17.0] - userscript-inspired additions (Wave 10)
 
-Eleven new features imported after a feature review of the competitor userscript
-userscript. Every toggle is **OFF by default** so existing setups are
+Eleven new features imported after a competitive userscript feature
+review. Every toggle is **OFF by default** so existing setups are
 unchanged — users opt in from Settings. Grouped under a new "Wave 10"
 block at the end of the features array for easy isolation.
 
@@ -1293,7 +1293,7 @@ block at the end of the features array for easy isolation.
 - Parse-clean (new Function() validates). All 81 existing JS tests pass.
 - Build artifacts regenerated: Chrome ZIP + CRX, Firefox ZIP + XPI all at
   375 KB.
-- Competitor-review source: competitor userscript's audio-track picker, header quick
+- Competitor-review source: the reviewed userscript's audio-track picker, header quick
   links (already covered by Astra Deck's `quickLinkMenu`), tab view
   (covered by `watchPageTabs`), and the colored transcript buttons
   (subsumed into the single `transcriptAiHandoff` selector-driven design).
@@ -2001,7 +2001,7 @@ squareSearchBar (square search bar corners), squareAvatars (square channel avata
 ### Changed
 
 - **Shorts redirect** — Switched from `location.href` to `location.replace()` so redirected Shorts don't create back-button history entries (pattern from popular redirect scripts)
-- **SPA navigation** — Added `yt-page-data-updated` as backup event alongside `yt-navigate-finish`, catching edge cases where navigation finish fires before DOM is ready (pattern from competitor userscript)
+- **SPA navigation** — Added `yt-page-data-updated` as backup event alongside `yt-navigate-finish`, catching edge cases where navigation finish fires before DOM is ready (common userscript pattern)
 - **Return YouTube Dislike formatting** — Replaced manual K/M/B formatter with `Intl.NumberFormat` compact notation for locale-aware dislike counts (e.g. "1,2K" in French, "1.2K" in English)
 - **Return YouTube Dislike button detection** — Replaced single CSS selector with multi-layout fallback chain (6 selectors) that handles YouTube's segmented button, toggle button, and menu container layouts (pattern from official RYD script)
 

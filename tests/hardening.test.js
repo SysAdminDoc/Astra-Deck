@@ -5159,7 +5159,7 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Scroll-in-fullscreen added 1 boolean (394 → 395).
     // Watch Later workbench added 1 boolean (395 → 396).
     // Muted/rewind caption triggers + live-edge speed reset added 3 booleans (396 → 399).
-    // v4.49.0 Wave 11 competitor userscript ingestion added the Guide-element manager (bool +
+    // v4.49.0 Wave 11 userscript ingestion added the Guide-element manager (bool +
     // array) plus hideOwnAvatar/hideSearchSidebar/removeScrubber/softBottomGradient/
     // hideCommentComposer/hideCommentReplyButton and the uiFontSize number (399 → 408).
     // Keep the literal so a future schema addition must bump this
@@ -10757,9 +10757,9 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'bug-report bundle payload must include swLifecycle (shorthand property)');
 });
 
-test('v4.47.0 — Quick Links menu caps at 10 slots (competitor userscript parity)', () => {
+test('v4.47.0 — Quick Links menu caps at 10 slots (10-slot parity)', () => {
     // Backlog P3/S: cap the quick-links list at 10 entries — matches
-    // competitor userscript's header-links UX + keeps the launcher dropdown
+    // a compact header-links UX + keeps the launcher dropdown
     // visually bounded. The cap lives on the feature object as
     // _QL_MAX_ITEMS so the value is testable + co-locates with the
     // documentation comment.
