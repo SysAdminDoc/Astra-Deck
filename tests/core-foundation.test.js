@@ -578,6 +578,16 @@ test('trusted-html.js feature-detects Sanitizer API setHTML when available', () 
         'trusted-html.js must cache the setHTML detection result');
     assert.match(src, /element\.setHTML\(/,
         'setTrustedHTML must call element.setHTML() when available');
+    // Defense-in-depth: the DOMParser fallback (used on engines lacking the
+    // Sanitizer API, i.e. most stable browsers today) must strip event-handler
+    // attributes and javascript:/data:/vbscript: URLs so a future untrusted
+    // caller can't smuggle an XSS sink past the text/html parse.
+    assert.match(src, /_sanitizeParsedTree\(parsed\.body\)/,
+        'parseTrustedHTML must sanitize the DOMParser fragment before insertion');
+    assert.match(src, /removeAttribute\(name\)/,
+        'sanitizer must strip on*/dangerous-URL attributes');
+    assert.match(src, /javascript\|data\|vbscript/,
+        'sanitizer must reject javascript:/data:/vbscript: URLs');
 });
 
 test('api limiter serializes same-bucket work and reports queue state', async () => {
@@ -815,10 +825,24 @@ test('createPredicateSandbox parses and evaluates ctx-bound expressions', () => 
         assert.match(r.error, /nested quantifiers/);
     }
 
+    // Sequential quantified GROUPS drive polynomial O(n^k) backtracking even
+    // though no single group is nested — the nesting-aware scan misses these,
+    // so the global open-ended-quantifier count must reject them. (Measured:
+    // (a+)(a+)(a+)(a+)(a+)b freezes for ~68s on a 200-char all-'a' title.)
+    for (const evil of ['(a+)(a+)(a+)(a+)(a+)b', '(.*)(.*)(.*)(.*)(.*)x', '.*.*.*.*.*']) {
+        const r = sandbox.compile(`ctx.title.match("${evil}")`);
+        assert.equal(r.ok, false, `sequential-quantifier pattern ${evil} must be rejected as ReDoS-risky`);
+    }
+
     // Over-long regex sources are rejected outright.
     const longPattern = 'a'.repeat(201);
     const tooLong = sandbox.compile(`ctx.title.test("${longPattern}")`);
     assert.equal(tooLong.ok, false);
+
+    // Up to four open-ended quantifiers (real-world URL/title filters) still
+    // compile — the guard must not over-reject common patterns.
+    const okQuad = sandbox.compile('ctx.title.match("https?://.*/watch.*v=.*")');
+    assert.equal(okQuad.ok, true);
 
     // Benign patterns (grouping without nested repetition) still compile.
     const ok1 = sandbox.compile('ctx.title.test("(cat|dog) video")');

@@ -54,24 +54,28 @@
             // alone are exponential — no inner quantifier needed.
             const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pattern);
             if (adjacent || groupInner || altGroupQuantified) return true;
-            // Group-free polynomial backtracking: patterns like `.*.*.*.*` or
-            // `a{0,99}a{0,99}...` contain no groups but still backtrack in
-            // O(n^k) where k = number of open-ended quantifiers. Reject when
-            // the count of top-level open-ended quantifiers exceeds a safe
-            // threshold (4 yields ~O(n^4) worst case, tolerable for titles).
-            var topLevelRepetitions = 0;
+            // Polynomial backtracking: patterns like `.*.*.*.*` or
+            // `a{0,99}a{0,99}...` — and crucially sequential *quantified groups*
+            // such as `(a+)(a+)(a+)(a+)(a+)b` or `(.*)(.*)(.*)(.*)x` — backtrack
+            // in O(n^k) where k = number of open-ended quantifiers. The nesting
+            // scan below only catches groups that are *themselves* quantified,
+            // so it misses sibling groups; count open-ended quantifiers across
+            // the ENTIRE pattern (groups are skipped, not treated as a boundary)
+            // and reject when the total exceeds a safe threshold (4 yields
+            // ~O(n^4) worst case, tolerable for the 200-char title cap).
+            var openEndedQuantifiers = 0;
             for (var qi = 0; qi < pattern.length; qi++) {
                 var qc = pattern[qi];
                 if (qc === '\\') { qi++; continue; }
                 if (qc === '[') { while (qi < pattern.length && pattern[qi] !== ']') { if (pattern[qi] === '\\') qi++; qi++; } continue; }
-                if (qc === '(') { break; } // groups are handled by the nesting scan below
-                if (qc === '+' || qc === '*') topLevelRepetitions++;
+                if (qc === '(' || qc === ')') { continue; } // count quantifiers regardless of grouping
+                if (qc === '+' || qc === '*') openEndedQuantifiers++;
                 if (qc === '{') {
                     var brace = pattern.slice(qi).match(/^\{(\d+),(\d*)}/);
-                    if (brace && (brace[2] === '' || Number(brace[2]) > Number(brace[1]))) topLevelRepetitions++;
+                    if (brace && (brace[2] === '' || Number(brace[2]) > Number(brace[1]))) openEndedQuantifiers++;
                 }
             }
-            if (topLevelRepetitions > 4) return true;
+            if (openEndedQuantifiers > 4) return true;
 
             // Nesting-aware scan: reject any group immediately followed by a
             // repetition quantifier (+ * {n,}) when the group's own contents
