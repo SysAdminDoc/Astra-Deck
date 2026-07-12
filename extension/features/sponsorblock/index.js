@@ -462,11 +462,12 @@
                     + 'ytd-popup-container [class*="adblock"]'
                 );
                 if (warning && DiagnosticLog) {
-                    DiagnosticLog.record('sb-anti-adblock', {
-                        detected: true,
-                        selector: warning.tagName.toLowerCase()
-                            + (warning.className ? '.' + warning.className.split(/\s+/)[0] : ''),
-                    });
+                    // record() coerces the message with String(msg); passing an
+                    // object would log the literal "[object Object]" and lose the
+                    // selector detail this diagnostic exists to capture.
+                    const selector = warning.tagName.toLowerCase()
+                        + (warning.className ? '.' + warning.className.split(/\s+/)[0] : '');
+                    DiagnosticLog.record('sb-anti-adblock', `detected: ${selector}`);
                 }
             },
 

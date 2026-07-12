@@ -32,6 +32,7 @@
         let _pillEl = null;
         let _estimateEl = null;
         let _navRule = null;
+        let _renderTimer = null;
 
         function _ensureStyles() {
             if (_styleElement) return;
@@ -181,6 +182,11 @@
             const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
             if (!dislikeButton) return;
             const data = await _fetch(videoId);
+            // The user can navigate during the fetch await. Bail if the active
+            // video changed (or we left the watch page) so we don't append the
+            // previous video's dislike count onto the current video's button —
+            // matches the route-token guards in dearrow/sponsorblock.
+            if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
             _pillEl?.remove();
             _estimateEl?.remove();
             document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
@@ -256,7 +262,13 @@
 
             init() {
                 _ensureStyles();
-                _navRule = () => { setTimeout(() => _render(), 1500); };
+                _navRule = () => {
+                    // Track the pending timer so destroy() can cancel it —
+                    // otherwise a navigation right before disable fires a
+                    // zombie _render() ~1.5s later that re-injects a pill.
+                    clearTimeout(_renderTimer);
+                    _renderTimer = setTimeout(() => { _renderTimer = null; _render(); }, 1500);
+                };
                 addNavigateRule('returnDislike', _navRule);
                 _navRule();
             },
@@ -264,6 +276,8 @@
             destroy() {
                 removeNavigateRule('returnDislike');
                 _navRule = null;
+                clearTimeout(_renderTimer);
+                _renderTimer = null;
                 _pillEl?.remove();
                 _pillEl = null;
                 _estimateEl?.remove();

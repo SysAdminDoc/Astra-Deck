@@ -63,6 +63,27 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   pending-reveals `storage.session.get` had no timeout; every awaiter (reveal
   handlers, the serialized SW-lifecycle chain) is now bounded by a 2s race that
   falls back to the in-memory set.
+- **Return YouTube Dislike left a zombie render timer on teardown.** The
+  navigate rule armed a 1.5s `setTimeout(_render)` that was never cancelled, so
+  disabling the feature right after a navigation re-injected a stray pill ~1.5s
+  later. The timer is now tracked and cleared in `destroy()` (both the peeled
+  module and the monolith copy).
+- **Return YouTube Dislike could show the wrong video's dislike count.**
+  `_render` didn't re-check the active video after the RYD fetch await, so a
+  navigation mid-fetch appended the previous video's count. It now bails if the
+  video changed, matching the DeArrow/SponsorBlock route guards.
+- **CSS lifecycle `apply()` could never inject a style that started at its
+  default.** `init()` skips creating a record when the initial CSS is falsy, and
+  `apply()` bailed with no record — so a color/accent spec left at its default
+  value would never render once the user picked a non-default. `apply()` now
+  injects when `buildCss` first returns truthy CSS.
+- **SponsorBlock anti-adblock diagnostic logged `[object Object]`.**
+  `DiagnosticLog.record` stringifies its message; the anti-adblock detection
+  passed an object, losing the selector detail the diagnostic exists to capture.
+  It now records a formatted string.
+- **Chapter-markdown copy could emit `?t=NaN`.** The timestamp reduce lacked the
+  NaN/undefined guard its sibling function has; `parseInt` is now radix-pinned
+  with `|| 0` fallbacks.
 
 ## [4.49.0] - 2026-07-11
 

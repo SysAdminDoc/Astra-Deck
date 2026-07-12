@@ -32442,7 +32442,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!chapters.length) { showToast('No chapters found', '#ef4444'); return; }
                 const vid = getVideoId();
                 const mk = chapters.map(c => {
-                    const secs = c.time.split(':').reverse().reduce((acc, v, i) => acc + parseInt(v) * [1, 60, 3600][i], 0);
+                    const secs = c.time.split(':').reverse().reduce((acc, v, i) => acc + (parseInt(v, 10) || 0) * ([1, 60, 3600][i] || 0), 0);
                     return `- [${c.time}](https://youtu.be/${vid}?t=${secs}) — ${c.title}`;
                 }).join('\n');
                 navigator.clipboard.writeText(mk).then(
@@ -35214,6 +35214,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _pillEl: null,
             _estimateEl: null,
             _navRule: null,
+            _renderTimer: null,
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -35310,6 +35311,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
                 if (!dislikeButton) return;
                 const data = await this._fetch(videoId);
+                // Bail if the user navigated during the fetch await, so we don't
+                // append the previous video's dislike count onto the current
+                // video's button (matches dearrow/sponsorblock route guards).
+                if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
                 this._pillEl?.remove();
                 this._estimateEl?.remove();
                 document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
@@ -35385,7 +35390,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._ensureStyles();
-                this._navRule = () => { setTimeout(() => this._render(), 1500); };
+                this._navRule = () => {
+                    // Track the pending timer so destroy() can cancel it and a
+                    // navigation right before disable can't fire a zombie
+                    // _render() ~1.5s later that re-injects a pill.
+                    clearTimeout(this._renderTimer);
+                    this._renderTimer = setTimeout(() => { this._renderTimer = null; this._render(); }, 1500);
+                };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
@@ -35393,6 +35404,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
+                clearTimeout(this._renderTimer);
+                this._renderTimer = null;
                 this._pillEl?.remove();
                 this._pillEl = null;
                 this._estimateEl?.remove();
