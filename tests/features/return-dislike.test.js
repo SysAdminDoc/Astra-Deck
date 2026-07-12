@@ -36,3 +36,25 @@ test('Return Dislike renders the est. caveat disclosure', () => {
     assert.match(block, /est\.|estimate/i,
         'returnDislike must surface the estimate caveat');
 });
+
+test('Return Dislike cancels the pending render timer on teardown (both copies)', () => {
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
+    const [monolith] = extractFeatureBlock(sources.ytkit, 'returnDislike');
+    for (const [label, src] of [['module', modSrc], ['monolith', monolith]]) {
+        assert.match(src, /_renderTimer/,
+            `${label} must track the nav-render timer so it can be cancelled`);
+        assert.match(src, /clearTimeout\(\s*(?:this\.)?_renderTimer\s*\)/,
+            `${label} destroy must clearTimeout the pending render so no zombie pill is injected after disable`);
+    }
+});
+
+test('Return Dislike guards against a stale video after the fetch await (both copies)', () => {
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
+    const [monolith] = extractFeatureBlock(sources.ytkit, 'returnDislike');
+    for (const [label, src] of [['module', modSrc], ['monolith', monolith]]) {
+        assert.match(src, /getVideoId\??\.?\(\)\s*!==\s*videoId/,
+            `${label} _render must bail if the active video changed during the fetch await`);
+    }
+});

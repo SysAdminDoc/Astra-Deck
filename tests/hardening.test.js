@@ -9955,6 +9955,28 @@ test('v4.47.0 NF5 wave 3 — cssFeature delegates registered CSS injection to li
             'lifecycle spec must remove the feature style on destroy');
         assert.equal(bodyClasses.has('ytkit-sandbox-feat'), false,
             'lifecycle spec must remove the feature body class on destroy');
+
+        // apply() must inject the style even when init() skipped it because the
+        // initial CSS was falsy (e.g. a default color that yields no override).
+        // Otherwise a spec whose value starts at default could never be applied
+        // once the user picks a non-default value.
+        let dynamicCss = '';
+        const dynamicSpec = stylesModule.createCssLifecycleSpec({
+            id: 'dynamic-feat',
+            category: 'shell',
+            buildCss() { return dynamicCss; },
+        });
+        dynamicSpec.init({});
+        assert.equal(styles.has('yt-suite-style-dynamic-feat'), false,
+            'init must not inject a style when the initial CSS is falsy');
+        dynamicCss = '.dynamic-feat { display: none !important; }';
+        dynamicSpec.apply({});
+        assert.ok(styles.has('yt-suite-style-dynamic-feat'),
+            'apply must inject the style once buildCss returns truthy CSS');
+        dynamicCss = '';
+        dynamicSpec.apply({});
+        assert.equal(styles.has('yt-suite-style-dynamic-feat'), false,
+            'apply must remove the style when buildCss goes falsy again');
     } finally {
         globalThis.YTKitCore = originalCore;
         globalThis.document = originalDocument;

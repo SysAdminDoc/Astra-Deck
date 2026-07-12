@@ -33,6 +33,22 @@ test('SponsorBlock skip path announces via aria-live with a human-friendly categ
         'SponsorBlock announcement must use a human-friendly category label, not the raw category id');
 });
 
+test('SponsorBlock anti-adblock diagnostic records a string, not [object Object]', () => {
+    // DiagnosticLog.record coerces the message via String(msg); passing an
+    // object logs the literal "[object Object]" and loses the selector detail.
+    const fs = require('fs');
+    const path = require('path');
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    const idx = modSrc.indexOf("record('sb-anti-adblock'");
+    assert.ok(idx > -1, 'anti-adblock diagnostic must call record with the sb-anti-adblock context');
+    const region = modSrc.slice(idx, idx + 200);
+    assert.doesNotMatch(region, /record\(\s*'sb-anti-adblock'\s*,\s*\{/,
+        'record must not be passed an object literal (would log [object Object])');
+    assert.match(region, /record\(\s*'sb-anti-adblock'\s*,\s*`/,
+        'record must be passed a formatted string with the selector detail');
+});
+
 test('poi_highlight stays a marker, never a skip target (v3.20.1 Pass 8)', () => {
     // Pin the documented SponsorBlock API contract: poi_highlight is
     // a jump-to reference, never an auto-skip end. Pass 8 closed this

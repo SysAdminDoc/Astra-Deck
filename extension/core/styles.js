@@ -51,9 +51,24 @@
                 lifecycleStyleRecords.set(id, { style, bodyClass: className });
             },
             apply(ctx = {}) {
+                if (typeof buildCss !== 'function') return;
                 const record = lifecycleStyleRecords.get(id);
-                if (!record || typeof buildCss !== 'function') return;
                 const css = buildCss(ctx.settings || {}, ctx);
+                if (!record) {
+                    // init() skips creating a record when the initial CSS is
+                    // falsy (e.g. a default color that yields no override). If
+                    // the user later picks a non-default value, apply() must be
+                    // able to inject it — otherwise the style is never applied.
+                    if (!css) return;
+                    const raw = typeof isRawCss === 'boolean'
+                        ? isRawCss
+                        : String(css).includes('{');
+                    const className = ctx.bodyClass || bodyClass;
+                    const style = injectStyle(css, id, raw);
+                    if (className && document.body) document.body.classList.add(className);
+                    lifecycleStyleRecords.set(id, { style, bodyClass: className });
+                    return;
+                }
                 if (!css) {
                     record.style?.remove();
                     lifecycleStyleRecords.delete(id);
