@@ -32,6 +32,35 @@
         return createTrustedHtmlPolicy().createHTML(value);
     }
 
+    const _URL_ATTRS = ['href', 'src', 'xlink:href', 'action', 'formaction'];
+    const _DANGEROUS_URL = /^\s*(?:javascript|data|vbscript):/i;
+
+    // Defense-in-depth for the DOMParser fallback (used on engines lacking the
+    // Sanitizer API `setHTML`, which is most stable browsers today). Parsing
+    // via text/html already prevents inline <script> from executing on
+    // adoption, but it does NOT neutralize `onerror=`/`onclick=` handlers or
+    // `javascript:` URLs. Today every caller passes static SVG literals, but
+    // this guarantees any future untrusted input can't smuggle an XSS sink.
+    function _sanitizeParsedElement(el) {
+        if (!el || el.nodeType !== 1) return;
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'script') { el.remove(); return; }
+        const attrs = el.attributes ? Array.from(el.attributes) : [];
+        for (const attr of attrs) {
+            const name = attr.name || '';
+            if (/^on/i.test(name)) { el.removeAttribute(name); continue; }
+            if (_URL_ATTRS.includes(name.toLowerCase()) && _DANGEROUS_URL.test(attr.value || '')) {
+                el.removeAttribute(name);
+            }
+        }
+    }
+
+    function _sanitizeParsedTree(root) {
+        if (!root || typeof root.querySelectorAll !== 'function') return;
+        const nodes = Array.from(root.querySelectorAll('*'));
+        for (const node of nodes) _sanitizeParsedElement(node);
+    }
+
     function parseTrustedHTML(value) {
         const trusted = toTrustedHTML(value);
         if (typeof document === 'undefined') return null;
@@ -39,6 +68,7 @@
         if (typeof DOMParser === 'function') {
             const parser = new DOMParser();
             const parsed = parser.parseFromString(trusted, 'text/html');
+            _sanitizeParsedTree(parsed.body);
             const fragment = document.createDocumentFragment();
             fragment.append(...Array.from(parsed.body?.childNodes || []));
             return fragment;
