@@ -6,6 +6,64 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- **Predicate-sandbox ReDoS gap closed.** The regex safety screen for
+  user-authored filter predicates rejected nested catastrophic forms but let
+  *sequential quantified groups* through — `(a+)(a+)(a+)(a+)(a+)b` and
+  `(.*)(.*)(.*)(.*)(.*)x` passed as "safe" yet backtrack in O(n^k), freezing the
+  tab for tens of seconds on an ordinary title. Open-ended quantifiers are now
+  counted across the whole pattern (regardless of grouping) with the same
+  4-quantifier ceiling, so these are rejected at compile time. Patterns with up
+  to four quantifiers (real-world URL/title filters) still compile.
+- **Trusted-HTML DOMParser fallback now sanitizes.** On engines without the
+  Sanitizer API (`Element.setHTML`) — most stable browsers today — the fallback
+  parsed via `text/html` but did not strip `on*` event-handler attributes or
+  `javascript:`/`data:`/`vbscript:` URLs. Every current caller passes static SVG
+  literals, but the sink is now hardened so a future untrusted caller cannot
+  smuggle an XSS payload past the parse.
+- **Companion `/health` no longer leaks diagnostics to unauthenticated callers.**
+  `recentErrors` (which can carry absolute paths, usernames, and exception text)
+  is now gated behind the bearer token; an unauthenticated local caller receives
+  an empty list.
+
+### Fixed
+
+- **Popup could clobber a concurrent sidepanel settings write.** `writeSetting`
+  merged the toggled key onto the in-memory cache; with both surfaces open a
+  stale cache could overwrite the sidepanel's write to a different key. It now
+  re-reads live storage inside the serialized `_pendingWriteChain` (which
+  already prevents the within-popup race), matching the sidepanel.
+- **Companion download queue could exceed its hard cap.** The `MAX_QUEUED_TOTAL`
+  check released the lock during URL/output normalization, so concurrent
+  `/download` requests could all pass and push the queue past 200. The cap is
+  now re-checked under the lock immediately before insertion.
+- **Companion stall watchdog could spawn a duplicate on the live-stream retry.**
+  The watchdog closures resolved the stop-event and process by name; the
+  "live event has ended → retry without cookies" path rebound both, so a
+  lingering original watchdog could poll the retry's process and cross-kill it.
+  Each watchdog is now bound to its own event/process, and the original is
+  joined before the retry starts.
+- **Sidepanel toggle showed a false "save failed" when only the tab broadcast
+  errored.** The setting was persisted, but a failure to notify open YouTube
+  tabs returned `false` and snapped the toggle back. Persistence now determines
+  success; the tab broadcast is best-effort (content scripts still pick up the
+  change via `storage.onChanged`).
+- **Popup search "clear" affordance stayed visible after Escape/clear.** The
+  Escape-to-clear and clear-button paths re-rendered results but never refreshed
+  the clear-button visibility; both now call `updateSearchState()`.
+- **Popup JSON schema editor double-persisted on edit.** `change` and `blur`
+  both fired the writer with no equality guard, issuing two identical storage
+  writes + tab broadcasts + re-renders per edit. An unchanged-value check (like
+  the number editor's) now short-circuits.
+- **`capabilityProbe.probe()` mis-reported async capabilities.** For async
+  probes it returned a raw promise, which is always truthy — `if (probe('mediaDL'))`
+  read `true` unconditionally. It now uniformly resolves a real boolean.
+- **Service-worker reveal hydration could stall on storage pressure.** The
+  pending-reveals `storage.session.get` had no timeout; every awaiter (reveal
+  handlers, the serialized SW-lifecycle chain) is now bounded by a 2s race that
+  falls back to the in-memory set.
+
 ## [4.49.0] - 2026-07-11
 
 - **Wave 11 — external-userscript feature ingestion (all off by default).** A
