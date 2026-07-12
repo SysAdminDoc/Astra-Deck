@@ -1110,7 +1110,19 @@ function registerOptionalHostPermissionListeners() {
 async function writeSetting(key, value) {
     await requestOptionalHostsForSetting(key, value);
     const task = _pendingWriteChain.catch(() => undefined).then(async () => {
-        const nextSettings = { ...popupState.settings, [key]: value };
+        // Read-modify-write against live storage rather than the in-memory
+        // cache. Merging a fresh read avoids clobbering a concurrent write from
+        // the sidepanel (which persists the same ytSuiteSettings object) while
+        // both surfaces are open — the cache can be stale until the onChanged
+        // refresh lands. Mirrors sidepanel.js writeSetting.
+        let current = popupState.settings;
+        try {
+            const data = await storageGet(SETTINGS_STORAGE_KEY);
+            if (data && data[SETTINGS_STORAGE_KEY] && typeof data[SETTINGS_STORAGE_KEY] === 'object') {
+                current = data[SETTINGS_STORAGE_KEY];
+            }
+        } catch { /* reason: fall back to the in-memory cache if the fresh read fails */ }
+        const nextSettings = { ...current, [key]: value };
         await storageSet({ [SETTINGS_STORAGE_KEY]: nextSettings });
         popupState.settings = nextSettings;
         await refreshOptionalHostGrantState({ render: false });
@@ -2862,6 +2874,13 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             }
             errorPill.hidden = true;
             errorPill.textContent = '';
+            // Skip the write when the value is unchanged. `change` and `blur`
+            // both fire persist, so editing then blurring would otherwise issue
+            // two identical writeSetting calls (double storage write + tab
+            // broadcast + re-render flicker). Mirrors the number editor's guard.
+            let unchanged = false;
+            try { unchanged = JSON.stringify(popupState.settings[entry.key]) === JSON.stringify(parsed); } catch { unchanged = false; }
+            if (unchanged) return;
             textarea.disabled = true;
             try {
                 await writeSetting(entry.key, parsed);
@@ -4387,6 +4406,7 @@ function installWheelScrolling() {
         if (event.key === 'Escape' && q.value) {
             event.preventDefault();
             q.value = '';
+            updateSearchState();
             render(popupState.settings, '');
             // The schema overview consults q.value too — clearing the
             // filter must un-filter the overview, not just the toggles.
@@ -4395,6 +4415,7 @@ function installWheelScrolling() {
     });
     clearSearchButton.addEventListener('click', () => {
         q.value = '';
+        updateSearchState();
         render(popupState.settings, '');
         // Keep the schema overview in sync with the cleared filter.
         renderSchemaOverview();

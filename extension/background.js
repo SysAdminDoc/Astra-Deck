@@ -49,7 +49,15 @@ function _addPendingReveal(downloadId) {
 const _pendingRevealsReady = (async () => {
     if (!chrome.storage?.session) return;
     try {
-        const stored = await chrome.storage.session.get(_PENDING_REVEALS_KEY);
+        // Bound the hydration read. Every caller that awaits this promise
+        // (reveal handlers, the serialized SW-lifecycle chain) would stall
+        // indefinitely if storage.session.get never settled under storage
+        // pressure; a timeout lets them proceed with the in-memory Set, which
+        // is the fast path anyway.
+        const stored = await Promise.race([
+            chrome.storage.session.get(_PENDING_REVEALS_KEY),
+            new Promise((resolve) => setTimeout(() => resolve(null), 2000)),
+        ]);
         const ids = stored?.[_PENDING_REVEALS_KEY];
         if (Array.isArray(ids)) {
             // Respect the same cap on hydration that _addPendingReveal enforces

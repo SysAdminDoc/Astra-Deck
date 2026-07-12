@@ -488,6 +488,20 @@ async function writeSetting(key, value) {
         const nextSettings = { ...current, [key]: value };
         await ext.storage.local.set({ [SETTINGS_KEY]: nextSettings });
         _settingsState = nextSettings;
+        // The setting is persisted at this point — report success before the
+        // best-effort tab broadcast so a failure to notify open YouTube tabs
+        // (query/messaging error) never surfaces as a false "save failed" that
+        // snaps the toggle back despite the value being saved. Content scripts
+        // still pick up the change via storage.onChanged.
+        void broadcastSettingChange(key, value);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+async function broadcastSettingChange(key, value) {
+    try {
         const tabs = await ext.tabs.query({ url: ['*://*.youtube.com/*'] });
         for (const tab of tabs) {
             void globalThis.YTKitBrowser.sendTabMessage(
@@ -496,9 +510,8 @@ async function writeSetting(key, value) {
                 { timeoutMs: 1000 }
             );
         }
-        return true;
     } catch (_) {
-        return false;
+        // reason: non-fatal — storage.onChanged is the source of truth for tabs.
     }
 }
 
