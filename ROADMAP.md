@@ -160,3 +160,23 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
   Where: popup Maintenance disclosure, diagnostics module.
   Acceptance: Button clears documented YouTube localStorage/sessionStorage keys (never Astra settings) with toast + Undo snapshot; logs what was cleared.
   Complexity: S
+
+## Audit follow-ups — 2026-07-12 (deep audit; items needing a product decision)
+
+- [ ] P2 — Bound companion playlist downloads
+  Why: `is_playlist_url` adds `--yes-playlist` with no `--playlist-end`/`--max-downloads`, so one accepted `/download` can spawn an unbounded multi-hundred-item job that holds a MAX_CONCURRENT slot and fills the confined output root; the stall watchdog never fires because an active playlist keeps producing output. Rate limiting caps request count, not per-request work.
+  Where: `astra_downloader/astra_downloader.py` (`is_playlist_url` ~2764; invocation ~3266/3317).
+  Decision needed: a sane default cap (e.g. `MaxPlaylistItems`, 0 = unlimited) — capping silently could surprise users who intentionally download full playlists, so it needs a config knob + GUI surface + default choice.
+  Complexity: M
+
+- [ ] P3 — Reconsider `.google.com` breadth in the cookie allowlist
+  Why: `ALLOWED_COOKIE_DOMAINS` includes the `.google.com` wildcard, which is genuinely required for authenticated YouTube downloads (SAPISID/SID live there) but also matches non-YouTube Google cookies. yt-dlp only sends cookies whose domain matches the youtube.com request, so the incremental exfil risk is low — but a tighter scheme (only forward the specific auth cookie names) would shrink the credential surface.
+  Where: `astra_downloader/astra_downloader.py:1991` (`ALLOWED_COOKIE_DOMAINS`).
+  Decision needed: whether to allowlist by cookie NAME rather than domain for the google.com set without breaking authenticated/members-only downloads.
+  Complexity: M
+
+- [ ] P3 — Native-host token handshake assumes a single message
+  Why: `NATIVE_MSG_GET_TOKEN` responds on the first `port.onMessage` and disconnects; a native host that sends a hello/handshake frame before the token reply would consume the single response slot and the real token frame would never be read.
+  Where: `extension/background.js` (~947-961).
+  Decision needed: confirm the native host protocol never sends a pre-token frame; if it can, ignore non-terminal frames until a token/terminal-error arrives or the timeout fires.
+  Complexity: S
