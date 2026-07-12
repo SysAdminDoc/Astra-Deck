@@ -3232,6 +3232,12 @@ class DownloadManager(QObject):
         referer, _ = normalize_url(referer) if referer else (None, None)
 
         with self._lock:
+            # Re-check both caps under the lock. The first check released the
+            # lock for URL/output normalization, so N concurrent requests could
+            # each pass it while the queue sat one slot below the cap and then
+            # all insert — a TOCTOU that lets the dict grow past MAX_QUEUED_TOTAL.
+            if len(self.downloads) >= MAX_QUEUED_TOTAL:
+                return None, "Download queue is full. Wait for some downloads to complete."
             active = sum(1 for d in self.downloads.values()
                          if d.status in DOWNLOAD_ACTIVE_STATES)
             if active >= MAX_CONCURRENT:
@@ -3359,14 +3365,19 @@ class DownloadManager(QObject):
             activity = {'at': time.monotonic()}
             stop_watchdog = threading.Event()
 
-            def _stall_watchdog():
-                while not stop_watchdog.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+            # Bind the stop event and process into the closure via default args.
+            # The retry path (below) rebinds `stop_watchdog` and `proc`; without
+            # this binding a still-running original watchdog would re-read those
+            # names and start polling the retry's event/process, becoming a
+            # duplicate watchdog that can cross-kill or mis-attribute a stall.
+            def _stall_watchdog(ev=stop_watchdog, watched_proc=proc):
+                while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
                     if dl.status == 'cancelled':
                         return
                     if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
                         watchdog_killed['value'] = 'stall'
                         try:
-                            terminate_process_tree(proc)
+                            terminate_process_tree(watched_proc)
                         except Exception:
                             # reason: best-effort kill; process may already be gone
                             pass
@@ -3493,6 +3504,10 @@ class DownloadManager(QObject):
                         self.progress_updated.emit()
                         if stop_watchdog is not None:
                             stop_watchdog.set()
+                        # Join the original watchdog before rebinding so it can't
+                        # linger and poll the retry's process/event.
+                        if watchdog_thread is not None:
+                            watchdog_thread.join(timeout=DOWNLOAD_WATCHDOG_POLL_SECONDS + 1)
                         activity['at'] = time.monotonic()
                         stop_watchdog = threading.Event()
                         proc = subprocess.Popen(
@@ -3505,14 +3520,14 @@ class DownloadManager(QObject):
                         last_lines = []
                         last_error = None
 
-                        def _retry_watchdog():
-                            while not stop_watchdog.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+                        def _retry_watchdog(ev=stop_watchdog, watched_proc=proc):
+                            while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
                                 if dl.status == 'cancelled':
                                     return
                                 if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
                                     watchdog_killed['value'] = 'stall'
                                     try:
-                                        terminate_process_tree(proc)
+                                        terminate_process_tree(watched_proc)
                                     except Exception:
                                         pass
                                     return
@@ -3956,7 +3971,11 @@ def create_api(config, dl_manager, history):
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
             },
-            "recentErrors": get_recent_log_entries(),
+            # Recent log lines can contain absolute paths (usernames), exception
+            # text, and download IDs. /health is otherwise unauthenticated (only
+            # Host-checked), so only expose diagnostics to a caller holding the
+            # bearer token — an unauthenticated local process gets an empty list.
+            "recentErrors": get_recent_log_entries() if check_auth() else [],
         }
         # Legacy token echo is an explicit compatibility path only. Browser
         # extension origins must be configured first; arbitrary installed

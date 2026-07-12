@@ -337,6 +337,29 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertTrue(body["nativeChannelRequired"])
         self.assertNotIn("token", body)
 
+    def test_health_recent_errors_require_auth(self):
+        # Recent log lines can carry absolute paths / exception text, so the
+        # otherwise-unauthenticated /health surface must only expose them to a
+        # caller holding the bearer token.
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+
+        ad.write_persistent_log("secret path C:/Users/tester/leak.txt")
+
+        anon = client.get("/health", headers={"X-MDL-Client": "MediaDL"})
+        self.assertEqual(anon.get_json()["recentErrors"], [])
+
+        authed = client.get("/health", headers={
+            "X-MDL-Client": "MediaDL",
+            "X-Auth-Token": token,
+        })
+        entries = authed.get_json()["recentErrors"]
+        self.assertTrue(entries, "authenticated /health must expose recent log entries")
+        self.assertIn("leak.txt", json.dumps(entries))
+
     def test_health_legacy_token_echo_is_origin_allowlisted(self):
         trusted_origin = "chrome-extension://trustedlegacyid"
         config = FakeConfig({
