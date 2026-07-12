@@ -149,7 +149,12 @@
         ollama:           { async: true,  run: hasOllama },
     });
 
-    function probe(name) {
+    // Always returns Promise<boolean>. Async probes (mediaDL, ollama) resolve
+    // a real boolean rather than handing back a raw fetch promise — a bare
+    // Promise is always truthy, so `if (await probe('mediaDL'))` is required to
+    // read the actual capability. Sync probes are wrapped for a uniform
+    // await-me contract; unknown names resolve false.
+    async function probe(name) {
         const entry = PROBES[name];
         if (!entry) {
             // Unknown capability — be defensive, return false rather
@@ -157,7 +162,13 @@
             // popup on an unknown name.
             return false;
         }
-        return entry.run();
+        try {
+            return Boolean(entry.async ? await entry.run() : entry.run());
+        } catch (_) {
+            // reason: probe should never crash the caller; treat any
+            // error as "capability not available".
+            return false;
+        }
     }
 
     async function runAll() {

@@ -670,13 +670,18 @@ test('popup.js serializes toggle writes to avoid read-merge-write race', () => {
         /_pendingWriteChain/,
         'popup.js must serialize writeSetting() via a pending-write chain'
     );
-    // The merge must be against the in-memory popupState.settings, not a
-    // fresh storageGet() round-trip (which was the race source).
+    // The write must merge inside the serialized _pendingWriteChain. The chain
+    // is what prevents the within-popup race (each chained task runs only after
+    // the prior write resolves), so the merge reads fresh storage there rather
+    // than the in-memory cache — that also stops the popup from clobbering a
+    // concurrent sidepanel write to the same ytSuiteSettings object when both
+    // surfaces are open.
     const fnStart = popupSource.indexOf('async function writeSetting');
     assert.ok(fnStart > -1, 'writeSetting must exist');
-    const fnBody = popupSource.slice(fnStart, fnStart + 1200);
-    assert.match(fnBody, /\.\.\.\s*popupState\.settings/, 'writeSetting must merge from popupState.settings');
-    assert.doesNotMatch(fnBody, /await\s+storageGet\s*\(/, 'writeSetting must not re-read storage per call');
+    const fnBody = popupSource.slice(fnStart, fnStart + 1400);
+    assert.match(fnBody, /_pendingWriteChain\.catch[\s\S]*await\s+storageGet\s*\(/,
+        'writeSetting must re-read storage inside the serialized pending-write chain');
+    assert.match(fnBody, /\.\.\.\s*current/, 'writeSetting must merge the new key onto the fresh read');
 });
 
 test('popup.js requests declared optional hosts before enabling optional features', () => {
