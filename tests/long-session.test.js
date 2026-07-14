@@ -19,6 +19,9 @@ function createLongSessionHarness() {
     const rafQueue = [];
     const timers = new Map();
     let nextTimerId = 1;
+    let viewTransitions = 0;
+    let viewTransitionThrows = false;
+    let reducedMotion = false;
 
     function addListener(map, type, callback) {
         if (!map.has(type)) map.set(type, new Set());
@@ -46,6 +49,12 @@ function createLongSessionHarness() {
         dispatchEvent(event) {
             dispatch(documentListeners, event.type);
             return true;
+        },
+        startViewTransition(callback) {
+            viewTransitions += 1;
+            if (viewTransitionThrows) throw new Error('transition already active');
+            callback();
+            return { finished: Promise.resolve() };
         }
     };
 
@@ -93,6 +102,9 @@ function createLongSessionHarness() {
         },
         clearTimeout(id) {
             timers.delete(id);
+        },
+        matchMedia(query) {
+            return { matches: query === '(prefers-reduced-motion: reduce)' && reducedMotion };
         },
         addEventListener(type, callback) { addListener(windowListeners, type, callback); },
         removeEventListener(type, callback) { removeListener(windowListeners, type, callback); },
@@ -146,7 +158,11 @@ function createLongSessionHarness() {
         flushTimers,
         activeObservers,
         sharedMutationObserver,
-        listenerCount
+        listenerCount,
+        location: context.location,
+        viewTransitionCount: () => viewTransitions,
+        setViewTransitionThrows(value) { viewTransitionThrows = !!value; },
+        setReducedMotion(value) { reducedMotion = !!value; }
     };
 }
 
@@ -161,6 +177,41 @@ function addedNode(matchesCard) {
         }
     };
 }
+
+test('navigation transitions only run for URL changes and respect reduced motion', () => {
+    const harness = createLongSessionHarness();
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+    let navRuns = 0;
+    core.addNavigateRule('transition-policy', () => { navRuns += 1; });
+
+    harness.document.dispatchEvent({ type: 'yt-page-data-updated' });
+    harness.flushTimers();
+    assert.equal(navRuns, 2, 'same-URL page updates must still run functional navigation rules');
+    assert.equal(harness.viewTransitionCount(), 0,
+        'same-URL feed updates must not snapshot and cross-fade the document');
+
+    harness.location.href = 'https://www.youtube.com/watch?v=bbbbbbbbbbb';
+    harness.document.dispatchEvent({ type: 'yt-navigate-finish' });
+    harness.flushTimers();
+    assert.equal(navRuns, 3);
+    assert.equal(harness.viewTransitionCount(), 1, 'real URL changes may use the cosmetic transition');
+
+    harness.setReducedMotion(true);
+    harness.location.href = 'https://www.youtube.com/watch?v=ccccccccccc';
+    harness.document.dispatchEvent({ type: 'yt-navigate-finish' });
+    harness.flushTimers();
+    assert.equal(navRuns, 4, 'reduced motion must not suppress navigation behavior');
+    assert.equal(harness.viewTransitionCount(), 1, 'reduced motion must suppress the transition');
+
+    harness.setReducedMotion(false);
+    harness.setViewTransitionThrows(true);
+    harness.location.href = 'https://www.youtube.com/watch?v=ddddddddddd';
+    harness.document.dispatchEvent({ type: 'yt-navigate-finish' });
+    harness.flushTimers();
+    assert.equal(navRuns, 5, 'a rejected cosmetic transition must fall back to navigation rules');
+    assert.equal(harness.viewTransitionCount(), 2, 'the rejected transition should be attempted once');
+});
 
 test('long-session route/mutation stress keeps observers and diagnostics bounded', () => {
     const harness = createLongSessionHarness();

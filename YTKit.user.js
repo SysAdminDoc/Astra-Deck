@@ -4460,7 +4460,12 @@
         }
 
         function buildNoFrostedGlassCss() {
-            return '* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }';
+            return 'ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, '
+                + 'ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, '
+                + 'tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, '
+                + '.ytp-chrome-bottom, .ytp-gradient-bottom, .ytp-gradient-top, '
+                + '.yt-spec-button-shape-next--enable-backdrop-filter-experiment '
+                + '{ backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }';
         }
 
         function buildHideLatestPostsCss() {
@@ -32004,7 +32009,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             `ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }`),
 
         cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Appearance', 'droplet',
-            `* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
+            `ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, .ytp-chrome-bottom, .ytp-gradient-bottom, .ytp-gradient-top, .yt-spec-button-shape-next--enable-backdrop-filter-experiment { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
 
         cssFeature('hideLatestPosts', 'Hide Latest Posts', 'Hide community posts and updates sections from feeds', 'Content', 'file-x',
             `ytd-rich-section-renderer:has(ytd-post-renderer), ytd-rich-section-renderer:has(ytd-backstage-post-thread-renderer), ytd-post-renderer, ytd-backstage-post-thread-renderer, ytd-reel-shelf-renderer:has(ytd-backstage-post-thread-renderer) { display: none !important; }`),

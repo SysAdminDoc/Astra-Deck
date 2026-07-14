@@ -27890,7 +27890,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Appearance', 'droplet',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildNoFrostedGlassCss && globalThis.YTKitFeatures.wave8Css.buildNoFrostedGlassCss())
-            || `* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
+            || `ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, .ytp-chrome-bottom, .ytp-gradient-bottom, .ytp-gradient-top, .yt-spec-button-shape-next--enable-backdrop-filter-experiment { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
 
         cssFeature('hideLatestPosts', 'Hide Latest Posts', 'Hide community posts and updates sections from feeds', 'Content', 'file-x',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildHideLatestPostsCss && globalThis.YTKitFeatures.wave8Css.buildHideLatestPostsCss())
