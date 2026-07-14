@@ -2256,6 +2256,33 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         self.assertEqual(result['minVersion'], '2.3.0')
         self.assertIn('2.3.0', result['advice'])
 
+    def test_probe_deno_runtime_fails_closed_when_version_cannot_be_verified(self):
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        original_run_captured = ad._run_captured
+        ad.shutil.which = lambda binary: '/usr/local/bin/deno' if binary == 'deno' else None
+        ad.get_ytdlp_version = lambda force=False: '2026.06.09'
+        ad._run_captured = lambda args, timeout=5: ''
+        try:
+            result = ad.probe_deno_runtime(force=True)
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+            ad._run_captured = original_run_captured
+        self.assertTrue(result['installed'])
+        self.assertIsNone(result['version'])
+        self.assertFalse(result['supported'])
+        self.assertTrue(result['stale'])
+        self.assertIn('did not report a valid version', result['advice'])
+
+    def test_deno_version_support_rejects_missing_and_unparseable_values(self):
+        for version in (None, '', 'unknown', 'deno canary', '2.3'):
+            with self.subTest(version=version):
+                self.assertFalse(ad._is_deno_version_supported(version))
+        self.assertFalse(ad._is_deno_version_supported('2.2.9'))
+        self.assertTrue(ad._is_deno_version_supported('2.3.0'))
+        self.assertTrue(ad._is_deno_version_supported('3.0.0'))
+
     def test_probe_deno_runtime_surfaces_advice_when_needed_and_missing(self):
         original_which = ad.shutil.which
         original_get_version = ad.get_ytdlp_version

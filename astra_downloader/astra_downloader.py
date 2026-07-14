@@ -967,12 +967,12 @@ def _parse_deno_version(output):
 
 
 def _is_deno_version_supported(version):
-    if not version:
-        return True
+    if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version.strip()):
+        return False
     try:
         return _compare_semver(version, DENO_MIN_VERSION) >= 0
     except Exception:
-        return True
+        return False
 
 
 def _probe_deno_binary_version(deno_path):
@@ -1111,8 +1111,12 @@ def probe_deno_runtime(force=False):
         version = None
         if installed:
             version = _probe_deno_binary_version(deno_path)
-        stale = bool(installed and version and not _is_deno_version_supported(version))
-        supported = bool(installed and not stale)
+        supported = bool(installed and _is_deno_version_supported(version))
+        # `stale` is the established wire-contract flag for every installed
+        # but unusable runtime. It includes binaries that fail `--version` or
+        # return an unparsable response; treating those as supported would let
+        # downloads proceed into yt-dlp's much less actionable format error.
+        stale = bool(installed and not supported)
         advice = ''
         if needs_runtime and not installed:
             advice = (
@@ -1121,12 +1125,20 @@ def probe_deno_runtime(force=False):
                 'manually: winget install DenoLand.Deno.'
             )
         elif needs_runtime and stale:
-            advice = (
-                f"Deno {version} is below the required {DENO_MIN_VERSION} "
-                'runtime floor for this yt-dlp build. Click Provision Deno '
-                'to install the bundled runtime, or update manually: winget '
-                'upgrade DenoLand.Deno.'
-            )
+            if version:
+                advice = (
+                    f"Deno {version} is below the required {DENO_MIN_VERSION} "
+                    'runtime floor for this yt-dlp build. Click Provision Deno '
+                    'to install the bundled runtime, or update manually: winget '
+                    'upgrade DenoLand.Deno.'
+                )
+            else:
+                advice = (
+                    'Deno is installed but did not report a valid version, so '
+                    'Astra Downloader cannot verify that it can run yt-dlp. '
+                    'Click Provision Deno to replace the runtime, or reinstall '
+                    'manually: winget install --force DenoLand.Deno.'
+                )
         result = {
             'installed': installed,
             'version': version,
