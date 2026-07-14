@@ -45,6 +45,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Toolbar popup smoke now handles Chromium's headless action gap.** When a
+  headless browser omits `chrome.action.openPopup`, the smoke retries the same
+  staged extension once in headed mode and still requires real toolbar
+  activation; it never bypasses the action with direct popup navigation.
 - **ffmpeg maintenance no longer deletes the working binary before refresh.**
   The companion downloads, verifies, and extracts a replacement beside the
   current executable, atomically swaps it only after validation, preserves the
