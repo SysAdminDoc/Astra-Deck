@@ -8938,6 +8938,16 @@ test('v4.46.0 downloader validation is local-only and pytest configuration is ex
     const requirements = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'requirements.txt'), 'utf8');
     assert.match(requirements, /^PyQt6>=6\.6\.0,<7$/m,
         'local downloader tests must keep the PyQt runtime dependency bounded');
+    const constraints = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'constraints-release.txt'), 'utf8');
+    assert.match(constraints, /^PyQt6==6\.11\.0$/m,
+        'release builds must resolve PyQt from the reviewed exact graph');
+    assert.match(constraints, /^pyinstaller==6\.21\.0$/m,
+        'release builds must pin PyInstaller instead of using an ambient version');
+    const buildSource = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'build.py'), 'utf8');
+    assert.match(buildSource, /verify_release_environment\(\)/,
+        'the release builder must fail before packaging when the active graph drifts');
+    assert.match(buildSource, /SUPPORTED_RELEASE_PYTHONS\s*=\s*\{\(3, 11\), \(3, 12\)\}/,
+        'the release builder must stay bounded to the reviewed Python 3.11/3.12 matrix');
 });
 
 test('v4.46.0 dependency auditing is enforced by local scripts', () => {
