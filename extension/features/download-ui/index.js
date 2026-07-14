@@ -812,6 +812,30 @@
                 tone: '#f59e0b',
                 duration: 15,
             },
+            'js-runtime-missing': {
+                message: 'A JavaScript runtime is required for this yt-dlp build.',
+                advice: 'Provision Deno, or install Node 22+ and select it in Astra Downloader settings.',
+                tone: '#f59e0b',
+                duration: 15,
+            },
+            'js-runtime-unverified': {
+                message: 'The selected JavaScript runtime could not be verified.',
+                advice: 'Repair or replace the runtime in Astra Downloader, then retry.',
+                tone: '#f59e0b',
+                duration: 15,
+            },
+            'js-runtime-unsupported': {
+                message: 'The selected JavaScript runtime needs an update.',
+                advice: 'Upgrade to Deno 2.3+ or Node 22+, then retry.',
+                tone: '#f59e0b',
+                duration: 15,
+            },
+            'ejs-runtime-not-ready': {
+                message: 'The JavaScript runtime failed yt-dlp readiness checks.',
+                advice: 'Repair or replace the selected runtime in Astra Downloader, then retry.',
+                tone: '#f59e0b',
+                duration: 15,
+            },
             'sign-in-required': {
                 message: 'YouTube needs signed-in browser access for this video.',
                 advice: 'Sign in to YouTube, allow the cookie bridge, then retry.',
@@ -1412,40 +1436,45 @@
                     }
                     this._container.appendChild(sabrPill);
                 }
-                const deno = data.denoRuntime;
+                const deno = data.javascriptRuntime || data.denoRuntime;
                 if (deno && deno.ytdlpNeedsRuntime) {
-                    const supported = deno.installed && deno.supported !== false;
+                    const supported = deno.supported === true && deno.ejsReady === true;
+                    const runtimeName = deno.runtime
+                        ? deno.runtime.charAt(0).toUpperCase() + deno.runtime.slice(1)
+                        : 'JavaScript';
                     const tone = supported ? 'ok' : 'warn';
                     const label = !deno.installed
                         ? 'missing'
-                        : deno.supported === false
-                            ? `stale ${deno.version ? `v${deno.version}` : ''}`.trim()
-                            : (deno.version ? `v${deno.version}` : 'installed');
+                        : !supported
+                            ? `${deno.version ? `v${deno.version}` : 'unverified'} · repair`
+                            : (deno.version ? `v${deno.version}` : 'ready');
                     const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
-                    const pill = this._renderPill('Deno', label + suffix, tone);
+                    const pill = this._renderPill(runtimeName, label + suffix, tone);
                     if (!supported) {
-                        pill.title = deno.advice || 'Click to auto-provision Deno';
-                        pill.style.cursor = 'pointer';
-                        pill.addEventListener('click', async () => {
-                            pill.textContent = 'Provisioning...';
-                            try {
-                                const { data: resp } = await extensionFetchJson({
-                                    method: 'POST',
-                                    url: `http://127.0.0.1:${data.port}/provision-deno`,
-                                    headers: { 'X-MDL-Token': data.token }
-                                });
-                                if (resp?.ok) {
-                                    showToast('Deno provisioned successfully', '#22c55e');
-                                    this._render();
-                                } else {
-                                    showToast(resp?.error || 'Deno provision failed', '#ef4444');
+                        pill.title = deno.advice || `Repair the configured ${runtimeName} runtime`;
+                        if (deno.canProvisionDeno) {
+                            pill.style.cursor = 'pointer';
+                            pill.addEventListener('click', async () => {
+                                pill.textContent = 'Provisioning...';
+                                try {
+                                    const { data: resp } = await extensionFetchJson({
+                                        method: 'POST',
+                                        url: `http://127.0.0.1:${data.port}/provision-deno`,
+                                        headers: { 'X-MDL-Token': data.token }
+                                    });
+                                    if (resp?.ok) {
+                                        showToast('Deno provisioned successfully', '#22c55e');
+                                        this._render();
+                                    } else {
+                                        showToast(resp?.error || 'Deno provision failed', '#ef4444');
+                                        pill.textContent = 'Deno: failed';
+                                    }
+                                } catch (e) {
+                                    showToast('Deno provision failed: ' + e.message, '#ef4444');
                                     pill.textContent = 'Deno: failed';
                                 }
-                            } catch (e) {
-                                showToast('Deno provision failed: ' + e.message, '#ef4444');
-                                pill.textContent = 'Deno: failed';
-                            }
-                        }, { once: true });
+                            }, { once: true });
+                        }
                     } else if (deno.path) {
                         pill.title = deno.path;
                     }

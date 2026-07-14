@@ -201,7 +201,11 @@ Astra Downloader's `/health` endpoint will surface `poTokenProvider: { ok, port,
 
 ### External JavaScript runtime (yt-dlp 2026+)
 
-yt-dlp `>= 2026.04` ships an external n/sig solver for YouTube and requires an external JavaScript runtime on the system PATH (Deno is the documented option). Without it, recent yt-dlp builds return empty format lists on a growing share of YouTube videos.
+yt-dlp `>= 2026.04` uses external EJS challenge solvers for YouTube. Astra
+Downloader defaults to Deno `>=2.3` and can fall back to Node `>=22`; choose
+Auto, Deno, or Node in companion Settings. Runtime presence alone is not
+enough: the companion verifies the version and executes a bounded JavaScript
+capability probe before allowing a runtime-required download.
 
 Install Deno once:
 
@@ -213,9 +217,10 @@ winget install DenoLand.Deno
 curl -fsSL https://deno.land/install.sh | sh
 ```
 
-(Or grab the installer from `https://deno.com/`.)
+(Or grab the installer from `https://deno.com/`. To use Node instead, install
+Node 22 or newer and select **Node 22+** in companion Settings.)
 
-Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
+Astra Downloader's `/health` endpoint surfaces `javascriptRuntime: { runtime, version, supported, ejsReady, reason }` while retaining `denoRuntime` as a compatibility alias. The download health panel names the selected runtime and offers one-click Deno provisioning only when Deno is an eligible choice. Unknown versions, probe failures, and unsupported runtimes stop with actionable errors; older pre-runtime yt-dlp builds remain allowed.
 
 The repo pins `yt-dlp==2026.7.4` and `curl_cffi==0.15.0` in
 `astra_downloader/requirements.txt` for local validation. Run the bounded media

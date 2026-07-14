@@ -23,11 +23,15 @@ BGUTIL_POT_MIN_VERSION = _ad.BGUTIL_POT_MIN_VERSION
 
 # Deno runtime
 probe_deno_runtime = _ad.probe_deno_runtime
+probe_javascript_runtime = _ad.probe_javascript_runtime
+build_javascript_runtime_args = _ad.build_javascript_runtime_args
 reset_deno_runtime_cache = _ad.reset_deno_runtime_cache
 provision_deno = _ad.provision_deno
 _parse_ytdlp_release_date = _ad._parse_ytdlp_release_date
 ytdlp_needs_external_runtime = _ad.ytdlp_needs_external_runtime
 YTDLP_EXTERNAL_RUNTIME_CUTOFF = _ad.YTDLP_EXTERNAL_RUNTIME_CUTOFF
+DENO_MIN_VERSION = _ad.DENO_MIN_VERSION
+NODE_MIN_VERSION = _ad.NODE_MIN_VERSION
 
 # ffmpeg capabilities
 parse_ffmpeg_major = _ad.parse_ffmpeg_major

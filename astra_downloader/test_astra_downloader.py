@@ -82,10 +82,14 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(cfg["ConcurrentFragments"], 32)
         self.assertEqual(cfg["RateLimit"], "2M")
         self.assertEqual(cfg["Proxy"], "")
+        self.assertEqual(cfg["JavaScriptRuntime"], "auto")
         self.assertFalse(cfg["EmbedMetadata"])
         self.assertFalse(cfg["LegacyHealthTokenEcho"])
         self.assertEqual(cfg["SubLangs"], "en,esbad")
         self.assertGreaterEqual(len(cfg["ServerToken"]), 16)
+
+        node_cfg = ad.sanitize_config({"JavaScriptRuntime": "NODE"})
+        self.assertEqual(node_cfg["JavaScriptRuntime"], "node")
 
     def test_output_directory_must_be_absolute(self):
         path, err = ad.normalize_output_dir("relative-folder")
@@ -197,7 +201,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn("#ff5f4b", ad.STYLESHEET)
         self.assertIn('QFrame[class="readiness"]', ad.STYLESHEET)
         self.assertIn('QLabel[class="errorCallout"]', ad.STYLESHEET)
-        self.assertIn("probe_deno_runtime", probe_source)
+        self.assertIn("probe_javascript_runtime", probe_source)
         self.assertIn("probe_po_token_provider", probe_source)
         self.assertIn("self.readiness_worker.moveToThread", source)
         self.assertIn("dl.error_advice", download_card_source)
@@ -237,8 +241,11 @@ class CompanionGuiPolicyTests(unittest.TestCase):
                 return False
 
         class ComboField:
+            def __init__(self, value="remove"):
+                self.value = value
+
             def currentData(self):
-                return "remove"
+                return self.value
 
         class Button:
             def __init__(self):
@@ -271,6 +278,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_subs = CheckField()
         window.cfg_sponsorblock = CheckField()
         window.cfg_sb_action = ComboField()
+        window.cfg_js_runtime = ComboField("auto")
         window.cfg_fragments = NumberField(4)
         window.cfg_autoupdate = CheckField()
         window.cfg_closetotray = CheckField()
@@ -1675,12 +1683,7 @@ class FolderPickerWatchdogTests(unittest.TestCase):
 
 
 class DenoRuntimeHardGateTests(unittest.TestCase):
-    """v4.47.0 NF27 — yt-dlp >= 2026.04.01 needs Deno to solve YouTube's
-    signature challenges. Without it, every download returns empty
-    format lists with an opaque late error. The /download handler must
-    refuse the request upfront with 422 + actionable advice when the
-    Deno probe reports ``ytdlpNeedsRuntime && !installed``.
-    """
+    """Runtime-required downloads fail closed on the capability contract."""
 
     def _create_api(self, deno_probe_result):
         # Build a fresh create_api(config, dl_manager, history) instance with
@@ -1689,7 +1692,7 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
         cfg = FakeConfig({'ServerToken': 'test-token-1234567890abcdef1234567890ab'})
         dl_manager = ad.DownloadManager(cfg, FakeHistory())
 
-        with mock.patch.object(ad, 'probe_deno_runtime', return_value=deno_probe_result):
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value=deno_probe_result):
             api = ad.create_api(cfg, dl_manager, FakeHistory())
         api.config['TESTING'] = True
         return api.test_client(), cfg
@@ -1707,8 +1710,11 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
         })
         # Note: even though we patched probe_deno_runtime at create_api time,
         # the handler calls it on every request, so re-patch for the request.
-        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value={
             'installed': False,
+            'supported': False,
+            'ejsReady': False,
+            'reason': 'runtime-not-installed',
             'ytdlpNeedsRuntime': True,
             'advice': 'winget install DenoLand.Deno',
         }):
@@ -1720,11 +1726,9 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 422,
                          f"Expected 422, got {resp.status_code} body={resp.data!r}")
         body = resp.get_json() or {}
-        self.assertEqual(body.get('code'), 'deno-runtime-missing',
-                         'Error code must identify the Deno cause')
-        self.assertEqual(body.get('error_code'), 'deno-runtime-missing',
-                         'Stable snake_case error_code must identify the Deno cause')
-        self.assertEqual(body.get('next_action'), 'install-deno',
+        self.assertEqual(body.get('code'), 'js-runtime-missing')
+        self.assertEqual(body.get('error_code'), 'js-runtime-missing')
+        self.assertEqual(body.get('next_action'), 'configure-javascript-runtime',
                          'Payload must include the recovery action for the extension UI')
         self.assertIn('Deno', body.get('error', ''),
                       'Error message must mention Deno so the extension can surface it')
@@ -1735,13 +1739,21 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
         # ytdlpNeedsRuntime=True but installed=True → guard passes through.
         client, cfg = self._create_api({
             'installed': True,
-            'version': '2.0.0',
+            'runtime': 'deno',
+            'version': '2.3.0',
             'path': '/usr/bin/deno',
+            'supported': True,
+            'ejsReady': True,
+            'reason': 'ready',
             'ytdlpNeedsRuntime': True,
             'advice': '',
         })
-        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value={
             'installed': True,
+            'runtime': 'deno',
+            'supported': True,
+            'ejsReady': True,
+            'reason': 'ready',
             'ytdlpNeedsRuntime': True,
         }):
             resp = client.post(
@@ -1765,8 +1777,10 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
             'installed': False,
             'ytdlpNeedsRuntime': False,
         })
-        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value={
             'installed': False,
+            'supported': False,
+            'ejsReady': False,
             'ytdlpNeedsRuntime': False,
         }):
             resp = client.post(
@@ -1785,15 +1799,19 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
             'installed': True,
             'version': '2.2.9',
             'supported': False,
+            'ejsReady': False,
+            'reason': 'runtime-version-unsupported',
             'stale': True,
             'minVersion': '2.3.0',
             'ytdlpNeedsRuntime': True,
             'advice': 'upgrade Deno',
         })
-        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value={
             'installed': True,
             'version': '2.2.9',
             'supported': False,
+            'ejsReady': False,
+            'reason': 'runtime-version-unsupported',
             'stale': True,
             'minVersion': '2.3.0',
             'ytdlpNeedsRuntime': True,
@@ -1806,9 +1824,35 @@ class DenoRuntimeHardGateTests(unittest.TestCase):
             )
         self.assertEqual(resp.status_code, 422)
         body = resp.get_json() or {}
-        self.assertEqual(body.get('code'), 'deno-runtime-unsupported')
-        self.assertEqual(body.get('next_action'), 'upgrade-deno')
-        self.assertIn('2.3.0', body.get('error', ''))
+        self.assertEqual(body.get('code'), 'js-runtime-unsupported')
+        self.assertEqual(body.get('next_action'), 'upgrade-javascript-runtime')
+
+    def test_unknown_and_exception_runtime_states_have_stable_codes(self):
+        cases = (
+            ('runtime-version-unparseable', 'js-runtime-unverified'),
+            ('runtime-probe-failed', 'js-runtime-unverified'),
+            ('runtime-execution-failed', 'ejs-runtime-not-ready'),
+        )
+        for reason, expected_code in cases:
+            runtime = {
+                'installed': True,
+                'runtime': 'deno',
+                'supported': reason == 'runtime-execution-failed',
+                'ejsReady': False,
+                'reason': reason,
+                'ytdlpNeedsRuntime': True,
+                'advice': 'repair runtime',
+            }
+            client, cfg = self._create_api(runtime)
+            with self.subTest(reason=reason), \
+                 mock.patch.object(ad, 'probe_javascript_runtime', return_value=runtime):
+                resp = client.post(
+                    '/download',
+                    headers={**self._auth_header(cfg), 'Host': '127.0.0.1'},
+                    json={'url': 'https://www.youtube.com/watch?v=abcdefghijk'},
+                )
+            self.assertEqual(resp.status_code, 422)
+            self.assertEqual((resp.get_json() or {}).get('code'), expected_code)
 
 
 class NoArchiveLockTests(unittest.TestCase):
@@ -2259,7 +2303,10 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         original_run_captured = ad._run_captured
         ad.shutil.which = lambda binary: '/usr/local/bin/deno' if binary == 'deno' else None
         ad.get_ytdlp_version = lambda force=False: '2026.05.03.233852'
-        ad._run_captured = lambda args, timeout=5: 'deno 2.4.1 (release, x86_64-pc-windows-msvc)\nv8 13.0.245.25-rusty\ntypescript 5.6.2\n'
+        ad._run_captured = lambda args, timeout=5: (
+            ad.JS_RUNTIME_CAPABILITY_MARKER if 'eval' in args
+            else 'deno 2.4.1 (release, x86_64-pc-windows-msvc)\n'
+        )
         try:
             result = ad.probe_deno_runtime(force=True)
         finally:
@@ -2271,12 +2318,15 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         # dropping any of these would break the downloadHealthPanel.
         self.assertEqual(set(result.keys()), {
             'installed', 'version', 'path', 'source', 'supported', 'stale',
-            'minVersion', 'ytdlpNeedsRuntime', 'advice'
+            'minVersion', 'ytdlpNeedsRuntime', 'advice', 'runtime', 'ejsReady',
+            'reason', 'configuredRuntime', 'canProvisionDeno'
         })
         self.assertTrue(result['installed'])
         self.assertEqual(result['version'], '2.4.1')
         self.assertIn(result['source'], ('bundled', 'system'))
         self.assertTrue(result['supported'])
+        self.assertTrue(result['ejsReady'])
+        self.assertEqual(result['reason'], 'ready')
         self.assertFalse(result['stale'])
         self.assertEqual(result['minVersion'], ad.DENO_MIN_VERSION)
         self.assertTrue(result['ytdlpNeedsRuntime'])
@@ -2318,7 +2368,8 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         self.assertIsNone(result['version'])
         self.assertFalse(result['supported'])
         self.assertTrue(result['stale'])
-        self.assertIn('did not report a valid version', result['advice'])
+        self.assertIn('could not verify', result['advice'])
+        self.assertEqual(result['reason'], 'runtime-version-unparseable')
 
     def test_deno_version_support_rejects_missing_and_unparseable_values(self):
         for version in (None, '', 'unknown', 'deno canary', '2.3'):
@@ -2343,7 +2394,7 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         self.assertIsNone(result['path'])
         self.assertTrue(result['ytdlpNeedsRuntime'])
         self.assertIn('Deno', result['advice'])
-        self.assertIn('yt-dlp', result['advice'])
+        self.assertIn('JavaScript runtime', result['advice'])
 
     def test_probe_deno_runtime_quiet_on_pre_cutoff_ytdlp(self):
         # Field installs running the pre-Deno-line yt-dlp don't need the
@@ -2377,9 +2428,46 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         finally:
             ad.shutil.which = original_which
             ad.get_ytdlp_version = original_get_version
-        # Only the force=True call should have hit shutil.which; the
-        # other two reads should have come from cache.
-        self.assertEqual(call_count['n'], 1)
+        # Auto checks Deno and Node once; subsequent reads use the cache.
+        self.assertEqual(call_count['n'], 2)
+
+    def test_configured_node_22_is_recognized_and_emitted_to_ytdlp(self):
+        with mock.patch.object(ad, 'DENO_PATH', Path(tempfile.gettempdir()) / 'astra-missing-deno-probe.exe'), \
+             mock.patch.object(ad.shutil, 'which', side_effect=lambda binary: (
+                 'C:/Program Files/nodejs/node.exe' if binary == 'node' else None
+             )), \
+             mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.07.04'), \
+             mock.patch.object(ad, '_run_captured', side_effect=lambda args, timeout=5: (
+                 'v24.16.0' if '--version' in args else ad.JS_RUNTIME_CAPABILITY_MARKER
+             )):
+            result = ad.probe_javascript_runtime(force=True, configured_runtime='node')
+        self.assertEqual(result['runtime'], 'node')
+        self.assertEqual(result['version'], '24.16.0')
+        self.assertTrue(result['supported'])
+        self.assertTrue(result['ejsReady'])
+        self.assertEqual(result['reason'], 'ready')
+        self.assertEqual(ad.build_javascript_runtime_args(result), [
+            '--no-js-runtimes', '--js-runtimes',
+            'node:C:/Program Files/nodejs/node.exe',
+        ])
+
+    def test_supported_version_with_failed_execution_is_not_ejs_ready(self):
+        def probe_output(args, timeout=5):
+            if '--version' in args:
+                return 'deno 2.7.11'
+            raise RuntimeError('execution blocked')
+
+        with mock.patch.object(ad, 'DENO_PATH', Path(tempfile.gettempdir()) / 'astra-missing-deno-probe.exe'), \
+             mock.patch.object(ad.shutil, 'which', side_effect=lambda binary: (
+                 '/usr/local/bin/deno' if binary == 'deno' else None
+             )), \
+             mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.07.04'), \
+             mock.patch.object(ad, '_run_captured', side_effect=probe_output):
+            result = ad.probe_javascript_runtime(force=True, configured_runtime='deno')
+        self.assertTrue(result['supported'])
+        self.assertFalse(result['ejsReady'])
+        self.assertEqual(result['reason'], 'runtime-execution-failed')
+        self.assertEqual(ad.build_javascript_runtime_args(result), [])
 
 
 class DenoProvisionTests(unittest.TestCase):
@@ -2533,9 +2621,12 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
             ad.http_requests.get = original_po_get
         body = resp.get_json()
         self.assertIn("denoRuntime", body)
+        self.assertIn("javascriptRuntime", body)
         self.assertIsInstance(body["denoRuntime"], dict)
         for key in ("installed", "version", "path", "ytdlpNeedsRuntime", "advice"):
             self.assertIn(key, body["denoRuntime"])
+        for key in ("runtime", "version", "supported", "ejsReady", "reason"):
+            self.assertIn(key, body["javascriptRuntime"])
 
     def test_api_version_constant_at_2(self):
         # Adding fields to /health is additive — wire-major stays at 2.
@@ -2676,6 +2767,10 @@ class EndToEndDownloadTests(unittest.TestCase):
             )
             with mock.patch.object(ad.subprocess, 'Popen', capture), \
                  mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'probe_javascript_runtime', return_value={
+                     'runtime': 'deno', 'path': 'C:/Tools/deno.exe',
+                     'supported': True, 'ejsReady': True,
+                 }), \
                  mock.patch.object(ad, 'write_persistent_log', return_value=None):
                 manager._run_download(download)
 
@@ -2687,6 +2782,9 @@ class EndToEndDownloadTests(unittest.TestCase):
             if isinstance(arg, str) and arg.startswith('--')
         }
         self.assertTrue(options.isdisjoint(ad.YTDLP_FORBIDDEN_LINK_FLAGS))
+        self.assertIn('--ignore-config', captured_args[0])
+        self.assertIn('--no-js-runtimes', captured_args[0])
+        self.assertIn('deno:C:/Tools/deno.exe', captured_args[0])
 
     def test_completed_download_closes_subprocess_stdout(self):
         token = "z" * 32

@@ -3609,6 +3609,8 @@ test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp 
     assert.match(block, /ytDlpVersion/, 'must surface yt-dlp version');
     assert.match(block, /ffmpegCapabilities/, 'must surface ffmpeg freshness');
     assert.match(block, /sabrSupport/, 'must surface SABR support status');
+    assert.match(block, /javascriptRuntime \|\| data\.denoRuntime/,
+        'must consume the generic runtime capability contract with legacy fallback');
     const pollIdx = block.indexOf('this._pollTimer = setInterval');
     assert.ok(pollIdx > -1, 'downloadHealthPanel must store its poll timer handle');
     const destroyIdx = block.indexOf('destroy()', pollIdx);
