@@ -93,9 +93,20 @@ function writeCompanionInventoryFixture(root, buildDir) {
         path.join(__dirname, '..', 'astra_downloader', 'license-policy.json'),
         path.join(root, 'astra_downloader', 'license-policy.json')
     );
+    fs.copyFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'constraints-release.txt'),
+        path.join(root, 'astra_downloader', 'constraints-release.txt')
+    );
+    const constraintsSha256 = sha256(path.join(root, 'astra_downloader', 'constraints-release.txt'));
     const licenseFile = [{ path: 'package.dist-info/LICENSE', sha256: 'b'.repeat(64) }];
+    const resolvedPackages = [
+        { name: 'PyInstaller', version: '6.21.0', scope: 'build', license: 'MIT', dependsOn: [] },
+        { name: 'PyQt6', version: '6.11.0', scope: 'embedded', license: 'GPL-3.0-only', dependsOn: ['pyqt6-qt6'] },
+        { name: 'PyQt6-Qt6', version: '6.11.1', scope: 'embedded', license: 'LGPL-3.0-only', dependsOn: [] },
+        { name: 'requests', version: '2.34.2', scope: 'validation', license: 'Apache-2.0', dependsOn: [] }
+    ];
     const metadata = {
-        schemaVersion: 1,
+        schemaVersion: 2,
         version: '1.5.1',
         artifact: {
             name: 'AstraDownloader.exe',
@@ -107,6 +118,14 @@ function writeCompanionInventoryFixture(root, buildDir) {
             version: '3.12.10',
             license: 'Python-2.0',
             sourceUrl: 'https://www.python.org/'
+        },
+        resolution: {
+            schemaVersion: 1,
+            constraintsPath: 'astra_downloader/constraints-release.txt',
+            constraintsSha256,
+            supportedPythonMinors: ['3.11', '3.12'],
+            direct: ['pyinstaller', 'pyqt6', 'requests'],
+            packages: resolvedPackages
         },
         distributions: [
             {
@@ -147,6 +166,21 @@ function writeCompanionInventoryFixture(root, buildDir) {
         inventory: buildCompanionInventory(root, buildDir)
     };
 }
+
+test('companion SBOM inventory carries the reviewed Python resolution graph', () => {
+    const { root, buildDir } = writeFixtureRepo();
+    const { inventory } = writeCompanionInventoryFixture(root, buildDir);
+    const requests = inventory.components.find((component) => component['bom-ref'] === 'pkg:pypi/requests@2.34.2');
+    const pyqt = inventory.dependencies.find((entry) => entry.ref === 'pkg:pypi/pyqt6@6.11.0');
+
+    assert.ok(requests, 'a constraints-only package must still appear in the release SBOM');
+    assert.equal(requests.scope, 'excluded', 'validation-only packages must not be represented as shipped');
+    assert.equal(
+        requests.properties.find((item) => item.name === PROPERTY.resolutionGraph).value,
+        'true'
+    );
+    assert.deepEqual(pyqt.dependsOn, ['pkg:pypi/pyqt6-qt6@6.11.1']);
+});
 
 test('release readiness passes for a complete manifest, checksum, SBOM, and version fixture', () => {
     const { root, buildDir, version } = writeFixtureRepo();
@@ -459,14 +493,28 @@ test('companion staging metadata is accepted only for the exact EXE bytes', () =
     const metadataPath = path.join(root, 'companion-build-metadata.json');
     const exe = Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 4)]);
     const metadata = {
-        schemaVersion: 1,
+        schemaVersion: 2,
         artifact: { name: 'AstraDownloader.exe', size: exe.length, sha256: crypto.createHash('sha256').update(exe).digest('hex') },
         python: { version: '3.12.10' },
+        resolution: {
+            schemaVersion: 1,
+            constraintsPath: 'astra_downloader/constraints-release.txt',
+            constraintsSha256: sha256(path.join(__dirname, '..', 'astra_downloader', 'constraints-release.txt')),
+            supportedPythonMinors: ['3.11', '3.12'],
+            direct: ['pyinstaller'],
+            packages: [{ name: 'PyInstaller', version: '6.21.0', scope: 'build', dependsOn: [] }]
+        },
         distributions: []
     };
     fs.writeFileSync(metadataPath, JSON.stringify(metadata));
 
     assert.equal(readValidatedMetadata(metadataPath, exe).artifact.sha256, metadata.artifact.sha256);
+    fs.writeFileSync(metadataPath, JSON.stringify({ ...metadata, resolution: undefined }));
+    assert.throws(
+        () => readValidatedMetadata(metadataPath, exe),
+        /reviewed release resolution graph/
+    );
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata));
     assert.throws(
         () => readValidatedMetadata(metadataPath, Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 5)])),
         /does not match/

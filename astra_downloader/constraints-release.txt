@@ -1,0 +1,37 @@
+# Astra Downloader reviewed Windows release graph.
+# Reviewed: 2026-07-14
+# Supported builders: CPython 3.11 and 3.12 on Windows x64.
+# Refresh with pip --dry-run reports for both interpreters, review every change,
+# then update build.py tests and the generated companion SBOM together.
+altgraph==0.17.5
+blinker==1.9.0
+certifi==2026.6.17
+cffi==2.1.0
+charset-normalizer==3.4.9
+click==8.4.2
+colorama==0.4.6
+curl_cffi==0.15.0
+Flask==3.1.3
+idna==3.18
+itsdangerous==2.2.0
+Jinja2==3.1.6
+markdown-it-py==4.2.0
+MarkupSafe==3.0.3
+mdurl==0.1.2
+packaging==26.2
+pefile==2024.8.26
+pycparser==3.0
+Pygments==2.20.0
+pyinstaller==6.21.0
+pyinstaller-hooks-contrib==2026.6
+PyQt6==6.11.0
+PyQt6-Qt6==6.11.1
+PyQt6_sip==13.11.1
+pywin32-ctypes==0.2.3
+requests==2.34.2
+rich==15.0.0
+setuptools==83.0.0
+urllib3==2.7.0
+waitress==3.0.2
+Werkzeug==3.1.8
+yt-dlp==2026.7.4

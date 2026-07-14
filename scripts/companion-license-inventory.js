@@ -32,6 +32,8 @@ const PROPERTY = Object.freeze({
     noticeUrl: 'astra:license:notice-url',
     obligations: 'astra:license:obligations',
     recordSha256: 'astra:companion:record-sha256',
+    resolutionGraph: 'astra:companion:resolution-graph',
+    constraintsSha256: 'astra:companion:constraints-sha256',
     resolution: 'astra:license:resolution',
     sourceUrl: 'astra:license:source-url'
 });
@@ -50,6 +52,48 @@ function purlName(value) {
 
 function readJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function validateResolutionMetadata(metadata, repoRoot = null) {
+    const resolution = metadata && metadata.resolution;
+    if (
+        !metadata || metadata.schemaVersion !== 2
+        || !resolution || resolution.schemaVersion !== 1
+        || resolution.constraintsPath !== 'astra_downloader/constraints-release.txt'
+        || !/^[0-9a-f]{64}$/i.test(String(resolution.constraintsSha256 || ''))
+        || !Array.isArray(resolution.supportedPythonMinors)
+        || resolution.supportedPythonMinors.join(',') !== '3.11,3.12'
+        || !Array.isArray(resolution.packages) || !resolution.packages.length
+    ) {
+        throw new Error('companion build metadata is missing the reviewed release resolution graph');
+    }
+    const keys = new Set();
+    for (const record of resolution.packages) {
+        const key = canonicalName(record && record.name);
+        if (
+            !key || keys.has(key)
+            || !record.version || !/^[A-Za-z0-9_.+!-]+$/.test(String(record.version))
+            || !['embedded', 'build', 'validation'].includes(record.scope)
+            || !Array.isArray(record.dependsOn)
+        ) {
+            throw new Error(`invalid or duplicate resolved Python package: ${key || 'unknown'}`);
+        }
+        keys.add(key);
+    }
+    for (const record of resolution.packages) {
+        for (const dependency of record.dependsOn) {
+            if (!keys.has(canonicalName(dependency))) {
+                throw new Error(`${record.name} depends on unresolved Python package ${dependency}`);
+            }
+        }
+    }
+    if (repoRoot) {
+        const constraintsPath = path.join(repoRoot, resolution.constraintsPath);
+        if (!fs.existsSync(constraintsPath) || sha256(constraintsPath) !== resolution.constraintsSha256) {
+            throw new Error('companion build metadata constraints digest does not match the reviewed release graph');
+        }
+    }
+    return resolution;
 }
 
 function property(name, value) {
@@ -190,6 +234,34 @@ function helperComponent(helper, artifact) {
     };
 }
 
+function resolvedPythonComponent(record, resolution, artifact) {
+    const expression = normalizeLicenseExpression(record.license);
+    const version = String(record.version);
+    const bomRef = `pkg:pypi/${purlName(record.name)}@${encodeURIComponent(version)}`;
+    const component = {
+        type: record.scope === 'build' ? 'framework' : 'library',
+        'bom-ref': bomRef,
+        name: record.name,
+        version,
+        purl: bomRef,
+        scope: record.scope === 'embedded' ? 'required' : 'excluded',
+        licenses: [licenseObject(expression)],
+        externalReferences: externalReferences(
+            { type: 'website', url: record.sourceUrl || '' }
+        ),
+        properties: [
+            property(PROPERTY.resolutionGraph, true),
+            property(PROPERTY.constraintsSha256, resolution.constraintsSha256),
+            property(PROPERTY.delivery, record.scope),
+            property(PROPERTY.artifactName, artifact.name),
+            property(PROPERTY.artifactSha256, artifact.sha256),
+            property(PROPERTY.recordSha256, record.recordSha256 || '')
+        ]
+    };
+    if (!component.externalReferences.length) delete component.externalReferences;
+    return component;
+}
+
 function buildCompanionInventory(repoRoot, buildDir) {
     const exePath = path.join(buildDir, COMPANION_EXE_NAME);
     if (!fs.existsSync(exePath)) return { components: [], dependencies: [] };
@@ -200,9 +272,10 @@ function buildCompanionInventory(repoRoot, buildDir) {
     }
     const metadata = readJson(metadataPath);
     const policy = readJson(path.join(repoRoot, POLICY_RELATIVE_PATH));
-    if (metadata.schemaVersion !== 1 || policy.schemaVersion !== 1) {
+    if (metadata.schemaVersion !== 2 || policy.schemaVersion !== 1) {
         throw new Error('unsupported companion build metadata or license policy schema');
     }
+    const resolution = validateResolutionMetadata(metadata, repoRoot);
     const artifactSha256 = sha256(exePath);
     const artifact = metadata.artifact || {};
     if (artifact.name !== COMPANION_EXE_NAME || artifact.sha256 !== artifactSha256) {
@@ -223,6 +296,23 @@ function buildCompanionInventory(repoRoot, buildDir) {
     ];
     const artifactRecord = { name: COMPANION_EXE_NAME, sha256: artifactSha256 };
     const libraryComponents = records.map((record) => componentFromRecord(record, policy, artifactRecord));
+    const componentByRef = new Map(libraryComponents.map((component) => [component['bom-ref'], component]));
+    const resolutionComponents = [];
+    const resolutionRefByName = new Map();
+    for (const record of resolution.packages) {
+        const resolved = resolvedPythonComponent(record, resolution, artifactRecord);
+        resolutionRefByName.set(canonicalName(record.name), resolved['bom-ref']);
+        const existing = componentByRef.get(resolved['bom-ref']);
+        if (existing) {
+            existing.properties.push(
+                property(PROPERTY.resolutionGraph, true),
+                property(PROPERTY.constraintsSha256, resolution.constraintsSha256)
+            );
+        } else {
+            resolutionComponents.push(resolved);
+            componentByRef.set(resolved['bom-ref'], resolved);
+        }
+    }
     const helperComponents = (policy.runtimeHelpers || []).map((helper) => helperComponent(helper, artifactRecord));
     const companionRef = `pkg:generic/astra-downloader@${encodeURIComponent(metadata.version || 'unresolved')}`;
     const companion = {
@@ -248,7 +338,14 @@ function buildCompanionInventory(repoRoot, buildDir) {
             property(PROPERTY.resolution, '')
         ]
     };
-    const components = [companion, ...libraryComponents, ...helperComponents];
+    const components = [companion, ...libraryComponents, ...resolutionComponents, ...helperComponents];
+    const resolutionDependencies = resolution.packages.map((record) => ({
+        ref: resolutionRefByName.get(canonicalName(record.name)),
+        dependsOn: record.dependsOn
+            .map((name) => resolutionRefByName.get(canonicalName(name)))
+            .filter(Boolean)
+            .sort()
+    }));
     return {
         components,
         dependencies: [{
@@ -257,7 +354,7 @@ function buildCompanionInventory(repoRoot, buildDir) {
                 .filter((component) => component.scope !== 'excluded')
                 .map((component) => component['bom-ref'])
                 .sort()
-        }]
+        }, ...resolutionDependencies]
     };
 }
 
@@ -335,5 +432,6 @@ module.exports = {
     inspectCompanionInventory,
     normalizeLicenseExpression,
     propertyValue,
+    validateResolutionMetadata,
     sha256
 };

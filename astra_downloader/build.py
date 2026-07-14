@@ -15,20 +15,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-# v1.4.0 (NX9): yt-dlp dropped Python 3.9 support in release 2025.10.22.
-# Astra Downloader auto-downloads the latest yt-dlp.exe at first run, so a
-# Python 3.9 host would shell out fine to the bundled yt-dlp binary, but
-# anyone running `python astra_downloader.py` directly (dev / source) needs
-# 3.10+. Hard-fail early with a clear message rather than yielding a
-# cryptic ImportError downstream when the build environment uses a newer
-# wheel.
-MIN_PYTHON = (3, 10)
-if sys.version_info < MIN_PYTHON:
+try:
+    from packaging.markers import default_environment
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+except ImportError as exc:
     raise SystemExit(
-        f"Astra Downloader requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ "
-        f"(yt-dlp dropped 3.9 in 2025.10.22). "
-        f"You're on {sys.version_info.major}.{sys.version_info.minor}."
-    )
+        "The release builder requires packaging from the reviewed constraints graph. "
+        "Create the release virtual environment before running build.py."
+    ) from exc
 
 HERE = Path(__file__).parent.resolve()
 ROOT = HERE.parent
@@ -40,6 +35,139 @@ BUILD_DIR = HERE / "build"
 DIST_DIR = HERE / "dist"
 SPEC_DIR = BUILD_DIR / "spec"
 BUILD_METADATA = BUILD_DIR / "companion-build-metadata.json"
+REQUIREMENTS = HERE / "requirements.txt"
+RELEASE_CONSTRAINTS = HERE / "constraints-release.txt"
+SUPPORTED_RELEASE_PYTHONS = {(3, 11), (3, 12)}
+RELEASE_PLATFORM = {
+    "system": "Windows",
+    "minimumVersion": "10",
+    "architecture": "x86_64",
+}
+
+
+def parse_release_constraints(path=None):
+    path = Path(path or RELEASE_CONSTRAINTS)
+    constraints = {}
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise SystemExit(f"Missing reviewed release constraints: {path}") from exc
+    for line_number, raw in enumerate(lines, 1):
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+!-]+)", line)
+        if not match:
+            raise SystemExit(
+                f"Release constraint line {line_number} must be one exact name==version pin: {raw}"
+            )
+        name, version = match.groups()
+        key = canonicalize_name(name)
+        if key in constraints:
+            raise SystemExit(f"Duplicate release constraint for {name}")
+        constraints[key] = {"name": name, "version": version}
+    if not constraints:
+        raise SystemExit("Reviewed release constraints are empty")
+    return constraints
+
+
+def _active_dependency(requirement):
+    if requirement.marker is None:
+        return True
+    environment = default_environment()
+    environment["extra"] = ""
+    return requirement.marker.evaluate(environment)
+
+
+def verify_release_environment():
+    """Fail unless every reviewed node is installed at its exact version.
+
+    Dependency metadata is traversed as well: any active edge to a package not
+    present in the reviewed graph fails the build instead of silently becoming
+    part of a fresh PyInstaller environment.
+    """
+    python_minor = sys.version_info[:2]
+    if python_minor not in SUPPORTED_RELEASE_PYTHONS:
+        supported = ", ".join(".".join(map(str, value)) for value in sorted(SUPPORTED_RELEASE_PYTHONS))
+        raise SystemExit(
+            f"Astra Downloader release builds require CPython {supported}; "
+            f"active interpreter is {platform.python_version()}."
+        )
+    if sys.platform != "win32":
+        raise SystemExit("Astra Downloader release builds must run on Windows for the Windows 10 x64 artifact.")
+
+    constraints = parse_release_constraints()
+    direct_names = set()
+    for raw in REQUIREMENTS.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        requirement = Requirement(line)
+        key = canonicalize_name(requirement.name)
+        direct_names.add(key)
+        if key not in constraints:
+            raise SystemExit(f"Direct requirement {requirement.name} is absent from release constraints")
+        if constraints[key]["version"] not in requirement.specifier:
+            raise SystemExit(
+                f"Release pin {requirement.name}=={constraints[key]['version']} violates {requirement.specifier}"
+            )
+    direct_names.add("pyinstaller")
+
+    distributions = {}
+    for key, constraint in constraints.items():
+        try:
+            dist = importlib.metadata.distribution(constraint["name"])
+        except importlib.metadata.PackageNotFoundError as exc:
+            raise SystemExit(
+                f"Release environment is incomplete: {constraint['name']}=={constraint['version']} is not installed. "
+                f"Install with -r {REQUIREMENTS.name} -c {RELEASE_CONSTRAINTS.name}."
+            ) from exc
+        if dist.version != constraint["version"]:
+            raise SystemExit(
+                f"Release environment drift: {constraint['name']}=={dist.version} is installed; "
+                f"reviewed version is {constraint['version']}."
+            )
+        distributions[key] = dist
+
+    graph = {}
+    for key, dist in distributions.items():
+        dependencies = set()
+        for raw_requirement in dist.requires or ():
+            requirement = Requirement(raw_requirement)
+            if not _active_dependency(requirement):
+                continue
+            dep_key = canonicalize_name(requirement.name)
+            if dep_key not in constraints:
+                raise SystemExit(
+                    f"Unreviewed active dependency: {dist.metadata.get('Name')} -> {requirement}"
+                )
+            dep_version = constraints[dep_key]["version"]
+            if requirement.specifier and dep_version not in requirement.specifier:
+                raise SystemExit(
+                    f"Reviewed pin {requirement.name}=={dep_version} violates {dist.metadata.get('Name')} requirement {requirement.specifier}"
+                )
+            dependencies.add(dep_key)
+        graph[key] = sorted(dependencies)
+
+    def closure(root):
+        found = set()
+        pending = [root]
+        while pending:
+            current = pending.pop()
+            if current in found:
+                continue
+            found.add(current)
+            pending.extend(graph.get(current, ()))
+        return found
+
+    build_names = closure("pyinstaller")
+    return {
+        "constraints": constraints,
+        "distributions": distributions,
+        "graph": graph,
+        "directNames": sorted(direct_names),
+        "buildNames": build_names,
+    }
 
 
 def sha256_file(path):
@@ -116,24 +244,26 @@ def write_build_metadata(exe_path):
         for value in iter_toc_strings(toc)
         if Path(value).is_absolute()
     }
+    release_environment = verify_release_environment()
+    resolved_packages = []
     distributions = []
-    pyinstaller = None
-    for dist in importlib.metadata.distributions():
-        name = (dist.metadata.get("Name") or "").casefold()
-        if name == "pyinstaller":
-            pyinstaller = distribution_metadata(dist, "build")
+    for key, dist in sorted(release_environment["distributions"].items()):
+        name = canonicalize_name(dist.metadata.get("Name") or "")
         included = any(
             str(Path(dist.locate_file(item)).resolve()).casefold() in packaged_paths
             for item in dist.files or ()
         )
-        if included and name != "pyinstaller":
-            distributions.append(distribution_metadata(dist, "embedded"))
+        scope = "embedded" if included else (
+            "build" if key in release_environment["buildNames"] else "validation"
+        )
+        record = distribution_metadata(dist, scope)
+        record["dependsOn"] = release_environment["graph"].get(key, [])
+        resolved_packages.append(record)
+        if included or key == "pyinstaller":
+            distributions.append(record)
 
-    if pyinstaller is None:
-        raise SystemExit("PyInstaller distribution metadata is unavailable after a PyInstaller build")
     if not any(item["name"].casefold() == "pyqt6" for item in distributions):
         raise SystemExit("PyInstaller analysis did not inventory the embedded PyQt6 distribution")
-    distributions.append(pyinstaller)
     distributions.sort(key=lambda item: (item["name"].casefold(), item["scope"]))
 
     source = SCRIPT.read_text(encoding="utf-8")
@@ -142,7 +272,7 @@ def write_build_metadata(exe_path):
         raise SystemExit(f"Could not read APP_VERSION from {SCRIPT}")
 
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "version": version_match.group(1),
         "artifact": {
             "name": exe_path.name,
@@ -154,6 +284,15 @@ def write_build_metadata(exe_path):
             "version": platform.python_version(),
             "license": "Python-2.0",
             "sourceUrl": f"https://www.python.org/downloads/release/python-{platform.python_version().replace('.', '')}/",
+        },
+        "platform": RELEASE_PLATFORM,
+        "resolution": {
+            "schemaVersion": 1,
+            "constraintsPath": "astra_downloader/constraints-release.txt",
+            "constraintsSha256": sha256_file(RELEASE_CONSTRAINTS),
+            "supportedPythonMinors": ["3.11", "3.12"],
+            "direct": release_environment["directNames"],
+            "packages": resolved_packages,
         },
         "distributions": distributions,
     }
@@ -183,6 +322,7 @@ def preflight():
             "PyInstaller is not installed in the active virtual environment. Run: "
             f"{sys.executable} -m pip install --require-virtualenv pyinstaller"
         )
+    verify_release_environment()
 
 
 def build():

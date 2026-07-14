@@ -82,6 +82,22 @@ py -3.12 -m venv .venv
 Source imports never install or modify Python packages. If a dependency is
 missing, Astra Downloader exits with the virtual-environment setup command.
 
+Release packaging is stricter than source testing. Build only in a clean
+Windows x64 virtual environment on CPython 3.11 or 3.12, install the reviewed
+graph, then run the builder:
+
+```powershell
+py -3.12 -m venv .release-venv
+.\.release-venv\Scripts\python.exe -m pip install --require-virtualenv -r astra_downloader/requirements.txt -c astra_downloader/constraints-release.txt PyInstaller==6.21.0
+.\.release-venv\Scripts\python.exe astra_downloader/build.py
+```
+
+The builder fails before cleaning or packaging when any active dependency
+differs from `constraints-release.txt`, when an unreviewed dependency edge is
+present, or when the interpreter falls outside 3.11/3.12. Build metadata links
+the exact resolution graph and constraints digest into the companion SBOM; the
+bundled artifact retains the Windows 10 x64 platform floor.
+
 The companion stores its config, logs, downloaded `yt-dlp.exe`, and `ffmpeg.exe`
 under `%LOCALAPPDATA%\AstraDownloader`. When a release does carry the companion
 payload, it must attach both `AstraDownloader.exe` and

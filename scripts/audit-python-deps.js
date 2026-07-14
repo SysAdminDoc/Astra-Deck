@@ -9,6 +9,7 @@ const path = require('path');
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const REQUIREMENTS_PATH = path.join(REPO_ROOT, 'astra_downloader', 'requirements.txt');
+const RELEASE_CONSTRAINTS_PATH = path.join(REPO_ROOT, 'astra_downloader', 'constraints-release.txt');
 const OUTPUT_PATH = path.join(BUILD_DIR, 'astra-downloader-pip-audit.json');
 const FAILURE_FLOOR = 'moderate';
 const UNKNOWN_SEVERITY_IS_ACTIONABLE = true;
@@ -282,18 +283,20 @@ function runPipAudit(options = {}) {
     );
 }
 
-function combineAuditReports(declared, minimum, options = {}) {
+function combineAuditReports(declared, minimum, options = {}, release = null) {
     const tagFindings = (report, resolution) => report.map((finding) => ({
         resolution,
         ...finding
     }));
     const actionableFindings = [
         ...tagFindings(declared.actionableFindings, 'declared'),
-        ...tagFindings(minimum.actionableFindings, 'minimum')
+        ...tagFindings(minimum.actionableFindings, 'minimum'),
+        ...(release ? tagFindings(release.actionableFindings, 'release-constraints') : [])
     ];
     const reviewedFindings = [
         ...tagFindings(declared.reviewedFindings, 'declared'),
-        ...tagFindings(minimum.reviewedFindings, 'minimum')
+        ...tagFindings(minimum.reviewedFindings, 'minimum'),
+        ...(release ? tagFindings(release.reviewedFindings, 'release-constraints') : [])
     ];
     return {
         schemaVersion: 2,
@@ -304,25 +307,30 @@ function combineAuditReports(declared, minimum, options = {}) {
         tool: {
             name: 'pip-audit',
             service: 'osv',
-            resolutions: ['declared', 'minimum']
+            resolutions: release
+                ? ['declared', 'minimum', 'release-constraints']
+                : ['declared', 'minimum']
         },
         policy: declared.policy,
         summary: {
-            resolutions: 2,
+            resolutions: release ? 3 : 2,
             declared: declared.summary,
             minimum: minimum.summary,
+            ...(release ? { releaseConstraints: release.summary } : {}),
             actionableFindings: actionableFindings.length,
             reviewedFindings: reviewedFindings.length
         },
         actionableFindings,
         reviewedFindings,
-        audits: { declared, minimum }
+        audits: { declared, minimum, ...(release ? { releaseConstraints: release } : {}) }
     };
 }
 
 function runPythonDependencyAudits(options = {}) {
     const requirementsPath = options.requirementsPath || REQUIREMENTS_PATH;
     const declared = runPipAudit({ ...options, requirementsPath });
+    const release = runPipAudit({ ...options, requirementsPath: RELEASE_CONSTRAINTS_PATH });
+    release.requirements = repoRelative(RELEASE_CONSTRAINTS_PATH);
     const minimumText = minimumRequirementsFor(fs.readFileSync(requirementsPath, 'utf8'));
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-downloader-audit-'));
     const minimumPath = path.join(tempDir, 'requirements-minimum.txt');
@@ -333,7 +341,7 @@ function runPythonDependencyAudits(options = {}) {
         if (minimum.tool.command) {
             minimum.tool.command = minimum.tool.command.replace(minimumPath, '<generated-minimum-requirements>');
         }
-        return combineAuditReports(declared, minimum, options);
+        return combineAuditReports(declared, minimum, options, release);
     } finally {
         fs.rmSync(tempDir, { recursive: true, force: true });
     }
@@ -353,6 +361,7 @@ function main() {
     console.log(
         `Declared findings: ${report.summary.declared.findings}; ` +
         `minimum findings: ${report.summary.minimum.findings}; ` +
+        `release findings: ${report.summary.releaseConstraints.findings}; ` +
         `actionable: ${report.summary.actionableFindings}`
     );
     if (report.status !== 'pass') {
@@ -379,6 +388,7 @@ if (require.main === module) {
 module.exports = {
     FAILURE_FLOOR,
     OUTPUT_PATH,
+    RELEASE_CONSTRAINTS_PATH,
     REQUIREMENTS_PATH,
     REVIEWED_VULNERABILITIES,
     combineAuditReports,

@@ -45,6 +45,18 @@ test('requirements stay pinned for local companion dependency review', () => {
         'Requests must exclude the vulnerable pre-2.33.0 range');
     assert.match(requirements, /^waitress>=3\.0\.2,<4$/m,
         'Waitress must exclude the vulnerable 3.0.0 and 3.0.1 releases');
+
+    const constraints = fs.readFileSync(
+        path.join(repoRoot, 'astra_downloader', 'constraints-release.txt'), 'utf8'
+    );
+    const pins = constraints.split(/\r?\n/)
+        .map((line) => line.replace(/#.*/, '').trim())
+        .filter(Boolean);
+    assert.ok(pins.length >= 30, 'the reviewed release graph must include direct and transitive packages');
+    assert.ok(pins.every((line) => /^[A-Za-z0-9_.-]+==[A-Za-z0-9_.+!-]+$/.test(line)),
+        'every release constraint must be an exact name==version pin');
+    assert.match(constraints, /^pyinstaller==6\.21\.0$/m,
+        'the ambient PyInstaller version must be part of the reviewed graph');
 });
 
 test('Python companion audit emits release-review JSON and fails closed', () => {
@@ -53,6 +65,11 @@ test('Python companion audit emits release-review JSON and fails closed', () => 
         audit.OUTPUT_PATH.endsWith(path.join('build', 'astra-downloader-pip-audit.json')),
         true,
         'Python audit must emit the named release-review artifact'
+    );
+    assert.equal(
+        audit.RELEASE_CONSTRAINTS_PATH.endsWith(path.join('astra_downloader', 'constraints-release.txt')),
+        true,
+        'Python audit must include the exact reviewed release graph'
     );
     assert.equal(audit.FAILURE_FLOOR, 'moderate',
         'Python audit must fail moderate-or-higher findings');

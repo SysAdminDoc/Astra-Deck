@@ -4,7 +4,10 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
-const { COMPANION_BUILD_METADATA_NAME } = require('./companion-license-inventory');
+const {
+    COMPANION_BUILD_METADATA_NAME,
+    validateResolutionMetadata
+} = require('./companion-license-inventory');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -91,7 +94,7 @@ function readValidatedMetadata(metadataPath, companionExe) {
         throw new Error(`invalid companion build metadata: ${err.message}`);
     }
     if (
-        metadata.schemaVersion !== 1
+        metadata.schemaVersion !== 2
         || !metadata.artifact
         || metadata.artifact.name !== 'AstraDownloader.exe'
         || metadata.artifact.size !== companionExe.length
@@ -102,6 +105,7 @@ function readValidatedMetadata(metadataPath, companionExe) {
     if (!metadata.python || !metadata.python.version || !Array.isArray(metadata.distributions)) {
         throw new Error('companion build metadata is missing Python or distribution inventory');
     }
+    validateResolutionMetadata(metadata, REPO_ROOT);
     return metadata;
 }
 
