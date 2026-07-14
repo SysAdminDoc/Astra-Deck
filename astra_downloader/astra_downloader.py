@@ -4454,6 +4454,10 @@ class SetupWorker(QThread):
     finished_ok = pyqtSignal()
     finished_err = pyqtSignal(str)
 
+    def __init__(self, parent=None, force_ffmpeg=False):
+        super().__init__(parent)
+        self.force_ffmpeg = bool(force_ffmpeg)
+
     def _ranged_progress_cb(self, low, high):
         """Return a progress callback that maps bytes into [low, high]% of overall.
 
@@ -4523,7 +4527,7 @@ class SetupWorker(QThread):
             self.progress.emit(30)
 
             # ffmpeg (35-58% — the heaviest step, now byte-level progress)
-            if not FFMPEG_PATH.exists():
+            if self.force_ffmpeg or not FFMPEG_PATH.exists():
                 self.log.emit("Downloading ffmpeg (this may take a moment)...")
                 self.progress.emit(35)
                 import zipfile
@@ -6137,38 +6141,31 @@ class MainWindow(QMainWindow):
         threading.Thread(target=run, daemon=True).start()
 
     def _reinstall_ffmpeg(self):
-        """Delete the installed ffmpeg.exe and re-run the setup download path
-        so integrity verification re-runs from scratch."""
+        """Stage and verify a fresh ffmpeg before replacing the live binary."""
         if self._setup_running:
             self._append_log("Setup is already running; wait for it to finish before reinstalling ffmpeg.")
             self._show_settings_status("Setup is already running.", "warning")
             return
-        if not FFMPEG_PATH.exists():
-            # Still reasonable to trigger: lets the user install ffmpeg from
-            # the Settings page without having to exit and re-launch.
-            pass
-        self._append_log("Reinstalling ffmpeg from source with checksum verification.")
-        self._show_settings_status("Reinstalling ffmpeg. Verification will run before it is trusted.", "warning")
-        try:
-            if FFMPEG_PATH.exists():
-                FFMPEG_PATH.unlink()
-        except Exception as e:
-            self._append_log(f"Could not remove existing ffmpeg: {e}")
+        active_downloads = self.dl_manager.active_count()
+        if active_downloads:
+            self._append_log(
+                f"ffmpeg refresh deferred: {active_downloads} download(s) are still active."
+            )
+            self._show_settings_status(
+                "Wait for active downloads to finish before refreshing ffmpeg.",
+                "warning",
+            )
             return
-        # Clear cached version string so /health reflects reality during the
-        # window where ffmpeg is not yet re-downloaded.
-        with _VERSION_CACHE_LOCK:
-            _version_cache['ffmpeg'] = {'value': None, 'checked_at': 0.0}
-        self._refresh_tools_status()
-        try:
-            self.config.set("LastFfmpegCheck", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            self.config.save()
-        except Exception:
-            pass
-        # Re-run the setup worker — it short-circuits the yt-dlp + shortcuts
-        # steps because those already exist, so effectively only the ffmpeg
-        # download + SHA-256 verification runs.
-        self._run_setup()
+        self._append_log("Reinstalling ffmpeg from source with checksum verification.")
+        self._show_settings_status(
+            "Refreshing ffmpeg. The current verified copy stays available until replacement succeeds.",
+            "warning",
+        )
+        # SetupWorker extracts into a unique temporary file and only calls
+        # os.replace after the archive checksum and executable size checks pass.
+        # `force_ffmpeg` bypasses the ordinary already-installed short circuit
+        # without deleting the live binary first.
+        self._run_setup(force_ffmpeg=True)
 
     def _save_settings(self):
         for field in (self.cfg_dl_path, self.cfg_audio_path, self.cfg_sublangs,
@@ -6501,18 +6498,18 @@ class MainWindow(QMainWindow):
             event.accept()
 
     # ── First-run setup ──
-    def _run_setup(self):
+    def _run_setup(self, force_ffmpeg=False):
         if self._setup_running:
             return
         self._setup_running = True
-        self._append_log("Running first-time setup...")
+        self._append_log("Refreshing ffmpeg..." if force_ffmpeg else "Running first-time setup...")
         self.setup_status.setText("Installing required download tools...")
         self.setup_status.show()
         self.setup_progress.setValue(0)
         self.setup_progress.show()
         self.btn_startstop.setEnabled(False)
         self.btn_startstop.setText("Setting Up")
-        self.setup_worker = SetupWorker()
+        self.setup_worker = SetupWorker(force_ffmpeg=force_ffmpeg)
         self.setup_worker.log.connect(self._append_log)
         self.setup_worker.progress.connect(self._setup_progress)
         self.setup_worker.finished_ok.connect(self._setup_done)
@@ -6531,24 +6528,42 @@ class MainWindow(QMainWindow):
             self.setup_status.setText("Finishing setup...")
 
     def _setup_done(self):
+        ffmpeg_refresh = bool(getattr(getattr(self, 'setup_worker', None), 'force_ffmpeg', False))
         self._setup_running = False
         self.btn_startstop.setEnabled(True)
+        self.btn_startstop.setText("Stop Server" if self.server_running else "Start Server")
         self.setup_progress.setValue(100)
-        self.setup_status.setText("Setup complete.")
-        self._append_log("Setup complete. Starting server...")
+        self.setup_status.setText("ffmpeg refresh complete." if ffmpeg_refresh else "Setup complete.")
+        self._append_log("ffmpeg refresh complete." if ffmpeg_refresh else "Setup complete. Starting server...")
+        if ffmpeg_refresh:
+            with _VERSION_CACHE_LOCK:
+                _version_cache['ffmpeg'] = {'value': None, 'checked_at': 0.0}
+            with _FFMPEG_CAPABILITIES_LOCK:
+                _ffmpeg_capabilities_cache['value'] = None
+                _ffmpeg_capabilities_cache['checked_at'] = 0.0
+            try:
+                self.config.set("LastFfmpegCheck", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                self.config.save()
+            except Exception as e:
+                self._append_log(f"ffmpeg refreshed, but its check timestamp could not be saved: {e}")
         # v1.2.0: refresh the Tools panel version readout now that the
         # binaries are (re)installed.
         self._refresh_tools_status()
-        if not self.server_running:
+        if not self.server_running and not ffmpeg_refresh:
             self._start_server()
         QTimer.singleShot(1400, self.setup_status.hide)
         QTimer.singleShot(1400, self.setup_progress.hide)
 
     def _setup_failed(self, error):
+        ffmpeg_refresh = bool(getattr(getattr(self, 'setup_worker', None), 'force_ffmpeg', False))
         self._setup_running = False
         self.btn_startstop.setEnabled(True)
-        self.btn_startstop.setText("Start Server")
-        self.setup_status.setText("Setup failed. Check the log for details.")
+        self.btn_startstop.setText("Stop Server" if self.server_running else "Start Server")
+        self.setup_status.setText(
+            "ffmpeg refresh failed. The previous copy is still installed."
+            if ffmpeg_refresh else
+            "Setup failed. Check the log for details."
+        )
         self.setup_progress.hide()
         self._append_log(f"Setup error: {error}")
 

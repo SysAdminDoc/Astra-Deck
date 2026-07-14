@@ -1218,6 +1218,31 @@ class Sha256VerifyTests(unittest.TestCase):
 
 
 class SetupChecksumTests(unittest.TestCase):
+    def test_forced_ffmpeg_refresh_preserves_existing_binary_on_download_failure(self):
+        original_install_dir = ad.INSTALL_DIR
+        original_ytdlp_path = ad.YTDLP_PATH
+        original_ffmpeg_path = ad.FFMPEG_PATH
+        original_download_path = ad.DEFAULT_CONFIG["DownloadPath"]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ad.INSTALL_DIR = root
+            ad.YTDLP_PATH = root / "yt-dlp.exe"
+            ad.FFMPEG_PATH = root / "ffmpeg.exe"
+            ad.DEFAULT_CONFIG["DownloadPath"] = str(root / "downloads")
+            ad.YTDLP_PATH.write_bytes(b"existing yt-dlp")
+            ad.FFMPEG_PATH.write_bytes(b"known working ffmpeg")
+            worker = ad.SetupWorker(force_ffmpeg=True)
+            try:
+                with mock.patch.object(ad.http_requests, 'get', side_effect=RuntimeError('offline')), \
+                        mock.patch.object(ad, 'log_crash'):
+                    worker.run()
+                self.assertEqual(ad.FFMPEG_PATH.read_bytes(), b"known working ffmpeg")
+            finally:
+                ad.INSTALL_DIR = original_install_dir
+                ad.YTDLP_PATH = original_ytdlp_path
+                ad.FFMPEG_PATH = original_ffmpeg_path
+                ad.DEFAULT_CONFIG["DownloadPath"] = original_download_path
+
     def test_setup_worker_rejects_missing_helper_checksum_sidecar(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "yt-dlp.exe"
