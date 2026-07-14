@@ -69,10 +69,10 @@ function createSettingsManagerFromSource(source) {
 
 test('settings import fixtures round-trip every prior schema version into the current schema', () => {
     const currentVersion = settingsMeta.settingsVersion;
-    assert.equal(currentVersion, 7, 'fixture suite is pinned to the current v7 schema');
+    assert.equal(currentVersion, 8, 'fixture suite is pinned to the current v8 schema');
     assert.deepEqual(
         fixture.profiles.map((profile) => profile.schemaVersion),
-        [1, 2, 3, 4, 5, 6],
+        [1, 2, 3, 4, 5, 6, 7],
         'fixtures must cover every prior SETTINGS_VERSION'
     );
 

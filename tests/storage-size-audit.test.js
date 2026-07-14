@@ -67,7 +67,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // Muted/rewind caption triggers + live-edge speed reset add 3 booleans (80 bytes).
     // v4.49.0 Wave 11 userscript ingestion adds the Guide-element manager (bool +
     // empty array) + 6 CSS-toggle booleans + uiFontSize number (232 bytes).
-    assert.equal(assessment.totalBytes, 179189);
+    // The background-owned AI credential vault removes the 21-byte empty
+    // aiSummaryApiKey field from ordinary settings.
+    assert.equal(assessment.totalBytes, 179168);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

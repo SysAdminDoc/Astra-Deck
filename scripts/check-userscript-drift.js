@@ -83,7 +83,6 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
 });
 
 const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
-    aiVideoSummary: 'unsafe-in-userscript',
     antiTranslateAudioTrack: 'not-yet-ported',
     antiTranslateTranscript: 'not-yet-ported',
     astraContextMenu: 'chrome-api',

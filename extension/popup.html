@@ -184,6 +184,35 @@
       <p class="data-flow-note" id="data-flow-note" data-i18n="dataFlowNote">Active origins are highlighted. Disable the driving toggle to mute an origin entirely.</p>
     </section>
 
+    <section class="ai-credential-manager" id="ai-credential-manager" aria-labelledby="ai-credential-title" hidden>
+      <header class="ai-credential-head">
+        <div>
+          <strong class="ai-credential-title" id="ai-credential-title">AI provider credential</strong>
+          <p class="ai-credential-note">The stored value is never shown or included in settings exports.</p>
+        </div>
+        <span class="ai-credential-status" id="ai-credential-status" role="status" aria-live="polite">Not configured</span>
+      </header>
+      <div class="ai-credential-fields">
+        <label for="ai-credential-provider">Provider</label>
+        <select id="ai-credential-provider" name="ai-credential-provider">
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="gemini">Gemini</option>
+        </select>
+        <label for="ai-credential-input">New credential</label>
+        <input id="ai-credential-input" name="ai-credential-input" type="password"
+               autocomplete="new-password" maxlength="4096" placeholder="Enter to set or replace">
+      </div>
+      <div class="ai-credential-actions">
+        <label class="ai-credential-remember" for="ai-credential-remember">
+          <input id="ai-credential-remember" name="ai-credential-remember" type="checkbox">
+          Remember after browser restart
+        </label>
+        <button type="button" id="ai-credential-save">Save credential</button>
+        <button type="button" id="ai-credential-delete" class="danger">Delete</button>
+      </div>
+    </section>
+
     <section class="selector-health" id="selector-health" aria-label="Selector health snapshot" hidden>
       <header class="selector-health-head">
         <strong class="selector-health-title" data-i18n="selectorHealthTitle">Selector health</strong>

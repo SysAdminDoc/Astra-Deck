@@ -6,6 +6,10 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
 const { createSettingsMutationController } = require('../extension/core/settings-controller');
+const {
+    createCredentialVault,
+    validateProviderEndpoint
+} = require('../extension/core/credential-vault');
 
 const repoRoot = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
@@ -19,6 +23,13 @@ function loadBackground({
 } = {}) {
     let messageListener = null;
     let settingsState = { ...initialSettings };
+    const sessionState = {};
+    const persistentCredentials = new Map();
+    const persistentStore = {
+        async get(provider) { return persistentCredentials.get(provider); },
+        async set(provider, value) { persistentCredentials.set(provider, value); },
+        async delete(provider) { persistentCredentials.delete(provider); }
+    };
     const chrome = {
         commands: {
             onCommand: {
@@ -59,6 +70,11 @@ function loadBackground({
                 async set(entries) {
                     if (entries.ytSuiteSettings) settingsState = { ...entries.ytSuiteSettings };
                 }
+            },
+            session: {
+                async get(key) { return { [key]: sessionState[key] }; },
+                async set(entries) { Object.assign(sessionState, entries); },
+                async remove(key) { delete sessionState[key]; }
             }
         }
     };
@@ -82,7 +98,11 @@ function loadBackground({
             headers: { 'content-length': '0' }
         })),
         globalThis: null,
-        YTKitCore: { createSettingsMutationController },
+        YTKitCore: {
+            createSettingsMutationController,
+            createCredentialVault: (options) => createCredentialVault({ ...options, persistentStore }),
+            validateAiProviderEndpoint: validateProviderEndpoint
+        },
         setTimeout
     };
     context.globalThis = context;
@@ -90,7 +110,13 @@ function loadBackground({
     vm.createContext(context);
     vm.runInContext(backgroundSource, context, { filename: 'extension/background.js' });
 
-    return { chrome, context, messageListener, getSettings: () => settingsState };
+    return {
+        chrome,
+        context,
+        messageListener,
+        getSettings: () => settingsState,
+        persistentCredentials
+    };
 }
 
 function dispatchMessage(listener, message, sender = {
@@ -424,6 +450,90 @@ test('background EXT_FETCH forwards x-goog-api-key to Gemini API', async () => {
     });
 
     assert.equal(capturedHeaders?.['x-goog-api-key'], 'test-key-123');
+});
+
+test('background vault migrates legacy AI keys and injects provider credentials', async () => {
+    let capturedUrl = '';
+    let capturedHeaders = null;
+    const { messageListener, getSettings, persistentCredentials } = loadBackground({
+        initialSettings: {
+            aiSummaryProvider: 'gemini',
+            aiSummaryApiKey: 'legacy-gemini-secret',
+            aiSummaryEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+        },
+        fetchImpl: async (url, options) => {
+            capturedUrl = url;
+            capturedHeaders = options.headers;
+            return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'summary' }] } }] }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' }
+            });
+        }
+    });
+
+    const result = await dispatchMessage(messageListener, {
+        type: 'YTKIT_AI_SUMMARY_REQUEST',
+        provider: 'gemini',
+        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+        payload: { contents: [{ parts: [{ text: 'Summarize this.' }] }] }
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.data.candidates[0].content.parts[0].text, 'summary');
+    assert.equal(capturedUrl.includes('legacy-gemini-secret'), false);
+    assert.equal(capturedHeaders['x-goog-api-key'], 'legacy-gemini-secret');
+    assert.equal(getSettings().aiSummaryApiKey, undefined);
+    assert.equal(persistentCredentials.get('gemini'), 'legacy-gemini-secret');
+    assert.equal(JSON.stringify(result).includes('legacy-gemini-secret'), false);
+});
+
+test('background blocks provider responses that echo a credential', async () => {
+    const secret = 'must-never-cross-worker-boundary';
+    const { messageListener } = loadBackground({
+        initialSettings: {
+            aiSummaryProvider: 'openai',
+            aiSummaryApiKey: secret
+        },
+        fetchImpl: async () => new Response(JSON.stringify({ echoed: secret }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+        })
+    });
+
+    const result = await dispatchMessage(messageListener, {
+        type: 'YTKIT_AI_SUMMARY_REQUEST',
+        provider: 'openai',
+        endpoint: 'https://api.openai.com/v1/chat/completions',
+        payload: { model: 'gpt-4o-mini', messages: [{ role: 'user', content: 'hello' }] }
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(result.error.message, /credential material.*blocked/i);
+    assert.equal(JSON.stringify(result).includes(secret), false);
+});
+
+test('credential management rejects content-script callers and never reveals stored values', async () => {
+    const { messageListener } = loadBackground();
+    const rejected = await dispatchMessage(messageListener, {
+        type: 'YTKIT_AI_CREDENTIAL_SET',
+        provider: 'openai',
+        credential: 'sk-content-script'
+    });
+    assert.equal(rejected.error.code, 'TRUSTED_CONTEXT_REQUIRED');
+
+    const trustedSender = { id: 'astra-test-extension' };
+    const saved = await dispatchMessage(messageListener, {
+        type: 'YTKIT_AI_CREDENTIAL_SET',
+        provider: 'openai',
+        credential: 'sk-popup-secret',
+        remember: false
+    }, trustedSender);
+    const status = await dispatchMessage(messageListener, {
+        type: 'YTKIT_AI_CREDENTIAL_STATUS'
+    }, trustedSender);
+    assert.equal(saved.ok, true);
+    assert.equal(status.providers.openai.configured, true);
+    assert.equal(JSON.stringify(status).includes('sk-popup-secret'), false);
 });
 
 test('background EXT_FETCH rejects non-default ports on portless allowlist entries', async () => {

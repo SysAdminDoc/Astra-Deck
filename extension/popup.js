@@ -309,11 +309,12 @@ const RETIRED_SETTING_KEYS = new Set([
     'preferredQuality',
     'useEnhancedBitrate',
     'hideQualityPopup',
+    'aiSummaryApiKey',
 ]);
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate
 // enforces parity across all three sources; bump in lockstep.
-const SETTINGS_VERSION_FALLBACK = 7;
+const SETTINGS_VERSION_FALLBACK = 8;
 const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     2(settings) {
         return settings;
@@ -335,6 +336,13 @@ const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     },
     6(settings) {
         for (const key of RETIRED_SETTING_KEYS) delete settings[key];
+        return settings;
+    },
+    7(settings) {
+        return settings;
+    },
+    8(settings) {
+        delete settings.aiSummaryApiKey;
         return settings;
     },
 });
@@ -507,6 +515,15 @@ const externalHealthCopyStatus = $('#external-health-copy-status');
 const dataFlowSection = $('#data-flow');
 const dataFlowSummary = $('#data-flow-summary');
 const dataFlowList = $('#data-flow-list');
+
+const aiCredentialSection = $('#ai-credential-manager');
+const aiCredentialProvider = $('#ai-credential-provider');
+const aiCredentialInput = $('#ai-credential-input');
+const aiCredentialRemember = $('#ai-credential-remember');
+const aiCredentialSave = $('#ai-credential-save');
+const aiCredentialDelete = $('#ai-credential-delete');
+const aiCredentialStatus = $('#ai-credential-status');
+let aiCredentialProviders = Object.create(null);
 
 // v4.23.0: schema-driven category overview refs.
 const schemaOverviewSection = $('#schema-overview');
@@ -1417,6 +1434,109 @@ function sendTabMessage(tabId, message) {
             });
         } catch { resolve(false); }
     });
+}
+
+function sendRuntimeMessage(message) {
+    return new Promise((resolve, reject) => {
+        try {
+            chrome.runtime.sendMessage(message, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve(response);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+function setAiCredentialBusy(busy) {
+    for (const control of [aiCredentialProvider, aiCredentialInput, aiCredentialRemember, aiCredentialSave, aiCredentialDelete]) {
+        if (control) control.disabled = !!busy;
+    }
+    if (!busy) renderAiCredentialStatus();
+}
+
+function renderAiCredentialStatus() {
+    if (!aiCredentialProvider || !aiCredentialStatus || !aiCredentialDelete) return;
+    const state = aiCredentialProviders[aiCredentialProvider.value] || {};
+    aiCredentialStatus.textContent = state.configured
+        ? (state.remembered ? 'Configured · remembered' : 'Configured · this session')
+        : 'Not configured';
+    aiCredentialDelete.disabled = !state.configured;
+    aiCredentialSave.textContent = state.configured ? 'Replace credential' : 'Save credential';
+}
+
+async function refreshAiCredentialManager() {
+    if (!aiCredentialSection) return;
+    const policy = ensurePolicyProfile();
+    const effective = policy
+        ? policy.resolveEffectiveProfile(popupState.settings || {})
+        : 'store-safe';
+    aiCredentialSection.hidden = effective !== 'github-full';
+    if (aiCredentialSection.hidden) return;
+    if (aiCredentialProvider && !aiCredentialProvider.dataset.initialized
+        && ['openai', 'anthropic', 'gemini'].includes(popupState.settings?.aiSummaryProvider)) {
+        aiCredentialProvider.value = popupState.settings.aiSummaryProvider;
+        aiCredentialProvider.dataset.initialized = 'true';
+    }
+    try {
+        const response = await sendRuntimeMessage({ type: 'YTKIT_AI_CREDENTIAL_STATUS' });
+        if (!response?.ok) throw new Error(response?.error?.message || 'Credential status unavailable.');
+        aiCredentialProviders = response.providers || Object.create(null);
+        renderAiCredentialStatus();
+    } catch (error) {
+        aiCredentialStatus.textContent = 'Status unavailable';
+        aiCredentialDelete.disabled = true;
+        showStatus(error.message || 'Credential status unavailable.', 'error', 3600);
+    }
+}
+
+async function saveAiCredential() {
+    const provider = aiCredentialProvider?.value;
+    const credential = aiCredentialInput?.value || '';
+    if (!credential.trim()) {
+        aiCredentialInput?.setCustomValidity('Enter a credential to save.');
+        aiCredentialInput?.reportValidity();
+        return;
+    }
+    setAiCredentialBusy(true);
+    try {
+        const response = await sendRuntimeMessage({
+            type: 'YTKIT_AI_CREDENTIAL_SET',
+            provider,
+            credential,
+            remember: aiCredentialRemember?.checked === true
+        });
+        if (!response?.ok) throw new Error(response?.error?.message || 'Credential could not be saved.');
+        aiCredentialInput.value = '';
+        aiCredentialRemember.checked = false;
+        showStatus('AI credential saved without exposing its value.', 'success', 3200);
+        await refreshAiCredentialManager();
+    } catch (error) {
+        showStatus(error.message || 'Credential could not be saved.', 'error', 4200);
+    } finally {
+        setAiCredentialBusy(false);
+    }
+}
+
+async function deleteAiCredential() {
+    const provider = aiCredentialProvider?.value;
+    setAiCredentialBusy(true);
+    try {
+        const response = await sendRuntimeMessage({ type: 'YTKIT_AI_CREDENTIAL_DELETE', provider });
+        if (!response?.ok) throw new Error(response?.error?.message || 'Credential could not be deleted.');
+        aiCredentialInput.value = '';
+        aiCredentialRemember.checked = false;
+        showStatus('AI credential deleted.', 'success', 3200);
+        await refreshAiCredentialManager();
+    } catch (error) {
+        showStatus(error.message || 'Credential could not be deleted.', 'error', 4200);
+    } finally {
+        setAiCredentialBusy(false);
+    }
 }
 
 // Bulk variant for import / reset paths where dozens or hundreds of settings
@@ -3110,7 +3230,6 @@ const BUG_REPORT_REDACTED_KEYS = Object.freeze([
 // but don't need a trust chip on the editor row because the
 // "local only" reassurance is specifically about secrets.
 const TRUST_SIGNAL_LOCAL_ONLY_KEYS = new Set([
-    'aiSummaryApiKey',
     'aiSummaryEndpoint',
 ]);
 
@@ -4376,6 +4495,7 @@ function installWheelScrolling() {
         renderSchemaOverview();
         // Companion update buttons only make sense under github-full.
         refreshCompanionUpdateVisibility();
+        void refreshAiCredentialManager();
         registerOptionalHostPermissionListeners();
         void refreshOptionalHostGrantState();
     } catch (error) {
@@ -4383,6 +4503,7 @@ function installWheelScrolling() {
         render({}, '');
         // Settings unknown — fail closed to the store-safe shape.
         refreshCompanionUpdateVisibility();
+        void refreshAiCredentialManager();
         showStatus(t('statusQuickCtrlLoadFail', 'Quick controls could not be loaded. Try reopening the popup.'), 'error', 5000);
     }
     focusInitialPopupControl();
@@ -4447,6 +4568,7 @@ function installWheelScrolling() {
             // Profile flips (githubFullProfile / safeStoreProfile) must
             // show/hide the companion update buttons immediately.
             refreshCompanionUpdateVisibility();
+            void refreshAiCredentialManager();
             // v4.23.0: keep the schema overview's counts in sync
             // when settings change from any source — but never blow away
             // a focused inline editor (number/text/JSON), which would
@@ -4542,6 +4664,18 @@ function installWheelScrolling() {
     }
     if (optionalHostGrantBtn) {
         optionalHostGrantBtn.addEventListener('click', () => { void grantMissingOptionalHostPermissions(); });
+    }
+    if (aiCredentialProvider) {
+        aiCredentialProvider.addEventListener('change', renderAiCredentialStatus);
+    }
+    if (aiCredentialInput) {
+        aiCredentialInput.addEventListener('input', () => aiCredentialInput.setCustomValidity(''));
+    }
+    if (aiCredentialSave) {
+        aiCredentialSave.addEventListener('click', () => { void saveAiCredential(); });
+    }
+    if (aiCredentialDelete) {
+        aiCredentialDelete.addEventListener('click', () => { void deleteAiCredential(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
     // Route through the same PIN gate as the primary Reset to prevent

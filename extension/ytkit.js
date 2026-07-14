@@ -4241,6 +4241,9 @@ return response;
         'preferredQuality',
         'useEnhancedBitrate',
         'hideQualityPopup',
+        // v4.49.0: credentials moved behind the extension background
+        // worker (or the userscript manager's isolated value store).
+        'aiSummaryApiKey',
     ]);
 
     //  SECTION 1: SETTINGS MANAGER
@@ -4712,7 +4715,6 @@ return response;
             aiVideoSummary: false,
             aiSummaryEndpoint: 'https://api.openai.com/v1/chat/completions',
             aiSummaryModel: 'gpt-4o-mini',
-            aiSummaryApiKey: '',
             aiSummaryProvider: 'openai',     // openai | anthropic | gemini | ollama
             copyChapterMarkdown: false,
             chapterJumpButtons: false,
@@ -4766,7 +4768,7 @@ return response;
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 7,
+        SETTINGS_VERSION: 8,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -4824,6 +4826,13 @@ return response;
                 // Reset the ack so the first re-enable surfaces the
                 // warning. Existing v6 profiles never had this key.
                 s._reactionSpammerAck = false;
+                return s;
+            },
+            8: (s) => {
+                // v4.49.0: the background worker migrates a legacy key into
+                // its credential vault before this ordinary settings bag is
+                // persisted. Imports and stale tabs must never reintroduce it.
+                delete s.aiSummaryApiKey;
                 return s;
             },
         },
@@ -32490,65 +32499,46 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _callLLM(prompt) {
                 const s = appState.settings;
-                if (!s.aiSummaryApiKey && s.aiSummaryProvider !== 'ollama') throw new Error('Set aiSummaryApiKey first in Astra Deck settings (gear icon or toolbar popup Open Full Settings)');
                 const provider = s.aiSummaryProvider || 'openai';
-                const requestJson = async (providerName, url, payload, headers = {}, timeout = 120000) => {
-                    const { response, data } = await extensionFetchJson({
-                        method: 'POST',
-                        url,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...headers
-                        },
-                        data: JSON.stringify(payload),
-                        timeout
-                    });
-
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        const apiMessage = data?.error?.message || data?.error || data?.message;
-                        throw new Error(apiMessage ? `${providerName} HTTP ${response?.status}: ${apiMessage}` : `${providerName} HTTP ${response?.status}`);
-                    }
-
-                    return data;
-                };
-
-                if (provider === 'openai' || provider === 'ollama') {
-                    const data = await requestJson(
-                        provider,
-                        s.aiSummaryEndpoint,
-                        {
-                            model: s.aiSummaryModel,
-                            messages: [{ role: 'user', content: prompt }],
-                            max_tokens: 800,
-                        },
-                        s.aiSummaryApiKey ? { 'Authorization': 'Bearer ' + s.aiSummaryApiKey } : {},
-                        provider === 'ollama' ? 300000 : 120000
-                    );
-                    return data.choices?.[0]?.message?.content || '[no content]';
-                }
-                if (provider === 'anthropic') {
-                    const data = await requestJson(
-                        'anthropic',
-                        s.aiSummaryEndpoint || 'https://api.anthropic.com/v1/messages',
-                        {
+                const validator = globalThis.YTKitCore?.validateAiProviderEndpoint;
+                if (typeof validator !== 'function') throw new Error('AI provider policy is unavailable. Reload Astra Deck.');
+                const providerPolicies = globalThis.YTKitCore?.AI_PROVIDER_POLICIES || {};
+                const knownDefaults = new Set(Object.values(providerPolicies).map((policy) => policy?.defaultEndpoint).filter(Boolean));
+                const configuredEndpoint = knownDefaults.has(s.aiSummaryEndpoint)
+                    ? providerPolicies[provider]?.defaultEndpoint
+                    : s.aiSummaryEndpoint;
+                const endpoint = validator(provider, configuredEndpoint).url;
+                const payload = provider === 'gemini'
+                    ? { contents: [{ parts: [{ text: prompt }] }] }
+                    : provider === 'anthropic'
+                        ? {
                             model: s.aiSummaryModel || 'claude-haiku-4-5-20251001',
                             max_tokens: 800,
                             messages: [{ role: 'user', content: prompt }],
-                        },
-                        {
-                            'x-api-key': s.aiSummaryApiKey,
-                            'anthropic-version': '2023-06-01'
                         }
-                    );
+                        : {
+                            model: s.aiSummaryModel,
+                            messages: [{ role: 'user', content: prompt }],
+                            max_tokens: 800,
+                        };
+
+                const result = await sendRuntimeMessage({
+                    type: 'YTKIT_AI_SUMMARY_REQUEST',
+                    provider,
+                    endpoint,
+                    payload,
+                    timeout: provider === 'ollama' ? 300000 : 120000
+                });
+                if (!result?.ok) throw new Error(result?.error?.message || 'AI request failed.');
+                const data = result.data;
+
+                if (provider === 'openai' || provider === 'ollama') {
+                    return data.choices?.[0]?.message?.content || '[no content]';
+                }
+                if (provider === 'anthropic') {
                     return data.content?.[0]?.text || '[no content]';
                 }
                 if (provider === 'gemini') {
-                    const url = `${s.aiSummaryEndpoint || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'}?key=${encodeURIComponent(s.aiSummaryApiKey)}`;
-                    const data = await requestJson(
-                        'gemini',
-                        url,
-                        { contents: [{ parts: [{ text: prompt }] }] }
-                    );
                     return data.candidates?.[0]?.content?.parts?.[0]?.text || '[no content]';
                 }
                 throw new Error('Unknown provider: ' + provider);
@@ -32606,7 +32596,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!controls || controls.querySelector('.ytkit-aisum-btn')) return;
                 const btn = document.createElement('button');
                 btn.className = 'ytp-button ytkit-player-btn ytkit-aisum-btn';
-                btn.title = 'AI Summary (YTKit)';
+                btn.title = 'AI Summary (manage credentials in the Astra Deck toolbar popup)';
                 TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z"/></svg>');
                 btn.onclick = (e) => { e.stopPropagation(); this._run(); };
                 controls.insertBefore(btn, controls.firstChild);
