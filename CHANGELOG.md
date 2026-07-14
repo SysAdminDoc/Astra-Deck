@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **In-page locale overrides are constrained to bundled translations.** The
+  content script now rejects malformed, stale, or manually restored locale
+  values before constructing an extension resource URL, matching the popup's
+  allowlist boundary.
 - **Dependency gates now cover vulnerable floors and build tooling.** Requests
   now starts at 2.33.0 and Waitress at 3.0.2. The Python audit resolves both the
   declared ranges and their exact direct minima, while the default npm audit
@@ -33,6 +37,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Comment Handle Revealer no longer wedges on slow pages or early startup.**
+  Author-page requests now time out after eight seconds, release their dedupe
+  entry for a later retry, attach when YouTube renders `#page-manager` late,
+  and abort every in-flight request on teardown in both extension and userscript.
+- **Deferred comment-selection styles now stay off the first-paint path.** The
+  shared observer's registration callback carries no added nodes; that bootstrap
+  call is now ignored so the stylesheet loads at idle or when comments actually
+  appear, as intended.
 - **Companion empty states now lead somewhere useful.** Empty Downloads and
   History pages provide direct navigation to the dashboard or queue, History
   disables Clear when there is nothing to remove, and disabled primary,

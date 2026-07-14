@@ -32525,7 +32525,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
             _nameMap: null,
             _pendingAuthors: null,
-            _abortController: null,
+            _requestControllers: null,
+            _cancelPageWait: null,
             _COMMENT_ROOT_SELECTOR: 'ytd-comment-view-model, ytd-comment-renderer, ytd-comment-thread-renderer',
 
             _normalizeAuthorKey(author) {
@@ -32589,9 +32590,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 this._pendingAuthors?.set(authorKey, new Set([author]));
+                const requestController = new AbortController();
+                this._requestControllers?.add(requestController);
+                const timeoutId = setTimeout(() => requestController.abort(), 8000);
                 fetch(author.href, {
                     credentials: 'same-origin',
-                    signal: this._abortController?.signal
+                    signal: requestController.signal
                 }).then(async (resp) => {
                     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                     const text = await resp.text();
@@ -32602,9 +32606,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const decoded = decode(rawName);
                     this._rememberName(authorKey, decoded);
                     this._flushPending(authorKey, decoded);
-                }).catch((error) => {
-                    if (error?.name === 'AbortError') return;
+                }).catch(() => {
                     this._flushPending(authorKey, null);
+                }).finally(() => {
+                    clearTimeout(timeoutId);
+                    this._requestControllers?.delete(requestController);
                 });
             },
 
@@ -32623,26 +32629,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._nameMap = new Map();
                 this._pendingAuthors = new Map();
-                this._abortController = typeof AbortController === 'function' ? new AbortController() : null;
-                const pageManager = document.getElementById('page-manager');
-                if (!pageManager) return;
+                this._requestControllers = new Set();
                 const decode = (() => {
                     const ENTITIES = [['amp','&'],['apos',"'"],['quot','"'],['nbsp',' '],['lt','<'],['gt','>'],['#39',"'"]];
                     return s => ENTITIES.reduce((acc, [e, sym]) => acc.replaceAll(`&${e};`, sym), s);
                 })();
-                this._processRoot(pageManager, decode);
-                this._observer = new MutationObserver(records => {
-                    for (const r of records) {
-                        for (const node of r.addedNodes) {
-                            this._processRoot(node, decode);
+                const attach = (pageManager) => {
+                    this._cancelPageWait = null;
+                    if (!this._nameMap || !pageManager || this._observer) return;
+                    this._processRoot(pageManager, decode);
+                    this._observer = new MutationObserver(records => {
+                        for (const r of records) {
+                            for (const node of r.addedNodes) {
+                                this._processRoot(node, decode);
+                            }
                         }
-                    }
-                });
-                this._observer.observe(pageManager, { childList: true, subtree: true });
+                    });
+                    this._observer.observe(pageManager, { childList: true, subtree: true });
+                };
+                const pageManager = document.getElementById('page-manager');
+                if (pageManager) attach(pageManager);
+                else this._cancelPageWait = waitForElement('#page-manager', attach, 10000);
             },
             destroy() {
+                this._cancelPageWait?.(); this._cancelPageWait = null;
                 this._observer?.disconnect(); this._observer = null;
-                this._abortController?.abort(); this._abortController = null;
+                this._requestControllers?.forEach(controller => controller.abort());
+                this._requestControllers?.clear(); this._requestControllers = null;
                 this._pendingAuthors?.clear(); this._pendingAuthors = null;
                 document.querySelectorAll('span[data-ytkit-name]').forEach(el => el.remove());
                 this._nameMap?.clear();

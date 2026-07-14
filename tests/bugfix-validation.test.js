@@ -532,6 +532,8 @@ test('global comment text selection support covers community posts and comment s
         'global comment selection support should be centralized in a singleton helper');
     assert.ok(block.includes("_styleElement = injectStyle(css, 'ytkit-comment-text-selection', true);"),
         'global comment selection support should inject a dedicated style block');
+    assert.ok(block.includes('if (!addedElements.length) return;'),
+        'scoped-rule registration should not defeat idle stylesheet injection');
     assert.ok(block.includes('#published-time-text a'),
         'global comment selection support should preserve timestamp link interactivity');
     assert.ok(block.includes('_normalizeCommentSurface(root)'),

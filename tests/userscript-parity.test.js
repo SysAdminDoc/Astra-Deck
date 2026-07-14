@@ -7,6 +7,7 @@ const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
 const userscriptSource = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
+const extensionSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
 
 test('userscript metadata and watch guards support youtu.be routes', () => {
     assert.match(userscriptSource, /^\/\/ @match\s+https:\/\/youtu\.be\/\*/m);
@@ -14,10 +15,23 @@ test('userscript metadata and watch guards support youtu.be routes', () => {
     assert.match(userscriptSource, /\bisWatchPagePath\(\)/);
 });
 
-test('userscript comment handle revealer deduplicates requests and aborts on teardown', () => {
-    assert.match(userscriptSource, /_pendingAuthors:\s*null/);
-    assert.match(userscriptSource, /signal:\s*this\._abortController\?\.signal/);
-    assert.match(userscriptSource, /this\._abortController\?\.abort\(\);\s*this\._abortController = null;/);
+test('comment handle revealer bounds requests, retries late DOM, and aborts on teardown', () => {
+    for (const [label, source] of [
+        ['extension', extensionSource],
+        ['userscript', userscriptSource],
+    ]) {
+        const start = source.indexOf("id: 'enableHandleRevealer'");
+        const end = source.indexOf("id: 'autoDownloadOnVisit'", start);
+        const block = source.slice(start, end > start ? end : start + 12000);
+        assert.match(block, /_pendingAuthors:\s*null/, `${label} must deduplicate author requests`);
+        assert.match(block, /_requestControllers:\s*null/, `${label} must track in-flight requests`);
+        assert.match(block, /setTimeout\(\(\) => requestController\.abort\(\), 8000\)/,
+            `${label} must bound stalled author-page fetches`);
+        assert.match(block, /waitForElement\('#page-manager', attach, 10000\)/,
+            `${label} must attach when page-manager renders late`);
+        assert.match(block, /this\._requestControllers\?\.forEach\(controller => controller\.abort\(\)\)/,
+            `${label} must abort all in-flight requests on teardown`);
+    }
 });
 
 test('userscript hardens blank-target navigation and CPU tamer cleanup', () => {

@@ -149,6 +149,16 @@
         ready: false,
         loading: null,
     };
+    const BUNDLED_LOCALE_OVERRIDES = new Set([
+        'ar', 'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
+    ]);
+
+    function isValidBundledLocaleOverride(locale) {
+        return typeof locale === 'string'
+            && locale.length <= 16
+            && /^[A-Za-z]{2,3}(?:[_-][A-Za-z0-9]{2,8})?$/.test(locale)
+            && BUNDLED_LOCALE_OVERRIDES.has(locale);
+    }
 
     async function _loadLocaleOverride() {
         if (_i18n.loading) return _i18n.loading;
@@ -157,6 +167,16 @@
                 const stored = await storageRead('_localeOverride');
                 const locale = (typeof stored === 'string' && stored.trim()) ? stored.trim() : '';
                 if (!locale || locale === 'auto') {
+                    _i18n.override = null;
+                    _i18n.overrideMap = null;
+                    _i18n.overrideLocale = null;
+                    _i18n.ready = true;
+                    return;
+                }
+                if (!isValidBundledLocaleOverride(locale)) {
+                    // Storage can be restored from old/manual backups. Keep a
+                    // malformed or stale locale from becoming an extension-URL
+                    // path traversal or an unrelated bundled-file fetch.
                     _i18n.override = null;
                     _i18n.overrideMap = null;
                     _i18n.overrideLocale = null;
@@ -29040,7 +29060,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
             _nameMap: null,
             _pendingAuthors: null,
-            _abortController: null,
+            _requestControllers: null,
+            _cancelPageWait: null,
             _COMMENT_ROOT_SELECTOR: 'ytd-comment-view-model, ytd-comment-renderer, ytd-comment-thread-renderer',
 
             _normalizeAuthorKey(author) {
@@ -29104,9 +29125,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 this._pendingAuthors?.set(authorKey, new Set([author]));
+                const requestController = new AbortController();
+                this._requestControllers?.add(requestController);
+                const timeoutId = setTimeout(() => requestController.abort(), 8000);
                 fetch(author.href, {
                     credentials: 'same-origin',
-                    signal: this._abortController?.signal
+                    signal: requestController.signal
                 }).then(async (resp) => {
                     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                     const text = await resp.text();
@@ -29117,9 +29141,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const decoded = decode(rawName);
                     this._rememberName(authorKey, decoded);
                     this._flushPending(authorKey, decoded);
-                }).catch((error) => {
-                    if (error?.name === 'AbortError') return;
+                }).catch(() => {
+                    // Timeout, teardown, and network failures all release the
+                    // dedupe entry so a later rendered comment can retry.
                     this._flushPending(authorKey, null);
+                }).finally(() => {
+                    clearTimeout(timeoutId);
+                    this._requestControllers?.delete(requestController);
                 });
             },
 
@@ -29138,42 +29166,49 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._nameMap = new Map();
                 this._pendingAuthors = new Map();
-                this._abortController = new AbortController();
-                const pageManager = document.getElementById('page-manager');
-                if (!pageManager) return;
+                this._requestControllers = new Set();
                 const decode = (() => {
                     const ENTITIES = [['amp','&'],['apos',"'"],['quot','"'],['nbsp',' '],['lt','<'],['gt','>'],['#39',"'"]];
                     return s => ENTITIES.reduce((acc, [e, sym]) => acc.replaceAll(`&${e};`, sym), s);
                 })();
-                this._processRoot(pageManager, decode);
-                // Route through the shared navigation observer's scoped-rule
-                // machinery instead of a second whole-subtree observer that ran
-                // two nested querySelectorAll passes per added node on every
-                // comment-scroll tick (hundreds/sec). The selector prefilter
-                // fires the rule only when a comment node is actually inserted.
-                if (typeof addScopedMutationRule === 'function') {
-                    addScopedMutationRule('enableHandleRevealer', this._COMMENT_ROOT_SELECTOR, (_target, addedElements) => {
-                        for (const node of addedElements) this._processRoot(node, decode);
-                    });
-                    this._scopedRuleActive = true;
-                } else {
-                    this._observer = new MutationObserver(records => {
-                        for (const r of records) {
-                            for (const node of r.addedNodes) {
-                                this._processRoot(node, decode);
+                const attach = (pageManager) => {
+                    this._cancelPageWait = null;
+                    if (!this._nameMap || !pageManager || this._scopedRuleActive || this._observer) return;
+                    this._processRoot(pageManager, decode);
+                    // Route through the shared navigation observer's scoped-rule
+                    // machinery instead of a second whole-subtree observer that ran
+                    // two nested querySelectorAll passes per added node on every
+                    // comment-scroll tick (hundreds/sec). The selector prefilter
+                    // fires the rule only when a comment node is actually inserted.
+                    if (typeof addScopedMutationRule === 'function') {
+                        addScopedMutationRule('enableHandleRevealer', this._COMMENT_ROOT_SELECTOR, (_target, addedElements) => {
+                            for (const node of addedElements) this._processRoot(node, decode);
+                        });
+                        this._scopedRuleActive = true;
+                    } else {
+                        this._observer = new MutationObserver(records => {
+                            for (const r of records) {
+                                for (const node of r.addedNodes) {
+                                    this._processRoot(node, decode);
+                                }
                             }
-                        }
-                    });
-                    this._observer.observe(pageManager, { childList: true, subtree: true });
-                }
+                        });
+                        this._observer.observe(pageManager, { childList: true, subtree: true });
+                    }
+                };
+                const pageManager = document.getElementById('page-manager');
+                if (pageManager) attach(pageManager);
+                else this._cancelPageWait = waitForElement('#page-manager', attach, 10000);
             },
             destroy() {
+                this._cancelPageWait?.(); this._cancelPageWait = null;
                 if (this._scopedRuleActive && typeof removeScopedMutationRule === 'function') {
                     removeScopedMutationRule('enableHandleRevealer');
                     this._scopedRuleActive = false;
                 }
                 this._observer?.disconnect(); this._observer = null;
-                this._abortController?.abort(); this._abortController = null;
+                this._requestControllers?.forEach(controller => controller.abort());
+                this._requestControllers?.clear(); this._requestControllers = null;
                 this._pendingAuthors?.clear(); this._pendingAuthors = null;
                 document.querySelectorAll('span[data-ytkit-name]').forEach(el => el.remove());
                 this._nameMap?.clear();
@@ -40798,7 +40833,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addScopedMutationRule(
                     'commentTextSelection',
                     `${COMMENT_TEXT_SELECTION_ROOT_SELECTOR}, ytd-comment-thread-renderer, .thread-hitbox`,
-                    () => {
+                    (_target, addedElements) => {
+                        // addScopedMutationRule invokes every rule once with an
+                        // empty added-node list at registration. Keep that
+                        // bootstrap call from defeating the idle deferral.
+                        if (!addedElements.length) return;
                         // Comments have appeared — ensure styles/listener are in
                         // place now rather than waiting for the idle callback.
                         this._injectDeferred();
