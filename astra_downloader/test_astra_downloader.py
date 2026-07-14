@@ -208,6 +208,9 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn('make_section_label("Ready when you are")', source)
         self.assertIn("window.render(pixmap)", renderer_source)
         self.assertIn("Companion navigation rail is incomplete", renderer_source)
+        self.assertIn("self.btn_clear_history.setEnabled(bool(data))", source)
+        self.assertIn('"Open Dashboard"', source)
+        self.assertIn('"View Download Queue"', source)
 
     def test_failed_settings_write_keeps_server_running_and_form_dirty(self):
         class TextField:
