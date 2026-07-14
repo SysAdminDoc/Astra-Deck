@@ -870,6 +870,23 @@ test('settingsPanel factory returns the panel runtime surface', () => {
     }
 });
 
+test('settingsPanel module ensures lazy styles before its direct build path', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/settings-panel/index.js',
+        'settingsPanel'
+    );
+    let styleCalls = 0;
+    const runtime = mod.createSettingsPanelRuntime({
+        ensurePanelStyles: () => { styleCalls += 1; },
+        shouldBuildPrimaryUI: () => false,
+    });
+
+    runtime.buildSettingsPanel();
+
+    assert.equal(styleCalls, 1,
+        'module runtime must inject the lazy panel stylesheet before returning');
+});
+
 test('settingsPanel module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];
@@ -921,6 +938,7 @@ test('settingsPanel monolith prefers the module runtime before inline fallback',
         'handleFileImport',
         'initFeatureLifecycle',
         'injectStyle',
+        'ensurePanelStyles',
         'isBooleanFeature',
         'liveFeatureList',
         'normalizeSelectOptions',
