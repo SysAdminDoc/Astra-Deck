@@ -20,6 +20,10 @@
 
     function buildPremiumCommentsCss() {
         return `
+                    #comments .tp-yt-paper-input-container.style-scope.underline {
+                        display: none !important;
+                    }
+
                     #comments ytd-comments#comments,
                     ytd-comments#comments {
                         display: block !important;

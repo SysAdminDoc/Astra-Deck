@@ -6843,7 +6843,8 @@ div.yt-spec-button-shape-next__button-text-content {
 .style-scope.ytd-commentbox {
     border: none; margin: 0; padding: 0;
 }
-div.unfocused-line.style-scope.tp-yt-paper-input-container { display: none; }
+div.unfocused-line.style-scope.tp-yt-paper-input-container,
+.tp-yt-paper-input-container.style-scope.underline { display: none; }
 yt-formatted-string.style-scope.ytd-commentbox { padding: 0; margin: 0; }
 
 /* Hide miniplayer */
@@ -7484,6 +7485,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const premiumCss = (chatStyleFeatures && typeof chatStyleFeatures.buildPremiumCommentsCss === 'function'
                     && chatStyleFeatures.buildPremiumCommentsCss())
                     || `
+                    #comments .tp-yt-paper-input-container.style-scope.underline {
+                        display: none !important;
+                    }
+
                     #comments ytd-comments#comments,
                     ytd-comments#comments {
                         display: block !important;

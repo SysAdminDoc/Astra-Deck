@@ -115,9 +115,24 @@
                     lifecycleStyleRecords.set(id, { style, bodyClass: className });
                 },
                 apply(ctx = {}) {
+                    if (typeof buildCss !== 'function') return;
                     const record = lifecycleStyleRecords.get(id);
-                    if (!record || typeof buildCss !== 'function') return;
                     const css = buildCss(ctx.settings || {}, ctx);
+                    if (!record) {
+                        // init() skips creating a record when the initial CSS is
+                        // falsy (e.g. a default color that yields no override). If
+                        // the user later picks a non-default value, apply() must be
+                        // able to inject it — otherwise the style is never applied.
+                        if (!css) return;
+                        const raw = typeof isRawCss === 'boolean'
+                            ? isRawCss
+                            : String(css).includes('{');
+                        const className = ctx.bodyClass || bodyClass;
+                        const style = injectStyle(css, id, raw);
+                        if (className && document.body) document.body.classList.add(className);
+                        lifecycleStyleRecords.set(id, { style, bodyClass: className });
+                        return;
+                    }
                     if (!css) {
                         record.style?.remove();
                         lifecycleStyleRecords.delete(id);
@@ -998,6 +1013,17 @@
         Object.freeze({ key: "sleepTimer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
         Object.freeze({ key: "cleanUiPreset", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.3" }),
+
+        // ─── v4.49.0 Wave 11 — external-userscript feature ingestion ───
+        Object.freeze({ key: "hiddenGuideElementsManager", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "hiddenGuideElements", category: "nav", type: "array", defaultValue: [], knownValues: Object.freeze(["home","subscriptions","history","playlists","yourVideos","watchLater","likedVideos","trending","music","movies","live","gaming","news","sports","learning","premium","studio","settings","reportHistory","help","footer"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "hideOwnAvatar", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "hideSearchSidebar", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "removeScrubber", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "softBottomGradient", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "hideCommentComposer", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "hideCommentReplyButton", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "uiFontSize", category: "shell", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
     ]);
 
     // Build a {key: defaultValue} map for chrome.storage.local seeding +
@@ -2954,11 +2980,35 @@
             }
         }
 
+        let lastNavHref = (typeof location !== 'undefined') ? location.href : '';
         function runNavigateRules() {
-            if (typeof document.startViewTransition === 'function') {
-                document.startViewTransition(() => _executeNavigateRules());
-            } else {
+            const href = (typeof location !== 'undefined') ? location.href : '';
+            const urlChanged = href !== lastNavHref;
+            lastNavHref = href;
+            // Only pay for a full-page view-transition snapshot on a real URL
+            // change. `yt-page-data-updated` also fires as the feed appends items
+            // during infinite scroll (same URL) — wrapping those in
+            // startViewTransition froze rendering and cross-faded the whole
+            // document mid-scroll. The navigate rules themselves still run every
+            // time; only the (cosmetic) cross-fade is gated to genuine navigations.
+            const reducedMotion = typeof window.matchMedia === 'function'
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!urlChanged || reducedMotion || typeof document.startViewTransition !== 'function') {
                 _executeNavigateRules();
+                return;
+            }
+
+            let executed = false;
+            try {
+                document.startViewTransition(() => {
+                    executed = true;
+                    _executeNavigateRules();
+                });
+            } catch (_) {
+                // A transition can be rejected while another document transition
+                // is active. Navigation rules are functional, so never let a
+                // cosmetic API prevent them from running.
+                if (!executed) _executeNavigateRules();
             }
         }
 
@@ -3835,7 +3885,12 @@
             ollama:           { async: true,  run: hasOllama },
         });
 
-        function probe(name) {
+        // Always returns Promise<boolean>. Async probes (mediaDL, ollama) resolve
+        // a real boolean rather than handing back a raw fetch promise — a bare
+        // Promise is always truthy, so `if (await probe('mediaDL'))` is required to
+        // read the actual capability. Sync probes are wrapped for a uniform
+        // await-me contract; unknown names resolve false.
+        async function probe(name) {
             const entry = PROBES[name];
             if (!entry) {
                 // Unknown capability — be defensive, return false rather
@@ -3843,7 +3898,13 @@
                 // popup on an unknown name.
                 return false;
             }
-            return entry.run();
+            try {
+                return Boolean(entry.async ? await entry.run() : entry.run());
+            } catch (_) {
+                // reason: probe should never crash the caller; treat any
+                // error as "capability not available".
+                return false;
+            }
         }
 
         async function runAll() {
@@ -4460,6 +4521,11 @@
         }
 
         function buildNoFrostedGlassCss() {
+            // Scoped to the surfaces YouTube actually applies backdrop-filter to
+            // (masthead, chip bar, dropdowns/dialogs, popup container, player
+            // chrome, and the backdrop-filter experiment button class) instead of
+            // a universal `*` selector, which forced the style engine to re-match
+            // the rule against every element on every DOM mutation.
             return 'ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, '
                 + 'ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, '
                 + 'tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, '
@@ -4695,6 +4761,10 @@
 
         function buildPremiumCommentsCss() {
             return `
+                        #comments .tp-yt-paper-input-container.style-scope.underline {
+                            display: none !important;
+                        }
+
                         #comments ytd-comments#comments,
                         ytd-comments#comments {
                             display: block !important;
@@ -15762,6 +15832,7 @@
                 handleFileImport,
                 initFeatureLifecycle,
                 injectStyle,
+                ensurePanelStyles,
                 isBooleanFeature,
                 liveFeatureList,
                 normalizeSelectOptions,
@@ -15809,10 +15880,21 @@
             document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
             panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
             if (open) {
-                requestAnimationFrame(() => {
+                const focusInitialControl = () => {
+                    if (!isSettingsPanelOpen()) return;
                     const searchInput = document.getElementById('ytkit-search');
                     const fallbackTarget = getFocusableUiElements(panel)[0];
-                    (searchInput || fallbackTarget)?.focus({ preventScroll: true });
+                    const visibleSearch = searchInput?.getClientRects().length ? searchInput : null;
+                    (visibleSearch || fallbackTarget)?.focus({ preventScroll: true });
+                };
+                requestAnimationFrame(() => {
+                    focusInitialControl();
+                    // On the first open, the lazily-injected stylesheet and dialog
+                    // layout can settle after this frame in slower engines. Retry
+                    // once so focus never falls back to <body> during the entrance.
+                    if (!panel?.contains(document.activeElement)) {
+                        setTimeout(focusInitialControl, 50);
+                    }
                 });
             } else if (wasOpen) {
                 const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
@@ -15909,6 +15991,11 @@
         }
 
     function buildSettingsPanel() {
+            // The module runtime can open the panel directly (without going
+            // through ytkit.js's inline wrapper), so it must trigger the lazy
+            // stylesheet itself. Otherwise the dialog renders at document origin
+            // with no positioning shell in the normal module path.
+            ensurePanelStyles?.();
             if (!shouldBuildPrimaryUI()) return;
             if (document.getElementById('ytkit-settings-panel')) return;
 
@@ -19611,6 +19698,7 @@
             let _pillEl = null;
             let _estimateEl = null;
             let _navRule = null;
+            let _renderTimer = null;
 
             function _ensureStyles() {
                 if (_styleElement) return;
@@ -19760,6 +19848,11 @@
                 const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
                 if (!dislikeButton) return;
                 const data = await _fetch(videoId);
+                // The user can navigate during the fetch await. Bail if the active
+                // video changed (or we left the watch page) so we don't append the
+                // previous video's dislike count onto the current video's button —
+                // matches the route-token guards in dearrow/sponsorblock.
+                if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
                 _pillEl?.remove();
                 _estimateEl?.remove();
                 document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
@@ -19835,7 +19928,13 @@
 
                 init() {
                     _ensureStyles();
-                    _navRule = () => { setTimeout(() => _render(), 1500); };
+                    _navRule = () => {
+                        // Track the pending timer so destroy() can cancel it —
+                        // otherwise a navigation right before disable fires a
+                        // zombie _render() ~1.5s later that re-injects a pill.
+                        clearTimeout(_renderTimer);
+                        _renderTimer = setTimeout(() => { _renderTimer = null; _render(); }, 1500);
+                    };
                     addNavigateRule('returnDislike', _navRule);
                     _navRule();
                 },
@@ -19843,6 +19942,8 @@
                 destroy() {
                     removeNavigateRule('returnDislike');
                     _navRule = null;
+                    clearTimeout(_renderTimer);
+                    _renderTimer = null;
                     _pillEl?.remove();
                     _pillEl = null;
                     _estimateEl?.remove();
@@ -20343,11 +20444,12 @@
                         + 'ytd-popup-container [class*="adblock"]'
                     );
                     if (warning && DiagnosticLog) {
-                        DiagnosticLog.record('sb-anti-adblock', {
-                            detected: true,
-                            selector: warning.tagName.toLowerCase()
-                                + (warning.className ? '.' + warning.className.split(/\s+/)[0] : ''),
-                        });
+                        // record() coerces the message with String(msg); passing an
+                        // object would log the literal "[object Object]" and lose the
+                        // selector detail this diagnostic exists to capture.
+                        const selector = warning.tagName.toLowerCase()
+                            + (warning.className ? '.' + warning.className.split(/\s+/)[0] : '');
+                        DiagnosticLog.record('sb-anti-adblock', `detected: ${selector}`);
                     }
                 },
 
@@ -20368,6 +20470,7 @@
                         self._videoId = null;
                         self._segments = [];
                         self._clearBarSegments();
+                        self._armBarObserver();
                         self._clearSchedule();
                         clearTimeout(self._reloadTimer);
                         self._reloadTimer = setTimeout(() => {
@@ -20381,15 +20484,31 @@
                         if (this._segments.length) this._renderBarSegments();
                     };
                     document.addEventListener('durationchange', this._durationHandler, true);
-                    // Also watch for video duration becoming available (for bar rendering)
+                    // Also watch for video duration becoming available (for bar
+                    // rendering). The observer disarms itself once the bars are
+                    // painted so it stops reacting to #movie_player's constant
+                    // playback churn (progress ticks, buffered ranges, caption
+                    // windows); the navigate rule re-arms it for the next video.
                     this._barObserver = new MutationObserver(() => {
                         const video = getMainVideoElement();
                         if (video?.duration && this._segments.length && !this._barSegments.length) {
                             this._renderBarSegments();
                         }
+                        if (this._barSegments.length) this._disarmBarObserver();
                     });
+                    this._armBarObserver();
+                },
+                _armBarObserver() {
+                    if (this._barArmed || !this._barObserver) return;
                     const player = getMoviePlayerElement();
-                    if (player) this._barObserver.observe(player, { childList: true, subtree: true });
+                    if (!player) return;
+                    this._barObserver.observe(player, { childList: true, subtree: true });
+                    this._barArmed = true;
+                },
+                _disarmBarObserver() {
+                    if (!this._barArmed || !this._barObserver) return;
+                    this._barObserver.disconnect();
+                    this._barArmed = false;
                 },
 
                 destroy() {
@@ -20410,7 +20529,7 @@
                     if (this._pauseHandler) document.removeEventListener('pause', this._pauseHandler, true);
                     if (this._durationHandler) document.removeEventListener('durationchange', this._durationHandler, true);
                     removeNavigateRule(this._navRuleId);
-                    this._barObserver?.disconnect();
+                    this._disarmBarObserver();
                     this._clearBarSegments();
                     this._styleEl?.remove();
                     this._flushCachePersist();
@@ -20467,6 +20586,7 @@
                 _cacheMeta: {},
                 _pending: {},
                 _observer: null,
+                _observing: false,
                 _navRuleId: 'deArrowNav',
                 _generation: 0,
                 _processTimer: null,
@@ -20531,14 +20651,33 @@
                             self._resetTimer = null;
                             self._processPage();
                         }, 1000);
+                        // Keep the churning observer attached only off watch pages.
+                        if (isWatchPagePath()) self._disconnectObserver();
+                        else self._connectObserver();
                     };
-                    addNavigateRule(this._navRuleId, resetAndProcess);
                     this._observer = new MutationObserver(() => {
                         if (isWatchPagePath()) return;
                         clearTimeout(self._processTimer);
                         self._processTimer = setTimeout(() => self._processPage(), 300);
                     });
+                    // Previously the observer stayed attached to document.body on
+                    // every page including watch pages, where it woke on each
+                    // player/comment mutation just to bail in the callback. Now the
+                    // navigate rule connects it only off watch pages and disconnects
+                    // it on entry; the watch-sidebar rail is still covered by
+                    // resetAndProcess's one-shot pass.
+                    addNavigateRule(this._navRuleId, resetAndProcess);
+                    if (!isWatchPagePath()) this._connectObserver();
+                },
+                _connectObserver() {
+                    if (this._observing || !this._observer) return;
                     this._observer.observe(document.body, { childList: true, subtree: true });
+                    this._observing = true;
+                },
+                _disconnectObserver() {
+                    if (!this._observing || !this._observer) return;
+                    this._observer.disconnect();
+                    this._observing = false;
                 },
                 async _fetchBranding(videoId) {
                     // Check cache with TTL enforcement
@@ -20744,6 +20883,7 @@
                     this._pending = {};
                     removeNavigateRule(this._navRuleId);
                     this._observer?.disconnect();
+                    this._observing = false;
                     this._styleEl?.remove();
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
                     document.querySelectorAll('[data-da-processed]').forEach(el => { delete el.dataset.daProcessed; el.style.display = ''; });
@@ -23984,7 +24124,8 @@ div.yt-spec-button-shape-next__button-text-content {
 .style-scope.ytd-commentbox {
     border: none; margin: 0; padding: 0;
 }
-div.unfocused-line.style-scope.tp-yt-paper-input-container { display: none; }
+div.unfocused-line.style-scope.tp-yt-paper-input-container,
+.tp-yt-paper-input-container.style-scope.underline { display: none; }
 yt-formatted-string.style-scope.ytd-commentbox { padding: 0; margin: 0; }
 
 /* Hide miniplayer */
