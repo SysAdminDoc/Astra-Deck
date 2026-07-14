@@ -50,10 +50,12 @@ test('optional-host Chromium smoke seeds enabled optional features and verifies 
         'smoke must open popup.html through the real toolbar action API');
     assert.doesNotMatch(smokeSource, /\/json\/new\?\$\{popupUrl\}/,
         'smoke must not bypass the toolbar action by navigating to popup.html directly');
-    assert.match(smokeSource, /ACTION_POPUP_REQUIRES_HEADED/,
-        'headless Chromium action gaps should retry the real toolbar API in headed mode');
-    assert.match(smokeSource, /result\.headedFallback = true/,
-        'the headed retry should remain visible in smoke output');
+    assert.match(smokeSource, /ACTION_POPUP_HEADLESS_UNAVAILABLE/,
+        'headless Chromium action gaps should fail with an explicit capability code');
+    assert.doesNotMatch(smokeSource, /headedFallback/,
+        'the smoke must never launch a headed-browser fallback implicitly');
+    assert.doesNotMatch(smokeSource, /\{ \.\.\.opts, headed: true \}/,
+        'the smoke must never mutate default options into headed mode');
     assert.match(smokeSource, /chrome\.permissions\.getAll/,
         'smoke must inspect current runtime host grants before the prompt');
     assert.match(smokeSource, /optional-host-banner/,
@@ -87,6 +89,33 @@ test('optional-host Chromium smoke exposes headed denial and revoke modes', () =
         'smoke must report the denied prompt state explicitly');
     assert.match(smokeSource, /optional host revoke completed/,
         'smoke must report the post-revoke prompt state explicitly');
+});
+
+test('optional-host Chromium smoke keeps headed verification explicit and reproducible', () => {
+    const defaults = smoke.parseArgs([]);
+    const headlessArgs = smoke.chromiumArgs('profile', 'stage', defaults, 9222);
+    const headedArgs = smoke.chromiumArgs(
+        'profile',
+        'stage',
+        smoke.parseArgs(['--headed']),
+        9222
+    );
+    assert.ok(headlessArgs.includes('--headless=new'));
+    assert.ok(!headedArgs.includes('--headless=new'));
+
+    const command = smoke.buildIsolatedHeadedCommand({
+        ...defaults,
+        attemptGrant: true,
+        grantTimeoutMs: 9000,
+        revokeAfterGrant: true,
+        timeoutMs: 15000,
+    }, 'C:\\Program Files\\Browser\\browser.exe');
+    assert.equal(
+        command,
+        'npm run smoke:optional-hosts -- --headed --browser "C:\\\\Program Files\\\\Browser\\\\browser.exe" --attempt-grant --revoke-after-grant --grant-timeout-ms 9000 --timeout-ms 15000'
+    );
+    assert.match(smokeSource, /Headless smoke stopped without opening a visible browser/);
+    assert.match(smokeSource, /dedicated isolated desktop/);
 });
 
 test('optional-host Chromium smoke bounds stalled DevTools HTTP requests', async () => {

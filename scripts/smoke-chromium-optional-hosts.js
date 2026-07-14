@@ -138,6 +138,23 @@ function chromiumArgs(browserProfile, stageDir, opts, devToolsPort) {
     return args;
 }
 
+function quoteCliArg(value) {
+    return JSON.stringify(String(value));
+}
+
+function buildIsolatedHeadedCommand(opts, browserPath = opts.browser) {
+    const args = ['npm run smoke:optional-hosts --', '--headed'];
+    if (browserPath) args.push('--browser', quoteCliArg(browserPath));
+    if (opts.expectDeny) args.push('--expect-deny');
+    if (opts.attemptGrant) args.push('--attempt-grant');
+    if (opts.revokeAfterGrant) args.push('--revoke-after-grant');
+    if (opts.grantTimeoutMs !== 5000) {
+        args.push('--grant-timeout-ms', String(opts.grantTimeoutMs));
+    }
+    if (opts.timeoutMs !== 12000) args.push('--timeout-ms', String(opts.timeoutMs));
+    return args.join(' ');
+}
+
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -649,8 +666,8 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
             stderr,
         };
     } catch (error) {
-        if (/chrome\.action\.openPopup is unavailable/i.test(error.message || '')) {
-            error.code = 'ACTION_POPUP_REQUIRES_HEADED';
+        if (!opts.headed && /chrome\.action\.openPopup is unavailable/i.test(error.message || '')) {
+            error.code = 'ACTION_POPUP_HEADLESS_UNAVAILABLE';
         }
         if (
             hasLoadExtensionPolicyBlock(stderr)
@@ -682,24 +699,8 @@ async function runChromiumOptionalHostSmoke(opts) {
     try {
         let lastError = null;
         for (const candidate of candidates) {
-            let attemptOpts = opts;
             try {
-                let result;
-                try {
-                    result = await runWithBrowser(candidate, manifest, stageDir, attemptOpts);
-                } catch (error) {
-                    // Chromium 150 omits chrome.action.openPopup from extension
-                    // service workers in --headless=new. The headed browser
-                    // exposes the real toolbar API, so retry the same staged
-                    // extension once without headless rather than bypassing the
-                    // action with a direct popup.html navigation.
-                    if (error.code !== 'ACTION_POPUP_REQUIRES_HEADED' || opts.headed) {
-                        throw error;
-                    }
-                    attemptOpts = { ...opts, headed: true };
-                    result = await runWithBrowser(candidate, manifest, stageDir, attemptOpts);
-                    result.headedFallback = true;
-                }
+                const result = await runWithBrowser(candidate, manifest, stageDir, opts);
                 result.blockedBrowsers = blocked;
                 return result;
             } catch (error) {
@@ -707,6 +708,11 @@ async function runChromiumOptionalHostSmoke(opts) {
                 if (error.code === 'LOAD_EXTENSION_BLOCKED') {
                     blocked.push(candidate);
                     continue;
+                }
+                if (error.code === 'ACTION_POPUP_HEADLESS_UNAVAILABLE') {
+                    const verificationCommand = buildIsolatedHeadedCommand(opts, candidate.path);
+                    error.verificationCommand = verificationCommand;
+                    error.message = `${error.message} Headless smoke stopped without opening a visible browser. To verify the real toolbar action on a dedicated isolated desktop, rerun explicitly: ${verificationCommand}`;
                 }
                 throw error;
             }
@@ -725,9 +731,6 @@ async function main(argv = process.argv.slice(2)) {
     const result = await runChromiumOptionalHostSmoke(opts);
     for (const blocked of result.blockedBrowsers || []) {
         console.log(`[smoke-chromium-optional-hosts] ${blocked.label}: --load-extension blocked by local Chrome policy; tried next browser`);
-    }
-    if (result.headedFallback) {
-        console.log('[smoke-chromium-optional-hosts] Headless Chromium omitted chrome.action.openPopup; real toolbar activation passed in a bounded headed retry');
     }
     console.log(`[smoke-chromium-optional-hosts] ${result.browser}: loaded store-safe MV3 ${result.extensionId}`);
     console.log(`[smoke-chromium-optional-hosts] optional hosts before grant: ${result.expectedOptionalOrigins.length} missing`);
@@ -754,6 +757,7 @@ if (require.main === module) {
 module.exports = {
     POPUP_BOOT_SETTINGS,
     browserCandidates,
+    buildIsolatedHeadedCommand,
     chromiumArgs,
     createChromiumStage,
     fetchJsonFromDevTools,
