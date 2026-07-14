@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Uninstall no longer terminates unrelated media processes.** Removal first
+  asks the running companion to close and cancel its own jobs, then limits the
+  fallback process-tree cleanup to `AstraDownloader.exe`; unrelated yt-dlp and
+  FFmpeg work owned by other applications is left untouched.
 - **Companion diagnostics are redacted and reviewable before sharing.** The
   dashboard now builds a bounded, allowlisted JSON payload, removes local
   paths, URLs, tokens, cookie-shaped values, and opaque identifiers, and opens
