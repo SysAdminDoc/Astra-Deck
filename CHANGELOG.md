@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Dependency gates now cover vulnerable floors and build tooling.** Requests
+  now starts at 2.33.0 and Waitress at 3.0.2. The Python audit resolves both the
+  declared ranges and their exact direct minima, while the default npm audit
+  checks the production graph and the complete development/tooling graph.
 - **Predicate-sandbox ReDoS gap closed.** The regex safety screen for
   user-authored filter predicates rejected nested catastrophic forms but let
   *sequential quantified groups* through — `(a+)(a+)(a+)(a+)(a+)b` and

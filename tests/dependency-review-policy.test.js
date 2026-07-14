@@ -17,8 +17,16 @@ test('dependency review stays local-only with no validate workflow', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
     assert.match(pkg.scripts.check, /npm run audit:deps/,
         'local check script must include dependency auditing');
-    assert.equal(pkg.scripts['audit:deps'], 'npm audit --omit=dev --audit-level=moderate',
-        'local dependency audit must keep the moderate vulnerability floor');
+    assert.equal(
+        pkg.scripts['audit:deps'],
+        'npm run audit:deps:production && npm audit --audit-level=moderate',
+        'default dependency audit must cover production and the complete toolchain graph'
+    );
+    assert.equal(
+        pkg.scripts['audit:deps:production'],
+        'npm audit --omit=dev --audit-level=moderate',
+        'production dependency audit must keep the moderate vulnerability floor'
+    );
     assert.match(pkg.scripts.check, /npm run audit:python/,
         'local check script must include Python companion dependency auditing');
     assert.equal(pkg.scripts['audit:python'], 'node scripts/audit-python-deps.js',
@@ -33,6 +41,10 @@ test('requirements stay pinned for local companion dependency review', () => {
         'yt-dlp must remain exactly pinned for reviewed local updates');
     assert.match(requirements, /^curl_cffi==\d+\.\d+\.\d+$/m,
         'curl_cffi must remain exactly pinned for reviewed local updates');
+    assert.match(requirements, /^requests>=2\.33\.0,<3$/m,
+        'Requests must exclude the vulnerable pre-2.33.0 range');
+    assert.match(requirements, /^waitress>=3\.0\.2,<4$/m,
+        'Waitress must exclude the vulnerable 3.0.0 and 3.0.1 releases');
 });
 
 test('Python companion audit emits release-review JSON and fails closed', () => {
@@ -68,4 +80,36 @@ test('Python companion audit emits release-review JSON and fails closed', () => 
         'unreviewed high-severity Python findings must fail the gate');
     assert.equal(report.summary.actionableFindings, 1);
     assert.equal(report.actionableFindings[0].package, 'flask');
+
+    const minimum = audit.minimumRequirementsFor([
+        'yt-dlp==2026.6.9',
+        'PyQt6>=6.6.0,<7',
+        'requests>=2.33.0,<3'
+    ].join('\n'));
+    assert.match(minimum, /^yt-dlp==2026\.6\.9$/m);
+    assert.match(minimum, /^PyQt6==6\.6\.0$/m);
+    assert.match(minimum, /^requests==2\.33\.0$/m);
+
+    const combined = audit.combineAuditReports(
+        { ...report, status: 'pass', actionableFindings: [], reviewedFindings: [] },
+        report,
+        { now: new Date('2026-07-14T00:00:00.000Z') }
+    );
+    assert.equal(combined.status, 'fail',
+        'a vulnerability found only at the minimum resolution must fail the combined gate');
+    assert.equal(combined.actionableFindings[0].resolution, 'minimum');
+
+    const duplicate = audit.normalizeAudit({
+        dependencies: [{
+            name: 'requests',
+            version: '2.32.4',
+            vulns: [
+                { id: 'PYSEC-TEST-2', aliases: ['CVE-2099-0002'], description: 'short' },
+                { id: 'PYSEC-TEST-2', aliases: ['CVE-2099-0002'], description: 'longer duplicate' }
+            ]
+        }]
+    });
+    assert.equal(duplicate.summary.findings, 1,
+        'duplicate records from advisory services must collapse to one finding');
+    assert.equal(duplicate.actionableFindings[0].description, 'longer duplicate');
 });
