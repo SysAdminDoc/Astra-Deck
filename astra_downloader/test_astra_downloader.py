@@ -1218,6 +1218,10 @@ class Sha256VerifyTests(unittest.TestCase):
 
 
 class SetupChecksumTests(unittest.TestCase):
+    def test_setup_worker_preserves_auto_update_preference(self):
+        self.assertFalse(ad.SetupWorker(auto_update_ytdlp=False).auto_update_ytdlp)
+        self.assertTrue(ad.SetupWorker(auto_update_ytdlp=True).auto_update_ytdlp)
+
     def test_forced_ffmpeg_refresh_preserves_existing_binary_on_download_failure(self):
         original_install_dir = ad.INSTALL_DIR
         original_ytdlp_path = ad.YTDLP_PATH

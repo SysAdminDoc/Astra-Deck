@@ -48,7 +48,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **ffmpeg maintenance no longer deletes the working binary before refresh.**
   The companion downloads, verifies, and extracts a replacement beside the
   current executable, atomically swaps it only after validation, preserves the
-  old copy on failure, and defers refresh while downloads are active.
+  old copy on failure, defers refresh while downloads are active, and respects
+  the user's automatic yt-dlp update preference during setup and repair.
 - **Deno readiness now fails closed when the runtime cannot identify itself.**
   A present but broken or unparsable Deno executable is reported as unsupported
   with a repair action instead of being allowed through to an opaque yt-dlp
