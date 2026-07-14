@@ -488,6 +488,7 @@
                     self._videoId = null;
                     self._segments = [];
                     self._clearBarSegments();
+                    self._armBarObserver();
                     self._clearSchedule();
                     clearTimeout(self._reloadTimer);
                     self._reloadTimer = setTimeout(() => {
@@ -501,15 +502,31 @@
                     if (this._segments.length) this._renderBarSegments();
                 };
                 document.addEventListener('durationchange', this._durationHandler, true);
-                // Also watch for video duration becoming available (for bar rendering)
+                // Also watch for video duration becoming available (for bar
+                // rendering). The observer disarms itself once the bars are
+                // painted so it stops reacting to #movie_player's constant
+                // playback churn (progress ticks, buffered ranges, caption
+                // windows); the navigate rule re-arms it for the next video.
                 this._barObserver = new MutationObserver(() => {
                     const video = getMainVideoElement();
                     if (video?.duration && this._segments.length && !this._barSegments.length) {
                         this._renderBarSegments();
                     }
+                    if (this._barSegments.length) this._disarmBarObserver();
                 });
+                this._armBarObserver();
+            },
+            _armBarObserver() {
+                if (this._barArmed || !this._barObserver) return;
                 const player = getMoviePlayerElement();
-                if (player) this._barObserver.observe(player, { childList: true, subtree: true });
+                if (!player) return;
+                this._barObserver.observe(player, { childList: true, subtree: true });
+                this._barArmed = true;
+            },
+            _disarmBarObserver() {
+                if (!this._barArmed || !this._barObserver) return;
+                this._barObserver.disconnect();
+                this._barArmed = false;
             },
 
             destroy() {
@@ -530,7 +547,7 @@
                 if (this._pauseHandler) document.removeEventListener('pause', this._pauseHandler, true);
                 if (this._durationHandler) document.removeEventListener('durationchange', this._durationHandler, true);
                 removeNavigateRule(this._navRuleId);
-                this._barObserver?.disconnect();
+                this._disarmBarObserver();
                 this._clearBarSegments();
                 this._styleEl?.remove();
                 this._flushCachePersist();
