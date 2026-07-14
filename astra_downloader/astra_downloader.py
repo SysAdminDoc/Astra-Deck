@@ -116,6 +116,8 @@ COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/l
 COMPANION_UPDATE_SHA256_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256"
 COMPANION_UPDATE_TIMEOUT_SECONDS = 120
 COMPANION_UPDATE_MIN_BYTES = 1024
+YTDLP_ROLLBACK_FILENAME = '.yt-dlp.last-known-good.exe'
+COMPANION_ROLLBACK_FILENAME = '.AstraDownloader.last-known-good.exe'
 # Hard ceiling for any single helper download (companion exe, yt-dlp, ffmpeg
 # zip, icon). The largest legitimate asset (the ffmpeg archive) is well under
 # 200 MB; a misbehaving CDN, truncating proxy, or endless redirect body must
@@ -453,6 +455,37 @@ def atomic_write_json(path, data):
         try:
             if tmp.exists():
                 tmp.unlink()
+        except Exception:
+            pass
+
+
+def atomic_copy_verified(source, destination):
+    """Copy one file through a sibling temporary and verify byte identity.
+
+    Update recovery depends on the backup remaining usable after a crash.  A
+    normal ``copy2`` can leave a truncated destination, so copy, fsync, hash,
+    and only then atomically replace the retained backup.
+    """
+    source = Path(source)
+    destination = Path(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    source_digest = _compute_sha256(source)
+    if not source_digest:
+        raise RuntimeError(f'Could not verify source file {source.name}.')
+    tmp = destination.with_name(f'.{destination.name}.{uuid.uuid4().hex}.tmp')
+    try:
+        with open(source, 'rb') as src, open(tmp, 'wb') as dst:
+            shutil.copyfileobj(src, dst, length=1024 * 1024)
+            dst.flush()
+            os.fsync(dst.fileno())
+        copied_digest = _compute_sha256(tmp)
+        if copied_digest != source_digest:
+            raise RuntimeError(f'Backup verification failed for {source.name}.')
+        os.replace(tmp, destination)
+        return source_digest
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
         except Exception:
             pass
 
@@ -1409,6 +1442,86 @@ def reset_ffmpeg_capabilities_cache():
 
 # ── v1.2.0: throttled yt-dlp auto-update helpers ──
 _YTDLP_UPDATE_INTERVAL_HOURS = 24
+_YTDLP_UPDATE_LOCK = threading.Lock()
+_COMPANION_UPDATE_LOCK = threading.Lock()
+
+
+def _ytdlp_update_state_path():
+    return INSTALL_DIR / 'yt-dlp-update-state.json'
+
+
+def _companion_update_state_path():
+    return INSTALL_DIR / 'companion-update-state.json'
+
+
+def _read_update_state(path):
+    try:
+        data = json.loads(Path(path).read_text(encoding='utf-8'))
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _write_update_state(path, **fields):
+    state = _read_update_state(path)
+    state.update(fields)
+    state['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    atomic_write_json(path, state)
+    return state
+
+
+def read_update_recovery_status():
+    """Return the allowlisted, path-free updater state exposed by /health."""
+    result = {}
+    for wire_name, path in (
+        ('ytDlp', _ytdlp_update_state_path()),
+        ('companion', _companion_update_state_path()),
+    ):
+        state = _read_update_state(path)
+        if not state:
+            continue
+        public = {}
+        for source, target in (
+            ('status', 'status'),
+            ('active_version', 'activeVersion'),
+            ('rollback_version', 'rollbackVersion'),
+            ('error_code', 'errorCode'),
+            ('updated_at', 'updatedAt'),
+        ):
+            value = state.get(source)
+            if isinstance(value, str) and value:
+                public[target] = value[:80]
+        if public:
+            result[wire_name] = public
+    return result
+
+
+def log_update_recovery_status():
+    for product, state in read_update_recovery_status().items():
+        write_persistent_log(
+            f'Update recovery {product}: status {state.get("status", "unknown")}; '
+            f'active {state.get("activeVersion", "unknown")}; '
+            f'rollback {state.get("rollbackVersion", "not retained")}.'
+        )
+
+
+def _probe_ytdlp_binary(path, timeout=15):
+    """Return a strict yt-dlp version only when the candidate can execute."""
+    try:
+        result = subprocess.run(
+            [str(path), '--version'],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    except Exception:
+        return ''
+    if result.returncode != 0:
+        return ''
+    output = ((result.stdout or '') + (result.stderr or '')).strip()
+    version = output.splitlines()[0].strip() if output else ''
+    return version[:32] if re.fullmatch(r'\d{4}\.\d{1,2}\.\d{1,2}(?:[.\w+-]*)?', version) else ''
 
 
 def _parse_iso_like(value):
@@ -1432,101 +1545,222 @@ def mark_ytdlp_update_check(config):
     if not config:
         return
     try:
-        config.set("LastYtDlpUpdateCheck", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        config.save()
+        stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(config, dict):
+            config["LastYtDlpUpdateCheck"] = stamp
+        else:
+            config.set("LastYtDlpUpdateCheck", stamp)
+            config.save()
     except Exception as e:
         write_persistent_log(f"Could not persist yt-dlp update timestamp: {e}")
 
 
 def _run_ytdlp_self_update(config, source_tag):
-    """Synchronously run ``yt-dlp -U`` and return a structured result.
+    """Update a staged yt-dlp copy, then activate it with verified rollback.
 
-    Shared runner used by both the background ``maybe_auto_update_ytdlp``
-    (NF26) and the on-demand ``/update-ytdlp`` endpoint (NF18). Captures
-    stdout/stderr, invalidates the version cache on success so ``/health``
-    reflects the new build, and stamps the throttle marker so a
-    successful force-update also resets the auto-update clock.
-
-    Returns a dict with keys:
-      - ``ok``: bool
-      - ``exit_code``: int (-1 on subprocess exception / timeout)
-      - ``stdout``: trimmed, ≤ 200 chars
-      - ``stderr``: trimmed, ≤ 200 chars
-      - ``error``: optional human-readable error string when ok is False
-      - ``version_before``: cached version at start of run (best-effort)
-      - ``version_after``: cached version refreshed post-run (best-effort)
-      - ``source``: caller-provided tag (logged for support traceability)
+    Running ``-U`` against the live executable made a valid-but-broken update
+    irreversible.  The updater now mutates a sibling staging copy, verifies
+    ``--version``, retains one byte-verified last-known-good copy, atomically
+    activates, and restores the backup if the post-activation probe fails.
     """
-    version_before = get_ytdlp_version() or ''
-    try:
-        result = subprocess.run(
-            [str(YTDLP_PATH), '-U'],
-            capture_output=True,
-            text=True,
-            timeout=120,
-            creationflags=CREATE_NO_WINDOW,
-        )
-    except subprocess.TimeoutExpired:
-        write_persistent_log(
-            f"yt-dlp {source_tag} update timed out after 120 s — yt-dlp may be "
-            f"blocked on a download.yt-dlp.org request."
-        )
+    if not _YTDLP_UPDATE_LOCK.acquire(blocking=False):
         return {
-            'ok': False,
-            'exit_code': -1,
-            'stdout': '',
-            'stderr': '',
-            'error': 'yt-dlp -U timed out after 120 s',
-            'version_before': version_before,
-            'version_after': version_before,
-            'source': source_tag,
-        }
-    except Exception as e:  # noqa: BLE001
-        write_persistent_log(f"yt-dlp {source_tag} update error: {e}")
-        return {
-            'ok': False,
-            'exit_code': -1,
-            'stdout': '',
-            'stderr': '',
-            'error': 'yt-dlp -U could not be launched. Check Astra Downloader logs for details.',
-            'version_before': version_before,
-            'version_after': version_before,
+            'ok': False, 'exit_code': -1, 'stdout': '', 'stderr': '',
+            'error': 'A yt-dlp update is already in progress.',
+            'error_code': 'update-in-progress',
+            'version_before': get_ytdlp_version() or '',
+            'version_after': get_ytdlp_version() or '',
             'source': source_tag,
         }
 
-    stdout = (result.stdout or '').strip()[:200]
-    stderr = (result.stderr or '').strip()[:200]
-    if result.returncode == 0:
-        mark_ytdlp_update_check(config)
-        # Invalidate version cache so /health reports the new version.
-        with _VERSION_CACHE_LOCK:
-            _version_cache['ytdlp']['checked_at'] = 0.0
-        version_after = get_ytdlp_version(force=True) or version_before
-        write_persistent_log(
-            f"yt-dlp {source_tag} update ok ({version_before} -> {version_after}): {stdout}"
-        )
-        return {
-            'ok': True,
-            'exit_code': 0,
-            'stdout': stdout,
-            'stderr': stderr,
-            'version_before': version_before,
-            'version_after': version_after,
-            'source': source_tag,
-        }
-    write_persistent_log(
-        f"yt-dlp {source_tag} update failed (exit {result.returncode}): {stderr or stdout}"
-    )
-    return {
-        'ok': False,
-        'exit_code': result.returncode,
-        'stdout': stdout,
-        'stderr': stderr,
-        'error': stderr or stdout or f'yt-dlp -U exited with code {result.returncode}',
+    stage_path = INSTALL_DIR / f'.yt-dlp.update.{uuid.uuid4().hex}.exe'
+    backup_path = INSTALL_DIR / YTDLP_ROLLBACK_FILENAME
+    version_before = _probe_ytdlp_binary(YTDLP_PATH)
+    base = {
+        'exit_code': -1,
+        'stdout': '',
+        'stderr': '',
         'version_before': version_before,
         'version_after': version_before,
+        'rollback_version': '',
+        'rolled_back': False,
         'source': source_tag,
     }
+    try:
+        if not version_before:
+            return {
+                **base, 'ok': False,
+                'error': 'The installed yt-dlp could not pass --version; update was not started.',
+                'error_code': 'active-version-unverified',
+            }
+        try:
+            atomic_copy_verified(YTDLP_PATH, stage_path)
+        except Exception as exc:  # noqa: BLE001
+            write_persistent_log(f'yt-dlp {source_tag} staging failed: {exc}')
+            return {
+                **base, 'ok': False,
+                'error': 'Could not stage yt-dlp beside the active executable.',
+                'error_code': 'staging-failed',
+            }
+
+        try:
+            result = subprocess.run(
+                [str(stage_path), '-U'],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                creationflags=CREATE_NO_WINDOW,
+            )
+        except subprocess.TimeoutExpired:
+            write_persistent_log(
+                f'yt-dlp {source_tag} staged update timed out after 120 s.'
+            )
+            return {
+                **base, 'ok': False,
+                'error': 'yt-dlp -U timed out after 120 s',
+                'error_code': 'update-timeout',
+            }
+        except Exception as exc:  # noqa: BLE001
+            write_persistent_log(f'yt-dlp {source_tag} staged update error: {exc}')
+            return {
+                **base, 'ok': False,
+                'error': 'yt-dlp -U could not be launched. Check Astra Downloader logs for details.',
+                'error_code': 'update-launch-failed',
+            }
+
+        stdout = (result.stdout or '').strip()[:200]
+        stderr = (result.stderr or '').strip()[:200]
+        result_fields = {**base, 'exit_code': result.returncode, 'stdout': stdout, 'stderr': stderr}
+        if result.returncode != 0:
+            write_persistent_log(
+                f'yt-dlp {source_tag} staged update failed (exit {result.returncode}): '
+                f'{stderr or stdout}'
+            )
+            return {
+                **result_fields, 'ok': False,
+                'error': stderr or stdout or f'yt-dlp -U exited with code {result.returncode}',
+                'error_code': 'update-command-failed',
+            }
+
+        staged_version = _probe_ytdlp_binary(stage_path)
+        if not staged_version:
+            write_persistent_log(f'yt-dlp {source_tag} staged binary failed --version; active copy retained.')
+            return {
+                **result_fields, 'ok': False,
+                'error': 'Updated yt-dlp failed its staged --version check; the active copy was retained.',
+                'error_code': 'staged-version-unverified',
+            }
+
+        if staged_version == version_before:
+            mark_ytdlp_update_check(config)
+            rollback_version = _probe_ytdlp_binary(backup_path) if backup_path.exists() else ''
+            _write_update_state(
+                _ytdlp_update_state_path(), status='current',
+                active_version=version_before, rollback_version=rollback_version,
+                active_sha256=_compute_sha256(YTDLP_PATH) or '', error_code='',
+            )
+            write_persistent_log(
+                f'yt-dlp {source_tag} update checked: active {version_before}; '
+                f'rollback {rollback_version or "not retained yet"}.'
+            )
+            return {
+                **result_fields, 'ok': True, 'exit_code': 0,
+                'version_after': version_before, 'rollback_version': rollback_version,
+            }
+
+        rollback_digest = atomic_copy_verified(YTDLP_PATH, backup_path)
+        rollback_version = _probe_ytdlp_binary(backup_path)
+        if rollback_version != version_before:
+            raise RuntimeError('The retained yt-dlp backup failed its version check.')
+
+        staged_digest = _compute_sha256(stage_path)
+        if not staged_digest:
+            raise RuntimeError('The staged yt-dlp update could not be hashed.')
+        os.replace(stage_path, YTDLP_PATH)
+        active_version = _probe_ytdlp_binary(YTDLP_PATH)
+        active_digest = _compute_sha256(YTDLP_PATH)
+        if active_version != staged_version or active_digest != staged_digest:
+            atomic_copy_verified(backup_path, YTDLP_PATH)
+            restored_version = _probe_ytdlp_binary(YTDLP_PATH)
+            restored_digest = _compute_sha256(YTDLP_PATH)
+            rollback_ok = restored_version == rollback_version and restored_digest == rollback_digest
+            status = 'rolled-back' if rollback_ok else 'rollback-failed'
+            error_code = 'post-update-health-failed' if rollback_ok else 'rollback-verification-failed'
+            _write_update_state(
+                _ytdlp_update_state_path(), status=status,
+                active_version=restored_version, rollback_version=rollback_version,
+                active_sha256=restored_digest or '', rollback_sha256=rollback_digest,
+                error_code=error_code,
+            )
+            write_persistent_log(
+                f'yt-dlp {source_tag} activation failed; rollback {rollback_version} '
+                f'{"restored" if rollback_ok else "could not be verified"}.'
+            )
+            return {
+                **result_fields, 'ok': False, 'version_after': restored_version,
+                'rollback_version': rollback_version, 'rolled_back': rollback_ok,
+                'error': (
+                    f'Updated yt-dlp failed post-update health; '
+                    f'{"restored " + rollback_version if rollback_ok else "automatic rollback could not be verified"}.'
+                ),
+                'error_code': error_code,
+            }
+
+        mark_ytdlp_update_check(config)
+        with _VERSION_CACHE_LOCK:
+            _version_cache['ytdlp']['value'] = active_version
+            _version_cache['ytdlp']['checked_at'] = time.time()
+        _write_update_state(
+            _ytdlp_update_state_path(), status='active',
+            active_version=active_version, rollback_version=rollback_version,
+            active_sha256=active_digest, rollback_sha256=rollback_digest,
+            error_code='',
+        )
+        write_persistent_log(
+            f'yt-dlp {source_tag} update active {active_version}; '
+            f'last-known-good rollback {rollback_version} retained.'
+        )
+        return {
+            **result_fields, 'ok': True, 'exit_code': 0,
+            'version_after': active_version, 'rollback_version': rollback_version,
+        }
+    except Exception as exc:  # noqa: BLE001
+        write_persistent_log(f'yt-dlp {source_tag} recoverable update failed: {exc}')
+        restored = False
+        rollback_version = _probe_ytdlp_binary(backup_path) if backup_path.exists() else ''
+        active_version = _probe_ytdlp_binary(YTDLP_PATH) if YTDLP_PATH.exists() else ''
+        if rollback_version and active_version != version_before:
+            try:
+                atomic_copy_verified(backup_path, YTDLP_PATH)
+                active_version = _probe_ytdlp_binary(YTDLP_PATH)
+                restored = active_version == rollback_version
+            except Exception as restore_exc:  # noqa: BLE001
+                write_persistent_log(f'yt-dlp emergency rollback failed: {restore_exc}')
+        error_code = 'safe-activation-failed' if active_version == version_before or restored else 'rollback-verification-failed'
+        try:
+            _write_update_state(
+                _ytdlp_update_state_path(),
+                status='rolled-back' if restored else ('active' if active_version == version_before else 'rollback-failed'),
+                active_version=active_version, rollback_version=rollback_version,
+                error_code=error_code,
+            )
+        except Exception as state_exc:  # noqa: BLE001
+            write_persistent_log(f'Could not persist yt-dlp recovery state: {state_exc}')
+        return {
+            **base, 'ok': False, 'version_after': active_version,
+            'rollback_version': rollback_version, 'rolled_back': restored,
+            'error': (
+                'Could not safely install the yt-dlp update. '
+                + ('The last-known-good copy was restored.' if restored else 'The active copy was retained.')
+            ),
+            'error_code': error_code,
+        }
+    finally:
+        try:
+            stage_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        _YTDLP_UPDATE_LOCK.release()
 
 
 def maybe_auto_update_ytdlp(config, active_count_fn=None):
@@ -1615,6 +1849,25 @@ def validate_companion_update_binary(path):
     return True
 
 
+def probe_companion_update_binary(path, expected_version, timeout=30):
+    """Run the staged companion's non-GUI startup check in the background."""
+    expected_version = str(expected_version or '').strip()
+    if not re.fullmatch(r'\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?', expected_version):
+        return False
+    try:
+        result = subprocess.run(
+            [str(path), '--update-health-check', str(expected_version)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    except Exception as exc:  # noqa: BLE001
+        write_persistent_log(f'Companion staged health check could not launch: {exc}')
+        return False
+    return result.returncode == 0
+
+
 # Audit fix (version-skew loop): "update available" is decided by parsing
 # APP_VERSION from the repo's main branch, but the artifact comes from
 # releases/latest. When main is bumped before the release asset is published,
@@ -1625,12 +1878,6 @@ def validate_companion_update_binary(path):
 # to schedule a replace whose digest matches it (or matches the running
 # frozen binary). A genuinely newer release has a different digest, so it
 # still installs normally.
-def _companion_update_state_path():
-    # Computed per call (not a module constant) so tests that patch
-    # INSTALL_DIR are honored, matching how update_path is built.
-    return INSTALL_DIR / 'companion-update-state.json'
-
-
 def read_last_installed_update_sha256():
     """Lowercase hex digest of the last scheduled update, or None."""
     try:
@@ -1648,11 +1895,12 @@ def read_last_installed_update_sha256():
 def record_last_installed_update_sha256(digest):
     """Persist the digest of the update we just scheduled. Best-effort."""
     try:
-        atomic_write_json(_companion_update_state_path(), {
-            'sha256': str(digest).strip().lower(),
-            'recorded_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'app_version': APP_VERSION,
-        })
+        _write_update_state(
+            _companion_update_state_path(),
+            sha256=str(digest).strip().lower(),
+            recorded_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            app_version=APP_VERSION,
+        )
     except Exception as e:  # noqa: BLE001
         write_persistent_log(f"Could not persist companion update state: {e}")
 
@@ -1670,19 +1918,31 @@ def _safe_update_paths(update_path, target_path=None):
     return update, target
 
 
-def schedule_companion_update_restart(update_path, target_path=None, restart_args=None, pid=None, expected_sha256=None):
+def schedule_companion_update_restart(
+    update_path, target_path=None, restart_args=None, pid=None,
+    expected_sha256=None, expected_version='', previous_version='',
+):
     """Schedule after-exit replacement and relaunch of AstraDownloader.exe.
 
     The running PyInstaller executable cannot be overwritten in-place on
     Windows. A detached helper waits for this PID to exit, re-verifies the
-    staged binary's SHA-256 against expected_sha256 (closing the TOCTOU window
-    between the caller's verify and the move), then atomically replaces the
-    managed install-dir executable and starts the new build.
+    staged binary's SHA-256 and startup check, retains one verified backup,
+    atomically replaces the managed executable, repeats the startup check, and
+    restores the backup before relaunch if post-activation health fails.
     """
     update, target = _safe_update_paths(update_path, target_path)
     restart_args = list(restart_args or ['--start-server'])
     current_pid = int(pid or os.getpid())
     expected_digest = str(expected_sha256 or '').strip().lower()
+    expected_version = str(expected_version or '').strip()[:32]
+    previous_version = str(previous_version or '').strip()[:32]
+    if not re.fullmatch(r'[0-9a-f]{64}', expected_digest):
+        raise RuntimeError('A verified SHA-256 is required to schedule the companion update.')
+    version_pattern = r'\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?'
+    if not re.fullmatch(version_pattern, expected_version) or not re.fullmatch(version_pattern, previous_version):
+        raise RuntimeError('Both active and target companion versions are required for rollback.')
+    backup = INSTALL_DIR / COMPANION_ROLLBACK_FILENAME
+    state_path = _companion_update_state_path()
     INSTALL_DIR.mkdir(parents=True, exist_ok=True)
 
     if sys.platform == 'win32':
@@ -1692,21 +1952,14 @@ param(
     [int] $ProcessId,
     [string] $SourcePath,
     [string] $TargetPath,
+    [string] $BackupPath,
+    [string] $StatePath,
     [string] $RestartArgs,
-    [string] $ExpectedSHA256
+    [string] $ExpectedSHA256,
+    [string] $ExpectedVersion,
+    [string] $PreviousVersion
 )
 $ErrorActionPreference = 'Stop'
-try {
-    Wait-Process -Id $ProcessId -Timeout 45
-} catch {
-    Start-Sleep -Seconds 2
-}
-if ($ExpectedSHA256 -and $ExpectedSHA256.Length -eq 64) {
-    $hash = (Get-FileHash -Path $SourcePath -Algorithm SHA256).Hash.ToLower()
-    if ($hash -ne $ExpectedSHA256.ToLower()) {
-        throw "SHA-256 mismatch before MoveFileEx: expected $ExpectedSHA256, got $hash — staged binary may have been tampered with"
-    }
-}
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -1718,13 +1971,80 @@ public static class AstraDeckMoveFile {
 $MOVEFILE_REPLACE_EXISTING = 0x1
 $MOVEFILE_WRITE_THROUGH = 0x8
 $flags = $MOVEFILE_REPLACE_EXISTING -bor $MOVEFILE_WRITE_THROUGH
-$ok = [AstraDeckMoveFile]::MoveFileEx($SourcePath, $TargetPath, $flags)
-if (-not $ok) {
-    $err = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
-    throw "MoveFileEx failed with Win32 error $err"
+
+function Move-Replace([string] $Source, [string] $Destination) {
+    $ok = [AstraDeckMoveFile]::MoveFileEx($Source, $Destination, $flags)
+    if (-not $ok) {
+        $err = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "MoveFileEx failed with Win32 error $err"
+    }
 }
-Start-Process -FilePath $TargetPath -ArgumentList $RestartArgs
-Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue
+
+function Copy-Verified([string] $Source, [string] $Destination) {
+    $temp = "$Destination.$([Guid]::NewGuid().ToString('N')).tmp"
+    Copy-Item -LiteralPath $Source -Destination $temp -Force
+    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLower()
+    $copyHash = (Get-FileHash -LiteralPath $temp -Algorithm SHA256).Hash.ToLower()
+    if ($sourceHash -ne $copyHash) { throw 'Retained backup digest mismatch' }
+    Move-Replace $temp $Destination
+    return $sourceHash
+}
+
+function Test-Companion([string] $Path, [string] $Version) {
+    $probe = Start-Process -FilePath $Path -ArgumentList @('--update-health-check', $Version) -WindowStyle Hidden -Wait -PassThru
+    return $probe.ExitCode -eq 0
+}
+
+function Write-RecoveryState([string] $Status, [string] $ActiveVersion, [string] $RollbackVersion, [string] $ErrorCode) {
+    $state = [ordered]@{
+        sha256 = $ExpectedSHA256.ToLower()
+        app_version = $ExpectedVersion
+        status = $Status
+        active_version = $ActiveVersion
+        rollback_version = $RollbackVersion
+        error_code = $ErrorCode
+        updated_at = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    }
+    $temp = "$StatePath.$([Guid]::NewGuid().ToString('N')).tmp"
+    $json = $state | ConvertTo-Json
+    [IO.File]::WriteAllText($temp, $json + [Environment]::NewLine, (New-Object Text.UTF8Encoding($false)))
+    Move-Item -LiteralPath $temp -Destination $StatePath -Force
+}
+
+$activated = $false
+try {
+    try { Wait-Process -Id $ProcessId -Timeout 45 } catch { Start-Sleep -Seconds 2 }
+    $sourceHash = (Get-FileHash -LiteralPath $SourcePath -Algorithm SHA256).Hash.ToLower()
+    if ($sourceHash -ne $ExpectedSHA256.ToLower()) { throw 'Staged update digest changed before activation' }
+    if (-not (Test-Companion $SourcePath $ExpectedVersion)) { throw 'Staged update health check failed' }
+    if (-not (Test-Path -LiteralPath $TargetPath)) { throw 'Managed companion target is missing' }
+    $rollbackHash = Copy-Verified $TargetPath $BackupPath
+    Move-Replace $SourcePath $TargetPath
+    $activated = $true
+    $targetHash = (Get-FileHash -LiteralPath $TargetPath -Algorithm SHA256).Hash.ToLower()
+    if ($targetHash -ne $ExpectedSHA256.ToLower() -or -not (Test-Companion $TargetPath $ExpectedVersion)) {
+        throw 'Post-update companion health check failed'
+    }
+    Write-RecoveryState 'active' $ExpectedVersion $PreviousVersion ''
+} catch {
+    if ($activated -and (Test-Path -LiteralPath $BackupPath)) {
+        try {
+            Copy-Verified $BackupPath $TargetPath | Out-Null
+            if (-not (Test-Companion $TargetPath $PreviousVersion)) { throw 'Restored companion health check failed' }
+            Write-RecoveryState 'rolled-back' $PreviousVersion $PreviousVersion 'post-update-health-failed'
+        } catch {
+            Write-RecoveryState 'rollback-failed' '' $PreviousVersion 'rollback-verification-failed'
+        }
+    } else {
+        Write-RecoveryState 'activation-failed' $PreviousVersion $PreviousVersion 'staged-health-failed'
+    }
+} finally {
+    if (Test-Path -LiteralPath $TargetPath) {
+        Start-Process -FilePath $TargetPath -ArgumentList $RestartArgs -WindowStyle Hidden
+    }
+    Remove-Item -LiteralPath $SourcePath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue
+}
 '''.lstrip(), encoding='utf-8')
         args = [
             'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass',
@@ -1732,24 +2052,71 @@ Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction Silent
             '-ProcessId', str(current_pid),
             '-SourcePath', str(update),
             '-TargetPath', str(target),
+            '-BackupPath', str(backup),
+            '-StatePath', str(state_path),
             '-RestartArgs', command_line(restart_args),
             '-ExpectedSHA256', expected_digest,
+            '-ExpectedVersion', expected_version,
+            '-PreviousVersion', previous_version,
         ]
         subprocess.Popen(args, creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
     else:
         script = INSTALL_DIR / f".AstraDownloader.apply-update.{uuid.uuid4().hex}.py"
         script.write_text('''\
 import hashlib
+import json
 import os
+import shutil
 import subprocess
 import sys
 import time
+import uuid
 
 pid = int(sys.argv[1])
 source = sys.argv[2]
 target = sys.argv[3]
-expected_sha256 = sys.argv[4] if len(sys.argv) > 4 else ''
-restart_args = sys.argv[5:]
+backup = sys.argv[4]
+state_path = sys.argv[5]
+expected_sha256 = sys.argv[6]
+expected_version = sys.argv[7]
+previous_version = sys.argv[8]
+restart_args = sys.argv[9:]
+
+def digest(path):
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b''):
+            h.update(chunk)
+    return h.hexdigest().lower()
+
+def atomic_copy(source_path, destination_path):
+    temp = destination_path + '.' + uuid.uuid4().hex + '.tmp'
+    shutil.copyfile(source_path, temp)
+    if digest(source_path) != digest(temp):
+        raise RuntimeError('Retained backup digest mismatch')
+    os.replace(temp, destination_path)
+
+def healthy(path, version):
+    return subprocess.run(
+        [path, '--update-health-check', version],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30,
+    ).returncode == 0
+
+def write_state(status, active_version, rollback_version, error_code):
+    payload = {
+        'sha256': expected_sha256, 'app_version': expected_version,
+        'status': status, 'active_version': active_version,
+        'rollback_version': rollback_version, 'error_code': error_code,
+        'updated_at': time.strftime('%Y-%m-%d %H:%M:%S'),
+    }
+    temp = state_path + '.' + uuid.uuid4().hex + '.tmp'
+    with open(temp, 'w', encoding='utf-8') as stream:
+        json.dump(payload, stream, indent=2)
+        stream.write('\n')
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temp, state_path)
+
 deadline = time.time() + 45
 while time.time() < deadline:
     try:
@@ -1757,23 +2124,49 @@ while time.time() < deadline:
     except OSError:
         break
     time.sleep(0.25)
-if expected_sha256 and len(expected_sha256) == 64:
-    h = hashlib.sha256()
-    with open(source, 'rb') as f:
-        for chunk in iter(lambda: f.read(65536), b''):
-            h.update(chunk)
-    actual = h.hexdigest().lower()
-    if actual != expected_sha256.lower():
-        raise SystemExit(f'SHA-256 mismatch before replace: expected {expected_sha256}, got {actual}')
-os.replace(source, target)
-subprocess.Popen([target] + restart_args)
+activated = False
 try:
-    os.remove(__file__)
-except OSError:
-    pass
+    if digest(source) != expected_sha256.lower() or not healthy(source, expected_version):
+        raise RuntimeError('Staged companion verification failed')
+    atomic_copy(target, backup)
+    os.replace(source, target)
+    activated = True
+    if digest(target) != expected_sha256.lower() or not healthy(target, expected_version):
+        raise RuntimeError('Post-update companion health check failed')
+    write_state('active', expected_version, previous_version, '')
+except Exception:
+    if activated and os.path.exists(backup):
+        try:
+            atomic_copy(backup, target)
+            if not healthy(target, previous_version):
+                raise RuntimeError('Restored companion health check failed')
+            write_state('rolled-back', previous_version, previous_version, 'post-update-health-failed')
+        except Exception:
+            write_state('rollback-failed', '', previous_version, 'rollback-verification-failed')
+    else:
+        write_state('activation-failed', previous_version, previous_version, 'staged-health-failed')
+finally:
+    if os.path.exists(target):
+        subprocess.Popen([target] + restart_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        os.remove(source)
+    except OSError:
+        pass
+    try:
+        os.remove(__file__)
+    except OSError:
+        pass
 ''', encoding='utf-8')
-        subprocess.Popen([sys.executable, str(script), str(current_pid), str(update), str(target), expected_digest] + restart_args)
-    return {'scheduled': True, 'target': str(target), 'source': str(update)}
+        subprocess.Popen([
+            sys.executable, str(script), str(current_pid), str(update), str(target),
+            str(backup), str(state_path), expected_digest, expected_version,
+            previous_version,
+        ] + restart_args)
+    return {
+        'scheduled': True, 'target': str(target), 'source': str(update),
+        'rollback': str(backup), 'active_version': expected_version,
+        'rollback_version': previous_version,
+    }
 
 
 def schedule_companion_process_exit(delay=0.6):
@@ -1787,6 +2180,21 @@ def schedule_companion_process_exit(delay=0.6):
 
 
 def _run_companion_self_update(restart=True):
+    if not _COMPANION_UPDATE_LOCK.acquire(blocking=False):
+        return {
+            'ok': False,
+            'error': 'An Astra Downloader update is already in progress.',
+            'error_code': 'update-in-progress',
+            'current_version': APP_VERSION,
+            'latest_version': '',
+        }
+    try:
+        return _run_companion_self_update_unlocked(restart=restart)
+    finally:
+        _COMPANION_UPDATE_LOCK.release()
+
+
+def _run_companion_self_update_unlocked(restart=True):
     current_version = APP_VERSION
     try:
         latest_version = fetch_latest_companion_version()
@@ -1850,6 +2258,18 @@ def _run_companion_self_update(restart=True):
                 'current_version': current_version,
                 'latest_version': latest_version,
             }
+        if not probe_companion_update_binary(update_path, latest_version):
+            try:
+                update_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return {
+                'ok': False,
+                'error': 'Downloaded Astra Downloader update failed its staged startup check.',
+                'error_code': 'staged-health-check-failed',
+                'current_version': current_version,
+                'latest_version': latest_version,
+            }
         # Version-skew guard (see read_last_installed_update_sha256): the
         # artifact digest equals expected_hash — verify_file_sha256 just
         # proved it — so compare that against the running frozen binary and
@@ -1881,7 +2301,17 @@ def _run_companion_self_update(restart=True):
                 'current_version': current_version,
                 'latest_version': latest_version,
             }
-        schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'], expected_sha256=downloaded_digest)
+        _write_update_state(
+            _companion_update_state_path(), status='activation-pending',
+            active_version=current_version, rollback_version=current_version,
+            active_sha256='', rollback_sha256='', error_code='',
+        )
+        schedule = schedule_companion_update_restart(
+            update_path, install_target_exe(), ['--start-server'],
+            expected_sha256=downloaded_digest,
+            expected_version=latest_version,
+            previous_version=current_version,
+        )
         record_last_installed_update_sha256(downloaded_digest)
         if restart:
             schedule_companion_process_exit()
@@ -1894,6 +2324,8 @@ def _run_companion_self_update(restart=True):
             'status': 'restart_scheduled',
             'current_version': current_version,
             'latest_version': latest_version,
+            'active_version': latest_version,
+            'rollback_version': current_version,
             'restart': bool(restart),
             'target': schedule.get('target'),
         }
@@ -4235,6 +4667,9 @@ def create_api(config, dl_manager, history):
             "javascriptRuntime": probe_javascript_runtime(
                 configured_runtime=config.get('JavaScriptRuntime', 'auto')
             ),
+            # Verified updater state contains only versions/status codes; file
+            # paths and digests remain local to the companion.
+            "updateRecovery": read_update_recovery_status(),
             # v1.6.0: SABR (Server-Based Adaptive Bitrate) support status.
             # YouTube's web client now returns SABR-only streaming URLs for
             # a growing share of videos. yt-dlp PR #13515 adds native SABR
@@ -4521,7 +4956,7 @@ def create_api(config, dl_manager, history):
                 },
                 409,
             )
-        result = _run_ytdlp_self_update(config.data, source_tag='manual')
+        result = _run_ytdlp_self_update(config, source_tag='manual')
         # 200 with ok:true on success; 500 with ok:false otherwise so the
         # popup can branch on HTTP status as well as the body field.
         status = 200 if result.get('ok') else 500
@@ -6277,22 +6712,19 @@ class MainWindow(QMainWindow):
 
         def run():
             try:
-                result = subprocess.run(
-                    [str(YTDLP_PATH), '-U'],
-                    capture_output=True, text=True, timeout=120,
-                    creationflags=CREATE_NO_WINDOW,
-                )
-                if result.returncode == 0:
-                    mark_ytdlp_update_check(self.config)
-                    with _VERSION_CACHE_LOCK:
-                        _version_cache['ytdlp']['checked_at'] = 0.0
+                result = _run_ytdlp_self_update(self.config, source_tag='gui')
+                if result.get('ok'):
                     self.log_message.emit(
-                        f"yt-dlp update: {(result.stdout or '').strip()[:200]}"
+                        f"yt-dlp active {result.get('version_after') or '?'}; "
+                        f"rollback {result.get('rollback_version') or 'not retained yet'}."
                     )
                 else:
+                    recovery = (
+                        f" Restored {result.get('version_after')}."
+                        if result.get('rolled_back') else ''
+                    )
                     self.log_message.emit(
-                        f"yt-dlp update failed (exit {result.returncode}): "
-                        f"{(result.stderr or result.stdout or '').strip()[:200]}"
+                        f"yt-dlp update failed: {result.get('error') or 'unknown error'}.{recovery}"
                     )
             except Exception as e:
                 self.log_message.emit(f"yt-dlp update error: {e}")
@@ -6889,7 +7321,31 @@ def build_native_host_manifest(exe_path, extension_ids, browser="chrome"):
     return manifest
 
 
+def companion_probe_exit_code(argv):
+    """Return a non-GUI probe exit code, or None for a normal application run."""
+    args = list(argv or [])
+    if '--version' in args:
+        return 0
+    if '--update-health-check' not in args:
+        return None
+    index = args.index('--update-health-check')
+    expected = args[index + 1].strip() if index + 1 < len(args) else ''
+    if not expected or not re.fullmatch(r'\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?', expected):
+        return 2
+    return 0 if hmac.compare_digest(expected, APP_VERSION) else 3
+
+
 def main():
+    probe_exit = companion_probe_exit_code(sys.argv[1:])
+    if probe_exit is not None:
+        if probe_exit == 0:
+            output = getattr(sys, 'stdout', None)
+            if output is not None:
+                output.write(APP_VERSION + '\n')
+                output.flush()
+            return
+        raise SystemExit(probe_exit)
+
     # Native-messaging host mode: the browser launches us with the extension
     # origin as an argv. Serve the token bootstrap over the private stdio pipe
     # and exit — before any GUI / single-instance / Flask logic.
@@ -6907,6 +7363,7 @@ def main():
 
     startup_command = startup_command_from_argv()
     start_minimized = '-Background' in sys.argv or '--background' in sys.argv or startup_command == 'start'
+    log_update_recovery_status()
 
     if is_frozen_app():
         ensure_system_integrations(prefer_installed=True)

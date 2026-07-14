@@ -37,6 +37,12 @@ class FakeConfig:
     def get(self, key, default=None):
         return self.data.get(key, default)
 
+    def set(self, key, value):
+        self.data[key] = value
+
+    def save(self):
+        pass
+
 
 class FakeHistory:
     def __init__(self):
@@ -659,6 +665,7 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertTrue(body["token_required"])
         self.assertFalse(body["legacyTokenEcho"])
         self.assertTrue(body["nativeChannelRequired"])
+        self.assertIn("updateRecovery", body)
         self.assertNotIn("token", body)
 
     def test_health_recent_errors_require_auth(self):
@@ -3374,6 +3381,18 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
     TOKEN = "u" * 32
 
     def _client(self, *, in_flight=0, ytdlp_present=True):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        install_dir = Path(temp_dir.name)
+        ytdlp_path = install_dir / 'yt-dlp.exe'
+        if ytdlp_present:
+            ytdlp_path.write_bytes(b'old-ytdlp')
+        path_patch = mock.patch.object(ad, 'YTDLP_PATH', ytdlp_path)
+        install_patch = mock.patch.object(ad, 'INSTALL_DIR', install_dir)
+        path_patch.start()
+        install_patch.start()
+        self.addCleanup(path_patch.stop)
+        self.addCleanup(install_patch.stop)
         config = FakeConfig({"ServerToken": self.TOKEN})
 
         class _FakeManager:
@@ -3385,15 +3404,6 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
 
         manager = _FakeManager()
         api = ad.create_api(config, manager, FakeHistory())
-
-        # Patch YTDLP_PATH.exists() so the endpoint can branch on
-        # presence without an actual yt-dlp.exe on disk.
-        patch = mock.patch.object(
-            ad.YTDLP_PATH.__class__, 'exists', return_value=ytdlp_present
-        )
-        patch.start()
-        self.addCleanup(patch.stop)
-
         return api.test_client()
 
     def test_unauthenticated_request_is_rejected(self):
@@ -3425,16 +3435,20 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
 
     def test_successful_self_update_returns_200_with_version_delta(self):
         client = self._client()
-        completed = subprocess.CompletedProcess(
-            args=[],
-            returncode=0,
-            stdout="Updated yt-dlp to version 2026.05.10",
-            stderr="",
-        )
-        version_seq = iter(['2026.04.01', '2026.05.10'])
-        with mock.patch.object(ad.subprocess, 'run', return_value=completed), \
-             mock.patch.object(ad, 'get_ytdlp_version',
-                               side_effect=lambda force=False: next(version_seq, '2026.05.10')):
+        old_payload = b'old-ytdlp'
+        new_payload = b'new-ytdlp'
+
+        def probe(path, timeout=15):
+            payload = Path(path).read_bytes() if Path(path).exists() else b''
+            return '2026.04.01' if payload == old_payload else ('2026.05.10' if payload == new_payload else '')
+
+        def run_update(args, **_kwargs):
+            self.assertEqual(args[1], '-U')
+            Path(args[0]).write_bytes(new_payload)
+            return subprocess.CompletedProcess(args=args, returncode=0, stdout='updated', stderr='')
+
+        with mock.patch.object(ad, '_probe_ytdlp_binary', side_effect=probe), \
+             mock.patch.object(ad.subprocess, 'run', side_effect=run_update):
             resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
 
         self.assertEqual(resp.status_code, 200)
@@ -3443,6 +3457,9 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(body.get("exit_code"), 0)
         self.assertEqual(body.get("version_before"), '2026.04.01')
         self.assertEqual(body.get("version_after"), '2026.05.10')
+        self.assertEqual(body.get("rollback_version"), '2026.04.01')
+        self.assertEqual(ad.YTDLP_PATH.read_bytes(), new_payload)
+        self.assertEqual((ad.INSTALL_DIR / ad.YTDLP_ROLLBACK_FILENAME).read_bytes(), old_payload)
         self.assertEqual(body.get("source"), 'manual')
 
     def test_nonzero_exit_returns_500_with_stderr(self):
@@ -3454,7 +3471,7 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
             stderr="Update failed: network unreachable",
         )
         with mock.patch.object(ad.subprocess, 'run', return_value=completed), \
-             mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
+             mock.patch.object(ad, '_probe_ytdlp_binary', return_value='2026.04.01'):
             resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
 
         self.assertEqual(resp.status_code, 500)
@@ -3470,7 +3487,7 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         with mock.patch.object(
             ad.subprocess, 'run',
             side_effect=subprocess.TimeoutExpired(cmd=['yt-dlp', '-U'], timeout=120),
-        ), mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
+        ), mock.patch.object(ad, '_probe_ytdlp_binary', return_value='2026.04.01'):
             resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
 
         self.assertEqual(resp.status_code, 500)
@@ -3479,16 +3496,81 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(body.get("exit_code"), -1)
         self.assertIn("timed out", body.get("error"))
 
+    def test_cached_version_cannot_bypass_live_binary_probe(self):
+        client = self._client()
+        with mock.patch.object(ad, '_probe_ytdlp_binary', return_value=''), \
+             mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'), \
+             mock.patch.object(ad.subprocess, 'run') as run:
+            resp = client.post('/update-ytdlp', headers={'X-Auth-Token': self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.get_json()['error_code'], 'active-version-unverified')
+        run.assert_not_called()
+
+    def test_post_activation_failure_restores_verified_backup(self):
+        client = self._client()
+        old_payload = b'old-ytdlp'
+        new_payload = b'new-ytdlp'
+
+        def probe(path, timeout=15):
+            candidate = Path(path)
+            payload = candidate.read_bytes() if candidate.exists() else b''
+            if payload == old_payload:
+                return '2026.04.01'
+            if payload == new_payload and candidate.name.startswith('.yt-dlp.update.'):
+                return '2026.05.10'
+            # The same updated bytes fail only after activation at the live path.
+            return ''
+
+        def run_update(args, **_kwargs):
+            Path(args[0]).write_bytes(new_payload)
+            return subprocess.CompletedProcess(args=args, returncode=0, stdout='updated', stderr='')
+
+        with mock.patch.object(ad, '_probe_ytdlp_binary', side_effect=probe), \
+             mock.patch.object(ad.subprocess, 'run', side_effect=run_update):
+            resp = client.post('/update-ytdlp', headers={'X-Auth-Token': self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        body = resp.get_json()
+        self.assertFalse(body['ok'])
+        self.assertTrue(body['rolled_back'])
+        self.assertEqual(body['version_after'], '2026.04.01')
+        self.assertEqual(body['rollback_version'], '2026.04.01')
+        self.assertEqual(ad.YTDLP_PATH.read_bytes(), old_payload)
+        state = ad.read_update_recovery_status()['ytDlp']
+        self.assertEqual(state['status'], 'rolled-back')
+        self.assertEqual(state['activeVersion'], '2026.04.01')
+
+    def test_staged_version_failure_never_replaces_live_binary(self):
+        client = self._client()
+
+        def run_update(args, **_kwargs):
+            Path(args[0]).write_bytes(b'broken-update')
+            return subprocess.CompletedProcess(args=args, returncode=0, stdout='updated', stderr='')
+
+        def probe(path, timeout=15):
+            return '2026.04.01' if Path(path).read_bytes() == b'old-ytdlp' else ''
+
+        with mock.patch.object(ad, '_probe_ytdlp_binary', side_effect=probe), \
+             mock.patch.object(ad.subprocess, 'run', side_effect=run_update):
+            resp = client.post('/update-ytdlp', headers={'X-Auth-Token': self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.get_json()['error_code'], 'staged-version-unverified')
+        self.assertEqual(ad.YTDLP_PATH.read_bytes(), b'old-ytdlp')
+
     def test_shared_runner_returns_structured_dict(self):
         # _run_ytdlp_self_update is the shared subprocess runner used
         # by both the manual endpoint and the background auto-update
         # path. Asserting the exact key set keeps the wire schema
         # stable for the popup consumer.
+        self._client()
         config = FakeConfig({"ServerToken": self.TOKEN, "LastYtDlpUpdateCheck": ""})
         completed = subprocess.CompletedProcess(
             args=[], returncode=0, stdout="ok", stderr="",
         )
         with mock.patch.object(ad.subprocess, 'run', return_value=completed), \
+             mock.patch.object(ad, '_probe_ytdlp_binary', return_value='2026.04.01'), \
              mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
             result = ad._run_ytdlp_self_update(config.data, source_tag='unit-test')
 
@@ -3505,6 +3587,9 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
     TOKEN = "v" * 32
 
     def _client(self, *, in_flight=0):
+        probe_patch = mock.patch.object(ad, 'probe_companion_update_binary', return_value=True)
+        probe_patch.start()
+        self.addCleanup(probe_patch.stop)
         config = FakeConfig({"ServerToken": self.TOKEN})
 
         class _FakeManager:
@@ -3564,6 +3649,19 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertFalse(body.get("ok"))
         self.assertEqual(body.get("error_code"), "version-check-failed")
         self.assertIn("Check Astra Downloader logs", body.get("error"))
+
+    def test_concurrent_companion_update_is_rejected_before_network_work(self):
+        client = self._client()
+        self.assertTrue(ad._COMPANION_UPDATE_LOCK.acquire(blocking=False))
+        try:
+            with mock.patch.object(ad, 'fetch_latest_companion_version') as fetch:
+                resp = client.post('/update', headers={'X-Auth-Token': self.TOKEN})
+        finally:
+            ad._COMPANION_UPDATE_LOCK.release()
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.get_json()['error_code'], 'update-in-progress')
+        fetch.assert_not_called()
 
     def test_successful_companion_update_schedules_replace_and_restart(self):
         client = self._client()
@@ -3639,6 +3737,100 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertIn("SHA-256", body.get("error", ""))
         schedule.assert_not_called()
         exit_later.assert_not_called()
+
+    def test_companion_update_rejects_failed_staged_startup_probe(self):
+        client = self._client()
+        payload = self._fake_payload()
+        expected_hash = hashlib.sha256(payload).hexdigest()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(payload)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value='9.9.9'), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected_hash), \
+             mock.patch.object(ad, 'probe_companion_update_binary', return_value=False), \
+             mock.patch.object(ad, 'schedule_companion_update_restart') as schedule:
+            resp = client.post('/update', headers={'X-Auth-Token': self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.get_json()['error_code'], 'staged-health-check-failed')
+        schedule.assert_not_called()
+
+    def test_companion_probe_cli_is_non_gui_and_version_strict(self):
+        self.assertEqual(ad.companion_probe_exit_code(['--version']), 0)
+        self.assertEqual(
+            ad.companion_probe_exit_code(['--update-health-check', ad.APP_VERSION]), 0,
+        )
+        self.assertEqual(ad.companion_probe_exit_code(['--update-health-check', '9.9.9']), 3)
+        self.assertEqual(ad.companion_probe_exit_code(['--update-health-check']), 2)
+        self.assertIsNone(ad.companion_probe_exit_code(['--start-server']))
+
+    def test_windowed_build_health_probe_does_not_require_stdout_or_qapplication(self):
+        with mock.patch.object(ad.sys, 'argv', ['AstraDownloader.exe', '--update-health-check', ad.APP_VERSION]), \
+             mock.patch.object(ad.sys, 'stdout', None), \
+             mock.patch.object(ad, 'QApplication') as application:
+            ad.main()
+        application.assert_not_called()
+
+    def test_windows_update_helper_contains_verified_backup_and_rollback_contract(self):
+        payload = self._fake_payload()
+        expected_hash = hashlib.sha256(payload).hexdigest()
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad.sys, 'platform', 'win32'):
+            root = Path(tmp)
+            update = root / '.AstraDownloader.update.abc.exe'
+            target = root / 'AstraDownloader.exe'
+            update.write_bytes(payload)
+            target.write_bytes(self._fake_payload(b'B'))
+            with mock.patch.object(ad.subprocess, 'Popen') as popen:
+                result = ad.schedule_companion_update_restart(
+                    update, target, ['--start-server'], pid=123,
+                    expected_sha256=expected_hash,
+                    expected_version='9.9.9', previous_version=ad.APP_VERSION,
+                )
+                helper_args = popen.call_args.args[0]
+            scripts = list(root.glob('.AstraDownloader.apply-update.*.ps1'))
+            self.assertEqual(len(scripts), 1)
+            helper_source = scripts[0].read_text(encoding='utf-8')
+            if os.name == 'nt':
+                escaped_script_path = str(scripts[0]).replace("'", "''")
+                parser_command = (
+                    "$tokens=$null; $errors=$null; "
+                    f"[System.Management.Automation.Language.Parser]::ParseFile('{escaped_script_path}', "
+                    "[ref]$tokens, [ref]$errors) | Out-Null; "
+                    "if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }"
+                )
+                parsed = subprocess.run(
+                    ['powershell', '-NoProfile', '-Command', parser_command],
+                    capture_output=True, text=True, timeout=15,
+                    creationflags=ad.CREATE_NO_WINDOW,
+                )
+                self.assertEqual(parsed.returncode, 0, parsed.stderr)
+
+        self.assertTrue(result['scheduled'])
+        self.assertEqual(result['rollback_version'], ad.APP_VERSION)
+        self.assertIn('Copy-Verified $TargetPath $BackupPath', helper_source)
+        self.assertIn("Write-RecoveryState 'rolled-back'", helper_source)
+        self.assertIn("'--update-health-check'", helper_source)
+        self.assertIn('-WindowStyle Hidden', helper_source)
+        self.assertIn('-BackupPath', helper_args)
+
+    def test_update_recovery_health_state_omits_paths_and_digests(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)):
+            ad._write_update_state(
+                ad._companion_update_state_path(), status='active',
+                active_version='9.9.9', rollback_version=ad.APP_VERSION,
+                active_sha256='a' * 64, source_path='C:/Users/secret/update.exe',
+            )
+            public = ad.read_update_recovery_status()['companion']
+        self.assertEqual(public['activeVersion'], '9.9.9')
+        self.assertEqual(public['rollbackVersion'], ad.APP_VERSION)
+        self.assertNotIn('active_sha256', public)
+        self.assertNotIn('source_path', public)
 
     # ── Audit fix: version-skew reinstall-loop guard ──
     # main's APP_VERSION can be bumped before the release asset exists; in
