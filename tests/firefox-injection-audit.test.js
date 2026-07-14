@@ -19,12 +19,27 @@ const {
     DEFAULT_START_URL,
     FIREFOX_OPTIONAL_HOST_UUID,
     MANUAL_OPTIONAL_HOST_TIMEOUT_MS,
+    firefoxCandidates,
     firefoxExtensionUrl,
     firefoxStartUrls,
     firefoxUuidPreference,
     hasStartupFailure,
     parseArgs: parseFirefoxSmokeArgs
 } = require('../scripts/smoke-firefox-webext.js');
+
+test('Firefox smoke discovers stable, Developer Edition, and Nightly on Windows', () => {
+    const candidates = firefoxCandidates('', {
+        platform: 'win32',
+        env: {
+            ProgramFiles: 'C:\\Program Files',
+            'ProgramFiles(x86)': 'C:\\Program Files (x86)'
+        }
+    });
+    assert.ok(candidates.includes('C:\\Program Files\\Mozilla Firefox\\firefox.exe'));
+    assert.ok(candidates.includes('C:\\Program Files\\Firefox Developer Edition\\firefox.exe'));
+    assert.ok(candidates.includes('C:\\Program Files\\Firefox Nightly\\firefox.exe'));
+    assert.ok(candidates.includes('C:\\Program Files (x86)\\Firefox Developer Edition\\firefox.exe'));
+});
 
 test('Firefox injection pre-flight gate is wired into npm run check', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));

@@ -33,18 +33,22 @@ function firefoxUuidPreference(uuid) {
     return `extensions.webextensions.uuids=${JSON.stringify({ [FIREFOX_GECKO_ID]: uuid })}`;
 }
 
-function firefoxCandidates(cliPath) {
+function firefoxCandidates(cliPath, { env = process.env, platform = process.platform } = {}) {
     const candidates = [];
     if (cliPath) candidates.push(cliPath);
-    if (process.env.FIREFOX_PATH) candidates.push(process.env.FIREFOX_PATH);
-    if (process.platform === 'win32') {
-        const pf = process.env.ProgramFiles || 'C:\\Program Files';
-        const pfx86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+    if (env.FIREFOX_PATH) candidates.push(env.FIREFOX_PATH);
+    if (platform === 'win32') {
+        const pf = env.ProgramFiles || 'C:\\Program Files';
+        const pfx86 = env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
         candidates.push(
             path.join(pf, 'Mozilla Firefox', 'firefox.exe'),
-            path.join(pfx86, 'Mozilla Firefox', 'firefox.exe')
+            path.join(pfx86, 'Mozilla Firefox', 'firefox.exe'),
+            path.join(pf, 'Firefox Developer Edition', 'firefox.exe'),
+            path.join(pfx86, 'Firefox Developer Edition', 'firefox.exe'),
+            path.join(pf, 'Firefox Nightly', 'firefox.exe'),
+            path.join(pfx86, 'Firefox Nightly', 'firefox.exe')
         );
-    } else if (process.platform === 'darwin') {
+    } else if (platform === 'darwin') {
         candidates.push('/Applications/Firefox.app/Contents/MacOS/firefox');
     } else {
         candidates.push('/usr/bin/firefox', '/usr/local/bin/firefox');
