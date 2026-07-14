@@ -132,6 +132,43 @@ class PersistenceTests(unittest.TestCase):
             finally:
                 ad.HISTORY_PATH = original
 
+    def test_config_update_failure_rolls_back_memory_and_preserves_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original = ad.CONFIG_PATH
+            try:
+                ad.CONFIG_PATH = Path(tmp) / "config.json"
+                config = ad.Config()
+                old_port = config.get("ServerPort")
+                old_file = ad.CONFIG_PATH.read_text(encoding="utf-8")
+
+                with mock.patch.object(ad, "atomic_write_json", side_effect=PermissionError("denied")):
+                    saved = config.update({"ServerPort": old_port + 1})
+
+                self.assertFalse(saved)
+                self.assertEqual(config.get("ServerPort"), old_port)
+                self.assertEqual(ad.CONFIG_PATH.read_text(encoding="utf-8"), old_file)
+            finally:
+                ad.CONFIG_PATH = original
+
+    def test_history_write_failure_is_reported_and_preserves_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original = ad.HISTORY_PATH
+            try:
+                ad.HISTORY_PATH = Path(tmp) / "history.json"
+                history = ad.History()
+                snapshot = [{"id": "1", "url": "https://example.com/1", "title": "One"}]
+                self.assertTrue(history.replace(snapshot))
+                old_file = ad.HISTORY_PATH.read_text(encoding="utf-8")
+
+                with mock.patch.object(ad, "atomic_write_json", side_effect=OSError("disk full")):
+                    self.assertFalse(history.clear())
+                    self.assertFalse(history.replace([]))
+
+                self.assertEqual(ad.HISTORY_PATH.read_text(encoding="utf-8"), old_file)
+                self.assertEqual(history.load(), ad.sanitize_history_entries(snapshot))
+            finally:
+                ad.HISTORY_PATH = original
+
 
 class CompanionGuiPolicyTests(unittest.TestCase):
     def test_companion_settings_flows_do_not_use_blocking_message_boxes(self):
@@ -171,6 +208,130 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn('make_section_label("Ready when you are")', source)
         self.assertIn("window.render(pixmap)", renderer_source)
         self.assertIn("Companion navigation rail is incomplete", renderer_source)
+
+    def test_failed_settings_write_keeps_server_running_and_form_dirty(self):
+        class TextField:
+            def __init__(self, value=""):
+                self.value_text = value
+
+            def text(self):
+                return self.value_text
+
+            def setText(self, value):
+                self.value_text = value
+
+        class NumberField:
+            def __init__(self, value):
+                self.number = value
+
+            def value(self):
+                return self.number
+
+        class CheckField:
+            def isChecked(self):
+                return False
+
+        class ComboField:
+            def currentData(self):
+                return "remove"
+
+        class Button:
+            def __init__(self):
+                self.text_value = "Save Changes"
+
+            def setText(self, value):
+                self.text_value = value
+
+        class FailingConfig(FakeConfig):
+            def update(self, mapping):
+                self.attempted = mapping
+                return False
+
+        class Harness:
+            pass
+
+        window = Harness()
+        window.config = FailingConfig({"ServerPort": ad.SERVER_PORT, "ServerToken": "a" * 32})
+        window.server_running = True
+        window.cfg_port = NumberField(ad.SERVER_PORT + 1)
+        window.cfg_token = TextField("b" * 32)
+        window.cfg_dl_path = TextField(window.config.get("DownloadPath"))
+        window.cfg_audio_path = TextField("")
+        window.cfg_sublangs = TextField("en")
+        window.cfg_ratelimit = TextField("")
+        window.cfg_proxy = TextField("")
+        window.cfg_metadata = CheckField()
+        window.cfg_thumbnail = CheckField()
+        window.cfg_chapters = CheckField()
+        window.cfg_subs = CheckField()
+        window.cfg_sponsorblock = CheckField()
+        window.cfg_sb_action = ComboField()
+        window.cfg_fragments = NumberField(4)
+        window.cfg_autoupdate = CheckField()
+        window.cfg_closetotray = CheckField()
+        window.cfg_startmin = CheckField()
+        window.btn_save = Button()
+        window.statuses = []
+        window.logs = []
+        window.server_calls = []
+        window._set_input_error = lambda *_args: None
+        window._show_settings_status = lambda message, tone="neutral": window.statuses.append((message, tone))
+        window._append_log = window.logs.append
+        window._sync_connection_ui = lambda: window.server_calls.append("sync")
+        window._stop_server = lambda: window.server_calls.append("stop")
+        window._start_server = lambda: window.server_calls.append("start")
+
+        ad.MainWindow._save_settings(window)
+
+        self.assertEqual(window.server_calls, [])
+        self.assertEqual(window.btn_save.text_value, "Save Changes")
+        self.assertEqual(window.statuses[-1][1], "danger")
+        self.assertIn("Nothing changed", window.statuses[-1][0])
+        self.assertIn("server state were preserved", window.logs[-1])
+
+    def test_failed_history_clear_and_undo_preserve_recovery_state(self):
+        class History:
+            def load(self):
+                return [{"id": "1", "title": "One"}]
+
+            def clear(self):
+                return False
+
+            def replace(self, _entries):
+                return False
+
+        class Button:
+            def __init__(self):
+                self.hidden = False
+
+            def hide(self):
+                self.hidden = True
+
+            def show(self):
+                self.hidden = False
+
+        class Harness:
+            pass
+
+        window = Harness()
+        window.history_mgr = History()
+        window._cleared_history_snapshot = [{"id": "prior", "title": "Prior"}]
+        window.btn_undo_clear_history = Button()
+        window.logs = []
+        window.refreshes = 0
+        window._append_log = window.logs.append
+        window._refresh_history = lambda: setattr(window, "refreshes", window.refreshes + 1)
+
+        ad.MainWindow._clear_history(window)
+        self.assertEqual(window._cleared_history_snapshot, [{"id": "prior", "title": "Prior"}])
+        self.assertEqual(window.refreshes, 0)
+        self.assertIn("preserved", window.logs[-1])
+
+        ad.MainWindow._undo_clear_history(window)
+        self.assertEqual(window._cleared_history_snapshot, [{"id": "prior", "title": "Prior"}])
+        self.assertFalse(window.btn_undo_clear_history.hidden)
+        self.assertEqual(window.refreshes, 0)
+        self.assertIn("still available", window.logs[-1])
 
 
 class InstanceCommandTests(unittest.TestCase):
@@ -285,6 +446,38 @@ class DownloadManagerTests(unittest.TestCase):
 
         self.assertIn(recent_long_download.id, manager.downloads)
         self.assertNotIn(old_terminal.id, manager.downloads)
+
+    def test_terminal_records_are_reclaimed_before_queue_cap(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+
+        def finish_immediately(download):
+            download.status = "complete" if manager._next_id % 2 else "cancelled"
+            download.mark_terminal()
+
+        class ImmediateThread:
+            def __init__(self, target=None, args=(), daemon=None):
+                self.target = target
+                self.args = args
+
+            def start(self):
+                self.target(*self.args)
+
+        manager._run_download = finish_immediately
+        with mock.patch.object(ad.threading, "Thread", ImmediateThread):
+            for index in range(ad.MAX_QUEUED_TOTAL + 5):
+                dl_id, err = manager.start_download(f"https://example.com/{index}")
+                self.assertIsNone(err)
+                self.assertIsNotNone(dl_id)
+
+            active = ad.Download("active-preserved", "https://example.com/active")
+            active.status = "downloading"
+            manager.downloads[active.id] = active
+            dl_id, err = manager.start_download("https://example.com/after-cap")
+
+        self.assertIsNone(err)
+        self.assertIsNotNone(dl_id)
+        self.assertIn(active.id, manager.downloads)
+        self.assertLessEqual(len(manager.downloads), ad.MAX_QUEUED_TOTAL)
 
 
 class DownloadFailureClassifierTests(unittest.TestCase):

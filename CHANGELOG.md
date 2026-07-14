@@ -29,6 +29,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Companion queue no longer locks permanently after 200 lifetime jobs.**
+  Queue admission now reclaims the oldest completed, failed, or cancelled
+  records only when capacity is needed, while preserving every active job and
+  the existing 200-record bound.
+- **Companion settings and history writes now fail truthfully.** Config updates
+  publish to memory only after the atomic file replacement succeeds and roll
+  back on disk errors. Settings remain dirty without restarting the server, and
+  History Clear/Undo preserve their file and recovery snapshot instead of
+  displaying false success.
 - **Popup could clobber a concurrent sidepanel settings write.** `writeSetting`
   merged the toggled key onto the in-memory cache; with both surfaces open a
   stale cache could overwrite the sidepanel's write to a different key. It now
