@@ -45,6 +45,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Extension fetch bodies now fail closed instead of corrupting binary data.**
+  The content bridge rejects ArrayBuffer, typed-array, Blob, and FormData bodies
+  before Chrome's JSON-only runtime messaging can erase their contents, while
+  URLSearchParams is normalized to a stable string and the background repeats
+  the guard for non-Chrome callers.
 - **RTL settings search controls no longer overlap.** The command search now
   mirrors its leading icon, trailing result/actions area, and input padding as
   a unit, with rendered desktop-RTL geometry coverage.

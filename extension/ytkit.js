@@ -328,6 +328,25 @@
         }
 
         const hasRequestBody = details && Object.prototype.hasOwnProperty.call(details, 'data');
+        const requestBody = hasRequestBody ? details.data : null;
+        // Chrome extension messages use JSON serialization, so these browser
+        // body types would arrive as empty or numeric-key objects. Reject them
+        // before sendRuntimeMessage rather than issuing a silently corrupted
+        // request. URLSearchParams has an unambiguous string representation and
+        // is safe to normalize locally.
+        const unsupportedBody = requestBody instanceof ArrayBuffer
+            || ArrayBuffer.isView(requestBody)
+            || requestBody instanceof Blob
+            || requestBody instanceof FormData;
+        if (unsupportedBody) {
+            details.onerror?.({
+                error: 'Binary and form-data request bodies are not supported by the extension fetch bridge. Encode the body as a string.'
+            });
+            return;
+        }
+        const serializedBody = requestBody instanceof URLSearchParams
+            ? requestBody.toString()
+            : requestBody;
 
         sendRuntimeMessage({
             type: 'EXT_FETCH',
@@ -335,7 +354,7 @@
                 method: details.method || 'GET',
                 url: details.url,
                 headers: details.headers || {},
-                data: hasRequestBody ? details.data : null,
+                data: serializedBody,
                 timeout: details.timeout || 0
             }
         }).then((response) => {

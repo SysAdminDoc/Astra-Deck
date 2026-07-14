@@ -4,6 +4,23 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
 
+test('extension fetch rejects non-JSON-safe bodies before runtime messaging', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf('function extensionRequest(details)');
+    const end = source.indexOf('function extensionRequestAsync(details)');
+    assert.ok(start > -1 && end > start, 'extensionRequest block should exist');
+
+    const block = source.slice(start, end);
+    const guardIndex = block.indexOf('if (unsupportedBody)');
+    const dispatchIndex = block.indexOf('sendRuntimeMessage({');
+    assert.ok(guardIndex > -1, 'extensionRequest should reject binary/form-data bodies');
+    assert.ok(dispatchIndex > guardIndex, 'the body guard must run before chrome.runtime messaging');
+    assert.match(block, /requestBody instanceof URLSearchParams\s*\? requestBody\.toString\(\)/,
+        'URLSearchParams should be normalized to its JSON-safe string representation');
+});
+
 // ── searchFilterDefaults: sp values must be raw (not double-encoded) ──
 
 test('searchFilterDefaults sp values are valid base64 sort parameters', () => {
