@@ -366,6 +366,94 @@ class InstanceCommandTests(unittest.TestCase):
         thread.join(2)
         self.assertEqual(received, ["start"])
 
+    def test_send_instance_command_posts_show_to_listener(self):
+        ready = threading.Event()
+        received = []
+        port_holder = []
+
+        def run_server():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+                server.bind(("127.0.0.1", 0))
+                port_holder.append(server.getsockname()[1])
+                server.listen(1)
+                ready.set()
+                conn, _addr = server.accept()
+                with conn:
+                    received.append(conn.recv(128).decode("ascii").strip())
+
+        thread = threading.Thread(target=run_server, daemon=True)
+        thread.start()
+        self.assertTrue(ready.wait(2))
+        self.assertTrue(ad.send_instance_command("show", port=port_holder[0], attempts=1))
+        thread.join(2)
+        self.assertEqual(received, ["show"])
+
+    def test_occupied_source_lock_delegates_without_killing_existing_instance(self):
+        class OccupiedSocket:
+            def bind(self, _address):
+                raise OSError("occupied")
+
+            def close(self):
+                return None
+
+        with mock.patch.object(ad.sys, "platform", "linux"), \
+             mock.patch.object(ad.socket, "socket", return_value=OccupiedSocket()), \
+             mock.patch.object(ad, "send_instance_command", return_value=True) as send:
+            result = ad.check_single_instance()
+
+        self.assertIs(result, ad.INSTANCE_ALREADY_RUNNING)
+        send.assert_called_once_with("show", attempts=1)
+
+    def test_existing_window_show_command_restores_window(self):
+        class Window:
+            pass
+
+        window = Window()
+        events = []
+        window._append_log = events.append
+        window._show_from_tray = lambda: events.append("shown")
+
+        ad.MainWindow._handle_instance_command(window, "show")
+
+        self.assertEqual(events[-1], "shown")
+
+
+class DiagnosticsBundleTests(unittest.TestCase):
+    def test_bundle_is_allowlisted_bounded_and_redacts_seeded_secrets(self):
+        secret = "seeded-secret-value-1234567890abcdef"
+        logs = [
+            {
+                "ts": "2026-07-14 12:00:00",
+                "msg": (
+                    f"Request https://youtube.com/watch?v=private123 failed; "
+                    f"token={secret}; cookie=SAPISID; path=C:\\Users\\private\\Videos\\clip.mp4; "
+                    f"id={'a' * 32}"
+                ),
+            }
+        ] * (ad.DIAGNOSTIC_LOG_ENTRY_LIMIT + 5)
+
+        bundle = ad.build_diagnostics_bundle(
+            server_running=True,
+            endpoint="http://127.0.0.1:9751",
+            active_downloads=2,
+            completed_downloads=7,
+            recent_logs=logs,
+            secrets=(secret,),
+        )
+        serialized = json.dumps(bundle)
+
+        self.assertEqual(set(bundle), {
+            "schemaVersion", "application", "service", "dependencies", "recentLog"
+        })
+        self.assertEqual(len(bundle["recentLog"]), ad.DIAGNOSTIC_LOG_ENTRY_LIMIT)
+        self.assertEqual(bundle["service"]["activeDownloads"], 2)
+        self.assertNotIn(secret, serialized)
+        self.assertNotIn("private123", serialized)
+        self.assertNotIn("C:\\\\Users", serialized)
+        self.assertNotIn("SAPISID", serialized)
+        self.assertNotIn("a" * 32, serialized)
+        self.assertIn("[redacted", serialized)
+
 
 class UninstallCleanupTests(unittest.TestCase):
     def test_delayed_install_dir_removal_only_accepts_app_owned_dir_shape(self):

@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Companion diagnostics are redacted and reviewable before sharing.** The
+  dashboard now builds a bounded, allowlisted JSON payload, removes local
+  paths, URLs, tokens, cookie-shaped values, and opaque identifiers, and opens
+  the exact payload in a review dialog before anything reaches the clipboard.
 - **In-page locale overrides are constrained to bundled translations.** The
   content script now rejects malformed, stale, or manually restored locale
   values before constructing an extension resource URL, matching the popup's
@@ -37,6 +41,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Reopening Astra Downloader no longer terminates the running service.** A
+  second launch now asks the existing instance to show its window (or start the
+  server for protocol launches) and exits cleanly, preserving active yt-dlp and
+  FFmpeg jobs; mutex failures also fail safely instead of falling into a broad
+  `taskkill` takeover path.
 - **Comment input underlines no longer leak through restyled comment surfaces.**
   Studio Comments and the Nyan comment cleanup now hide YouTube's current
   `tp-yt-paper-input-container` underline node in both extension and userscript.

@@ -91,7 +91,8 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QTabWidget, QScrollArea, QFrame, QCheckBox, QLineEdit,
     QFileDialog, QSystemTrayIcon, QMenu, QProgressBar, QTextEdit,
-    QSpinBox, QComboBox, QGraphicsOpacityEffect, QStyle
+    QSpinBox, QComboBox, QGraphicsOpacityEffect, QStyle, QDialog,
+    QDialogButtonBox
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread, QSize, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QIcon, QFont, QTextCursor
@@ -120,6 +121,8 @@ INSTANCE_LOCK_PORT = 9753
 PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
 MAX_CONCURRENT = 3
 MAX_QUEUED_TOTAL = 200
+DIAGNOSTIC_LOG_ENTRY_LIMIT = 30
+DIAGNOSTIC_TEXT_LIMIT = 600
 # Stall watchdog for the download subprocess. `for line in proc.stdout` blocks
 # forever if yt-dlp wedges on a dead socket — there is no other timeout on the
 # download path, so a hung process permanently consumes one of MAX_CONCURRENT
@@ -361,6 +364,76 @@ def write_persistent_log(message, path=LOG_PATH):
 def get_recent_log_entries():
     with _LOG_LOCK:
         return list(_log_ring)
+
+
+def redact_diagnostic_text(value, secrets=None):
+    """Return bounded support text without paths, URLs, or secret-shaped values."""
+    text = str(value or '')[:DIAGNOSTIC_TEXT_LIMIT]
+    for secret in secrets or ():
+        secret = str(secret or '')
+        if secret:
+            text = text.replace(secret, '[redacted secret]')
+
+    replacements = (
+        (str(INSTALL_DIR), '%LOCALAPPDATA%\\AstraDownloader'),
+        (str(Path.home()), '%USERPROFILE%'),
+    )
+    for raw, replacement in replacements:
+        if raw:
+            text = re.sub(re.escape(raw), lambda _match: replacement, text, flags=re.IGNORECASE)
+
+    # Support bundles do not need user/video URLs. Removing the whole value also
+    # avoids leaking query tokens, video IDs, channel handles, and local callback
+    # parameters while retaining the surrounding failure message.
+    text = re.sub(r'https?://[^\s\]\[(){}<>"\']+', '[redacted URL]', text, flags=re.IGNORECASE)
+    # Any remaining absolute Windows path is private even when it lives outside
+    # the default install/home roots. Stop at common log delimiters.
+    text = re.sub(r'(?<![A-Za-z0-9_])[A-Za-z]:\\[^\r\n\t,;]+', '[redacted path]', text)
+    text = re.sub(
+        r'(?i)\b(authorization|bearer|cookie|set-cookie|token|api[-_ ]?key)\b\s*[:=]?\s*[^\s,;]+',
+        lambda match: f"{match.group(1)}=[redacted]",
+        text,
+    )
+    # Long opaque hex/base64url values cover server tokens, API keys, cookie
+    # fragments, request IDs, and download UUIDs. Keep short hashes/versions.
+    text = re.sub(r'(?i)\b[a-f0-9]{24,}\b', '[redacted identifier]', text)
+    text = re.sub(r'\b[A-Za-z0-9_-]{32,}\b', '[redacted identifier]', text)
+    return text
+
+
+def build_diagnostics_bundle(server_running=False, endpoint='', active_downloads=0,
+                             completed_downloads=0, recent_logs=None, secrets=None):
+    """Build the allowlisted, redacted diagnostics payload shown before copy."""
+    safe_logs = []
+    for entry in list(recent_logs or [])[-DIAGNOSTIC_LOG_ENTRY_LIMIT:]:
+        if not isinstance(entry, dict):
+            continue
+        message = redact_diagnostic_text(entry.get('msg', ''), secrets=secrets)
+        if not message:
+            continue
+        safe_logs.append({
+            'timestamp': clean_text(entry.get('ts'), '', 32),
+            'message': message,
+        })
+    return {
+        'schemaVersion': 1,
+        'application': {
+            'name': APP_NAME,
+            'version': APP_VERSION,
+        },
+        'service': {
+            'state': 'running' if server_running else 'stopped',
+            'endpoint': clean_text(endpoint, '', 128),
+            'activeDownloads': max(0, int(active_downloads or 0)),
+            'completedThisSession': max(0, int(completed_downloads or 0)),
+        },
+        'dependencies': {
+            'ytDlpInstalled': YTDLP_PATH.exists(),
+            'ffmpegInstalled': FFMPEG_PATH.exists(),
+            'denoInstalled': DENO_PATH.exists() or bool(shutil.which('deno')),
+        },
+        'recentLog': safe_logs,
+    }
 
 
 def log_crash(context="Unhandled exception"):
@@ -2176,7 +2249,7 @@ def startup_command_from_argv(argv=None):
 
 def send_instance_command(command, host=INSTANCE_CONTROL_HOST, port=INSTANCE_CONTROL_PORT, attempts=5, delay=0.2):
     command = str(command or '').strip().lower()
-    if command not in {'start'}:
+    if command not in {'show', 'start'}:
         return False
     payload = (command + '\n').encode('ascii')
     for attempt in range(max(1, int(attempts))):
@@ -5235,7 +5308,8 @@ class MainWindow(QMainWindow):
         btn_clear_log = self._make_tool_button("Clear Log", QStyle.StandardPixmap.SP_DialogResetButton, "ghost")
         btn_clear_log.clicked.connect(self._clear_log)
         log_header.addWidget(btn_clear_log)
-        btn_diag = self._make_tool_button("Copy Diagnostics", QStyle.StandardPixmap.SP_FileDialogContentsView, "ghost")
+        btn_diag = self._make_tool_button("Review Diagnostics", QStyle.StandardPixmap.SP_FileDialogContentsView, "ghost")
+        btn_diag.setToolTip("Review the redacted support payload before copying it.")
         btn_diag.clicked.connect(self._copy_diagnostics)
         log_header.addWidget(btn_diag)
         log_header.addWidget(make_status_badge("Local only", "neutral"))
@@ -6184,22 +6258,47 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(2200, lambda: self._show_settings_status(""))
 
     def _copy_diagnostics(self):
-        active = self.dl_manager.active_count()
-        diagnostics = [
-            f"{APP_NAME} {APP_VERSION}",
-            f"Server: {'running' if self.server_running else 'stopped'}",
-            f"Endpoint: {self.dash_endpoint.text()}",
-            f"Active downloads: {active}",
-            f"Completed this session: {self.dl_manager.total_completed}",
-            f"yt-dlp installed: {YTDLP_PATH.exists()}",
-            f"ffmpeg installed: {FFMPEG_PATH.exists()}",
-            f"Install directory: {INSTALL_DIR}",
-            "",
-            "Recent log:",
-            self.log_text.toPlainText()[-3000:],
-        ]
-        QApplication.clipboard().setText("\n".join(diagnostics))
-        self._append_log("Diagnostics copied to clipboard")
+        payload = build_diagnostics_bundle(
+            server_running=self.server_running,
+            endpoint=self.dash_endpoint.text(),
+            active_downloads=self.dl_manager.active_count(),
+            completed_downloads=self.dl_manager.total_completed,
+            recent_logs=get_recent_log_entries(),
+            secrets=(self.config.get('ServerToken', ''), self.cfg_token.text()),
+        )
+        text = json.dumps(payload, indent=2, ensure_ascii=False)
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Review Diagnostics")
+        dialog.setModal(True)
+        dialog.resize(720, 520)
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(20, 18, 20, 18)
+        layout.setSpacing(12)
+        heading = make_label("Review the redacted support payload", "section")
+        detail = make_label(
+            "Paths, URLs, tokens, cookie-shaped values, and opaque identifiers are removed. "
+            "Only copy this payload if you are comfortable sharing what remains.",
+            "fieldHint",
+            word_wrap=True,
+        )
+        preview = QTextEdit()
+        preview.setReadOnly(True)
+        preview.setPlainText(text)
+        preview.setAccessibleName("Redacted diagnostics preview")
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        copy_button = buttons.addButton("Copy to Clipboard", QDialogButtonBox.ButtonRole.AcceptRole)
+        copy_button.setDefault(True)
+        copy_button.clicked.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(heading)
+        layout.addWidget(detail)
+        layout.addWidget(preview, 1)
+        layout.addWidget(buttons)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            QApplication.clipboard().setText(text)
+            self._append_log("Redacted diagnostics copied to clipboard")
 
     def _clear_log(self):
         self.log_text.setPlainText("Ready.")
@@ -6279,7 +6378,7 @@ class MainWindow(QMainWindow):
                             except OSError:
                                 continue
                         command = raw.decode('ascii', errors='ignore').strip().lower()
-                        if command in {'start'}:
+                        if command in {'show', 'start'}:
                             self.instance_command.emit(command)
             except OSError as e:
                 if not self._instance_command_stop.is_set():
@@ -6306,7 +6405,12 @@ class MainWindow(QMainWindow):
         self._instance_command_thread = None
 
     def _handle_instance_command(self, command):
-        if str(command).strip().lower() != 'start':
+        command = str(command).strip().lower()
+        if command == 'show':
+            self._append_log("Received request to show the existing window.")
+            self._show_from_tray()
+            return
+        if command != 'start':
             return
         self._append_log("Received browser start request.")
         if self.server_running:
@@ -6425,6 +6529,9 @@ class MainWindow(QMainWindow):
 # ══════════════════════════════════════════════════════════════
 # SINGLE INSTANCE GUARD
 # ══════════════════════════════════════════════════════════════
+INSTANCE_ALREADY_RUNNING = object()
+
+
 def check_single_instance(startup_command=''):
     """Prevent multiple GUI instances without relying on a TCP port."""
     if sys.platform == 'win32':
@@ -6437,27 +6544,31 @@ def check_single_instance(startup_command=''):
             kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
             handle = kernel32.CreateMutexW(None, False, "Local\\AstraDownloader.SingleInstance")
             if not handle:
-                write_persistent_log(f"Single-instance mutex failed: {ctypes.get_last_error()}")
-                return None
+                error = ctypes.get_last_error()
+                raise OSError(error, f"single-instance mutex creation failed ({error})")
             if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS
                 kernel32.CloseHandle(handle)
-                if startup_command:
-                    send_instance_command(startup_command)
-                return None
+                send_instance_command(startup_command or 'show')
+                return INSTANCE_ALREADY_RUNNING
             return handle
         except Exception as e:
             write_persistent_log(f"Mutex single-instance guard unavailable: {e}")
+            raise
 
     # Cross-platform fallback for source runs outside Windows.
-    if startup_command and send_instance_command(startup_command, attempts=1):
-        return None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('127.0.0.1', INSTANCE_LOCK_PORT))
         s.listen(1)
         return s  # Keep alive
-    except OSError:
-        return None
+    except OSError as exc:
+        try:
+            s.close()
+        except Exception:
+            pass
+        if send_instance_command(startup_command or 'show', attempts=1):
+            return INSTANCE_ALREADY_RUNNING
+        raise OSError(f"single-instance lock is occupied and the existing app did not respond: {exc}") from exc
 
 # ══════════════════════════════════════════════════════════════
 # MAIN
@@ -6589,23 +6700,16 @@ def main():
     if is_frozen_app():
         ensure_system_integrations(prefer_installed=True)
 
-    # Single instance check — kill stale instances and take over
-    lock = check_single_instance(startup_command)
-    if lock is None:
-        write_persistent_log("Another instance detected — killing it to take over.")
-        current_pid = str(os.getpid())
-        parent_pid = str(os.getppid())
-        subprocess.run(
-            ['taskkill', '/F', '/IM', 'AstraDownloader.exe',
-             '/FI', f'PID ne {current_pid}',
-             '/FI', f'PID ne {parent_pid}'],
-            capture_output=True, creationflags=CREATE_NO_WINDOW,
-        )
-        time.sleep(1)
+    # A second launch delegates to the healthy process and exits. Never kill a
+    # live companion here: it may own active yt-dlp/ffmpeg jobs.
+    try:
         lock = check_single_instance(startup_command)
-        if lock is None:
-            write_persistent_log("Could not acquire single-instance lock after killing stale processes.")
-            sys.exit(1)
+    except Exception as exc:
+        write_persistent_log(f"Could not establish the single-instance guard: {exc}")
+        return
+    if lock is INSTANCE_ALREADY_RUNNING:
+        write_persistent_log("Existing Astra Downloader instance accepted the launch request.")
+        return
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
