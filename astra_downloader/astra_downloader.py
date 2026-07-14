@@ -3541,6 +3541,19 @@ class DownloadManager(QObject):
                         # linger and poll the retry's process/event.
                         if watchdog_thread is not None:
                             watchdog_thread.join(timeout=DOWNLOAD_WATCHDOG_POLL_SECONDS + 1)
+                        # The first process reached EOF, but Popen keeps the
+                        # TextIOWrapper open until it is explicitly closed (or
+                        # garbage-collected). Close it before rebinding `proc`
+                        # so repeated cookie-less retries cannot leak one pipe
+                        # handle per attempt.
+                        previous_stdout = getattr(proc, 'stdout', None)
+                        try:
+                            if previous_stdout is not None:
+                                previous_stdout.close()
+                        except Exception:
+                            # reason: test doubles and already-closed streams
+                            # may not expose a conventional close operation
+                            pass
                         activity['at'] = time.monotonic()
                         stop_watchdog = threading.Event()
                         proc = subprocess.Popen(
@@ -3704,6 +3717,17 @@ class DownloadManager(QObject):
                 except Exception:
                     # reason: best-effort kill; never mask the original error
                     pass
+            # Popen does not close PIPE-backed TextIOWrapper objects merely
+            # because wait() reached EOF. Explicit closure prevents descriptor
+            # leaks in the long-running GUI after each completed, failed, or
+            # cancelled download.
+            process_stdout = getattr(orphan, 'stdout', None)
+            try:
+                if process_stdout is not None:
+                    process_stdout.close()
+            except Exception:
+                # reason: cleanup must never replace the download result
+                pass
             dl.process = None
             # Cookie jar holds session credentials — purge it as soon as the
             # download process exits so it never outlives the one request that

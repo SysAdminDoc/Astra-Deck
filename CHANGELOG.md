@@ -33,6 +33,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Companion downloads now close their subprocess pipes deterministically.**
+  Completed, failed, cancelled, and cookie-less retry paths explicitly close
+  the `yt-dlp` stdout stream instead of leaving Windows handles for garbage
+  collection. The YouTube-host allowlist test is also hermetic and no longer
+  launches real download workers during the unit suite.
 - **Companion queue no longer locks permanently after 200 lifetime jobs.**
   Queue admission now reclaims the oldest completed, failed, or cancelled
   records only when capacity is needed, while preserving every active job and
