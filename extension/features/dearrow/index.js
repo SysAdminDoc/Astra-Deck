@@ -35,6 +35,7 @@
             _cacheMeta: {},
             _pending: {},
             _observer: null,
+            _observing: false,
             _navRuleId: 'deArrowNav',
             _generation: 0,
             _processTimer: null,
@@ -99,14 +100,33 @@
                         self._resetTimer = null;
                         self._processPage();
                     }, 1000);
+                    // Keep the churning observer attached only off watch pages.
+                    if (isWatchPagePath()) self._disconnectObserver();
+                    else self._connectObserver();
                 };
-                addNavigateRule(this._navRuleId, resetAndProcess);
                 this._observer = new MutationObserver(() => {
                     if (isWatchPagePath()) return;
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
+                // Previously the observer stayed attached to document.body on
+                // every page including watch pages, where it woke on each
+                // player/comment mutation just to bail in the callback. Now the
+                // navigate rule connects it only off watch pages and disconnects
+                // it on entry; the watch-sidebar rail is still covered by
+                // resetAndProcess's one-shot pass.
+                addNavigateRule(this._navRuleId, resetAndProcess);
+                if (!isWatchPagePath()) this._connectObserver();
+            },
+            _connectObserver() {
+                if (this._observing || !this._observer) return;
                 this._observer.observe(document.body, { childList: true, subtree: true });
+                this._observing = true;
+            },
+            _disconnectObserver() {
+                if (!this._observing || !this._observer) return;
+                this._observer.disconnect();
+                this._observing = false;
             },
             async _fetchBranding(videoId) {
                 // Check cache with TTL enforcement
@@ -312,6 +332,7 @@
                 this._pending = {};
                 removeNavigateRule(this._navRuleId);
                 this._observer?.disconnect();
+                this._observing = false;
                 this._styleEl?.remove();
                 document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
                 document.querySelectorAll('[data-da-processed]').forEach(el => { delete el.dataset.daProcessed; el.style.display = ''; });

@@ -746,30 +746,19 @@ return response;
                 this._prCacheHref = location.href;
                 this._prCache = null;
                 try {
-                    for (const script of document.querySelectorAll('script')) {
+                    // Only inline scripts carry ytInitialPlayerResponse; skip
+                    // external (`src`) script nodes so the walk never touches
+                    // network-loaded resources with no inline textContent.
+                    for (const script of document.querySelectorAll('script:not([src])')) {
                         const text = script.textContent;
                         if (text && text.includes('ytInitialPlayerResponse')) {
-                            // Try multiple regex patterns to handle YouTube's varying script formats
-                            const patterns = [
-                                /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var\s|<\/script)/s,
-                                /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:if\s|window\s)/s,
-                                /ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var\s|if\s|window\s|<\/script)/s
-                            ];
-                            for (const pattern of patterns) {
-                                const match = text.match(pattern);
-                                if (match) {
-                                    try {
-                                        this._prCache = JSON.parse(match[1]);
-                                        break;
-                                    } catch (_) { /* reason: invalid JSON candidate; try next pattern */ }
-                                }
-                            }
-                            if (this._prCache) break;
-
-                            // Fallback: find JSON object after the assignment using
-                            // brace counting that correctly skips over string literals
-                            // and their escape sequences so that `}` or `{` inside a
-                            // JSON string value does not confuse the depth counter.
+                            // Brace-counting extraction FIRST: it is O(n),
+                            // deterministic, and correctly skips string literals
+                            // and their escape sequences so a `{`/`}` inside a
+                            // JSON string cannot confuse the depth counter. This
+                            // avoids running three dot-all `/\{.+?\}/s` regexes —
+                            // which can backtrack pathologically — over a script
+                            // body that is frequently hundreds of KB.
                             const idx = text.indexOf('ytInitialPlayerResponse');
                             if (idx !== -1) {
                                 const eqIdx = text.indexOf('=', idx);
@@ -792,9 +781,29 @@ return response;
                                         try {
                                             this._prCache = JSON.parse(text.substring(jsonStart, end));
                                         } catch (_) {
-                                            // reason: brace-counting fallback; try next script tag on failure
+                                            // reason: brace-counting candidate failed to parse; fall back to regex below
                                         }
                                     }
+                                }
+                            }
+                            if (this._prCache) break;
+
+                            // Fallback: legacy regex patterns for the rare script
+                            // shapes the brace scan cannot locate a balanced
+                            // object in. Kept for resilience to YouTube's varying
+                            // inline-assignment formats.
+                            const patterns = [
+                                /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var\s|<\/script)/s,
+                                /var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:if\s|window\s)/s,
+                                /ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var\s|if\s|window\s|<\/script)/s
+                            ];
+                            for (const pattern of patterns) {
+                                const match = text.match(pattern);
+                                if (match) {
+                                    try {
+                                        this._prCache = JSON.parse(match[1]);
+                                        break;
+                                    } catch (_) { /* reason: invalid JSON candidate; try next pattern */ }
                                 }
                             }
                             if (this._prCache) break;
@@ -24419,15 +24428,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._bar = bar;
                 this._dismissed = false;
 
-                // Update progress periodically
+                // Update progress from media events instead of a 2 Hz poll.
+                // timeupdate fires ~4/sec only while playing; seeked/play/pause
+                // cover the paused and scrub cases. No-ops while the bar is
+                // hidden (the common case — it only shows on scroll-past).
                 if (this._progressInterval) clearInterval(this._progressInterval);
-                this._progressInterval = setInterval(() => {
+                this._updateProgress = () => {
+                    if (!this._bar || this._bar.style.display === 'none') return;
                     const v = document.querySelector('video');
                     if (v && v.duration) {
                         progressFill.style.width = `${(v.currentTime / v.duration) * 100}%`;
                         playBtn.textContent = v.paused ? '\u25B6' : '\u23F8';
                     }
-                }, 500);
+                };
+                this._progressEvents = ['timeupdate', 'seeked', 'play', 'pause'];
+                this._progressEvents.forEach(ev => document.addEventListener(ev, this._updateProgress, true));
 
                 // Show/hide when player scrolls out of view (IntersectionObserver is
                 // far more efficient than a scroll listener — fires only on threshold
@@ -24437,7 +24452,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._playerObserver = new IntersectionObserver((entries) => {
                         if (this._dismissed) return;
                         const entry = entries[0];
-                        bar.style.display = entry.isIntersecting ? 'none' : 'flex';
+                        const show = !entry.isIntersecting;
+                        bar.style.display = show ? 'flex' : 'none';
+                        // Refresh immediately on reveal — timeupdate may not fire
+                        // again if the video is currently paused.
+                        if (show) this._updateProgress?.();
                     }, { threshold: 0.1 });
                     this._playerObserver.observe(player);
                 }
@@ -24455,6 +24474,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 if (this._playerObserver) { this._playerObserver.disconnect(); this._playerObserver = null; }
                 if (this._progressInterval) { clearInterval(this._progressInterval); this._progressInterval = null; }
+                if (this._updateProgress && this._progressEvents) {
+                    this._progressEvents.forEach(ev => document.removeEventListener(ev, this._updateProgress, true));
+                }
+                this._updateProgress = null; this._progressEvents = null;
                 this._bar?.remove(); this._bar = null;
                 this._dismissed = false;
             },
@@ -25076,7 +25099,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 player.appendChild(overlay);
                 this._overlay = overlay;
 
-                this._interval = setInterval(() => {
+                // Event-driven: the overlay only depends on playbackRate, which
+                // changes exactly when `ratechange` fires. This replaces a 2 Hz
+                // setInterval that polled + branched forever (even at 1x, even in
+                // backgrounded/paused tabs). Capture-phase document listener is
+                // resilient to YouTube swapping the <video> element on nav.
+                this._update = () => {
                     const video = document.querySelector('video');
                     if (!video || !this._overlay) return;
                     const rate = video.playbackRate;
@@ -25086,7 +25114,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._overlay.style.display = 'block';
                         this._overlay.textContent = `${rate}x`;
                     }
-                }, 500);
+                };
+                document.addEventListener('ratechange', this._update, true);
+                this._update();
             },
 
             init() {
@@ -25100,6 +25130,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cleanup() {
                 if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 if (this._interval) { clearInterval(this._interval); this._interval = null; }
+                if (this._update) { document.removeEventListener('ratechange', this._update, true); this._update = null; }
                 this._overlay?.remove(); this._overlay = null;
             },
 
@@ -29107,16 +29138,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return s => ENTITIES.reduce((acc, [e, sym]) => acc.replaceAll(`&${e};`, sym), s);
                 })();
                 this._processRoot(pageManager, decode);
-                this._observer = new MutationObserver(records => {
-                    for (const r of records) {
-                        for (const node of r.addedNodes) {
-                            this._processRoot(node, decode);
+                // Route through the shared navigation observer's scoped-rule
+                // machinery instead of a second whole-subtree observer that ran
+                // two nested querySelectorAll passes per added node on every
+                // comment-scroll tick (hundreds/sec). The selector prefilter
+                // fires the rule only when a comment node is actually inserted.
+                if (typeof addScopedMutationRule === 'function') {
+                    addScopedMutationRule('enableHandleRevealer', this._COMMENT_ROOT_SELECTOR, (_target, addedElements) => {
+                        for (const node of addedElements) this._processRoot(node, decode);
+                    });
+                    this._scopedRuleActive = true;
+                } else {
+                    this._observer = new MutationObserver(records => {
+                        for (const r of records) {
+                            for (const node of r.addedNodes) {
+                                this._processRoot(node, decode);
+                            }
                         }
-                    }
-                });
-                this._observer.observe(pageManager, { childList: true, subtree: true });
+                    });
+                    this._observer.observe(pageManager, { childList: true, subtree: true });
+                }
             },
             destroy() {
+                if (this._scopedRuleActive && typeof removeScopedMutationRule === 'function') {
+                    removeScopedMutationRule('enableHandleRevealer');
+                    this._scopedRuleActive = false;
+                }
                 this._observer?.disconnect(); this._observer = null;
                 this._abortController?.abort(); this._abortController = null;
                 this._pendingAuthors?.clear(); this._pendingAuthors = null;
@@ -30001,6 +30048,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cacheMeta: {},
             _pending: {},
             _observer: null,
+            _observing: false,
             _navRuleId: 'deArrowNav',
             _generation: 0,
             _processTimer: null,
@@ -30065,14 +30113,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         self._resetTimer = null;
                         self._processPage();
                     }, 1000);
+                    // Keep the churning observer attached only off watch pages.
+                    if (isWatchPagePath()) self._disconnectObserver();
+                    else self._connectObserver();
                 };
-                addNavigateRule(this._navRuleId, resetAndProcess);
                 this._observer = new MutationObserver(() => {
                     if (isWatchPagePath()) return;
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
+                // Connect only off watch pages; the navigate rule re-toggles on
+                // every SPA transition so the observer never fires just to bail.
+                addNavigateRule(this._navRuleId, resetAndProcess);
+                if (!isWatchPagePath()) this._connectObserver();
+            },
+            _connectObserver() {
+                if (this._observing || !this._observer) return;
                 this._observer.observe(document.body, { childList: true, subtree: true });
+                this._observing = true;
+            },
+            _disconnectObserver() {
+                if (!this._observing || !this._observer) return;
+                this._observer.disconnect();
+                this._observing = false;
             },
             async _fetchBranding(videoId) {
                 // Check cache with TTL enforcement
@@ -30261,6 +30324,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pending = {};
                 removeNavigateRule(this._navRuleId);
                 this._observer?.disconnect();
+                this._observing = false;
                 this._styleEl?.remove();
                 document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
                 document.querySelectorAll('[data-da-processed]').forEach(el => { delete el.dataset.daProcessed; el.style.display = ''; });
@@ -40693,39 +40757,82 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     cursor: text !important;
                 }
             `;
-            this._styleElement = injectStyle(css, 'ytkit-comment-text-selection', true);
-            this._normalizeCommentSurface(document);
-
-            this._selectStartHandler = (event) => {
-                if (!this._isTextTarget(event.target)) return;
-                event.stopPropagation();
-                event.stopImmediatePropagation?.();
+            // Defer the (large) stylesheet + capture-phase selectstart listener
+            // off the first-paint path. Comments never render on the initial
+            // frame, so there is no visible cost to injecting these at idle —
+            // and the scoped mutation rule below force-runs it the instant a
+            // comment surface actually appears, so styling is never late.
+            this._injectDeferred = () => {
+                if (this._deferredDone) return;
+                this._deferredDone = true;
+                this._styleElement = injectStyle(css, 'ytkit-comment-text-selection', true);
+                this._normalizeCommentSurface(document);
+                this._selectStartHandler = (event) => {
+                    if (!this._isTextTarget(event.target)) return;
+                    event.stopPropagation();
+                    event.stopImmediatePropagation?.();
+                };
+                window.addEventListener('selectstart', this._selectStartHandler, true);
             };
+            if (typeof requestIdleCallback === 'function') {
+                this._idleHandle = requestIdleCallback(() => this._injectDeferred(), { timeout: 2000 });
+            } else {
+                this._idleTimer = setTimeout(() => this._injectDeferred(), 0);
+            }
 
-            window.addEventListener('selectstart', this._selectStartHandler, true);
-
-            this._observer = new MutationObserver((records) => {
-                for (const record of records) {
-                    for (const node of record.addedNodes) {
-                        if (!(node instanceof Element)) continue;
-                        if (
-                            node.matches?.(COMMENT_TEXT_SELECTION_ROOT_SELECTOR) ||
-                            node.matches?.('ytd-comment-thread-renderer') ||
-                            node.querySelector?.(COMMENT_TEXT_SELECTION_ROOT_SELECTOR) ||
-                            node.querySelector?.('.thread-hitbox')
-                        ) {
-                            this._scheduleNormalize(node);
-                            return;
+            // Replace the dedicated whole-document MutationObserver with a
+            // participant in the shared navigation observer. Its added-node
+            // selector prefilter means this callback only wakes when a comment
+            // node is actually inserted — eliminating the per-mutation wakeups
+            // on watch pages (the heaviest-mutating surface). Behavior is
+            // unchanged: comment surfaces are still normalized on insert.
+            if (typeof addScopedMutationRule === 'function') {
+                addScopedMutationRule(
+                    'commentTextSelection',
+                    `${COMMENT_TEXT_SELECTION_ROOT_SELECTOR}, ytd-comment-thread-renderer, .thread-hitbox`,
+                    () => {
+                        // Comments have appeared — ensure styles/listener are in
+                        // place now rather than waiting for the idle callback.
+                        this._injectDeferred();
+                        this._scheduleNormalize(document);
+                    }
+                );
+                this._scopedRuleActive = true;
+            } else {
+                // Fallback for cores without scoped rules: dedicated observer.
+                this._observer = new MutationObserver((records) => {
+                    for (const record of records) {
+                        for (const node of record.addedNodes) {
+                            if (!(node instanceof Element)) continue;
+                            if (
+                                node.matches?.(COMMENT_TEXT_SELECTION_ROOT_SELECTOR) ||
+                                node.matches?.('ytd-comment-thread-renderer') ||
+                                node.querySelector?.(COMMENT_TEXT_SELECTION_ROOT_SELECTOR) ||
+                                node.querySelector?.('.thread-hitbox')
+                            ) {
+                                this._injectDeferred();
+                                this._scheduleNormalize(node);
+                                return;
+                            }
                         }
                     }
-                }
-            });
-            this._observer.observe(document.documentElement, { childList: true, subtree: true });
+                });
+                this._observer.observe(document.documentElement, { childList: true, subtree: true });
+            }
         },
         destroy() {
+            if (this._idleHandle && typeof cancelIdleCallback === 'function') {
+                cancelIdleCallback(this._idleHandle);
+            }
+            this._idleHandle = null;
+            if (this._idleTimer) { clearTimeout(this._idleTimer); this._idleTimer = null; }
             if (this._selectStartHandler) {
                 window.removeEventListener('selectstart', this._selectStartHandler, true);
                 this._selectStartHandler = null;
+            }
+            if (this._scopedRuleActive && typeof removeScopedMutationRule === 'function') {
+                removeScopedMutationRule('commentTextSelection');
+                this._scopedRuleActive = false;
             }
             this._observer?.disconnect();
             this._observer = null;
@@ -40735,6 +40842,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
             this._styleElement?.remove();
             this._styleElement = null;
+            this._injectDeferred = null;
+            this._deferredDone = false;
             this._initialized = false;
         }
     };
@@ -40972,6 +41081,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     }
 
     function buildSettingsPanel() {
+        // Ensure panel styles are present before either build path runs. This
+        // is the lazy trigger that replaces the old eager page-load injection.
+        injectPanelStyles();
         const runtime = getSettingsPanelRuntime();
         if (runtime?.buildSettingsPanel) return runtime.buildSettingsPanel();
         if (!shouldBuildPrimaryUI()) return;
@@ -44158,6 +44270,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     //  SECTION 5: STYLES
     function injectPanelStyles() {
+        // Injected lazily on first settings-panel build rather than at page
+        // load: this (large) stylesheet only targets #ytkit-settings-panel
+        // internals that do not exist until the panel is opened, so parsing it
+        // on every pageview was pure dead weight (the panel is closed on 99% of
+        // views). Idempotent so both the module and fallback build paths are safe.
+        if (injectPanelStyles._done) return;
+        injectPanelStyles._done = true;
         appendStyleSheet(`
 /* ─── Drag-reorder sidebar ─── */
 .ytkit-nav-btn{cursor:grab;user-select:none;}
@@ -45578,7 +45697,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         injectStyle(`:root, html[dark] { --ytkit-accent: #a78bfa; --ytkit-accent-rgb: 167,139,250; --ytkit-accent-light: #c4b5fd; }`, 'ytkit-accent-vars', true);
         commentTextSelectionSupport.init();
 
-        injectPanelStyles();
+        // Panel styles are now injected lazily on first panel open
+        // (buildSettingsPanel -> injectPanelStyles), not eagerly at page load.
 
         // v4.46.2: forced-colors support is unconditional — the
         // @media (forced-colors: active) query is the gate, not the setting.
@@ -54913,6 +55033,14 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         // Track page changes for lazy loading (skip in safe mode)
         if (!isSafeMode) {
+            // Precompute the page-scoped subset ONCE. `pages` and `_arrayKey`
+            // are static feature-definition properties, so only features that
+            // declare a `pages` constraint can ever change active state on
+            // navigation. Iterating this subset instead of the full ~247-entry
+            // liveFeatureList avoids ~500 predicate evaluations per SPA
+            // navigation (twice per feature) that did nothing on a clean
+            // install where every feature is off.
+            const pageScopedFeatures = liveFeatureList.filter((f) => !f._arrayKey && f.pages);
             addNavigateRule('_pageChangeTracker', () => {
                 const newPage = getCurrentPage();
                 if (newPage === appState.currentPage) return;
@@ -54922,9 +55050,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 DebugManager.log('Navigation', `Page changed: ${oldPage} -> ${newPage}`);
 
                 // Re-initialize features that are page-specific
-                liveFeatureList.forEach((f) => {
-                    if (f._arrayKey || !f.pages) return;
-
+                pageScopedFeatures.forEach((f) => {
                     const wasActive = shouldFeatureBeActive(f, appState.settings, oldPage);
                     const shouldBeActiveNow = shouldFeatureBeActive(f, appState.settings, newPage);
 
