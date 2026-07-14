@@ -754,21 +754,24 @@ class ApiSecurityTests(unittest.TestCase):
         manager = ad.DownloadManager(config, FakeHistory())
         api = ad.create_api(config, manager, FakeHistory())
         client = api.test_client()
-        for ok_url in (
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            "https://youtu.be/dQw4w9WgXcQ",
-            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
-        ):
-            resp = client.post(
-                "/download",
-                json={"url": ok_url},
-                headers={"X-Auth-Token": token},
-            )
-            # Must get PAST the YouTube allowlist (i.e. not the non-youtube-url
-            # rejection). Downstream gates (Deno/queue) may still 200/422/429,
-            # but the URL must never be rejected as non-YouTube.
-            body = resp.get_json() or {}
-            self.assertNotEqual(body.get("code"), "non-youtube-url", ok_url)
+        with mock.patch.object(manager, 'start_download', return_value=('dl_test', None)) as start:
+            for ok_url in (
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "https://youtu.be/dQw4w9WgXcQ",
+                "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+            ):
+                resp = client.post(
+                    "/download",
+                    json={"url": ok_url},
+                    headers={"X-Auth-Token": token},
+                )
+                # Must get PAST the YouTube allowlist without launching a real
+                # yt-dlp worker from the unit suite.
+                body = resp.get_json() or {}
+                self.assertNotEqual(body.get("code"), "non-youtube-url", ok_url)
+                self.assertEqual(resp.status_code, 200, ok_url)
+
+        self.assertEqual(start.call_count, 3)
 
     def test_history_limit_is_clamped(self):
         token = "d" * 32
@@ -2454,6 +2457,45 @@ class EndToEndDownloadTests(unittest.TestCase):
             self.assertEqual(entry["filename"], "fake-video.mp4")
             self.assertEqual(entry["format"], "mp4")
             self.assertFalse(entry["audioOnly"])
+
+    def test_completed_download_closes_subprocess_stdout(self):
+        token = "z" * 32
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "ServerToken": token,
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+            })
+            manager = ad.DownloadManager(config, FakeHistory())
+            dl = ad.Download(
+                "dl_stdout_cleanup",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir=tmpdir,
+            )
+
+            class FakeProc:
+                def __init__(self):
+                    self.stdout = io.StringIO(
+                        'MDLP_JSON {"downloaded_bytes": 1, "total_bytes": 1}\n'
+                    )
+                    self.returncode = 0
+
+                def wait(self):
+                    return self.returncode
+
+                def poll(self):
+                    return self.returncode
+
+            fake_proc = FakeProc()
+            with mock.patch.object(ad.subprocess, 'Popen', return_value=fake_proc), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                manager._run_download(dl)
+
+            self.assertEqual(dl.status, "complete")
+            self.assertTrue(fake_proc.stdout.closed,
+                "download teardown must close the PIPE-backed stdout stream")
+            self.assertIsNone(dl.process)
 
     def test_yt_dlp_nonzero_exit_with_error_marks_failed(self):
         # When the subprocess exits non-zero and progress never reached
