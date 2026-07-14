@@ -1,9 +1,11 @@
 import hashlib
 import io
 import json
+import os
 import socket
 import struct
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -949,45 +951,56 @@ class ApiSecurityTests(unittest.TestCase):
                 )
                 self.assertEqual(resp.status_code, 200, f"Expected 200 for Host={good_host}")
 
-    def test_bootstrap_surfaces_failure_to_stderr(self):
-        """Verify _bootstrap writes a helpful message to stderr when pip is unreachable."""
-        import io
-        import unittest.mock as mock
-        # Only run if running from source (frozen exe skips bootstrap entirely)
-        buf = io.StringIO()
-        with mock.patch.object(ad, "subprocess") as fake_subproc, \
-             mock.patch.object(ad.sys, "stderr", buf), \
-             mock.patch.object(ad.os.environ, "get", return_value=None), \
-             mock.patch.object(ad.sys, "frozen", False, create=True):
-            # Force each install strategy to report that pip is not on PATH
-            fake_subproc.check_call.side_effect = FileNotFoundError(2, "No such file", "pip")
-            # Force the import check to report every dependency as missing
-            with mock.patch("builtins.__import__", side_effect=ImportError):
-                ad._bootstrap()
-        stderr = buf.getvalue()
-        self.assertIn("Failed to auto-install", stderr)
-        self.assertIn("pip install -r", stderr)
+    def test_missing_source_dependency_message_requires_explicit_virtualenv_setup(self):
+        error = ModuleNotFoundError("missing PyQt6", name="PyQt6")
+        message = ad.source_dependency_error(error)
+        self.assertIn("will not install packages during import", message)
+        self.assertIn("py -3.12 -m venv .venv", message)
+        self.assertIn("--require-virtualenv -r", message)
+        self.assertIn(str(ad.REQUIREMENTS_PATH), message)
 
-    def test_bootstrap_installs_from_requirements_file(self):
-        import unittest.mock as mock
-        with tempfile.TemporaryDirectory() as tmp:
-            requirements_path = Path(tmp) / "requirements.txt"
-            requirements_path.write_text("PyQt6>=6.6.0,<7\n", encoding="utf-8")
-            with mock.patch.object(ad, "subprocess") as fake_subproc, \
-                 mock.patch.object(ad.os.environ, "get", return_value=None), \
-                 mock.patch.object(ad.sys, "frozen", False, create=True), \
-                 mock.patch.object(ad, "REQUIREMENTS_PATH", requirements_path), \
-                 mock.patch("builtins.__import__", side_effect=ImportError):
-                fake_subproc.check_call.return_value = None
-                ad._bootstrap()
+    def test_source_import_has_no_package_install_path(self):
+        source = Path(ad.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("def _bootstrap", source)
+        self.assertNotIn("--break-system-packages", source)
+        self.assertNotIn("subprocess.check_call", source)
+        self.assertIn("raise ImportError(source_dependency_error(exc))", source)
 
-        args = fake_subproc.check_call.call_args.args[0]
-        self.assertIn("-r", args)
-        self.assertIn(str(requirements_path), args)
-        self.assertNotIn("PyQt6", args)
-        self.assertNotIn("flask", args)
-        self.assertNotIn("requests", args)
-        self.assertNotIn("waitress", args)
+    def test_importing_companion_modules_never_spawns_a_process(self):
+        script = r'''
+import importlib
+import subprocess
+
+def forbidden(*args, **kwargs):
+    raise AssertionError(f"process launch during import: {args!r}")
+
+subprocess.Popen = forbidden
+subprocess.call = forbidden
+subprocess.check_call = forbidden
+subprocess.check_output = forbidden
+subprocess.run = forbidden
+
+for name in (
+    "astra_downloader.astra_downloader",
+    "astra_downloader.config",
+    "astra_downloader.download",
+    "astra_downloader.gui",
+    "astra_downloader.health",
+    "astra_downloader.routes",
+):
+    importlib.import_module(name)
+'''
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 class CookieJarTests(unittest.TestCase):

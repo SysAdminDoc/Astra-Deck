@@ -20,7 +20,7 @@ from pathlib import Path
 # Python 3.9 host would shell out fine to the bundled yt-dlp binary, but
 # anyone running `python astra_downloader.py` directly (dev / source) needs
 # 3.10+. Hard-fail early with a clear message rather than yielding a
-# cryptic ImportError downstream when the bootstrap path hits a newer
+# cryptic ImportError downstream when the build environment uses a newer
 # wheel.
 MIN_PYTHON = (3, 10)
 if sys.version_info < MIN_PYTHON:
@@ -180,8 +180,8 @@ def preflight():
         raise SystemExit(f"Missing icon: {ICON}")
     if importlib.util.find_spec("PyInstaller") is None:
         raise SystemExit(
-            "PyInstaller is not installed. Install it with: "
-            f"{sys.executable} -m pip install pyinstaller"
+            "PyInstaller is not installed in the active virtual environment. Run: "
+            f"{sys.executable} -m pip install --require-virtualenv pyinstaller"
         )
 
 
