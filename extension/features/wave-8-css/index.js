@@ -23,7 +23,17 @@
     }
 
     function buildNoFrostedGlassCss() {
-        return '* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }';
+        // Scoped to the surfaces YouTube actually applies backdrop-filter to
+        // (masthead, chip bar, dropdowns/dialogs, popup container, player
+        // chrome, and the backdrop-filter experiment button class) instead of
+        // a universal `*` selector, which forced the style engine to re-match
+        // the rule against every element on every DOM mutation.
+        return 'ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, '
+            + 'ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, '
+            + 'tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, '
+            + '.ytp-chrome-bottom, .ytp-gradient-bottom, .ytp-gradient-top, '
+            + '.yt-spec-button-shape-next--enable-backdrop-filter-experiment '
+            + '{ backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }';
     }
 
     function buildHideLatestPostsCss() {

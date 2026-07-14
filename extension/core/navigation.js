@@ -157,8 +157,18 @@
         }
     }
 
+    let lastNavHref = (typeof location !== 'undefined') ? location.href : '';
     function runNavigateRules() {
-        if (typeof document.startViewTransition === 'function') {
+        const href = (typeof location !== 'undefined') ? location.href : '';
+        const urlChanged = href !== lastNavHref;
+        lastNavHref = href;
+        // Only pay for a full-page view-transition snapshot on a real URL
+        // change. `yt-page-data-updated` also fires as the feed appends items
+        // during infinite scroll (same URL) — wrapping those in
+        // startViewTransition froze rendering and cross-faded the whole
+        // document mid-scroll. The navigate rules themselves still run every
+        // time; only the (cosmetic) cross-fade is gated to genuine navigations.
+        if (urlChanged && typeof document.startViewTransition === 'function') {
             document.startViewTransition(() => _executeNavigateRules());
         } else {
             _executeNavigateRules();
