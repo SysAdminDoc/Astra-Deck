@@ -50,6 +50,10 @@ test('optional-host Chromium smoke seeds enabled optional features and verifies 
         'smoke must open popup.html through the real toolbar action API');
     assert.doesNotMatch(smokeSource, /\/json\/new\?\$\{popupUrl\}/,
         'smoke must not bypass the toolbar action by navigating to popup.html directly');
+    assert.match(smokeSource, /ACTION_POPUP_REQUIRES_HEADED/,
+        'headless Chromium action gaps should retry the real toolbar API in headed mode');
+    assert.match(smokeSource, /result\.headedFallback = true/,
+        'the headed retry should remain visible in smoke output');
     assert.match(smokeSource, /chrome\.permissions\.getAll/,
         'smoke must inspect current runtime host grants before the prompt');
     assert.match(smokeSource, /optional-host-banner/,

@@ -649,6 +649,9 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
             stderr,
         };
     } catch (error) {
+        if (/chrome\.action\.openPopup is unavailable/i.test(error.message || '')) {
+            error.code = 'ACTION_POPUP_REQUIRES_HEADED';
+        }
         if (
             hasLoadExtensionPolicyBlock(stderr)
             || (isGoogleChromeCandidate(candidate)
@@ -679,8 +682,24 @@ async function runChromiumOptionalHostSmoke(opts) {
     try {
         let lastError = null;
         for (const candidate of candidates) {
+            let attemptOpts = opts;
             try {
-                const result = await runWithBrowser(candidate, manifest, stageDir, opts);
+                let result;
+                try {
+                    result = await runWithBrowser(candidate, manifest, stageDir, attemptOpts);
+                } catch (error) {
+                    // Chromium 150 omits chrome.action.openPopup from extension
+                    // service workers in --headless=new. The headed browser
+                    // exposes the real toolbar API, so retry the same staged
+                    // extension once without headless rather than bypassing the
+                    // action with a direct popup.html navigation.
+                    if (error.code !== 'ACTION_POPUP_REQUIRES_HEADED' || opts.headed) {
+                        throw error;
+                    }
+                    attemptOpts = { ...opts, headed: true };
+                    result = await runWithBrowser(candidate, manifest, stageDir, attemptOpts);
+                    result.headedFallback = true;
+                }
                 result.blockedBrowsers = blocked;
                 return result;
             } catch (error) {
@@ -706,6 +725,9 @@ async function main(argv = process.argv.slice(2)) {
     const result = await runChromiumOptionalHostSmoke(opts);
     for (const blocked of result.blockedBrowsers || []) {
         console.log(`[smoke-chromium-optional-hosts] ${blocked.label}: --load-extension blocked by local Chrome policy; tried next browser`);
+    }
+    if (result.headedFallback) {
+        console.log('[smoke-chromium-optional-hosts] Headless Chromium omitted chrome.action.openPopup; real toolbar activation passed in a bounded headed retry');
     }
     console.log(`[smoke-chromium-optional-hosts] ${result.browser}: loaded store-safe MV3 ${result.extensionId}`);
     console.log(`[smoke-chromium-optional-hosts] optional hosts before grant: ${result.expectedOptionalOrigins.length} missing`);
