@@ -46,6 +46,10 @@ test('optional-host Chromium smoke seeds enabled optional features and verifies 
 
     assert.match(smokeSource, /chrome-extension:\/\/\$\{extensionId\}\/popup\.html/,
         'smoke must open the real extension popup page');
+    assert.match(smokeSource, /await chrome\.action\.openPopup\(\)/,
+        'smoke must open popup.html through the real toolbar action API');
+    assert.doesNotMatch(smokeSource, /\/json\/new\?\$\{popupUrl\}/,
+        'smoke must not bypass the toolbar action by navigating to popup.html directly');
     assert.match(smokeSource, /chrome\.permissions\.getAll/,
         'smoke must inspect current runtime host grants before the prompt');
     assert.match(smokeSource, /optional-host-banner/,

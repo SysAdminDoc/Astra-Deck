@@ -276,9 +276,45 @@ function extensionIdFromTarget(target) {
     return match[1];
 }
 
-async function openPopupTarget(port, extensionId) {
+async function waitForPopupTarget(port, extensionId, timeoutMs) {
     const popupUrl = `chrome-extension://${extensionId}/popup.html`;
-    const target = await fetchJsonFromDevTools(port, `/json/new?${popupUrl}`, { method: 'PUT' });
+    const deadline = Date.now() + timeoutMs;
+    let lastTargets = [];
+    while (Date.now() < deadline) {
+        lastTargets = await fetchJsonFromDevTools(port, '/json/list');
+        const target = lastTargets.find((entry) =>
+            entry.type === 'page' && String(entry.url).startsWith(popupUrl));
+        if (target) return { popupUrl, target };
+        await sleep(100);
+    }
+    const targetSummary = lastTargets.map((target) => `${target.type}:${target.url}`).join(', ');
+    throw new Error(`Toolbar action did not create the popup target. Saw: ${targetSummary}`);
+}
+
+async function openPopupFromToolbar(backgroundTarget, port, extensionId, timeoutMs) {
+    const backgroundClient = await connectCdp(backgroundTarget.webSocketDebuggerUrl);
+    let openResult;
+    try {
+        await backgroundClient.send('Runtime.enable');
+        openResult = await evaluate(backgroundClient, `(async () => {
+            if (!chrome.action || typeof chrome.action.openPopup !== 'function') {
+                return { opened: false, error: 'chrome.action.openPopup is unavailable' };
+            }
+            try {
+                await chrome.action.openPopup();
+                return { opened: true, error: '' };
+            } catch (error) {
+                return { opened: false, error: error?.message || String(error) };
+            }
+        })()`);
+    } finally {
+        backgroundClient.close();
+    }
+    if (!openResult?.opened) {
+        throw new Error(`Toolbar action could not open popup.html: ${openResult?.error || 'unknown error'}`);
+    }
+
+    const { popupUrl, target } = await waitForPopupTarget(port, extensionId, timeoutMs);
     const client = await connectCdp(target.webSocketDebuggerUrl);
     await client.send('Runtime.enable');
     await client.send('Page.enable');
@@ -556,7 +592,12 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
         await waitForDevTools(devToolsPort, opts.timeoutMs);
         const backgroundTarget = await waitForBackgroundTarget(devToolsPort, opts.timeoutMs);
         const extensionId = extensionIdFromTarget(backgroundTarget);
-        const popup = await openPopupTarget(devToolsPort, extensionId);
+        const popup = await openPopupFromToolbar(
+            backgroundTarget,
+            devToolsPort,
+            extensionId,
+            opts.timeoutMs
+        );
         client = popup.client;
         await sleep(1000);
 
