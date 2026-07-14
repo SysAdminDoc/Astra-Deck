@@ -60,6 +60,15 @@ test('chatStyleComments style builders preserve the monolith fallback CSS', () =
     assert.equal(mod.buildSelectorSupportFallbackCss(), extractTemplate(block, 'selectorSupportFallbackCss'));
 });
 
+test('chatStyleComments hides the current YouTube paper-input underline', () => {
+    const { mod } = loadModule();
+    assert.match(
+        mod.buildPremiumCommentsCss(),
+        /#comments \.tp-yt-paper-input-container\.style-scope\.underline\s*\{\s*display: none !important;/,
+        'comment restyling must hide YouTube paper-input underline nodes without affecting non-comment inputs'
+    );
+});
+
 test('chatStyleComments monolith delegates CSS payloads through the feature module', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'chatStyleComments');
     assert.match(block, /globalThis\.YTKitFeatures && globalThis\.YTKitFeatures\.chatStyleComments/,

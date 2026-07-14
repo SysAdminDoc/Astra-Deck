@@ -37,6 +37,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Comment input underlines no longer leak through restyled comment surfaces.**
+  Studio Comments and the Nyan comment cleanup now hide YouTube's current
+  `tp-yt-paper-input-container` underline node in both extension and userscript.
 - **Firefox smoke now discovers non-stable Windows channels.** The default
   executable search includes Firefox Developer Edition and Nightly in both
   Program Files roots, so local AMO verification no longer needs `--firefox`
