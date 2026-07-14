@@ -11,6 +11,7 @@ const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const MANIFEST_NAME = 'release-manifest.json';
 const SHA256SUMS_NAME = 'SHA256SUMS';
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
+const { COMPANION_BUILD_METADATA_NAME } = require('./companion-license-inventory');
 // Local-only signing provenance marker written by build-extension.js.
 // Never listed as a release asset; its `mode` field is folded into the
 // manifest as `crxSigningMode` so release readiness can gate on it.
@@ -134,7 +135,10 @@ function listBuildAssets() {
     return fs.readdirSync(BUILD_DIR, { withFileTypes: true })
         .filter((entry) => entry.isFile())
         .map((entry) => entry.name)
-        .filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME && name !== CRX_SIGNING_PROVENANCE_NAME)
+        .filter((name) => name !== MANIFEST_NAME
+            && name !== SHA256SUMS_NAME
+            && name !== CRX_SIGNING_PROVENANCE_NAME
+            && name !== COMPANION_BUILD_METADATA_NAME)
         .sort();
 }
 

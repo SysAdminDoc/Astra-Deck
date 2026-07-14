@@ -7,6 +7,11 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const {
+    PROPERTY,
+    buildCompanionInventory,
+    inspectCompanionInventory
+} = require('../scripts/companion-license-inventory');
 const { expectedReleaseNames } = require('../scripts/generate-release-manifest');
 const {
     buildReadinessReport,
@@ -36,9 +41,19 @@ function writeFixtureRepo({ companionRequired = false, crxSigningMode = 'externa
     fs.writeFileSync(path.join(root, 'YTKit.user.js'), `// @version      ${version}\n`);
 
     for (const name of expectedReleaseNames(version, { requireCompanion: companionRequired })) {
-        const content = name === 'AstraDownloader.exe'
-            ? Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 7)])
-            : Buffer.from(`fixture ${name}\n`, 'utf8');
+        let content;
+        if (name === 'AstraDownloader.exe') {
+            content = Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 7)]);
+        } else if (name === 'astra-deck-npm-sbom.cdx.json') {
+            content = Buffer.from(JSON.stringify({
+                bomFormat: 'CycloneDX',
+                specVersion: '1.5',
+                version: 1,
+                components: []
+            }, null, 2) + '\n', 'utf8');
+        } else {
+            content = Buffer.from(`fixture ${name}\n`, 'utf8');
+        }
         fs.writeFileSync(path.join(buildDir, name), content);
     }
 
@@ -67,6 +82,70 @@ function writeFixtureRepo({ companionRequired = false, crxSigningMode = 'externa
         .join('\n') + '\n';
     fs.writeFileSync(path.join(buildDir, 'SHA256SUMS'), sums);
     return { root, buildDir, version };
+}
+
+function writeCompanionInventoryFixture(root, buildDir) {
+    const exe = Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 9)]);
+    const exePath = path.join(buildDir, 'AstraDownloader.exe');
+    fs.writeFileSync(exePath, exe);
+    fs.mkdirSync(path.join(root, 'astra_downloader'), { recursive: true });
+    fs.copyFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'license-policy.json'),
+        path.join(root, 'astra_downloader', 'license-policy.json')
+    );
+    const licenseFile = [{ path: 'package.dist-info/LICENSE', sha256: 'b'.repeat(64) }];
+    const metadata = {
+        schemaVersion: 1,
+        version: '1.5.1',
+        artifact: {
+            name: 'AstraDownloader.exe',
+            size: exe.length,
+            sha256: sha256(exePath)
+        },
+        python: {
+            implementation: 'CPython',
+            version: '3.12.10',
+            license: 'Python-2.0',
+            sourceUrl: 'https://www.python.org/'
+        },
+        distributions: [
+            {
+                name: 'PyInstaller',
+                version: '6.21.0',
+                scope: 'build',
+                license: 'GPLv2-or-later with special exception',
+                sourceUrl: 'https://pyinstaller.org/',
+                recordSha256: '1'.repeat(64),
+                licenseFiles: licenseFile
+            },
+            {
+                name: 'PyQt6',
+                version: '6.11.0',
+                scope: 'embedded',
+                license: 'GPL-3.0-only',
+                sourceUrl: 'https://pypi.org/project/PyQt6/',
+                recordSha256: '2'.repeat(64),
+                licenseFiles: licenseFile
+            },
+            {
+                name: 'PyQt6-Qt6',
+                version: '6.11.1',
+                scope: 'embedded',
+                license: 'LGPL-3.0-only',
+                sourceUrl: 'https://pypi.org/project/PyQt6-Qt6/',
+                recordSha256: '3'.repeat(64),
+                licenseFiles: licenseFile
+            }
+        ]
+    };
+    fs.writeFileSync(
+        path.join(buildDir, 'companion-build-metadata.json'),
+        JSON.stringify(metadata, null, 2) + '\n'
+    );
+    return {
+        artifactSha256: metadata.artifact.sha256,
+        inventory: buildCompanionInventory(root, buildDir)
+    };
 }
 
 test('release readiness passes for a complete manifest, checksum, SBOM, and version fixture', () => {
@@ -297,4 +376,99 @@ test('release SBOM generation uses production package-lock dependencies', () => 
         'SBOM must omit dev-only dependencies');
     assert.ok(sbom.dependencies.some((entry) => entry.dependsOn && entry.dependsOn.length),
         'SBOM must include dependency graph edges');
+});
+
+test('companion SBOM inventory links exact embedded versions to the staged artifact and names unresolved obligations', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-companion-license-'));
+    const buildDir = path.join(root, 'build');
+    fs.mkdirSync(buildDir, { recursive: true });
+    const { artifactSha256, inventory } = writeCompanionInventoryFixture(root, buildDir);
+    const sbom = { components: inventory.components };
+    const inspection = inspectCompanionInventory(sbom, artifactSha256);
+
+    assert.ok(inventory.components.some((component) => component.name === 'CPython' && component.version === '3.12.10'));
+    assert.ok(inventory.components.some((component) => component.name === 'PyQt6' && component.version === '6.11.0'));
+    assert.equal(
+        inventory.components.every((component) => (
+            component.properties.find((entry) => entry.name === PROPERTY.artifactSha256).value === artifactSha256
+        )),
+        true
+    );
+    assert.ok(inspection.issues.some((issue) => /pyqt6: decision=unresolved/i.test(issue)));
+    assert.ok(inspection.issues.some((issue) => /ffmpeg: exact version is unresolved/i.test(issue)));
+    assert.ok(inspection.issues.some((issue) => /yt-dlp: exact download SHA-256 is unresolved/i.test(issue)));
+});
+
+test('companion license inspection fails closed on disallowed decisions and clears only after exact approvals', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-companion-license-'));
+    const buildDir = path.join(root, 'build');
+    fs.mkdirSync(buildDir, { recursive: true });
+    const { artifactSha256, inventory } = writeCompanionInventoryFixture(root, buildDir);
+    const sbom = { components: inventory.components };
+
+    for (const component of sbom.components) {
+        const decision = component.properties.find((entry) => entry.name === PROPERTY.decision);
+        if (decision) decision.value = 'approved';
+        const evidence = component.properties.find((entry) => entry.name === PROPERTY.evidence);
+        if (evidence && !evidence.value) evidence.value = 'reviewed fixture evidence';
+        if (/^(?:unknown|unresolved|latest|dynamic)$/i.test(component.version)) component.version = '1.2.3';
+        const downloadHash = component.properties.find((entry) => entry.name === PROPERTY.downloadSha256);
+        if (downloadHash) downloadHash.value = 'a'.repeat(64);
+        for (const propertyName of [PROPERTY.distributionUrl, PROPERTY.checksumUrl, PROPERTY.sourceUrl]) {
+            const url = component.properties.find((entry) => entry.name === propertyName);
+            if (url && /latest/i.test(url.value)) url.value = 'https://example.test/releases/v1.2.3/artifact';
+        }
+    }
+    assert.deepEqual(inspectCompanionInventory(sbom, artifactSha256).issues, []);
+
+    const pyqt = sbom.components.find((component) => component.name === 'PyQt6');
+    pyqt.properties.find((entry) => entry.name === PROPERTY.decision).value = 'disallowed';
+    assert.ok(inspectCompanionInventory(sbom, artifactSha256).issues.some(
+        (issue) => /pyqt6: decision=disallowed/i.test(issue)
+    ));
+});
+
+test('release readiness surfaces companion license blockers by component name', () => {
+    const { root, buildDir } = writeFixtureRepo();
+    const { inventory } = writeCompanionInventoryFixture(root, buildDir);
+    fs.writeFileSync(
+        path.join(buildDir, 'astra-deck-npm-sbom.cdx.json'),
+        JSON.stringify({
+            bomFormat: 'CycloneDX',
+            specVersion: '1.5',
+            version: 1,
+            components: inventory.components
+        }, null, 2) + '\n'
+    );
+    const report = buildReadinessReport({
+        repoRoot: root,
+        buildDir,
+        gitTags: [],
+        now: new Date('2026-07-14T12:00:00.000Z')
+    });
+    const licenseCheck = report.checks.find((item) => item.id === 'companion-license-inventory');
+
+    assert.equal(licenseCheck.status, 'fail');
+    assert.match(licenseCheck.details, /pyqt6: decision=unresolved/i);
+    assert.match(licenseCheck.details, /ffmpeg: exact version is unresolved/i);
+});
+
+test('companion staging metadata is accepted only for the exact EXE bytes', () => {
+    const { readValidatedMetadata } = require('../scripts/stage-companion-release');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-companion-stage-'));
+    const metadataPath = path.join(root, 'companion-build-metadata.json');
+    const exe = Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 4)]);
+    const metadata = {
+        schemaVersion: 1,
+        artifact: { name: 'AstraDownloader.exe', size: exe.length, sha256: crypto.createHash('sha256').update(exe).digest('hex') },
+        python: { version: '3.12.10' },
+        distributions: []
+    };
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+
+    assert.equal(readValidatedMetadata(metadataPath, exe).artifact.sha256, metadata.artifact.sha256);
+    assert.throws(
+        () => readValidatedMetadata(metadataPath, Buffer.concat([Buffer.from('MZ'), Buffer.alloc(2048, 5)])),
+        /does not match/
+    );
 });

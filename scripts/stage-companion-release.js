@@ -2,12 +2,16 @@
 'use strict';
 
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
+const { COMPANION_BUILD_METADATA_NAME } = require('./companion-license-inventory');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const DEFAULT_SOURCE = path.join(REPO_ROOT, 'AstraDownloader.exe');
+const DEFAULT_METADATA_SOURCE = path.join(REPO_ROOT, 'astra_downloader', 'build', COMPANION_BUILD_METADATA_NAME);
 const DEST = path.join(BUILD_DIR, 'AstraDownloader.exe');
+const METADATA_DEST = path.join(BUILD_DIR, COMPANION_BUILD_METADATA_NAME);
 const MIN_BYTES = 1024;
 
 function openCompanionExe(filePath) {
@@ -72,18 +76,50 @@ function assertBuildDirExists() {
     }
 }
 
-function stageCompanionRelease(sourcePath = DEFAULT_SOURCE) {
+function sha256(data) {
+    return crypto.createHash('sha256').update(data).digest('hex');
+}
+
+function readValidatedMetadata(metadataPath, companionExe) {
+    let metadata;
+    try {
+        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    } catch (err) {
+        if (err && err.code === 'ENOENT') {
+            throw new Error(`missing companion build metadata: ${metadataPath}; rebuild with astra_downloader/build.py`);
+        }
+        throw new Error(`invalid companion build metadata: ${err.message}`);
+    }
+    if (
+        metadata.schemaVersion !== 1
+        || !metadata.artifact
+        || metadata.artifact.name !== 'AstraDownloader.exe'
+        || metadata.artifact.size !== companionExe.length
+        || metadata.artifact.sha256 !== sha256(companionExe)
+    ) {
+        throw new Error('companion build metadata does not match the staged AstraDownloader.exe');
+    }
+    if (!metadata.python || !metadata.python.version || !Array.isArray(metadata.distributions)) {
+        throw new Error('companion build metadata is missing Python or distribution inventory');
+    }
+    return metadata;
+}
+
+function stageCompanionRelease(sourcePath = DEFAULT_SOURCE, metadataPath = DEFAULT_METADATA_SOURCE) {
     const resolvedSource = path.resolve(sourcePath);
     assertBuildDirExists();
     const companionExe = readValidatedCompanionExe(resolvedSource);
+    const metadata = readValidatedMetadata(path.resolve(metadataPath), companionExe);
     fs.writeFileSync(DEST, companionExe);
+    fs.writeFileSync(METADATA_DEST, JSON.stringify(metadata, null, 2) + '\n', 'utf8');
     console.log(`Staged companion EXE: build/AstraDownloader.exe (${companionExe.length} bytes)`);
+    console.log(`Staged companion inventory input: build/${COMPANION_BUILD_METADATA_NAME}`);
     console.log('Run `npm run release:manifest -- --require-companion` to emit the SHA-256 sidecar and include both assets.');
 }
 
 if (require.main === module) {
     try {
-        stageCompanionRelease(process.argv[2] || DEFAULT_SOURCE);
+        stageCompanionRelease(process.argv[2] || DEFAULT_SOURCE, process.argv[3] || DEFAULT_METADATA_SOURCE);
     } catch (err) {
         console.error('[stage-companion-release] ' + err.message);
         process.exit(1);
@@ -91,6 +127,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+    readValidatedMetadata,
     stageCompanionRelease,
     validateCompanionExe
 };
