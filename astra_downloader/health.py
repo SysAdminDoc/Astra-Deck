@@ -46,11 +46,14 @@ is_youtube_url = _ad.is_youtube_url
 should_check_ytdlp_update = _ad.should_check_ytdlp_update
 maybe_auto_update_ytdlp = _ad.maybe_auto_update_ytdlp
 _run_ytdlp_self_update = _ad._run_ytdlp_self_update
+read_update_recovery_status = _ad.read_update_recovery_status
+atomic_copy_verified = _ad.atomic_copy_verified
 
 # Companion self-update
 parse_companion_version_source = _ad.parse_companion_version_source
 fetch_latest_companion_version = _ad.fetch_latest_companion_version
 validate_companion_update_binary = _ad.validate_companion_update_binary
+probe_companion_update_binary = _ad.probe_companion_update_binary
 read_last_installed_update_sha256 = _ad.read_last_installed_update_sha256
 record_last_installed_update_sha256 = _ad.record_last_installed_update_sha256
 schedule_companion_update_restart = _ad.schedule_companion_update_restart

@@ -4012,11 +4012,17 @@ async function updateYtdlpNow() {
             const detail = (before && after && before === after)
                 ? `yt-dlp already at v${after}`
                 : `yt-dlp updated to v${after || '?'}${before ? ` (from v${before})` : ''}`;
-            showStatus(detail, 'success', 5200);
+            const rollback = result.rollback_version
+                ? ` Last-known-good: v${result.rollback_version}.`
+                : '';
+            showStatus(detail + rollback, 'success', 6200);
         } else {
             const err = (result && (result.error || result.stderr)) || 'Update failed.';
+            const recovery = result?.rolled_back
+                ? ` Active version restored to v${result.version_after || result.rollback_version || '?'}.`
+                : '';
             // Same reasoning — t() would lose the stderr appendix.
-            showStatus('yt-dlp update failed — ' + err, 'error', 6200);
+            showStatus('yt-dlp update failed — ' + err + recovery, 'error', 7200);
         }
     } finally {
         updateYtdlpButton.removeAttribute('aria-busy');
@@ -4043,7 +4049,8 @@ async function updateCompanionNow() {
             if (result.update_available === false || result.status === 'current') {
                 showStatus(`Astra Downloader already at v${latest || current || '?'}.`, 'success', 5200);
             } else {
-                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting Astra Downloader.`, 'success', 7200);
+                const rollback = result.rollback_version || current || '?';
+                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting with v${rollback} retained for automatic rollback.`, 'success', 8200);
             }
         } else {
             const err = (result && result.error) || 'Update failed.';

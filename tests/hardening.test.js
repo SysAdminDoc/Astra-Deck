@@ -10943,6 +10943,10 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
         'updateYtdlpNow must surface the version_before field in the status message');
     assert.match(popupHandlerBlock, /version_after/,
         'updateYtdlpNow must surface the version_after field in the status message');
+    assert.match(popupHandlerBlock, /rollback_version/,
+        'updateYtdlpNow must name the retained last-known-good version');
+    assert.match(popupHandlerBlock, /rolled_back/,
+        'updateYtdlpNow must surface automatic rollback recovery');
     // Button is disabled during the in-flight call so a rapid second
     // click can't fire a second update while the server is mid-replace.
     assert.match(popupHandlerBlock, /updateYtdlpButton\.disabled\s*=\s*true/,

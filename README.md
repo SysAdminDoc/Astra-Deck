@@ -181,6 +181,14 @@ are not browser extension install steps.
 
 > Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service. Store-safe artifacts stop there; GitHub-full artifacts can show the Cobalt fallback button when Astra Downloader is offline. See [Astra Downloader Companion Setup](#astra-downloader-companion-setup) for the current install and release-asset state.
 
+The GitHub-full popup maintenance actions are recoverable. yt-dlp updates run
+against a staged sibling executable; companion updates must pass checksum and
+hidden startup checks. Each path retains one verified last-known-good binary,
+activates atomically, and restores that backup automatically when the new
+binary fails its post-update check. The popup and `/health.updateRecovery`
+identify the active and rollback versions without exposing local paths or
+digests.
+
 ### PO Token provider (optional but recommended)
 
 YouTube binds PO tokens to video IDs in 2026; without a provider, the `web` client increasingly fails with "Sign in to confirm you're not a bot" on a subset of videos. Astra Downloader auto-detects a [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) HTTP server on `127.0.0.1:4416` and routes yt-dlp through it when available.
