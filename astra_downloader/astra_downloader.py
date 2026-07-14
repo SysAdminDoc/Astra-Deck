@@ -2622,6 +2622,14 @@ QPushButton[class="primary"] {
 QPushButton[class="primary"]:hover { background-color: #ff7564; border-color: #ff8b7c; }
 QPushButton[class="secondary"] { background-color: #121821; color: #d3d8de; border-color: #303b49; }
 QPushButton[class="ghost"]:hover { background-color: #171d26; border-color: #303b49; }
+QPushButton[class="primary"]:disabled,
+QPushButton[class="secondary"]:disabled,
+QPushButton[class="danger"]:disabled,
+QPushButton[class="ghost"]:disabled {
+    color: #5f6975;
+    background-color: #0e1319;
+    border-color: #202832;
+}
 QPushButton[class="nav"] {
     color: #929ba7;
     padding: 11px 14px;
@@ -4796,7 +4804,7 @@ def clamp_int(value, default, minimum, maximum):
     return max(minimum, min(maximum, parsed))
 
 
-def make_empty_state(title, body):
+def make_empty_state(title, body, action_text=None, action=None):
     frame = make_card("empty")
     layout = QVBoxLayout(frame)
     layout.setContentsMargins(18, 18, 18, 18)
@@ -4804,6 +4812,14 @@ def make_empty_state(title, body):
     layout.addWidget(make_section_label("Ready when you are"))
     layout.addWidget(make_label(title, "emptyTitle"))
     layout.addWidget(make_label(body, "emptyBody", word_wrap=True))
+    if action_text and callable(action):
+        button = QPushButton(action_text)
+        button.setProperty("class", "secondary")
+        button.setAccessibleName(action_text)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.clicked.connect(action)
+        layout.addSpacing(6)
+        layout.addWidget(button, 0, Qt.AlignmentFlag.AlignLeft)
     return frame
 
 
@@ -5263,9 +5279,10 @@ class MainWindow(QMainWindow):
             "History",
             "The latest completed downloads are kept here for quick confirmation."
         ), 1)
-        btn_clear = self._make_tool_button("Clear History", QStyle.StandardPixmap.SP_TrashIcon, "danger")
-        btn_clear.clicked.connect(self._clear_history)
-        header.addWidget(btn_clear, 0, Qt.AlignmentFlag.AlignTop)
+        self.btn_clear_history = self._make_tool_button("Clear History", QStyle.StandardPixmap.SP_TrashIcon, "danger")
+        self.btn_clear_history.setToolTip("Remove saved history entries. Downloaded files are not deleted.")
+        self.btn_clear_history.clicked.connect(self._clear_history)
+        header.addWidget(self.btn_clear_history, 0, Qt.AlignmentFlag.AlignTop)
         self.btn_undo_clear_history = self._make_tool_button("Undo Clear", QStyle.StandardPixmap.SP_ArrowBack, "ghost")
         self.btn_undo_clear_history.setToolTip("Restore the history entries cleared in this session.")
         self.btn_undo_clear_history.clicked.connect(self._undo_clear_history)
@@ -5831,7 +5848,9 @@ class MainWindow(QMainWindow):
         if not active and not recent:
             self.downloads_list_layout.addWidget(make_empty_state(
                 "Queue is clear",
-                "Start the local server, then use Astra Deck's download action on YouTube. Active jobs will show progress, speed, and recovery guidance here."
+                "Start the local server, then use Astra Deck's download action on YouTube. Active jobs will show progress, speed, and recovery guidance here.",
+                "Open Dashboard",
+                lambda: self._nav_click("Dashboard"),
             ))
         if active:
             self.downloads_list_layout.addWidget(make_section_label("In progress"))
@@ -5847,10 +5866,13 @@ class MainWindow(QMainWindow):
         self._clear_layout(self.history_container)
 
         data = self.history_mgr.load()
+        self.btn_clear_history.setEnabled(bool(data))
         if not data:
             self.history_container.addWidget(make_empty_state(
                 "No downloads yet",
-                "Completed jobs appear here with format, quality, duration, and a direct path back to the saved file."
+                "Completed jobs appear here with format, quality, duration, and a direct path back to the saved file.",
+                "View Download Queue",
+                lambda: self._nav_click("Downloads"),
             ))
             self.history_container.addStretch()
             return

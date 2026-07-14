@@ -76,6 +76,8 @@ def main():
                     raise RuntimeError(f"Companion navigation did not activate {page_name}")
                 if not window.brand_widget.isVisible() or not all(button.isVisible() for button in window.nav_buttons):
                     raise RuntimeError(f"Companion navigation rail is incomplete on {page_name}")
+                if page_name == "History" and window.btn_clear_history.isEnabled():
+                    raise RuntimeError("Clear History must be disabled when history is empty")
                 output = OUTPUT_DIR / f"{page_name.lower()}.png"
                 pixmap = QPixmap(window.size())
                 pixmap.fill(QColor("#080a0f"))

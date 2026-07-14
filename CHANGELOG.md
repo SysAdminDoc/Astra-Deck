@@ -33,6 +33,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Companion empty states now lead somewhere useful.** Empty Downloads and
+  History pages provide direct navigation to the dashboard or queue, History
+  disables Clear when there is nothing to remove, and disabled primary,
+  secondary, ghost, and destructive buttons now look visibly unavailable.
 - **Lazy settings styles now load on the normal module path.** The optimized
   first-open stylesheet trigger only existed in the monolith fallback, so the
   production settings-panel module could render the dialog centered at the
