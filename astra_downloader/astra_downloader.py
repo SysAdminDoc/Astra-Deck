@@ -2691,6 +2691,7 @@ class Config:
         INSTALL_DIR.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
         self._data = sanitize_config(load_json_file(CONFIG_PATH, {}))
+        self._persisted_data = dict(self._data)
         self.save()
 
     def get(self, key, default=None):
@@ -2703,18 +2704,27 @@ class Config:
 
     def update(self, mapping):
         with self._lock:
-            self._data.update(mapping)
-            return self.save()
+            candidate = dict(self._data)
+            candidate.update(mapping)
+            return self._save_candidate_unlocked(candidate)
 
     def save(self):
         with self._lock:
-            try:
-                self._data = sanitize_config(self._data)
-                atomic_write_json(CONFIG_PATH, self._data)
-                return True
-            except Exception as e:
-                write_persistent_log(f"Config save failed: {e}")
-                return False
+            return self._save_candidate_unlocked(self._data)
+
+    def _save_candidate_unlocked(self, candidate):
+        candidate = sanitize_config(candidate)
+        try:
+            atomic_write_json(CONFIG_PATH, candidate)
+        except Exception as e:
+            # Keep memory aligned with the last durable file. Callers can safely
+            # retry without the failed values leaking into the running server.
+            self._data = dict(self._persisted_data)
+            write_persistent_log(f"Config save failed: {e}")
+            return False
+        self._data = candidate
+        self._persisted_data = dict(candidate)
+        return True
 
     @property
     def data(self):
@@ -2740,25 +2750,27 @@ class History:
             data.append(entry)
             if len(data) > 500:
                 data = data[-500:]
-            self._write_unlocked(data)
+            return self._write_unlocked(data)
 
     def clear(self):
         with self._lock:
-            self._write_unlocked([])
+            return self._write_unlocked([])
 
     def replace(self, entries):
         with self._lock:
-            self._write_unlocked(entries)
+            return self._write_unlocked(entries)
 
     def _write(self, data):
         with self._lock:
-            self._write_unlocked(data)
+            return self._write_unlocked(data)
 
     def _write_unlocked(self, data):
         try:
             atomic_write_json(HISTORY_PATH, sanitize_history_entries(data))
+            return True
         except Exception as e:
             write_persistent_log(f"History save failed: {e}")
+            return False
 
 
 def is_playlist_url(url):
@@ -3183,6 +3195,25 @@ class DownloadManager(QObject):
         # that needed them.
         cleanup_stale_cookie_jars()
 
+    def _reclaim_terminal_records_locked(self, required_slots=1):
+        """Free only terminal records when the bounded queue needs capacity."""
+        overflow = len(self.downloads) + max(0, required_slots) - MAX_QUEUED_TOTAL
+        if overflow <= 0:
+            return 0
+        terminal = sorted(
+            (
+                (getattr(download, 'finished_time', None) or download.start_time, dl_id)
+                for dl_id, download in self.downloads.items()
+                if download.status in DOWNLOAD_TERMINAL_STATES
+            ),
+            key=lambda item: item[0],
+        )
+        removed = 0
+        for _finished_at, dl_id in terminal[:overflow]:
+            del self.downloads[dl_id]
+            removed += 1
+        return removed
+
     def start_download(self, url, audio_only=False, fmt=None, quality=None,
                        output_dir=None, title=None, referer=None, cookies=None):
         url, err = normalize_url(url)
@@ -3191,6 +3222,7 @@ class DownloadManager(QObject):
         audio_only = coerce_bool(audio_only, False)
 
         with self._lock:
+            self._reclaim_terminal_records_locked()
             total = len(self.downloads)
             if total >= MAX_QUEUED_TOTAL:
                 return None, "Download queue is full. Wait for some downloads to complete."
@@ -3236,6 +3268,7 @@ class DownloadManager(QObject):
             # lock for URL/output normalization, so N concurrent requests could
             # each pass it while the queue sat one slot below the cap and then
             # all insert — a TOCTOU that lets the dict grow past MAX_QUEUED_TOTAL.
+            self._reclaim_terminal_records_locked()
             if len(self.downloads) >= MAX_QUEUED_TOTAL:
                 return None, "Download queue is full. Wait for some downloads to complete."
             active = sum(1 for d in self.downloads.values()
@@ -5833,8 +5866,13 @@ class MainWindow(QMainWindow):
             self._refresh_history()
             self._append_log("Download history is already clear")
             return
+        if not self.history_mgr.clear():
+            self._append_log(
+                "Could not clear download history. The existing history was preserved; "
+                "check disk permissions and retry."
+            )
+            return
         self._cleared_history_snapshot = snapshot
-        self.history_mgr.clear()
         self._refresh_history()
         self.btn_undo_clear_history.show()
         self._append_log("Download history cleared. Downloaded files were not removed.")
@@ -5844,7 +5882,12 @@ class MainWindow(QMainWindow):
             self.btn_undo_clear_history.hide()
             self._append_log("No cleared history entries to restore")
             return
-        self.history_mgr.replace(self._cleared_history_snapshot)
+        if not self.history_mgr.replace(self._cleared_history_snapshot):
+            self._append_log(
+                "Could not restore download history. The Undo snapshot is still available; "
+                "check disk permissions and retry."
+            )
+            return
         restored = len(self._cleared_history_snapshot)
         self._cleared_history_snapshot = []
         self.btn_undo_clear_history.hide()
@@ -6032,16 +6075,12 @@ class MainWindow(QMainWindow):
         connection_changed = new_port != old_port or new_token != old_token
         restart_now = connection_changed and self.server_running
 
-        if restart_now:
-            self._append_log("Connection settings changed; restarting local server.")
-            self._stop_server()
-
         self.cfg_dl_path.setText(dl_path)
         self.cfg_audio_path.setText(audio_path)
         self.cfg_sublangs.setText(sublangs)
         self.cfg_ratelimit.setText(rate)
         self.cfg_proxy.setText(proxy)
-        self.config.update({
+        saved = self.config.update({
             "ServerPort": new_port,
             "ServerToken": new_token,
             "DownloadPath": dl_path,
@@ -6060,8 +6099,19 @@ class MainWindow(QMainWindow):
             "CloseToTray": self.cfg_closetotray.isChecked(),
             "StartMinimized": self.cfg_startmin.isChecked(),
         })
+        if not saved:
+            self.btn_save.setText("Save Changes")
+            self._show_settings_status(
+                "Could not save settings. Nothing changed; check disk permissions and retry.",
+                "danger",
+            )
+            self._append_log("Settings save failed. Existing settings and server state were preserved.")
+            return
+
         self._sync_connection_ui()
         if restart_now:
+            self._append_log("Connection settings changed; restarting local server.")
+            self._stop_server()
             self._start_server()
             self._show_settings_status("Settings saved and server restarted.", "success")
         else:
