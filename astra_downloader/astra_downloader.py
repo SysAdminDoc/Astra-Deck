@@ -154,6 +154,9 @@ DEFAULT_CONFIG = {
     "SponsorBlock": False,
     "SponsorBlockAction": "remove",
     "ConcurrentFragments": 4,
+    # Deno is yt-dlp's default and recommended runtime. "auto" prefers a
+    # working Deno and falls back to an explicitly enabled Node 22+ command.
+    "JavaScriptRuntime": "auto",
     "AutoUpdateYtDlp": True,
     "RateLimit": "",
     "Proxy": "",
@@ -255,8 +258,10 @@ BGUTIL_POT_MIN_VERSION = "1.3.0"
 # don't false-positive on a misconfigured PATH.
 YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)
 DENO_MIN_VERSION = "2.3.0"
+NODE_MIN_VERSION = "22.0.0"
 DENO_RUNTIME_PROBE_TIMEOUT = 1.5
 _DENO_RUNTIME_CACHE_TTL_SECONDS = 60
+JS_RUNTIME_CAPABILITY_MARKER = "ASTRA_EJS_RUNTIME_OK"
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
@@ -965,6 +970,92 @@ def _probe_deno_binary_version(deno_path):
     return _parse_deno_version(output)
 
 
+def _parse_javascript_runtime_version(runtime, output):
+    if runtime == 'deno':
+        return _parse_deno_version(output)
+    if not output:
+        return None
+    first_line = output.strip().splitlines()[0] if output.strip() else ''
+    match = re.search(r'(\d+\.\d+\.\d+)', first_line)
+    return match.group(1) if match else None
+
+
+def _javascript_runtime_supported(runtime, version):
+    minimum = DENO_MIN_VERSION if runtime == 'deno' else NODE_MIN_VERSION
+    if runtime not in {'deno', 'node'}:
+        return False
+    if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version.strip()):
+        return False
+    try:
+        return _compare_semver(version, minimum) >= 0
+    except Exception:
+        return False
+
+
+def _probe_javascript_execution(runtime, executable):
+    if runtime == 'deno':
+        args = [str(executable), 'eval', '--no-config', f"console.log('{JS_RUNTIME_CAPABILITY_MARKER}')"]
+    elif runtime == 'node':
+        args = [
+            str(executable), '--input-type=commonjs', '-e',
+            f"process.stdout.write('{JS_RUNTIME_CAPABILITY_MARKER}')",
+        ]
+    else:
+        return False
+    output = _run_captured(args, timeout=DENO_RUNTIME_PROBE_TIMEOUT)
+    return JS_RUNTIME_CAPABILITY_MARKER in output
+
+
+def _javascript_runtime_candidates(configured_runtime):
+    candidates = []
+    if configured_runtime in {'auto', 'deno'}:
+        if DENO_PATH.exists():
+            candidates.append(('deno', str(DENO_PATH), 'bundled'))
+        system_deno = shutil.which('deno')
+        if system_deno and all(path != system_deno for _runtime, path, _source in candidates):
+            candidates.append(('deno', system_deno, 'system'))
+    if configured_runtime in {'auto', 'node'}:
+        system_node = shutil.which('node')
+        if system_node:
+            candidates.append(('node', system_node, 'system'))
+    return candidates
+
+
+def _evaluate_javascript_runtime(runtime, path, source):
+    minimum = DENO_MIN_VERSION if runtime == 'deno' else NODE_MIN_VERSION
+    try:
+        output = _run_captured([str(path), '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
+        version = _parse_javascript_runtime_version(runtime, output)
+    except Exception:
+        return {
+            'runtime': runtime, 'version': None, 'path': path, 'source': source,
+            'supported': False, 'ejsReady': False, 'minVersion': minimum,
+            'reason': 'runtime-probe-failed',
+        }
+    if not version:
+        return {
+            'runtime': runtime, 'version': None, 'path': path, 'source': source,
+            'supported': False, 'ejsReady': False, 'minVersion': minimum,
+            'reason': 'runtime-version-unparseable',
+        }
+    supported = _javascript_runtime_supported(runtime, version)
+    if not supported:
+        return {
+            'runtime': runtime, 'version': version, 'path': path, 'source': source,
+            'supported': False, 'ejsReady': False, 'minVersion': minimum,
+            'reason': 'runtime-version-unsupported',
+        }
+    try:
+        ejs_ready = _probe_javascript_execution(runtime, path)
+    except Exception:
+        ejs_ready = False
+    return {
+        'runtime': runtime, 'version': version, 'path': path, 'source': source,
+        'supported': True, 'ejsReady': ejs_ready, 'minVersion': minimum,
+        'reason': 'ready' if ejs_ready else 'runtime-execution-failed',
+    }
+
+
 def provision_deno():
     """Download Deno into DENO_DIR if not already present.
 
@@ -1064,80 +1155,105 @@ def provision_deno():
             pass
 
 
-def probe_deno_runtime(force=False):
-    """Best-effort detection of an installed external JavaScript runtime.
+def probe_deno_runtime(force=False, configured_runtime='auto'):
+    """Probe the configured yt-dlp JavaScript runtime capability.
 
-    Returns ``{'installed': bool, 'version': str | None, 'path': str | None,
-    'source': 'bundled' | 'system' | None, 'supported': bool, 'stale': bool,
-    'minVersion': str, 'ytdlpNeedsRuntime': bool, 'advice': str}``.
-    Cached for 60 s.
-
-    Checks the bundled DENO_DIR first, then falls back to system PATH
-    via ``shutil.which('deno')``.
+    The historical function name remains for wire compatibility. The result
+    now distinguishes version support from actual JavaScript execution and can
+    select Node 22+ when configured. Unknown and exception states fail closed.
     """
+    preference = str(configured_runtime or 'auto').strip().lower()
+    if preference not in {'auto', 'deno', 'node'}:
+        preference = 'auto'
     with _DENO_RUNTIME_CACHE_LOCK:
         cache = _deno_runtime_cache
         now = time.time()
-        if not force and (now - cache['checked_at']) < _DENO_RUNTIME_CACHE_TTL_SECONDS:
+        if (not force
+                and cache.get('preference') == preference
+                and (now - cache['checked_at']) < _DENO_RUNTIME_CACHE_TTL_SECONDS):
             return cache['value']
         ytdlp_version = get_ytdlp_version()
-        needs_runtime = ytdlp_needs_external_runtime(ytdlp_version or '')
-        deno_path = None
-        source = None
-        if DENO_PATH.exists():
-            deno_path = str(DENO_PATH)
-            source = 'bundled'
-        else:
-            system_deno = shutil.which('deno')
-            if system_deno:
-                deno_path = system_deno
-                source = 'system'
-        installed = deno_path is not None
-        version = None
-        if installed:
-            version = _probe_deno_binary_version(deno_path)
-        supported = bool(installed and _is_deno_version_supported(version))
-        # `stale` is the established wire-contract flag for every installed
-        # but unusable runtime. It includes binaries that fail `--version` or
-        # return an unparsable response; treating those as supported would let
-        # downloads proceed into yt-dlp's much less actionable format error.
-        stale = bool(installed and not supported)
+        parsed_ytdlp_version = _parse_ytdlp_release_date(ytdlp_version or '')
+        # A present binary whose version cannot be verified is not evidence of
+        # the pre-runtime line. Treat it as runtime-required; first-run remains
+        # quiet because there is no binary yet.
+        needs_runtime = (
+            ytdlp_needs_external_runtime(ytdlp_version or '')
+            if parsed_ytdlp_version is not None
+            else YTDLP_PATH.exists()
+        )
+        evaluated = [
+            _evaluate_javascript_runtime(runtime, path, source)
+            for runtime, path, source in _javascript_runtime_candidates(preference)
+        ]
+        selected = next((item for item in evaluated if item['ejsReady']), None)
+        if selected is None and evaluated:
+            selected = evaluated[0]
+        if selected is None:
+            selected = {
+                'runtime': preference if preference != 'auto' else None,
+                'version': None,
+                'path': None,
+                'source': None,
+                'supported': False,
+                'ejsReady': False,
+                'minVersion': NODE_MIN_VERSION if preference == 'node' else DENO_MIN_VERSION,
+                'reason': 'runtime-not-installed',
+            }
+
+        installed = selected['path'] is not None
+        ready = selected['supported'] and selected['ejsReady']
+        runtime_label = (selected.get('runtime') or 'JavaScript runtime').title()
         advice = ''
-        if needs_runtime and not installed:
+        if needs_runtime and selected['reason'] == 'runtime-not-installed':
             advice = (
-                'yt-dlp >= 2026.04 needs Deno >= 2.3.0 for '
-                'YouTube. Click Provision Deno in the companion, or install '
-                'manually: winget install DenoLand.Deno.'
+                'No configured JavaScript runtime was found. Select Auto or Deno and click '
+                'Provision Deno, or select Node after installing Node 22 or newer.'
             )
-        elif needs_runtime and stale:
-            if version:
-                advice = (
-                    f"Deno {version} is below the required {DENO_MIN_VERSION} "
-                    'runtime floor for this yt-dlp build. Click Provision Deno '
-                    'to install the bundled runtime, or update manually: winget '
-                    'upgrade DenoLand.Deno.'
-                )
-            else:
-                advice = (
-                    'Deno is installed but did not report a valid version, so '
-                    'Astra Downloader cannot verify that it can run yt-dlp. '
-                    'Click Provision Deno to replace the runtime, or reinstall '
-                    'manually: winget install --force DenoLand.Deno.'
-                )
+        elif needs_runtime and selected['reason'] == 'runtime-version-unsupported':
+            advice = (
+                f"{runtime_label} {selected.get('version') or 'unknown'} is below the required "
+                f"{selected['minVersion']} runtime floor. Update it, then retry."
+            )
+        elif needs_runtime and selected['reason'] in {'runtime-version-unparseable', 'runtime-probe-failed'}:
+            advice = (
+                f"Astra Downloader could not verify the configured {runtime_label} version. "
+                'Repair or replace the runtime, then retry.'
+            )
+        elif needs_runtime and not ready:
+            advice = (
+                f"{runtime_label} reported a supported version but failed the JavaScript "
+                'execution probe required by yt-dlp EJS. Repair or replace it, then retry.'
+            )
         result = {
+            **selected,
             'installed': installed,
-            'version': version,
-            'path': deno_path,
-            'source': source,
-            'supported': supported,
-            'stale': stale,
-            'minVersion': DENO_MIN_VERSION,
+            'stale': bool(installed and not ready),
+            'configuredRuntime': preference,
+            'canProvisionDeno': preference in {'auto', 'deno'},
             'ytdlpNeedsRuntime': needs_runtime,
             'advice': advice,
         }
         cache['value'] = result
         cache['checked_at'] = now
+        cache['preference'] = preference
         return result
+
+
+probe_javascript_runtime = probe_deno_runtime
+
+
+def build_javascript_runtime_args(readiness):
+    """Return an explicit yt-dlp runtime selection for a verified probe."""
+    if not isinstance(readiness, dict):
+        return []
+    if readiness.get('supported') is not True or readiness.get('ejsReady') is not True:
+        return []
+    runtime = readiness.get('runtime')
+    path = readiness.get('path')
+    if runtime not in {'deno', 'node'} or not path:
+        return []
+    return ['--no-js-runtimes', '--js-runtimes', f'{runtime}:{path}']
 
 
 def reset_deno_runtime_cache():
@@ -1145,6 +1261,7 @@ def reset_deno_runtime_cache():
     with _DENO_RUNTIME_CACHE_LOCK:
         _deno_runtime_cache['value'] = None
         _deno_runtime_cache['checked_at'] = 0.0
+        _deno_runtime_cache['preference'] = None
 
 
 def build_youtube_extractor_args(url, po_token_provider=None):
@@ -2019,6 +2136,8 @@ def sanitize_config(raw):
     data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))
     data["SponsorBlockAction"] = "mark" if data.get("SponsorBlockAction") == "mark" else "remove"
     data["ConcurrentFragments"] = clamp_int(data.get("ConcurrentFragments"), 4, 1, 32)
+    runtime = clean_text(data.get("JavaScriptRuntime"), "auto", 16).lower()
+    data["JavaScriptRuntime"] = runtime if runtime in {"auto", "deno", "node"} else "auto"
     data["RateLimit"] = normalize_rate_limit(data.get("RateLimit"))
     data["Proxy"] = normalize_proxy(data.get("Proxy"))
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
@@ -3030,6 +3149,26 @@ DOWNLOAD_FAILURE_RECOVERY = {
         'advice': 'Upgrade Deno to 2.3.0 or newer with winget upgrade DenoLand.Deno, then retry.',
         'next_action': 'upgrade-deno',
     },
+    'js-runtime-missing': {
+        'error': 'yt-dlp needs a configured JavaScript runtime for YouTube challenges.',
+        'advice': 'Provision Deno, or install Node 22+ and select it in companion settings.',
+        'next_action': 'configure-javascript-runtime',
+    },
+    'js-runtime-unverified': {
+        'error': 'Astra Downloader could not verify the configured JavaScript runtime.',
+        'advice': 'Repair or replace the selected runtime, then retry.',
+        'next_action': 'repair-javascript-runtime',
+    },
+    'js-runtime-unsupported': {
+        'error': 'The configured JavaScript runtime is below yt-dlp\'s supported floor.',
+        'advice': 'Upgrade to Deno 2.3+ or Node 22+, then retry.',
+        'next_action': 'upgrade-javascript-runtime',
+    },
+    'ejs-runtime-not-ready': {
+        'error': 'The configured runtime could not execute the yt-dlp EJS capability probe.',
+        'advice': 'Repair or replace the selected JavaScript runtime, then retry.',
+        'next_action': 'repair-javascript-runtime',
+    },
     'sign-in-required': {
         'error': (
             'Sign in to confirm YouTube access. Grant browser cookies or open '
@@ -3388,7 +3527,7 @@ class DownloadManager(QObject):
         # Build args. v1.2.0: emit progress as JSON alongside the legacy MDLP
         # line so we can parse robustly when yt-dlp tweaks its human-readable
         # format. We keep the legacy line as a fallback.
-        args = [ytdlp, '--newline', '--progress', '--no-colors',
+        args = [ytdlp, '--ignore-config', '--newline', '--progress', '--no-colors',
                 '--trim-filenames', '180',
                 '--replace-in-metadata', 'title,playlist_title',
                 '[\":<>|*?/\\\\]', '_',
@@ -3450,6 +3589,10 @@ class DownloadManager(QObject):
             dl.url,
             po_token_provider=probe_po_token_provider(),
         )
+        runtime = probe_javascript_runtime(
+            configured_runtime=self.config.get('JavaScriptRuntime', 'auto')
+        )
+        args += build_javascript_runtime_args(runtime)
 
         args.append(dl.url)
 
@@ -4084,15 +4227,14 @@ def create_api(config, dl_manager, history):
             # the Repair panel" pill when current=false. null = first-run
             # bootstrap before ffmpeg is on disk.
             "ffmpegCapabilities": check_ffmpeg_capabilities(),
-            # v1.5.0: external JavaScript runtime presence.
-            # yt-dlp >= 2026.04 invokes an external Deno runtime to solve
-            # YouTube's n/sig challenges. Without Deno on PATH, recent
-            # yt-dlp builds return empty format lists on a growing share
-            # of YouTube videos. The downloadHealthPanel in ytkit.js
-            # renders a "Deno: missing" warn pill when
-            # ``ytdlpNeedsRuntime && !installed``, and stays quiet when
-            # the bundled yt-dlp predates the cutoff.
-            "denoRuntime": probe_deno_runtime(),
+            # External JavaScript runtime capability. The legacy denoRuntime
+            # key remains during the additive migration to javascriptRuntime.
+            "denoRuntime": probe_javascript_runtime(
+                configured_runtime=config.get('JavaScriptRuntime', 'auto')
+            ),
+            "javascriptRuntime": probe_javascript_runtime(
+                configured_runtime=config.get('JavaScriptRuntime', 'auto')
+            ),
             # v1.6.0: SABR (Server-Based Adaptive Bitrate) support status.
             # YouTube's web client now returns SABR-only streaming URLs for
             # a growing share of videos. yt-dlp PR #13515 adds native SABR
@@ -4139,7 +4281,10 @@ def create_api(config, dl_manager, history):
             return cors_response({"error": "Unauthorized"}, 403)
         result = provision_deno()
         if result:
-            runtime = probe_deno_runtime(force=True)
+            runtime = probe_javascript_runtime(
+                force=True,
+                configured_runtime=config.get('JavaScriptRuntime', 'auto'),
+            )
             return cors_response({"ok": True, "path": result, "denoRuntime": runtime})
         error = get_last_deno_provision_error()
         return cors_response({
@@ -4187,30 +4332,28 @@ def create_api(config, dl_manager, history):
                 400,
             )
 
-        # v4.47.0 NF27: Deno runtime hard-gate.
-        #
-        # yt-dlp >= 2026.04.01 ships an external n/sig solver and shells out
-        # to a JavaScript runtime (Deno is the documented option) to solve
-        # YouTube's signature challenges. Without Deno on PATH, recent yt-dlp
-        # builds silently return empty format lists, and the download fails
-        # late with an opaque "no formats available" error.
-        #
-        # The /health probe surfaces denoRuntime.ytdlpNeedsRuntime +
-        # denoRuntime.installed; the extension renders a "Deno: missing"
-        # warn pill via that data. Until now /download accepted the request
-        # anyway and the user saw the late failure. NF27 turns this into an
-        # actionable upfront error.
-        deno = probe_deno_runtime()
-        deno_usable = deno.get('installed') and deno.get('supported', True)
-        if deno.get('ytdlpNeedsRuntime') and not deno_usable:
-            error_code = 'deno-runtime-unsupported' if deno.get('installed') else 'deno-runtime-missing'
-            advice = deno.get('advice') or 'Install Deno (https://deno.com/) and restart Astra Downloader.'
+        # Runtime capability hard gate. Presence is insufficient: downloads
+        # require a supported version and a successful EJS execution probe.
+        runtime = probe_javascript_runtime(
+            configured_runtime=config.get('JavaScriptRuntime', 'auto')
+        )
+        runtime_usable = runtime.get('supported') is True and runtime.get('ejsReady') is True
+        if runtime.get('ytdlpNeedsRuntime') and not runtime_usable:
+            reason = runtime.get('reason')
+            if reason == 'runtime-not-installed':
+                error_code = 'js-runtime-missing'
+            elif reason == 'runtime-version-unsupported':
+                error_code = 'js-runtime-unsupported'
+            elif reason in {'runtime-version-unparseable', 'runtime-probe-failed'}:
+                error_code = 'js-runtime-unverified'
+            else:
+                error_code = 'ejs-runtime-not-ready'
+            advice = runtime.get('advice') or 'Configure a supported JavaScript runtime and retry.'
             payload = download_error_payload(
                 error_code,
                 error=(
-                    "yt-dlp >= 2026.04.01 requires Deno >= 2.3.0 to solve "
-                    "YouTube's signature challenges; without a supported "
-                    "runtime, every download returns empty format lists. " + advice
+                    "yt-dlp requires a verified JavaScript runtime to solve "
+                    "YouTube's signature challenges. " + advice
                 ),
                 advice=advice,
             )
@@ -4439,10 +4582,12 @@ class SetupWorker(QThread):
     finished_ok = pyqtSignal()
     finished_err = pyqtSignal(str)
 
-    def __init__(self, parent=None, force_ffmpeg=False, auto_update_ytdlp=True):
+    def __init__(self, parent=None, force_ffmpeg=False, auto_update_ytdlp=True,
+                 configured_runtime='auto'):
         super().__init__(parent)
         self.force_ffmpeg = bool(force_ffmpeg)
         self.auto_update_ytdlp = bool(auto_update_ytdlp)
+        self.configured_runtime = configured_runtime
 
     def _ranged_progress_cb(self, low, high):
         """Return a progress callback that maps bytes into [low, high]% of overall.
@@ -4600,19 +4745,24 @@ class SetupWorker(QThread):
                 self.log.emit("ffmpeg already installed")
             self.progress.emit(55)
 
-            # Deno (56-60% — only when yt-dlp needs the external runtime)
+            # JavaScript runtime (56-60% — only when yt-dlp needs one).
             ytdlp_ver = get_ytdlp_version()
-            if ytdlp_needs_external_runtime(ytdlp_ver or '') and not DENO_PATH.exists():
-                system_deno = shutil.which('deno')
-                if not system_deno:
+            if ytdlp_needs_external_runtime(ytdlp_ver or ''):
+                runtime = probe_javascript_runtime(
+                    force=True, configured_runtime=self.configured_runtime
+                )
+                if not runtime.get('ejsReady') and runtime.get('canProvisionDeno'):
                     self.log.emit("Downloading Deno runtime...")
                     result = provision_deno()
                     if result:
                         self.log.emit("  Done")
                     else:
                         self.log.emit("  Deno download failed (non-critical)")
+                elif runtime.get('ejsReady'):
+                    label = str(runtime.get('runtime') or 'JavaScript').title()
+                    self.log.emit(f"{label} runtime ready: {runtime.get('path')}")
                 else:
-                    self.log.emit(f"Deno found on system PATH: {system_deno}")
+                    self.log.emit("Configured Node runtime is unavailable or unsupported")
             self.progress.emit(60)
 
             # Icon
@@ -4932,14 +5082,19 @@ class ReadinessProbe(QObject):
 
     completed = pyqtSignal(dict)
 
+    def __init__(self, configured_runtime='auto'):
+        super().__init__()
+        self.configured_runtime = configured_runtime
+
     def run(self):
         try:
-            deno = probe_deno_runtime()
+            runtime = probe_javascript_runtime(configured_runtime=self.configured_runtime)
             provider = probe_po_token_provider()
             payload = {
                 "ytDlp": get_ytdlp_version() or "",
                 "ffmpeg": get_ffmpeg_version() or "",
-                "deno": deno or {},
+                "runtime": runtime or {},
+                "deno": runtime or {},
                 "provider": provider or {},
             }
         except Exception as exc:
@@ -5174,7 +5329,7 @@ class MainWindow(QMainWindow):
         if self.readiness_thread is not None:
             return
         self.readiness_thread = QThread(self)
-        self.readiness_worker = ReadinessProbe()
+        self.readiness_worker = ReadinessProbe(self.config.get('JavaScriptRuntime', 'auto'))
         self.readiness_worker.moveToThread(self.readiness_thread)
         self.readiness_thread.started.connect(self.readiness_worker.run)
         self.readiness_worker.completed.connect(self._apply_readiness)
@@ -5198,17 +5353,18 @@ class MainWindow(QMainWindow):
 
         yt_dlp = payload.get("ytDlp")
         ffmpeg = payload.get("ffmpeg")
-        deno = payload.get("deno") or {}
+        runtime = payload.get("runtime") or payload.get("deno") or {}
         provider = payload.get("provider") or {}
         self._set_readiness("ytDlp", yt_dlp or "Missing", "success" if yt_dlp else "danger")
         self._set_readiness("ffmpeg", ffmpeg or "Missing", "success" if ffmpeg else "danger")
 
-        deno_version = deno.get("version")
-        if deno.get("supported"):
-            self._set_readiness("deno", deno_version or "Ready", "success")
-        elif deno.get("installed"):
-            self._set_readiness("deno", deno_version or "Update", "warning")
-        elif deno.get("ytdlpNeedsRuntime"):
+        runtime_name = str(runtime.get('runtime') or 'JS').title()
+        runtime_version = runtime.get("version")
+        if runtime.get("supported") and runtime.get('ejsReady'):
+            self._set_readiness("deno", f"{runtime_name} {runtime_version or 'ready'}", "success")
+        elif runtime.get("installed"):
+            self._set_readiness("deno", f"{runtime_name} {runtime_version or 'repair'}", "warning")
+        elif runtime.get("ytdlpNeedsRuntime"):
             self._set_readiness("deno", "Required", "danger")
         else:
             self._set_readiness("deno", "Optional", "neutral")
@@ -5290,7 +5446,7 @@ class MainWindow(QMainWindow):
         readiness_layout.addWidget(self._make_readiness_row("server", "Local API", "Stopped"))
         readiness_layout.addWidget(self._make_readiness_row("ytDlp", "yt-dlp"))
         readiness_layout.addWidget(self._make_readiness_row("ffmpeg", "FFmpeg"))
-        readiness_layout.addWidget(self._make_readiness_row("deno", "Deno runtime"))
+        readiness_layout.addWidget(self._make_readiness_row("deno", "JavaScript runtime"))
         readiness_layout.addWidget(self._make_readiness_row("provider", "PO provider"))
         readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Limited"))
         self._set_readiness("sabr", "Limited", "warning")
@@ -5569,6 +5725,25 @@ class MainWindow(QMainWindow):
         self.cfg_proxy.setMinimumWidth(260)
         proxy_row.addWidget(self.cfg_proxy)
         perf_l.addLayout(proxy_row)
+        perf_l.addWidget(make_divider())
+        runtime_row = QHBoxLayout()
+        runtime_copy = QVBoxLayout()
+        runtime_copy.setSpacing(2)
+        runtime_copy.addWidget(make_label("JavaScript runtime", "fieldLabel"))
+        runtime_copy.addWidget(make_label(
+            "Auto prefers Deno and falls back to Node 22+ for yt-dlp challenge solving.",
+            "fieldHint", word_wrap=True,
+        ))
+        runtime_row.addLayout(runtime_copy, 1)
+        self.cfg_js_runtime = QComboBox()
+        self.cfg_js_runtime.setAccessibleName("JavaScript runtime")
+        self.cfg_js_runtime.addItem("Auto", "auto")
+        self.cfg_js_runtime.addItem("Deno", "deno")
+        self.cfg_js_runtime.addItem("Node 22+", "node")
+        selected_runtime = self.config.get("JavaScriptRuntime", "auto")
+        self.cfg_js_runtime.setCurrentIndex(max(0, self.cfg_js_runtime.findData(selected_runtime)))
+        runtime_row.addWidget(self.cfg_js_runtime)
+        perf_l.addLayout(runtime_row)
         layout.addWidget(perf_card)
 
         # Behavior
@@ -5639,6 +5814,7 @@ class MainWindow(QMainWindow):
             self.cfg_fragments.valueChanged,
             self.cfg_ratelimit.textChanged,
             self.cfg_proxy.textChanged,
+            self.cfg_js_runtime.currentIndexChanged,
             self.cfg_autoupdate.toggled,
             self.cfg_closetotray.toggled,
             self.cfg_startmin.toggled,
@@ -6220,6 +6396,7 @@ class MainWindow(QMainWindow):
             "ConcurrentFragments": self.cfg_fragments.value(),
             "RateLimit": rate,
             "Proxy": proxy,
+            "JavaScriptRuntime": self.cfg_js_runtime.currentData(),
             "AutoUpdateYtDlp": self.cfg_autoupdate.isChecked(),
             "CloseToTray": self.cfg_closetotray.isChecked(),
             "StartMinimized": self.cfg_startmin.isChecked(),
@@ -6232,6 +6409,9 @@ class MainWindow(QMainWindow):
             )
             self._append_log("Settings save failed. Existing settings and server state were preserved.")
             return
+
+        reset_deno_runtime_cache()
+        self._start_readiness_probe()
 
         self._sync_connection_ui()
         if restart_now:
@@ -6498,6 +6678,7 @@ class MainWindow(QMainWindow):
         self.setup_worker = SetupWorker(
             force_ffmpeg=force_ffmpeg,
             auto_update_ytdlp=self.config.get("AutoUpdateYtDlp", True),
+            configured_runtime=self.config.get("JavaScriptRuntime", "auto"),
         )
         self.setup_worker.log.connect(self._append_log)
         self.setup_worker.progress.connect(self._setup_progress)
