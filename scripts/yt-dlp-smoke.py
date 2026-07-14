@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Monthly yt-dlp extractor smoke test.
+"""Local yt-dlp extractor smoke test.
 
 Downloads a tiny, stable YouTube test video with the pinned Python yt-dlp
 package. This intentionally exercises the real extractor and media download
-path, not only import/version checks, so Dependabot PRs and the scheduled
-workflow fail before a broken extractor reaches users.
+path, not only import/version checks, so dependency updates can be checked
+before a broken extractor reaches users.
 """
 
 from __future__ import annotations

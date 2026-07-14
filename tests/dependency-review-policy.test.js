@@ -82,11 +82,11 @@ test('Python companion audit emits release-review JSON and fails closed', () => 
     assert.equal(report.actionableFindings[0].package, 'flask');
 
     const minimum = audit.minimumRequirementsFor([
-        'yt-dlp==2026.6.9',
+        'yt-dlp==2026.7.4',
         'PyQt6>=6.6.0,<7',
         'requests>=2.33.0,<3'
     ].join('\n'));
-    assert.match(minimum, /^yt-dlp==2026\.6\.9$/m);
+    assert.match(minimum, /^yt-dlp==2026\.7\.4$/m);
     assert.match(minimum, /^PyQt6==6\.6\.0$/m);
     assert.match(minimum, /^requests==2\.33\.0$/m);
 
