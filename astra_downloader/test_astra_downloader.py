@@ -456,6 +456,36 @@ class DiagnosticsBundleTests(unittest.TestCase):
 
 
 class UninstallCleanupTests(unittest.TestCase):
+    def test_uninstall_shutdown_targets_only_companion_process_tree(self):
+        with mock.patch.object(ad, "send_instance_command", return_value=True) as send, \
+             mock.patch.object(ad.time, "sleep") as sleep, \
+             mock.patch.object(ad.sys, "platform", "win32"), \
+             mock.patch.object(ad.os, "getpid", return_value=4242), \
+             mock.patch.object(ad.subprocess, "run") as run:
+            self.assertTrue(ad.stop_running_companion_for_uninstall())
+
+        send.assert_called_once_with("shutdown", attempts=3, delay=0.2)
+        sleep.assert_called_once_with(0.75)
+        run.assert_called_once()
+        command = run.call_args.args[0]
+        self.assertIn("AstraDownloader.exe", command)
+        self.assertIn("/T", command)
+        self.assertNotIn("yt-dlp.exe", command)
+        self.assertNotIn("ffmpeg.exe", command)
+
+    def test_shutdown_instance_command_closes_owned_window(self):
+        class Window:
+            pass
+
+        window = Window()
+        events = []
+        window._append_log = events.append
+        window._force_close = lambda: events.append("closed")
+
+        ad.MainWindow._handle_instance_command(window, "shutdown")
+
+        self.assertEqual(events[-1], "closed")
+
     def test_delayed_install_dir_removal_only_accepts_app_owned_dir_shape(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertTrue(ad.is_safe_install_dir_for_removal(Path(tmp) / "AstraDownloader"))

@@ -2249,7 +2249,7 @@ def startup_command_from_argv(argv=None):
 
 def send_instance_command(command, host=INSTANCE_CONTROL_HOST, port=INSTANCE_CONTROL_PORT, attempts=5, delay=0.2):
     command = str(command or '').strip().lower()
-    if command not in {'show', 'start'}:
+    if command not in {'show', 'start', 'shutdown'}:
         return False
     payload = (command + '\n').encode('ascii')
     for attempt in range(max(1, int(attempts))):
@@ -4687,13 +4687,7 @@ class SetupWorker(QThread):
 def run_uninstall():
     write_persistent_log("Uninstall requested; removing Astra Downloader components.")
 
-    # Kill processes
-    if sys.platform == 'win32':
-        current_pid = str(os.getpid())
-        subprocess.run(['taskkill', '/F', '/T', '/IM', 'AstraDownloader.exe', '/FI', f'PID ne {current_pid}'],
-                       capture_output=True, creationflags=CREATE_NO_WINDOW)
-        subprocess.run(['taskkill', '/F', '/T', '/IM', 'yt-dlp.exe'], capture_output=True, creationflags=CREATE_NO_WINDOW)
-        subprocess.run(['taskkill', '/F', '/T', '/IM', 'ffmpeg.exe'], capture_output=True, creationflags=CREATE_NO_WINDOW)
+    stop_running_companion_for_uninstall()
 
     # Remove scheduled task
     subprocess.run(['schtasks', '/Delete', '/TN', 'AstraDownloader', '/F'],
@@ -4749,6 +4743,22 @@ def run_uninstall():
     write_persistent_log(message)
     print(message)
     sys.exit(0)
+
+
+def stop_running_companion_for_uninstall():
+    """Stop only Astra Downloader and its child process tree before removal."""
+    graceful = send_instance_command('shutdown', attempts=3, delay=0.2)
+    if graceful:
+        # Give closeEvent time to stop the local API and cancel owned jobs.
+        time.sleep(0.75)
+    if sys.platform == 'win32':
+        current_pid = str(os.getpid())
+        subprocess.run(
+            ['taskkill', '/F', '/T', '/IM', 'AstraDownloader.exe', '/FI', f'PID ne {current_pid}'],
+            capture_output=True,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    return graceful
 
 
 def is_safe_install_dir_for_removal(path):
@@ -6378,7 +6388,7 @@ class MainWindow(QMainWindow):
                             except OSError:
                                 continue
                         command = raw.decode('ascii', errors='ignore').strip().lower()
-                        if command in {'show', 'start'}:
+                        if command in {'show', 'start', 'shutdown'}:
                             self.instance_command.emit(command)
             except OSError as e:
                 if not self._instance_command_stop.is_set():
@@ -6409,6 +6419,10 @@ class MainWindow(QMainWindow):
         if command == 'show':
             self._append_log("Received request to show the existing window.")
             self._show_from_tray()
+            return
+        if command == 'shutdown':
+            self._append_log("Received uninstall shutdown request.")
+            self._force_close()
             return
         if command != 'start':
             return
