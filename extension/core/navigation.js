@@ -168,10 +168,24 @@
         // startViewTransition froze rendering and cross-faded the whole
         // document mid-scroll. The navigate rules themselves still run every
         // time; only the (cosmetic) cross-fade is gated to genuine navigations.
-        if (urlChanged && typeof document.startViewTransition === 'function') {
-            document.startViewTransition(() => _executeNavigateRules());
-        } else {
+        const reducedMotion = typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!urlChanged || reducedMotion || typeof document.startViewTransition !== 'function') {
             _executeNavigateRules();
+            return;
+        }
+
+        let executed = false;
+        try {
+            document.startViewTransition(() => {
+                executed = true;
+                _executeNavigateRules();
+            });
+        } catch (_) {
+            // A transition can be rejected while another document transition
+            // is active. Navigation rules are functional, so never let a
+            // cosmetic API prevent them from running.
+            if (!executed) _executeNavigateRules();
         }
     }
 

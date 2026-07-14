@@ -37,6 +37,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Navigation effects no longer cross-fade infinite-scroll updates.** The
+  document View Transition now runs only when the URL changes, is skipped for
+  reduced-motion users, and falls back safely if the cosmetic API rejects while
+  functional navigation rules continue.
 - **Comment Handle Revealer no longer wedges on slow pages or early startup.**
   Author-page requests now time out after eight seconds, release their dedupe
   entry for a later retry, attach when YouTube renders `#page-manager` late,
@@ -45,6 +49,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   shared observer's registration callback carries no added nodes; that bootstrap
   call is now ignored so the stylesheet loads at idle or when comments actually
   appear, as intended.
+
 - **Companion empty states now lead somewhere useful.** Empty Downloads and
   History pages provide direct navigation to the dashboard or queue, History
   disables Clear when there is nothing to remove, and disabled primary,
@@ -124,6 +129,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Chapter-markdown copy could emit `?t=NaN`.** The timestamp reduce lacked the
   NaN/undefined guard its sibling function has; `parseInt` is now radix-pinned
   with `|| 0` fallbacks.
+
+### Performance
+
+- **Disable Frosted Glass no longer installs a universal CSS selector.** Both
+  extension and userscript now target YouTube's masthead, chip, menu, dialog,
+  popup, and player-chrome surfaces instead of rematching every DOM element on
+  each feed mutation.
 
 ## [4.49.0] - 2026-07-11
 

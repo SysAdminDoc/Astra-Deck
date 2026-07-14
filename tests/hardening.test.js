@@ -8362,6 +8362,18 @@ test('v4.38.0 wave-8-css module exports five pure builders', () => {
     }
 });
 
+test('noFrostedGlass avoids a universal selector in both distributions', () => {
+    const wave8 = loadWave8CssModule();
+    const css = wave8.buildNoFrostedGlassCss();
+    const userscript = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    assert.doesNotMatch(css, /^\s*\*/, 'extension CSS must not rematch every DOM element');
+    assert.match(css, /ytd-masthead/);
+    assert.match(css, /tp-yt-iron-dropdown/);
+    assert.doesNotMatch(userscript,
+        /`\* \{ backdrop-filter: none !important; -webkit-backdrop-filter: none !important; \}`/,
+        'userscript feature fallback must avoid the universal selector too');
+});
+
 test('v4.38.0 wave-8-css helpers return byte-identical CSS to the monolith fallback', () => {
     const wave8 = loadWave8CssModule();
     // For each peeled feature, the module's CSS must appear verbatim
