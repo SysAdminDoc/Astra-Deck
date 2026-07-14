@@ -1,5 +1,5 @@
 {
-  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 7.",
+  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 8.",
   "profiles": [
     {
       "schemaVersion": 1,
@@ -124,6 +124,26 @@
         "safeUnknownKey": "custom-v6"
       },
       "absent": []
+    },
+    {
+      "schemaVersion": 7,
+      "settings": {
+        "_settingsVersion": 7,
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "reactionSpammer": false,
+        "aiSummaryProvider": "gemini",
+        "aiSummaryApiKey": "legacy-secret-must-not-import",
+        "safeUnknownKey": "custom-v7"
+      },
+      "expected": {
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "reactionSpammer": false,
+        "aiSummaryProvider": "gemini",
+        "safeUnknownKey": "custom-v7"
+      },
+      "absent": ["aiSummaryApiKey"]
     }
   ]
 }

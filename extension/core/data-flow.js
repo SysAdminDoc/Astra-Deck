@@ -111,7 +111,7 @@
         Object.freeze({
             origin: 'http://127.0.0.1:11434',
             purpose: 'Local Ollama runtime for offline AI summaries.',
-            requiredByFeatures: ['localAiSummary'],
+            requiredByFeatures: ['aiVideoSummary'],
             credentialsPolicy: 'local-loopback',
             profile: 'github-full',
             hostGrant: 'required',
@@ -194,10 +194,10 @@
         downloadAudioFormat: 'showLocalDownloadButton',
         // Cobalt fallback sub-knobs
         downloadCobaltInstance: 'downloadCobaltFallback',
-        // AI summary sub-knobs (provider/model/endpoint/key)
+        // AI summary sub-knobs. Credentials are background-owned and never
+        // appear in the content-script settings schema.
         aiSummaryEndpoint: 'aiVideoSummary',
         aiSummaryModel: 'aiVideoSummary',
-        aiSummaryApiKey: 'aiVideoSummary',
         aiSummaryProvider: 'aiVideoSummary',
         // subscriptionAiTags is intentionally NOT mapped: per the schema
         // description it uses Chrome's built-in Summarizer (no remote

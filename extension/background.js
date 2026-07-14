@@ -8,7 +8,7 @@
 // Firefox's background.scripts entry still loads background.js as a classic
 // worker script, where importScripts is available as well.
 if (typeof importScripts === 'function') {
-    importScripts('core/settings-schema.js', 'core/settings-controller.js');
+    importScripts('core/settings-schema.js', 'core/settings-controller.js', 'core/credential-vault.js');
 }
 
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
@@ -18,6 +18,30 @@ const _settingsMutationController = globalThis.YTKitCore?.createSettingsMutation
     storageKey: SETTINGS_STORAGE_KEY,
     storage: chrome.storage?.local
 }) || null;
+const _credentialVault = globalThis.YTKitCore?.createCredentialVault?.({
+    sessionStorage: chrome.storage?.session
+}) || null;
+
+async function migrateLegacyAiCredential() {
+    if (!_credentialVault || !chrome.storage?.local?.get || !chrome.storage?.local?.set) return false;
+    const stored = await chrome.storage.local.get(SETTINGS_STORAGE_KEY);
+    const settings = stored?.[SETTINGS_STORAGE_KEY];
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)
+        || !Object.prototype.hasOwnProperty.call(settings, 'aiSummaryApiKey')) return false;
+    // migrateLegacy persists the credential first. Only after that succeeds do
+    // we remove the ordinary content-script-visible setting.
+    const result = await _credentialVault.migrateLegacy(settings);
+    await chrome.storage.local.set({ [SETTINGS_STORAGE_KEY]: result.settings });
+    return result.migrated;
+}
+
+const _credentialMigrationReady = migrateLegacyAiCredential().catch((error) => {
+    // Never pass provider errors into lifecycle diagnostics: a storage-layer
+    // error could contain IndexedDB keys or implementation details.
+    void error;
+    void _recordSwLifecycle('ai-credential-migration-failed');
+    return false;
+});
 
 async function broadcastSettingsMutation(result, source = '') {
     // The initiating in-page surface already holds an optimistic snapshot and
@@ -41,6 +65,87 @@ async function broadcastSettingsMutation(result, source = '') {
 
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
+const MAX_AI_REQUEST_BYTES = 512 * 1024;
+const MAX_AI_RESPONSE_BYTES = 2 * 1024 * 1024;
+
+async function performAiSummaryRequest(details) {
+    if (!_credentialVault) throw new Error('AI credential vault is unavailable.');
+    const validator = globalThis.YTKitCore?.validateAiProviderEndpoint;
+    if (typeof validator !== 'function') throw new Error('AI provider policy is unavailable.');
+    const validated = validator(details?.provider, details?.endpoint);
+    const payload = details?.payload;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new Error('AI request payload must be a plain object.');
+    }
+    const requestBody = JSON.stringify(payload);
+    if (new TextEncoder().encode(requestBody).byteLength > MAX_AI_REQUEST_BYTES) {
+        throw new Error('AI request payload is too large.');
+    }
+
+    const credential = validated.policy.credentialHeader
+        ? await _credentialVault.get(validated.provider)
+        : '';
+    if (validated.policy.credentialHeader && !credential) {
+        const error = new Error(`No ${validated.provider} credential is configured in the toolbar popup.`);
+        error.code = 'CREDENTIAL_MISSING';
+        throw error;
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (credential) {
+        headers[validated.policy.credentialHeader] = validated.policy.credentialPrefix + credential;
+    }
+    if (validated.provider === 'anthropic') headers['anthropic-version'] = '2023-06-01';
+
+    const controller = new AbortController();
+    const requestedTimeout = Number(details?.timeout);
+    const timeoutMs = Math.max(1000, Math.min(
+        Number.isFinite(requestedTimeout) && requestedTimeout > 0 ? requestedTimeout : MAX_FETCH_TIMEOUT_MS,
+        MAX_FETCH_TIMEOUT_MS
+    ));
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(validated.url, {
+            method: 'POST',
+            headers,
+            body: requestBody,
+            credentials: 'omit',
+            redirect: credential ? 'manual' : 'follow',
+            signal: controller.signal
+        });
+        if (response.type === 'opaqueredirect') throw new Error('Credentialed AI redirects are blocked.');
+        if (response.url && new URL(response.url).origin !== validated.policy.origin) {
+            throw new Error('AI response escaped the approved provider origin.');
+        }
+        const contentLength = Number(response.headers.get('content-length'));
+        if (Number.isFinite(contentLength) && contentLength > MAX_AI_RESPONSE_BYTES) {
+            throw new Error('AI response is too large.');
+        }
+        const text = await response.text();
+        if (new TextEncoder().encode(text).byteLength > MAX_AI_RESPONSE_BYTES) {
+            throw new Error('AI response body is too large.');
+        }
+        if (credential && text.includes(credential)) {
+            throw new Error('AI provider response contained credential material and was blocked.');
+        }
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (_) {
+            // reason: surface a stable invalid-response error without logging provider output
+            throw new Error('AI provider returned invalid JSON.');
+        }
+        if (!response.ok) {
+            // Provider error bodies are untrusted and may echo headers or
+            // account metadata. Keep the worker-to-content response generic.
+            throw new Error(`AI provider rejected the request (HTTP ${response.status}).`);
+        }
+        return { ok: true, status: response.status, provider: validated.provider, data };
+    } catch (error) {
+        if (error?.name === 'AbortError') throw new Error('AI request timed out.');
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 // v3.20.3: explicit cookie-jar wire contract.
 // Mirrors normalizeCookieExpiry() in extension/ytkit.js — keep both in sync.
@@ -626,10 +731,57 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return false;
     }
 
+    if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'
+        || msg.type === 'YTKIT_AI_CREDENTIAL_SET'
+        || msg.type === 'YTKIT_AI_CREDENTIAL_DELETE') {
+        if (sender?.tab) {
+            sendResponse({ ok: false, error: { code: 'TRUSTED_CONTEXT_REQUIRED', message: 'Manage AI credentials from the toolbar popup.' } });
+            return false;
+        }
+        (async () => {
+            await _credentialMigrationReady;
+            if (!_credentialVault) throw new Error('AI credential vault is unavailable.');
+            if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS') {
+                sendResponse({ ok: true, providers: await _credentialVault.status() });
+                return;
+            }
+            if (msg.type === 'YTKIT_AI_CREDENTIAL_SET') {
+                const result = await _credentialVault.set(msg.provider, msg.credential, { remember: msg.remember === true });
+                sendResponse({ ok: true, ...result });
+                return;
+            }
+            const result = await _credentialVault.remove(msg.provider);
+            sendResponse({ ok: true, ...result });
+        })().catch((error) => {
+            sendResponse({
+                ok: false,
+                error: { code: 'CREDENTIAL_OPERATION_FAILED', message: error?.message || 'Credential operation failed.' }
+            });
+        });
+        return true;
+    }
+
+    if (msg.type === 'YTKIT_AI_SUMMARY_REQUEST') {
+        (async () => {
+            await _credentialMigrationReady;
+            sendResponse(await performAiSummaryRequest(msg));
+        })().catch((error) => {
+            sendResponse({
+                ok: false,
+                error: {
+                    code: error?.code || 'AI_REQUEST_FAILED',
+                    message: error?.message || 'AI request failed.'
+                }
+            });
+        });
+        return true;
+    }
+
     if (msg.type === 'YTKIT_MUTATE_SETTING'
         || msg.type === 'YTKIT_MUTATE_SETTINGS'
         || msg.type === 'YTKIT_REPLACE_SETTINGS') {
         (async () => {
+            await _credentialMigrationReady;
             if (!_settingsMutationController) {
                 sendResponse({
                     ok: false,

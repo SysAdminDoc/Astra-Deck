@@ -15,11 +15,15 @@
 // @inject-into  content
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_deleteValue
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @connect      sponsor.ajay.app
 // @connect      returnyoutubedislikeapi.com
+// @connect      api.openai.com
+// @connect      api.anthropic.com
+// @connect      generativelanguage.googleapis.com
 // @connect      cobalt.tools
 // @connect      *.cobalt.tools
 // @connect      *.imput.net
@@ -891,7 +895,7 @@
         Object.freeze({ key: "subscriptionFilterStreamed", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
         // ─── research-ai ───
-        Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
+        Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
         Object.freeze({ key: "localAiTranscriptQa", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["promptApi"]) }),
         Object.freeze({ key: "researchSpacedReview", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "researchTranscriptIndex", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -977,7 +981,6 @@
         Object.freeze({ key: "aiVideoSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint — OpenAI, Anthropic, Gemini, or local Ollama." }),
         Object.freeze({ key: "aiSummaryModel", category: "research-ai", type: "string", defaultValue: "gpt-4o-mini", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "aiSummaryApiKey", category: "research-ai", type: "string", defaultValue: "", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary provider", descriptionKey: "Provider id — openai, anthropic, gemini, or ollama (local)." }),
 
         // ─── watch-player ───
@@ -2041,6 +2044,593 @@
         }
     })();
 
+    // ── bundled module: extension/core/credential-vault.js ──
+    (() => {
+        'use strict';
+
+        const root = globalThis;
+        const core = root.YTKitCore || (root.YTKitCore = {});
+        if (core.createCredentialVault) return;
+
+        const SESSION_PREFIX = 'ytkitAiCredential:';
+        const PROVIDER_POLICIES = Object.freeze({
+            openai: Object.freeze({
+                origin: 'https://api.openai.com',
+                defaultEndpoint: 'https://api.openai.com/v1/chat/completions',
+                credentialHeader: 'Authorization',
+                credentialPrefix: 'Bearer '
+            }),
+            anthropic: Object.freeze({
+                origin: 'https://api.anthropic.com',
+                defaultEndpoint: 'https://api.anthropic.com/v1/messages',
+                credentialHeader: 'x-api-key',
+                credentialPrefix: ''
+            }),
+            gemini: Object.freeze({
+                origin: 'https://generativelanguage.googleapis.com',
+                defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+                credentialHeader: 'x-goog-api-key',
+                credentialPrefix: ''
+            }),
+            ollama: Object.freeze({
+                origin: 'http://127.0.0.1:11434',
+                defaultEndpoint: 'http://127.0.0.1:11434/v1/chat/completions',
+                credentialHeader: '',
+                credentialPrefix: ''
+            })
+        });
+        const SENSITIVE_QUERY_KEYS = /^(?:key|api[-_]?key|token|access[-_]?token|client[-_]?secret|credential|auth|authorization)$/i;
+
+        function normalizeProvider(provider) {
+            const normalized = String(provider || '').trim().toLowerCase();
+            return Object.prototype.hasOwnProperty.call(PROVIDER_POLICIES, normalized)
+                ? normalized
+                : null;
+        }
+
+        function validateProviderEndpoint(provider, endpoint) {
+            const normalizedProvider = normalizeProvider(provider);
+            if (!normalizedProvider) throw new Error('Unsupported AI provider.');
+            const policy = PROVIDER_POLICIES[normalizedProvider];
+            const parsed = new URL(String(endpoint || policy.defaultEndpoint));
+            if (parsed.origin !== policy.origin) {
+                throw new Error(`The ${normalizedProvider} endpoint must use ${policy.origin}.`);
+            }
+            for (const key of parsed.searchParams.keys()) {
+                if (SENSITIVE_QUERY_KEYS.test(key)) {
+                    throw new Error('Credentials are not allowed in AI endpoint URLs.');
+                }
+            }
+            return { provider: normalizedProvider, policy, url: parsed.toString() };
+        }
+
+        function createIndexedDbCredentialStore(options = {}) {
+            const indexedDb = options.indexedDB || root.indexedDB;
+            const databaseName = options.databaseName || 'ytkit-credential-vault';
+            const storeName = options.storeName || 'credentials';
+
+            function openDatabase() {
+                if (!indexedDb?.open) return Promise.reject(new Error('Persistent credential storage is unavailable.'));
+                return new Promise((resolve, reject) => {
+                    const request = indexedDb.open(databaseName, 1);
+                    request.onupgradeneeded = () => {
+                        if (!request.result.objectStoreNames.contains(storeName)) {
+                            request.result.createObjectStore(storeName);
+                        }
+                    };
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error || new Error('Could not open credential storage.'));
+                });
+            }
+
+            async function transact(mode, operation) {
+                const db = await openDatabase();
+                try {
+                    return await new Promise((resolve, reject) => {
+                        const transaction = db.transaction(storeName, mode);
+                        const store = transaction.objectStore(storeName);
+                        let request;
+                        try { request = operation(store); } catch (error) { reject(error); return; }
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error || new Error('Credential storage transaction failed.'));
+                        transaction.onabort = () => reject(transaction.error || new Error('Credential storage transaction aborted.'));
+                    });
+                } finally {
+                    db.close();
+                }
+            }
+
+            return Object.freeze({
+                get(provider) { return transact('readonly', (store) => store.get(provider)); },
+                set(provider, credential) { return transact('readwrite', (store) => store.put(credential, provider)); },
+                delete(provider) { return transact('readwrite', (store) => store.delete(provider)); }
+            });
+        }
+
+        function createCredentialVault(options = {}) {
+            const sessionStorage = options.sessionStorage || root.chrome?.storage?.session || null;
+            const persistentStore = options.persistentStore || createIndexedDbCredentialStore(options);
+            const memorySession = new Map();
+
+            async function sessionGet(provider) {
+                const key = SESSION_PREFIX + provider;
+                if (sessionStorage?.get) {
+                    const result = await sessionStorage.get(key);
+                    return typeof result?.[key] === 'string' ? result[key] : '';
+                }
+                return memorySession.get(provider) || '';
+            }
+
+            async function sessionSet(provider, credential) {
+                const key = SESSION_PREFIX + provider;
+                if (sessionStorage?.set) {
+                    await sessionStorage.set({ [key]: credential });
+                    return;
+                }
+                memorySession.set(provider, credential);
+            }
+
+            async function sessionDelete(provider) {
+                const key = SESSION_PREFIX + provider;
+                if (sessionStorage?.remove) {
+                    await sessionStorage.remove(key);
+                    return;
+                }
+                memorySession.delete(provider);
+            }
+
+            async function get(provider) {
+                const normalized = normalizeProvider(provider);
+                if (!normalized || normalized === 'ollama') return '';
+                const sessionValue = await sessionGet(normalized);
+                if (sessionValue) return sessionValue;
+                const persisted = await persistentStore.get(normalized);
+                if (typeof persisted === 'string' && persisted) {
+                    await sessionSet(normalized, persisted);
+                    return persisted;
+                }
+                return '';
+            }
+
+            async function set(provider, credential, setOptions = {}) {
+                const normalized = normalizeProvider(provider);
+                if (!normalized || normalized === 'ollama') throw new Error('This provider does not accept a stored credential.');
+                const value = String(credential || '').trim();
+                if (!value || value.length > 4096 || /[\r\n\0]/.test(value)) {
+                    throw new Error('Credential must be 1-4096 characters without control characters.');
+                }
+                if (setOptions.remember === true) {
+                    // Persistent write first: a failed remember operation must not
+                    // delete or supersede the legacy durable copy during migration.
+                    await persistentStore.set(normalized, value);
+                } else {
+                    await persistentStore.delete(normalized);
+                }
+                await sessionSet(normalized, value);
+                return { provider: normalized, configured: true, remembered: setOptions.remember === true };
+            }
+
+            async function remove(provider) {
+                const normalized = normalizeProvider(provider);
+                if (!normalized || normalized === 'ollama') throw new Error('This provider has no stored credential.');
+                await persistentStore.delete(normalized);
+                await sessionDelete(normalized);
+                return { provider: normalized, configured: false, remembered: false };
+            }
+
+            async function status() {
+                const providers = {};
+                for (const provider of Object.keys(PROVIDER_POLICIES)) {
+                    if (provider === 'ollama') {
+                        providers[provider] = { configured: true, remembered: false, credentialRequired: false };
+                        continue;
+                    }
+                    const sessionValue = await sessionGet(provider);
+                    const persisted = await persistentStore.get(provider);
+                    providers[provider] = {
+                        configured: Boolean(sessionValue || persisted),
+                        remembered: Boolean(persisted),
+                        credentialRequired: true
+                    };
+                }
+                return providers;
+            }
+
+            async function migrateLegacy(settings) {
+                const source = settings && typeof settings === 'object' && !Array.isArray(settings)
+                    ? { ...settings }
+                    : {};
+                const credential = typeof source.aiSummaryApiKey === 'string'
+                    ? source.aiSummaryApiKey.trim()
+                    : '';
+                if (!credential) {
+                    delete source.aiSummaryApiKey;
+                    return { migrated: false, settings: source };
+                }
+                const provider = normalizeProvider(source.aiSummaryProvider) || 'openai';
+                if (provider === 'ollama') {
+                    delete source.aiSummaryApiKey;
+                    return { migrated: false, settings: source };
+                }
+                await set(provider, credential, { remember: true });
+                delete source.aiSummaryApiKey;
+                return { migrated: true, provider, settings: source };
+            }
+
+            return Object.freeze({ get, set, remove, status, migrateLegacy });
+        }
+
+        function createUserscriptCredentialVault(options = {}) {
+            const getValue = options.getValue || root.GM_getValue;
+            const setValue = options.setValue || root.GM_setValue;
+            const deleteValue = options.deleteValue || root.GM_deleteValue;
+            const prefix = options.prefix || 'ytkit:ai-credential:';
+
+            function keyFor(provider) {
+                const normalized = normalizeProvider(provider);
+                if (!normalized || normalized === 'ollama') throw new Error('This provider has no userscript credential.');
+                return prefix + normalized;
+            }
+
+            async function get(provider) {
+                if (normalizeProvider(provider) === 'ollama') return '';
+                if (typeof getValue !== 'function') throw new Error('Userscript credential storage is unavailable.');
+                const value = await Promise.resolve(getValue(keyFor(provider), ''));
+                return typeof value === 'string' ? value.trim() : '';
+            }
+
+            async function set(provider, credential) {
+                if (typeof setValue !== 'function') throw new Error('Userscript credential storage is unavailable.');
+                const value = String(credential || '').trim();
+                if (!value || value.length > 4096 || /[\r\n\0]/.test(value)) {
+                    throw new Error('Credential must be 1-4096 characters without control characters.');
+                }
+                await Promise.resolve(setValue(keyFor(provider), value));
+                return { provider: normalizeProvider(provider), configured: true, remembered: true };
+            }
+
+            async function remove(provider) {
+                const key = keyFor(provider);
+                if (typeof deleteValue === 'function') await Promise.resolve(deleteValue(key));
+                else if (typeof setValue === 'function') await Promise.resolve(setValue(key, ''));
+                else throw new Error('Userscript credential storage is unavailable.');
+                return { provider: normalizeProvider(provider), configured: false, remembered: false };
+            }
+
+            async function status(provider) {
+                if (normalizeProvider(provider) === 'ollama') {
+                    return { provider: 'ollama', configured: true, remembered: false, credentialRequired: false };
+                }
+                return {
+                    provider: normalizeProvider(provider),
+                    configured: Boolean(await get(provider)),
+                    remembered: true,
+                    credentialRequired: true
+                };
+            }
+
+            return Object.freeze({ get, set, remove, status });
+        }
+
+        Object.assign(core, {
+            AI_PROVIDER_POLICIES: PROVIDER_POLICIES,
+            createCredentialVault,
+            createIndexedDbCredentialStore,
+            createUserscriptCredentialVault,
+            normalizeAiProvider: normalizeProvider,
+            validateAiProviderEndpoint: validateProviderEndpoint
+        });
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = {
+                PROVIDER_POLICIES,
+                createCredentialVault,
+                createIndexedDbCredentialStore,
+                createUserscriptCredentialVault,
+                normalizeProvider,
+                validateProviderEndpoint
+            };
+        }
+    })();
+
+    // ── bundled module: extension/core/userscript-ai-summary.js ──
+    (() => {
+        'use strict';
+
+        const root = globalThis;
+        const core = root.YTKitCore || (root.YTKitCore = {});
+        if (core.createUserscriptAiSummaryFeature) return;
+
+        function createUserscriptAiSummaryFeature(options = {}) {
+            const doc = options.document || root.document;
+            const getSettings = options.getSettings;
+            const getVideoId = options.getVideoId;
+            const transcriptService = options.transcriptService;
+            const addNavigateRule = options.addNavigateRule;
+            const removeNavigateRule = options.removeNavigateRule;
+            const injectStyle = options.injectStyle;
+            const showToast = options.showToast || (() => {});
+            const request = options.request || root.GM_xmlhttpRequest || root.GM?.xmlHttpRequest;
+            const vault = core.createUserscriptCredentialVault?.(options.credentialStore || {});
+
+            if (!doc || typeof getSettings !== 'function' || typeof getVideoId !== 'function'
+                || !transcriptService || !vault || typeof request !== 'function') {
+                throw new Error('Userscript AI Summary dependencies are unavailable.');
+            }
+
+            function providerRequest(settings, prompt) {
+                const provider = settings.aiSummaryProvider || 'openai';
+                const policies = core.AI_PROVIDER_POLICIES || {};
+                const knownDefaults = new Set(Object.values(policies).map((policy) => policy?.defaultEndpoint).filter(Boolean));
+                const configuredEndpoint = knownDefaults.has(settings.aiSummaryEndpoint)
+                    ? policies[provider]?.defaultEndpoint
+                    : settings.aiSummaryEndpoint;
+                const validated = core.validateAiProviderEndpoint(provider, configuredEndpoint);
+                const payload = provider === 'gemini'
+                    ? { contents: [{ parts: [{ text: prompt }] }] }
+                    : provider === 'anthropic'
+                        ? {
+                            model: settings.aiSummaryModel || 'claude-haiku-4-5-20251001',
+                            max_tokens: 800,
+                            messages: [{ role: 'user', content: prompt }]
+                        }
+                        : {
+                            model: settings.aiSummaryModel,
+                            max_tokens: 800,
+                            messages: [{ role: 'user', content: prompt }]
+                        };
+                return { provider, validated, payload };
+            }
+
+            function requestJson(details, credential) {
+                return new Promise((resolve, reject) => {
+                    let settled = false;
+                    const finish = (fn, value) => {
+                        if (settled) return;
+                        settled = true;
+                        fn(value);
+                    };
+                    const requestDetails = {
+                        method: 'POST',
+                        url: details.validated.url,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(credential && details.validated.policy.credentialHeader
+                                ? { [details.validated.policy.credentialHeader]: details.validated.policy.credentialPrefix + credential }
+                                : {}),
+                            ...(details.provider === 'anthropic' ? { 'anthropic-version': '2023-06-01' } : {})
+                        },
+                        data: JSON.stringify(details.payload),
+                        timeout: details.provider === 'ollama' ? 300000 : 60000,
+                        anonymous: true,
+                        onload(response) {
+                            const text = String(response?.responseText || '');
+                            if (text.length > 2 * 1024 * 1024) {
+                                finish(reject, new Error('AI response is too large.'));
+                                return;
+                            }
+                            if (credential && text.includes(credential)) {
+                                finish(reject, new Error('AI provider response contained credential material and was blocked.'));
+                                return;
+                            }
+                            if (!response || response.status < 200 || response.status >= 300) {
+                                finish(reject, new Error(`AI provider rejected the request (HTTP ${response?.status || 0}).`));
+                                return;
+                            }
+                            try { finish(resolve, JSON.parse(text)); }
+                            catch (_) { finish(reject, new Error('AI provider returned invalid JSON.')); }
+                        },
+                        onerror() { finish(reject, new Error('AI provider request failed.')); },
+                        ontimeout() { finish(reject, new Error('AI provider request timed out.')); }
+                    };
+                    try {
+                        const maybePromise = request(requestDetails);
+                        if (maybePromise && typeof maybePromise.then === 'function') {
+                            maybePromise.then(requestDetails.onload, requestDetails.onerror);
+                        }
+                    } catch (error) {
+                        finish(reject, error);
+                    }
+                });
+            }
+
+            async function fetchTranscript() {
+                const videoId = getVideoId();
+                if (!videoId) throw new Error('No video ID found.');
+                const trackData = await transcriptService._getCaptionTracks(videoId);
+                if (!trackData?.tracks?.length) throw new Error('No captions are available for this video.');
+                const track = transcriptService._selectBestTrack(trackData.tracks);
+                const segments = await transcriptService._fetchTranscriptContent(track.baseUrl);
+                const transcript = (segments || []).map((segment) => segment?.text || '').filter(Boolean).join(' ');
+                if (!transcript) throw new Error('The transcript was empty.');
+                return { videoId, transcript };
+            }
+
+            function manageCredential(provider, required = false) {
+                if (provider === 'ollama') return Promise.resolve('');
+                return vault.status(provider).then((state) => new Promise((resolve, reject) => {
+                    const previousFocus = doc.activeElement;
+                    const shell = doc.createElement('div');
+                    shell.className = 'ytkit-us-ai-credential-shell';
+                    shell.setAttribute('role', 'dialog');
+                    shell.setAttribute('aria-modal', 'true');
+                    shell.setAttribute('aria-labelledby', 'ytkit-us-ai-credential-title');
+                    const form = doc.createElement('form');
+                    form.className = 'ytkit-us-ai-credential-card';
+                    const title = doc.createElement('h3');
+                    title.id = 'ytkit-us-ai-credential-title';
+                    title.textContent = `${provider[0].toUpperCase()}${provider.slice(1)} credential`;
+                    const note = doc.createElement('p');
+                    note.textContent = state.configured
+                        ? 'A credential is configured. Enter a new value to replace it; the stored value is never shown.'
+                        : 'Stored only in your userscript manager, outside Astra Deck settings and exports.';
+                    const label = doc.createElement('label');
+                    label.htmlFor = 'ytkit-us-ai-credential-input';
+                    label.textContent = 'New credential';
+                    const input = doc.createElement('input');
+                    input.id = 'ytkit-us-ai-credential-input';
+                    input.type = 'password';
+                    input.autocomplete = 'new-password';
+                    input.maxLength = 4096;
+                    input.required = true;
+                    input.value = '';
+                    const actions = doc.createElement('div');
+                    actions.className = 'ytkit-us-ai-credential-actions';
+                    const save = doc.createElement('button');
+                    save.type = 'submit';
+                    save.textContent = state.configured ? 'Replace' : 'Save';
+                    const remove = doc.createElement('button');
+                    remove.type = 'button';
+                    remove.textContent = 'Delete';
+                    remove.disabled = !state.configured;
+                    const cancel = doc.createElement('button');
+                    cancel.type = 'button';
+                    cancel.textContent = 'Cancel';
+                    actions.append(save, remove, cancel);
+                    form.append(title, note, label, input, actions);
+                    shell.appendChild(form);
+                    doc.body.appendChild(shell);
+
+                    let settled = false;
+                    const finish = (value, error) => {
+                        if (settled) return;
+                        settled = true;
+                        shell.remove();
+                        try { previousFocus?.focus?.({ preventScroll: true }); } catch (_) { /* reason: prior control may be detached */ }
+                        if (error) reject(error); else resolve(value);
+                    };
+                    input.addEventListener('input', () => input.setCustomValidity(''));
+                    form.addEventListener('submit', (event) => {
+                        event.preventDefault();
+                        save.disabled = true;
+                        void vault.set(provider, input.value).then(
+                            () => finish(input.value),
+                            (error) => { save.disabled = false; input.setCustomValidity(error.message); input.reportValidity(); }
+                        );
+                    });
+                    remove.addEventListener('click', () => {
+                        remove.disabled = true;
+                        void vault.remove(provider).then(
+                            () => finish(''),
+                            (error) => { remove.disabled = false; input.setCustomValidity(error.message); input.reportValidity(); }
+                        );
+                    });
+                    cancel.addEventListener('click', () => finish('', required ? new Error(`No ${provider} credential is configured.`) : null));
+                    shell.addEventListener('keydown', (event) => {
+                        if (event.key !== 'Escape') return;
+                        event.preventDefault();
+                        finish('', required ? new Error(`No ${provider} credential is configured.`) : null);
+                    });
+                    input.focus({ preventScroll: true });
+                }));
+            }
+
+            return {
+                id: 'aiVideoSummary',
+                name: 'AI Video Summary',
+                description: 'Summarize the current transcript with a userscript-manager-isolated provider credential',
+                group: 'Watch Page',
+                icon: 'sparkles',
+                pages: [options.watchPage || 'watch'],
+                _button: null,
+                _panel: null,
+                _style: null,
+                _rule: null,
+                _timer: null,
+                async _call(prompt) {
+                    const details = providerRequest(getSettings() || {}, prompt);
+                    let credential = await vault.get(details.provider);
+                    if (details.provider !== 'ollama' && !credential) {
+                        credential = await manageCredential(details.provider, true);
+                    }
+                    const data = await requestJson(details, credential);
+                    if (details.provider === 'gemini') return data?.candidates?.[0]?.content?.parts?.[0]?.text || '[no content]';
+                    if (details.provider === 'anthropic') return data?.content?.[0]?.text || '[no content]';
+                    return data?.choices?.[0]?.message?.content || '[no content]';
+                },
+                _showPanel(text, tone = 'normal') {
+                    this._panel?.remove();
+                    const panel = doc.createElement('section');
+                    panel.className = 'ytkit-us-ai-panel';
+                    panel.setAttribute('role', 'dialog');
+                    panel.setAttribute('aria-label', 'AI video summary');
+                    const close = doc.createElement('button');
+                    close.type = 'button';
+                    close.className = 'ytkit-us-ai-close';
+                    close.setAttribute('aria-label', 'Close AI summary');
+                    close.textContent = '×';
+                    close.addEventListener('click', () => { panel.remove(); this._panel = null; });
+                    const body = doc.createElement('div');
+                    body.className = `ytkit-us-ai-body ytkit-us-ai-${tone}`;
+                    body.textContent = text;
+                    panel.append(close, body);
+                    doc.body.appendChild(panel);
+                    this._panel = panel;
+                },
+                async _run() {
+                    this._showPanel('Fetching transcript…');
+                    try {
+                        const { videoId, transcript } = await fetchTranscript();
+                        this._showPanel('Calling AI provider…');
+                        const title = doc.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || '(video)';
+                        const prompt = `Summarize this YouTube video transcript in 5-8 bullet points, then add a one-line TL;DR at the end.\n\nTitle: ${title}\nURL: https://youtu.be/${videoId}\n\nTranscript:\n${transcript.slice(0, 120000)}`;
+                        this._showPanel(await this._call(prompt));
+                    } catch (error) {
+                        this._showPanel(error?.message || 'AI summary failed.', 'error');
+                    }
+                },
+                _inject() {
+                    const controls = doc.querySelector('.ytp-right-controls');
+                    if (!controls || controls.querySelector('.ytkit-us-ai-button')) return;
+                    const button = doc.createElement('button');
+                    button.type = 'button';
+                    button.className = 'ytp-button ytkit-us-ai-button';
+                    button.title = 'AI Summary (right-click to manage the provider credential)';
+                    button.setAttribute('aria-label', 'AI Summary');
+                    button.textContent = '✦';
+                    button.addEventListener('click', (event) => { event.stopPropagation(); void this._run(); });
+                    button.addEventListener('contextmenu', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const provider = getSettings()?.aiSummaryProvider || 'openai';
+                        void manageCredential(provider).then(
+                            () => showToast('AI credential updated', '#22c55e'),
+                            (error) => showToast(error.message || 'AI credential update failed', '#ef4444')
+                        );
+                    });
+                    controls.insertBefore(button, controls.firstChild);
+                    this._button = button;
+                },
+                init() {
+                    this._style = injectStyle(`
+                        .ytkit-us-ai-panel{position:fixed;top:80px;right:20px;z-index:2147483647;width:min(420px,calc(100vw - 40px));max-height:70vh;overflow:auto;box-sizing:border-box;padding:18px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 12px 44px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui;white-space:pre-wrap}.ytkit-us-ai-close{float:right;min-width:36px;min-height:36px;border:0;background:transparent;color:#cdd6f4;font-size:22px;cursor:pointer}.ytkit-us-ai-error{color:#fca5a5}.ytkit-us-ai-credential-shell{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.7)}.ytkit-us-ai-credential-card{width:min(420px,calc(100vw - 40px));box-sizing:border-box;padding:20px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 16px 56px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}.ytkit-us-ai-credential-card h3{margin:0 0 8px}.ytkit-us-ai-credential-card p{color:#bac2de}.ytkit-us-ai-credential-card label{display:block;margin:12px 0 5px;font-weight:600}.ytkit-us-ai-credential-card input{box-sizing:border-box;width:100%;min-height:40px;padding:8px;border:1px solid #585b70;border-radius:7px;background:#11111b;color:#cdd6f4}.ytkit-us-ai-credential-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.ytkit-us-ai-credential-actions button{min-height:38px;padding:7px 14px}.ytkit-us-ai-panel :focus-visible,.ytkit-us-ai-credential-card :focus-visible{outline:3px solid #89b4fa;outline-offset:2px}@media(prefers-reduced-motion:reduce){.ytkit-us-ai-panel,.ytkit-us-ai-credential-card{scroll-behavior:auto}}`, 'userscript-ai-summary', true);
+                    this._timer = setTimeout(() => { this._timer = null; this._inject(); }, 1500);
+                    this._rule = () => {
+                        this._button = null;
+                        clearTimeout(this._timer);
+                        this._timer = setTimeout(() => { this._timer = null; this._inject(); }, 1200);
+                    };
+                    addNavigateRule('userscriptAiSummary', this._rule);
+                },
+                destroy() {
+                    clearTimeout(this._timer);
+                    this._timer = null;
+                    removeNavigateRule('userscriptAiSummary');
+                    this._button?.remove();
+                    this._panel?.remove();
+                    this._style?.remove();
+                    this._button = this._panel = this._style = null;
+                }
+            };
+        }
+
+        core.createUserscriptAiSummaryFeature = createUserscriptAiSummaryFeature;
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = { createUserscriptAiSummaryFeature };
+        }
+    })();
+
     // ── bundled module: extension/core/external-api-health.js ──
     (() => {
         'use strict';
@@ -2655,7 +3245,7 @@
             Object.freeze({
                 origin: 'http://127.0.0.1:11434',
                 purpose: 'Local Ollama runtime for offline AI summaries.',
-                requiredByFeatures: ['localAiSummary'],
+                requiredByFeatures: ['aiVideoSummary'],
                 credentialsPolicy: 'local-loopback',
                 profile: 'github-full',
                 hostGrant: 'required',
@@ -2738,10 +3328,10 @@
             downloadAudioFormat: 'showLocalDownloadButton',
             // Cobalt fallback sub-knobs
             downloadCobaltInstance: 'downloadCobaltFallback',
-            // AI summary sub-knobs (provider/model/endpoint/key)
+            // AI summary sub-knobs. Credentials are background-owned and never
+            // appear in the content-script settings schema.
             aiSummaryEndpoint: 'aiVideoSummary',
             aiSummaryModel: 'aiVideoSummary',
-            aiSummaryApiKey: 'aiVideoSummary',
             aiSummaryProvider: 'aiVideoSummary',
             // subscriptionAiTags is intentionally NOT mapped: per the schema
             // description it uses Chrome's built-in Summarizer (no remote
@@ -24272,6 +24862,17 @@
     };
 
     const features = [
+        globalThis.YTKitCore.createUserscriptAiSummaryFeature({
+            getSettings: () => appState.settings,
+            getVideoId,
+            transcriptService: TranscriptService,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            showToast,
+            request: (details) => GM_xmlhttpRequest(details),
+            watchPage: PageTypes.WATCH
+        }),
         // ─── Interface ───
         cssFeature('hideCreateButton', 'Hide Create Button', 'Remove the "Create" button from the header toolbar', 'Home / Subscriptions', 'plus-circle',
             'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])'),

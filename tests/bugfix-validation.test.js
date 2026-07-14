@@ -1492,8 +1492,10 @@ test('settings profiles expose safe store and full GitHub profile models', () =>
 
     assert.ok(source.includes('function createSettingsProfileSnapshot('),
         'profile snapshot creation should be centralized');
-    assert.ok(source.includes("'aiSummaryApiKey'"),
-        'API keys must be excluded from every profile mode');
+    assert.ok(!Object.hasOwn(defaults, 'aiSummaryApiKey'),
+        'API keys must stay outside ordinary profile settings');
+    assert.match(source, /RETIRED_SETTING_KEYS[\s\S]*?'aiSummaryApiKey'/,
+        'legacy API-key settings must be retired during profile import');
     assert.ok(source.includes("'advancedLocalPredicateCode'"),
         'advanced local code should be explicitly modeled as unsafe for store profiles');
     assert.ok(source.includes('exportSafeStoreJson()'),

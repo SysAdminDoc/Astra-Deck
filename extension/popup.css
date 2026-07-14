@@ -1864,6 +1864,102 @@ body {
   font-style: italic;
 }
 
+/* Credentials are managed separately from the schema-driven settings UI.
+   Password values are write-only; the status chip exposes only configured /
+   remembered state returned by the background-owned vault. */
+.ai-credential-manager {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+}
+
+.ai-credential-manager[hidden] { display: none; }
+
+.ai-credential-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ai-credential-title {
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.ai-credential-note {
+  margin: 3px 0 0;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.ai-credential-status {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ai-credential-fields {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+}
+
+.ai-credential-fields select,
+.ai-credential-fields input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.ai-credential-fields input { padding: 7px 9px; }
+
+.ai-credential-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ai-credential-actions button { min-height: 36px; }
+
+.ai-credential-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.ai-credential-remember input { width: 16px; height: 16px; }
+
+.ai-credential-manager :focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 420px) {
+  .ai-credential-fields { grid-template-columns: 1fr; gap: 5px; }
+  .ai-credential-fields label:not(:first-child) { margin-top: 5px; }
+  .ai-credential-actions { align-items: stretch; }
+  .ai-credential-remember { width: 100%; }
+}
+
 /* ── Main Action (CTA) ── */
 
 .main-action { margin: 0; }

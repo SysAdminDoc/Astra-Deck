@@ -3190,11 +3190,11 @@ test('reactionSpammer defaults to false in both ytkit.js source and the generate
     );
 });
 
-test('SETTINGS_VERSION is 7 and migration 7 force-resets reactionSpammer to false', () => {
+test('SETTINGS_VERSION is 8 and migration 7 force-resets reactionSpammer to false', () => {
     assert.match(
         ytkitSource,
-        /SETTINGS_VERSION:\s*7,/,
-        'ytkit.js settingsManager must declare SETTINGS_VERSION: 7',
+        /SETTINGS_VERSION:\s*8,/,
+        'ytkit.js settingsManager must declare SETTINGS_VERSION: 8',
     );
     // The v7 migration must reset reactionSpammer to false and reset the
     // ack flag so the warning toast re-fires on the next opt-in.
@@ -5202,10 +5202,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // v4.49.0 Wave 11 userscript ingestion added the Guide-element manager (bool +
     // array) plus hideOwnAvatar/hideSearchSidebar/removeScrubber/softBottomGradient/
     // hideCommentComposer/hideCommentReplyButton and the uiFontSize number (399 → 408).
+    // aiSummaryApiKey then moved out of ordinary settings into credential
+    // vaults, so the canonical schema intentionally returned to 407.
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 408,
-        'SETTINGS_SCHEMA must cover all 408 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 407,
+        'SETTINGS_SCHEMA must cover all 407 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -5604,8 +5606,8 @@ test('v5.0.0 policy-profile: github-full export still scrubs credential-shaped s
     const pp = core.createPolicyProfile();
     const { SETTINGS_SCHEMA } = settingsSchemaModule;
     const credentialEntries = SETTINGS_SCHEMA.filter((entry) => schemaKeyLooksCredentialBearing(entry.key));
-    assert.ok(credentialEntries.some((entry) => entry.key === 'aiSummaryApiKey'),
-        'live schema credential coverage must include the BYO AI key');
+    assert.ok(!SETTINGS_SCHEMA.some((entry) => entry.key === 'aiSummaryApiKey'),
+        'the BYO AI key must not be exposed through the ordinary settings schema');
 
     const input = {};
     for (const entry of SETTINGS_SCHEMA) {
@@ -7058,6 +7060,8 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
         'extension/core/settings-controller.js',
+        'extension/core/credential-vault.js',
+        'extension/core/userscript-ai-summary.js',
         'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
         'extension/core/data-flow.js',
@@ -11134,8 +11138,9 @@ test('v4.47.0 — schema-overview rows for credential-bearing keys carry an inli
         assert.ok(redactKeys.has(trustKey),
             `${trustKey} must also be in BUG_REPORT_REDACTED_KEYS so the chip's "redacted from bundle" claim is true`);
     }
-    // Each of the well-known BYO-key fields must carry the trust chip.
-    for (const required of ["'aiSummaryApiKey'", "'aiSummaryEndpoint'"]) {
+    // The editable endpoint remains local-only; the credential itself no
+    // longer has a schema row because it is managed by the worker vault.
+    for (const required of ["'aiSummaryEndpoint'"]) {
         assert.ok(trustKeys.includes(required),
             `${required} must be in TRUST_SIGNAL_LOCAL_ONLY_KEYS so the trust chip surfaces on its row`);
     }

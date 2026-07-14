@@ -488,7 +488,6 @@
   "aiVideoSummary": false,
   "aiSummaryEndpoint": "https://api.openai.com/v1/chat/completions",
   "aiSummaryModel": "gpt-4o-mini",
-  "aiSummaryApiKey": "",
   "aiSummaryProvider": "openai",
   "copyChapterMarkdown": false,
   "chapterJumpButtons": false,
