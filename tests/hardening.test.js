@@ -4965,6 +4965,24 @@ test('popup locale override is validated against the bundled allowlist', () => {
         'initI18n must short-circuit when isValidLocaleTag rejects the stored override');
 });
 
+test('in-page locale override is validated before extension URL construction', () => {
+    assert.match(ytkitSource, /const BUNDLED_LOCALE_OVERRIDES = new Set/,
+        'content script must declare the bundled locale allowlist');
+    assert.match(ytkitSource, /function isValidBundledLocaleOverride\(locale\)/,
+        'content script must validate restored locale values');
+    assert.match(ytkitSource, /BUNDLED_LOCALE_OVERRIDES\.has\(locale\)/,
+        'content-script validator must consult the bundled allowlist');
+    const loadStart = ytkitSource.indexOf('async function _loadLocaleOverride()');
+    const loadEnd = ytkitSource.indexOf('// Kick off override load early', loadStart);
+    const loadBody = ytkitSource.slice(loadStart, loadEnd);
+    assert.match(loadBody, /if \(!isValidBundledLocaleOverride\(locale\)\)/,
+        'locale must be rejected before chrome.runtime.getURL is called');
+    assert.ok(
+        loadBody.indexOf('isValidBundledLocaleOverride(locale)') < loadBody.indexOf('chrome.runtime.getURL'),
+        'allowlist check must precede extension URL construction'
+    );
+});
+
 test('PageTypes covers music, embed, and live_chat surfaces', () => {
     const pageSource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'core', 'page.js'),
