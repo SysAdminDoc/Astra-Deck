@@ -104,11 +104,41 @@ def main():
                 window.close()
                 window.deleteLater()
                 app.processEvents()
+            # Exercise the privacy-critical diagnostics review as a real modal,
+            # capture the exact preview surface, then cancel without touching
+            # the clipboard.
+            window = app_module.MainWindow(config, manager, history)
+            window._animate_page = lambda: None
+            window.show()
+            app.processEvents()
+            diagnostics_output = OUTPUT_DIR / "diagnostics-review.png"
+
+            def capture_diagnostics_dialog():
+                dialog = app.activeModalWidget()
+                if dialog is None or dialog.windowTitle() != "Review Diagnostics":
+                    raise RuntimeError("Diagnostics review dialog did not open")
+                preview = dialog.findChild(app_module.QTextEdit)
+                if preview is None or '"schemaVersion": 1' not in preview.toPlainText():
+                    raise RuntimeError("Diagnostics review does not expose the redacted payload")
+                pixmap = QPixmap(dialog.size())
+                pixmap.fill(QColor("#080a0f"))
+                dialog.render(pixmap)
+                if not pixmap.save(str(diagnostics_output), "PNG"):
+                    raise RuntimeError("Failed to save diagnostics review render")
+                dialog.reject()
+
+            QTimer.singleShot(150, capture_diagnostics_dialog)
+            window._copy_diagnostics()
+            window._force_exit = True
+            window.close()
+            window.deleteLater()
+            app.processEvents()
             app.quit()
 
         QTimer.singleShot(1200, capture)
         exit_code = app.exec()
         outputs = [OUTPUT_DIR / f"{name}.png" for name in ("dashboard", "downloads", "history", "settings")]
+        outputs.append(OUTPUT_DIR / "diagnostics-review.png")
         for output in outputs:
             if not output.exists() or output.stat().st_size < 10_000:
                 raise RuntimeError(f"Companion render is missing or unexpectedly small: {output}")
