@@ -811,12 +811,15 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertIsNone(code)
 
     def test_download_request_body_rejects_client_supplied_ytdlp_flags(self):
-        _validated, err, code = ad.validate_download_request_body({
-            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            "ytDlpArgs": ["--netrc-cmd", "calc.exe"],
-        })
-        self.assertEqual(code, "unsupported-ytdlp-flags")
-        self.assertIn("Client-supplied yt-dlp flags are not allowed", err)
+        hostile_args = ["--netrc-cmd", "calc.exe", *ad.YTDLP_FORBIDDEN_LINK_FLAGS]
+        for field in ad.DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS:
+            with self.subTest(field=field):
+                _validated, err, code = ad.validate_download_request_body({
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    field: hostile_args,
+                })
+                self.assertEqual(code, "unsupported-ytdlp-flags")
+                self.assertIn("Client-supplied yt-dlp flags are not allowed", err)
 
     def test_download_request_body_rejects_unknown_fields(self):
         _validated, err, code = ad.validate_download_request_body({
@@ -2648,6 +2651,43 @@ class EndToEndDownloadTests(unittest.TestCase):
             self.assertEqual(entry["format"], "mp4")
             self.assertFalse(entry["audioOnly"])
 
+    def test_saved_config_cannot_inject_link_file_flags_into_spawn(self):
+        captured_args = []
+        base_factory = self._make_fake_popen([], returncode=0)
+
+        def capture(args, **kwargs):
+            captured_args.append(list(args))
+            return base_factory(args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+                "ytDlpArgs": list(ad.YTDLP_FORBIDDEN_LINK_FLAGS),
+                "extraArgs": ["--write-link"],
+                "writeLink": True,
+                "--write-desktop-link": True,
+            })
+            manager = ad.DownloadManager(config, FakeHistory())
+            download = ad.Download(
+                "dl_link_policy",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir=tmpdir,
+            )
+            with mock.patch.object(ad.subprocess, 'Popen', capture), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                manager._run_download(download)
+
+        self.assertEqual(download.status, "complete")
+        self.assertEqual(len(captured_args), 1)
+        options = {
+            arg.split('=', 1)[0].casefold()
+            for arg in captured_args[0][1:]
+            if isinstance(arg, str) and arg.startswith('--')
+        }
+        self.assertTrue(options.isdisjoint(ad.YTDLP_FORBIDDEN_LINK_FLAGS))
+
     def test_completed_download_closes_subprocess_stdout(self):
         token = "z" * 32
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -2839,6 +2879,36 @@ class EndToEndDownloadTests(unittest.TestCase):
                     self.assertEqual(leftovers, [],
                         "cookie jar file must be unlinked after the orphan is killed")
                     self.assertEqual(len(history.entries), 0)
+
+
+class YtDlpLinkFilePolicyTests(unittest.TestCase):
+    """Defense in depth for CVE-2026-55404 shortcut-file output."""
+
+    def test_process_boundary_rejects_link_flags_and_abbreviations(self):
+        hostile_options = {
+            *ad.YTDLP_FORBIDDEN_LINK_FLAGS,
+            '--write-l',
+            '--write-u',
+            '--write-d',
+            '--write-w',
+        }
+        for option in hostile_options:
+            for suffix in ('', '=true'):
+                with self.subTest(option=option, suffix=suffix), \
+                     mock.patch.object(ad.subprocess, 'Popen') as popen:
+                    with self.assertRaisesRegex(ValueError, 'link-file output flag'):
+                        ad.spawn_ytdlp(['yt-dlp.exe', option + suffix, 'https://example.test'])
+                    popen.assert_not_called()
+
+    def test_process_boundary_allows_reviewed_download_args(self):
+        sentinel = object()
+        with mock.patch.object(ad.subprocess, 'Popen', return_value=sentinel) as popen:
+            result = ad.spawn_ytdlp([
+                'yt-dlp.exe', '--write-subs', '--no-playlist',
+                'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            ], text=True)
+        self.assertIs(result, sentinel)
+        popen.assert_called_once()
 
 
 class Aria2cExternalDownloaderBanTests(unittest.TestCase):

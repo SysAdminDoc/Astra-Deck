@@ -292,6 +292,36 @@ DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
     'ytdlpArgs',
     'yt_dlp_args',
 })
+YTDLP_FORBIDDEN_LINK_FLAGS = frozenset({
+    '--write-link',
+    '--write-url-link',
+    '--write-desktop-link',
+    '--write-webloc-link',
+})
+
+
+def validate_ytdlp_spawn_args(args):
+    """Fail closed if a shortcut-writing flag reaches the process boundary.
+
+    Request fields and persisted settings are allowlisted earlier, but this
+    final guard also catches future builder regressions and yt-dlp's accepted
+    long-option abbreviations. These flags create files from remote metadata
+    and were the affected surface in CVE-2026-55404.
+    """
+    safe_args = list(args)
+    for raw_arg in safe_args[1:]:
+        if not isinstance(raw_arg, str):
+            continue
+        option = raw_arg.strip().split('=', 1)[0].casefold()
+        if option.startswith('--') and any(
+                forbidden.startswith(option) for forbidden in YTDLP_FORBIDDEN_LINK_FLAGS):
+            raise ValueError('Refusing unsafe yt-dlp link-file output flag.')
+    return safe_args
+
+
+def spawn_ytdlp(args, **kwargs):
+    """Launch yt-dlp only after applying final process-boundary policy."""
+    return subprocess.Popen(validate_ytdlp_spawn_args(args), **kwargs)
 
 
 def write_persistent_log(message, path=LOG_PATH):
@@ -3430,7 +3460,7 @@ class DownloadManager(QObject):
         watchdog_killed = {'value': None}
         try:
             env = _build_subprocess_env()
-            proc = subprocess.Popen(
+            proc = spawn_ytdlp(
                 args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding='utf-8', errors='replace', bufsize=1,
                 creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
@@ -3604,7 +3634,7 @@ class DownloadManager(QObject):
                             pass
                         activity['at'] = time.monotonic()
                         stop_watchdog = threading.Event()
-                        proc = subprocess.Popen(
+                        proc = spawn_ytdlp(
                             retry_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, encoding='utf-8', errors='replace', bufsize=1,
                             creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
@@ -4624,7 +4654,7 @@ class SetupWorker(QThread):
             if self.auto_update_ytdlp:
                 self.log.emit("Updating yt-dlp...")
                 try:
-                    subprocess.Popen([str(YTDLP_PATH), '-U'],
+                    spawn_ytdlp([str(YTDLP_PATH), '-U'],
                                      creationflags=CREATE_NO_WINDOW)
                 except Exception as e:
                     write_persistent_log(f"yt-dlp -U launch failed during setup: {e}")
