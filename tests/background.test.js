@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { createSettingsMutationController } = require('../extension/core/settings-controller');
 
 const repoRoot = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
@@ -13,9 +14,11 @@ function loadBackground({
     fetchImpl,
     downloadsDownloadImpl,
     optionalHostPermissions = [],
-    permissionsContainsImpl
+    permissionsContainsImpl,
+    initialSettings = {}
 } = {}) {
     let messageListener = null;
+    let settingsState = { ...initialSettings };
     const chrome = {
         commands: {
             onCommand: {
@@ -28,6 +31,7 @@ function loadBackground({
             create: async () => ({ id: 1 })
         },
         runtime: {
+            id: 'astra-test-extension',
             lastError: null,
             getManifest: () => ({ optional_host_permissions: optionalHostPermissions }),
             openOptionsPage: async () => {},
@@ -46,6 +50,16 @@ function loadBackground({
         },
         cookies: {
             getAll: async () => []
+        },
+        storage: {
+            local: {
+                async get(key) {
+                    return { [key]: settingsState };
+                },
+                async set(entries) {
+                    if (entries.ytSuiteSettings) settingsState = { ...entries.ytSuiteSettings };
+                }
+            }
         }
     };
 
@@ -68,6 +82,7 @@ function loadBackground({
             headers: { 'content-length': '0' }
         })),
         globalThis: null,
+        YTKitCore: { createSettingsMutationController },
         setTimeout
     };
     context.globalThis = context;
@@ -75,10 +90,13 @@ function loadBackground({
     vm.createContext(context);
     vm.runInContext(backgroundSource, context, { filename: 'extension/background.js' });
 
-    return { chrome, context, messageListener };
+    return { chrome, context, messageListener, getSettings: () => settingsState };
 }
 
-function dispatchMessage(listener, message, sender = { tab: { id: 9, windowId: 1, index: 0 } }) {
+function dispatchMessage(listener, message, sender = {
+    id: 'astra-test-extension',
+    tab: { id: 9, windowId: 1, index: 0 }
+}) {
     return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => reject(new Error('Timed out waiting for sendResponse')), 1000);
         const sendResponse = (response) => {
@@ -94,6 +112,52 @@ function dispatchMessage(listener, message, sender = { tab: { id: 9, windowId: 1
         }
     });
 }
+
+test('background serializes schema-aware setting mutations behind one message contract', async () => {
+    const { messageListener, getSettings } = loadBackground({
+        initialSettings: { safeStoreProfile: true, githubFullProfile: false, removeAllShorts: false }
+    });
+
+    const [saved, patched] = await Promise.all([
+        dispatchMessage(messageListener, {
+            type: 'YTKIT_MUTATE_SETTING',
+            key: 'removeAllShorts',
+            value: true,
+            source: 'popup'
+        }),
+        dispatchMessage(messageListener, {
+            type: 'YTKIT_MUTATE_SETTINGS',
+            changes: { hideCommentComposer: true },
+            source: 'in-page'
+        })
+    ]);
+    const rejected = await dispatchMessage(messageListener, {
+        type: 'YTKIT_MUTATE_SETTING',
+        key: 'notASetting',
+        value: true,
+        source: 'sidepanel'
+    });
+    const rejectedSender = await dispatchMessage(messageListener, {
+        type: 'YTKIT_MUTATE_SETTING',
+        key: 'removeAllShorts',
+        value: false,
+        source: 'external'
+    }, { id: 'another-extension' });
+
+    assert.equal(saved.ok, true);
+    assert.equal(saved.persisted, true);
+    assert.equal(saved.previous, false);
+    assert.equal(saved.value, true);
+    assert.equal(patched.ok, true);
+    assert.equal(getSettings().removeAllShorts, true);
+    assert.equal(getSettings().hideCommentComposer, true);
+    assert.equal(rejected.ok, false);
+    assert.equal(rejected.persisted, false);
+    assert.equal(rejected.error.code, 'UNKNOWN_SETTING');
+    assert.equal(rejectedSender.error, 'Sender rejected.');
+    assert.equal(getSettings().notASetting, undefined);
+    assert.equal(getSettings().removeAllShorts, true);
+});
 
 test('background EXT_FETCH preserves empty-string request bodies', async () => {
     let capturedOptions = null;

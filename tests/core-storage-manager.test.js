@@ -117,6 +117,18 @@ test('consumeLocalEcho returns true exactly once for a recently written value', 
     assert.equal(cache.consumeLocalEcho('k', { x: 1 }), false, 'echo should be consumed');
 });
 
+test('consumeLocalEcho retains multiple queued snapshots for the same key', () => {
+    const factory = loadFactoryIntoFreshGlobal();
+    const cache = factory({});
+    cache._rememberLocalWrite('settings', { toggle: true });
+    cache._rememberLocalWrite('settings', { toggle: false });
+
+    assert.equal(cache.consumeLocalEcho('settings', { toggle: true }), true);
+    assert.equal(cache.consumeLocalEcho('settings', { toggle: false }), true);
+    assert.equal(cache.consumeLocalEcho('settings', { toggle: true }), false);
+    assert.equal(cache._recentLocalWrites.has('settings'), false);
+});
+
 test('syncFromExternal updates cache without marking dirty (avoids write-back loop)', () => {
     const factory = loadFactoryIntoFreshGlobal();
     const cache = factory({});

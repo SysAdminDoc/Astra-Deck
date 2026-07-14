@@ -73,21 +73,37 @@
 
             _rememberLocalWrite(key, value) {
                 const serialized = this._serialize(value);
-                this._recentLocalWrites.set(key, serialized);
+                let values = this._recentLocalWrites.get(key);
+                if (!values) {
+                    values = new Map();
+                    this._recentLocalWrites.set(key, values);
+                }
+                let tokens = values.get(serialized);
+                if (!tokens) {
+                    tokens = new Set();
+                    values.set(serialized, tokens);
+                }
+                const token = {};
+                tokens.add(token);
                 setTimeout(() => {
-                    if (this._recentLocalWrites.get(key) === serialized) {
-                        this._recentLocalWrites.delete(key);
-                    }
+                    const activeValues = this._recentLocalWrites.get(key);
+                    const activeTokens = activeValues?.get(serialized);
+                    if (!activeTokens?.delete(token)) return;
+                    if (activeTokens.size === 0) activeValues.delete(serialized);
+                    if (activeValues.size === 0) this._recentLocalWrites.delete(key);
                 }, echoTtlMs);
             },
 
             consumeLocalEcho(key, value) {
                 const serialized = this._serialize(value);
-                if (this._recentLocalWrites.get(key) === serialized) {
-                    this._recentLocalWrites.delete(key);
-                    return true;
-                }
-                return false;
+                const values = this._recentLocalWrites.get(key);
+                const tokens = values?.get(serialized);
+                if (!tokens?.size) return false;
+                const token = tokens.values().next().value;
+                tokens.delete(token);
+                if (tokens.size === 0) values.delete(serialized);
+                if (values.size === 0) this._recentLocalWrites.delete(key);
+                return true;
             },
 
             get(key, defaultVal = null) {

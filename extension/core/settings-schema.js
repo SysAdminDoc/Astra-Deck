@@ -898,8 +898,8 @@ if (typeof module !== "undefined" && module.exports) {
         humanizeSettingKey
     };
 }
-if (typeof window !== "undefined") {
-    window.__YTKIT_SETTINGS_SCHEMA__ = {
+if (typeof globalThis !== "undefined") {
+    globalThis.__YTKIT_SETTINGS_SCHEMA__ = {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         CAPABILITIES,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,

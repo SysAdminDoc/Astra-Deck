@@ -156,7 +156,12 @@ test('popup import stages a session undo snapshot before applying backup data', 
         'importSettings block must be found');
     const importBlock = popupSource.slice(importStart, importEnd);
     const snapshotPos = importBlock.indexOf('writeImportSnapshot(snapshot)');
-    const applyPos = importBlock.indexOf('chrome.storage.local.set(writes)');
+    const settingApplyPos = importBlock.indexOf('replaceSettings(importedSettingsToApply)');
+    const otherApplyPos = importBlock.indexOf('storageSet(nonSettingWrites)');
+    const applyPos = Math.min(
+        settingApplyPos > -1 ? settingApplyPos : Number.MAX_SAFE_INTEGER,
+        otherApplyPos > -1 ? otherApplyPos : Number.MAX_SAFE_INTEGER
+    );
     assert.ok(snapshotPos > -1 && applyPos > -1 && snapshotPos < applyPos,
         'importSettings must stage the undo snapshot before writing imported data');
     assert.match(importBlock, /restoreLocalStorageSnapshot\(snapshot\)/,

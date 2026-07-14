@@ -40,6 +40,11 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
+const settingsControllerSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'core', 'settings-controller.js'),
+    'utf8'
+);
+
 const settingsPanelSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'),
     'utf8'
@@ -661,27 +666,28 @@ test('crash-loop guard keeps an in-memory fallback when localStorage is denied',
 
 // ── v3.16+ Audit Pass: popup.js serializes toggle writes ──
 
-test('popup.js serializes toggle writes to avoid read-merge-write race', () => {
-    // The fix chains every writeSetting() call onto a shared promise so two
-    // rapid toggle clicks can't both read pre-write storage and clobber each
-    // other's update.
-    assert.match(
-        popupSource,
-        /_pendingWriteChain/,
-        'popup.js must serialize writeSetting() via a pending-write chain'
-    );
-    // The write must merge inside the serialized _pendingWriteChain. The chain
-    // is what prevents the within-popup race (each chained task runs only after
-    // the prior write resolves), so the merge reads fresh storage there rather
-    // than the in-memory cache — that also stops the popup from clobbering a
-    // concurrent sidepanel write to the same ytSuiteSettings object when both
-    // surfaces are open.
+test('all settings surfaces serialize mutations through the background controller', () => {
     const fnStart = popupSource.indexOf('async function writeSetting');
     assert.ok(fnStart > -1, 'writeSetting must exist');
     const fnBody = popupSource.slice(fnStart, fnStart + 1400);
-    assert.match(fnBody, /_pendingWriteChain\.catch[\s\S]*await\s+storageGet\s*\(/,
-        'writeSetting must re-read storage inside the serialized pending-write chain');
-    assert.match(fnBody, /\.\.\.\s*current/, 'writeSetting must merge the new key onto the fresh read');
+    assert.match(fnBody, /getSettingsMutationController\(\)\.mutate\(key, value\)/,
+        'popup writes must call the shared mutation contract');
+    assert.match(settingsControllerSource, /const task = chain\.catch\(\(\) => undefined\)\.then\(operation\)/,
+        'the shared controller must serialize each read-validate-write transaction');
+    assert.match(backgroundSource, /YTKIT_MUTATE_SETTING[\s\S]*_settingsMutationController\.mutate/,
+        'the service worker must own the authoritative mutation queue');
+    assert.match(ytkitSource, /controller\.mutateMany\(changes\)/,
+        'the in-page surface must patch only changed keys through the shared queue');
+    assert.match(backgroundSource, /YTKIT_MUTATE_SETTINGS[\s\S]*_settingsMutationController\.mutateMany/,
+        'the service worker must merge multi-key patches against fresh persisted state');
+    const liveMutationHandler = ytkitSource.slice(
+        ytkitSource.indexOf("message.type === 'YTKIT_SETTING_CHANGED'"),
+        ytkitSource.indexOf("message.type === 'YTKIT_SETTING_CHANGED'") + 1000
+    );
+    assert.doesNotMatch(liveMutationHandler, /settingsManager\.save/,
+        'a background-persisted live setting must not be written back by each receiving tab');
+    assert.match(settingsControllerSource, /previous:[\s\S]*value:[\s\S]*settings:/,
+        'the stable mutation result must carry persisted, previous, and rollback state');
 });
 
 test('popup.js requests declared optional hosts before enabling optional features', () => {
@@ -730,8 +736,8 @@ test('popup.js requests declared optional hosts before enabling optional feature
     assert.match(fnBody, /await requestOptionalHostsForSetting\(key, value\)/,
         'writeSetting must request optional hosts before persisting enabled state');
     assert.ok(
-        fnBody.indexOf('requestOptionalHostsForSetting') < fnBody.indexOf('storageSet'),
-        'optional host request must happen before storageSet persists the feature as enabled'
+        fnBody.indexOf('requestOptionalHostsForSetting') < fnBody.indexOf('.mutate(key, value)'),
+        'optional host request must happen before the background mutation persists enabled state'
     );
     assert.match(fnBody, /await refreshOptionalHostGrantState\(\{\s*render:\s*false\s*\}\)/,
         'writeSetting must refresh optional grant state immediately after successful storage writes');
@@ -7051,6 +7057,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
+        'extension/core/settings-controller.js',
         'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
         'extension/core/data-flow.js',
