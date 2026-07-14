@@ -433,9 +433,6 @@ function hasHeader(headers, name) {
 function normalizeRequestBody(data, headers = {}) {
     if (data == null) return null;
     if (typeof data === 'string') return data;
-    // ArrayBuffer and TypedArrays survive structured cloning through chrome.runtime messaging
-    if (data instanceof ArrayBuffer) return data;
-    if (ArrayBuffer.isView(data)) return data;
 
     const contentTypeHeader = Object.entries(headers).find(([key]) => key.toLowerCase() === 'content-type');
     const contentType = typeof contentTypeHeader?.[1] === 'string' ? contentTypeHeader[1].toLowerCase() : '';
@@ -638,6 +635,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         if (!isUrlAllowed(url)) {
             sendResponse({ error: `URL not in allowlist: ${url}` });
+            return false;
+        }
+
+        // Chrome runtime messaging JSON-serializes values instead of applying
+        // the structured-clone algorithm. ArrayBuffer/view, Blob, and FormData
+        // bodies therefore cannot cross this boundary without corruption. The
+        // content script rejects them before dispatch; keep this check here as
+        // defense in depth for Firefox and extension-page callers, where the
+        // original object can still reach the background listener.
+        const unsupportedBody = data instanceof ArrayBuffer
+            || ArrayBuffer.isView(data)
+            || data instanceof Blob
+            || data instanceof FormData;
+        if (unsupportedBody) {
+            sendResponse({
+                error: 'Binary and form-data request bodies are not supported by the extension fetch bridge. Encode the body as a string.'
+            });
             return false;
         }
 

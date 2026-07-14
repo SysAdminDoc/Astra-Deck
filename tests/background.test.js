@@ -122,6 +122,28 @@ test('background EXT_FETCH preserves empty-string request bodies', async () => {
     assert.equal(response.responseText, '');
 });
 
+test('background EXT_FETCH rejects binary bodies instead of silently corrupting them', async () => {
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://www.youtube.com/api/test',
+            data: new Uint8Array([1, 2, 3])
+        }
+    });
+
+    assert.equal(fetchCalled, false);
+    assert.match(response.error, /Binary and form-data request bodies are not supported/);
+});
+
 test('background EXT_FETCH uses manual redirect for credentialed (cookie-bearing) requests', async () => {
     let capturedOptions = null;
     const { messageListener } = loadBackground({
