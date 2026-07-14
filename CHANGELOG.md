@@ -33,6 +33,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Lazy settings styles now load on the normal module path.** The optimized
+  first-open stylesheet trigger only existed in the monolith fallback, so the
+  production settings-panel module could render the dialog centered at the
+  document origin and clip half the workspace. Both paths now ensure styles
+  before building, with retry-safe injection and dark/light/RTL/mobile smoke
+  coverage.
 - **Companion downloads now close their subprocess pipes deterministically.**
   Completed, failed, cancelled, and cookie-less retry paths explicitly close
   the `yt-dlp` stdout stream instead of leaving Windows handles for garbage

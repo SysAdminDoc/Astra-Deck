@@ -5890,6 +5890,7 @@ return response;
                 handleFileImport,
                 initFeatureLifecycle,
                 injectStyle,
+                ensurePanelStyles: injectPanelStyles,
                 isBooleanFeature,
                 liveFeatureList,
                 normalizeSelectOptions,
@@ -5981,11 +5982,18 @@ return response;
         document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
         panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
         if (open) {
-            requestAnimationFrame(() => {
+            const focusInitialControl = () => {
+                if (!isSettingsPanelOpen()) return;
                 const searchInput = document.getElementById('ytkit-search');
                 const fallbackTarget = getFocusableUiElements(panel)[0];
                 const visibleSearch = searchInput?.getClientRects().length ? searchInput : null;
                 (visibleSearch || fallbackTarget)?.focus({ preventScroll: true });
+            };
+            requestAnimationFrame(() => {
+                focusInitialControl();
+                if (!panel?.contains(document.activeElement)) {
+                    setTimeout(focusInitialControl, 50);
+                }
             });
         } else if (wasOpen) {
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
@@ -44276,7 +44284,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // on every pageview was pure dead weight (the panel is closed on 99% of
         // views). Idempotent so both the module and fallback build paths are safe.
         if (injectPanelStyles._done) return;
-        injectPanelStyles._done = true;
         appendStyleSheet(`
 /* ─── Drag-reorder sidebar ─── */
 .ytkit-nav-btn{cursor:grab;user-select:none;}
@@ -45657,6 +45664,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
         animation: none !important;
     }
 }`);
+        // Mark complete only after every stylesheet append succeeds. A
+        // transient injection failure must remain retryable on the next open.
+        injectPanelStyles._done = true;
     }
 
     //  SECTION 6: BOOTSTRAP

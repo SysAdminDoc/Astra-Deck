@@ -38,6 +38,7 @@
             handleFileImport,
             initFeatureLifecycle,
             injectStyle,
+            ensurePanelStyles,
             isBooleanFeature,
             liveFeatureList,
             normalizeSelectOptions,
@@ -85,10 +86,21 @@ function setSettingsPanelOpen(open) {
         document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
         panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
         if (open) {
-            requestAnimationFrame(() => {
+            const focusInitialControl = () => {
+                if (!isSettingsPanelOpen()) return;
                 const searchInput = document.getElementById('ytkit-search');
                 const fallbackTarget = getFocusableUiElements(panel)[0];
-                (searchInput || fallbackTarget)?.focus({ preventScroll: true });
+                const visibleSearch = searchInput?.getClientRects().length ? searchInput : null;
+                (visibleSearch || fallbackTarget)?.focus({ preventScroll: true });
+            };
+            requestAnimationFrame(() => {
+                focusInitialControl();
+                // On the first open, the lazily-injected stylesheet and dialog
+                // layout can settle after this frame in slower engines. Retry
+                // once so focus never falls back to <body> during the entrance.
+                if (!panel?.contains(document.activeElement)) {
+                    setTimeout(focusInitialControl, 50);
+                }
             });
         } else if (wasOpen) {
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
@@ -185,6 +197,11 @@ function updatePanelInsightState() {
     }
 
 function buildSettingsPanel() {
+        // The module runtime can open the panel directly (without going
+        // through ytkit.js's inline wrapper), so it must trigger the lazy
+        // stylesheet itself. Otherwise the dialog renders at document origin
+        // with no positioning shell in the normal module path.
+        ensurePanelStyles?.();
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
 
