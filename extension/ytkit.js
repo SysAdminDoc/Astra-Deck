@@ -5032,6 +5032,10 @@ return response;
                 ? normalizedStored
                 : this.SETTINGS_VERSION;
             const rawSettingsSnapshot = this._sanitize(savedSettings);
+            this._lastSubmittedSettings = this._normalizeProfileModel(this._sanitize({
+                ...this.defaults,
+                ...rawSettingsSnapshot
+            }));
             savedSettings = this._sanitize(this._migrate(savedSettings));
             const merged = this._normalizeProfileModel(this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: targetVersion }));
             let shouldPersistMerged = normalizedStored !== targetVersion
@@ -5047,13 +5051,114 @@ return response;
             // Persist migrated or sanitized settings if needed
             if (shouldPersistMerged) {
                 this.save(merged);
+            } else {
+                this._lastSubmittedSettings = merged;
             }
             return merged;
         },
 
+        _settingsMutationController: null,
+        _settingsSaveGeneration: 0,
+        _lastSubmittedSettings: null,
+        _getSettingsMutationController() {
+            if (this._settingsMutationController) return this._settingsMutationController;
+            const factory = globalThis.YTKitCore?.createSettingsMutationController;
+            if (typeof factory !== 'function') return null;
+            if (hasExtensionContext()) {
+                this._settingsMutationController = factory({ source: 'in-page' });
+            } else {
+                // The userscript has no extension service worker. It still uses
+                // the same validation/result contract with its local storage
+                // adapter, while extension surfaces converge in background.js.
+                this._settingsMutationController = factory({
+                    local: true,
+                    source: 'userscript',
+                    readSettings: () => StorageManager.get(STORAGE_KEYS.settings, {}),
+                    writeSettings: (nextSettings) => {
+                        StorageManager.set(STORAGE_KEYS.settings, nextSettings);
+                    }
+                });
+            }
+            return this._settingsMutationController;
+        },
+
         save(settings) {
-            StorageManager.set(STORAGE_KEYS.settings, this._sanitize(this._normalizeProfileModel(settings)));
-            StorageManager.set(LEGACY_STORAGE_KEYS.sidebarOrder, null);
+            const nextSettings = this._sanitize(this._normalizeProfileModel(settings));
+            const baseline = this._lastSubmittedSettings || this._normalizeProfileModel(this._sanitize({
+                ...this.defaults,
+                ...StorageManager.get(STORAGE_KEYS.settings, {})
+            }));
+            const changes = {};
+            for (const [key, value] of Object.entries(nextSettings)) {
+                if (JSON.stringify(baseline[key]) !== JSON.stringify(value)) changes[key] = value;
+            }
+            this._lastSubmittedSettings = nextSettings;
+            const controller = this._getSettingsMutationController();
+            if (!controller) {
+                StorageManager.set(STORAGE_KEYS.settings, nextSettings);
+                StorageManager.set(LEGACY_STORAGE_KEYS.sidebarOrder, null);
+                return Promise.resolve({
+                    ok: true,
+                    persisted: true,
+                    previous: null,
+                    value: nextSettings,
+                    settings: nextSettings
+                });
+            }
+
+            if (Object.keys(changes).length === 0) {
+                StorageManager.set(LEGACY_STORAGE_KEYS.sidebarOrder, null);
+                return Promise.resolve({
+                    ok: true,
+                    persisted: true,
+                    previous: baseline,
+                    value: nextSettings,
+                    settings: nextSettings
+                });
+            }
+
+            const generation = ++this._settingsSaveGeneration;
+            // Keep synchronous readers and the clicked control optimistic while
+            // the service worker serializes the actual write.
+            if (hasExtensionContext()) {
+                StorageManager.syncFromExternal(STORAGE_KEYS.settings, nextSettings);
+                StorageManager._rememberLocalWrite(STORAGE_KEYS.settings, nextSettings);
+            }
+            return controller.mutateMany(changes).then((result) => {
+                if (result.ok) {
+                    if (generation === this._settingsSaveGeneration && result.settings) {
+                        this._lastSubmittedSettings = result.settings;
+                        StorageManager.syncFromExternal(STORAGE_KEYS.settings, result.settings);
+                        if (appState?.settings
+                            && JSON.stringify(appState.settings) !== JSON.stringify(result.settings)) {
+                            applyExternalSettingsUpdate({
+                                source: 'settings-write-normalized',
+                                nextSettings: result.settings
+                            });
+                        }
+                    }
+                    StorageManager.set(LEGACY_STORAGE_KEYS.sidebarOrder, null);
+                    return result;
+                }
+
+                // Only the latest optimistic snapshot owns rollback. If a newer
+                // save is queued, its result will either persist or perform the
+                // final rollback without flashing an older intermediate state.
+                if (generation === this._settingsSaveGeneration && result.settings) {
+                    this._lastSubmittedSettings = result.settings;
+                    StorageManager.syncFromExternal(STORAGE_KEYS.settings, result.settings);
+                    if (appState?.settings) {
+                        applyExternalSettingsUpdate({
+                            source: 'settings-write-rollback',
+                            nextSettings: result.settings
+                        });
+                        const message = result.error?.message || 'Settings could not be saved.';
+                        setPanelStatus(message, 'error');
+                        showToast(message, 'error');
+                    }
+                }
+                return result;
+            });
         },
         getFirstRunStatus() {
             return StorageManager.get('ytSuiteHasRun', false);
@@ -6095,6 +6200,8 @@ return response;
         const changedKeys = getChangedSettingKeys(previousSettings, resolvedSettings);
         const changedKeysSet = new Set(changedKeys);
 
+        settingsManager._lastSubmittedSettings = resolvedSettings;
+        StorageManager.syncFromExternal(STORAGE_KEYS.settings, resolvedSettings);
         appState.settings = resolvedSettings;
         appState.currentPage = getCurrentPage();
 
@@ -6340,27 +6447,13 @@ return response;
                 // v3.8.0: live setting updates from the toolbar popup without reload.
                 if (message.type === 'YTKIT_SETTING_CHANGED' && message.key) {
                     try {
-                        const key = message.key;
-                        const value = message.value;
-                        const prev = appState.settings[key];
-                        appState.settings[key] = value;
-                        settingsManager.save(appState.settings);
-                        // If this key maps to a feature ID, re-init/destroy respecting page constraints.
-                        const feat = (typeof features !== 'undefined' && Array.isArray(features))
-                            ? features.find(f => f.id === key) : null;
-                        if (feat && prev !== value) {
-                            try {
-                                if (value && typeof feat.init === 'function') {
-                                    if (typeof shouldFeatureBeActive === 'function'
-                                        ? shouldFeatureBeActive(feat, appState.settings)
-                                        : true) {
-                                        initFeatureLifecycle(feat, 'message');
-                                    }
-                                } else if (!value && typeof feat.destroy === 'function') {
-                                    destroyFeatureLifecycle(feat, 'message');
-                                }
-                            } catch (e) { console.warn('[YTKit] live toggle failed for', key, e); }
-                        }
+                        applyExternalSettingsUpdate({
+                            source: 'settings-mutation',
+                            nextSettings: message.settings || {
+                                ...appState.settings,
+                                [message.key]: message.value
+                            }
+                        });
                         sendResponse?.({ ok: true });
                     } catch (e) {
                         sendResponse?.({ ok: false, error: String(e?.message || e) });

@@ -427,6 +427,7 @@ function countStoredItems(value) {
 let _settingsSchema = null;
 let _settingsState = {};
 let _settingsLoadError = '';
+let _settingsMutationController = null;
 const QUICK_SETTINGS = Object.freeze({
     removeAllShorts: ['Hide Shorts', 'Remove Shorts shelves and navigation links.'],
     hideRelatedVideos: ['Hide Related Videos', 'Clear the watch-page side rail.'],
@@ -476,42 +477,17 @@ async function loadSettings() {
 
 async function writeSetting(key, value) {
     try {
-        // Read-modify-write against live storage instead of persisting the
-        // module cache wholesale. The cache starts empty ({}) and is only
-        // filled at the end of refresh(); a toggle fired before that (or after
-        // a failed load) would otherwise overwrite the entire settings object
-        // with a single key. Merging a fresh read also avoids clobbering
-        // concurrent writes from the popup while both surfaces are open.
-        const data = await ext.storage.local.get(SETTINGS_KEY);
-        const current = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
-            ? data[SETTINGS_KEY] : {};
-        const nextSettings = { ...current, [key]: value };
-        await ext.storage.local.set({ [SETTINGS_KEY]: nextSettings });
-        _settingsState = nextSettings;
-        // The setting is persisted at this point — report success before the
-        // best-effort tab broadcast so a failure to notify open YouTube tabs
-        // (query/messaging error) never surfaces as a false "save failed" that
-        // snaps the toggle back despite the value being saved. Content scripts
-        // still pick up the change via storage.onChanged.
-        void broadcastSettingChange(key, value);
+        if (!_settingsMutationController) {
+            const factory = globalThis.YTKitCore?.createSettingsMutationController;
+            if (typeof factory !== 'function') return false;
+            _settingsMutationController = factory({ source: 'sidepanel' });
+        }
+        const result = await _settingsMutationController.mutate(key, value);
+        if (!result.ok) return false;
+        _settingsState = result.settings;
         return true;
     } catch (_) {
         return false;
-    }
-}
-
-async function broadcastSettingChange(key, value) {
-    try {
-        const tabs = await ext.tabs.query({ url: ['*://*.youtube.com/*'] });
-        for (const tab of tabs) {
-            void globalThis.YTKitBrowser.sendTabMessage(
-                tab.id,
-                { type: 'YTKIT_SETTING_CHANGED', key, value },
-                { timeoutMs: 1000 }
-            );
-        }
-    } catch (_) {
-        // reason: non-fatal — storage.onChanged is the source of truth for tabs.
     }
 }
 

@@ -873,8 +873,17 @@ async function loadSettings() {
     return popupState.settings;
 }
 
-// Serialize writes so rapid toggle clicks can't race the merge cycle.
-let _pendingWriteChain = Promise.resolve();
+let _settingsMutationController = null;
+
+function getSettingsMutationController() {
+    if (_settingsMutationController) return _settingsMutationController;
+    const factory = window.YTKitCore?.createSettingsMutationController;
+    if (typeof factory !== 'function') {
+        throw new Error('The settings service is unavailable. Reload the extension.');
+    }
+    _settingsMutationController = factory({ source: 'popup' });
+    return _settingsMutationController;
+}
 function getManifestOptionalHostPermissions() {
     try {
         const declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
@@ -1109,27 +1118,28 @@ function registerOptionalHostPermissionListeners() {
 
 async function writeSetting(key, value) {
     await requestOptionalHostsForSetting(key, value);
-    const task = _pendingWriteChain.catch(() => undefined).then(async () => {
-        // Read-modify-write against live storage rather than the in-memory
-        // cache. Merging a fresh read avoids clobbering a concurrent write from
-        // the sidepanel (which persists the same ytSuiteSettings object) while
-        // both surfaces are open — the cache can be stale until the onChanged
-        // refresh lands. Mirrors sidepanel.js writeSetting.
-        let current = popupState.settings;
-        try {
-            const data = await storageGet(SETTINGS_STORAGE_KEY);
-            if (data && data[SETTINGS_STORAGE_KEY] && typeof data[SETTINGS_STORAGE_KEY] === 'object') {
-                current = data[SETTINGS_STORAGE_KEY];
-            }
-        } catch { /* reason: fall back to the in-memory cache if the fresh read fails */ }
-        const nextSettings = { ...current, [key]: value };
-        await storageSet({ [SETTINGS_STORAGE_KEY]: nextSettings });
-        popupState.settings = nextSettings;
-        await refreshOptionalHostGrantState({ render: false });
-        return nextSettings;
-    });
-    _pendingWriteChain = task;
-    return task;
+    const result = await getSettingsMutationController().mutate(key, value);
+    if (!result.ok) {
+        const error = new Error(result.error?.message || `Could not update ${key}.`);
+        error.code = result.error?.code || 'SETTING_WRITE_FAILED';
+        error.result = result;
+        throw error;
+    }
+    popupState.settings = result.settings;
+    await refreshOptionalHostGrantState({ render: false });
+    return result;
+}
+
+async function replaceSettings(settings) {
+    const result = await getSettingsMutationController().replace(settings);
+    if (!result.ok) {
+        const error = new Error(result.error?.message || 'Could not replace settings.');
+        error.code = result.error?.code || 'SETTING_WRITE_FAILED';
+        error.result = result;
+        throw error;
+    }
+    popupState.settings = result.settings;
+    return result;
 }
 
 // ── URL / tab classification ──
@@ -1409,19 +1419,6 @@ function sendTabMessage(tabId, message) {
     });
 }
 
-async function broadcast(key, value) {
-    try {
-        const tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS });
-        for (const tab of tabs) {
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTING_CHANGED', key, value }, () => {
-                    void chrome.runtime.lastError;
-                });
-            } catch { /* reason: tab closing or no receiver — fine to skip */ }
-        }
-    } catch { /* reason: extension suspended — chrome.tabs.query rejected */ }
-}
-
 // Bulk variant for import / reset paths where dozens or hundreds of settings
 // change at once. Sending one message per key produces O(N*tabs) IPC traffic
 // — the receiver only needs the final aggregate state, so a single
@@ -1630,7 +1627,6 @@ function installToggleClickDelegation() {
             render(popupState.settings, q.value);
             const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
             if (refocus) refocus.focus();
-            void broadcast(key, next);
             showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
         } catch (error) {
             console.warn('[Astra Deck popup] Failed to toggle setting:', error);
@@ -3769,7 +3765,14 @@ async function importSettings(file) {
         }
         const undoAvailable = snapped && sessionStorageAvailable();
         try {
-            await chrome.storage.local.set(writes);
+            const importedSettingsToApply = writes[STORAGE_KEYS.settings];
+            const nonSettingWrites = { ...writes };
+            delete nonSettingWrites[STORAGE_KEYS.settings];
+            if (Object.keys(nonSettingWrites).length) await storageSet(nonSettingWrites);
+            if (importedSettingsToApply) {
+                const result = await replaceSettings(importedSettingsToApply);
+                writes[STORAGE_KEYS.settings] = result.settings;
+            }
         } catch (error) {
             if (snapped) {
                 await restoreLocalStorageSnapshot(snapshot);
@@ -3788,13 +3791,6 @@ async function importSettings(file) {
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
-        // Broadcast whole-settings change so open tabs pick up the new state.
-        // Use the bulk-replaced variant — the prior per-key fan-out produced
-        // O(N*tabs) IPC traffic on an import (~250 settings × open tabs) and
-        // visible flicker as the UI reconciled partial state.
-        if (writes[STORAGE_KEYS.settings]) {
-            void broadcastSettingsReplaced(writes[STORAGE_KEYS.settings]);
-        }
         await refreshUndoImportVisibility();
         showStatus(undoAvailable
             ? t('statusBackupImportedUndo',

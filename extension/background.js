@@ -3,6 +3,42 @@
 // The toolbar popup owns control-center activation directly via
 // chrome.tabs.sendMessage(YTKIT_OPEN_PANEL) — no background mediation needed.
 
+// Settings writes from the popup, side panel/sidebar, and in-page workspace
+// converge here so their read/validate/write cycles cannot race each other.
+// Firefox's background.scripts entry still loads background.js as a classic
+// worker script, where importScripts is available as well.
+if (typeof importScripts === 'function') {
+    importScripts('core/settings-schema.js', 'core/settings-controller.js');
+}
+
+const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
+const _settingsMutationController = globalThis.YTKitCore?.createSettingsMutationController?.({
+    local: true,
+    source: 'background',
+    storageKey: SETTINGS_STORAGE_KEY,
+    storage: chrome.storage?.local
+}) || null;
+
+async function broadcastSettingsMutation(result, source = '') {
+    // The initiating in-page surface already holds an optimistic snapshot and
+    // every tab receives the authoritative chrome.storage.onChanged event.
+    // Skipping its redundant tab message prevents an older queued write from
+    // flashing over a newer optimistic change in the same tab.
+    if (!result?.ok || source === 'in-page' || !chrome.tabs?.query) return;
+    try {
+        const tabs = await chrome.tabs.query({ url: ['*://*.youtube.com/*'] });
+        const message = result.key
+            ? { type: 'YTKIT_SETTING_CHANGED', key: result.key, value: result.value, settings: result.settings }
+            : { type: 'YTKIT_SETTINGS_REPLACED', settings: result.settings };
+        await Promise.allSettled((tabs || []).filter((tab) => tab?.id).map((tab) =>
+            Promise.resolve(chrome.tabs.sendMessage(tab.id, message))
+        ));
+    } catch (_) {
+        // reason: persistence is authoritative; closing/suspended tabs refresh
+        // from storage.onChanged or on their next load.
+    }
+}
+
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 
@@ -588,6 +624,49 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // but if reading it throws we conservatively reject the message.
         try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* reason: sender may already be disconnected; we've already returned false */ }
         return false;
+    }
+
+    if (msg.type === 'YTKIT_MUTATE_SETTING'
+        || msg.type === 'YTKIT_MUTATE_SETTINGS'
+        || msg.type === 'YTKIT_REPLACE_SETTINGS') {
+        (async () => {
+            if (!_settingsMutationController) {
+                sendResponse({
+                    ok: false,
+                    persisted: false,
+                    key: msg.key,
+                    previous: undefined,
+                    value: undefined,
+                    settings: null,
+                    error: {
+                        code: 'MUTATION_SERVICE_UNAVAILABLE',
+                        message: 'The settings service is unavailable.'
+                    }
+                });
+                return;
+            }
+            const result = msg.type === 'YTKIT_MUTATE_SETTING'
+                ? await _settingsMutationController.mutate(msg.key, msg.value)
+                : msg.type === 'YTKIT_MUTATE_SETTINGS'
+                    ? await _settingsMutationController.mutateMany(msg.changes)
+                    : await _settingsMutationController.replace(msg.settings);
+            if (result.ok) void broadcastSettingsMutation(result, msg.source);
+            sendResponse(result);
+        })().catch((error) => {
+            sendResponse({
+                ok: false,
+                persisted: false,
+                key: msg.key,
+                previous: undefined,
+                value: undefined,
+                settings: null,
+                error: {
+                    code: 'MUTATION_SERVICE_FAILED',
+                    message: error?.message || 'The settings service failed.'
+                }
+            });
+        });
+        return true;
     }
 
     if (msg.type === 'OPEN_URL') {
