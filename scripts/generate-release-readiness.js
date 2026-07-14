@@ -11,6 +11,10 @@ const {
     unexpectedReleaseNames
 } = require('./generate-release-manifest');
 const { findStrayProductTags } = require('./check-versions');
+const {
+    COMPANION_BUILD_METADATA_NAME,
+    inspectCompanionInventory
+} = require('./companion-license-inventory');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -266,12 +270,55 @@ function buildReadinessReport(options = {}) {
     ));
 
     const sbomPath = path.join(buildDir, SBOM_NAME);
+    let sbom = null;
+    let sbomError = null;
+    if (fs.existsSync(sbomPath)) {
+        try {
+            sbom = readJsonIfExists(sbomPath);
+            if (!sbom || sbom.bomFormat !== 'CycloneDX' || !Array.isArray(sbom.components)) {
+                throw new Error('expected CycloneDX JSON with a components array');
+            }
+        } catch (err) {
+            sbomError = err;
+        }
+    }
     checks.push(check(
         'sbom',
-        'Release SBOM exists',
-        fs.existsSync(sbomPath) ? 'pass' : 'fail',
-        fs.existsSync(sbomPath) ? `build/${SBOM_NAME}` : `missing build/${SBOM_NAME}`
+        'Release SBOM exists and parses',
+        sbom ? 'pass' : 'fail',
+        sbom
+            ? `build/${SBOM_NAME}`
+            : (sbomError ? `invalid build/${SBOM_NAME}: ${sbomError.message}` : `missing build/${SBOM_NAME}`)
     ));
+
+    const companionExePath = path.join(buildDir, 'AstraDownloader.exe');
+    if (fs.existsSync(companionExePath)) {
+        if (!sbom) {
+            checks.push(check(
+                'companion-license-inventory',
+                'Companion license inventory is complete and approved',
+                'fail',
+                'companion artifact is present but the release SBOM is unavailable'
+            ));
+        } else {
+            const inspection = inspectCompanionInventory(sbom, sha256(companionExePath));
+            checks.push(check(
+                'companion-license-inventory',
+                'Companion license inventory is complete and approved',
+                inspection.issues.length ? 'fail' : 'pass',
+                inspection.issues.length
+                    ? inspection.issues.join('; ')
+                    : `${inspection.components.length} artifact-linked component(s) have approved obligations`
+            ));
+        }
+    } else {
+        checks.push(check(
+            'companion-license-inventory',
+            'Companion license inventory is complete and approved',
+            'pass',
+            'not applicable: companion artifact omitted'
+        ));
+    }
 
     const shaPath = path.join(buildDir, SHA256SUMS_NAME);
     const shaText = readFileIfExists(shaPath);
@@ -302,7 +349,10 @@ function buildReadinessReport(options = {}) {
 
         const unexpectedAssets = unexpectedReleaseNames([
             ...new Set([
-                ...buildFiles.filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME && name !== CRX_SIGNING_PROVENANCE_NAME),
+                ...buildFiles.filter((name) => name !== MANIFEST_NAME
+                    && name !== SHA256SUMS_NAME
+                    && name !== CRX_SIGNING_PROVENANCE_NAME
+                    && name !== COMPANION_BUILD_METADATA_NAME),
                 ...manifestAssetNames
             ])
         ], packageVersion || releaseManifest.version || '', { requireCompanion });
@@ -315,7 +365,10 @@ function buildReadinessReport(options = {}) {
 
         const manifestSet = new Set(manifestAssetNames);
         const unmanifestedFiles = buildFiles
-            .filter((name) => name !== MANIFEST_NAME && name !== SHA256SUMS_NAME && name !== CRX_SIGNING_PROVENANCE_NAME)
+            .filter((name) => name !== MANIFEST_NAME
+                && name !== SHA256SUMS_NAME
+                && name !== CRX_SIGNING_PROVENANCE_NAME
+                && name !== COMPANION_BUILD_METADATA_NAME)
             .filter((name) => !manifestSet.has(name));
         checks.push(check(
             'manifest-inventory',

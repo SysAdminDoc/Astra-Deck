@@ -3,13 +3,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const { buildCompanionInventory } = require('./companion-license-inventory');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
 
-function readJson(relPath) {
-    return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8'));
+function readJson(repoRoot, relPath) {
+    return JSON.parse(fs.readFileSync(path.join(repoRoot, relPath), 'utf8'));
 }
 
 function packageNameFromLockPath(lockPath) {
@@ -35,9 +36,11 @@ function normalizeLicense(license) {
     return [{ expression: value }];
 }
 
-function buildSbom() {
-    const pkg = readJson('package.json');
-    const lock = readJson('package-lock.json');
+function buildSbom(options = {}) {
+    const repoRoot = options.repoRoot || REPO_ROOT;
+    const buildDir = options.buildDir || path.join(repoRoot, 'build');
+    const pkg = readJson(repoRoot, 'package.json');
+    const lock = readJson(repoRoot, 'package-lock.json');
     const packages = lock.packages || {};
     const componentNames = new Set();
 
@@ -71,7 +74,11 @@ function buildSbom() {
             return component;
         });
 
-    const dependencyRefs = new Set(components.map((component) => component['bom-ref']));
+    const npmComponents = components.slice();
+    const dependencyRefs = new Set(npmComponents.map((component) => component['bom-ref']));
+    const companionInventory = buildCompanionInventory(repoRoot, buildDir);
+    components.push(...companionInventory.components);
+
     const dependencies = [
         {
             ref: `pkg:npm/${encodeURIComponent(pkg.name)}@${encodeURIComponent(pkg.version)}`,
@@ -81,10 +88,14 @@ function buildSbom() {
                     return entry ? purlFor(name, entry.version) : null;
                 })
                 .filter(Boolean)
+                .concat(companionInventory.components.length
+                    ? [companionInventory.components[0]['bom-ref']]
+                    : [])
+                .sort((a, b) => a.localeCompare(b))
         }
     ];
 
-    for (const component of components) {
+    for (const component of npmComponents) {
         const entry = packages[`node_modules/${component.name}`] || {};
         const dependsOn = Object.keys(entry.dependencies || {})
             .map((name) => {
@@ -98,6 +109,7 @@ function buildSbom() {
             dependsOn
         });
     }
+    dependencies.push(...companionInventory.dependencies);
 
     return {
         bomFormat: 'CycloneDX',

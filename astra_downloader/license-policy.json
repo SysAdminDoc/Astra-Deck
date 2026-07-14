@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "autoApprovedLicenseExpressions": [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "MPL-2.0",
+    "Python-2.0",
+    "Unlicense",
+    "ZPL-2.1"
+  ],
+  "components": {
+    "python": {
+      "name": "CPython",
+      "licenseExpression": "Python-2.0",
+      "decision": "approved",
+      "approvalEvidence": "Official PSF license retained through the generated SBOM notice field.",
+      "sourceUrl": "https://github.com/python/cpython",
+      "noticeUrl": "https://docs.python.org/3/license.html",
+      "obligations": [
+        "Retain the PSF license and copyright notice with the binary distribution."
+      ]
+    },
+    "pyinstaller": {
+      "licenseExpression": "LicenseRef-PyInstaller-GPL-2.0-or-later-with-Bootloader-exception",
+      "decision": "approved",
+      "approvalEvidence": "PyInstaller bootloader exception reviewed against the official COPYING.txt source.",
+      "sourceUrl": "https://github.com/pyinstaller/pyinstaller",
+      "noticeUrl": "https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt",
+      "obligations": [
+        "Retain the PyInstaller license and bootloader exception notice."
+      ]
+    },
+    "pyqt6": {
+      "licenseExpression": "GPL-3.0-only",
+      "decision": "unresolved",
+      "sourceUrl": "https://pypi.org/project/PyQt6/",
+      "noticeUrl": "https://www.riverbankcomputing.com/software/pyqt/",
+      "obligations": [
+        "Record either a GPL-compatible companion distribution route with corresponding source or a valid Riverbank commercial entitlement before release."
+      ],
+      "resolution": "Maintainer legal/licensing decision required; the MIT repository license alone does not select a PyQt distribution route."
+    },
+    "pyqt6-qt6": {
+      "licenseExpression": "LGPL-3.0-only",
+      "decision": "unresolved",
+      "sourceUrl": "https://code.qt.io/cgit/qt/qt5.git/",
+      "noticeUrl": "https://www.qt.io/licensing/open-source-lgpl-obligations",
+      "obligations": [
+        "Ship the LGPL license and Qt notices, preserve replacement/relinking rights, and provide the corresponding Qt source route for the exact wheel build."
+      ],
+      "resolution": "Exact Qt wheel source and redistributable notice/source bundle must be recorded."
+    },
+    "pyqt6-sip": {
+      "licenseExpression": "BSD-2-Clause",
+      "decision": "approved",
+      "approvalEvidence": "BSD-2-Clause notice location is recorded and retained in the embedded wheel inventory.",
+      "sourceUrl": "https://github.com/Python-SIP/sip",
+      "noticeUrl": "https://github.com/Python-SIP/sip/blob/main/LICENSE",
+      "obligations": [
+        "Retain the BSD copyright notice and disclaimer."
+      ]
+    }
+  },
+  "runtimeHelpers": [
+    {
+      "key": "yt-dlp",
+      "name": "yt-dlp.exe",
+      "version": "unresolved",
+      "licenseExpression": "GPL-3.0-or-later",
+      "decision": "unresolved",
+      "distributionUrl": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe",
+      "checksumUrl": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS",
+      "sourceUrl": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.tar.gz",
+      "noticeUrl": "https://github.com/yt-dlp/yt-dlp/blob/master/README.md#license",
+      "obligations": [
+        "Record the resolved release version and SHA-256, and ship the executable's THIRD_PARTY_LICENSES plus GPL corresponding-source route."
+      ],
+      "resolution": "The moving latest URL must be resolved to an exact release and digest for each companion release."
+    },
+    {
+      "key": "ffmpeg",
+      "name": "FFmpeg GPL build",
+      "version": "unresolved",
+      "licenseExpression": "GPL-3.0-or-later",
+      "decision": "unresolved",
+      "distributionUrl": "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
+      "checksumUrl": "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip.sha256",
+      "sourceUrl": "https://github.com/yt-dlp/FFmpeg-Builds",
+      "noticeUrl": "https://ffmpeg.org/legal.html",
+      "obligations": [
+        "Record the resolved build version and SHA-256, identify the exact configured license, retain notices, and provide corresponding source for the distributed GPL build."
+      ],
+      "resolution": "The moving master build and its corresponding source/notice bundle must be frozen per companion release."
+    },
+    {
+      "key": "deno",
+      "name": "Deno runtime",
+      "version": "unresolved",
+      "licenseExpression": "MIT",
+      "decision": "unresolved",
+      "distributionUrl": "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip",
+      "checksumUrl": "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip.sha256sum",
+      "sourceUrl": "https://github.com/denoland/deno",
+      "noticeUrl": "https://github.com/denoland/deno/blob/main/LICENSE.md",
+      "obligations": [
+        "Record the resolved release version and SHA-256 and retain the MIT notice."
+      ],
+      "resolution": "The moving latest URL must be resolved to an exact release and digest for each companion release."
+    }
+  ]
+}

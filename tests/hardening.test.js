@@ -2099,6 +2099,10 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'companion staging must reject files without a Windows EXE header');
     assert.match(stageScriptSource, /build\/AstraDownloader\.exe/,
         'companion staging must stage the EXE into build/ for release manifest inclusion');
+    assert.match(stageScriptSource, /companion-build-metadata\.json|COMPANION_BUILD_METADATA_NAME/,
+        'companion staging must carry artifact-linked Python distribution metadata into the SBOM pipeline');
+    assert.match(stageScriptSource, /metadata\.artifact\.sha256 !== sha256\(companionExe\)/,
+        'companion staging must reject metadata for a different binary');
     assert.match(stageScriptSource, /fs\.fstatSync\(fd\)/,
         'companion staging must validate metadata from the opened descriptor');
     assert.doesNotMatch(stageScriptSource, /fs\.existsSync/,
@@ -2355,7 +2359,10 @@ test('CODEOWNERS protects security-sensitive repository paths', () => {
         '/package.json',
         '/package-lock.json',
         '/build-extension.js',
+        '/scripts/companion-license-inventory.js',
         '/scripts/generate-release-manifest.js',
+        '/scripts/generate-release-readiness.js',
+        '/scripts/generate-release-sbom.js',
         '/scripts/stage-companion-release.js',
         '/scripts/check-*.js',
         '/docs/signing-keys.md',
