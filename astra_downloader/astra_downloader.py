@@ -4454,9 +4454,10 @@ class SetupWorker(QThread):
     finished_ok = pyqtSignal()
     finished_err = pyqtSignal(str)
 
-    def __init__(self, parent=None, force_ffmpeg=False):
+    def __init__(self, parent=None, force_ffmpeg=False, auto_update_ytdlp=True):
         super().__init__(parent)
         self.force_ffmpeg = bool(force_ffmpeg)
+        self.auto_update_ytdlp = bool(auto_update_ytdlp)
 
     def _ranged_progress_cb(self, low, high):
         """Return a progress callback that maps bytes into [low, high]% of overall.
@@ -4665,7 +4666,7 @@ class SetupWorker(QThread):
             _set_integrations_stamp()
 
             # Auto-update yt-dlp (throttled: only if we don't have a recent stamp)
-            if DEFAULT_CONFIG.get("AutoUpdateYtDlp", True):
+            if self.auto_update_ytdlp:
                 self.log.emit("Updating yt-dlp...")
                 try:
                     subprocess.Popen([str(YTDLP_PATH), '-U'],
@@ -6509,7 +6510,10 @@ class MainWindow(QMainWindow):
         self.setup_progress.show()
         self.btn_startstop.setEnabled(False)
         self.btn_startstop.setText("Setting Up")
-        self.setup_worker = SetupWorker(force_ffmpeg=force_ffmpeg)
+        self.setup_worker = SetupWorker(
+            force_ffmpeg=force_ffmpeg,
+            auto_update_ytdlp=self.config.get("AutoUpdateYtDlp", True),
+        )
         self.setup_worker.log.connect(self._append_log)
         self.setup_worker.progress.connect(self._setup_progress)
         self.setup_worker.finished_ok.connect(self._setup_done)
