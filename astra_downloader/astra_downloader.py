@@ -12,13 +12,8 @@ from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse
 
-# v1.4.0 (NX9): yt-dlp dropped Python 3.9 in release 2025.10.22. Astra
-# Downloader's bundled yt-dlp.exe is auto-updated, so a Python 3.9 host
-# would still run via subprocess shellout — but `pip install
-# -r requirements.txt` increasingly pulls 3.10-only wheels (waitress 3.x,
-# requests 2.32+). Hard-fail at module load with a clear message so the
-# bootstrap path's auto-pip strategies don't silently install
-# incompatible wheels.
+# v1.4.0 (NX9): yt-dlp dropped Python 3.9 in release 2025.10.22.
+# Source runs need 3.10+; packaged builds carry their own interpreter.
 _MIN_PYTHON = (3, 10)
 if sys.version_info < _MIN_PYTHON:
     sys.stderr.write(
@@ -29,75 +24,35 @@ if sys.version_info < _MIN_PYTHON:
     )
     sys.exit(1)
 
-# ── Bootstrap: auto-install dependencies ──
+# Source imports are deliberately side-effect free: dependency installation is
+# an explicit virtual-environment setup step, never an import-time mutation.
 REQUIREMENTS_PATH = Path(__file__).with_name("requirements.txt")
 
 
-def _bootstrap():
-    """Install required packages before importing them."""
-    if getattr(sys, "frozen", False):
-        return
-    if os.environ.get("ASTRA_DOWNLOADER_NO_BOOTSTRAP"):
-        return
-    required = {'PyQt6': 'PyQt6', 'flask': 'flask', 'requests': 'requests', 'waitress': 'waitress'}
-    missing = []
-    for mod, pkg in required.items():
-        try:
-            __import__(mod)
-        except ImportError:
-            missing.append(pkg)
-    if not missing:
-        return
-    if not REQUIREMENTS_PATH.exists():
-        sys.stderr.write(
-            f"[Astra Downloader] Failed to auto-install dependencies "
-            f"({', '.join(missing)}): requirements.txt not found at {REQUIREMENTS_PATH}\n"
-            f"Install manually with: pip install -r {REQUIREMENTS_PATH}\n"
-        )
-        return
-    # v3.15.0: Keep the last failure's stderr so we can surface a useful error
-    # if every strategy fails. Previously all three silently fell through and
-    # the user saw a cryptic ImportError at line 43+ instead of the pip output.
-    last_error = None
-    install_target = ['-r', str(REQUIREMENTS_PATH)]
-    for strategy in [
-        [sys.executable, '-m', 'pip', 'install', '--quiet'],
-        [sys.executable, '-m', 'pip', 'install', '--quiet', '--user'],
-        [sys.executable, '-m', 'pip', 'install', '--quiet', '--break-system-packages'],
-    ]:
-        try:
-            subprocess.check_call(strategy + install_target, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return
-        except FileNotFoundError as e:
-            last_error = f"python/pip not on PATH ({e.filename or 'unknown'})"
-            break  # No pip at all — retrying won't help
-        except subprocess.CalledProcessError as e:
-            last_error = f"pip install exited with code {e.returncode}"
-            continue
-        except Exception as e:
-            last_error = f"{type(e).__name__}: {e}"
-            continue
-    # All strategies failed — emit a helpful message so the ImportError that
-    # will follow has context.
-    sys.stderr.write(
-        f"[Astra Downloader] Failed to auto-install dependencies "
-        f"({', '.join(missing)}): {last_error}\n"
-        f"Install manually with: pip install -r {REQUIREMENTS_PATH}\n"
+def source_dependency_error(error):
+    missing = getattr(error, "name", None) or type(error).__name__
+    return (
+        f"Astra Downloader source dependencies are missing or unusable ({missing}). "
+        "The application will not install packages during import. Create a virtual "
+        "environment with `py -3.12 -m venv .venv`, then run "
+        f"`.\\.venv\\Scripts\\python.exe -m pip install --require-virtualenv -r \"{REQUIREMENTS_PATH}\"`."
     )
 
-_bootstrap()
 
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QTabWidget, QScrollArea, QFrame, QCheckBox, QLineEdit,
-    QFileDialog, QSystemTrayIcon, QMenu, QProgressBar, QTextEdit,
-    QSpinBox, QComboBox, QGraphicsOpacityEffect, QStyle, QDialog,
-    QDialogButtonBox
-)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread, QSize, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QIcon, QFont, QTextCursor
-from flask import Flask, request, jsonify
-import requests as http_requests
+try:
+    from PyQt6.QtWidgets import (
+        QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+        QLabel, QPushButton, QTabWidget, QScrollArea, QFrame, QCheckBox, QLineEdit,
+        QFileDialog, QSystemTrayIcon, QMenu, QProgressBar, QTextEdit,
+        QSpinBox, QComboBox, QGraphicsOpacityEffect, QStyle, QDialog,
+        QDialogButtonBox
+    )
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread, QSize, QPropertyAnimation, QEasingCurve
+    from PyQt6.QtGui import QIcon, QFont, QTextCursor
+    from flask import Flask, request, jsonify
+    import requests as http_requests
+except ImportError as exc:
+    raise ImportError(source_dependency_error(exc)) from exc
 
 # ══════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -5760,7 +5715,7 @@ class MainWindow(QMainWindow):
         try:
             # v1.2.0: prefer waitress (production-grade WSGI) and fall back
             # to werkzeug's dev server only when waitress isn't available
-            # (source runs without `pip install -r requirements.txt`).
+            # (legacy source environments can omit the declared dependency).
             self.server_obj = _build_wsgi_server(chosen_port, api)
         except Exception as e:
             self.server_obj = None

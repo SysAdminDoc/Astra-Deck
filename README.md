@@ -74,9 +74,13 @@ for the live asset list.
 For current source-checkout testing on Windows:
 
 ```powershell
-py -3.12 -m pip install -r astra_downloader/requirements.txt
-py -3.12 astra_downloader/astra_downloader.py
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --require-virtualenv -r astra_downloader/requirements.txt
+.\.venv\Scripts\python.exe astra_downloader/astra_downloader.py
 ```
+
+Source imports never install or modify Python packages. If a dependency is
+missing, Astra Downloader exits with the virtual-environment setup command.
 
 The companion stores its config, logs, downloaded `yt-dlp.exe`, and `ffmpeg.exe`
 under `%LOCALAPPDATA%\AstraDownloader`. When a release does carry the companion

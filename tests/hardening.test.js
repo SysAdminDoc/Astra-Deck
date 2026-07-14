@@ -2163,10 +2163,12 @@ test('README documents Astra Downloader companion setup and pending release asse
         'README must disclose that companion release assets are pending without hardcoding a tag');
     assert.match(readme, /releases\/latest\)\s*\nfor the live asset list/,
         'README must point readers at the live release page instead of a hardcoded version claim');
-    assert.match(readme, /py -3\.12 -m pip install -r astra_downloader\/requirements\.txt/,
-        'README must document the current source-checkout companion path');
-    assert.match(readme, /py -3\.12 astra_downloader\/astra_downloader\.py/,
-        'README must document how to launch the source-checkout companion');
+    assert.match(readme, /py -3\.12 -m venv \.venv/,
+        'README must isolate source-checkout companion dependencies in a virtual environment');
+    assert.match(readme, /\.\\\.venv\\Scripts\\python\.exe -m pip install --require-virtualenv -r astra_downloader\/requirements\.txt/,
+        'README must require the current source-checkout companion dependencies inside the virtual environment');
+    assert.match(readme, /\.\\\.venv\\Scripts\\python\.exe astra_downloader\/astra_downloader\.py/,
+        'README must document how to launch the source-checkout companion from the virtual environment');
     assert.match(readme, /PO-token provider and Deno sections below are companion prerequisites/,
         'README must frame Deno and PO-token setup as companion prerequisites');
     assert.match(readme, /AstraDownloader\.exe` and\s+`AstraDownloader\.exe\.sha256`/,
