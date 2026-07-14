@@ -37,6 +37,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Firefox smoke now discovers non-stable Windows channels.** The default
+  executable search includes Firefox Developer Edition and Nightly in both
+  Program Files roots, so local AMO verification no longer needs `--firefox`
+  on those installations.
 - **Navigation effects no longer cross-fade infinite-scroll updates.** The
   document View Transition now runs only when the URL changes, is skipped for
   reduced-motion users, and falls back safely if the cosmetic API rejects while
