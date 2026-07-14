@@ -18095,9 +18095,10 @@
             if (panel.dir === 'rtl') {
                 injectStyle(`
                     #ytkit-settings-panel[dir="rtl"] .ytkit-sidebar { border-right: none; border-left: 1px solid rgba(255,255,255,0.08); }
-                    #ytkit-settings-panel[dir="rtl"] .ytkit-search-icon { left: auto; right: 14px; }
-                    #ytkit-settings-panel[dir="rtl"] .ytkit-search-meta { right: auto; left: 12px; }
-                    #ytkit-settings-panel[dir="rtl"] .ytkit-search-input { padding: 12px 40px 12px 84px; }
+                    #ytkit-settings-panel[dir="rtl"] .ytkit-command-search .ytkit-search-icon { left: auto !important; right: 16px !important; }
+                    #ytkit-settings-panel[dir="rtl"] .ytkit-command-search .ytkit-search-actions { right: auto !important; left: 8px !important; }
+                    #ytkit-settings-panel[dir="rtl"] .ytkit-command-search .ytkit-search-meta { right: auto !important; left: auto !important; }
+                    #ytkit-settings-panel[dir="rtl"] .ytkit-command-search .ytkit-search-input { padding: 0 44px 0 78px !important; }
                     #ytkit-settings-panel[dir="rtl"] .ytkit-feature-card { text-align: right; }
                 `, 'ytkit-rtl-panel', true);
             }
