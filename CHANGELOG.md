@@ -45,6 +45,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Deno readiness now fails closed when the runtime cannot identify itself.**
+  A present but broken or unparsable Deno executable is reported as unsupported
+  with a repair action instead of being allowed through to an opaque yt-dlp
+  format failure; provisioning also replaces unverifiable bundled runtimes.
 - **Extension fetch bodies now fail closed instead of corrupting binary data.**
   The content bridge rejects ArrayBuffer, typed-array, Blob, and FormData bodies
   before Chrome's JSON-only runtime messaging can erase their contents, while
