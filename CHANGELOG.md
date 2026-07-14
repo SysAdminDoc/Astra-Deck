@@ -41,6 +41,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **RTL settings search controls no longer overlap.** The command search now
+  mirrors its leading icon, trailing result/actions area, and input padding as
+  a unit, with rendered desktop-RTL geometry coverage.
 - **Reopening Astra Downloader no longer terminates the running service.** A
   second launch now asks the existing instance to show its window (or start the
   server for protocol launches) and exits cleanly, preserving active yt-dlp and

@@ -185,6 +185,22 @@ const IN_PAGE_CHECKS = `(() => {
     if (!sidebarFooter) failures.push('version and project tools are not mounted in the sidebar footer');
     if (footerActions.length !== 4) failures.push('footer action parity expected 4 buttons, found ' + footerActions.length);
     if (!historyImport) failures.push('history import action is not mounted in the insights rail');
+    if (panel.getAttribute('dir') === 'rtl' && headerSearch) {
+        const searchIcon = panel.querySelector('.ytkit-command-search .ytkit-search-icon');
+        const searchActions = panel.querySelector('.ytkit-command-search .ytkit-search-actions');
+        const inputRect = headerSearch.getBoundingClientRect();
+        const iconRect = searchIcon?.getBoundingClientRect();
+        const actionsRect = searchActions?.getBoundingClientRect();
+        if (!iconRect || iconRect.left < inputRect.left + (inputRect.width / 2)) {
+            failures.push('RTL search icon is not anchored to the input start edge');
+        }
+        if (!actionsRect || actionsRect.right > inputRect.left + (inputRect.width / 2)) {
+            failures.push('RTL search actions are not anchored to the input end edge');
+        }
+        if (iconRect && actionsRect && iconRect.left < actionsRect.right && iconRect.right > actionsRect.left) {
+            failures.push('RTL search icon overlaps its actions');
+        }
+    }
     for (const id of ['ytkit-export', 'ytkit-import', 'ytkit-import-history', 'ytkit-reset-active-section', 'ytkit-close-footer']) {
         if (panel.querySelectorAll('#' + id).length !== 1) failures.push(id + ' must render exactly once');
     }

@@ -462,6 +462,18 @@ test('settings command-deck keeps mobile navigation and footer bounded', () => {
         'render smoke must fail oversized mobile navigation');
 });
 
+test('settings command search mirrors icon and actions without RTL overlap', () => {
+    const moduleSource = read('extension/features/settings-panel/index.js');
+    const monolithSource = read('extension/ytkit.js');
+    for (const source of [moduleSource, monolithSource]) {
+        assert.match(source, /\[dir="rtl"\] \.ytkit-command-search \.ytkit-search-icon \{ left: auto !important; right: 16px !important; \}/);
+        assert.match(source, /\[dir="rtl"\] \.ytkit-command-search \.ytkit-search-actions \{ right: auto !important; left: 8px !important; \}/);
+        assert.match(source, /\[dir="rtl"\] \.ytkit-command-search \.ytkit-search-input \{ padding: 0 44px 0 78px !important; \}/);
+    }
+    const smoke = read('scripts/smoke-settings-overlay.js');
+    assert.match(smoke, /RTL search icon overlaps its actions/);
+});
+
 test('blue light filter stays opt-in with a master toggle and nested intensity control', () => {
     assert.equal(defaultSettings.blueLightFilter, false,
         'Blue Light Filter must remain disabled on clean installs');
