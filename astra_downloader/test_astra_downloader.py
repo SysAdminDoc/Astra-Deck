@@ -264,6 +264,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         import inspect
 
         source = Path(ad.__file__).read_text(encoding="utf-8")
+        gui_source = Path(ad.__file__).with_name("gui.py").read_text(encoding="utf-8")
         probe_source = inspect.getsource(ad.ReadinessProbe.run)
         download_card_source = inspect.getsource(ad.MainWindow._download_card)
         self.assertIn("#ff5f4b", ad.STYLESHEET)
@@ -279,7 +280,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn("btn.setCheckable(True)", source)
         self.assertIn("btn.setAutoExclusive(True)", source)
         self.assertIn("Unsaved changes. Save when ready.", source)
-        self.assertIn('make_section_label("Ready when you are")', source)
+        self.assertIn('make_section_label("Ready when you are")', gui_source)
         self.assertIn("window.render(pixmap)", renderer_source)
         self.assertIn("Companion navigation rail is incomplete", renderer_source)
         self.assertIn("self.btn_clear_history.setEnabled(bool(data))", source)
@@ -1388,6 +1389,33 @@ for forbidden in (
         self.assertIs(health.build_javascript_runtime_args, ad.build_javascript_runtime_args)
         self.assertIs(routes.create_api, ad.create_api)
         self.assertIs(gui.MainWindow, ad.MainWindow)
+        self.assertIs(gui.make_label, ad.make_label)
+        self.assertIs(gui.make_empty_state, ad.make_empty_state)
+        self.assertIs(gui.human_status, ad.human_status)
+
+    def test_gui_boundary_imports_pyqt_without_creating_application(self):
+        script = r'''
+import importlib
+import sys
+
+gui = importlib.import_module("astra_downloader.gui")
+from PyQt6.QtWidgets import QApplication
+assert QApplication.instance() is None
+assert gui.human_status("needs-auth") == "Needs sign-in"
+assert gui.format_duration(3660) == "1h 1m"
+assert "astra_downloader.astra_downloader" not in sys.modules
+'''
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_health_version_probe_uses_injected_cache_dependencies(self):
         import health
