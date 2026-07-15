@@ -1409,6 +1409,8 @@ for forbidden in (
         self.assertIs(gui.human_status, ad.human_status)
         self.assertTrue(issubclass(ad.ReadinessProbe, gui.ReadinessProbe))
         self.assertTrue(issubclass(ad.FolderPickerService, gui.FolderPickerService))
+        self.assertIs(gui.SetupWorker, gui.SetupWorkerCore)
+        self.assertTrue(issubclass(ad.SetupWorker, gui.SetupWorkerCore))
 
     def test_gui_boundary_imports_pyqt_without_creating_application(self):
         script = r'''
