@@ -94,6 +94,7 @@ try:
         parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
     from .gui import (
+        ReadinessProbe as _OwnedReadinessProbe,
         download_status_tone, format_duration, human_status, make_card,
         make_divider, make_empty_state, make_label, make_section_label,
         make_stat, make_status_badge, repolish,
@@ -139,6 +140,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
         parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
     from gui import (
+        ReadinessProbe as _OwnedReadinessProbe,
         download_status_tone, format_duration, human_status, make_card,
         make_divider, make_empty_state, make_label, make_section_label,
         make_stat, make_status_badge, repolish,
@@ -4248,30 +4250,16 @@ def spawn_delayed_install_dir_removal(path=INSTALL_DIR):
         )
     return True
 
-class ReadinessProbe(QObject):
-    """Collect toolchain health away from the GUI thread."""
-
-    completed = pyqtSignal(dict)
-
+class ReadinessProbe(_OwnedReadinessProbe):
     def __init__(self, configured_runtime='auto'):
-        super().__init__()
-        self.configured_runtime = configured_runtime
-
-    def run(self):
-        try:
-            runtime = probe_javascript_runtime(configured_runtime=self.configured_runtime)
-            provider = probe_po_token_provider()
-            payload = {
-                "ytDlp": get_ytdlp_version() or "",
-                "ffmpeg": get_ffmpeg_version() or "",
-                "runtime": runtime or {},
-                "deno": runtime or {},
-                "provider": provider or {},
-            }
-        except Exception as exc:
-            write_persistent_log(f"Readiness probe failed: {exc}")
-            payload = {"error": str(exc)}
-        self.completed.emit(payload)
+        super().__init__(
+            configured_runtime,
+            runtime_probe=lambda *args, **kwargs: probe_javascript_runtime(*args, **kwargs),
+            provider_probe=lambda *args, **kwargs: probe_po_token_provider(*args, **kwargs),
+            ytdlp_version=lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
+            ffmpeg_version=lambda *args, **kwargs: get_ffmpeg_version(*args, **kwargs),
+            logger=lambda message: write_persistent_log(message),
+        )
 
 # ══════════════════════════════════════════════════════════════
 # MAIN WINDOW
