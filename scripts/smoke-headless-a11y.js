@@ -22,6 +22,7 @@ const {
 } = require('./smoke-settings-overlay.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
+const OUT_DIR = path.join(REPO_ROOT, 'build', 'headless-a11y');
 const FOCUSABLE_SELECTOR = [
     'a[href]',
     'area[href]',
@@ -378,8 +379,10 @@ async function configureRenderedState(client, surface, theme, mode) {
     return { width, height };
 }
 
-async function navigateToSurface(client, stageDir, surface, timeoutMs) {
-    await client.send('Page.navigate', { url: fileUrl(path.join(stageDir, surface.page)) });
+async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = 'dark') {
+    const url = new URL(fileUrl(path.join(stageDir, surface.page)));
+    url.searchParams.set('theme', theme);
+    await client.send('Page.navigate', { url: url.href });
     await waitFor(
         () => client.evaluate("document.readyState === 'complete'"),
         timeoutMs,
@@ -401,18 +404,34 @@ async function navigateToSurface(client, stageDir, surface, timeoutMs) {
     await sleep(surface.settleMs || 300);
 }
 
+async function captureSurface(client, surface, theme) {
+    await client.evaluate(`(() => {
+        const root = document.querySelector(${JSON.stringify(surface.selector)});
+        if (root) root.scrollTop = 0;
+        document.scrollingElement.scrollTop = 0;
+    })()`);
+    const image = await client.send('Page.captureScreenshot', {
+        format: 'png',
+        fromSurface: true,
+        captureBeyondViewport: false,
+    });
+    const output = path.join(OUT_DIR, `${surface.name}-${theme}.png`);
+    fs.writeFileSync(output, Buffer.from(image.data, 'base64'));
+}
+
 async function auditSurface(client, stageDir, surface, timeoutMs) {
-    if (!surface.reopenEachState) {
-        await navigateToSurface(client, stageDir, surface, timeoutMs);
-    }
     const reports = [];
     for (const theme of surface.themes) {
+        if (!surface.reopenEachState) {
+            await navigateToSurface(client, stageDir, surface, timeoutMs, theme);
+        }
         for (const mode of ['normal', 'zoom-200']) {
             let viewport = await configureRenderedState(client, surface, theme, mode);
             if (surface.reopenEachState) {
-                await navigateToSurface(client, stageDir, surface, timeoutMs);
+                await navigateToSurface(client, stageDir, surface, timeoutMs, theme);
                 viewport = await configureRenderedState(client, surface, theme, mode);
             }
+            if (mode === 'normal') await captureSurface(client, surface, theme);
             const controls = await auditKeyboardPath(client, surface, `${theme}/${mode}`);
             reports.push({ controls, mode, theme, viewport });
         }
@@ -424,7 +443,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         'forced-colors'
     );
     if (surface.reopenEachState) {
-        await navigateToSurface(client, stageDir, surface, timeoutMs);
+        await navigateToSurface(client, stageDir, surface, timeoutMs, surface.themes[0]);
         forcedViewport = await configureRenderedState(
             client,
             surface,
@@ -453,6 +472,8 @@ async function main(argv = process.argv.slice(2)) {
 
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-headless-a11y-stage-'));
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-headless-a11y-profile-'));
+    fs.rmSync(OUT_DIR, { recursive: true, force: true });
+    fs.mkdirSync(OUT_DIR, { recursive: true });
     const fixturePath = createStage(stageDir);
     const browser = spawn(browserPath, [
         '--headless=new',
@@ -506,6 +527,7 @@ async function main(argv = process.argv.slice(2)) {
                 + `${total} keyboard focus visits, no obscuring/overflow failures`
             );
         }
+        console.log(`[headless-a11y] Captures saved to ${OUT_DIR}`);
         console.log('[headless-a11y] PASS — normal, 200% reflow, themes, and forced colors');
     } finally {
         if (socket) socket.close();
