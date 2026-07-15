@@ -74,7 +74,7 @@ try:
         DOWNLOAD_PENDING_STATES, DOWNLOAD_RETRYABLE_ERROR_CODES,
         DOWNLOAD_RUNNING_STATES, DOWNLOAD_STALL_TIMEOUT_SECONDS,
         DOWNLOAD_TERMINAL_STATES, DOWNLOAD_WATCHDOG_POLL_SECONDS,
-        MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download,
+        MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download, DownloadQueueStore,
         apply_download_failure_classification, build_video_format_args,
         build_subprocess_env as _owned_build_subprocess_env,
         classify_download_failure,
@@ -119,7 +119,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
         DOWNLOAD_PENDING_STATES, DOWNLOAD_RETRYABLE_ERROR_CODES,
         DOWNLOAD_RUNNING_STATES, DOWNLOAD_STALL_TIMEOUT_SECONDS,
         DOWNLOAD_TERMINAL_STATES, DOWNLOAD_WATCHDOG_POLL_SECONDS,
-        MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download,
+        MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download, DownloadQueueStore,
         apply_download_failure_classification, build_video_format_args,
         build_subprocess_env as _owned_build_subprocess_env,
         classify_download_failure,
@@ -2707,6 +2707,19 @@ class DownloadManager(QObject):
         self._lock = threading.Lock()
         self._running_ids = set()
         self._queue_path = Path(queue_path) if queue_path else None
+        self._queue_store = (
+            DownloadQueueStore(
+                path=self._queue_path,
+                reader=lambda path, fallback: load_json_file(path, fallback),
+                writer=lambda path, data: atomic_write_json(path, data),
+                logger=lambda message: write_persistent_log(message),
+                clean_text=lambda *args, **kwargs: clean_text(*args, **kwargs),
+                clean_path_text=lambda *args, **kwargs: clean_path_text(*args, **kwargs),
+                schema_version=DOWNLOAD_QUEUE_SCHEMA_VERSION,
+                max_records=MAX_QUEUED_TOTAL,
+            )
+            if self._queue_path is not None else None
+        )
         self._persistence_error = ""
         self._persistence_compatible = True
         self.intake_paused = False
@@ -2727,12 +2740,10 @@ class DownloadManager(QObject):
         used browser cookies becomes ``needs-auth``. This prevents duplicate
         downloads from silently starting after an application restart.
         """
-        if self._queue_path is None:
+        if self._queue_store is None:
             return
-        raw = load_json_file(self._queue_path, {})
-        if not isinstance(raw, dict):
-            return
-        if raw and raw.get('schemaVersion') != DOWNLOAD_QUEUE_SCHEMA_VERSION:
+        raw, compatible = self._queue_store.load()
+        if not compatible:
             self._persistence_compatible = False
             self._persistence_error = (
                 'The pending queue was created by an incompatible Astra Downloader version.'
@@ -2812,47 +2823,24 @@ class DownloadManager(QObject):
             self._persist_locked()
 
     def _serialize_queue_locked(self):
-        records = []
-        unfinished = sorted(
-            (
-                dl for dl in self.downloads.values()
-                if dl.status in DOWNLOAD_ACTIVE_STATES
-            ),
-            key=lambda dl: (dl.queue_order, dl.start_time, dl.id),
-        )[:MAX_QUEUED_TOTAL]
-        for dl in unfinished:
-            records.append({
-                'id': clean_text(dl.id, '', 120),
-                'url': dl.url,
-                'title': clean_text(dl.title, 'Unknown', 500) or 'Unknown',
-                'audioOnly': bool(dl.audio_only),
-                'format': dl.format,
-                'quality': dl.quality,
-                'outputDir': clean_path_text(dl.output_dir),
-                'referer': dl.referer,
-                'requiresAuth': bool(dl.requires_auth),
-                'createdAt': float(dl.start_time),
-                'order': int(dl.queue_order),
-            })
-        return {
-            'schemaVersion': DOWNLOAD_QUEUE_SCHEMA_VERSION,
-            'intakePaused': bool(self.intake_paused),
-            'downloads': records,
-        }
+        if self._queue_store is None:
+            return {
+                'schemaVersion': DOWNLOAD_QUEUE_SCHEMA_VERSION,
+                'intakePaused': bool(self.intake_paused),
+                'downloads': [],
+            }
+        return self._queue_store.serialize(self.downloads.values(), self.intake_paused)
 
     def _persist_locked(self):
-        if self._queue_path is None or self._closing:
+        if self._queue_store is None or self._closing:
             return True
         if not self._persistence_compatible:
             return False
-        try:
-            atomic_write_json(self._queue_path, self._serialize_queue_locked())
+        if self._queue_store.save(self.downloads.values(), self.intake_paused):
             self._persistence_error = ''
             return True
-        except Exception as exc:
-            self._persistence_error = 'Could not save the pending download queue.'
-            write_persistent_log(f"Download queue save failed: {exc}")
-            return False
+        self._persistence_error = 'Could not save the pending download queue.'
+        return False
 
     def _capacity_locked(self):
         running = len(self._running_ids)
