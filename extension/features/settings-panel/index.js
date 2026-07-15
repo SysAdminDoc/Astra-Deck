@@ -2689,7 +2689,7 @@ function attachUIEventListeners() {
             }
             if (e.target.closest('#ytkit-import')) {
                 handleFileImport(async (content) => {
-                    const result = settingsManager.importAllSettingsDetailed(content);
+                    const result = await settingsManager.importAllSettingsDetailed(content);
                     if (result?.ok) {
                         handleExternalStorageChanges({
                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },

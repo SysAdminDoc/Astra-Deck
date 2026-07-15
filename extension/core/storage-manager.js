@@ -145,7 +145,10 @@
                 this._cache[key] = value;
                 this._dirty.delete(key);
                 this._rememberLocalWrite(key, value);
-                void storageWrite(key, value, { immediate: true });
+                // Resolves { ok, error } — never rejects. Callers that must
+                // confirm persistence (settings import) inspect the result;
+                // fire-and-forget callers can keep ignoring it.
+                return storageWrite(key, value, { immediate: true });
             },
 
             syncFromExternal(key, value) {

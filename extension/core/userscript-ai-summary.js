@@ -239,10 +239,32 @@
             render();
         }
 
+        // Rendered inside a closed shadow root: the password input lives on
+        // youtube.com, so an open DOM would let page scripts read
+        // input.value or observe keystrokes while the dialog is up —
+        // contradicting the "stored outside Astra Deck" isolation promise.
+        const CREDENTIAL_DIALOG_CSS = ':host{all:initial}'
+            + '.ytkit-us-ai-credential-shell{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.7);font:14px/1.5 Roboto,system-ui}'
+            + '.ytkit-us-ai-credential-card{width:min(420px,calc(100vw - 40px));box-sizing:border-box;padding:20px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 16px 56px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}'
+            + '.ytkit-us-ai-credential-card h3{margin:0 0 8px;color:#fff}'
+            + '.ytkit-us-ai-credential-card p{color:#bac2de}'
+            + '.ytkit-us-ai-credential-card label{display:block;margin:12px 0 5px;font-weight:600}'
+            + '.ytkit-us-ai-credential-card input{box-sizing:border-box;width:100%;min-height:40px;padding:8px;border:1px solid #585b70;border-radius:7px;background:#11111b;color:#cdd6f4}'
+            + '.ytkit-us-ai-credential-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}'
+            + '.ytkit-us-ai-credential-actions button{min-height:38px;padding:7px 14px;border:1px solid #585b70;border-radius:6px;background:#313244;color:#cdd6f4;font-weight:700}'
+            + '.ytkit-us-ai-credential-card :focus-visible{outline:3px solid #89b4fa;outline-offset:2px}'
+            + '@media(forced-colors:active){.ytkit-us-ai-credential-card,.ytkit-us-ai-credential-actions button,.ytkit-us-ai-credential-card input{border:1px solid CanvasText;color:CanvasText;background:Canvas}}'
+            + '@media(prefers-reduced-motion:reduce){.ytkit-us-ai-credential-card{scroll-behavior:auto}}';
+
         function manageCredential(provider, required = false) {
             if (provider === 'ollama') return Promise.resolve('');
             return vault.status(provider).then((state) => new Promise((resolve, reject) => {
                 const previousFocus = doc.activeElement;
+                const host = doc.createElement('div');
+                const shadow = host.attachShadow({ mode: 'closed' });
+                const dialogStyle = doc.createElement('style');
+                dialogStyle.textContent = CREDENTIAL_DIALOG_CSS;
+                shadow.appendChild(dialogStyle);
                 const shell = doc.createElement('div');
                 shell.className = 'ytkit-us-ai-credential-shell';
                 shell.setAttribute('role', 'dialog');
@@ -282,13 +304,14 @@
                 actions.append(save, remove, cancel);
                 form.append(title, note, label, input, actions);
                 shell.appendChild(form);
-                doc.body.appendChild(shell);
+                shadow.appendChild(shell);
+                doc.body.appendChild(host);
 
                 let settled = false;
                 const finish = (value, error) => {
                     if (settled) return;
                     settled = true;
-                    shell.remove();
+                    host.remove();
                     try { previousFocus?.focus?.({ preventScroll: true }); } catch (_) { /* reason: prior control may be detached */ }
                     if (error) reject(error); else resolve(value);
                 };
@@ -509,7 +532,7 @@
             },
             init() {
                 this._style = injectStyle(`
-                    .ytkit-us-ai-panel{position:fixed;top:80px;right:20px;z-index:2147483647;width:min(520px,calc(100vw - 40px));max-height:75vh;overflow:auto;box-sizing:border-box;padding:18px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 12px 44px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}.ytkit-us-ai-close{float:right;min-width:36px;min-height:36px;border:0;background:transparent;color:#cdd6f4;font-size:22px;cursor:pointer}.ytkit-us-ai-body h4{margin:0 0 4px;color:#fff}.ytkit-us-ai-meta{margin:0 0 10px;color:#bac2de;font-size:11px}.ytkit-us-ai-body ul{display:grid;gap:8px;padding-left:20px}.ytkit-us-ai-citations{display:inline-flex;gap:5px;margin-left:7px}.ytkit-us-ai-citation{padding:2px 6px;border:1px solid #585b70;border-radius:5px;color:#89b4fa;text-decoration:none;font:700 11px/1.3 system-ui}.ytkit-us-ai-tldr{padding:10px;border-left:3px solid #cba6f7;background:rgba(203,166,247,.08)}.ytkit-us-ai-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.ytkit-us-ai-actions button,.ytkit-us-ai-library-row button{min-height:36px;padding:7px 10px;border:1px solid #585b70;border-radius:6px;background:#313244;color:#cdd6f4;font-weight:700}.ytkit-us-ai-delete{color:#fecaca!important;border-color:#7f1d1d!important}.ytkit-us-ai-library{margin-top:12px;border-top:1px solid #45475a;padding-top:10px}.ytkit-us-ai-library summary{min-height:36px;cursor:pointer;font-weight:700}.ytkit-us-ai-library input{box-sizing:border-box;width:100%;min-height:40px;margin:8px 0;padding:8px;border:1px solid #585b70;border-radius:6px;background:#11111b;color:#cdd6f4}.ytkit-us-ai-library-results{display:grid;gap:6px}.ytkit-us-ai-library-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.ytkit-us-ai-library-row button:first-child{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ytkit-us-ai-error{color:#fca5a5}.ytkit-us-ai-credential-shell{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.7)}.ytkit-us-ai-credential-card{width:min(420px,calc(100vw - 40px));box-sizing:border-box;padding:20px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 16px 56px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}.ytkit-us-ai-credential-card h3{margin:0 0 8px}.ytkit-us-ai-credential-card p{color:#bac2de}.ytkit-us-ai-credential-card label{display:block;margin:12px 0 5px;font-weight:600}.ytkit-us-ai-credential-card input{box-sizing:border-box;width:100%;min-height:40px;padding:8px;border:1px solid #585b70;border-radius:7px;background:#11111b;color:#cdd6f4}.ytkit-us-ai-credential-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.ytkit-us-ai-credential-actions button{min-height:38px;padding:7px 14px}.ytkit-us-ai-panel :focus-visible,.ytkit-us-ai-credential-card :focus-visible{outline:3px solid #89b4fa;outline-offset:2px}@media(max-width:600px){.ytkit-us-ai-panel{top:64px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 72px)}}@media(forced-colors:active){.ytkit-us-ai-panel,.ytkit-us-ai-actions button,.ytkit-us-ai-library-row button,.ytkit-us-ai-library input,.ytkit-us-ai-citation{border:1px solid CanvasText;color:CanvasText;background:Canvas}}@media(prefers-reduced-motion:reduce){.ytkit-us-ai-panel,.ytkit-us-ai-credential-card{scroll-behavior:auto}.ytkit-us-ai-panel *{transition:none!important}}`, 'userscript-ai-summary', true);
+                    .ytkit-us-ai-panel{position:fixed;top:80px;right:20px;z-index:2147483647;width:min(520px,calc(100vw - 40px));max-height:75vh;overflow:auto;box-sizing:border-box;padding:18px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 12px 44px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}.ytkit-us-ai-close{float:right;min-width:36px;min-height:36px;border:0;background:transparent;color:#cdd6f4;font-size:22px;cursor:pointer}.ytkit-us-ai-body h4{margin:0 0 4px;color:#fff}.ytkit-us-ai-meta{margin:0 0 10px;color:#bac2de;font-size:11px}.ytkit-us-ai-body ul{display:grid;gap:8px;padding-left:20px}.ytkit-us-ai-citations{display:inline-flex;gap:5px;margin-left:7px}.ytkit-us-ai-citation{padding:2px 6px;border:1px solid #585b70;border-radius:5px;color:#89b4fa;text-decoration:none;font:700 11px/1.3 system-ui}.ytkit-us-ai-tldr{padding:10px;border-left:3px solid #cba6f7;background:rgba(203,166,247,.08)}.ytkit-us-ai-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.ytkit-us-ai-actions button,.ytkit-us-ai-library-row button{min-height:36px;padding:7px 10px;border:1px solid #585b70;border-radius:6px;background:#313244;color:#cdd6f4;font-weight:700}.ytkit-us-ai-delete{color:#fecaca!important;border-color:#7f1d1d!important}.ytkit-us-ai-library{margin-top:12px;border-top:1px solid #45475a;padding-top:10px}.ytkit-us-ai-library summary{min-height:36px;cursor:pointer;font-weight:700}.ytkit-us-ai-library input{box-sizing:border-box;width:100%;min-height:40px;margin:8px 0;padding:8px;border:1px solid #585b70;border-radius:6px;background:#11111b;color:#cdd6f4}.ytkit-us-ai-library-results{display:grid;gap:6px}.ytkit-us-ai-library-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.ytkit-us-ai-library-row button:first-child{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ytkit-us-ai-error{color:#fca5a5}.ytkit-us-ai-panel :focus-visible{outline:3px solid #89b4fa;outline-offset:2px}@media(max-width:600px){.ytkit-us-ai-panel{top:64px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 72px)}}@media(forced-colors:active){.ytkit-us-ai-panel,.ytkit-us-ai-actions button,.ytkit-us-ai-library-row button,.ytkit-us-ai-library input,.ytkit-us-ai-citation{border:1px solid CanvasText;color:CanvasText;background:Canvas}}@media(prefers-reduced-motion:reduce){.ytkit-us-ai-panel{scroll-behavior:auto}.ytkit-us-ai-panel *{transition:none!important}}`, 'userscript-ai-summary', true);
                 this._timer = setTimeout(() => { this._timer = null; this._inject(); }, 1500);
                 this._rule = () => {
                     this._runToken += 1;
