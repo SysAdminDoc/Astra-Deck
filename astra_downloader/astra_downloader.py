@@ -94,6 +94,7 @@ try:
         parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
     from .gui import (
+        FolderPickerService as _OwnedFolderPickerService,
         ReadinessProbe as _OwnedReadinessProbe,
         download_status_tone, format_duration, human_status, make_card,
         make_divider, make_empty_state, make_label, make_section_label,
@@ -140,6 +141,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
         parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
     from gui import (
+        FolderPickerService as _OwnedFolderPickerService,
         ReadinessProbe as _OwnedReadinessProbe,
         download_status_tone, format_duration, human_status, make_card,
         make_divider, make_empty_state, make_label, make_section_label,
@@ -2629,66 +2631,16 @@ _folder_pick_q = queue.Queue(maxsize=1)
 _folder_picker_service = None  # set in main() once QApplication exists
 
 
-class FolderPickerService(QObject):
-    """Bridges Flask worker threads to the GUI thread's QFileDialog."""
-
-    # v4.47.0 NF35: log a watchdog line when a single dialog
-    # exec() blocks longer than this many seconds. Real folder
-    # pickers complete in <30s in the worst case (slow drive, large
-    # directory enumeration); blocking past 60s signals a hang in
-    # the Qt event loop, file system, or user-side OS dialog that
-    # the prior implementation swallowed silently. The Flask side
-    # times out at 120s (see /pick-folder handler), so 60s gives a
-    # mid-flight diagnostic before the HTTP request gives up.
-    DIALOG_WATCHDOG_THRESHOLD_SECONDS = 60
-
+class FolderPickerService(_OwnedFolderPickerService):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self._tick)
-        self._timer.start(150)
-
-    def _tick(self):
-        try:
-            req = _folder_pick_q.get_nowait()
-        except queue.Empty:
-            return
-        response_q = req['response']
-        try:
-            initial = req.get('initial') or str(Path.home() / "Videos")
-            dlg = QFileDialog(None, "Choose download folder", initial)
-            dlg.setFileMode(QFileDialog.FileMode.Directory)
-            dlg.setOption(QFileDialog.Option.ShowDirsOnly, True)
-            dlg.setOption(QFileDialog.Option.DontResolveSymlinks, True)
-            # Tray-only mode means there's no parent window to anchor the
-            # dialog to; force it on top so the user actually sees it.
-            dlg.setWindowFlags(dlg.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
-            dlg.activateWindow()
-            dlg.raise_()
-            # v4.47.0 NF35: dialog watchdog. Time the .exec() call and
-            # log a persistent diagnostic line if the dialog blocked
-            # longer than DIALOG_WATCHDOG_THRESHOLD_SECONDS. Previously
-            # the dialog could hang silently and the Flask handler would
-            # time out at 120s with no GUI-side log entry pointing at
-            # the cause.
-            dialog_started_at = time.time()
-            exec_result = dlg.exec()
-            dialog_elapsed = time.time() - dialog_started_at
-            if dialog_elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS:
-                write_persistent_log(
-                    f"FolderPickerService: dialog blocked for {dialog_elapsed:.1f}s "
-                    f"(threshold {self.DIALOG_WATCHDOG_THRESHOLD_SECONDS}s; "
-                    f"initial='{initial}'). Possible Qt event-loop or file-system hang."
-                )
-            if exec_result == QFileDialog.DialogCode.Accepted:
-                paths = dlg.selectedFiles()
-                response_q.put({'path': paths[0] if paths else None,
-                                'cancelled': not bool(paths)})
-            else:
-                response_q.put({'path': None, 'cancelled': True})
-        except Exception as e:
-            write_persistent_log("FolderPickerService failed")
-            response_q.put({'error': 'Folder picker failed. Check Astra Downloader logs for details.'})
+        super().__init__(
+            request_queue=_folder_pick_q,
+            dialog_factory=lambda *args, **kwargs: QFileDialog(*args, **kwargs),
+            dialog_types=lambda: QFileDialog,
+            clock=lambda: time.time(),
+            logger=lambda message: write_persistent_log(message),
+            parent=parent,
+        )
 
 
 class DownloadManager(QObject):
