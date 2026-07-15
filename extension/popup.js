@@ -1302,7 +1302,7 @@ function focusInitialPopupControl() {
     requestAnimationFrame(() => {
         if (document.activeElement && document.activeElement !== document.body) return;
         const firstControl = getFocusableElements(document.body)[0];
-        firstControl?.focus?.({ preventScroll: true });
+        firstControl?.focus?.();
     });
 }
 
@@ -1313,7 +1313,7 @@ function handlePopupDialogKeydown(event) {
         if (openMaintenance) {
             event.preventDefault();
             openMaintenance.open = false;
-            openMaintenance.querySelector('summary')?.focus?.({ preventScroll: true });
+            openMaintenance.querySelector('summary')?.focus?.();
             return;
         }
         event.preventDefault();
@@ -1331,19 +1331,19 @@ function handlePopupDialogKeydown(event) {
 
         if (focusable.length === 1) {
             event.preventDefault();
-            first.focus({ preventScroll: true });
+            first.focus();
             return;
         }
 
         if (event.shiftKey && (!active || active === first || !focusRoot.contains(active))) {
             event.preventDefault();
-            last.focus({ preventScroll: true });
+            last.focus();
             return;
         }
 
         if (!event.shiftKey && active === last) {
             event.preventDefault();
-            first.focus({ preventScroll: true });
+            first.focus();
         }
     }
 }

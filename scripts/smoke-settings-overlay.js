@@ -83,6 +83,7 @@ const CHROME_STUB = `'use strict';
 // captured so the smoke can drive the real YTKIT_OPEN_PANEL path.
 (() => {
     const store = Object.create(null);
+    store.ytSuiteSettings = { transcriptViewer: true };
     const messageListeners = [];
     const changeListeners = [];
     const normalizeKeys = (keys) => {
@@ -99,37 +100,42 @@ const CHROME_STUB = `'use strict';
         }
         return out;
     };
+    const settle = (value, cb) => {
+        if (typeof cb === 'function') { cb(value); return undefined; }
+        return Promise.resolve(value);
+    };
+    const storageArea = {
+        get: (keys, cb) => settle(readOut(keys), cb),
+        set: (items, cb) => { Object.assign(store, items); return settle(undefined, cb); },
+        remove: (keys, cb) => {
+            for (const key of normalizeKeys(keys)) delete store[key];
+            return settle(undefined, cb);
+        },
+        clear: (cb) => {
+            for (const key of Object.keys(store)) delete store[key];
+            return settle(undefined, cb);
+        },
+        getBytesInUse: (_keys, cb) => settle(JSON.stringify(store).length, cb)
+    };
+    const noOpEvent = { addListener() {}, removeListener() {} };
     globalThis.chrome = {
         runtime: {
             id: 'ytkit-smoke-fixture',
             getURL: (p) => p,
             getManifest: () => ({ version: '0.0.0-smoke' }),
-            sendMessage: (_msg, cb) => { if (typeof cb === 'function') cb({}); },
-            onMessage: { addListener: (fn) => messageListeners.push(fn) },
+            sendMessage: (_msg, cb) => settle({}, cb),
+            onMessage: {
+                addListener: (fn) => messageListeners.push(fn),
+                removeListener: (fn) => {
+                    const index = messageListeners.indexOf(fn);
+                    if (index >= 0) messageListeners.splice(index, 1);
+                }
+            },
             lastError: null
         },
         storage: {
-            local: {
-                get: (keys, cb) => {
-                    const out = readOut(keys);
-                    if (typeof cb === 'function') { cb(out); return undefined; }
-                    return Promise.resolve(out);
-                },
-                set: (items, cb) => {
-                    Object.assign(store, items);
-                    if (typeof cb === 'function') { cb(); return undefined; }
-                    return Promise.resolve();
-                },
-                remove: (keys, cb) => {
-                    for (const key of normalizeKeys(keys)) delete store[key];
-                    if (typeof cb === 'function') { cb(); return undefined; }
-                    return Promise.resolve();
-                }
-            },
-            session: {
-                get: (_k, cb) => { const out = {}; if (typeof cb === 'function') { cb(out); return undefined; } return Promise.resolve(out); },
-                set: (_i, cb) => { if (typeof cb === 'function') { cb(); return undefined; } return Promise.resolve(); }
-            },
+            local: storageArea,
+            session: storageArea,
             onChanged: { addListener: (fn) => changeListeners.push(fn) }
         },
         i18n: {
@@ -137,10 +143,22 @@ const CHROME_STUB = `'use strict';
             getUILanguage: () => document.documentElement.dir === 'rtl' ? 'ar' : 'en'
         },
         permissions: {
-            contains: (_p, cb) => { if (typeof cb === 'function') cb(false); },
-            onAdded: { addListener() {} },
-            onRemoved: { addListener() {} }
-        }
+            contains: (_p, cb) => settle(false, cb),
+            getAll: (cb) => settle({ origins: [], permissions: [] }, cb),
+            request: (_p, cb) => settle(false, cb),
+            remove: (_p, cb) => settle(true, cb),
+            onAdded: noOpEvent,
+            onRemoved: noOpEvent
+        },
+        tabs: {
+            query: (_q, cb) => settle([], cb),
+            sendMessage: (_id, _msg, cb) => settle({}, cb),
+            create: (_opts, cb) => settle({ id: 1 }, cb)
+        },
+        sidePanel: { open: (_opts, cb) => settle(undefined, cb) },
+        downloads: { download: (_opts, cb) => settle(1, cb) },
+        action: { openPopup: (cb) => settle(undefined, cb) },
+        extension: { inIncognitoContext: false }
     };
     globalThis.__ytkitSmoke = {
         openPanel() {
@@ -305,9 +323,27 @@ function buildFixture(stageDir, { fallbackOnly = false } = {}) {
     const isolatedScripts = fallbackOnly
         ? isolatedGroup.js.filter((src) => src !== 'features/settings-panel/index.js')
         : isolatedGroup.js;
-    const scriptTags = ['chrome-stub.js', ...isolatedScripts]
+    const scriptTags = ['chrome-stub.js', ...isolatedScripts, 'a11y-fixture-driver.js']
         .map((src) => `    <script src="${src}"></script>`)
         .join('\n');
+    fs.writeFileSync(path.join(stageDir, 'a11y-fixture-driver.js'), `'use strict';
+(() => {
+    const anchor = document.getElementById('fixture-download-anchor');
+    const factory = globalThis.YTKitFeatures?.createDownloadUIFeature;
+    const downloadUi = typeof factory === 'function' ? factory({
+        appState: { settings: {} },
+        extensionFetchJson: async () => ({ data: null }),
+        t: (_key, fallback) => fallback
+    }) : null;
+    globalThis.__ytkitA11y = {
+        openDownload() {
+            if (!downloadUi) return false;
+            downloadUi.showDownloadPopup(anchor);
+            return Boolean(document.querySelector('.ytkit-dl-popup'));
+        }
+    };
+})();
+`, 'utf8');
     const html = `<!DOCTYPE html>
 <html lang="en" dark>
 <head>
@@ -317,6 +353,11 @@ function buildFixture(stageDir, { fallbackOnly = false } = {}) {
 </head>
 <body>
     <div id="fixture-note" style="color:#666;padding:16px;">settings overlay smoke fixture</div>
+    <ytd-watch-flexy>
+        <div id="top-level-buttons-computed"></div>
+        <div id="secondary"></div>
+    </ytd-watch-flexy>
+    <button id="fixture-download-anchor" type="button">Download fixture</button>
 ${scriptTags}
 </body>
 </html>
@@ -418,7 +459,7 @@ async function main() {
         '--allow-file-access-from-files',
         `--user-data-dir=${profileDir}`,
         fixtureUrl
-    ], { stdio: ['ignore', 'pipe', 'pipe'] });
+    ], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 
     let stderrBuf = '';
     const devtoolsUrl = await new Promise((resolve, reject) => {
@@ -567,4 +608,13 @@ if (require.main === module) {
     });
 }
 
-module.exports = { STATES, PANEL_SELECTOR };
+module.exports = {
+    buildFixture,
+    CHROME_STUB,
+    DevtoolsClient,
+    findBrowser,
+    PANEL_SELECTOR,
+    sleep,
+    STATES,
+    waitFor,
+};

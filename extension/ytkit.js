@@ -1732,7 +1732,7 @@ return response;
                 position-try-fallbacks: flip-block !important;
             }
             .ytkit-po-dl { anchor-name: --ytkit-dl-anchor !important; }
-            .ytkit-dl-popup {
+            .ytkit-dl-popup.ytkit-dl-popup--anchored {
                 position-anchor: --ytkit-dl-anchor !important;
                 inset: unset !important;
                 top: unset !important; left: unset !important;
@@ -3600,13 +3600,17 @@ return response;
 
     let _dlPopup = null;
     let _dlPopupCleanup = null;
+    let _dlPopupReturnFocus = null;
 
     function _closeDlPopup() {
+        const returnFocus = _dlPopupReturnFocus;
+        _dlPopupReturnFocus = null;
         if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
         if (_dlPopup) {
             try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
             _dlPopup.remove(); _dlPopup = null;
         }
+        if (returnFocus?.isConnected) returnFocus.focus();
     }
 
     // ── Speed control popup (driven by player chrome speedBtn) ──
@@ -3770,8 +3774,14 @@ return response;
         const popup = document.createElement('div');
         popup.className = 'ytkit-dl-popup';
         popup.setAttribute('role', 'dialog');
+        popup.setAttribute('aria-modal', 'true');
         popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
         const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+        const _useCssAnchor = Boolean(
+            anchorEl?.matches?.('.ytkit-po-dl')
+            && CSS.supports?.('anchor-name: --x')
+        );
+        if (_useCssAnchor) popup.classList.add('ytkit-dl-popup--anchored');
         if (_usePopover) popup.setAttribute('popover', 'auto');
 
         // ── Toolbar: tabs + close in one row ──
@@ -3982,6 +3992,28 @@ return response;
 
         document.body.appendChild(popup);
         _dlPopup = popup;
+        _dlPopupReturnFocus = anchorEl?.isConnected ? anchorEl : null;
+
+        const dialogKeydown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                _closeDlPopup();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const controls = Array.from(popup.querySelectorAll(
+                'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+            )).filter((control) => !control.closest('[hidden], [inert]') && control.offsetParent !== null);
+            if (!controls.length) return;
+            event.preventDefault();
+            const activeIndex = controls.indexOf(document.activeElement);
+            const nextIndex = event.shiftKey
+                ? (activeIndex <= 0 ? controls.length - 1 : activeIndex - 1)
+                : (activeIndex < 0 || activeIndex === controls.length - 1 ? 0 : activeIndex + 1);
+            controls[nextIndex].focus();
+        };
+        popup.addEventListener('keydown', dialogKeydown);
 
         if (_usePopover) {
             popup.showPopover();
@@ -3990,7 +4022,7 @@ return response;
             }, { once: true });
         }
 
-        if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
+        if (anchorEl && !_useCssAnchor) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
             const ph = popup.offsetHeight;
@@ -3999,6 +4031,10 @@ return response;
             if (top < 8) top = r.bottom + 8;
             if (left < 8) left = 8;
             if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+            if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
+            popup.style.inset = 'auto';
+            popup.style.margin = '0';
+            popup.style.translate = 'none';
             popup.style.left = left + 'px';
             popup.style.top = top + 'px';
         }
@@ -4017,13 +4053,16 @@ return response;
             _dlPopupCleanup = () => {
                 document.removeEventListener('click', outsideClick, true);
                 document.removeEventListener('keydown', escHandler);
+                popup.removeEventListener('keydown', dialogKeydown);
                 anchorEl?.setAttribute?.('aria-expanded', 'false');
             };
         } else {
             _dlPopupCleanup = () => {
+                popup.removeEventListener('keydown', dialogKeydown);
                 anchorEl?.setAttribute?.('aria-expanded', 'false');
             };
         }
+        queueMicrotask(() => { if (popup.isConnected) vidTab.focus(); });
 
         // Fetch server config to show current directory.
         // Server returns both downloadPath (camelCase, v1.2.2+) and DownloadPath
@@ -9451,7 +9490,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         // ─── Video Player ───
         cssFeature('hideRelatedVideos', 'Hide Related Videos', 'Remove the related videos panel on watch pages', 'Watch Page', 'panel-right',
-            `ytd-watch-flexy #secondary #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]))) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
+            `ytd-watch-flexy #secondary #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]), .ytkit-bookmarks-container, #ytkit-transcript-panel)) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
         {
             id: 'expandVideoWidth',
             name: 'Expand Video Width',
@@ -49817,6 +49856,10 @@ body.ytkit-panel-open #ytkit-settings-panel {
             -webkit-backdrop-filter: none;
         }
 
+        .ytkit-dl-popup [hidden] {
+            display: none !important;
+        }
+
         .ytkit-dl-popup__toolbar {
             display: flex;
             align-items: center;
@@ -54831,6 +54874,20 @@ body.ytkit-panel-open #ytkit-settings-panel {
             outline: 2px solid #ff7777 !important;
             outline-offset: 2px !important;
             box-shadow: 0 0 0 4px rgba(var(--ytkit-command-accent-rgb),0.22) !important;
+        }
+
+        @media (forced-colors: active) {
+            #ytkit-settings-panel button:focus-visible,
+            #ytkit-settings-panel input:focus-visible,
+            #ytkit-settings-panel select:focus-visible,
+            #ytkit-settings-panel textarea:focus-visible,
+            #ytkit-settings-panel a:focus-visible,
+            #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
+                outline: 2px solid Highlight !important;
+                outline-offset: 2px !important;
+                border-color: Highlight !important;
+                box-shadow: none !important;
+            }
         }
 
         html:not([dark]) #ytkit-settings-panel {

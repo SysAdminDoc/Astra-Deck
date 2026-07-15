@@ -1046,13 +1046,17 @@
 
         let _dlPopup = null;
         let _dlPopupCleanup = null;
+        let _dlPopupReturnFocus = null;
 
         function _closeDlPopup() {
+            const returnFocus = _dlPopupReturnFocus;
+            _dlPopupReturnFocus = null;
             if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
             if (_dlPopup) {
                 try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
                 _dlPopup.remove(); _dlPopup = null;
             }
+            if (returnFocus?.isConnected) returnFocus.focus();
         }
 
         async function _fetchServerConfig(token) {
@@ -1095,8 +1099,14 @@
             const popup = document.createElement('div');
             popup.className = 'ytkit-dl-popup';
             popup.setAttribute('role', 'dialog');
+            popup.setAttribute('aria-modal', 'true');
             popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
             const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+            const _useCssAnchor = Boolean(
+                anchorEl?.matches?.('.ytkit-po-dl')
+                && CSS.supports?.('anchor-name: --x')
+            );
+            if (_useCssAnchor) popup.classList.add('ytkit-dl-popup--anchored');
             if (_usePopover) popup.setAttribute('popover', 'auto');
 
             // ── Toolbar: tabs + close in one row ──
@@ -1298,7 +1308,29 @@
 
             document.body.appendChild(popup);
             _dlPopup = popup;
+            _dlPopupReturnFocus = anchorEl?.isConnected ? anchorEl : null;
             anchorEl?.setAttribute?.('aria-expanded', 'true');
+
+            const dialogKeydown = (event) => {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    _closeDlPopup();
+                    return;
+                }
+                if (event.key !== 'Tab') return;
+                const controls = Array.from(popup.querySelectorAll(
+                    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+                )).filter((control) => !control.closest('[hidden], [inert]') && control.offsetParent !== null);
+                if (!controls.length) return;
+                event.preventDefault();
+                const activeIndex = controls.indexOf(document.activeElement);
+                const nextIndex = event.shiftKey
+                    ? (activeIndex <= 0 ? controls.length - 1 : activeIndex - 1)
+                    : (activeIndex < 0 || activeIndex === controls.length - 1 ? 0 : activeIndex + 1);
+                controls[nextIndex].focus();
+            };
+            popup.addEventListener('keydown', dialogKeydown);
 
             if (_usePopover) {
                 popup.showPopover();
@@ -1307,7 +1339,7 @@
                 }, { once: true });
             }
 
-            if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
+            if (anchorEl && !_useCssAnchor) {
                 const r = anchorEl.getBoundingClientRect();
                 const pw = popup.offsetWidth;
                 const ph = popup.offsetHeight;
@@ -1316,6 +1348,10 @@
                 if (top < 8) top = r.bottom + 8;
                 if (left < 8) left = 8;
                 if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+                if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
+                popup.style.inset = 'auto';
+                popup.style.margin = '0';
+                popup.style.translate = 'none';
                 popup.style.left = left + 'px';
                 popup.style.top = top + 'px';
             }
@@ -1332,13 +1368,16 @@
                 _dlPopupCleanup = () => {
                     document.removeEventListener('click', outsideClick, true);
                     document.removeEventListener('keydown', escHandler);
+                    popup.removeEventListener('keydown', dialogKeydown);
                     anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             } else {
                 _dlPopupCleanup = () => {
+                    popup.removeEventListener('keydown', dialogKeydown);
                     anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             }
+            queueMicrotask(() => { if (popup.isConnected) vidTab.focus(); });
 
             // Fetch server config to show current directory.
             (async () => {

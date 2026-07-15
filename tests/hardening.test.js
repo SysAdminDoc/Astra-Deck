@@ -896,8 +896,16 @@ test('popup root is a modal dialog with focus trapping and Escape close semantic
     );
     assert.match(
         popupSource,
-        /event\.key\s*===\s*'Tab'[\s\S]*?event\.shiftKey[\s\S]*?focus\(\{\s*preventScroll:\s*true\s*\}\)/,
+        /event\.key\s*===\s*'Tab'[\s\S]*?event\.shiftKey[\s\S]*?last\.focus\(\)[\s\S]*?first\.focus\(\)/,
         'Tab and Shift+Tab must wrap between first and last popup controls'
+    );
+    assert.doesNotMatch(
+        popupSource.slice(
+            popupSource.indexOf('function handlePopupDialogKeydown'),
+            popupSource.indexOf('function installPopupFocusManagement')
+        ),
+        /preventScroll\s*:\s*true/,
+        'focus wrapping must scroll the destination into view instead of leaving it obscured'
     );
     assert.match(
         popupSource,
