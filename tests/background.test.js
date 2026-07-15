@@ -379,6 +379,42 @@ test('background EXT_FETCH uses manual redirect for credentialed (cookie-bearing
     assert.equal(capturedOptions?.redirect, 'manual');
 });
 
+test('background EXT_FETCH honors a caller credentials omit downgrade on a cookie origin', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://www.youtube.com/youtubei/v1/player', credentials: 'omit' }
+    });
+
+    // The caller asked for an anonymous probe — the allowlist must not
+    // re-attach the YouTube session cookies.
+    assert.equal(capturedOptions?.credentials, 'omit');
+});
+
+test('background EXT_FETCH never upgrades a non-cookie origin to credentials include', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://sponsor.ajay.app/api/skipSegments', credentials: 'include' }
+    });
+
+    assert.equal(capturedOptions?.credentials, 'omit');
+});
+
 test('background EXT_FETCH blocks an opaqueredirect on a credentialed request', async () => {
     const { messageListener } = loadBackground({
         fetchImpl: async () => ({

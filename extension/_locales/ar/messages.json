@@ -3353,6 +3353,9 @@
   "statusYoutubeStateResetFail": {
     "message": "YouTube state reset failed"
   },
+  "statusYoutubeStateResetPartialUndo": {
+    "message": "تم مسح {count} من مفاتيح حالة صفحة YouTube القديمة. تجاوز {big} منها حد النسخ الاحتياطي، لذا لا يمكن للتراجع استعادتها."
+  },
   "statusYoutubeStateRestored": {
     "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
   },

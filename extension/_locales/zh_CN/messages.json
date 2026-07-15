@@ -3353,6 +3353,9 @@
   "statusYoutubeStateResetFail": {
     "message": "YouTube state reset failed"
   },
+  "statusYoutubeStateResetPartialUndo": {
+    "message": "已清除 {count} 个过时的 YouTube 页面状态键。其中 {big} 个超出备份限制，撤销无法恢复它们。"
+  },
   "statusYoutubeStateRestored": {
     "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
   },

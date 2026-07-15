@@ -3197,6 +3197,9 @@
   "statusYoutubeStateResetFail": {
     "message": "YouTube state reset failed"
   },
+  "statusYoutubeStateResetPartialUndo": {
+    "message": "Cleared {count} stale YouTube page-state keys. {big} exceeded the backup limit, so Undo cannot restore them."
+  },
   "statusYoutubeStateRestored": {
     "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
   },
