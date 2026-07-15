@@ -1319,6 +1319,7 @@ for name in (
 
 config = importlib.import_module("astra_downloader.config")
 download = importlib.import_module("astra_downloader.download")
+health = importlib.import_module("astra_downloader.health")
 assert config.normalize_url("https://example.com/video") == (
     "https://example.com/video", None
 )
@@ -1331,6 +1332,9 @@ model.status = "complete"
 model.mark_terminal()
 assert model.finished_time == 123.0
 assert download.classify_download_failure("connection timed out") == "network-unreachable"
+assert health.is_youtube_url("https://youtu.be/abcdefghijk")
+assert health.parse_ffmpeg_major("8.1.1") == 8
+assert health.ytdlp_needs_external_runtime("2026.04.01")
 
 for forbidden in (
     "astra_downloader.astra_downloader",
@@ -1372,6 +1376,10 @@ for forbidden in (
         self.assertIs(download.classify_download_failure, ad.classify_download_failure)
         self.assertIs(download.DOWNLOAD_ACTIVE_STATES, ad.DOWNLOAD_ACTIVE_STATES)
         self.assertIs(health.get_ytdlp_version, ad.get_ytdlp_version)
+        self.assertIs(health.is_youtube_url, ad.is_youtube_url)
+        self.assertIs(health.parse_ffmpeg_major, ad.parse_ffmpeg_major)
+        self.assertIs(health.build_youtube_extractor_args, ad.build_youtube_extractor_args)
+        self.assertIs(health.build_javascript_runtime_args, ad.build_javascript_runtime_args)
         self.assertIs(routes.create_api, ad.create_api)
         self.assertIs(gui.MainWindow, ad.MainWindow)
 
