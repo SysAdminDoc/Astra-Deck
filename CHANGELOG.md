@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.10] - 2026-07-15
+
+### Fixed
+
+- **Subscription masthead actions now arrive as one stable group.** Removed the
+  one-second deferred insertion that painted YouTube's native controls first
+  and then shifted them when Astra's actions appeared. The subscription and
+  Home action groups now synchronize immediately and whenever YouTube replaces
+  its masthead controls, without polling every page mutation.
+
 ## [4.49.9] - 2026-07-15
 
 ### Fixed

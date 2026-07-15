@@ -1689,6 +1689,34 @@
                 document.querySelector('.ytkit-home-hide-all-btn')?.remove();
             },
 
+            _syncMastheadPageActions() {
+                const path = window.location.pathname;
+                if (path === '/feed/subscriptions' && this._isScopeEnabledForPath('/feed/subscriptions')) {
+                    this._createSubsHideAllButton();
+                } else {
+                    this._removeSubsHideAllButton();
+                }
+                if (path === '/' && this._isScopeEnabledForPath('/')) {
+                    this._createHomeHideAllButton();
+                } else {
+                    this._removeHomeHideAllButton();
+                }
+            },
+
+            _mutationTouchesMastheadControls(mutations) {
+                const selector = '#masthead #end #buttons';
+                const touches = node => node?.nodeType === 1 && Boolean(
+                    node.matches?.(selector)
+                    || node.closest?.(selector)
+                    || node.querySelector?.(selector)
+                );
+                return Array.from(mutations || []).some(mutation =>
+                    touches(mutation.target)
+                    || Array.from(mutation.addedNodes || []).some(touches)
+                    || Array.from(mutation.removedNodes || []).some(touches)
+                );
+            },
+
             init() {
                 const css = `
                     .ytkit-video-hide-btn {
@@ -1884,6 +1912,13 @@
                             });
                         }
                     }
+                    // Insert the Astra group in the same mutation turn that
+                    // creates/replaces YouTube's masthead controls. Waiting a
+                    // second painted the native buttons first, then shifted
+                    // them when the group arrived.
+                    if (this._mutationTouchesMastheadControls(mutations)) {
+                        this._syncMastheadPageActions();
+                    }
                     if (!pendingMutationCards.length) return;
                     // Cancel the in-flight batch and re-schedule with ALL
                     // pending cards (the accumulated ones plus the new ones).
@@ -1897,21 +1932,12 @@
                 const checkPages = () => {
                     const path = window.location.pathname;
                     const isOnSubsPage = path === '/feed/subscriptions';
-                    const isOnHomePage = path === '/';
                     if (isOnSubsPage && this._isScopeEnabledForPath('/feed/subscriptions')) {
                         if (!wasOnSubsPage) this._resetSubsLoadState();
-                        clearTimeout(this._subsButtonTimer);
-                        this._subsButtonTimer = setTimeout(() => this._createSubsHideAllButton(), 1000);
                     } else {
-                        this._removeSubsHideAllButton();
                         this._removeLoadBlocker();
                     }
-                    if (isOnHomePage && this._isScopeEnabledForPath('/')) {
-                        clearTimeout(this._homeButtonTimer);
-                        this._homeButtonTimer = setTimeout(() => this._createHomeHideAllButton(), 1000);
-                    } else {
-                        this._removeHomeHideAllButton();
-                    }
+                    this._syncMastheadPageActions();
                     wasOnSubsPage = isOnSubsPage;
                     this._updatePageActionButtons();
                 };
@@ -1962,8 +1988,6 @@
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                 if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
                 if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
-                clearTimeout(this._subsButtonTimer); this._subsButtonTimer = null;
-                clearTimeout(this._homeButtonTimer); this._homeButtonTimer = null;
                 removeNavigateRule('hideVideosFromHomeNav');
                 document.querySelectorAll('.ytkit-video-hide-btn').forEach(b => b.remove());
                 document.querySelectorAll('.ytkit-video-hidden').forEach(e => e.classList.remove('ytkit-video-hidden'));
