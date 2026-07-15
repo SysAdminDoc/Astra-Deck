@@ -28,6 +28,28 @@ _LEGACY_EXPORTS = tuple(
 )
 _resolve_legacy = make_legacy_resolver(_LEGACY_EXPORTS)
 
+_PUBLIC_RUNTIME_FIELDS = (
+    "runtime",
+    "installed",
+    "version",
+    "supported",
+    "ejsReady",
+    "minVersion",
+    "reason",
+    "configuredRuntime",
+    "canProvisionDeno",
+    "ytdlpNeedsRuntime",
+    "advice",
+    "source",
+)
+
+
+def _public_runtime_status(status):
+    """Return the runtime capability contract without local filesystem data."""
+    if not isinstance(status, dict):
+        return {}
+    return {key: status[key] for key in _PUBLIC_RUNTIME_FIELDS if key in status}
+
 
 class RateLimiter:
     """Thread-safe sliding-window limiter with an injectable monotonic clock."""
@@ -275,7 +297,10 @@ def create_api(config, dl_manager, history, *, dependencies):
             resp.headers["Access-Control-Allow-Origin"] = origin
             resp.headers["Vary"] = "Origin"
         resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type,X-Auth-Token,X-MDL-Client"
+        resp.headers["Access-Control-Allow-Headers"] = (
+            "Content-Type,X-Auth-Token,X-MDL-Client,"
+            "X-MDL-Token,X-MDL-Token-Source"
+        )
         # v1.2.0: cache preflight for 10 minutes. Multi-video downloads
         # previously re-negotiated OPTIONS on every POST /download.
         resp.headers["Access-Control-Max-Age"] = str(CORS_MAX_AGE_SECONDS)
@@ -311,6 +336,9 @@ def create_api(config, dl_manager, history, *, dependencies):
 
     @api.route('/health')
     def health():
+        runtime_status = _public_runtime_status(probe_javascript_runtime(
+            configured_runtime=config.get('JavaScriptRuntime', 'auto')
+        ))
         resp = {
             "status": "ok", "service": SERVICE_ID, "api": SERVICE_API_VERSION,
             "name": APP_NAME, "version": APP_VERSION,
@@ -336,12 +364,8 @@ def create_api(config, dl_manager, history, *, dependencies):
             "ffmpegCapabilities": check_ffmpeg_capabilities(),
             # External JavaScript runtime capability. The legacy denoRuntime
             # key remains during the additive migration to javascriptRuntime.
-            "denoRuntime": probe_javascript_runtime(
-                configured_runtime=config.get('JavaScriptRuntime', 'auto')
-            ),
-            "javascriptRuntime": probe_javascript_runtime(
-                configured_runtime=config.get('JavaScriptRuntime', 'auto')
-            ),
+            "denoRuntime": runtime_status,
+            "javascriptRuntime": runtime_status,
             # Verified updater state contains only versions/status codes; file
             # paths and digests remain local to the companion.
             "updateRecovery": read_update_recovery_status(),
@@ -395,7 +419,10 @@ def create_api(config, dl_manager, history, *, dependencies):
                 force=True,
                 configured_runtime=config.get('JavaScriptRuntime', 'auto'),
             )
-            return cors_response({"ok": True, "path": result, "denoRuntime": runtime})
+            return cors_response({
+                "ok": True,
+                "denoRuntime": _public_runtime_status(runtime),
+            })
         error = get_last_deno_provision_error()
         return cors_response({
             "ok": False,
@@ -626,15 +653,20 @@ def create_api(config, dl_manager, history, *, dependencies):
     def get_config():
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        c = dict(config.data)
-        c['videoFormats'] = ['mp4', 'mkv', 'webm']
-        c['audioFormats'] = ['mp3', 'm4a', 'opus', 'flac', 'wav']
-        c['qualities'] = ['best', '2160', '1440', '1080', '720', '480']
+        video_path = config.get('DownloadPath', '')
+        audio_path = config.get('AudioDownloadPath', '')
+        c = {
+            'DownloadPath': video_path,
+            'AudioDownloadPath': audio_path,
+            'videoFormats': ['mp4', 'mkv', 'webm'],
+            'audioFormats': ['mp3', 'm4a', 'opus', 'flac', 'wav'],
+            'qualities': ['best', '2160', '1440', '1080', '720', '480'],
+        }
         # v1.2.2: expose camelCase aliases for the path keys so the extension
         # can use the conventional JS casing. Capital-case keys remain for
         # backward compatibility with older extension builds.
-        c['downloadPath'] = c.get('DownloadPath', '')
-        c['audioDownloadPath'] = c.get('AudioDownloadPath', '')
+        c['downloadPath'] = video_path
+        c['audioDownloadPath'] = audio_path
         return cors_response(c)
 
     @api.route('/pick-folder', methods=['POST'])
@@ -680,8 +712,10 @@ def create_api(config, dl_manager, history, *, dependencies):
                         break
                     except ValueError:
                         continue
-            except Exception:
-                inside = True  # advisory only; /download still enforces — fail open on the hint
+            except (OSError, RuntimeError, TypeError, ValueError):
+                # The hint is advisory, but an indeterminate path must not be
+                # represented as trusted. /download independently enforces it.
+                inside = False
             result['outsideAllowlist'] = not inside
         return cors_response(result)
 

@@ -934,6 +934,47 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertTrue(entries, "authenticated /health must expose recent log entries")
         self.assertIn("leak.txt", json.dumps(entries))
 
+    def test_health_omits_local_runtime_paths_and_probes_once(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        runtime = {
+            "runtime": "deno",
+            "installed": True,
+            "version": "2.4.1",
+            "supported": True,
+            "ejsReady": True,
+            "source": "bundled",
+            "path": "C:/Users/tester/AppData/Local/Astra Downloader/deno.exe",
+            "ytdlpNeedsRuntime": True,
+        }
+        with mock.patch.object(ad, "probe_javascript_runtime", return_value=runtime) as probe:
+            api = ad.create_api(config, manager, FakeHistory())
+            body = api.test_client().get("/health").get_json()
+
+        self.assertEqual(probe.call_count, 1)
+        self.assertEqual(body["javascriptRuntime"], body["denoRuntime"])
+        self.assertNotIn("path", body["javascriptRuntime"])
+        self.assertEqual(body["javascriptRuntime"]["source"], "bundled")
+
+    def test_config_response_is_allowlisted(self):
+        token = "a" * 32
+        config = FakeConfig({
+            "ServerToken": token,
+            "Proxy": "https://user:secret@example.invalid:8443",
+            "NativeChromeExtensionIds": "private-extension-id",
+        })
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().get("/config", headers={"X-Auth-Token": token})
+        body = resp.get_json()
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(body["downloadPath"], config.get("DownloadPath"))
+        self.assertEqual(body["DownloadPath"], config.get("DownloadPath"))
+        for private_key in ("ServerToken", "Proxy", "NativeChromeExtensionIds"):
+            self.assertNotIn(private_key, body)
+
     def test_health_legacy_token_echo_is_origin_allowlisted(self):
         trusted_origin = "chrome-extension://trustedlegacyid"
         config = FakeConfig({
@@ -2031,6 +2072,29 @@ class CorsHeaderTests(unittest.TestCase):
         api = ad.create_api(config, manager, FakeHistory())
         resp = api.test_client().get("/health", headers={"X-MDL-Client": "MediaDL"})
         self.assertEqual(resp.headers.get("Access-Control-Max-Age"), str(ad.CORS_MAX_AGE_SECONDS))
+
+    def test_preflight_advertises_supported_auth_headers(self):
+        token = "g" * 32
+        origin = "chrome-extension://trustedlegacyid"
+        config = FakeConfig({
+            "ServerToken": token,
+            "LegacyHealthTokenOrigins": origin,
+        })
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().options(
+            "/provision-deno",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Headers": "X-MDL-Token,X-MDL-Token-Source",
+            },
+        )
+        allowed = {
+            header.strip().lower()
+            for header in resp.headers.get("Access-Control-Allow-Headers", "").split(",")
+        }
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue({"x-mdl-token", "x-mdl-token-source"}.issubset(allowed))
 
     def test_response_disables_intermediary_caching(self):
         # v1.4.0 NX11: defense-in-depth against intermediary caching of
@@ -3137,6 +3201,29 @@ class DenoProvisionTests(unittest.TestCase):
         resp = api.test_client().post("/provision-deno")
         self.assertEqual(resp.status_code, 403)
 
+    def test_provision_deno_endpoint_omits_local_install_path(self):
+        token = "f" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        runtime = {
+            "runtime": "deno",
+            "installed": True,
+            "supported": True,
+            "ejsReady": True,
+            "path": "C:/Users/tester/AppData/Local/Astra Downloader/deno.exe",
+        }
+        api = ad.create_api(config, manager, FakeHistory())
+        with mock.patch.object(ad, "provision_deno", return_value=runtime["path"]), \
+                mock.patch.object(ad, "probe_javascript_runtime", return_value=runtime):
+            body = api.test_client().post(
+                "/provision-deno",
+                headers={"X-Auth-Token": token},
+            ).get_json()
+
+        self.assertTrue(body["ok"])
+        self.assertNotIn("path", body)
+        self.assertNotIn("path", body["denoRuntime"])
+
     def test_provision_deno_requires_sha256_sidecar_before_extracting(self):
         original_path = ad.DENO_PATH
         original_dir = ad.DENO_DIR
@@ -3249,8 +3336,9 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         self.assertIn("denoRuntime", body)
         self.assertIn("javascriptRuntime", body)
         self.assertIsInstance(body["denoRuntime"], dict)
-        for key in ("installed", "version", "path", "ytdlpNeedsRuntime", "advice"):
+        for key in ("installed", "version", "ytdlpNeedsRuntime", "advice"):
             self.assertIn(key, body["denoRuntime"])
+        self.assertNotIn("path", body["denoRuntime"])
         for key in ("runtime", "version", "supported", "ejsReady", "reason"):
             self.assertIn(key, body["javascriptRuntime"])
 
