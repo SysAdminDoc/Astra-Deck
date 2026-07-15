@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "referenceLocale": "en",
+  "referenceKeys": 1040,
+  "locales": {
+    "ar": 143,
+    "de": 140,
+    "es": 144,
+    "fr": 144,
+    "it": 142,
+    "ja": 138,
+    "ko": 138,
+    "pt_BR": 140,
+    "ru": 138,
+    "zh_CN": 135
+  }
+}
