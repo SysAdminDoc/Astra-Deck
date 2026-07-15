@@ -1491,6 +1491,74 @@
       "matchedSelectors": [
         "ytd-in-feed-ad-layout-renderer"
       ]
+    },
+    "transcriptPanel.classic": {
+      "surface": "transcriptPanel",
+      "source": "tests/fixtures/transcript-panel-classic.html",
+      "fixture": "transcript-panel-classic.html",
+      "elementCount": 5,
+      "stable": [
+        {
+          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"]",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "[data-target-id=\"PAmodern_transcript_view\"]",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-transcript-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"]",
+        "ytd-transcript-renderer"
+      ]
+    },
+    "transcriptPanel.modern": {
+      "surface": "transcriptPanel",
+      "source": "tests/fixtures/transcript-panel-modern.html",
+      "fixture": "transcript-panel-modern.html",
+      "elementCount": 5,
+      "stable": [
+        {
+          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"]",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "[data-target-id=\"PAmodern_transcript_view\"]",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-transcript-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "[data-target-id=\"PAmodern_transcript_view\"]",
+        "ytd-transcript-renderer"
+      ]
     }
   }
 }

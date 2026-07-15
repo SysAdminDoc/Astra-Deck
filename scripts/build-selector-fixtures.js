@@ -77,6 +77,8 @@ const SURFACE_MATCH_SOURCES = [
     { id: 'channel.thumbnail', surface: 'thumbnail', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
     { id: 'embed.player', surface: 'player', mhtml: 'EmbedPlayer.mhtml', fixture: 'yt-embed-player.tokens.txt', minElements: 40 },
     { id: 'embed.mainVideo', surface: 'mainVideo', mhtml: 'EmbedPlayer.mhtml', fixture: 'yt-embed-player.tokens.txt', minElements: 40 },
+    { id: 'transcriptPanel.classic', surface: 'transcriptPanel', source: 'tests/fixtures/transcript-panel-classic.html', fixture: 'transcript-panel-classic.html', minElements: 3 },
+    { id: 'transcriptPanel.modern', surface: 'transcriptPanel', source: 'tests/fixtures/transcript-panel-modern.html', fixture: 'transcript-panel-modern.html', minElements: 3 },
 ];
 
 const VOID_TAGS = new Set([
@@ -385,12 +387,16 @@ function buildSurfaceMatchFixture() {
             throw new Error(`Selector surface "${target.surface}" is not registered`);
         }
 
-        if (!decodedByMhtml.has(target.mhtml)) {
-            const mhtmlPath = path.join(MHTML_DIR, target.mhtml);
-            decodedByMhtml.set(target.mhtml, extractTokenText(mhtmlPath));
-            elementsByMhtml.set(target.mhtml, parseDomElements(decodedByMhtml.get(target.mhtml)));
+        const source = target.source || `mhtml/${target.mhtml}`;
+        if (!decodedByMhtml.has(source)) {
+            const sourcePath = path.join(REPO_ROOT, source);
+            const sourceText = target.source
+                ? fs.readFileSync(sourcePath, 'utf8')
+                : extractTokenText(sourcePath);
+            decodedByMhtml.set(source, sourceText);
+            elementsByMhtml.set(source, parseDomElements(sourceText));
         }
-        const elements = elementsByMhtml.get(target.mhtml);
+        const elements = elementsByMhtml.get(source);
         const stable = evaluateSelectorGroup(elements, [...entry.stable]);
         const fallback = evaluateSelectorGroup(elements, [...entry.fallback]);
         const all = [...stable, ...fallback];
@@ -398,7 +404,7 @@ function buildSurfaceMatchFixture() {
         const surfaceId = target.id || target.surface;
         surfaces[surfaceId] = {
             surface: target.surface,
-            source: `mhtml/${target.mhtml}`,
+            source,
             fixture: target.fixture,
             elementCount: elements.length,
             stable,
