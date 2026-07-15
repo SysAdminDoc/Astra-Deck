@@ -212,6 +212,34 @@ test('background EXT_FETCH preserves empty-string request bodies', async () => {
     assert.equal(response.responseText, '');
 });
 
+test('background EXT_FETCH preserves JSON request bodies across Chrome message serialization', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', {
+                status: 200,
+                headers: { 'content-length': '2' }
+            });
+        }
+    });
+    const message = JSON.parse(JSON.stringify({
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://www.youtube.com/api/test',
+            headers: { 'Content-Type': 'application/json' },
+            data: { query: 'transcript', limit: 25 }
+        }
+    }));
+
+    const response = await dispatchMessage(messageListener, message);
+
+    assert.equal(capturedOptions?.body, '{"query":"transcript","limit":25}');
+    assert.equal(capturedOptions?.headers?.['Content-Type'], 'application/json');
+    assert.equal(response.status, 200);
+});
+
 test('background EXT_FETCH rejects binary bodies instead of silently corrupting them', async () => {
     let fetchCalled = false;
     const { messageListener } = loadBackground({
