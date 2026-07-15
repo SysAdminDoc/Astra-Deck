@@ -1417,6 +1417,33 @@ for forbidden in (
             self.assertEqual(probe.get(force=True), "1.2.3")
             self.assertEqual(len(calls), 2)
 
+    def test_po_token_probe_caches_injected_http_result_and_resets(self):
+        import health
+
+        calls = []
+
+        class Response:
+            ok = True
+
+            @staticmethod
+            def json():
+                return {"version": "1.2.0"}
+
+        probe = health.PoTokenProviderProbe(
+            http_get=lambda url, **kwargs: calls.append((url, kwargs)) or Response(),
+            clock=lambda: 0.0,
+            port=4416,
+            min_version="1.3.0",
+            ttl_seconds=30,
+        )
+        first = probe.probe()
+        self.assertTrue(first["stale"])
+        self.assertEqual(probe.probe(), first)
+        self.assertEqual(len(calls), 1)
+        probe.reset()
+        self.assertEqual(probe.probe(), first)
+        self.assertEqual(len(calls), 2)
+
     def test_routes_module_owns_injected_wsgi_backend_selection_and_teardown(self):
         import routes
 

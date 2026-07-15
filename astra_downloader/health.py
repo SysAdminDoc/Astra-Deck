@@ -31,6 +31,7 @@ __all__ = (
     "_compare_semver",
     "ExecutableVersionProbe", "parse_ytdlp_version_output",
     "parse_ffmpeg_version_output",
+    "PoTokenProviderProbe",
 )
 
 PO_TOKEN_PROVIDER_PORT = 4416
@@ -207,6 +208,73 @@ class ExecutableVersionProbe:
             self._checked_at = self._clock() if checked_at is None else float(checked_at)
 
 
+class PoTokenProviderProbe:
+    """Cached liveness/version probe for an injected local PO-token provider."""
+
+    def __init__(self, *, http_get, clock=time.time, port=PO_TOKEN_PROVIDER_PORT,
+                 min_version=BGUTIL_POT_MIN_VERSION, ttl_seconds=30):
+        self._http_get = http_get
+        self._clock = clock
+        self._port = int(port)
+        self._min_version = str(min_version)
+        self._ttl_seconds = max(0, float(ttl_seconds))
+        self._value = None
+        self._checked_at = 0.0
+        self._has_checked = False
+        self._lock = threading.Lock()
+
+    def probe(self, force=False, timeout=1.0):
+        with self._lock:
+            now = self._clock()
+            if (
+                not force
+                and self._has_checked
+                and (now - self._checked_at) < self._ttl_seconds
+            ):
+                return self._value
+            result = None
+            for path in ('/ping', '/'):
+                try:
+                    response = self._http_get(
+                        f'http://127.0.0.1:{self._port}{path}',
+                        timeout=timeout,
+                    )
+                except Exception:
+                    continue
+                if not getattr(response, 'ok', False):
+                    continue
+                try:
+                    payload = response.json()
+                except (TypeError, ValueError):
+                    payload = None
+                version = None
+                if isinstance(payload, dict):
+                    raw = payload.get('version') or payload.get('plugin_version')
+                    if raw is not None:
+                        version = str(raw)[:32]
+                stale = bool(
+                    version and _compare_semver(version, self._min_version) < 0
+                )
+                result = {
+                    'ok': True,
+                    'port': self._port,
+                    'version': version,
+                    'stale': stale,
+                    'minVersion': self._min_version,
+                }
+                break
+            self._value = result
+            self._checked_at = now
+            self._has_checked = True
+            return result
+
+    def reset(self):
+        with self._lock:
+            self._value = None
+            self._checked_at = 0.0
+            self._has_checked = False
+
+
 _OWNED_EXPORTS = {
     "PO_TOKEN_PROVIDER_PORT", "BGUTIL_POT_MIN_VERSION",
     "YTDLP_EXTERNAL_RUNTIME_CUTOFF", "DENO_MIN_VERSION", "NODE_MIN_VERSION",
@@ -215,6 +283,7 @@ _OWNED_EXPORTS = {
     "build_youtube_extractor_args", "parse_ffmpeg_major",
     "_run_captured", "ExecutableVersionProbe", "parse_ytdlp_version_output",
     "parse_ffmpeg_version_output",
+    "PoTokenProviderProbe",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS

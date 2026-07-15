@@ -83,7 +83,7 @@ try:
     )
     from .health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
-        ExecutableVersionProbe,
+        ExecutableVersionProbe, PoTokenProviderProbe,
         PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
         _compare_semver, _parse_ytdlp_release_date,
         _run_captured as _owned_run_captured,
@@ -120,7 +120,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
     )
     from health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
-        ExecutableVersionProbe,
+        ExecutableVersionProbe, PoTokenProviderProbe,
         PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
         _compare_semver, _parse_ytdlp_release_date,
         _run_captured as _owned_run_captured,
@@ -635,89 +635,20 @@ def get_ytdlp_version(force=False):
     return _ytdlp_version_probe.get(force=force)
 
 
-# v1.4.0 (N1): cached probe for bgutil-ytdlp-pot-provider.
-# Caches for 30 s so the /health endpoint stays cheap under polling but a
-# user starting the provider mid-session sees it surfaced within half a
-# minute. Returns None when unreachable so the call site can branch
-# clearly. The cache cell is shared across threads — the 30 s TTL races
-# benignly (two probes in flight is fine).
-_po_token_provider_cache = {'value': None, 'checked_at': 0.0}
-_PO_TOKEN_PROVIDER_CACHE_LOCK = threading.Lock()
+_po_token_provider_probe = PoTokenProviderProbe(
+    http_get=lambda *args, **kwargs: http_requests.get(*args, **kwargs),
+    clock=lambda: time.time(),
+    port=PO_TOKEN_PROVIDER_PORT,
+    min_version=BGUTIL_POT_MIN_VERSION,
+    ttl_seconds=_PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS,
+)
 
 def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT):
-    """Best-effort detection of a running bgutil-ytdlp-pot-provider.
-
-    Returns ``{'ok': True, 'port': int, 'version': str | None, 'stale': bool,
-    'minVersion': str}`` when the provider's HTTP server responds on
-    ``127.0.0.1:4416``, ``None`` otherwise. Cached for 30 s. The probe uses
-    a tight timeout so a stale firewall hold can't gum up health polling.
-
-    The ``stale`` field is true when the detected version
-    string compares less than ``BGUTIL_POT_MIN_VERSION``. The extension
-    popup health surface renders an amber "update bgutil-pot" notice on
-    stale, distinct from the absence notice when the provider isn't running
-    at all.
-
-    The provider's ``/ping`` endpoint is the documented liveness check; older
-    builds expose ``/`` instead. We accept either as long as the body parses
-    as JSON or the status is 2xx — false positives are harmless because the
-    actual PO-token call is yt-dlp's responsibility.
-    """
-    with _PO_TOKEN_PROVIDER_CACHE_LOCK:
-        cache = _po_token_provider_cache
-        now = time.time()
-        if not force and (now - cache['checked_at']) < _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS:
-            return cache['value']
-        result = None
-        for path in ('/ping', '/'):
-            try:
-                r = http_requests.get(
-                    f'http://127.0.0.1:{PO_TOKEN_PROVIDER_PORT}{path}',
-                    timeout=timeout,
-                )
-            except Exception:
-                continue
-            if not getattr(r, 'ok', False):
-                continue
-            version = None
-            try:
-                payload = r.json()
-            except ValueError:
-                payload = None
-            if isinstance(payload, dict):
-                raw = payload.get('version') or payload.get('plugin_version')
-                if raw is not None:
-                    version = str(raw)[:32]
-            # stale-version comparison. Stale is only set true
-            # when the detected version parses cleanly AND compares less
-            # than BGUTIL_POT_MIN_VERSION. Unknown version -> stale=False
-            # (don't false-positive on older provider builds that don't
-            # return a version field).
-            stale = False
-            if version:
-                try:
-                    if _compare_semver(version, BGUTIL_POT_MIN_VERSION) < 0:
-                        stale = True
-                except Exception:
-                    stale = False
-            result = {
-                'ok': True,
-                'port': PO_TOKEN_PROVIDER_PORT,
-                'version': version,
-                'stale': stale,
-                'minVersion': BGUTIL_POT_MIN_VERSION,
-            }
-            break
-        cache['value'] = result
-        cache['checked_at'] = now
-        return result
+    return _po_token_provider_probe.probe(force=force, timeout=timeout)
 
 
 def reset_po_token_provider_cache():
-    """Test hook + manual recheck path — clears the cached probe result."""
-    with _PO_TOKEN_PROVIDER_CACHE_LOCK:
-        _po_token_provider_cache['value'] = None
-        _po_token_provider_cache['checked_at'] = 0.0
+    _po_token_provider_probe.reset()
 
 
 # Deno (or other external JS runtime) presence probe + cutoff
