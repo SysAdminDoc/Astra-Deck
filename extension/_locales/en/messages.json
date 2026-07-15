@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "Credential could not be deleted."
+  },
+  "aiCredentialDeleted": {
+    "message": "AI credential deleted."
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "Enter to set or replace"
+  },
+  "aiCredentialInputRequired": {
+    "message": "Enter a credential to save."
+  },
+  "aiCredentialNewLabel": {
+    "message": "New credential"
+  },
+  "aiCredentialNote": {
+    "message": "The stored value is never shown or included in settings exports."
+  },
+  "aiCredentialProviderLabel": {
+    "message": "Provider"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "Remember after browser restart"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "Replace credential"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "Save credential"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "Credential could not be saved."
+  },
+  "aiCredentialSaved": {
+    "message": "AI credential saved without exposing its value."
+  },
+  "aiCredentialStatusError": {
+    "message": "Credential status unavailable."
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "Not configured"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "Configured · remembered"
+  },
+  "aiCredentialStatusSession": {
+    "message": "Configured · this session"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "Status unavailable"
+  },
+  "aiCredentialTitle": {
+    "message": "AI provider credential"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
@@ -3005,6 +3059,33 @@
   "resultsMatching": {
     "message": "matching"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "This setting only applies when GitHub-Full Profile is enabled."
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "local only"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "This value is stored in extension storage on this device. It is never synced to a Google account, never sent to Astra Deck servers, and is redacted from the bug-report bundle (Diagnostics → Save)."
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type} (no inline editor)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "unavailable"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "This setting requires a capability not available in this browser: {capabilities}. Toggling the setting has no effect until the capability becomes available."
+  },
+  "schemaJsonExpectedArray": {
+    "message": "Expected an array"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "Expected an object"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "Invalid JSON: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} settings on across {categories} categories"
   },
@@ -3530,6 +3611,12 @@
   "statusImportFail": {
     "message": "Import failed"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "Import preview: {preview}. Applying with rollback…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "Preview: {preview}."
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3553,6 +3640,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Quick controls could not be loaded. Try reopening the popup."
+  },
+  "statusResetDoneNoUndo": {
+    "message": "Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser."
+  },
+  "statusResetDoneUndo": {
+    "message": "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser."
   },
   "statusResetFail": {
     "message": "Reset failed"
@@ -3589,6 +3682,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "Open a YouTube tab first — the popup needs it to reach the Astra Downloader."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

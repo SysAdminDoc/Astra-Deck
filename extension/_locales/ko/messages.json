@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "자격 증명을 삭제하지 못했습니다."
+  },
+  "aiCredentialDeleted": {
+    "message": "AI 자격 증명이 삭제되었습니다."
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "입력하여 설정 또는 교체"
+  },
+  "aiCredentialInputRequired": {
+    "message": "저장할 자격 증명을 입력하세요."
+  },
+  "aiCredentialNewLabel": {
+    "message": "새 자격 증명"
+  },
+  "aiCredentialNote": {
+    "message": "저장된 값은 표시되지 않으며 설정 내보내기에도 포함되지 않습니다."
+  },
+  "aiCredentialProviderLabel": {
+    "message": "제공자"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "브라우저 재시작 후에도 기억"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "자격 증명 교체"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "자격 증명 저장"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "자격 증명을 저장하지 못했습니다."
+  },
+  "aiCredentialSaved": {
+    "message": "값을 노출하지 않고 AI 자격 증명을 저장했습니다."
+  },
+  "aiCredentialStatusError": {
+    "message": "자격 증명 상태를 확인할 수 없습니다."
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "설정되지 않음"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "설정됨 · 기억됨"
+  },
+  "aiCredentialStatusSession": {
+    "message": "설정됨 · 이 세션만"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "상태를 확인할 수 없음"
+  },
+  "aiCredentialTitle": {
+    "message": "AI 제공자 자격 증명"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
@@ -3005,6 +3059,33 @@
   "resultsMatching": {
     "message": "일치"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "이 설정은 GitHub-Full 프로필이 활성화된 경우에만 적용됩니다."
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "로컬 전용"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "이 값은 이 기기의 확장 프로그램 저장소에 저장됩니다. Google 계정과 동기화되지 않고 Astra Deck 서버로 전송되지 않으며 버그 신고 번들(진단 → 저장)에서 제외됩니다."
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type} (인라인 편집기 없음)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "사용 불가"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "이 설정에는 이 브라우저에서 사용할 수 없는 기능이 필요합니다: {capabilities}. 기능을 사용할 수 있을 때까지 설정을 전환해도 효과가 없습니다."
+  },
+  "schemaJsonExpectedArray": {
+    "message": "배열이 필요합니다"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "객체가 필요합니다"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "잘못된 JSON: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{categories}개 카테고리에서 {enabled}/{total}개 설정 활성화"
   },
@@ -3530,6 +3611,12 @@
   "statusImportFail": {
     "message": "가져오기 실패"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "가져오기 미리 보기: {preview}. 롤백과 함께 적용 중…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "미리 보기: {preview}."
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3553,6 +3640,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "빠른 컨트롤을 로드할 수 없습니다. 팝업을 다시 열어보세요."
+  },
+  "statusResetDoneNoUndo": {
+    "message": "이동식 데이터가 삭제되었습니다. 저장된 AI 자격 증명은 유지되었습니다. 이 브라우저에서는 실행 취소를 사용할 수 없습니다."
+  },
+  "statusResetDoneUndo": {
+    "message": "이동식 설정, 기록, 대기열, 자막 데이터가 삭제되었습니다. 저장된 AI 자격 증명은 유지됩니다. 제거하려면 자격 증명 삭제를 사용하세요. 브라우저를 닫기 전까지 재설정 실행 취소를 클릭해 복원할 수 있습니다."
   },
   "statusResetFail": {
     "message": "재설정 실패"
@@ -3589,6 +3682,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "먼저 YouTube 탭을 여세요 — 팝업이 Astra Downloader에 연결하려면 필요합니다."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

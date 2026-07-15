@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "資格情報を削除できませんでした。"
+  },
+  "aiCredentialDeleted": {
+    "message": "AI 資格情報を削除しました。"
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "入力して設定または置き換え"
+  },
+  "aiCredentialInputRequired": {
+    "message": "保存する資格情報を入力してください。"
+  },
+  "aiCredentialNewLabel": {
+    "message": "新しい資格情報"
+  },
+  "aiCredentialNote": {
+    "message": "保存された値は表示されず、設定のエクスポートにも含まれません。"
+  },
+  "aiCredentialProviderLabel": {
+    "message": "プロバイダー"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "ブラウザー再起動後も記憶する"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "資格情報を置き換え"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "資格情報を保存"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "資格情報を保存できませんでした。"
+  },
+  "aiCredentialSaved": {
+    "message": "値を公開せずに AI 資格情報を保存しました。"
+  },
+  "aiCredentialStatusError": {
+    "message": "資格情報の状態を取得できません。"
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "未設定"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "設定済み · 記憶あり"
+  },
+  "aiCredentialStatusSession": {
+    "message": "設定済み · このセッションのみ"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "状態を取得できません"
+  },
+  "aiCredentialTitle": {
+    "message": "AI プロバイダーの資格情報"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
@@ -3005,6 +3059,33 @@
   "resultsMatching": {
     "message": "一致"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "この設定は GitHub-Full プロファイルが有効な場合にのみ適用されます。"
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "ローカルのみ"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "この値はこのデバイス上の拡張機能ストレージに保存されます。Google アカウントと同期されず、Astra Deck のサーバーに送信されることもなく、バグレポートのバンドル(診断 → 保存)からは除外されます。"
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type}(インラインエディターなし)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "利用不可"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "この設定にはこのブラウザーで利用できない機能が必要です: {capabilities}。機能が利用可能になるまで、設定を切り替えても効果はありません。"
+  },
+  "schemaJsonExpectedArray": {
+    "message": "配列が必要です"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "オブジェクトが必要です"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "無効な JSON: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{categories} カテゴリで {enabled}/{total} 個の設定がオン"
   },
@@ -3530,6 +3611,12 @@
   "statusImportFail": {
     "message": "インポート失敗"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "インポートのプレビュー: {preview}。ロールバック付きで適用中…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "プレビュー: {preview}。"
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3553,6 +3640,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "クイックコントロールを読み込めませんでした。ポップアップを再度開いてください。"
+  },
+  "statusResetDoneNoUndo": {
+    "message": "ポータブルデータを消去しました。保存済みの AI 資格情報は保持されています。このブラウザーでは元に戻す操作を利用できません。"
+  },
+  "statusResetDoneUndo": {
+    "message": "ポータブルな設定、履歴、キュー、文字起こしデータを消去しました。保存済みの AI 資格情報は保持されます。削除するには「資格情報を削除」を使用してください。ブラウザーを閉じるまでは「リセットを元に戻す」で復元できます。"
   },
   "statusResetFail": {
     "message": "リセット失敗"
@@ -3589,6 +3682,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "先に YouTube タブを開いてください — ポップアップが Astra Downloader に接続するために必要です。"
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

@@ -1531,10 +1531,14 @@ function renderAiCredentialStatus() {
     if (!aiCredentialProvider || !aiCredentialStatus || !aiCredentialDelete) return;
     const state = aiCredentialProviders[aiCredentialProvider.value] || {};
     aiCredentialStatus.textContent = state.configured
-        ? (state.remembered ? 'Configured · remembered' : 'Configured · this session')
-        : 'Not configured';
+        ? (state.remembered
+            ? t('aiCredentialStatusRemembered', 'Configured · remembered')
+            : t('aiCredentialStatusSession', 'Configured · this session'))
+        : t('aiCredentialStatusNotConfigured', 'Not configured');
     aiCredentialDelete.disabled = !state.configured;
-    aiCredentialSave.textContent = state.configured ? 'Replace credential' : 'Save credential';
+    aiCredentialSave.textContent = state.configured
+        ? t('aiCredentialReplaceBtn', 'Replace credential')
+        : t('aiCredentialSaveBtn', 'Save credential');
 }
 
 async function refreshAiCredentialManager() {
@@ -1552,13 +1556,13 @@ async function refreshAiCredentialManager() {
     }
     try {
         const response = await sendRuntimeMessage({ type: 'YTKIT_AI_CREDENTIAL_STATUS' });
-        if (!response?.ok) throw new Error(response?.error?.message || 'Credential status unavailable.');
+        if (!response?.ok) throw new Error(response?.error?.message || t('aiCredentialStatusError', 'Credential status unavailable.'));
         aiCredentialProviders = response.providers || Object.create(null);
         renderAiCredentialStatus();
     } catch (error) {
-        aiCredentialStatus.textContent = 'Status unavailable';
+        aiCredentialStatus.textContent = t('aiCredentialStatusUnavailable', 'Status unavailable');
         aiCredentialDelete.disabled = true;
-        showStatus(error.message || 'Credential status unavailable.', 'error', 3600);
+        showStatus(error.message || t('aiCredentialStatusError', 'Credential status unavailable.'), 'error', 3600);
     }
 }
 
@@ -1566,7 +1570,7 @@ async function saveAiCredential() {
     const provider = aiCredentialProvider?.value;
     const credential = aiCredentialInput?.value || '';
     if (!credential.trim()) {
-        aiCredentialInput?.setCustomValidity('Enter a credential to save.');
+        aiCredentialInput?.setCustomValidity(t('aiCredentialInputRequired', 'Enter a credential to save.'));
         aiCredentialInput?.reportValidity();
         return;
     }
@@ -1578,13 +1582,13 @@ async function saveAiCredential() {
             credential,
             remember: aiCredentialRemember?.checked === true
         });
-        if (!response?.ok) throw new Error(response?.error?.message || 'Credential could not be saved.');
+        if (!response?.ok) throw new Error(response?.error?.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'));
         aiCredentialInput.value = '';
         aiCredentialRemember.checked = false;
-        showStatus('AI credential saved without exposing its value.', 'success', 3200);
+        showStatus(t('aiCredentialSaved', 'AI credential saved without exposing its value.'), 'success', 3200);
         await refreshAiCredentialManager();
     } catch (error) {
-        showStatus(error.message || 'Credential could not be saved.', 'error', 4200);
+        showStatus(error.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'), 'error', 4200);
     } finally {
         setAiCredentialBusy(false);
     }
@@ -1595,13 +1599,13 @@ async function deleteAiCredential() {
     setAiCredentialBusy(true);
     try {
         const response = await sendRuntimeMessage({ type: 'YTKIT_AI_CREDENTIAL_DELETE', provider });
-        if (!response?.ok) throw new Error(response?.error?.message || 'Credential could not be deleted.');
+        if (!response?.ok) throw new Error(response?.error?.message || t('aiCredentialDeleteFailed', 'Credential could not be deleted.'));
         aiCredentialInput.value = '';
         aiCredentialRemember.checked = false;
-        showStatus('AI credential deleted.', 'success', 3200);
+        showStatus(t('aiCredentialDeleted', 'AI credential deleted.'), 'success', 3200);
         await refreshAiCredentialManager();
     } catch (error) {
-        showStatus(error.message || 'Credential could not be deleted.', 'error', 4200);
+        showStatus(error.message || t('aiCredentialDeleteFailed', 'Credential could not be deleted.'), 'error', 4200);
     } finally {
         setAiCredentialBusy(false);
     }
@@ -2759,8 +2763,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         if (!policy || !policy.isEntryAllowedInProfile(entry, effective)) {
             const badge = document.createElement('span');
             badge.className = 'so-key-profile-badge so-key-profile-gated';
+            // i18n-static: build-profile identifier, matches manifest naming
             badge.textContent = 'github-full';
-            badge.title = 'This setting only applies when GitHub-Full Profile is enabled.';
+            badge.title = t('schemaBadgeGithubFullTitle',
+                'This setting only applies when GitHub-Full Profile is enabled.');
             row.appendChild(badge);
         }
     }
@@ -2787,10 +2793,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             const missing = entry.requires.filter((cap) => caps[cap] !== true);
             const chip = document.createElement('span');
             chip.className = 'so-key-profile-badge so-key-unavailable';
-            chip.textContent = 'unavailable';
-            chip.title = 'This setting requires a capability not available in this browser: '
-                + missing.join(', ')
-                + '. Toggling the setting has no effect until the capability becomes available.';
+            chip.textContent = t('schemaBadgeUnavailable', 'unavailable');
+            chip.title = t('schemaBadgeUnavailableTitleTpl',
+                'This setting requires a capability not available in this browser: {capabilities}. '
+                + 'Toggling the setting has no effect until the capability becomes available.')
+                .replace('{capabilities}', missing.join(', '));
             row.appendChild(chip);
         }
     }
@@ -2808,10 +2815,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     if (TRUST_SIGNAL_LOCAL_ONLY_KEYS.has(entry.key)) {
         const trustChip = document.createElement('span');
         trustChip.className = 'so-key-profile-badge so-key-trust-local';
-        trustChip.textContent = 'local only';
-        trustChip.title = 'This value is stored in extension storage on this device. '
+        trustChip.textContent = t('schemaBadgeLocalOnly', 'local only');
+        trustChip.title = t('schemaBadgeLocalOnlyTitle',
+            'This value is stored in extension storage on this device. '
             + 'It is never synced to a Google account, never sent to Astra Deck servers, '
-            + 'and is redacted from the bug-report bundle (Diagnostics → Save).';
+            + 'and is redacted from the bug-report bundle (Diagnostics → Save).');
         row.appendChild(trustChip);
     }
 
@@ -3039,7 +3047,8 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             try {
                 parsed = JSON.parse(raw);
             } catch (err) {
-                errorPill.textContent = 'Invalid JSON: ' + (err && err.message || err);
+                errorPill.textContent = t('schemaJsonInvalidTpl', 'Invalid JSON: {error}')
+                    .replace('{error}', String(err && err.message || err));
                 errorPill.hidden = false;
                 return;
             }
@@ -3047,12 +3056,12 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             // `{}` into an array-typed entry sees a clear error
             // instead of silently corrupting the storage shape.
             if (entry.type === 'array' && !Array.isArray(parsed)) {
-                errorPill.textContent = 'Expected an array';
+                errorPill.textContent = t('schemaJsonExpectedArray', 'Expected an array');
                 errorPill.hidden = false;
                 return;
             }
             if (entry.type === 'object' && (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object')) {
-                errorPill.textContent = 'Expected an object';
+                errorPill.textContent = t('schemaJsonExpectedObject', 'Expected an object');
                 errorPill.hidden = false;
                 return;
             }
@@ -3092,7 +3101,8 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         if (value === undefined || value === null) display = '—';
         else display = String(value);
         badge.textContent = display;
-        badge.title = entry.type + ' (no inline editor)';
+        badge.title = t('schemaBadgeNoEditorTpl', '{type} (no inline editor)')
+            .replace('{type}', entry.type);
         row.appendChild(badge);
     }
 
@@ -3994,7 +4004,8 @@ async function importSettings(file) {
             sanitized.appliedByDomain
         );
         const previewText = persistedDomains.formatImportPreview(preview);
-        showStatus(`Import preview: ${previewText}. Applying with rollback…`, 'success', 6000);
+        showStatus(t('statusImportPreviewApplyTpl', 'Import preview: {preview}. Applying with rollback…')
+            .replace('{preview}', previewText), 'success', 6000);
         await new Promise((resolve) => (globalThis.requestAnimationFrame || setTimeout)(resolve, 0));
 
         const currentLocal = await readLocalStorageSnapshot();
@@ -4051,7 +4062,9 @@ async function importSettings(file) {
                 'Backup imported. Click Undo Import to restore the previous state until you close the browser.')
             : t('statusBackupImportedNoUndo',
                 'Backup imported. Undo is unavailable on this browser.');
-        showStatus(`${importedStatus} Preview: ${previewText}.`,
+        const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
+            .replace('{preview}', previewText);
+        showStatus(`${importedStatus} ${previewSummary}`,
             'success', 6000);
     } catch (error) {
         showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
@@ -4306,7 +4319,9 @@ async function updateCompanionNow() {
     try {
         const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_UPDATE_COMPANION');
         if (result?.noYouTubeTab) {
-            showStatus('Open a YouTube tab first — the popup needs it to reach the Astra Downloader.', 'error', 5200);
+            showStatus(t('statusUpdateYtdlpNoTab',
+                'Open a YouTube tab first — the popup needs it to reach the Astra Downloader.'),
+                'error', 5200);
             return;
         }
         if (result && result.ok) {
@@ -4699,8 +4714,10 @@ async function resetAllData() {
         await refreshUndoResetVisibility();
         undoResetButton?.focus?.({ preventScroll: true });
         showStatus(undoAvailable
-            ? 'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.'
-            : 'Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser.',
+            ? t('statusResetDoneUndo',
+                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.')
+            : t('statusResetDoneNoUndo',
+                'Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser.'),
         'success', 6000);
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);

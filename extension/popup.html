@@ -187,29 +187,32 @@
     <section class="ai-credential-manager" id="ai-credential-manager" aria-labelledby="ai-credential-title" hidden>
       <header class="ai-credential-head">
         <div>
-          <strong class="ai-credential-title" id="ai-credential-title">AI provider credential</strong>
-          <p class="ai-credential-note">The stored value is never shown or included in settings exports.</p>
+          <strong class="ai-credential-title" id="ai-credential-title" data-i18n="aiCredentialTitle">AI provider credential</strong>
+          <p class="ai-credential-note" data-i18n="aiCredentialNote">The stored value is never shown or included in settings exports.</p>
         </div>
-        <span class="ai-credential-status" id="ai-credential-status" role="status" aria-live="polite">Not configured</span>
+        <span class="ai-credential-status" id="ai-credential-status" role="status" aria-live="polite" data-i18n="aiCredentialStatusNotConfigured">Not configured</span>
       </header>
       <div class="ai-credential-fields">
-        <label for="ai-credential-provider">Provider</label>
+        <label for="ai-credential-provider" data-i18n="aiCredentialProviderLabel">Provider</label>
         <select id="ai-credential-provider" name="ai-credential-provider">
+          <!-- i18n-static: AI provider brand name -->
           <option value="openai">OpenAI</option>
+          <!-- i18n-static: AI provider brand name -->
           <option value="anthropic">Anthropic</option>
+          <!-- i18n-static: AI provider brand name -->
           <option value="gemini">Gemini</option>
         </select>
-        <label for="ai-credential-input">New credential</label>
+        <label for="ai-credential-input" data-i18n="aiCredentialNewLabel">New credential</label>
         <input id="ai-credential-input" name="ai-credential-input" type="password"
-               autocomplete="new-password" maxlength="4096" placeholder="Enter to set or replace">
+               autocomplete="new-password" maxlength="4096" data-i18n-attr-placeholder="aiCredentialInputPlaceholder" placeholder="Enter to set or replace">
       </div>
       <div class="ai-credential-actions">
         <label class="ai-credential-remember" for="ai-credential-remember">
           <input id="ai-credential-remember" name="ai-credential-remember" type="checkbox">
-          Remember after browser restart
+          <span data-i18n="aiCredentialRememberLabel">Remember after browser restart</span>
         </label>
-        <button type="button" id="ai-credential-save">Save credential</button>
-        <button type="button" id="ai-credential-delete" class="danger">Delete</button>
+        <button type="button" id="ai-credential-save" data-i18n="aiCredentialSaveBtn">Save credential</button>
+        <button type="button" id="ai-credential-delete" class="danger" data-i18n="aiSummaryDelete">Delete</button>
       </div>
     </section>
 

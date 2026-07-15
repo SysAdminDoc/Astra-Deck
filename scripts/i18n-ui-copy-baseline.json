@@ -74,12 +74,12 @@
       "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"
     },
     "extension/popup.html": {
-      "count": 18,
-      "digest": "e26bcb487856ac4750ccde6fce4eba436e25ed4abfb492b65307bca52e42392c"
+      "count": 7,
+      "digest": "1b20784b77f1812dd547d9336e3f4237670353dc860219bff5b254656636d255"
     },
     "extension/popup.js": {
-      "count": 44,
-      "digest": "48a2b7cf658a6b528dc2a7c58d17cbd89e4a96fba024c484b3eb4f02b0b70eec"
+      "count": 30,
+      "digest": "ef52e7e29633406ac9d2aea3a85096bd08d6638a813cad0f6a365d6af526b280"
     },
     "extension/sidepanel.js": {
       "count": 3,
