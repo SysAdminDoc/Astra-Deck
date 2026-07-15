@@ -10813,7 +10813,7 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
     // entries via R-M-W race on chrome.storage.session (audit-pass
     // fix). The function itself may be either `async` or sync (the
     // chain owns the async work either way).
-    assert.match(backgroundSource, /function _recordSwLifecycle\(event\)/,
+    assert.match(backgroundSource, /function _recordSwLifecycle\(event(?:,\s*operationId\s*=\s*['"]{2})?\)/,
         'background.js must define _recordSwLifecycle helper');
     assert.match(backgroundSource, /let _swLifecycleChain\s*=\s*Promise\.resolve\(\)/,
         'background.js must serialize lifecycle writes via _swLifecycleChain so concurrent records cannot race');
