@@ -199,6 +199,9 @@ const IN_PAGE_CHECKS = `(() => {
     const sidebarFooter = panel.querySelector('.ytkit-sidebar > .ytkit-sidebar-footer');
     const footerActions = panel.querySelectorAll('.ytkit-footer-actions > button');
     const historyImport = panel.querySelector('.ytkit-insights #ytkit-import-history');
+    const insightsRail = panel.querySelector('.ytkit-insights');
+    const footerStatus = panel.querySelector('.ytkit-panel-status');
+    const selectChrome = panel.querySelector('.ytkit-select-shell-chrome');
     const obsoleteVersionBadge = panel.querySelector('#ytkit-whats-new-badge');
     if (!headerSearch) failures.push('command search is not mounted in the header');
     if (!liveBadge || getComputedStyle(liveBadge).display === 'none') failures.push('live connection badge is not visible');
@@ -206,6 +209,28 @@ const IN_PAGE_CHECKS = `(() => {
     if (footerActions.length !== 4) failures.push('footer action parity expected 4 buttons, found ' + footerActions.length);
     if (!historyImport) failures.push('history import action is not mounted in the insights rail');
     if (obsoleteVersionBadge) failures.push('obsolete version notification badge is visible');
+    if (insightsRail && getComputedStyle(insightsRail).display !== 'none') {
+        failures.push('redundant desktop insights rail is visible');
+    }
+    if (selectChrome && getComputedStyle(selectChrome).display !== 'none') {
+        failures.push('decorative select outline chrome is visible');
+    }
+    if (footerStatus) {
+        const statusStyle = getComputedStyle(footerStatus);
+        if ([statusStyle.borderTopWidth, statusStyle.borderRightWidth, statusStyle.borderBottomWidth, statusStyle.borderLeftWidth].some((width) => parseFloat(width) > 0)) {
+            failures.push('footer status retains an outlined box');
+        }
+    }
+    if (window.innerWidth > 900) {
+        const featureName = panel.querySelector('.ytkit-feature-name');
+        const featureDescription = panel.querySelector('.ytkit-feature-desc');
+        const headerRect = panel.querySelector('.ytkit-header')?.getBoundingClientRect();
+        const footerRect = panel.querySelector('.ytkit-footer')?.getBoundingClientRect();
+        if (featureName && parseFloat(getComputedStyle(featureName).fontSize) < 16) failures.push('desktop setting names are undersized');
+        if (featureDescription && parseFloat(getComputedStyle(featureDescription).fontSize) < 14) failures.push('desktop setting descriptions are undersized');
+        if (headerRect && headerRect.height > 66) failures.push('desktop settings header is taller than 66px');
+        if (footerRect && footerRect.height > 60) failures.push('desktop settings footer is taller than 60px');
+    }
     if (panel.getAttribute('dir') === 'rtl' && headerSearch) {
         const searchIcon = panel.querySelector('.ytkit-command-search .ytkit-search-icon');
         const searchActions = panel.querySelector('.ytkit-command-search .ytkit-search-actions');

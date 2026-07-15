@@ -2,10 +2,10 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    const STYLE_ID = 'ytkit-settings-visual-v3';
+    const STYLE_ID = 'ytkit-settings-visual-v4';
 
     const SETTINGS_VISUAL_SYSTEM_CSS = `
-        /* Astra Deck settings visual system v3 — imagegen mockup parity. */
+        /* Astra Deck settings visual system v4 — calm, compact document UI. */
         #ytkit-settings-panel {
             --ytkit-v3-bg: #0b1016;
             --ytkit-v3-surface: #101720;
@@ -13,6 +13,7 @@
             --ytkit-v3-hover: rgba(255,255,255,0.035);
             --ytkit-v3-border: rgba(220,230,242,0.10);
             --ytkit-v3-border-strong: rgba(220,230,242,0.16);
+            --ytkit-v3-control-stroke: rgba(220,230,242,0.055);
             --ytkit-v3-text: #f3f5f7;
             --ytkit-v3-muted: #aab3bf;
             --ytkit-v3-subtle: #7f8996;
@@ -24,9 +25,9 @@
             --ytkit-v3-accent-fill-hover: #b92c27;
             --ytkit-v3-success: #45d978;
             /* Above YouTube player chrome and ad overlays (was the folded
-               "premium refresh" layer's job before v3 became the SSOT). */
+               "premium refresh" layer's job before v4 became the SSOT). */
             z-index: 2147483646 !important;
-            width: min(1440px, calc(100vw - 48px)) !important;
+            width: min(1480px, calc(100vw - 40px)) !important;
             height: min(94vh, 920px) !important;
             max-height: min(94vh, 920px) !important;
             border: 1px solid var(--ytkit-v3-border-strong) !important;
@@ -47,12 +48,12 @@
 
         #ytkit-settings-panel .ytkit-header {
             display: grid !important;
-            grid-template-columns: 260px minmax(320px, 1fr) auto !important;
+            grid-template-columns: 240px minmax(320px, 1fr) auto !important;
             grid-template-areas: "brand search actions" !important;
             align-items: center !important;
-            gap: 24px !important;
-            min-height: 76px !important;
-            padding: 0 24px !important;
+            gap: 20px !important;
+            min-height: 64px !important;
+            padding: 0 20px !important;
             border-bottom: 1px solid var(--ytkit-v3-border) !important;
             background: var(--ytkit-v3-bg) !important;
             box-shadow: none !important;
@@ -70,9 +71,9 @@
         #ytkit-settings-panel .ytkit-brand-mark {
             display: grid !important;
             place-items: center !important;
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
             border: 0 !important;
             border-radius: 0 !important;
             background: transparent !important;
@@ -80,8 +81,8 @@
         }
 
         #ytkit-settings-panel .ytkit-brand-image {
-            width: 32px !important;
-            height: 32px !important;
+            width: 30px !important;
+            height: 30px !important;
             object-fit: contain !important;
         }
 
@@ -133,19 +134,18 @@
             grid-area: search !important;
             position: relative !important;
             width: 100% !important;
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 42px !important;
+            min-height: 42px !important;
             margin: 0 !important;
-            border: 1px solid var(--ytkit-v3-border-strong) !important;
-            border-radius: 10px !important;
+            border: 0 !important;
+            border-radius: 8px !important;
             background: var(--ytkit-v3-surface) !important;
-            box-shadow: none !important;
+            box-shadow: inset 0 0 0 1px var(--ytkit-v3-border) !important;
             overflow: hidden !important;
         }
 
         #ytkit-settings-panel .ytkit-command-search:focus-within {
-            border-color: rgba(var(--ytkit-v3-accent-rgb),0.72) !important;
-            box-shadow: 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.12) !important;
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.72), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.12) !important;
         }
 
         #ytkit-settings-panel .ytkit-command-search .ytkit-search-input {
@@ -212,10 +212,10 @@
         }
 
         #ytkit-settings-panel .ytkit-close {
-            width: 44px !important;
-            min-width: 44px !important;
-            height: 44px !important;
-            min-height: 44px !important;
+            width: 40px !important;
+            min-width: 40px !important;
+            height: 40px !important;
+            min-height: 40px !important;
             padding: 0 !important;
             border: 0 !important;
             border-radius: 10px !important;
@@ -231,7 +231,7 @@
 
         #ytkit-settings-panel .ytkit-body {
             display: grid !important;
-            grid-template-columns: 240px minmax(520px, 1fr) 220px !important;
+            grid-template-columns: 240px minmax(0, 1fr) !important;
             min-height: 0 !important;
             background: var(--ytkit-v3-bg) !important;
         }
@@ -242,7 +242,7 @@
             width: auto !important;
             min-width: 0 !important;
             height: auto !important;
-            padding: 22px 12px 14px !important;
+            padding: 14px 12px 12px !important;
             gap: 0 !important;
             border: 0 !important;
             border-right: 1px solid var(--ytkit-v3-border) !important;
@@ -279,11 +279,11 @@
             gap: 10px !important;
             width: 100% !important;
             min-width: 0 !important;
-            min-height: 50px !important;
+            min-height: 48px !important;
             margin: 0 !important;
             padding: 0 12px !important;
             border: 0 !important;
-            border-radius: 10px !important;
+            border-radius: 7px !important;
             background: transparent !important;
             color: var(--ytkit-v3-muted) !important;
             box-shadow: none !important;
@@ -308,7 +308,7 @@
 
         #ytkit-settings-panel .ytkit-nav-btn.active {
             border: 0 !important;
-            background: rgba(var(--ytkit-v3-accent-rgb),0.09) !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.065) !important;
             color: var(--ytkit-v3-text) !important;
             box-shadow: none !important;
         }
@@ -344,7 +344,7 @@
             display: block !important;
             overflow: hidden !important;
             color: inherit !important;
-            font-size: 14px !important;
+            font-size: 15px !important;
             font-weight: 610 !important;
             line-height: 1.25 !important;
             text-overflow: ellipsis !important;
@@ -401,7 +401,7 @@
 
         #ytkit-settings-panel .ytkit-content {
             min-width: 0 !important;
-            padding: 28px 40px 48px !important;
+            padding: 20px 48px 36px !important;
             background: var(--ytkit-v3-bg) !important;
             scrollbar-gutter: stable !important;
         }
@@ -411,16 +411,16 @@
             top: 0 !important;
             z-index: 4 !important;
             display: flex !important;
-            align-items: flex-start !important;
+            align-items: center !important;
             justify-content: space-between !important;
             gap: 24px !important;
-            min-height: 0 !important;
-            margin: 0 0 22px !important;
-            padding: 0 0 22px !important;
+            min-height: 76px !important;
+            margin: 0 !important;
+            padding: 0 0 14px !important;
             border: 0 !important;
             border-bottom: 1px solid var(--ytkit-v3-border) !important;
             background: var(--ytkit-v3-bg) !important;
-            box-shadow: 0 -28px 0 var(--ytkit-v3-bg) !important;
+            box-shadow: 0 -20px 0 var(--ytkit-v3-bg) !important;
             isolation: isolate !important;
         }
 
@@ -436,7 +436,7 @@
         #ytkit-settings-panel .ytkit-pane-title h2 {
             margin: 0 !important;
             color: var(--ytkit-v3-text) !important;
-            font-size: 28px !important;
+            font-size: 29px !important;
             font-weight: 720 !important;
             line-height: 1.15 !important;
             letter-spacing: -0.025em !important;
@@ -444,23 +444,26 @@
 
         #ytkit-settings-panel .ytkit-pane-description {
             display: block !important;
-            max-width: 680px !important;
-            margin: 8px 0 0 !important;
+            max-width: 720px !important;
+            margin: 6px 0 0 !important;
+            overflow: hidden !important;
             color: var(--ytkit-v3-muted) !important;
-            font-size: 14.5px !important;
+            font-size: 14px !important;
             font-weight: 440 !important;
-            line-height: 1.5 !important;
+            line-height: 1.4 !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
         }
 
         #ytkit-settings-panel .ytkit-pane-actions {
             display: flex !important;
             align-items: center !important;
-            gap: 14px !important;
+            gap: 10px !important;
             flex: 0 0 auto !important;
         }
 
         #ytkit-settings-panel .ytkit-reset-group-btn {
-            min-height: 40px !important;
+            min-height: 38px !important;
             padding: 0 10px !important;
             border: 0 !important;
             border-radius: 8px !important;
@@ -477,7 +480,7 @@
         }
 
         #ytkit-settings-panel .ytkit-toggle-all {
-            min-height: 40px !important;
+            min-height: 38px !important;
             padding: 0 !important;
             border: 0 !important;
             background: transparent !important;
@@ -504,13 +507,13 @@
         #ytkit-settings-panel .ytkit-feature-card {
             position: relative !important;
             display: grid !important;
-            grid-template-columns: minmax(0, 1fr) minmax(190px, 310px) !important;
+            grid-template-columns: minmax(0, 1fr) minmax(190px, 300px) !important;
             align-items: center !important;
-            gap: 28px !important;
+            gap: 32px !important;
             width: 100% !important;
-            min-height: 80px !important;
+            min-height: 70px !important;
             margin: 0 !important;
-            padding: 16px 4px !important;
+            padding: 12px 4px !important;
             border: 0 !important;
             border-bottom: 1px solid var(--ytkit-v3-border) !important;
             border-radius: 0 !important;
@@ -534,8 +537,8 @@
         #ytkit-settings-panel .ytkit-feature-card:hover,
         #ytkit-settings-panel .ytkit-feature-card:focus-within {
             border-color: var(--ytkit-v3-border) !important;
-            background: var(--ytkit-v3-hover) !important;
-            box-shadow: 12px 0 0 var(--ytkit-v3-hover), -12px 0 0 var(--ytkit-v3-hover) !important;
+            background: rgba(255,255,255,0.018) !important;
+            box-shadow: 10px 0 0 rgba(255,255,255,0.018), -10px 0 0 rgba(255,255,255,0.018) !important;
             transform: none !important;
         }
 
@@ -633,16 +636,16 @@
         }
 
         #ytkit-settings-panel .ytkit-feature-desc {
-            display: -webkit-box !important;
+            display: block !important;
             max-width: 640px !important;
-            margin: 5px 0 0 !important;
+            margin: 4px 0 0 !important;
             overflow: hidden !important;
             color: var(--ytkit-v3-muted) !important;
-            font-size: 13.5px !important;
+            font-size: 14px !important;
             font-weight: 430 !important;
-            line-height: 1.45 !important;
-            -webkit-box-orient: vertical !important;
-            -webkit-line-clamp: 2 !important;
+            line-height: 1.4 !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
         }
 
         #ytkit-settings-panel .ytkit-select-shell,
@@ -652,26 +655,37 @@
         #ytkit-settings-panel .ytkit-feature-custom {
             justify-self: stretch !important;
             width: 100% !important;
-            max-width: 310px !important;
+            max-width: 300px !important;
             margin: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-select-shell-chrome {
+            display: none !important;
         }
 
         #ytkit-settings-panel .ytkit-select {
             width: 100% !important;
-            min-height: 46px !important;
+            min-height: 44px !important;
             padding: 0 42px 0 14px !important;
-            border: 1px solid var(--ytkit-v3-border-strong) !important;
-            border-radius: 9px !important;
+            border: 0 !important;
+            border-radius: 7px !important;
             background: var(--ytkit-v3-surface) !important;
             color: var(--ytkit-v3-text) !important;
             font-size: 14px !important;
             font-weight: 560 !important;
-            box-shadow: none !important;
+            box-shadow: inset 0 0 0 1px var(--ytkit-v3-control-stroke) !important;
         }
 
         #ytkit-settings-panel .ytkit-select:hover {
-            border-color: rgba(var(--ytkit-v3-accent-rgb),0.42) !important;
             background: var(--ytkit-v3-surface-raised) !important;
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.30) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-select:focus-visible,
+        #ytkit-settings-panel .ytkit-input:focus-visible,
+        #ytkit-settings-panel .ytkit-vh-number:focus-visible {
+            outline: 0 !important;
+            box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.80), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.14) !important;
         }
 
         #ytkit-settings-panel .ytkit-switch {
@@ -690,7 +704,7 @@
         #ytkit-settings-panel .ytkit-switch .ytkit-switch-track {
             position: absolute !important;
             inset: 0 !important;
-            border: 1px solid var(--ytkit-v3-border-strong) !important;
+            border: 0 !important;
             border-radius: 999px !important;
             background: var(--ytkit-v3-surface-raised) !important;
             box-shadow: none !important;
@@ -745,12 +759,12 @@
 
         #ytkit-settings-panel .ytkit-input,
         #ytkit-settings-panel .ytkit-vh-number {
-            border: 1px solid var(--ytkit-v3-border-strong) !important;
-            border-radius: 9px !important;
+            border: 0 !important;
+            border-radius: 7px !important;
             background: var(--ytkit-v3-surface) !important;
             color: var(--ytkit-v3-text) !important;
             font-size: 14px !important;
-            box-shadow: none !important;
+            box-shadow: inset 0 0 0 1px var(--ytkit-v3-control-stroke) !important;
         }
 
         #ytkit-settings-panel .ytkit-sub-features {
@@ -767,26 +781,20 @@
         }
 
         #ytkit-settings-panel .ytkit-sub-card {
-            min-height: 66px !important;
-            padding-block: 12px !important;
+            min-height: 62px !important;
+            padding-block: 10px !important;
         }
 
         #ytkit-settings-panel .ytkit-sub-card .ytkit-feature-name {
-            font-size: 14.5px !important;
+            font-size: 15px !important;
         }
 
         #ytkit-settings-panel .ytkit-sub-card .ytkit-feature-desc {
-            font-size: 12.75px !important;
+            font-size: 13.25px !important;
         }
 
         #ytkit-settings-panel .ytkit-insights {
-            display: block !important;
-            min-width: 0 !important;
-            padding: 30px 22px !important;
-            border: 0 !important;
-            border-left: 1px solid var(--ytkit-v3-border) !important;
-            background: rgba(255,255,255,0.012) !important;
-            overflow: auto !important;
+            display: none !important;
         }
 
         #ytkit-settings-panel .ytkit-insight-section {
@@ -900,8 +908,8 @@
             grid-template-columns: minmax(0, 1fr) auto !important;
             align-items: center !important;
             gap: 24px !important;
-            min-height: 72px !important;
-            padding: 0 24px !important;
+            min-height: 58px !important;
+            padding: 0 20px !important;
             border: 0 !important;
             border-top: 1px solid var(--ytkit-v3-border) !important;
             background: var(--ytkit-v3-bg) !important;
@@ -910,12 +918,19 @@
 
         #ytkit-settings-panel .ytkit-panel-status {
             display: block !important;
+            flex: 0 1 auto !important;
+            width: auto !important;
             min-height: 0 !important;
             padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
             color: var(--ytkit-v3-muted) !important;
-            font-size: 14px !important;
+            font-size: 13px !important;
             font-weight: 500 !important;
             line-height: 1.4 !important;
+            text-align: start !important;
+            box-shadow: none !important;
         }
 
         #ytkit-settings-panel .ytkit-panel-status::before,
@@ -938,10 +953,10 @@
 
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn {
             min-width: 0 !important;
-            min-height: 44px !important;
-            padding: 0 16px !important;
+            min-height: 40px !important;
+            padding: 0 14px !important;
             border: 0 !important;
-            border-radius: 9px !important;
+            border-radius: 7px !important;
             background: transparent !important;
             color: var(--ytkit-v3-muted) !important;
             font-size: 14px !important;
@@ -959,8 +974,8 @@
         }
 
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
-            min-width: 120px !important;
-            padding-inline: 24px !important;
+            min-width: 112px !important;
+            padding-inline: 22px !important;
             background: var(--ytkit-v3-accent-fill) !important;
             color: #fff !important;
             box-shadow: none !important;
@@ -978,6 +993,7 @@
             --ytkit-v3-hover: rgba(15,23,42,0.045);
             --ytkit-v3-border: rgba(15,23,42,0.10);
             --ytkit-v3-border-strong: rgba(15,23,42,0.16);
+            --ytkit-v3-control-stroke: rgba(15,23,42,0.07);
             --ytkit-v3-text: #17202b;
             --ytkit-v3-muted: #5f6b79;
             /* #7d8997 on #f7f8fa was 3.36:1 — below AA for the placeholder,
@@ -1225,7 +1241,10 @@
 
             #ytkit-settings-panel .ytkit-feature-desc {
                 font-size: 13px !important;
-                -webkit-line-clamp: 3 !important;
+                display: -webkit-box !important;
+                white-space: normal !important;
+                -webkit-box-orient: vertical !important;
+                -webkit-line-clamp: 2 !important;
             }
 
             #ytkit-settings-panel .ytkit-select-shell,

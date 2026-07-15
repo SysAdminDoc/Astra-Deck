@@ -6,6 +6,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.8] - 2026-07-15
+
+### Changed
+
+- **Settings now use a calmer, compact document layout.** The imagegen-guided
+  v4 visual system removes the redundant status inspector, decorative dropdown
+  boxes, card-like status chrome, and most full control outlines. Larger type,
+  shorter section copy, 70px rows, a 64px header, and a 58px footer move useful
+  controls substantially higher in the viewport without sacrificing focus
+  visibility.
+- **Settings adapt cleanly across every supported layout.** Desktop, light,
+  RTL, tablet, and 390px mobile views share the same hierarchy; mobile keeps
+  readable wrapping while desktop descriptions stay to one concise line.
+
+### Fixed
+
+- **Scrolled settings headers remain opaque in every submenu.** The compact
+  sticky section header retains its solid theme surface and stacking contract,
+  preventing controls from overlapping section titles while scrolling.
+- **Settings feedback is quieter and clearer.** The idle status is now
+  unboxed `Saved` text, the primary completion action reads `Done`, and full
+  descriptions remain available through native title text when visually
+  truncated.
+
 ## [4.49.7] - 2026-07-15
 
 Roadmap drain: both remaining P2 engineering items and every actionable P3

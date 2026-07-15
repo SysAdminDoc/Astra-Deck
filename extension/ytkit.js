@@ -877,7 +877,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.49.7';
+    const YTKIT_VERSION = '4.49.8';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -40388,43 +40388,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     const CATEGORY_META = {
         'Video Player': {
             summary: 'Layout, theater behavior & player chrome',
-            description: 'Shape the player surface, full-width layout, overlays, and watch-time ergonomics.'
+            description: 'Playback defaults, quality, and player behavior.'
         },
         'Playback': {
             summary: 'Speed, looping & tab-aware behavior',
-            description: 'Fine-tune how playback behaves across tabs, resumes, loops, and sync-sensitive moments.'
+            description: 'Resuming, looping, timing, and tab-aware playback.'
         },
         'Comments': {
             summary: 'Readability, filtering & creator context',
-            description: 'Reduce noise, surface useful signals, and make comment threads easier to scan.'
+            description: 'Readability, filtering, and focused comment threads.'
         },
         'Watch Page': {
             summary: 'Actions, utilities & page-level helpers',
-            description: 'Add practical controls around the player, title area, transcript flow, and watch-page tools.'
+            description: 'Player actions, transcripts, and watch-page utilities.'
         },
         'Content': {
             summary: 'Hide, block & curate what you see',
-            description: 'Take control of recommendations, blocked channels, hidden items, and clutter-heavy content.'
+            description: 'Recommendations, blocked channels, and content visibility.'
         },
         'Home / Subscriptions': {
             summary: 'Feed cleanup & subscription shaping',
-            description: 'Calm the home feed, tune subscriptions, and decide how dense or selective discovery should feel.'
+            description: 'Feed density, subscriptions, and focused discovery.'
         },
         'Theme': {
             summary: 'Color, density & visual polish',
-            description: 'Refine the interface mood with appearance tweaks, custom styles, and contrast-focused polish.'
+            description: 'Color, contrast, density, and custom appearance.'
         },
         'Live Chat': {
             summary: 'Filters, density & live viewing comfort',
-            description: 'Tame fast-moving chat with filtering, spacing, and visibility controls built for streams.'
+            description: 'Filtering, spacing, and visibility for live streams.'
         },
             'Downloads': {
                 summary: 'Local yt-dlp downloads and server status',
-                description: 'Manage one-click yt-dlp downloads, preferred quality, and the local companion service.'
+                description: 'Download quality, formats, and companion service.'
             },
         'Advanced': {
             summary: 'Power-user toggles & experimental controls',
-            description: 'Reserve this space for diagnostics, edge-case behavior, and features that benefit from a careful hand.'
+            description: 'Diagnostics, experiments, and power-user controls.'
         }
     };
     _settingsPanelRuntimeReady = true;
@@ -42139,6 +42139,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const paneDescription = document.createElement('p');
             paneDescription.className = 'ytkit-pane-description';
             paneDescription.textContent = CATEGORY_META[cat]?.description || 'Adjust how this part of YouTube behaves.';
+            paneDescription.title = paneDescription.textContent;
             const paneMeta = document.createElement('div');
             paneMeta.className = 'ytkit-pane-meta';
             const paneEnabledChip = document.createElement('span');
@@ -42624,7 +42625,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         footerStatus.setAttribute('role', 'status');
         footerStatus.setAttribute('aria-live', 'polite');
         footerStatus.dataset.tone = 'idle';
-        footerStatus.textContent = 'Ready. Changes save automatically.';
+        footerStatus.textContent = 'Saved';
 
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
@@ -42653,7 +42654,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-close-footer',
-            label: 'Close',
+            label: 'Done',
             icon: 'close',
             variant: 'primary',
             ariaLabel: t('panelCloseAria', 'Close settings')
