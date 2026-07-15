@@ -105,6 +105,10 @@ function parseArgs(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
             throw new Error(`unknown argument: ${arg}`);
         }
     }
+    if (args.checkReport) {
+        // A staleness gate must never rewrite the report it is checking.
+        args.writeReport = false;
+    }
     return args;
 }
 
@@ -367,7 +371,7 @@ function printHelp() {
         '  --output <path>                      Markdown report path',
         '  --warn-feature-identical-above <n>   Warn when unresolved feature copy exceeds n',
         '  --fail-above <n>                     Exit non-zero when any locale has more than n placeholder-identical keys',
-        '  --check-report                       Exit non-zero when the markdown report is stale',
+        '  --check-report                       Exit non-zero when the markdown report is stale (implies --no-write)',
         '  --placeholder-baseline <path>         Per-locale unresolved-copy baseline JSON',
         '  --check-placeholder-baseline          Require every locale to match its ratcheted baseline',
         '  --update-placeholder-baseline         Rewrite the baseline from current locale files',

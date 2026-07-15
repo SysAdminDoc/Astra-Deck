@@ -102,6 +102,15 @@ test('i18n coverage parses warning threshold and emits non-fatal warnings', () =
     assert.throws(() => parseArgs(['--warn-feature-identical-above', 'bad']), /non-negative integer/);
 });
 
+test('--check-report implies --no-write so the staleness gate never rewrites the report', () => {
+    const gateOnly = parseArgs(['--check-report']);
+    assert.equal(gateOnly.checkReport, true);
+    assert.equal(gateOnly.writeReport, false);
+
+    const defaults = parseArgs([]);
+    assert.equal(defaults.writeReport, true);
+});
+
 test('per-locale placeholder baseline fails on regressions and requires improvements to ratchet down', () => {
     const { localesDir } = writeLocaleFixture();
     const report = buildCoverageReport({ localesDir });
