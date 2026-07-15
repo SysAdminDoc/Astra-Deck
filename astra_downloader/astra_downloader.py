@@ -90,8 +90,14 @@ try:
         _compare_semver, _parse_ytdlp_release_date,
         _run_captured as _owned_run_captured,
         build_javascript_runtime_args, build_youtube_extractor_args,
-        is_youtube_url, parse_ffmpeg_major, parse_ffmpeg_version_output,
-        parse_ytdlp_version_output, ytdlp_needs_external_runtime,
+        evaluate_javascript_runtime as _owned_evaluate_javascript_runtime,
+        is_youtube_url,
+        javascript_runtime_supported as _owned_javascript_runtime_supported,
+        parse_ffmpeg_major, parse_ffmpeg_version_output,
+        parse_javascript_runtime_version as _owned_parse_javascript_runtime_version,
+        parse_ytdlp_version_output,
+        probe_javascript_execution as _owned_probe_javascript_execution,
+        ytdlp_needs_external_runtime,
     )
     from .gui import (
         FolderPickerService as _OwnedFolderPickerService,
@@ -137,8 +143,14 @@ except ImportError:  # Direct script / flat source-path compatibility.
         _compare_semver, _parse_ytdlp_release_date,
         _run_captured as _owned_run_captured,
         build_javascript_runtime_args, build_youtube_extractor_args,
-        is_youtube_url, parse_ffmpeg_major, parse_ffmpeg_version_output,
-        parse_ytdlp_version_output, ytdlp_needs_external_runtime,
+        evaluate_javascript_runtime as _owned_evaluate_javascript_runtime,
+        is_youtube_url,
+        javascript_runtime_supported as _owned_javascript_runtime_supported,
+        parse_ffmpeg_major, parse_ffmpeg_version_output,
+        parse_javascript_runtime_version as _owned_parse_javascript_runtime_version,
+        parse_ytdlp_version_output,
+        probe_javascript_execution as _owned_probe_javascript_execution,
+        ytdlp_needs_external_runtime,
     )
     from gui import (
         FolderPickerService as _OwnedFolderPickerService,
@@ -695,22 +707,13 @@ def get_last_deno_provision_error():
 
 
 def _parse_deno_version(output):
-    if not output:
-        return None
-    first_line = output.strip().splitlines()[0] if output.strip() else ''
-    m = re.search(r'(\d+\.\d+\.\d+)', first_line)
-    if m:
-        return m.group(1)
-    return first_line[:32] if first_line else None
+    return _owned_parse_javascript_runtime_version('deno', output)
 
 
 def _is_deno_version_supported(version):
-    if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version.strip()):
-        return False
-    try:
-        return _compare_semver(version, DENO_MIN_VERSION) >= 0
-    except Exception:
-        return False
+    return _owned_javascript_runtime_supported(
+        'deno', version, deno_min=DENO_MIN_VERSION, node_min=NODE_MIN_VERSION
+    )
 
 
 def _probe_deno_binary_version(deno_path):
@@ -719,39 +722,23 @@ def _probe_deno_binary_version(deno_path):
 
 
 def _parse_javascript_runtime_version(runtime, output):
-    if runtime == 'deno':
-        return _parse_deno_version(output)
-    if not output:
-        return None
-    first_line = output.strip().splitlines()[0] if output.strip() else ''
-    match = re.search(r'(\d+\.\d+\.\d+)', first_line)
-    return match.group(1) if match else None
+    return _owned_parse_javascript_runtime_version(runtime, output)
 
 
 def _javascript_runtime_supported(runtime, version):
-    minimum = DENO_MIN_VERSION if runtime == 'deno' else NODE_MIN_VERSION
-    if runtime not in {'deno', 'node'}:
-        return False
-    if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version.strip()):
-        return False
-    try:
-        return _compare_semver(version, minimum) >= 0
-    except Exception:
-        return False
+    return _owned_javascript_runtime_supported(
+        runtime, version, deno_min=DENO_MIN_VERSION, node_min=NODE_MIN_VERSION
+    )
 
 
 def _probe_javascript_execution(runtime, executable):
-    if runtime == 'deno':
-        args = [str(executable), 'eval', '--no-config', f"console.log('{JS_RUNTIME_CAPABILITY_MARKER}')"]
-    elif runtime == 'node':
-        args = [
-            str(executable), '--input-type=commonjs', '-e',
-            f"process.stdout.write('{JS_RUNTIME_CAPABILITY_MARKER}')",
-        ]
-    else:
-        return False
-    output = _run_captured(args, timeout=DENO_RUNTIME_PROBE_TIMEOUT)
-    return JS_RUNTIME_CAPABILITY_MARKER in output
+    return _owned_probe_javascript_execution(
+        runtime,
+        executable,
+        runner=lambda args, timeout: _run_captured(args, timeout=timeout),
+        marker=JS_RUNTIME_CAPABILITY_MARKER,
+        timeout=DENO_RUNTIME_PROBE_TIMEOUT,
+    )
 
 
 def _javascript_runtime_candidates(configured_runtime):
@@ -770,38 +757,16 @@ def _javascript_runtime_candidates(configured_runtime):
 
 
 def _evaluate_javascript_runtime(runtime, path, source):
-    minimum = DENO_MIN_VERSION if runtime == 'deno' else NODE_MIN_VERSION
-    try:
-        output = _run_captured([str(path), '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
-        version = _parse_javascript_runtime_version(runtime, output)
-    except Exception:
-        return {
-            'runtime': runtime, 'version': None, 'path': path, 'source': source,
-            'supported': False, 'ejsReady': False, 'minVersion': minimum,
-            'reason': 'runtime-probe-failed',
-        }
-    if not version:
-        return {
-            'runtime': runtime, 'version': None, 'path': path, 'source': source,
-            'supported': False, 'ejsReady': False, 'minVersion': minimum,
-            'reason': 'runtime-version-unparseable',
-        }
-    supported = _javascript_runtime_supported(runtime, version)
-    if not supported:
-        return {
-            'runtime': runtime, 'version': version, 'path': path, 'source': source,
-            'supported': False, 'ejsReady': False, 'minVersion': minimum,
-            'reason': 'runtime-version-unsupported',
-        }
-    try:
-        ejs_ready = _probe_javascript_execution(runtime, path)
-    except Exception:
-        ejs_ready = False
-    return {
-        'runtime': runtime, 'version': version, 'path': path, 'source': source,
-        'supported': True, 'ejsReady': ejs_ready, 'minVersion': minimum,
-        'reason': 'ready' if ejs_ready else 'runtime-execution-failed',
-    }
+    return _owned_evaluate_javascript_runtime(
+        runtime,
+        path,
+        source,
+        runner=lambda args, timeout: _run_captured(args, timeout=timeout),
+        marker=JS_RUNTIME_CAPABILITY_MARKER,
+        timeout=DENO_RUNTIME_PROBE_TIMEOUT,
+        deno_min=DENO_MIN_VERSION,
+        node_min=NODE_MIN_VERSION,
+    )
 
 
 def provision_deno():

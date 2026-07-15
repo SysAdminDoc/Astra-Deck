@@ -33,6 +33,8 @@ __all__ = (
     "parse_ffmpeg_version_output",
     "PoTokenProviderProbe",
     "FfmpegCapabilitiesProbe",
+    "parse_javascript_runtime_version", "javascript_runtime_supported",
+    "probe_javascript_execution", "evaluate_javascript_runtime",
 )
 
 PO_TOKEN_PROVIDER_PORT = 4416
@@ -134,6 +136,81 @@ def parse_ffmpeg_major(version_string):
         return None
     match = re.match(r'(\d+)\.', str(version_string))
     return int(match.group(1)) if match else None
+
+
+def parse_javascript_runtime_version(runtime, output):
+    if not output:
+        return None
+    first_line = output.strip().splitlines()[0] if output.strip() else ''
+    match = re.search(r'(\d+\.\d+\.\d+)', first_line)
+    if match:
+        return match.group(1)
+    return first_line[:32] if runtime == 'deno' and first_line else None
+
+
+def javascript_runtime_supported(runtime, version, *, deno_min=DENO_MIN_VERSION,
+                                 node_min=NODE_MIN_VERSION):
+    if runtime not in {'deno', 'node'}:
+        return False
+    if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version.strip()):
+        return False
+    minimum = deno_min if runtime == 'deno' else node_min
+    return _compare_semver(version, minimum) >= 0
+
+
+def probe_javascript_execution(runtime, executable, *, runner, marker,
+                               timeout=1.5):
+    if runtime == 'deno':
+        args = [str(executable), 'eval', '--no-config', f"console.log('{marker}')"]
+    elif runtime == 'node':
+        args = [
+            str(executable), '--input-type=commonjs', '-e',
+            f"process.stdout.write('{marker}')",
+        ]
+    else:
+        return False
+    return marker in runner(args, timeout=timeout)
+
+
+def evaluate_javascript_runtime(runtime, path, source, *, runner, marker,
+                                timeout=1.5, deno_min=DENO_MIN_VERSION,
+                                node_min=NODE_MIN_VERSION):
+    minimum = deno_min if runtime == 'deno' else node_min
+    try:
+        output = runner([str(path), '--version'], timeout=timeout)
+        version = parse_javascript_runtime_version(runtime, output)
+    except Exception:
+        return {
+            'runtime': runtime, 'version': None, 'path': path, 'source': source,
+            'supported': False, 'ejsReady': False, 'minVersion': minimum,
+            'reason': 'runtime-probe-failed',
+        }
+    if not version:
+        return {
+            'runtime': runtime, 'version': None, 'path': path, 'source': source,
+            'supported': False, 'ejsReady': False, 'minVersion': minimum,
+            'reason': 'runtime-version-unparseable',
+        }
+    supported = javascript_runtime_supported(
+        runtime, version, deno_min=deno_min, node_min=node_min
+    )
+    if not supported:
+        return {
+            'runtime': runtime, 'version': version, 'path': path, 'source': source,
+            'supported': False, 'ejsReady': False, 'minVersion': minimum,
+            'reason': 'runtime-version-unsupported',
+        }
+    try:
+        ejs_ready = probe_javascript_execution(
+            runtime, path, runner=runner, marker=marker, timeout=timeout
+        )
+    except Exception:
+        ejs_ready = False
+    return {
+        'runtime': runtime, 'version': version, 'path': path, 'source': source,
+        'supported': True, 'ejsReady': ejs_ready, 'minVersion': minimum,
+        'reason': 'ready' if ejs_ready else 'runtime-execution-failed',
+    }
 
 
 def _run_captured(args, timeout=5, *, runner=None, creationflags=0):
@@ -339,6 +416,8 @@ _OWNED_EXPORTS = {
     "parse_ffmpeg_version_output",
     "PoTokenProviderProbe",
     "FfmpegCapabilitiesProbe",
+    "parse_javascript_runtime_version", "javascript_runtime_supported",
+    "probe_javascript_execution", "evaluate_javascript_runtime",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS
