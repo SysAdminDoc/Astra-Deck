@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.49.9
+// @name         YTKit v4.49.10
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.49.9
+// @version      4.49.10
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -17294,6 +17294,34 @@
                     document.querySelector('.ytkit-home-hide-all-btn')?.remove();
                 },
 
+                _syncMastheadPageActions() {
+                    const path = window.location.pathname;
+                    if (path === '/feed/subscriptions' && this._isScopeEnabledForPath('/feed/subscriptions')) {
+                        this._createSubsHideAllButton();
+                    } else {
+                        this._removeSubsHideAllButton();
+                    }
+                    if (path === '/' && this._isScopeEnabledForPath('/')) {
+                        this._createHomeHideAllButton();
+                    } else {
+                        this._removeHomeHideAllButton();
+                    }
+                },
+
+                _mutationTouchesMastheadControls(mutations) {
+                    const selector = '#masthead #end #buttons';
+                    const touches = node => node?.nodeType === 1 && Boolean(
+                        node.matches?.(selector)
+                        || node.closest?.(selector)
+                        || node.querySelector?.(selector)
+                    );
+                    return Array.from(mutations || []).some(mutation =>
+                        touches(mutation.target)
+                        || Array.from(mutation.addedNodes || []).some(touches)
+                        || Array.from(mutation.removedNodes || []).some(touches)
+                    );
+                },
+
                 init() {
                     const css = `
                         .ytkit-video-hide-btn {
@@ -17489,6 +17517,13 @@
                                 });
                             }
                         }
+                        // Insert the Astra group in the same mutation turn that
+                        // creates/replaces YouTube's masthead controls. Waiting a
+                        // second painted the native buttons first, then shifted
+                        // them when the group arrived.
+                        if (this._mutationTouchesMastheadControls(mutations)) {
+                            this._syncMastheadPageActions();
+                        }
                         if (!pendingMutationCards.length) return;
                         // Cancel the in-flight batch and re-schedule with ALL
                         // pending cards (the accumulated ones plus the new ones).
@@ -17502,21 +17537,12 @@
                     const checkPages = () => {
                         const path = window.location.pathname;
                         const isOnSubsPage = path === '/feed/subscriptions';
-                        const isOnHomePage = path === '/';
                         if (isOnSubsPage && this._isScopeEnabledForPath('/feed/subscriptions')) {
                             if (!wasOnSubsPage) this._resetSubsLoadState();
-                            clearTimeout(this._subsButtonTimer);
-                            this._subsButtonTimer = setTimeout(() => this._createSubsHideAllButton(), 1000);
                         } else {
-                            this._removeSubsHideAllButton();
                             this._removeLoadBlocker();
                         }
-                        if (isOnHomePage && this._isScopeEnabledForPath('/')) {
-                            clearTimeout(this._homeButtonTimer);
-                            this._homeButtonTimer = setTimeout(() => this._createHomeHideAllButton(), 1000);
-                        } else {
-                            this._removeHomeHideAllButton();
-                        }
+                        this._syncMastheadPageActions();
                         wasOnSubsPage = isOnSubsPage;
                         this._updatePageActionButtons();
                     };
@@ -17567,8 +17593,6 @@
                     if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                     if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
                     if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
-                    clearTimeout(this._subsButtonTimer); this._subsButtonTimer = null;
-                    clearTimeout(this._homeButtonTimer); this._homeButtonTimer = null;
                     removeNavigateRule('hideVideosFromHomeNav');
                     document.querySelectorAll('.ytkit-video-hide-btn').forEach(b => b.remove());
                     document.querySelectorAll('.ytkit-video-hidden').forEach(e => e.classList.remove('ytkit-video-hidden'));
@@ -26408,7 +26432,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.49.9';
+    const YTKIT_VERSION = '4.49.10';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -32286,11 +32310,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 else headerButtons.appendChild(hideAllBtn);
             },
 
-            _removeHomeHideAllButton() {
-                document.querySelector('.ytkit-home-hide-all-btn')?.remove();
-            },
+                _removeHomeHideAllButton() {
+                    document.querySelector('.ytkit-home-hide-all-btn')?.remove();
+                },
 
-            init() {
+                _syncMastheadPageActions() {
+                    const path = window.location.pathname;
+                    if (path === '/feed/subscriptions') {
+                        this._createSubsHideAllButton();
+                    } else {
+                        this._removeSubsHideAllButton();
+                    }
+                    if (path === '/') {
+                        this._createHomeHideAllButton();
+                    } else {
+                        this._removeHomeHideAllButton();
+                    }
+                },
+
+                _mutationTouchesMastheadControls(mutations) {
+                    const selector = '#masthead #end #buttons';
+                    const touches = node => node?.nodeType === 1 && Boolean(
+                        node.matches?.(selector)
+                        || node.closest?.(selector)
+                        || node.querySelector?.(selector)
+                    );
+                    return Array.from(mutations || []).some(mutation =>
+                        touches(mutation.target)
+                        || Array.from(mutation.addedNodes || []).some(touches)
+                        || Array.from(mutation.removedNodes || []).some(touches)
+                    );
+                },
+
+                init() {
                 const css = `
                     .ytkit-video-hide-btn { position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:${Z.HIDE_BTN};opacity:0;transition:all 0.15s;padding:0;color:#fff; }
                     .ytkit-video-hide-btn:hover { background:rgba(200,0,0,0.9);transform:scale(1.1); }
@@ -32334,6 +32386,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             });
                         }
                     }
+                    if (this._mutationTouchesMastheadControls(mutations)) {
+                        this._syncMastheadPageActions();
+                    }
                     if (batchTimeout) clearTimeout(batchTimeout);
                     batchTimeout = setTimeout(processBatch, 300);
                 });
@@ -32344,19 +32399,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const checkPages = () => {
                     const path = window.location.pathname;
                     const isOnSubsPage = path === '/feed/subscriptions';
-                    const isOnHomePage = path === '/';
                     if (isOnSubsPage) {
                         if (!wasOnSubsPage) this._resetSubsLoadState();
-                        setTimeout(() => this._createSubsHideAllButton(), 1000);
                     } else {
-                        this._removeSubsHideAllButton();
                         this._removeLoadBlocker();
                     }
-                    if (isOnHomePage) {
-                        setTimeout(() => this._createHomeHideAllButton(), 1000);
-                    } else {
-                        this._removeHomeHideAllButton();
-                    }
+                    this._syncMastheadPageActions();
                     wasOnSubsPage = isOnSubsPage;
                 };
 

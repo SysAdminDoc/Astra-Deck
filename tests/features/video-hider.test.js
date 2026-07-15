@@ -48,9 +48,62 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
         '_getPredicateEvaluator',
         '_createHomeHideAllButton',
         '_createSubsHideAllButton',
+        '_syncMastheadPageActions',
+        '_mutationTouchesMastheadControls',
         '_removeHiddenVideosOnPage'
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+});
+
+test('masthead quick actions synchronize without a post-paint delay', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const originalWindow = globalThis.window;
+    const events = [];
+
+    feature._isScopeEnabledForPath = () => true;
+    feature._createSubsHideAllButton = () => events.push('create-subs');
+    feature._removeSubsHideAllButton = () => events.push('remove-subs');
+    feature._createHomeHideAllButton = () => events.push('create-home');
+    feature._removeHomeHideAllButton = () => events.push('remove-home');
+
+    try {
+        globalThis.window = { location: { pathname: '/feed/subscriptions' } };
+        feature._syncMastheadPageActions();
+        assert.deepEqual(events.splice(0), ['create-subs', 'remove-home']);
+
+        globalThis.window.location.pathname = '/';
+        feature._syncMastheadPageActions();
+        assert.deepEqual(events.splice(0), ['remove-subs', 'create-home']);
+
+        globalThis.window.location.pathname = '/watch';
+        feature._syncMastheadPageActions();
+        assert.deepEqual(events.splice(0), ['remove-subs', 'remove-home']);
+    } finally {
+        globalThis.window = originalWindow;
+    }
+
+    const mastheadTarget = {
+        nodeType: 1,
+        matches: selector => selector === '#masthead #end #buttons',
+        closest: () => null,
+        querySelector: () => null
+    };
+    const unrelatedTarget = {
+        nodeType: 1,
+        matches: () => false,
+        closest: () => null,
+        querySelector: () => null
+    };
+    assert.equal(feature._mutationTouchesMastheadControls([{ target: mastheadTarget }]), true);
+    assert.equal(feature._mutationTouchesMastheadControls([{ target: unrelatedTarget }]), false);
+
+    for (const source of [MODULE_SOURCE, sources.ytkit, sources.userscript]) {
+        assert.doesNotMatch(source, /setTimeout\(\(\) => this\._create(?:Subs|Home)HideAllButton\(\), 1000\)/,
+            'masthead actions must not wait one second after native controls paint');
+        assert.match(source, /if \(this\._mutationTouchesMastheadControls\(mutations\)\) \{\s*this\._syncMastheadPageActions\(\);\s*\}/,
+            'the DOM observer must synchronize actions when the masthead is created or replaced');
     }
 });
 
