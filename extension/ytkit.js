@@ -3125,6 +3125,7 @@ return response;
             channelSubCount: false,
             customSpeedButtons: false,
             openInNewTab: false,
+            searchWhileWatching: false,
 
             // v3.2.0 wave 8 — restored from archive
             preventAutoplay: false,
@@ -27016,6 +27017,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._handler) { document.removeEventListener('click', this._handler, true); this._handler = null; }
             }
         },
+        (globalThis.YTKitFeatures?.createSearchWhileWatchingFeature?.({
+            appState,
+            extensionFetchText,
+            isWatchPagePath,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            openExternalUrl,
+            DiagnosticLog,
+            documentRef: document,
+            windowRef: window,
+            t
+        }) || {
+            id: 'searchWhileWatching',
+            name: 'Search While Watching',
+            description: 'Show YouTube search results in a lightweight watch-page panel without interrupting playback.',
+            group: 'Content',
+            icon: 'search',
+            init() {},
+            destroy() {}
+        }),
 
         // ═══════════════════════════════════════════════════════════════
         //  WAVE 8: RESTORED ARCHIVE FEATURES

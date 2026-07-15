@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "썸네일 좋아요 비율"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "재생을 중단하지 않고 가벼운 시청 페이지 패널에 YouTube 검색 결과를 표시합니다."
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "시청하며 검색"
+  },
+  "searchWatchClose": {
+    "message": "검색 결과 닫기"
+  },
+  "searchWatchEmpty": {
+    "message": "지원되는 결과를 찾지 못했습니다."
+  },
+  "searchWatchError": {
+    "message": "검색 결과를 불러오지 못했습니다."
+  },
+  "searchWatchInputLabel": {
+    "message": "YouTube 검색"
+  },
+  "searchWatchLoading": {
+    "message": "YouTube 검색 중…"
+  },
+  "searchWatchOpenError": {
+    "message": "결과를 열지 못했습니다."
+  },
+  "searchWatchOpenHintNew": {
+    "message": "결과가 새 탭에서 열립니다."
+  },
+  "searchWatchOpenHintSame": {
+    "message": "결과가 현재 동영상을 대체합니다."
+  },
+  "searchWatchPlaceholder": {
+    "message": "시청하며 검색…"
+  },
+  "searchWatchResultsFor": {
+    "message": "검색 결과"
+  },
+  "searchWatchRetry": {
+    "message": "다시 시도"
+  },
+  "searchWatchSubmit": {
+    "message": "검색"
+  },
+  "searchWatchTitle": {
+    "message": "재생을 멈추지 않고 검색"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "좋아요 · Return YouTube Dislike 추정"
   },
@@ -2673,7 +2718,7 @@
     "message": "Search settings, pages, controls..."
   },
   "panelSearchStateBadge": {
-    "message": "Search"
+    "message": "검색"
   },
   "panelSearchStateClear": {
     "message": "검색 지우기"

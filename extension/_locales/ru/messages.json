@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Соотношение лайков на миниатюрах"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "Показывать результаты поиска YouTube в компактной панели страницы просмотра, не прерывая воспроизведение."
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "Поиск во время просмотра"
+  },
+  "searchWatchClose": {
+    "message": "Закрыть результаты поиска"
+  },
+  "searchWatchEmpty": {
+    "message": "Поддерживаемые результаты не найдены."
+  },
+  "searchWatchError": {
+    "message": "Не удалось загрузить результаты поиска."
+  },
+  "searchWatchInputLabel": {
+    "message": "Поиск в YouTube"
+  },
+  "searchWatchLoading": {
+    "message": "Поиск в YouTube…"
+  },
+  "searchWatchOpenError": {
+    "message": "Не удалось открыть результат."
+  },
+  "searchWatchOpenHintNew": {
+    "message": "Результаты открываются в новой вкладке."
+  },
+  "searchWatchOpenHintSame": {
+    "message": "Результаты заменяют текущее видео."
+  },
+  "searchWatchPlaceholder": {
+    "message": "Искать во время просмотра…"
+  },
+  "searchWatchResultsFor": {
+    "message": "Результаты для"
+  },
+  "searchWatchRetry": {
+    "message": "Повторить"
+  },
+  "searchWatchSubmit": {
+    "message": "Найти"
+  },
+  "searchWatchTitle": {
+    "message": "Поиск без остановки воспроизведения"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "лайков · оценка Return YouTube Dislike"
   },
@@ -2673,7 +2718,7 @@
     "message": "Search settings, pages, controls..."
   },
   "panelSearchStateBadge": {
-    "message": "Search"
+    "message": "Найти"
   },
   "panelSearchStateClear": {
     "message": "Очистить поиск"

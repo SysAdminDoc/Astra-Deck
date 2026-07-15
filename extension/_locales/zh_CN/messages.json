@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "缩略图点赞比例"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "在轻量的观看页面板中显示 YouTube 搜索结果，同时不中断播放。"
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "边看边搜"
+  },
+  "searchWatchClose": {
+    "message": "关闭搜索结果"
+  },
+  "searchWatchEmpty": {
+    "message": "未找到支持的结果。"
+  },
+  "searchWatchError": {
+    "message": "无法加载搜索结果。"
+  },
+  "searchWatchInputLabel": {
+    "message": "搜索 YouTube"
+  },
+  "searchWatchLoading": {
+    "message": "正在搜索 YouTube…"
+  },
+  "searchWatchOpenError": {
+    "message": "无法打开该结果。"
+  },
+  "searchWatchOpenHintNew": {
+    "message": "结果将在新标签页中打开。"
+  },
+  "searchWatchOpenHintSame": {
+    "message": "结果将替换当前视频。"
+  },
+  "searchWatchPlaceholder": {
+    "message": "边看边搜…"
+  },
+  "searchWatchResultsFor": {
+    "message": "搜索结果："
+  },
+  "searchWatchRetry": {
+    "message": "重试"
+  },
+  "searchWatchSubmit": {
+    "message": "搜索"
+  },
+  "searchWatchTitle": {
+    "message": "搜索时不中断播放"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "点赞 · Return YouTube Dislike 估算"
   },

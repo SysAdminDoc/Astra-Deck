@@ -475,6 +475,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── nav ───
     Object.freeze({ key: "openInNewTab", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "searchWhileWatching", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
 
     // ─── playback-audio ───
     Object.freeze({ key: "preventAutoplay", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

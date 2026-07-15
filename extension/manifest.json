@@ -188,6 +188,7 @@
         "features/settings-panel/index.js",
         "features/player-dock/index.js",
         "features/youtube-music-compat/index.js",
+        "features/search-while-watching/index.js",
         "features/video-insights/index.js",
         "features/return-dislike/index.js",
         "features/sponsorblock/index.js",

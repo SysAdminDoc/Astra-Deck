@@ -70,7 +70,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // The background-owned AI credential vault removes the 21-byte empty
     // aiSummaryApiKey field from ordinary settings.
     // GitHub-full videoInsights adds a 22-byte false-by-default preference.
-    assert.equal(assessment.totalBytes, 179190);
+    // Search-while-watching adds a 28-byte false-by-default preference.
+    assert.equal(assessment.totalBytes, 179218);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

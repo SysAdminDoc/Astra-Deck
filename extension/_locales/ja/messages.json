@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "サムネイルの高評価比率"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "再生を中断せずに、軽量な視聴ページパネルへ YouTube の検索結果を表示します。"
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "視聴しながら検索"
+  },
+  "searchWatchClose": {
+    "message": "検索結果を閉じる"
+  },
+  "searchWatchEmpty": {
+    "message": "対応する結果が見つかりませんでした。"
+  },
+  "searchWatchError": {
+    "message": "検索結果を読み込めませんでした。"
+  },
+  "searchWatchInputLabel": {
+    "message": "YouTube を検索"
+  },
+  "searchWatchLoading": {
+    "message": "YouTube を検索中…"
+  },
+  "searchWatchOpenError": {
+    "message": "結果を開けませんでした。"
+  },
+  "searchWatchOpenHintNew": {
+    "message": "結果は新しいタブで開きます。"
+  },
+  "searchWatchOpenHintSame": {
+    "message": "結果は現在の動画と置き換わります。"
+  },
+  "searchWatchPlaceholder": {
+    "message": "視聴しながら検索…"
+  },
+  "searchWatchResultsFor": {
+    "message": "検索結果"
+  },
+  "searchWatchRetry": {
+    "message": "再試行"
+  },
+  "searchWatchSubmit": {
+    "message": "検索"
+  },
+  "searchWatchTitle": {
+    "message": "再生を止めずに検索"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "高評価 · Return YouTube Dislike による推定"
   },
@@ -2673,7 +2718,7 @@
     "message": "Search settings, pages, controls..."
   },
   "panelSearchStateBadge": {
-    "message": "Search"
+    "message": "検索"
   },
   "panelSearchStateClear": {
     "message": "検索をクリア"

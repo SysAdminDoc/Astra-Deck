@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Thumbnail Like-Ratio Bars"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "Show YouTube search results in a lightweight watch-page panel without interrupting playback."
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "Search While Watching"
+  },
+  "searchWatchClose": {
+    "message": "Close search results"
+  },
+  "searchWatchEmpty": {
+    "message": "No supported results found."
+  },
+  "searchWatchError": {
+    "message": "Search results could not be loaded."
+  },
+  "searchWatchInputLabel": {
+    "message": "Search YouTube"
+  },
+  "searchWatchLoading": {
+    "message": "Searching YouTube…"
+  },
+  "searchWatchOpenError": {
+    "message": "The result could not be opened."
+  },
+  "searchWatchOpenHintNew": {
+    "message": "Results open in a new tab."
+  },
+  "searchWatchOpenHintSame": {
+    "message": "Results replace the current video."
+  },
+  "searchWatchPlaceholder": {
+    "message": "Search while watching…"
+  },
+  "searchWatchResultsFor": {
+    "message": "Results for"
+  },
+  "searchWatchRetry": {
+    "message": "Try again"
+  },
+  "searchWatchSubmit": {
+    "message": "Search"
+  },
+  "searchWatchTitle": {
+    "message": "Search without stopping playback"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "liked · estimated by Return YouTube Dislike"
   },
