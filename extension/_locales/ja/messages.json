@@ -3041,6 +3041,84 @@
   "quickTogglesEyebrow": {
     "message": "クイックトグル"
   },
+  "reactionSenderChooseOne": {
+    "message": "利用可能なリアクションを1つ以上選択してください。"
+  },
+  "reactionSenderCollapseAria": {
+    "message": "パネルを折りたたむ"
+  },
+  "reactionSenderEmpty": {
+    "message": "リアクションが見つかりません。リアクションボタンを開いてから更新してください。"
+  },
+  "reactionSenderExpandAria": {
+    "message": "パネルを展開する"
+  },
+  "reactionSenderHideAria": {
+    "message": "リアクション送信パネルを非表示にする"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "リアクションの間隔（ミリ秒）"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "間隔"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "リアクション"
+  },
+  "reactionSenderOpenAria": {
+    "message": "リアクション送信ツールを開く"
+  },
+  "reactionSenderPickerHint": {
+    "message": "YouTube のリアクション選択ツールを開いてから、このリストを更新してください。"
+  },
+  "reactionSenderRateWarning": {
+    "message": "高速なリアクションは YouTube によって制限される場合があります。最小間隔は 500 ミリ秒です。"
+  },
+  "reactionSenderRefresh": {
+    "message": "リアクションを更新"
+  },
+  "reactionSenderRiskToast": {
+    "message": "リアクション送信: 高速なリアクションは YouTube に制限または検知される場合があります。自己責任でご利用ください。"
+  },
+  "reactionSenderRunningTpl": {
+    "message": "{count} 件のリアクションで実行中。"
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "実行中。選択したリアクションを待機しています。"
+  },
+  "reactionSenderSelectOne": {
+    "message": "リアクションを1つ以上選択してください。"
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "{count} 件のリアクションを選択済み。"
+  },
+  "reactionSenderSentTpl": {
+    "message": "{emoji} を送信しました"
+  },
+  "reactionSenderStart": {
+    "message": "開始"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "連続送信を開始"
+  },
+  "reactionSenderStop": {
+    "message": "停止"
+  },
+  "reactionSenderStopped": {
+    "message": "停止中"
+  },
+  "reactionSenderTest": {
+    "message": "テスト"
+  },
+  "reactionSenderTestHint": {
+    "message": "開始する前に「テスト」でリアクションを1件送信できます。"
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "{emoji} を1回送信"
+  },
+  "reactionSenderTitle": {
+    "message": "リアクション送信"
+  },
   "reenableMediadlAria": {
     "message": "Astra Downloader のインストールプロンプトを再有効化"
   },
@@ -3865,6 +3943,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "チャンネル名フィルター"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "チャンネル名に含む…"
+  },
+  "wlwbCloseAria": {
+    "message": "ワークベンチを閉じる"
+  },
+  "wlwbExportCsv": {
+    "message": "CSVをエクスポート"
+  },
+  "wlwbExportJson": {
+    "message": "JSONをエクスポート"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "読み込み済みの「後で見る」{count} 件をエクスポートしました"
+  },
+  "wlwbLogEmpty": {
+    "message": "削除ログは空です"
+  },
+  "wlwbNoMatches": {
+    "message": "削除対象に一致する行がありません"
+  },
+  "wlwbOpenAria": {
+    "message": "「後で見る」ワークベンチを開く"
+  },
+  "wlwbOpenBtn": {
+    "message": "ワークベンチ"
+  },
+  "wlwbPanelAria": {
+    "message": "「後で見る」ワークベンチ"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "削除ログ"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "一致項目を削除（1回あたり最大 {limit} 件）"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— まだ {count} 件が一致しています。もう一度実行してください"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "{count} 件の動画を削除しました{remaining}。復元リストは削除ログにあります。"
+  },
+  "wlwbRemovingTpl": {
+    "message": "{current} / {total} を削除中…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel}（{percent}% 視聴済み）"
+  },
+  "wlwbSortAria": {
+    "message": "プレビューの並び順"
+  },
+  "wlwbSortLongest": {
+    "message": "長い順"
+  },
+  "wlwbSortPlaylist": {
+    "message": "再生リスト順"
+  },
+  "wlwbSortShortest": {
+    "message": "短い順"
+  },
+  "wlwbSortTitle": {
+    "message": "タイトル順（A–Z）"
+  },
+  "wlwbStatusTpl": {
+    "message": "読み込み済みの {loaded} 件中 {matched} 件が一致。実行前に再生リストをスクロールして行をさらに読み込んでください。"
+  },
+  "wlwbTitleAria": {
+    "message": "タイトルフィルター"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "タイトルに含む…"
+  },
+  "wlwbWatchedAria": {
+    "message": "最低視聴率フィルター"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "視聴率 ≥ %（例: 90）"
   },
   "workspaceEyebrow": {
     "message": "設定ワークスペース"

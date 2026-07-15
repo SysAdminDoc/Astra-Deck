@@ -29,7 +29,3 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 ### P2 — Resilience, accessibility, and maintainability
 
 ## Deep-audit backlog — 2026-07-15 (verified, unfixed)
-
-- [ ] P3 — Localize the Watch Later Workbench and reaction sender surfaces
-  Why: both shipped fully hardcoded-English (panel labels, placeholders, sort options, toasts) and the literals were baselined into scripts/i18n-ui-copy-baseline.json; the live-chat module does not even receive t(). Route through locale keys and shrink the ratchet baseline.
-  Where: extension/ytkit.js (watchLaterWorkbench ~32535-32830), extension/features/live-chat/index.js (reaction panel ~301-429)

@@ -15486,9 +15486,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const button = document.createElement('button');
                 button.id = 'ytkit-reaction-spammer-launcher';
                 button.type = 'button';
-                button.textContent = 'React';
-                button.title = 'Reaction spammer';
-                button.setAttribute('aria-label', 'Open reaction spammer');
+                button.textContent = t('reactionSenderLauncherBtn', 'React');
+                button.title = t('feature_reactionSpammer_name', 'Reaction Spammer');
+                button.setAttribute('aria-label', t('reactionSenderOpenAria', 'Open reaction sender'));
                 button.addEventListener('click', () => this._showPanel());
                 document.body.append(button);
                 this._launcherButton = button;
@@ -15514,7 +15514,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     if (appState?.settings?._reactionSpammerAck) return;
                     showToast(
-                        'Reaction Spammer: YouTube may rate-limit or flag rapid reactions. Use at your own risk.',
+                        t('reactionSenderRiskToast', 'Reaction Spammer: YouTube may rate-limit or flag rapid reactions. Use at your own risk.'),
                         '#f59e0b',
                         { duration: 10 },
                     );
@@ -15532,7 +15532,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const pos = this._panelPosition();
                 const panel = document.createElement('section');
                 panel.id = 'ytkit-reaction-spammer-panel';
-                panel.setAttribute('aria-label', 'Reaction spammer');
+                panel.setAttribute('aria-label', t('feature_reactionSpammer_name', 'Reaction Spammer'));
                 panel.tabIndex = -1;
                 panel.style.left = `${pos.x}px`;
                 panel.style.top = `${pos.y}px`;
@@ -15542,23 +15542,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const title = document.createElement('div');
                 title.className = 'ytkit-rs-title';
-                title.textContent = 'Reaction Spammer';
+                title.textContent = t('feature_reactionSpammer_name', 'Reaction Spammer');
 
                 const headerActions = document.createElement('div');
                 headerActions.className = 'ytkit-rs-header-actions';
 
                 this._collapseBtn = this._createButton(this._state.collapsed ? '+' : '-', 'ghost');
-                this._collapseBtn.setAttribute('aria-label', this._state.collapsed ? 'Expand panel' : 'Collapse panel');
+                this._collapseBtn.setAttribute('aria-label', this._state.collapsed ? t('reactionSenderExpandAria', 'Expand panel') : t('reactionSenderCollapseAria', 'Collapse panel'));
                 this._collapseBtn.addEventListener('click', () => {
                     this._state.collapsed = !this._state.collapsed;
                     this._body.hidden = this._state.collapsed;
                     this._collapseBtn.textContent = this._state.collapsed ? '+' : '-';
-                    this._collapseBtn.setAttribute('aria-label', this._state.collapsed ? 'Expand panel' : 'Collapse panel');
+                    this._collapseBtn.setAttribute('aria-label', this._state.collapsed ? t('reactionSenderExpandAria', 'Expand panel') : t('reactionSenderCollapseAria', 'Collapse panel'));
                     this._saveState();
                 });
 
                 const closeBtn = this._createButton('x', 'ghost');
-                closeBtn.setAttribute('aria-label', 'Hide reaction spammer panel');
+                closeBtn.setAttribute('aria-label', t('reactionSenderHideAria', 'Hide reaction spammer panel'));
                 closeBtn.addEventListener('click', () => {
                     this._stop();
                     this._dragCleanup?.();
@@ -15583,7 +15583,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._listEl = document.createElement('div');
                 this._listEl.className = 'ytkit-rs-list';
 
-                const refreshBtn = this._createButton('Refresh reactions');
+                const refreshBtn = this._createButton(t('reactionSenderRefresh', 'Refresh reactions'));
                 refreshBtn.addEventListener('click', () => {
                     this._ensureExpanded();
                     this._renderList();
@@ -15593,7 +15593,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const intervalRow = document.createElement('label');
                 intervalRow.className = 'ytkit-rs-field';
                 const intervalLabel = document.createElement('span');
-                intervalLabel.textContent = 'Interval';
+                intervalLabel.textContent = t('reactionSenderIntervalLabel', 'Interval');
                 this._intervalEl = document.createElement('input');
                 this._intervalEl.type = 'number';
                 this._intervalEl.min = String(this._INTERVAL_MIN_MS_FLOOR);
@@ -15606,7 +15606,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 intervalRow.append(intervalLabel, this._intervalEl);
 
-                this._startBtn = this._createButton('Start spamming', 'primary');
+                this._startBtn = this._createButton(t('reactionSenderStartSpamming', 'Start spamming'), 'primary');
                 this._startBtn.addEventListener('click', () => {
                     if (this._running) this._stop();
                     else this._start();
@@ -15617,7 +15617,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const hint = document.createElement('div');
                 hint.className = 'ytkit-rs-hint';
-                hint.textContent = 'Use Test to send one reaction before starting.';
+                hint.textContent = t('reactionSenderTestHint', 'Use Test to send one reaction before starting.');
 
                 this._body.append(this._listEl, refreshBtn, intervalRow, this._startBtn, this._statusEl, hint);
                 panel.append(header, this._body);
@@ -15639,7 +15639,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (map.size === 0) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-rs-empty';
-                    empty.textContent = 'No reactions found. Open the reaction button, then refresh.';
+                    empty.textContent = t('reactionSenderEmpty', 'No reactions found. Open the reaction button, then refresh.');
                     this._listEl.append(empty);
                     this._paint();
                     return;
@@ -15671,8 +15671,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     label.append(checkbox, emojiLabel);
 
-                    const testButton = this._createButton('Test', 'compact');
-                    testButton.title = `Send ${emoji} once`;
+                    const testButton = this._createButton(t('reactionSenderTest', 'Test'), 'compact');
+                    testButton.title = t('reactionSenderTestTitleTpl', `Send ${emoji} once`).replace('{emoji}', emoji);
                     testButton.addEventListener('click', event => {
                         event.preventDefault();
                         this._clickReaction(emoji);
@@ -15690,17 +15690,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const selectedCount = this._state.selected.length;
                 const readyCount = this._state.selected.filter(emoji => available.has(emoji)).length;
                 if (this._running) {
-                    this._startBtn.textContent = 'Stop';
+                    this._startBtn.textContent = t('reactionSenderStop', 'Stop');
                     this._startBtn.classList.add('ytkit-rs-running');
                     this._statusEl.textContent = readyCount > 0
-                        ? `Running with ${readyCount} reaction(s).`
-                        : 'Running, waiting for selected reactions.';
+                        ? t('reactionSenderRunningTpl', `Running with ${readyCount} reaction(s).`).replace('{count}', String(readyCount))
+                        : t('reactionSenderRunningWaiting', 'Running, waiting for selected reactions.');
                 } else {
-                    this._startBtn.textContent = 'Start spamming';
+                    this._startBtn.textContent = t('reactionSenderStartSpamming', 'Start spamming');
                     this._startBtn.classList.remove('ytkit-rs-running');
                     this._statusEl.textContent = selectedCount === 0
-                        ? 'Select at least one reaction.'
-                        : `${selectedCount} reaction(s) selected.`;
+                        ? t('reactionSenderSelectOne', 'Select at least one reaction.')
+                        : t('reactionSenderSelectedTpl', `${selectedCount} reaction(s) selected.`).replace('{count}', String(selectedCount));
                 }
             },
 
@@ -32848,7 +32848,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     rowEl.className = 'ytkit-wlwb-row';
                     const label = document.createElement('span');
                     label.textContent = e.title;
-                    label.title = `${e.title} — ${e.channel} (${e.watchedPct.toFixed(0)}% watched)`;
+                    label.title = t('wlwbRowTitleTpl', `${e.title} — ${e.channel} (${e.watchedPct.toFixed(0)}% watched)`)
+                        .replace('{title}', e.title)
+                        .replace('{channel}', e.channel)
+                        .replace('{percent}', e.watchedPct.toFixed(0));
                     const meta = document.createElement('span');
                     meta.className = 'ytkit-wlwb-meta';
                     meta.textContent = `${e.watchedPct.toFixed(0)}%`;
@@ -32858,7 +32861,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 const status = this._panel.querySelector('.ytkit-wlwb-status');
                 const loaded = this._scanRows().length;
-                status.textContent = `${entries.length} of ${loaded} loaded videos match. Scroll the playlist to load more rows before running.`;
+                status.textContent = t('wlwbStatusTpl', `${entries.length} of ${loaded} loaded videos match. Scroll the playlist to load more rows before running.`)
+                    .replace('{matched}', String(entries.length))
+                    .replace('{loaded}', String(loaded));
                 this._matched = entries;
             },
 
@@ -32887,11 +32892,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else {
                     this._download(`watch-later-${stamp}.json`, JSON.stringify({ exportVersion: 1, exportedAt: Date.now(), entries }, null, 2), 'application/json');
                 }
-                showToast(`Exported ${entries.length} loaded Watch Later entries`, '#22c55e', { duration: 3 });
+                showToast(t('wlwbExportedToastTpl', `Exported ${entries.length} loaded Watch Later entries`)
+                    .replace('{count}', String(entries.length)), '#22c55e', { duration: 3 });
             },
             _exportRemovalLog() {
                 const log = storageReadJSON(this._LOG_KEY, []);
-                if (!log.length) { showToast('Removal log is empty', '#f59e0b', { duration: 3, tone: 'warning' }); return; }
+                if (!log.length) { showToast(t('wlwbLogEmpty', 'Removal log is empty'), '#f59e0b', { duration: 3, tone: 'warning' }); return; }
                 this._download(`watch-later-removed-${new Date().toISOString().slice(0, 10)}.json`,
                     JSON.stringify({ exportVersion: 1, entries: log }, null, 2), 'application/json');
             },
@@ -32925,13 +32931,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _runRemoval(runBtn) {
                 if (this._running) return;
                 const matched = this._matched || [];
-                if (!matched.length) { showToast('No matching rows to remove', '#f59e0b', { duration: 3, tone: 'warning' }); return; }
+                if (!matched.length) { showToast(t('wlwbNoMatches', 'No matching rows to remove'), '#f59e0b', { duration: 3, tone: 'warning' }); return; }
                 const batch = matched.slice(0, this._BATCH_LIMIT);
                 this._running = true;
                 runBtn.disabled = true;
                 const removed = [];
                 for (let i = 0; i < batch.length; i++) {
-                    runBtn.textContent = `Removing ${i + 1} / ${batch.length}…`;
+                    runBtn.textContent = t('wlwbRemovingTpl', `Removing ${i + 1} / ${batch.length}…`)
+                        .replace('{current}', String(i + 1))
+                        .replace('{total}', String(batch.length));
                     if (!batch[i].row.isConnected) continue;
                     const ok = await this._removeRow(batch[i]);
                     if (ok) removed.push(batch[i]);
@@ -32939,9 +32947,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._appendLog(removed);
                 this._running = false;
                 runBtn.disabled = false;
-                runBtn.textContent = 'Remove matched (max 25/run)';
+                runBtn.textContent = t('wlwbRemoveMatchedTpl', `Remove matched (max ${this._BATCH_LIMIT}/run)`)
+                    .replace('{limit}', String(this._BATCH_LIMIT));
                 const remaining = matched.length - batch.length;
-                showToast(`Removed ${removed.length} video(s)${remaining > 0 ? ` — ${remaining} still match, run again` : ''}. Recovery list is in the removal log.`, '#22c55e', { duration: 5 });
+                const remainingNote = remaining > 0
+                    ? ` ${t('wlwbRemovedRemainingTpl', `— ${remaining} still match, run again`).replace('{count}', String(remaining))}`
+                    : '';
+                showToast(t('wlwbRemovedToastTpl', `Removed ${removed.length} video(s)${remainingNote}. Recovery list is in the removal log.`)
+                    .replace('{count}', String(removed.length))
+                    .replace('{remaining}', remainingNote), '#22c55e', { duration: 5 });
                 this._refreshPreview();
             },
 
@@ -32950,16 +32964,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-wlwb-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', 'Watch Later workbench');
+                panel.setAttribute('aria-label', t('wlwbPanelAria', 'Watch Later workbench'));
 
                 const header = document.createElement('div');
                 header.className = 'ytkit-wlwb-header';
                 const heading = document.createElement('span');
-                heading.textContent = 'Watch Later Workbench';
+                heading.textContent = t('feature_watchLaterWorkbench_name', 'Watch Later Workbench');
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.textContent = '✕';
-                close.setAttribute('aria-label', 'Close workbench');
+                close.setAttribute('aria-label', t('wlwbCloseAria', 'Close workbench'));
                 close.addEventListener('click', () => this._togglePanel());
                 header.appendChild(heading);
                 header.appendChild(close);
@@ -32977,13 +32991,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     controls.appendChild(input);
                     return input;
                 };
-                mkInput('ytkit-wlwb-watched', 'number', 'Watched ≥ % (e.g. 90)', 'Minimum watched percent filter');
-                mkInput('ytkit-wlwb-channel', 'text', 'Channel contains…', 'Channel name filter');
-                mkInput('ytkit-wlwb-title', 'text', 'Title contains…', 'Title filter');
+                mkInput('ytkit-wlwb-watched', 'number', t('wlwbWatchedPlaceholder', 'Watched ≥ % (e.g. 90)'), t('wlwbWatchedAria', 'Minimum watched percent filter'));
+                mkInput('ytkit-wlwb-channel', 'text', t('wlwbChannelPlaceholder', 'Channel contains…'), t('wlwbChannelAria', 'Channel name filter'));
+                mkInput('ytkit-wlwb-title', 'text', t('wlwbTitlePlaceholder', 'Title contains…'), t('wlwbTitleAria', 'Title filter'));
                 const sort = document.createElement('select');
                 sort.className = 'ytkit-wlwb-sort';
-                sort.setAttribute('aria-label', 'Preview sort order');
-                [['playlist', 'Playlist order'], ['duration-asc', 'Shortest first'], ['duration-desc', 'Longest first'], ['title', 'Title A–Z']]
+                sort.setAttribute('aria-label', t('wlwbSortAria', 'Preview sort order'));
+                [['playlist', t('wlwbSortPlaylist', 'Playlist order')], ['duration-asc', t('wlwbSortShortest', 'Shortest first')], ['duration-desc', t('wlwbSortLongest', 'Longest first')], ['title', t('wlwbSortTitle', 'Title A–Z')]]
                     .forEach(([value, label]) => {
                         const opt = document.createElement('option');
                         opt.value = value; opt.textContent = label;
@@ -33009,10 +33023,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     actions.appendChild(b);
                     return b;
                 };
-                const runBtn = mkAction('Remove matched (max 25/run)', () => this._runRemoval(runBtn));
-                mkAction('Export CSV', () => this._exportScan('csv'));
-                mkAction('Export JSON', () => this._exportScan('json'));
-                mkAction('Removal log', () => this._exportRemovalLog());
+                const runBtn = mkAction(
+                    t('wlwbRemoveMatchedTpl', `Remove matched (max ${this._BATCH_LIMIT}/run)`)
+                        .replace('{limit}', String(this._BATCH_LIMIT)),
+                    () => this._runRemoval(runBtn)
+                );
+                mkAction(t('wlwbExportCsv', 'Export CSV'), () => this._exportScan('csv'));
+                mkAction(t('wlwbExportJson', 'Export JSON'), () => this._exportScan('json'));
+                mkAction(t('wlwbRemovalLogBtn', 'Removal log'), () => this._exportRemovalLog());
 
                 panel.appendChild(header);
                 panel.appendChild(controls);
@@ -33044,8 +33062,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.id = 'ytkit-wl-workbench';
                 btn.type = 'button';
                 btn.className = 'ytkit-wlwb-open';
-                btn.textContent = 'Workbench';
-                btn.setAttribute('aria-label', 'Open the Watch Later workbench');
+                btn.textContent = t('wlwbOpenBtn', 'Workbench');
+                btn.setAttribute('aria-label', t('wlwbOpenAria', 'Open the Watch Later workbench'));
                 btn.addEventListener('click', () => this._togglePanel());
                 host.appendChild(btn);
                 this._btn = btn;

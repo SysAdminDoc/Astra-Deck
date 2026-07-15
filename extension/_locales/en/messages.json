@@ -3041,6 +3041,84 @@
   "quickTogglesEyebrow": {
     "message": "Quick toggles"
   },
+  "reactionSenderChooseOne": {
+    "message": "Choose at least one available reaction."
+  },
+  "reactionSenderCollapseAria": {
+    "message": "Collapse panel"
+  },
+  "reactionSenderEmpty": {
+    "message": "No reactions found. Open the reaction button, then refresh."
+  },
+  "reactionSenderExpandAria": {
+    "message": "Expand panel"
+  },
+  "reactionSenderHideAria": {
+    "message": "Hide reaction spammer panel"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "Reaction interval in milliseconds"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "Interval"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "React"
+  },
+  "reactionSenderOpenAria": {
+    "message": "Open reaction sender"
+  },
+  "reactionSenderPickerHint": {
+    "message": "Open YouTube’s reaction picker, then refresh this list."
+  },
+  "reactionSenderRateWarning": {
+    "message": "Rapid reactions may be rate-limited by YouTube. The minimum interval is 500 ms."
+  },
+  "reactionSenderRefresh": {
+    "message": "Refresh reactions"
+  },
+  "reactionSenderRiskToast": {
+    "message": "Reaction Spammer: YouTube may rate-limit or flag rapid reactions. Use at your own risk."
+  },
+  "reactionSenderRunningTpl": {
+    "message": "Running with {count} reaction(s)."
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "Running, waiting for selected reactions."
+  },
+  "reactionSenderSelectOne": {
+    "message": "Select at least one reaction."
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "{count} reaction(s) selected."
+  },
+  "reactionSenderSentTpl": {
+    "message": "Sent {emoji}"
+  },
+  "reactionSenderStart": {
+    "message": "Start"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "Start spamming"
+  },
+  "reactionSenderStop": {
+    "message": "Stop"
+  },
+  "reactionSenderStopped": {
+    "message": "Stopped"
+  },
+  "reactionSenderTest": {
+    "message": "Test"
+  },
+  "reactionSenderTestHint": {
+    "message": "Use Test to send one reaction before starting."
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "Send {emoji} once"
+  },
+  "reactionSenderTitle": {
+    "message": "Reaction sender"
+  },
   "reenableMediadlAria": {
     "message": "Re-enable Astra Downloader install prompts"
   },
@@ -3865,6 +3943,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "Channel name filter"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "Channel contains…"
+  },
+  "wlwbCloseAria": {
+    "message": "Close workbench"
+  },
+  "wlwbExportCsv": {
+    "message": "Export CSV"
+  },
+  "wlwbExportJson": {
+    "message": "Export JSON"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "Exported {count} loaded Watch Later entries"
+  },
+  "wlwbLogEmpty": {
+    "message": "Removal log is empty"
+  },
+  "wlwbNoMatches": {
+    "message": "No matching rows to remove"
+  },
+  "wlwbOpenAria": {
+    "message": "Open the Watch Later workbench"
+  },
+  "wlwbOpenBtn": {
+    "message": "Workbench"
+  },
+  "wlwbPanelAria": {
+    "message": "Watch Later workbench"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "Removal log"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "Remove matched (max {limit}/run)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— {count} still match, run again"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "Removed {count} video(s){remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovingTpl": {
+    "message": "Removing {current} / {total}…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel} ({percent}% watched)"
+  },
+  "wlwbSortAria": {
+    "message": "Preview sort order"
+  },
+  "wlwbSortLongest": {
+    "message": "Longest first"
+  },
+  "wlwbSortPlaylist": {
+    "message": "Playlist order"
+  },
+  "wlwbSortShortest": {
+    "message": "Shortest first"
+  },
+  "wlwbSortTitle": {
+    "message": "Title A–Z"
+  },
+  "wlwbStatusTpl": {
+    "message": "{matched} of {loaded} loaded videos match. Scroll the playlist to load more rows before running."
+  },
+  "wlwbTitleAria": {
+    "message": "Title filter"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "Title contains…"
+  },
+  "wlwbWatchedAria": {
+    "message": "Minimum watched percent filter"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "Watched ≥ % (e.g. 90)"
   },
   "workspaceEyebrow": {
     "message": "Settings workspace"

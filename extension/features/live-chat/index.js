@@ -93,6 +93,23 @@
             findSettingEntry: schemaApi.findSettingEntry
         });
         const injectStyle = options.injectStyle || core.injectStyle;
+        const translate = typeof options.t === 'function'
+            ? options.t
+            : (typeof core.t === 'function' ? core.t : null);
+        function t(key, fallback) {
+            try {
+                if (translate) {
+                    const message = translate(key, fallback);
+                    if (message) return message;
+                } else if (browser?.i18n?.getMessage) {
+                    const message = browser.i18n.getMessage(key);
+                    if (message) return message;
+                }
+            } catch (_) {
+                // reason: i18n is best-effort; the chat UI must never fail on it.
+            }
+            return (fallback != null) ? fallback : key;
+        }
         const defaults = {
             ...FALLBACK_DEFAULTS,
             ...(schemaApi.buildDefaultsFromSchema?.() || {})
@@ -311,8 +328,8 @@
                 if (timer) win.clearTimeout(timer);
                 timer = null;
                 const button = panel?.querySelector?.('[data-action="toggle"]');
-                if (button) button.textContent = 'Start';
-                setStatus('Stopped');
+                if (button) button.textContent = t('reactionSenderStart', 'Start');
+                setStatus(t('reactionSenderStopped', 'Stopped'));
             }
 
             function schedule() {
@@ -321,12 +338,12 @@
                 const selected = state.selected.filter((emoji) => available.has(emoji));
                 if (!selected.length) {
                     stop();
-                    setStatus('Choose at least one available reaction.');
+                    setStatus(t('reactionSenderChooseOne', 'Choose at least one available reaction.'));
                     return;
                 }
                 const emoji = selected[Math.floor(Math.random() * selected.length)];
                 dispatchReaction(available.get(emoji));
-                setStatus(`Sent ${emoji}`);
+                setStatus(t('reactionSenderSentTpl', `Sent ${emoji}`).replace('{emoji}', emoji));
                 timer = win.setTimeout(schedule, clampInterval(state.intervalMs));
             }
 
@@ -337,7 +354,7 @@
                 const available = reactionButtons();
                 if (!available.size) {
                     const empty = doc.createElement('p');
-                    empty.textContent = 'Open YouTube’s reaction picker, then refresh this list.';
+                    empty.textContent = t('reactionSenderPickerHint', 'Open YouTube’s reaction picker, then refresh this list.');
                     container.append(empty);
                     return;
                 }
@@ -378,16 +395,16 @@
                 const header = doc.createElement('header');
                 const title = doc.createElement('h2');
                 title.id = 'ytkit-rs-title';
-                title.textContent = 'Reaction sender';
+                title.textContent = t('reactionSenderTitle', 'Reaction sender');
                 const close = doc.createElement('button');
                 close.type = 'button';
-                close.textContent = 'Close';
+                close.textContent = t('closeBtnAria', 'Close');
                 close.addEventListener('click', closePanel);
                 header.append(title, close);
 
                 const warning = doc.createElement('p');
                 warning.className = 'ytkit-rs-warning';
-                warning.textContent = 'Rapid reactions may be rate-limited by YouTube. The minimum interval is 500 ms.';
+                warning.textContent = t('reactionSenderRateWarning', 'Rapid reactions may be rate-limited by YouTube. The minimum interval is 500 ms.');
                 const optionsList = doc.createElement('div');
                 optionsList.className = 'ytkit-rs-options';
                 const controls = doc.createElement('div');
@@ -398,7 +415,7 @@
                 interval.max = '60000';
                 interval.step = '100';
                 interval.value = String(clampInterval(state.intervalMs));
-                interval.setAttribute('aria-label', 'Reaction interval in milliseconds');
+                interval.setAttribute('aria-label', t('reactionSenderIntervalAria', 'Reaction interval in milliseconds'));
                 interval.addEventListener('change', () => {
                     state.intervalMs = clampInterval(interval.value);
                     interval.value = String(state.intervalMs);
@@ -407,25 +424,25 @@
                 const toggle = doc.createElement('button');
                 toggle.type = 'button';
                 toggle.dataset.action = 'toggle';
-                toggle.textContent = 'Start';
+                toggle.textContent = t('reactionSenderStart', 'Start');
                 toggle.addEventListener('click', () => {
                     if (running) {
                         stop();
                     } else {
                         running = true;
-                        toggle.textContent = 'Stop';
+                        toggle.textContent = t('reactionSenderStop', 'Stop');
                         schedule();
                     }
                 });
                 controls.append(interval, toggle);
                 const refresh = doc.createElement('button');
                 refresh.type = 'button';
-                refresh.textContent = 'Refresh reactions';
+                refresh.textContent = t('reactionSenderRefresh', 'Refresh reactions');
                 refresh.addEventListener('click', renderOptions);
                 const status = doc.createElement('div');
                 status.className = 'ytkit-rs-status';
                 status.setAttribute('role', 'status');
-                status.textContent = 'Stopped';
+                status.textContent = t('reactionSenderStopped', 'Stopped');
                 panel.append(header, warning, optionsList, controls, refresh, status);
                 doc.body?.append(panel);
                 renderOptions();
@@ -439,8 +456,8 @@
                 launcher.id = 'ytkit-reaction-spammer-launcher';
                 launcher.type = 'button';
                 launcher.textContent = '♥';
-                launcher.title = 'Open reaction sender';
-                launcher.setAttribute('aria-label', 'Open reaction sender');
+                launcher.title = t('reactionSenderOpenAria', 'Open reaction sender');
+                launcher.setAttribute('aria-label', t('reactionSenderOpenAria', 'Open reaction sender'));
                 launcher.addEventListener('click', openPanel);
                 doc.body?.append(launcher);
             }

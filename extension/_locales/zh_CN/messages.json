@@ -3038,6 +3038,84 @@
   "quickTogglesEyebrow": {
     "message": "快捷开关"
   },
+  "reactionSenderChooseOne": {
+    "message": "请至少选择一个可用的表情反应。"
+  },
+  "reactionSenderCollapseAria": {
+    "message": "折叠面板"
+  },
+  "reactionSenderEmpty": {
+    "message": "未找到表情反应。请打开反应按钮，然后刷新。"
+  },
+  "reactionSenderExpandAria": {
+    "message": "展开面板"
+  },
+  "reactionSenderHideAria": {
+    "message": "隐藏表情反应发送面板"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "表情反应间隔（毫秒）"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "间隔"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "反应"
+  },
+  "reactionSenderOpenAria": {
+    "message": "打开表情反应发送器"
+  },
+  "reactionSenderPickerHint": {
+    "message": "请打开 YouTube 的表情反应选择器，然后刷新此列表。"
+  },
+  "reactionSenderRateWarning": {
+    "message": "快速发送表情反应可能会被 YouTube 限速。最小间隔为 500 毫秒。"
+  },
+  "reactionSenderRefresh": {
+    "message": "刷新表情反应"
+  },
+  "reactionSenderRiskToast": {
+    "message": "表情反应发送器：YouTube 可能会限制或标记快速反应。使用风险自负。"
+  },
+  "reactionSenderRunningTpl": {
+    "message": "正在使用 {count} 个表情反应运行。"
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "正在运行，等待所选表情反应。"
+  },
+  "reactionSenderSelectOne": {
+    "message": "请至少选择一个表情反应。"
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "已选择 {count} 个表情反应。"
+  },
+  "reactionSenderSentTpl": {
+    "message": "已发送 {emoji}"
+  },
+  "reactionSenderStart": {
+    "message": "开始"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "开始连续发送"
+  },
+  "reactionSenderStop": {
+    "message": "停止"
+  },
+  "reactionSenderStopped": {
+    "message": "已停止"
+  },
+  "reactionSenderTest": {
+    "message": "测试"
+  },
+  "reactionSenderTestHint": {
+    "message": "开始前可使用“测试”发送一个表情反应。"
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "发送一次 {emoji}"
+  },
+  "reactionSenderTitle": {
+    "message": "表情反应发送器"
+  },
   "reenableMediadlAria": {
     "message": "重新启用 Astra Downloader 安装提示"
   },
@@ -3835,6 +3913,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "频道名称筛选"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "频道包含…"
+  },
+  "wlwbCloseAria": {
+    "message": "关闭工作台"
+  },
+  "wlwbExportCsv": {
+    "message": "导出 CSV"
+  },
+  "wlwbExportJson": {
+    "message": "导出 JSON"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "已导出 {count} 个已加载的稍后观看条目"
+  },
+  "wlwbLogEmpty": {
+    "message": "移除日志为空"
+  },
+  "wlwbNoMatches": {
+    "message": "没有匹配的行可移除"
+  },
+  "wlwbOpenAria": {
+    "message": "打开稍后观看工作台"
+  },
+  "wlwbOpenBtn": {
+    "message": "工作台"
+  },
+  "wlwbPanelAria": {
+    "message": "稍后观看工作台"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "移除日志"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "移除匹配项（每次最多 {limit} 个）"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— 仍有 {count} 个匹配，请再次运行"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "已移除 {count} 个视频{remaining}。恢复列表在移除日志中。"
+  },
+  "wlwbRemovingTpl": {
+    "message": "正在移除 {current} / {total}…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel}（已观看 {percent}%）"
+  },
+  "wlwbSortAria": {
+    "message": "预览排序方式"
+  },
+  "wlwbSortLongest": {
+    "message": "最长优先"
+  },
+  "wlwbSortPlaylist": {
+    "message": "播放列表顺序"
+  },
+  "wlwbSortShortest": {
+    "message": "最短优先"
+  },
+  "wlwbSortTitle": {
+    "message": "标题 A–Z"
+  },
+  "wlwbStatusTpl": {
+    "message": "已加载的 {loaded} 个视频中有 {matched} 个匹配。运行前请滚动播放列表以加载更多行。"
+  },
+  "wlwbTitleAria": {
+    "message": "标题筛选"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "标题包含…"
+  },
+  "wlwbWatchedAria": {
+    "message": "最低已观看百分比筛选"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "已观看 ≥ %（例如 90）"
   },
   "workspaceEyebrow": {
     "message": "设置工作区"

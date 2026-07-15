@@ -3038,6 +3038,84 @@
   "quickTogglesEyebrow": {
     "message": "التبديلات السريعة"
   },
+  "reactionSenderChooseOne": {
+    "message": "اختر تفاعلًا واحدًا متاحًا على الأقل."
+  },
+  "reactionSenderCollapseAria": {
+    "message": "طي اللوحة"
+  },
+  "reactionSenderEmpty": {
+    "message": "لم يتم العثور على تفاعلات. افتح زر التفاعلات ثم حدّث."
+  },
+  "reactionSenderExpandAria": {
+    "message": "توسيع اللوحة"
+  },
+  "reactionSenderHideAria": {
+    "message": "إخفاء لوحة مرسل التفاعلات"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "الفاصل الزمني بين التفاعلات بالمللي ثانية"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "الفاصل الزمني"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "تفاعُل"
+  },
+  "reactionSenderOpenAria": {
+    "message": "فتح مرسل التفاعلات"
+  },
+  "reactionSenderPickerHint": {
+    "message": "افتح منتقي التفاعلات في YouTube ثم حدّث هذه القائمة."
+  },
+  "reactionSenderRateWarning": {
+    "message": "قد يقيّد YouTube معدل التفاعلات السريعة. الحد الأدنى للفاصل الزمني هو 500 مللي ثانية."
+  },
+  "reactionSenderRefresh": {
+    "message": "تحديث التفاعلات"
+  },
+  "reactionSenderRiskToast": {
+    "message": "مرسل التفاعلات: قد يقيّد YouTube التفاعلات السريعة أو يبلّغ عنها. استخدمه على مسؤوليتك."
+  },
+  "reactionSenderRunningTpl": {
+    "message": "قيد التشغيل مع {count} من التفاعلات."
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "قيد التشغيل، في انتظار التفاعلات المحددة."
+  },
+  "reactionSenderSelectOne": {
+    "message": "حدد تفاعلًا واحدًا على الأقل."
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "تم تحديد {count} من التفاعلات."
+  },
+  "reactionSenderSentTpl": {
+    "message": "تم إرسال {emoji}"
+  },
+  "reactionSenderStart": {
+    "message": "بدء"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "بدء الإرسال المتكرر"
+  },
+  "reactionSenderStop": {
+    "message": "إيقاف"
+  },
+  "reactionSenderStopped": {
+    "message": "متوقف"
+  },
+  "reactionSenderTest": {
+    "message": "اختبار"
+  },
+  "reactionSenderTestHint": {
+    "message": "استخدم «اختبار» لإرسال تفاعل واحد قبل البدء."
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "إرسال {emoji} مرة واحدة"
+  },
+  "reactionSenderTitle": {
+    "message": "مرسل التفاعلات"
+  },
   "reenableMediadlAria": {
     "message": "إعادة تفعيل مطالبات تثبيت Astra Downloader"
   },
@@ -3835,6 +3913,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "عامل تصفية اسم القناة"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "القناة تحتوي على…"
+  },
+  "wlwbCloseAria": {
+    "message": "إغلاق منضدة العمل"
+  },
+  "wlwbExportCsv": {
+    "message": "تصدير CSV"
+  },
+  "wlwbExportJson": {
+    "message": "تصدير JSON"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "تم تصدير {count} من عناصر «المشاهدة لاحقًا» المحمّلة"
+  },
+  "wlwbLogEmpty": {
+    "message": "سجل الإزالة فارغ"
+  },
+  "wlwbNoMatches": {
+    "message": "لا توجد صفوف مطابقة للإزالة"
+  },
+  "wlwbOpenAria": {
+    "message": "فتح منضدة عمل «المشاهدة لاحقًا»"
+  },
+  "wlwbOpenBtn": {
+    "message": "منضدة العمل"
+  },
+  "wlwbPanelAria": {
+    "message": "منضدة عمل «المشاهدة لاحقًا»"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "سجل الإزالة"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "إزالة المطابقات (بحد أقصى {limit} لكل تشغيل)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— لا يزال {count} مطابقًا، أعد التشغيل"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "تمت إزالة {count} من الفيديوهات{remaining}. قائمة الاسترداد موجودة في سجل الإزالة."
+  },
+  "wlwbRemovingTpl": {
+    "message": "جارٍ إزالة {current} / {total}…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel} (تمت مشاهدة {percent}%)"
+  },
+  "wlwbSortAria": {
+    "message": "ترتيب فرز المعاينة"
+  },
+  "wlwbSortLongest": {
+    "message": "الأطول أولًا"
+  },
+  "wlwbSortPlaylist": {
+    "message": "ترتيب قائمة التشغيل"
+  },
+  "wlwbSortShortest": {
+    "message": "الأقصر أولًا"
+  },
+  "wlwbSortTitle": {
+    "message": "العنوان من أ إلى ي"
+  },
+  "wlwbStatusTpl": {
+    "message": "{matched} من {loaded} فيديو محمّل مطابق. مرّر قائمة التشغيل لتحميل مزيد من الصفوف قبل التشغيل."
+  },
+  "wlwbTitleAria": {
+    "message": "عامل تصفية العنوان"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "العنوان يحتوي على…"
+  },
+  "wlwbWatchedAria": {
+    "message": "عامل تصفية الحد الأدنى لنسبة المشاهدة"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "نسبة المشاهدة ≥ % (مثال: 90)"
   },
   "workspaceEyebrow": {
     "message": "مساحة عمل الإعدادات"

@@ -50,6 +50,23 @@ test('watchLaterWorkbench filters, sorts, and exports the loaded scan', () => {
         'status must disclose that only loaded rows are covered (no silent cap)');
 });
 
+test('watchLaterWorkbench routes its user-facing copy through locale keys', () => {
+    const block = featureSlice('watchLaterWorkbench');
+    assert.match(block, /heading\.textContent = t\('feature_watchLaterWorkbench_name', 'Watch Later Workbench'\)/,
+        'panel title must route through t()');
+    assert.match(block, /t\('wlwbPanelAria', 'Watch Later workbench'\)/,
+        'panel dialog aria-label must route through t()');
+    assert.match(block, /t\('wlwbStatusTpl', /,
+        'preview status must route through the {matched}/{loaded} template key');
+    assert.match(block, /t\('wlwbRemoveMatchedTpl', /,
+        'run button label must route through the {limit} template key');
+    const en = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+    for (const key of ['wlwbPanelAria', 'wlwbStatusTpl', 'wlwbRemoveMatchedTpl', 'wlwbOpenBtn']) {
+        assert.ok(en[key]?.message, `en messages must define ${key}`);
+    }
+});
+
 test('watchLaterWorkbench cleans up its UI on destroy', () => {
     const block = featureSlice('watchLaterWorkbench');
     assert.match(block, /removeNavigateRule\('watchLaterWorkbench'\)/);
