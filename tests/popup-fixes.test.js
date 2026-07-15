@@ -131,7 +131,7 @@ test('legacy v1 import preserves explicit false through the full chain', () => {
 
 test('popup importer threads the backup settingsSchemaVersion into the migration chain', () => {
     assert.match(popupSource,
-        /backupSchemaVersion:\s*data\.settingsSchemaVersion/,
+        /backupSchemaVersion:\s*migrated\.settingsSchemaVersion/,
         'importSettings must pass the backup-level settingsSchemaVersion to the merge/migrate path');
     assert.match(popupSource,
         /function mergeImportedSettingsWithDefaults\(settings, defaults, settingsVersion, source, options = \{\}\)/,
@@ -164,8 +164,8 @@ test('popup import stages a session undo snapshot before applying backup data', 
     );
     assert.ok(snapshotPos > -1 && applyPos > -1 && snapshotPos < applyPos,
         'importSettings must stage the undo snapshot before writing imported data');
-    assert.match(importBlock, /restoreLocalStorageSnapshot\(snapshot\)/,
-        'failed import apply must restore the pre-import storage snapshot');
+    assert.match(importBlock, /restoreCoordinatedSnapshot\(snapshot\)/,
+        'failed import apply must restore the coordinated extension/page snapshot');
     assert.match(importBlock, /statusBackupImportedUndo/,
         'successful import must tell users the Undo Import recovery is available');
 
@@ -176,11 +176,11 @@ test('popup import stages a session undo snapshot before applying backup data', 
     const undoBlock = popupSource.slice(undoStart, undoEnd);
     assert.match(undoBlock, /readImportSnapshot\(\)/,
         'Undo Import must read the session snapshot');
-    assert.match(undoBlock, /restoreLocalStorageSnapshot\(snap\)/,
-        'Undo Import must wipe and replace local storage from the snapshot');
+    assert.match(undoBlock, /restoreCoordinatedSnapshot\(snap\)/,
+        'Undo Import must restore both extension and YouTube-origin data');
     assert.match(undoBlock, /clearImportSnapshot\(\)/,
         'Undo Import must clear the snapshot after restoration');
-    assert.match(undoBlock, /broadcastSettingsReplaced\(snap\[STORAGE_KEYS\.settings\]\)/,
+    assert.match(undoBlock, /broadcastSettingsReplaced\(restoredLocal\[STORAGE_KEYS\.settings\]\)/,
         'Undo Import must notify open YouTube tabs when settings are restored');
 
     const enMessages = JSON.parse(fs.readFileSync(

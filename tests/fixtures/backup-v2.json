@@ -1,0 +1,7 @@
+{
+  "astraDeckBackup": true,
+  "exportVersion": 2,
+  "settings": { "hideHomeFeed": true },
+  "filteredVideoPosts": ["abcdefghijk"],
+  "blockedChannels": [{ "id": "UCfixture", "name": "Fixture" }]
+}

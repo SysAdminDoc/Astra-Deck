@@ -45,6 +45,11 @@ const settingsControllerSource = fs.readFileSync(
     'utf8'
 );
 
+const persistedDomainsSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'core', 'persisted-domains.js'),
+    'utf8'
+);
+
 const settingsPanelSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'),
     'utf8'
@@ -282,7 +287,7 @@ test('settings backups include filtered video posts and import the alias', () =>
     const popupExportBody = popupSource.slice(popupExportStart, popupExportEnd);
     assert.match(
         popupExportBody,
-        /filteredVideoPosts:\s*hiddenVideos/,
+        /filteredVideoPosts:\s*domains\.hiddenVideos\s*\|\|\s*hiddenVideos/,
         'Popup exports should include filteredVideoPosts beside hiddenVideos'
     );
     assert.match(
@@ -297,8 +302,8 @@ test('settings backups include filtered video posts and import the alias', () =>
     );
     assert.match(
         popupExportBody,
-        /exportVersion:\s*4/,
-        'Popup settings backups must emit the schema-validated v4 payload'
+        /BACKUP_EXPORT_VERSION\s*\|\|\s*5/,
+        'Popup settings backups must emit the persisted-domain v5 payload'
     );
     assert.match(
         popupExportBody,
@@ -352,7 +357,8 @@ test('settings backups include filtered video posts and import the alias', () =>
         'Imports should restore hidden videos from filteredVideoPosts when hiddenVideos is absent'
     );
     assert.ok(
-        popupSource.includes('data.allowedVideos') &&
+        popupSource.includes('persistedDomains.migrateBackup(data)') &&
+        persistedDomainsSource.includes("domains.allowedVideos = raw.allowedVideos") &&
         ytkitSource.includes('importedData.allowedVideos'),
         'Imports should restore allowed video exceptions from backups'
     );
@@ -10095,8 +10101,8 @@ test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pa
     // wiping so Undo Reset can restore byte-identical. This test
     // belongs to EI2 conceptually but we pin it here too so the NF14
     // pass can't silently remove the snapshot path.
-    assert.match(resetFnBody, /readLocalStorageSnapshot\(\)/,
-        'resetAllData must snapshot all local storage before wiping (EI2 Undo path)');
+    assert.match(resetFnBody, /createCoordinatedSnapshot\('reset',\s*\{ includePage: true \}\)/,
+        'resetAllData must snapshot extension and YouTube-origin data before wiping');
     assert.match(popupJs, /function readLocalStorageSnapshot|async function readLocalStorageSnapshot/,
         'popup.js must keep the shared local-storage snapshot helper');
     const snapshotHelperStart = popupJs.indexOf('async function readLocalStorageSnapshot');

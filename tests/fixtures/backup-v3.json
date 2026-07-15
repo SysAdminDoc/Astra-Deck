@@ -1,0 +1,10 @@
+{
+  "astraDeckBackup": true,
+  "exportVersion": 3,
+  "settingsSchemaVersion": 6,
+  "settings": { "hideHomeFeed": false },
+  "hiddenVideos": ["abcdefghijk"],
+  "allowedVideos": ["lmnopqrstuv"],
+  "blockedChannels": [{ "id": "UCfixture", "name": "Fixture" }],
+  "bookmarks": { "abcdefghijk": [{ "t": 12, "n": "note", "d": 1700000000000 }] }
+}

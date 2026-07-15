@@ -6346,6 +6346,57 @@ return response;
                     return false;
                 }
 
+                // Portable data bridge. YouTube-origin IndexedDB cannot be
+                // reached from the extension popup, so the popup coordinates
+                // bounded chunks through the already-injected content script.
+                // Every mutating action responds only after its transaction
+                // commits; callers can therefore distinguish complete work
+                // from a partial reset/import and roll back truthfully.
+                if (message.type === 'YTKIT_PERSISTED_DATA') {
+                    const persisted = globalThis.YTKitCore?.persistedDomains;
+                    if (!persisted) {
+                        sendResponse?.({ ok: false, error: 'Persisted-domain service unavailable' });
+                        return false;
+                    }
+                    const run = async () => {
+                        switch (message.action) {
+                        case 'export-chunk':
+                            return persisted.readTranscriptChunk({
+                                afterKey: message.afterKey || '',
+                                maxBytes: message.maxBytes
+                            });
+                        case 'snapshot':
+                            await persisted.snapshotTranscriptRecords(message.snapshotId);
+                            return { snapshotId: message.snapshotId };
+                        case 'replace-chunk':
+                            return {
+                                written: await persisted.replaceTranscriptRecords(message.records, {
+                                    clearFirst: message.clearFirst === true
+                                })
+                            };
+                        case 'clear':
+                            await persisted.clearTranscriptRecords();
+                            return { cleared: true };
+                        case 'restore-snapshot':
+                            return {
+                                restored: await persisted.restoreTranscriptSnapshot(message.snapshotId, {
+                                    keepSnapshot: message.keepSnapshot === true
+                                })
+                            };
+                        case 'discard-snapshot':
+                            await persisted.deleteTranscriptSnapshot(message.snapshotId);
+                            return { discarded: true };
+                        default:
+                            throw new Error('Unsupported persisted-data action');
+                        }
+                    };
+                    run().then(
+                        (result) => sendResponse?.({ ok: true, ...result }),
+                        (error) => sendResponse?.({ ok: false, error: String(error?.message || error) })
+                    );
+                    return true;
+                }
+
                 // selector-health snapshot for popup dashboard.
                 // Returns a compact summary (top-K problematic surfaces +
                 // per-ctx diagnostic counts) so the popup can render
@@ -39345,7 +39396,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _DB_NAME: 'ytkit-transcript-index',
             _DB_STORE: 'transcripts',
-            _DB_VERSION: 1,
+            _DB_VERSION: 2,
             _navRule: null,
             _ingested: null,
             // Each record holds up to ~200 KB of transcript text, one per
@@ -39355,12 +39406,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _MAX_RECORDS: 1000,
 
             _openDb() {
+                const persisted = globalThis.YTKitCore?.persistedDomains;
+                if (persisted?.openPageDb) return persisted.openPageDb();
                 return new Promise((resolve, reject) => {
                     const req = indexedDB.open(this._DB_NAME, this._DB_VERSION);
                     req.onupgradeneeded = () => {
                         const db = req.result;
                         if (!db.objectStoreNames.contains(this._DB_STORE)) {
                             db.createObjectStore(this._DB_STORE, { keyPath: 'videoId' });
+                        }
+                        if (!db.objectStoreNames.contains('backupSnapshots')) {
+                            const snapshots = db.createObjectStore('backupSnapshots', { keyPath: ['snapshotId', 'videoId'] });
+                            snapshots.createIndex('bySnapshot', 'snapshotId', { unique: false });
                         }
                     };
                     req.onsuccess = () => resolve(req.result);
