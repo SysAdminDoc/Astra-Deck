@@ -332,12 +332,12 @@ test('early.css globally disables entrance animations under prefers-reduced-moti
     const mediaStart = earlyCss.indexOf('@media (prefers-reduced-motion: reduce)');
     assert.ok(mediaStart > -1, 'early.css must carry a prefers-reduced-motion block');
     const block = earlyCss.slice(mediaStart, earlyCss.indexOf('}', earlyCss.indexOf('animation', mediaStart)) + 1);
-    for (const selector of ['#ytkit-mediadl-install-prompt', '.ytkit-dl-progress', '.ytkit-dl-popup', '#ytkit-whats-new-badge']) {
+    for (const selector of ['#ytkit-mediadl-install-prompt', '.ytkit-dl-progress', '.ytkit-dl-popup']) {
         assert.ok(block.includes(selector),
             `reduced-motion block must cover ${selector}`);
     }
     assert.match(block, /animation:\s*none !important/,
-        'reduced-motion block must use !important so it also beats the inline badge animation');
+        'reduced-motion block must use !important so it also beats inline animations');
 });
 
 test('forced-colors CSS is injected unconditionally; the setting no longer gates it', () => {

@@ -56,6 +56,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **The settings version no longer has a dismiss-only notification badge.**
+  The footer version is passive text in the extension, fallback, and userscript;
+  the separate popup release-notes surface is unchanged.
 - **Toolbar popup smoke now handles Chromium's headless action gap.** When a
   headless browser omits `chrome.action.openPopup`, the smoke retries the same
   staged extension once in headed mode and still requires real toolbar

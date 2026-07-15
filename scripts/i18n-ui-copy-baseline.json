@@ -46,8 +46,8 @@
       "digest": "d0319ba4029625649258bf038b45490dc385c8ec44cf4f7fde2387dc41385ea2"
     },
     "extension/features/settings-panel/index.js": {
-      "count": 178,
-      "digest": "7539090db0026d47c009f8b745ff4d9267e39b06367e2927988c804fd8be7cb2"
+      "count": 176,
+      "digest": "fb340516ea34f8b9e1f7fa00c8e3469bd342546be2d6fa3599571b11187b22b6"
     },
     "extension/features/sponsorblock/index.js": {
       "count": 2,
@@ -94,8 +94,8 @@
       "digest": "7cd34d4d191ed8555010d837e20d027b572020577722097cc92b1477e2952268"
     },
     "extension/ytkit.js": {
-      "count": 1406,
-      "digest": "6bfc906271d44e43417d93b71726e0ece417080e18dfca795e17bf9e9108bbe9"
+      "count": 1404,
+      "digest": "8fc34afa32a0d9c8606f734a41d2b39b24d3784a8980564474ba167621a928ed"
     }
   }
 }

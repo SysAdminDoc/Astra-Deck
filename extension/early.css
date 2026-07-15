@@ -149,8 +149,7 @@ html:not(.ytkit-restore-native-ui) yt-img-shadow.style-scope.ytd-video-owner-ren
 @media (prefers-reduced-motion: reduce) {
     #ytkit-mediadl-install-prompt,
     .ytkit-dl-progress,
-    .ytkit-dl-popup,
-    #ytkit-whats-new-badge {
+    .ytkit-dl-popup {
         animation: none !important;
     }
 }
