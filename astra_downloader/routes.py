@@ -547,9 +547,7 @@ def create_api(config, dl_manager, history, *, dependencies):
             if 'could not save' in err.lower():
                 return cors_response({"error": err, "code": "queue-persistence-failed"}, 503)
             return cors_response({"error": err}, 400)
-        with dl_manager._lock:
-            queued = dl_manager.downloads.get(dl_id)
-            status_value = queued.status if queued else 'pending'
+        status_value = dl_manager.status_of(dl_id, default='pending')
         return cors_response({
             "id": dl_id,
             "status": status_value,
@@ -560,11 +558,10 @@ def create_api(config, dl_manager, history, *, dependencies):
     def status(dl_id):
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        with dl_manager._lock:
-            dl = dl_manager.downloads.get(dl_id)
-        if not dl:
+        payload = dl_manager.snapshot_of(dl_id)
+        if payload is None:
             return cors_response({"error": "Download no longer exists in the active queue."}, 404)
-        return cors_response(dl.to_dict())
+        return cors_response(payload)
 
     # NOTE: must not be named `queue` — a nested function named `queue` would
     # shadow the stdlib `queue` module for every sibling closure in create_api
@@ -757,8 +754,7 @@ def create_api(config, dl_manager, history, *, dependencies):
     def cancel(dl_id):
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        with dl_manager._lock:
-            exists = dl_id in dl_manager.downloads
+        exists = dl_manager.exists(dl_id)
         if dl_manager.cancel(dl_id):
             return cors_response({"id": dl_id, "cancelled": True})
         if exists:
