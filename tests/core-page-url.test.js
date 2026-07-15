@@ -68,3 +68,39 @@ test('core video id helper rejects invalid path segments and invalid urls', () =
     assert.equal(core.extractVideoIdFromUrl('https://www.youtube.com/embed/not-real'), null);
     assert.equal(core.extractVideoIdFromUrl('not a valid url'), null);
 });
+
+test('cleanYouTubeShareUrl strips trackers while preserving playback state', () => {
+    const core = loadCoreAtUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    assert.equal(
+        core.cleanYouTubeShareUrl('https://www.youtube.com/watch?v=9bZkp7q19f0&si=share-id&pp=tracking&t=43#details'),
+        'https://youtu.be/9bZkp7q19f0?t=43#details'
+    );
+    assert.equal(
+        core.cleanYouTubeShareUrl(
+            'https://www.youtube.com/watch?v=9bZkp7q19f0&feature=shared&t=43',
+            { shortenWatch: false }
+        ),
+        'https://www.youtube.com/watch?v=9bZkp7q19f0&t=43'
+    );
+    assert.equal(
+        core.cleanYouTubeShareUrl('https://example.com/watch?si=must-stay'),
+        'https://example.com/watch?si=must-stay'
+    );
+});
+
+test('unwrapYouTubeRedirectUrl accepts only HTTP(S) targets from YouTube wrappers', () => {
+    const core = loadCoreAtUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    const target = 'https://example.com/article?ref=author#section';
+    assert.equal(
+        core.unwrapYouTubeRedirectUrl(`https://www.youtube.com/redirect?q=${encodeURIComponent(target)}&event=video_description`),
+        target
+    );
+    assert.equal(
+        core.unwrapYouTubeRedirectUrl(`https://www.youtube.com/redirect?url=${encodeURIComponent(target)}`),
+        target
+    );
+    const unsafe = 'https://www.youtube.com/redirect?q=javascript%3Aalert%281%29';
+    assert.equal(core.unwrapYouTubeRedirectUrl(unsafe), unsafe);
+    const foreign = `https://attacker.example/redirect?q=${encodeURIComponent(target)}`;
+    assert.equal(core.unwrapYouTubeRedirectUrl(foreign), foreign);
+});

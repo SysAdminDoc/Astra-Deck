@@ -10,6 +10,11 @@
         '/embed/',
         '/live/'
     ]);
+    const YOUTUBE_TRACKING_PARAMS = Object.freeze([
+        'si', 'pp', 'feature', 'cbrd', 'ucbcb', 'app', 'sttick',
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id',
+        'gclid', 'fbclid', 'mc_cid', 'mc_eid', 'igshid', 'twclid', 'yclid'
+    ]);
 
     let cachedVideoId = null;
     let cachedHref = '';
@@ -42,6 +47,13 @@
     function isYoutuBeHost(host = '') {
         const normalizedHost = typeof host === 'string' ? host.toLowerCase() : '';
         return normalizedHost === 'youtu.be' || normalizedHost === 'www.youtu.be';
+    }
+
+    function isYouTubeHost(host = '') {
+        const normalizedHost = typeof host === 'string' ? host.toLowerCase() : '';
+        return normalizedHost === 'youtube.com'
+            || normalizedHost.endsWith('.youtube.com')
+            || isYoutuBeHost(normalizedHost);
     }
 
     function parseUrl(urlValue = window.location.href) {
@@ -88,10 +100,48 @@
         return cachedVideoId;
     }
 
+    function cleanYouTubeShareUrl(urlValue, options = {}) {
+        const original = typeof urlValue === 'string' ? urlValue : String(urlValue || '');
+        const url = parseUrl(original);
+        if (!url || !isYouTubeHost(url.hostname)) return original;
+
+        for (const param of YOUTUBE_TRACKING_PARAMS) url.searchParams.delete(param);
+
+        const shortenWatch = options.shortenWatch !== false;
+        const videoId = extractVideoIdFromUrl(url);
+        const isWatchUrl = url.pathname === '/watch' || isYoutuBeHost(url.hostname);
+        if (shortenWatch && videoId && isWatchUrl) {
+            const remainingParams = new URLSearchParams(url.searchParams);
+            remainingParams.delete('v');
+            const remaining = remainingParams.toString();
+            return `https://youtu.be/${videoId}${remaining ? '?' + remaining : ''}${url.hash}`;
+        }
+        return url.toString();
+    }
+
+    function unwrapYouTubeRedirectUrl(urlValue) {
+        const original = typeof urlValue === 'string' ? urlValue : String(urlValue || '');
+        const wrapper = parseUrl(original);
+        if (!wrapper || !isYouTubeHost(wrapper.hostname) || wrapper.pathname !== '/redirect') {
+            return original;
+        }
+        const targetValue = wrapper.searchParams.get('q') || wrapper.searchParams.get('url');
+        if (!targetValue || !/^https?:\/\//i.test(targetValue)) return original;
+        try {
+            const target = new URL(targetValue);
+            if (target.protocol !== 'https:' && target.protocol !== 'http:') return original;
+            return target.toString();
+        } catch {
+            return original;
+        }
+    }
+
     Object.assign(core, {
+        cleanYouTubeShareUrl,
         extractVideoIdFromUrl,
         getUrlParam,
         getUrlSearchParams,
-        getVideoId
+        getVideoId,
+        unwrapYouTubeRedirectUrl
     });
 })();
