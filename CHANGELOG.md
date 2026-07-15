@@ -6,8 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.1] - 2026-07-15
+
 ### Changed
 
+- **Astra Downloader advances to v1.5.2.** The companion version shown in its
+  dashboard, health API, Windows registration, update probes, and packaged
+  metadata now identifies this hardened maintenance release.
 - **Secondary download and transcript surfaces now share the full theme system.**
   The download chooser uses larger, calmer controls and clearer muted text,
   while both it and the transcript panel now have dedicated light-theme
