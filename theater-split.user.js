@@ -92,7 +92,7 @@
         body.ts-active {
             --ts-accent-rgb: var(--ytkit-accent-rgb, 245, 158, 11);
         }
-        body.ts-split #below[style*="position"] {
+        body.ts-split #below.ytkit-split-scroll-surface {
             color-scheme: dark !important;
             min-width: 0 !important;
             max-width: 100% !important;
@@ -105,7 +105,7 @@
         body.ts-split ytd-multi-page-menu-renderer {
             z-index: 2147483647 !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata {
             margin: 0 0 14px !important;
             padding: 0 0 14px !important;
             display: grid !important;
@@ -119,7 +119,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #top-row {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #top-row {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
             width: 100% !important;
@@ -134,7 +134,7 @@
             padding: 0 !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title {
             position: relative !important;
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
@@ -158,14 +158,14 @@
             box-sizing: border-box !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1 *,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string *,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-attributed-string,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title h1,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title h1 *,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-formatted-string,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-formatted-string *,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
             min-width: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -178,22 +178,22 @@
             overflow-wrap: anywhere !important;
             word-break: break-word !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1 *,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string *,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-attributed-string,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title h1,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title h1 *,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-formatted-string,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-formatted-string *,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .yt-core-attributed-string--white-space-pre-wrap {
             display: block !important;
             max-height: none !important;
             -webkit-line-clamp: unset !important;
             -webkit-box-orient: initial !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title:has(#ytkit-po-logo-wrap.ytkit-ql-open) {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title:has(#ytkit-po-logo-wrap.ytkit-ql-open) {
             z-index: 2147483646 !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-title-bar {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-title-bar {
             display: grid !important;
             grid-template-columns: auto minmax(0, 1fr) !important;
             grid-template-areas:
@@ -207,7 +207,7 @@
             position: relative !important;
             z-index: 5 !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-youtube-link {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-youtube-link {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -228,19 +228,19 @@
             text-decoration: none !important;
             transition: transform 140ms ease, filter 140ms ease !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-youtube-link:hover {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-youtube-link:hover {
             filter: brightness(1.12) !important;
             transform: translateY(-1px) !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-youtube-link:active {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-youtube-link:active {
             transform: translateY(0) scale(0.96) !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-youtube-link svg {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-youtube-link svg {
             width: 24px !important;
             height: 18px !important;
             display: block !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-header-actions {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-header-actions {
             display: inline-flex !important;
             align-items: center !important;
             flex-wrap: wrap !important;
@@ -253,10 +253,10 @@
             position: relative !important;
             z-index: 30 !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-header-actions[hidden] {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-header-actions[hidden] {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap {
             position: relative !important;
             z-index: 30 !important;
             display: inline-flex !important;
@@ -267,15 +267,15 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap.ytkit-ql-open {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap.ytkit-ql-open {
             z-index: 2147483647 !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap::before {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap::before {
             content: none !important;
             display: none !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher--player,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-toggle {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher--player,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-toggle {
             width: 30px !important;
             min-width: 30px !important;
             height: 28px !important;
@@ -288,23 +288,23 @@
             color: rgba(226, 232, 240, 0.90) !important;
             box-shadow: none !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher--player:hover,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-toggle:hover {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher--player:hover,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-toggle:hover {
             border-color: rgba(var(--ts-accent-rgb), 0.28) !important;
             background:
                 linear-gradient(180deg, rgba(var(--ts-accent-rgb), 0.15), rgba(var(--ts-accent-rgb), 0.045)),
                 rgba(255, 255, 255, 0.052) !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher-glyph,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher-glyph svg {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher-glyph,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-launcher-glyph svg {
             width: 15px !important;
             height: 15px !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-toggle {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-toggle {
             width: 25px !important;
             min-width: 25px !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-drop {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title #ytkit-po-logo-wrap .ytkit-ql-drop {
             top: calc(100% + 8px) !important;
             right: auto !important;
             bottom: auto !important;
@@ -316,7 +316,7 @@
             overflow: auto !important;
             transform-origin: top left !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-upload-meta {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-meta {
             display: inline-grid !important;
             align-items: center !important;
             justify-items: end !important;
@@ -338,7 +338,7 @@
             white-space: nowrap !important;
             overflow: hidden !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-upload-date {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-date {
             display: block !important;
             max-width: 100% !important;
             color: rgba(226, 232, 240, 0.90) !important;
@@ -350,7 +350,7 @@
             overflow: hidden !important;
             text-overflow: ellipsis !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-view-count {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-view-count {
             display: block !important;
             max-width: 100% !important;
             color: rgba(148, 163, 184, 0.86) !important;
@@ -362,16 +362,16 @@
             overflow: hidden !important;
             text-overflow: ellipsis !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-upload-meta[hidden],
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-upload-date[hidden],
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-upload-date:empty,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-view-count[hidden],
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title .ytkit-split-view-count:empty {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-meta[hidden],
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-date[hidden],
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-date:empty,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-view-count[hidden],
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-view-count:empty {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title h1,
-        body.ts-split #below[style*="position"] ytd-watch-metadata h1.style-scope.ytd-watch-metadata,
-        body.ts-split #below[style*="position"] ytd-watch-metadata h1.ytd-watch-metadata {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title h1,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata h1.style-scope.ytd-watch-metadata,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata h1.ytd-watch-metadata {
             margin: 0 !important;
             padding: 0 !important;
             max-width: 100% !important;
@@ -392,7 +392,7 @@
             overflow-wrap: anywhere !important;
             text-overflow: ellipsis !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #title yt-formatted-string {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title yt-formatted-string {
             display: block !important;
             min-width: 0 !important;
             max-width: 100% !important;
@@ -403,8 +403,8 @@
             letter-spacing: 0 !important;
             overflow-wrap: inherit !important;
         }
-        body.ts-split #below[style*="position"] #owner,
-        body.ts-split #below[style*="position"] #owner.ytd-watch-metadata {
+        body.ts-split #below.ytkit-split-scroll-surface #owner,
+        body.ts-split #below.ytkit-split-scroll-surface #owner.ytd-watch-metadata {
             position: relative !important;
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
@@ -423,7 +423,7 @@
                 rgba(12, 16, 24, 0.82) !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
@@ -434,9 +434,9 @@
             min-width: 0 !important;
             margin: 0 !important;
         }
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer #avatar,
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer #avatar img,
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer #avatar yt-img-shadow {
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer #avatar,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer #avatar img,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer #avatar yt-img-shadow {
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -448,11 +448,11 @@
             border-radius: 14px !important;
             overflow: hidden !important;
         }
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer #avatar img,
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer #avatar yt-img-shadow {
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer #avatar img,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer #avatar yt-img-shadow {
             box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.10) !important;
         }
-        body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer #upload-info {
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer #upload-info {
             display: grid !important;
             justify-items: start !important;
             gap: 3px !important;
@@ -463,9 +463,9 @@
             margin: 0 !important;
             text-align: left !important;
         }
-        body.ts-split #below[style*="position"] #owner #channel-name,
-        body.ts-split #below[style*="position"] #owner #channel-name a,
-        body.ts-split #below[style*="position"] #owner #channel-name yt-formatted-string {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #channel-name,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #channel-name a,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #channel-name yt-formatted-string {
             color: rgba(248, 250, 252, 0.96) !important;
             font-size: 13px !important;
             line-height: 1.2 !important;
@@ -474,29 +474,29 @@
             text-align: left !important;
             justify-self: start !important;
         }
-        body.ts-split #below[style*="position"] #owner #owner-sub-count,
-        body.ts-split #below[style*="position"] #owner #owner-sub-count yt-formatted-string {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #owner-sub-count,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #owner-sub-count yt-formatted-string {
             color: rgba(148, 163, 184, 0.88) !important;
             font-size: 11px !important;
             line-height: 1.25 !important;
         }
-        body.ts-split #below[style*="position"] #owner #subscribe-button,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model,
-        body.ts-split #below[style*="position"] #owner ytd-subscribe-button-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscribe-button-renderer {
             flex: 1 1 100% !important;
             order: 2 !important;
             width: 100% !important;
             max-width: 100% !important;
         }
-        body.ts-split #below[style*="position"] #owner #notification-preference-button,
-        body.ts-split #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next,
-        body.ts-split #below[style*="position"] #owner > #ytkit-page-btn-watch,
-        body.ts-split #below[style*="position"] #owner > #ytkit-watch-btn {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #notification-preference-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscription-notification-toggle-button-renderer-next,
+        body.ts-split #below.ytkit-split-scroll-surface #owner > #ytkit-page-btn-watch,
+        body.ts-split #below.ytkit-split-scroll-surface #owner > #ytkit-watch-btn {
             order: 3 !important;
         }
-        body.ts-split #below[style*="position"] #owner #subscribe-button,
-        body.ts-split #below[style*="position"] #owner #notification-preference-button,
-        body.ts-split #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #notification-preference-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscription-notification-toggle-button-renderer-next {
             position: relative !important;
             align-self: center !important;
             justify-self: start !important;
@@ -506,14 +506,14 @@
             pointer-events: auto !important;
             z-index: 40 !important;
         }
-        body.ts-split #below[style*="position"] #owner #notification-preference-button *,
-        body.ts-split #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next * {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #notification-preference-button *,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscription-notification-toggle-button-renderer-next * {
             pointer-events: auto !important;
         }
-        body.ts-split #below[style*="position"] #owner #notification-preference-button .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #owner #notification-preference-button button,
-        body.ts-split #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next button {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #notification-preference-button .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #notification-preference-button button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscription-notification-toggle-button-renderer-next .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscription-notification-toggle-button-renderer-next button {
             min-height: 32px !important;
             height: 32px !important;
             border-radius: 8px !important;
@@ -522,19 +522,19 @@
             color: rgba(248, 250, 252, 0.92) !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
-        body.ts-split #below[style*="position"] #owner #subscribe-button,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model,
-        body.ts-split #below[style*="position"] #owner ytd-subscribe-button-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscribe-button-renderer {
             flex: 1 1 100% !important;
             order: 2 !important;
             width: 100% !important;
             max-width: 100% !important;
         }
-        body.ts-split #below[style*="position"] #owner #subscribe-button .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #owner #subscribe-button button,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model button,
-        body.ts-split #below[style*="position"] #owner ytd-subscribe-button-renderer button {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscribe-button-renderer button {
             min-height: 34px !important;
             height: 34px !important;
             min-width: 118px !important;
@@ -552,38 +552,38 @@
             text-transform: none !important;
             box-shadow: 0 10px 22px rgba(2, 6, 12, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
         }
-        body.ts-split #below[style*="position"] #owner #subscribe-button .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #owner #subscribe-button button:hover,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model button:hover,
-        body.ts-split #below[style*="position"] #owner ytd-subscribe-button-renderer button:hover {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscribe-button-renderer button:hover {
             border-color: rgba(var(--ts-accent-rgb), 0.34) !important;
             background:
                 linear-gradient(180deg, rgba(var(--ts-accent-rgb), 0.22), rgba(var(--ts-accent-rgb), 0.1)),
                 rgba(16, 22, 33, 0.96) !important;
             color: rgba(255, 255, 255, 0.99) !important;
         }
-        body.ts-split #below[style*="position"] #owner #subscribe-button .yt-spec-button-shape-next *,
-        body.ts-split #below[style*="position"] #owner #subscribe-button button *,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model .yt-spec-button-shape-next *,
-        body.ts-split #below[style*="position"] #owner yt-subscribe-button-view-model button *,
-        body.ts-split #below[style*="position"] #owner ytd-subscribe-button-renderer button * {
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button .yt-spec-button-shape-next *,
+        body.ts-split #below.ytkit-split-scroll-surface #owner #subscribe-button button *,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model .yt-spec-button-shape-next *,
+        body.ts-split #below.ytkit-split-scroll-surface #owner yt-subscribe-button-view-model button *,
+        body.ts-split #below.ytkit-split-scroll-surface #owner ytd-subscribe-button-renderer button * {
             color: inherit !important;
             font-weight: inherit !important;
             letter-spacing: inherit !important;
         }
-        body.ts-split #below[style*="position"] #actions,
-        body.ts-split #below[style*="position"] #actions.ytd-watch-metadata {
+        body.ts-split #below.ytkit-split-scroll-surface #actions,
+        body.ts-split #below.ytkit-split-scroll-surface #actions.ytd-watch-metadata {
             display: block !important;
             width: 100% !important;
             margin: 0 0 10px !important;
             padding: 0 !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] #actions-inner,
-        body.ts-split #below[style*="position"] #top-level-buttons-computed,
-        body.ts-split #below[style*="position"] #actions ytd-menu-renderer,
-        body.ts-split #below[style*="position"] #flexible-item-buttons {
+        body.ts-split #below.ytkit-split-scroll-surface #actions-inner,
+        body.ts-split #below.ytkit-split-scroll-surface #top-level-buttons-computed,
+        body.ts-split #below.ytkit-split-scroll-surface #actions ytd-menu-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #flexible-item-buttons {
             display: flex !important;
             flex-wrap: wrap !important;
             align-items: center !important;
@@ -591,9 +591,9 @@
             gap: 8px !important;
             row-gap: 8px !important;
         }
-        body.ts-split #below[style*="position"] #actions .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #actions button,
-        body.ts-split #below[style*="position"] .ytkit-local-dl-btn {
+        body.ts-split #below.ytkit-split-scroll-surface #actions .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #actions button,
+        body.ts-split #below.ytkit-split-scroll-surface .ytkit-local-dl-btn {
             min-height: 32px !important;
             height: 32px !important;
             border-radius: 8px !important;
@@ -605,23 +605,23 @@
             letter-spacing: 0 !important;
             transform: none !important;
         }
-        body.ts-split #below[style*="position"] #actions .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #actions button:hover,
-        body.ts-split #below[style*="position"] .ytkit-local-dl-btn:hover {
+        body.ts-split #below.ytkit-split-scroll-surface #actions .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #actions button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface .ytkit-local-dl-btn:hover {
             border-color: rgba(var(--ts-accent-rgb), 0.24) !important;
             background: rgba(255, 255, 255, 0.075) !important;
             color: rgba(248, 250, 252, 0.98) !important;
         }
-        body.ts-split #below[style*="position"] ytd-watch-metadata #top-row[data-ytkit-split-actions-docked="1"] > #actions,
-        body.ts-split #below[style*="position"] ytd-watch-metadata #top-row[data-ytkit-split-actions-docked="1"] > #actions.ytd-watch-metadata {
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #top-row[data-ytkit-split-actions-docked="1"] > #actions,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #top-row[data-ytkit-split-actions-docked="1"] > #actions.ytd-watch-metadata {
             display: none !important;
             height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
             overflow: hidden !important;
         }
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions),
-        body.ts-split #below[style*="position"] #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
+        body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions),
+        body.ts-split #below.ytkit-split-scroll-surface #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
             grid-template-areas:
@@ -633,17 +633,17 @@
             justify-items: start !important;
             gap: 12px 8px !important;
         }
-        body.ts-split #below[style*="position"] #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
+        body.ts-split #below.ytkit-split-scroll-surface #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
             grid-template-areas:
                 "owner"
                 "actions" !important;
         }
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
             grid-area: owner !important;
         }
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) #subscribe-button,
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) yt-subscribe-button-view-model,
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-subscribe-button-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions) #subscribe-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions) yt-subscribe-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions) ytd-subscribe-button-renderer {
             grid-area: sub !important;
             flex: 0 1 auto !important;
             order: 2 !important;
@@ -651,7 +651,7 @@
             max-width: 100% !important;
             justify-self: start !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions {
             grid-area: actions !important;
             grid-column: 1 / -1 !important;
             display: inline-flex !important;
@@ -669,32 +669,32 @@
             position: relative !important;
             z-index: 20 !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions[hidden] {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions[hidden] {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions > * {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions > * {
             flex: 0 1 auto !important;
             margin: 0 !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions #notification-preference-button,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-subscription-notification-toggle-button-renderer-next {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions #notification-preference-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions ytd-subscription-notification-toggle-button-renderer-next {
             order: 1 !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions > #ytkit-page-btn-watch,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions > #ytkit-watch-btn {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions > #ytkit-page-btn-watch,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions > #ytkit-watch-btn {
             order: 2 !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions like-button-view-model {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions like-button-view-model {
             order: 3 !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytkit-local-dl-btn {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytkit-local-dl-btn {
             order: 4 !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytkit-local-dl-btn,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions button,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .yt-spec-button-shape-next {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytkit-local-dl-btn,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .yt-spec-button-shape-next {
             min-height: 32px !important;
             height: 32px !important;
             border-radius: 8px !important;
@@ -706,33 +706,33 @@
             letter-spacing: 0 !important;
             transform: none !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytkit-local-dl-btn {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytkit-local-dl-btn {
             gap: 5px !important;
             padding-inline: 10px !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions dislike-button-view-model,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions #segmented-dislike-button,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytDislikeButtonViewModelHost {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions dislike-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions #segmented-dislike-button,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytDislikeButtonViewModelHost {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions like-button-view-model,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions like-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer {
             overflow: hidden !important;
             border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             box-shadow: none !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper {
             gap: 0 !important;
             overflow: hidden !important;
             border: 0 !important;
@@ -740,31 +740,31 @@
             background: transparent !important;
             box-shadow: none !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper::before,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper::after,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions like-button-view-model::before,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions like-button-view-model::after {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper::before,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper::after,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions like-button-view-model::before,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions like-button-view-model::after {
             content: none !important;
             display: none !important;
             border: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
         }
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytSpecButtonShapeNextSegmentedStart,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytSpecButtonShapeNextSegmentedEnd,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-start,
-        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-end {
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytSpecButtonShapeNextSegmentedStart,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .ytSpecButtonShapeNextSegmentedEnd,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-start,
+        body.ts-split #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-end {
             border: 0 !important;
             border-radius: 8px !important;
             background: transparent !important;
             box-shadow: none !important;
         }
-        body.ts-split #below[style*="position"] #comments {
+        body.ts-split #below.ytkit-split-scroll-surface #comments {
             margin: 0 !important;
             padding: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments#comments,
-        body.ts-split #below[style*="position"] ytd-comments#comments {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments#comments,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-comments#comments {
             display: block !important;
             visibility: visible !important;
             margin: 0 !important;
@@ -775,7 +775,7 @@
             box-shadow: none !important;
             overflow: visible !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) auto !important;
             grid-template-areas:
@@ -794,7 +794,7 @@
                 rgba(13, 17, 25, 0.82) !important;
             box-sizing: border-box !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #title {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #title {
             grid-area: count !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -802,8 +802,8 @@
             margin: 0 !important;
             min-width: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments #count.ytd-comments-header-renderer,
-        body.ts-split #below[style*="position"] #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments #count.ytd-comments-header-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
             display: inline-flex !important;
             align-items: baseline !important;
             gap: 0.26em !important;
@@ -815,15 +815,15 @@
             letter-spacing: 0 !important;
             white-space: nowrap !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #sort-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer {
             grid-area: sort !important;
             justify-self: end !important;
             margin: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu button {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #sort-menu button {
             min-height: 30px !important;
             height: 30px !important;
             padding: 0 12px !important;
@@ -836,8 +836,8 @@
             letter-spacing: 0 !important;
             text-transform: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #simple-box,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer ytd-comment-simplebox-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #simple-box,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer ytd-comment-simplebox-renderer {
             grid-area: box !important;
             grid-column: 1 / -1 !important;
             width: 100% !important;
@@ -847,25 +847,25 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
             display: grid !important;
             grid-template-columns: 32px minmax(0, 1fr) !important;
             align-items: center !important;
             gap: 10px !important;
             width: 100% !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail img,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail yt-img-shadow,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar img,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar yt-img-shadow {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #author-thumbnail img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #author-thumbnail yt-img-shadow,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #avatar,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #avatar img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #avatar yt-img-shadow {
             width: 32px !important;
             height: 32px !important;
             border-radius: 11px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #placeholder-area,
-        body.ts-split #below[style*="position"] #comments ytd-commentbox #contenteditable-textarea {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #placeholder-area,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-commentbox #contenteditable-textarea {
             display: flex !important;
             align-items: center !important;
             width: 100% !important;
@@ -878,14 +878,16 @@
             color: rgba(226, 232, 240, 0.74) !important;
             box-sizing: border-box !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-thread-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-thread-renderer {
             margin: 0 0 10px !important;
             padding: 0 !important;
             border: none !important;
             background: transparent !important;
+            content-visibility: auto !important;
+            contain-intrinsic-size: auto 180px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer {
             position: relative !important;
             display: block !important;
             margin: 0 !important;
@@ -898,26 +900,26 @@
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 14px 30px rgba(2, 6, 12, 0.22) !important;
             transition: border-color 160ms ease, background 160ms ease, transform 160ms ease !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer:hover {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer:hover {
             border-color: rgba(var(--ts-accent-rgb), 0.22) !important;
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.03)),
                 rgba(14, 19, 29, 0.9) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model > #body,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer > #body {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model > #body,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer > #body {
             display: flex !important;
             align-items: flex-start !important;
             gap: 11px !important;
             position: static !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-thumbnail img,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-thumbnail img,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-thumbnail yt-img-shadow,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-thumbnail yt-img-shadow {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-thumbnail img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-thumbnail img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-thumbnail yt-img-shadow,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-thumbnail yt-img-shadow {
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -927,39 +929,39 @@
             border-radius: 12px !important;
             overflow: hidden !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model > #body > #main,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer > #body > #main {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model > #body > #main,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer > #body > #main {
             min-width: 0 !important;
             flex: 1 1 auto !important;
             padding-right: 0 !important;
             position: static !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #header-author,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #header-author {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #header-author,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #header-author {
             display: flex !important;
             flex-wrap: wrap !important;
             align-items: baseline !important;
             gap: 6px !important;
             margin: 0 0 4px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-text {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-text {
             color: rgba(248, 250, 252, 0.96) !important;
             font-size: 12.5px !important;
             font-weight: 760 !important;
             letter-spacing: 0 !important;
             line-height: 1.25 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #published-time-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #published-time-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model .published-time-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer .published-time-text {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #published-time-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #published-time-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model .published-time-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer .published-time-text {
             color: rgba(148, 163, 184, 0.78) !important;
             font-size: 11px !important;
             line-height: 1.25 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content-text {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content-text {
             display: block !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -969,66 +971,66 @@
             letter-spacing: 0 !important;
             word-break: break-word !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content-text a,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content-text a {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content-text a,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content-text a {
             color: rgba(var(--ts-accent-rgb), 0.92) !important;
             text-decoration: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-thread-renderer .thread-hitbox,
-        body.ts-split #below[style*="position"] #comments ytd-comment-thread-renderer .thread-hitbox.style-scope.ytd-comment-thread-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-thread-renderer .thread-hitbox,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-thread-renderer .thread-hitbox.style-scope.ytd-comment-thread-renderer {
             display: none !important;
             pointer-events: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-thread-renderer,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model > #body,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer > #body,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model > #body > #main,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer > #body > #main,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model ytd-expander,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer ytd-expander,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model yt-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer yt-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model yt-core-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer yt-core-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model .ytAttributedStringHost,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer .ytAttributedStringHost {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-thread-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model > #body,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer > #body,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model > #body > #main,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer > #body > #main,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model ytd-expander,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer ytd-expander,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model .ytAttributedStringHost,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer .ytAttributedStringHost {
             pointer-events: auto !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content-text *,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content-text *,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #published-time-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #published-time-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model yt-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer yt-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model yt-core-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer yt-core-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model .ytAttributedStringHost,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer .ytAttributedStringHost {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content-text *,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content-text *,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #published-time-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #published-time-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model .ytAttributedStringHost,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer .ytAttributedStringHost {
             -webkit-user-select: text !important;
             user-select: text !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #content-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model yt-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer yt-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model yt-core-attributed-string,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer yt-core-attributed-string {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #content-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer yt-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model yt-core-attributed-string,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer yt-core-attributed-string {
             cursor: text !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu {
             position: absolute !important;
             top: 11px !important;
             right: 11px !important;
@@ -1044,18 +1046,18 @@
             z-index: 3 !important;
             pointer-events: auto !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu ytd-menu-renderer,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu ytd-menu-renderer,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu ytd-menu-renderer,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu ytd-menu-renderer,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu yt-icon-button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu yt-icon-button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu yt-icon-button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu yt-icon-button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu button {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu ytd-menu-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu ytd-menu-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu ytd-menu-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu ytd-menu-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu yt-icon-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu yt-icon-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu yt-icon-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu yt-icon-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu button {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1068,50 +1070,50 @@
             background: rgba(255, 255, 255, 0.045) !important;
             color: rgba(226, 232, 240, 0.82) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model:hover #action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer:hover #action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model:hover #inline-action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer:hover #inline-action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model:focus-within #action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer:focus-within #action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model:focus-within #inline-action-menu,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer:focus-within #inline-action-menu {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model:hover #action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer:hover #action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model:hover #inline-action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer:hover #inline-action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model:focus-within #action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer:focus-within #action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model:focus-within #inline-action-menu,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer:focus-within #inline-action-menu {
             opacity: 1 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu button:hover {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu button:hover {
             background: rgba(255, 255, 255, 0.075) !important;
             color: rgba(255, 255, 255, 0.96) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #action-menu svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #action-menu svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #inline-action-menu svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #inline-action-menu svg {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #action-menu svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #action-menu svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #inline-action-menu svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #inline-action-menu svg {
             width: 18px !important;
             height: 18px !important;
             color: inherit !important;
             fill: currentColor !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar {
             display: block !important;
             margin: 9px 0 0 !important;
             padding: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar {
             display: flex !important;
             flex-wrap: wrap !important;
             align-items: center !important;
             gap: 6px !important;
             margin: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar .yt-spec-button-shape-next {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar .yt-spec-button-shape-next {
             min-height: 28px !important;
             height: 28px !important;
             padding: 0 10px !important;
@@ -1123,18 +1125,18 @@
             letter-spacing: 0 !important;
             transform: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer {
             position: relative !important;
             margin: 7px 0 0 12px !important;
             padding: 4px 0 0 7px !important;
             border-left: 1px solid rgba(var(--ts-accent-rgb), 0.18) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-replies-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-replies-renderer {
             margin-left: 8px !important;
             padding-left: 6px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-view-model,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-renderer {
             padding: 10px 40px 10px 10px !important;
             border-radius: 14px !important;
             box-shadow: none !important;
@@ -1142,38 +1144,38 @@
                 linear-gradient(180deg, rgba(255, 255, 255, 0.034), rgba(255, 255, 255, 0.016)),
                 rgba(9, 13, 20, 0.72) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-view-model > #body,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-renderer > #body {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-view-model > #body,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-renderer > #body {
             gap: 8px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow {
             flex-basis: 28px !important;
             width: 28px !important;
             height: 28px !important;
             border-radius: 10px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer .show-replies-button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer .show-replies-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread {
             margin: 6px 0 0 !important;
             padding: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer .show-replies-button button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread button {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer .show-replies-button button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread button {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1195,37 +1197,37 @@
             -webkit-user-select: none !important;
             user-select: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer .show-replies-button button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies button:hover,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread button:hover {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer .show-replies-button button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies button:hover,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread button:hover {
             border-color: rgba(var(--ts-accent-rgb), 0.3) !important;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022)), rgba(var(--ts-accent-rgb), 0.12) !important;
             color: rgba(255, 255, 255, 0.98) !important;
             transform: translateY(-1px) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread button {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread button {
             color: rgba(203, 213, 225, 0.74) !important;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.015)), rgba(7, 10, 16, 0.52) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer .show-replies-button yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer .show-replies-button svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #more-replies-sub-thread svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies svg,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread yt-icon,
-        body.ts-split #below[style*="position"] #comments ytd-comment-replies-renderer #less-replies-sub-thread svg {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer .show-replies-button yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer .show-replies-button svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #more-replies-sub-thread svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies svg,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer #less-replies-sub-thread svg {
             display: inline-flex !important;
             width: 16px !important;
             height: 16px !important;
@@ -1237,7 +1239,7 @@
             flex-shrink: 0 !important;
         }
 
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer {
             gap: 6px !important;
             min-height: 0 !important;
             margin-bottom: 8px !important;
@@ -1247,75 +1249,75 @@
                 linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.014)),
                 rgba(12, 16, 24, 0.74) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #title,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #leading-section,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #additional-section {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #title,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #leading-section,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #additional-section {
             min-height: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments #count.ytd-comments-header-renderer,
-        body.ts-split #below[style*="position"] #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments #count.ytd-comments-header-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
             font-size: 14px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
-        body.ts-split #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu button {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer #sort-menu button {
             min-height: 28px !important;
             height: 28px !important;
             padding: 0 10px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer {
             min-height: 0 !important;
             height: auto !important;
             margin-bottom: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
             display: block !important;
             min-height: 0 !important;
             gap: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #avatar {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer #placeholder-area,
-        body.ts-split #below[style*="position"] #comments ytd-commentbox #contenteditable-textarea {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer #placeholder-area,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-commentbox #contenteditable-textarea {
             min-height: 34px !important;
             padding: 0 11px !important;
             border-radius: 12px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #placeholder-area {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #thumbnail-input-row,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #placeholder-area {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog {
             display: block !important;
             width: 100% !important;
             min-width: 0 !important;
             max-width: none !important;
             grid-column: 1 / -1 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog ytd-commentbox #thumbnail-input-row {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog ytd-commentbox #thumbnail-input-row {
             display: block !important;
             grid-template-columns: minmax(0, 1fr) !important;
             gap: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog ytd-commentbox #author-thumbnail,
-        body.ts-split #below[style*="position"] #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog ytd-commentbox #avatar {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog ytd-commentbox #author-thumbnail,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer:has(> #comment-dialog:not([hidden])) > #comment-dialog ytd-commentbox #avatar {
             display: none !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-thread-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-thread-renderer {
             margin-bottom: 8px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer {
             padding: 11px 54px 10px 11px !important;
             border-radius: 14px !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.028), 0 10px 22px rgba(2, 6, 12, 0.2) !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-text,
-        body.ts-split #below[style*="position"] #comments ytd-comment-view-model #author-text *,
-        body.ts-split #below[style*="position"] #comments ytd-comment-renderer #author-text * {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-text,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-view-model #author-text *,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-renderer #author-text * {
             background: transparent !important;
             border: 0 !important;
             border-radius: 0 !important;
@@ -1323,19 +1325,19 @@
             color: rgba(248, 250, 252, 0.96) !important;
             padding: 0 !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar {
             margin-top: 8px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar {
             gap: 5px !important;
         }
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar button,
-        body.ts-split #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar .yt-spec-button-shape-next,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button button,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button yt-icon-button,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button tp-yt-paper-icon-button,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button .yt-spec-button-shape-next {
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar .yt-spec-button-shape-next,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button yt-icon-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button tp-yt-paper-icon-button,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button .yt-spec-button-shape-next {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1351,10 +1353,10 @@
             box-shadow: none !important;
             overflow: hidden !important;
         }
-        body.ts-split #below[style*="position"] #comments #creator-heart-button img,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button yt-img-shadow,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button yt-icon,
-        body.ts-split #below[style*="position"] #comments #creator-heart-button svg {
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button img,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button yt-img-shadow,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button yt-icon,
+        body.ts-split #below.ytkit-split-scroll-surface #comments #creator-heart-button svg {
             max-width: 15px !important;
             max-height: 15px !important;
         }
@@ -1538,12 +1540,14 @@
     // ── Position helpers ────────────────────────────────────────────────────
     function positionOverRight(el, rightPct, topOffset, heightStr) {
         if (!el) return;
+        if (el.id === 'below') el.classList.add('ytkit-split-scroll-surface');
         setStyles(el, {
             position: 'fixed', top: topOffset || '0', right: '0',
             width: `calc(${rightPct}% - 6px)`, 'max-width': 'none',
             height: heightStr || '100vh', 'max-height': 'none',
             'min-height': '0', margin: '0',
             'overflow-y': 'auto', 'overflow-x': 'hidden',
+            'overscroll-behavior-y': 'contain',
             'z-index': '10001', background: 'linear-gradient(180deg, #0b0f16 0%, #070a10 100%)', padding: '0',
             'box-sizing': 'border-box', visibility: 'visible',
             'pointer-events': 'auto',
@@ -1553,8 +1557,9 @@
     }
 
     function unpositionEl(el) {
+        if (el?.id === 'below') el.classList.remove('ytkit-split-scroll-surface');
         removeStyles(el, ['position', 'top', 'right', 'width', 'max-width', 'height', 'max-height',
-            'min-height', 'margin', 'overflow-y', 'overflow-x', 'z-index', 'background', 'padding',
+            'min-height', 'margin', 'overflow-y', 'overflow-x', 'overscroll-behavior-y', 'z-index', 'background', 'padding',
             'box-sizing', 'visibility', 'pointer-events', 'display', 'flex-direction',
             'scrollbar-width', 'scrollbar-color', 'border-radius', 'border-bottom']);
     }
@@ -1574,7 +1579,7 @@
         const node = target instanceof Element ? target : target?.parentElement;
         if (!node) return false;
     const thread = node.closest('ytd-comment-thread-renderer');
-    if (!thread || !thread.closest('#below[style*="position"] #comments')) return false;
+    if (!thread || !thread.closest('#below.ytkit-split-scroll-surface #comments')) return false;
     if (node.closest([
         'button',
         '[role="button"]',

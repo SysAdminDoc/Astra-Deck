@@ -140,6 +140,42 @@ test('stickyVideo style builders preserve the monolith fallback CSS', () => {
     assert.equal(mod.buildSplitCommentsCss(), extractTemplate(block, 'splitCommentsCss'));
 });
 
+test('stickyVideo keeps comment scrolling native and bounds offscreen rendering', () => {
+    const { mod } = loadModule();
+    const moduleSource = fs.readFileSync(path.join(config.repoRoot, 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const userscriptSource = fs.readFileSync(path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+    const commentsCss = mod.buildSplitCommentsCss();
+
+    for (const [contents, label] of [
+        [moduleSource, 'extension module'],
+        [sources.ytkit, 'extension fallback'],
+        [userscriptSource, 'standalone userscript'],
+    ]) {
+        const nativeScrollGateCount = (
+            contents.match(/if \(isInRightContent\(e\.target\)\) return;/g) || []
+        ).length + (
+            contents.match(/if \(isSplit && !isInRightContent\(e\.target\)\)/g) || []
+        ).length;
+        assert.ok(nativeScrollGateCount >= 2,
+            `${label} must leave right-panel wheel and touch gestures on the native scroller`);
+        assert.ok(contents.includes("'overscroll-behavior-y'"),
+            `${label} must contain split-panel scroll chaining`);
+        assert.ok(contents.includes("classList.add('ytkit-split-scroll-surface')")
+            && contents.includes("classList.remove('ytkit-split-scroll-surface')"),
+            `${label} must add and clean up the stable split-surface class`);
+        assert.ok(!contents.includes('#below[style*="position"]')
+            && !contents.includes('#below[style*="position:fixed"]'),
+            `${label} must not use expensive inline-style substring selectors for the split surface`);
+    }
+
+    assert.ok(commentsCss.includes('content-visibility: auto !important;'),
+        'split comments should skip layout and paint for offscreen threads');
+    assert.ok(commentsCss.includes('contain-intrinsic-size: auto 180px !important;'),
+        'offscreen threads should reserve a stable learned scroll size');
+    assert.ok(commentsCss.includes('#below.ytkit-split-scroll-surface'),
+        'split comments CSS should use the stable surface class');
+});
+
 test('stickyVideo wraps split-pane titles and grows live header height from rendered content', () => {
     const { mod } = loadModule();
     const css = mod.buildSplitMetaCss();
