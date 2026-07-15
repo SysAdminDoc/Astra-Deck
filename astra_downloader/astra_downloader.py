@@ -83,7 +83,7 @@ try:
     )
     from .health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
-        ExecutableVersionProbe, PoTokenProviderProbe,
+        ExecutableVersionProbe, FfmpegCapabilitiesProbe, PoTokenProviderProbe,
         PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
         _compare_semver, _parse_ytdlp_release_date,
         _run_captured as _owned_run_captured,
@@ -120,7 +120,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
     )
     from health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
-        ExecutableVersionProbe, PoTokenProviderProbe,
+        ExecutableVersionProbe, FfmpegCapabilitiesProbe, PoTokenProviderProbe,
         PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
         _compare_semver, _parse_ytdlp_release_date,
         _run_captured as _owned_run_captured,
@@ -995,56 +995,20 @@ def get_ffmpeg_version(force=False):
 _FFMPEG_MIN_MAJOR = 7  # ffmpeg 8.x is current as of 2026; 7.x is the
                        # acceptable floor (covers most distros' bundles
                        # without forcing immediate refresh).
-_ffmpeg_capabilities_cache = {'value': None, 'checked_at': 0.0}
-_FFMPEG_CAPABILITIES_LOCK = threading.Lock()
-_FFMPEG_CAPABILITIES_TTL_SECONDS = 3600
+_ffmpeg_capabilities_probe = FfmpegCapabilitiesProbe(
+    version_getter=lambda: get_ffmpeg_version(),
+    clock=lambda: time.time(),
+    minimum_major=_FFMPEG_MIN_MAJOR,
+    ttl_seconds=3600,
+)
 
 
 def check_ffmpeg_capabilities(force=False):
-    """One-shot bootstrap audit of the bundled ffmpeg.
-
-    Returns a dict ``{majorVersion: int|None, current: bool, message: str}``
-    suitable for the /health endpoint. Cached for an hour so subsequent
-    polls are cheap; force=True bypasses the cache (used after a re-pull
-    of ffmpeg.exe).
-    """
-    with _FFMPEG_CAPABILITIES_LOCK:
-        cache = _ffmpeg_capabilities_cache
-        now = time.time()
-        if not force and cache['value'] and (now - cache['checked_at']) < _FFMPEG_CAPABILITIES_TTL_SECONDS:
-            return cache['value']
-        version = get_ffmpeg_version()
-        major = parse_ffmpeg_major(version)
-        if major is None:
-            result = {
-                'majorVersion': None,
-                'current': None,
-                'message': 'ffmpeg version not detected (first-run bootstrap or snapshot build)',
-            }
-        else:
-            current = major >= _FFMPEG_MIN_MAJOR
-            if current:
-                message = f'ffmpeg {major}.x meets the {_FFMPEG_MIN_MAJOR}+ floor'
-            else:
-                message = (
-                    f'ffmpeg {major}.x is below the {_FFMPEG_MIN_MAJOR}+ floor; '
-                    f'consider re-downloading via the bundled bootstrap'
-                )
-            result = {
-                'majorVersion': major,
-                'current': current,
-                'message': message,
-            }
-        cache['value'] = result
-        cache['checked_at'] = now
-        return result
+    return _ffmpeg_capabilities_probe.check(force=force)
 
 
 def reset_ffmpeg_capabilities_cache():
-    """Test hook + post-ffmpeg-refresh re-check trigger."""
-    with _FFMPEG_CAPABILITIES_LOCK:
-        _ffmpeg_capabilities_cache['value'] = None
-        _ffmpeg_capabilities_cache['checked_at'] = 0.0
+    _ffmpeg_capabilities_probe.reset()
 
 
 # ── v1.2.0: throttled yt-dlp auto-update helpers ──
@@ -6649,9 +6613,7 @@ class MainWindow(QMainWindow):
         self._append_log("ffmpeg refresh complete." if ffmpeg_refresh else "Setup complete. Starting server...")
         if ffmpeg_refresh:
             _ffmpeg_version_probe.reset()
-            with _FFMPEG_CAPABILITIES_LOCK:
-                _ffmpeg_capabilities_cache['value'] = None
-                _ffmpeg_capabilities_cache['checked_at'] = 0.0
+            reset_ffmpeg_capabilities_cache()
             try:
                 self.config.set("LastFfmpegCheck", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 self.config.save()

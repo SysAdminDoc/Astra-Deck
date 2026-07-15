@@ -32,6 +32,7 @@ __all__ = (
     "ExecutableVersionProbe", "parse_ytdlp_version_output",
     "parse_ffmpeg_version_output",
     "PoTokenProviderProbe",
+    "FfmpegCapabilitiesProbe",
 )
 
 PO_TOKEN_PROVIDER_PORT = 4416
@@ -275,6 +276,59 @@ class PoTokenProviderProbe:
             self._has_checked = False
 
 
+class FfmpegCapabilitiesProbe:
+    """Cached ffmpeg support-floor assessment over an injected version source."""
+
+    def __init__(self, *, version_getter, clock=time.time, minimum_major=7,
+                 ttl_seconds=3600):
+        self._version_getter = version_getter
+        self._clock = clock
+        self._minimum_major = max(0, int(minimum_major))
+        self._ttl_seconds = max(0, float(ttl_seconds))
+        self._value = None
+        self._checked_at = 0.0
+        self._lock = threading.Lock()
+
+    def check(self, force=False):
+        with self._lock:
+            now = self._clock()
+            if (
+                not force
+                and self._value is not None
+                and (now - self._checked_at) < self._ttl_seconds
+            ):
+                return dict(self._value)
+            major = parse_ffmpeg_major(self._version_getter())
+            if major is None:
+                result = {
+                    'majorVersion': None,
+                    'current': None,
+                    'message': 'ffmpeg version not detected (first-run bootstrap or snapshot build)',
+                }
+            else:
+                current = major >= self._minimum_major
+                if current:
+                    message = f'ffmpeg {major}.x meets the {self._minimum_major}+ floor'
+                else:
+                    message = (
+                        f'ffmpeg {major}.x is below the {self._minimum_major}+ floor; '
+                        'consider re-downloading via the bundled bootstrap'
+                    )
+                result = {
+                    'majorVersion': major,
+                    'current': current,
+                    'message': message,
+                }
+            self._value = result
+            self._checked_at = now
+            return dict(result)
+
+    def reset(self):
+        with self._lock:
+            self._value = None
+            self._checked_at = 0.0
+
+
 _OWNED_EXPORTS = {
     "PO_TOKEN_PROVIDER_PORT", "BGUTIL_POT_MIN_VERSION",
     "YTDLP_EXTERNAL_RUNTIME_CUTOFF", "DENO_MIN_VERSION", "NODE_MIN_VERSION",
@@ -284,6 +338,7 @@ _OWNED_EXPORTS = {
     "_run_captured", "ExecutableVersionProbe", "parse_ytdlp_version_output",
     "parse_ffmpeg_version_output",
     "PoTokenProviderProbe",
+    "FfmpegCapabilitiesProbe",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS
