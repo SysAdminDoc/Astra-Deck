@@ -1260,6 +1260,8 @@ assert config.normalize_url("https://example.com/video") == (
     "https://example.com/video", None
 )
 assert config.validate_download_request_body({"url": "https://example.com"})[1] is None
+assert config.sanitize_config({"ServerPort": 999999})["ServerPort"] == 65535
+assert config.DEFAULT_CONFIG["JavaScriptRuntime"] == "auto"
 
 for forbidden in (
     "astra_downloader.astra_downloader",
@@ -1288,6 +1290,8 @@ for forbidden in (
         import routes
 
         self.assertIs(config.Config, ad.Config)
+        self.assertIs(config.DEFAULT_CONFIG, ad.DEFAULT_CONFIG)
+        self.assertIs(config.sanitize_config, ad.sanitize_config)
         self.assertIs(config.clean_text, ad.clean_text)
         self.assertIs(config.clamp_int, ad.clamp_int)
         self.assertIs(config.validate_download_request_body, ad.validate_download_request_body)
