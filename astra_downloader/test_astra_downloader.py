@@ -1387,7 +1387,8 @@ for forbidden in (
         self.assertIs(health.parse_ffmpeg_major, ad.parse_ffmpeg_major)
         self.assertIs(health.build_youtube_extractor_args, ad.build_youtube_extractor_args)
         self.assertIs(health.build_javascript_runtime_args, ad.build_javascript_runtime_args)
-        self.assertIs(routes.create_api, ad.create_api)
+        self.assertEqual(routes.create_api.__module__, routes.__name__)
+        self.assertIsNot(routes.create_api, ad.create_api)
         self.assertIs(gui.MainWindow, ad.MainWindow)
         self.assertIs(gui.make_label, ad.make_label)
         self.assertIs(gui.make_empty_state, ad.make_empty_state)
@@ -1411,6 +1412,30 @@ assert "astra_downloader.astra_downloader" not in sys.modules
             [sys.executable, "-c", script],
             cwd=Path(ad.__file__).resolve().parent.parent,
             env=env,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_routes_boundary_owns_handlers_without_loading_legacy_root(self):
+        script = r'''
+import importlib
+import sys
+
+routes = importlib.import_module("astra_downloader.routes")
+assert routes.create_api.__module__ == "astra_downloader.routes"
+assert "astra_downloader.astra_downloader" not in sys.modules
+try:
+    routes.create_api(None, None, None, dependencies={})
+except ValueError as error:
+    assert "Missing API dependencies" in str(error)
+else:
+    raise AssertionError("missing route dependencies were accepted")
+'''
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
             capture_output=True,
             text=True,
             timeout=20,
@@ -3717,7 +3742,8 @@ class ResponseSizeCapTests(unittest.TestCase):
         # CI. The shape pinned here: len(resp.get_data()) > MAX_RESPONSE_BYTES
         # must short-circuit into a 413 jsonify response.
         import inspect
-        src = inspect.getsource(ad.create_api)
+        import routes
+        src = inspect.getsource(routes.create_api)
         self.assertIn("MAX_RESPONSE_BYTES", src,
             "create_api must reference MAX_RESPONSE_BYTES in cors_response")
         self.assertIn("status_code = 413", src,
