@@ -12,11 +12,10 @@
 //    call found in any JS source file under extension/ has a matching key in
 //    extension/_locales/en/messages.json.
 //
-// Strings remain hardcoded English in most source files and are NOT required
-// to route through chrome.i18n.getMessage — migration is incremental.
-// This script only validates calls that already use the i18n API, so new
-// getMessage() calls added without a messages.json entry are caught
-// immediately.
+// Migration of existing hardcoded English remains incremental, but
+// check-localizable-ui-copy.js fingerprints that debt so newly added literals
+// at rendered UI sinks must route through t()/data-i18n. This script validates
+// that every locale reference resolves and every locale has structural parity.
 //
 // Exit 0: all checks pass.
 // Exit 1: at least one missing key found.

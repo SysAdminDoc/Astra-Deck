@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "entries": {
+    "extension/core/persisted-domains.js": {
+      "count": 2,
+      "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
+    },
+    "extension/core/toast-dom.js": {
+      "count": 1,
+      "digest": "06191305cffcb2b125c9bba687b1278b887f67145bdce1548b88764f101b7764"
+    },
+    "extension/core/transcript-service.js": {
+      "count": 11,
+      "digest": "4c50f3c01414595cb4de438c817debdd2df321738b8e792ac9ea30d3446db92c"
+    },
+    "extension/core/userscript-ai-summary.js": {
+      "count": 11,
+      "digest": "40d476d8611c1dcb6508257328cb1af4752cb074d3bf1715de8da3cdd5a1debf"
+    },
+    "extension/features/dearrow/index.js": {
+      "count": 1,
+      "digest": "7a217049d64898476bfd0b8a6f05489c21c214fdc6ea268b4e0b2d07f7a20945"
+    },
+    "extension/features/digital-wellbeing/index.js": {
+      "count": 4,
+      "digest": "beac0f6b3078a6c27186bf870efdb047eb62db2d260143a5092eb45521281a2a"
+    },
+    "extension/features/download-ui/index.js": {
+      "count": 58,
+      "digest": "b420a4e84395aa3f8f8f6e4831170a5a105a8a338230f3a073b7d5f0f5fbab0c"
+    },
+    "extension/features/live-chat/index.js": {
+      "count": 15,
+      "digest": "d0aa8af6dc679effa986f8383caaee0fbca106d2d8875fb7f83723d07fa18019"
+    },
+    "extension/features/player-dock/index.js": {
+      "count": 3,
+      "digest": "fe0cb025508debbe143950bd789bd1393d3879017f6b485087b777cd9e0e71b2"
+    },
+    "extension/features/return-dislike/index.js": {
+      "count": 11,
+      "digest": "059dd9f5804ba7024c8559577dea040bf107e308d9c5887b8d6b53d8618c1125"
+    },
+    "extension/features/settings-panel/index.js": {
+      "count": 178,
+      "digest": "7539090db0026d47c009f8b745ff4d9267e39b06367e2927988c804fd8be7cb2"
+    },
+    "extension/features/sponsorblock/index.js": {
+      "count": 2,
+      "digest": "f01779c4deb78dda55e6b39737f90820e8b7f5272c37fa37710e81d3c844f337"
+    },
+    "extension/features/sticky-video/index.js": {
+      "count": 9,
+      "digest": "c82eb242c13aa707294b6615bdc0e07e3b987d65c325c64e005338f9cf88e06e"
+    },
+    "extension/features/subscription-groups/index.js": {
+      "count": 121,
+      "digest": "9115d5a56de5a308c0461bb4217b2e99b622959c28574dc2c3c99c6c2cb44dd3"
+    },
+    "extension/features/video-hider/index.js": {
+      "count": 28,
+      "digest": "87d289a5312fa087b4c6ed43009f720f3269df7be04947bb8189f0c35e84d926"
+    },
+    "extension/features/video-notes/index.js": {
+      "count": 18,
+      "digest": "8c845d5961b4a200f7780e57666d48a6819445b50829e3924573bde6e9194482"
+    },
+    "extension/features/youtube-music-compat/index.js": {
+      "count": 2,
+      "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"
+    },
+    "extension/popup.html": {
+      "count": 18,
+      "digest": "e26bcb487856ac4750ccde6fce4eba436e25ed4abfb492b65307bca52e42392c"
+    },
+    "extension/popup.js": {
+      "count": 44,
+      "digest": "bee7ce1e3d13dea68832efa41a2667ea37d433a6761e4d3484879cd99b3477a9"
+    },
+    "extension/sidebar.html": {
+      "count": 44,
+      "digest": "f2f5259c98ae97ebfeccb4131829b92a895d0324313a7a6b9d9043c8188f1b2b"
+    },
+    "extension/sidepanel.html": {
+      "count": 44,
+      "digest": "326c7ff642d94e6341a41736c29cfdbf10de6fe485682a52c9c507a9cd1382f7"
+    },
+    "extension/sidepanel.js": {
+      "count": 24,
+      "digest": "7cd34d4d191ed8555010d837e20d027b572020577722097cc92b1477e2952268"
+    },
+    "extension/ytkit.js": {
+      "count": 1470,
+      "digest": "226492c2be0ac2f3d776d253d0a5f52e548cb4ed23e8d19762a10d7b094317f0"
+    }
+  }
+}

@@ -22,6 +22,7 @@ const {
 const REPO_ROOT = path.join(__dirname, '..');
 const LOCALES_DIR = path.join(REPO_ROOT, 'extension', '_locales');
 const REPORT_PATH = path.join(REPO_ROOT, 'docs', 'i18n-coverage.md');
+const PLACEHOLDER_BASELINE_PATH = path.join(__dirname, 'i18n-placeholder-baseline.json');
 const SAMPLE_LIMIT = 8;
 const DEFAULT_FEATURE_WARNING_BASELINE = 582;
 
@@ -62,8 +63,11 @@ function parseArgs(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
     const args = {
         localesDir: path.join(repoRoot, 'extension', '_locales'),
         reportPath: path.join(repoRoot, 'docs', 'i18n-coverage.md'),
+        placeholderBaselinePath: path.join(repoRoot, 'scripts', 'i18n-placeholder-baseline.json'),
         warnFeatureIdenticalAbove: null,
         checkReport: false,
+        checkPlaceholderBaseline: false,
+        updatePlaceholderBaseline: false,
         writeReport: true
     };
 
@@ -85,6 +89,14 @@ function parseArgs(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
             args.failAbove = parseNonNegativeInt(argv[i], arg);
         } else if (arg === '--check-report') {
             args.checkReport = true;
+        } else if (arg === '--placeholder-baseline') {
+            i += 1;
+            if (!argv[i]) throw new Error('--placeholder-baseline requires a path');
+            args.placeholderBaselinePath = path.resolve(argv[i]);
+        } else if (arg === '--check-placeholder-baseline') {
+            args.checkPlaceholderBaseline = true;
+        } else if (arg === '--update-placeholder-baseline') {
+            args.updatePlaceholderBaseline = true;
         } else if (arg === '--no-write') {
             args.writeReport = false;
         } else if (arg === '--help' || arg === '-h') {
@@ -288,6 +300,49 @@ function checkThreshold(report, threshold) {
     return failures;
 }
 
+function buildPlaceholderBaseline(report) {
+    return {
+        schemaVersion: 1,
+        referenceLocale: report.referenceLocale,
+        referenceKeys: report.totalKeys,
+        locales: Object.fromEntries(report.rows.map((row) => [row.name, row.placeholderIdentical]))
+    };
+}
+
+function checkPlaceholderBaseline(report, baseline) {
+    const failures = [];
+    if (!baseline || baseline.schemaVersion !== 1 || baseline.referenceLocale !== report.referenceLocale) {
+        return ['placeholder baseline schema or reference locale is invalid'];
+    }
+    if (baseline.referenceKeys !== report.totalKeys) {
+        failures.push(`reference key count changed from ${baseline.referenceKeys} to ${report.totalKeys}; update the placeholder baseline`);
+    }
+    const expectedLocales = Object.keys(baseline.locales || {}).sort();
+    const actualLocales = report.rows.map((row) => row.name).sort();
+    if (JSON.stringify(expectedLocales) !== JSON.stringify(actualLocales)) {
+        failures.push(`placeholder baseline locales differ: expected ${expectedLocales.join(', ')}, found ${actualLocales.join(', ')}`);
+    }
+    for (const row of report.rows) {
+        const allowed = baseline.locales?.[row.name];
+        if (!Number.isInteger(allowed)) continue;
+        if (row.placeholderIdentical > allowed) {
+            failures.push(`${row.name}: ${row.placeholderIdentical} placeholder-identical keys exceed baseline ${allowed}`);
+        } else if (row.placeholderIdentical < allowed) {
+            failures.push(`${row.name}: placeholder-identical keys improved from ${allowed} to ${row.placeholderIdentical}; ratchet the baseline down`);
+        }
+    }
+    return failures;
+}
+
+function loadPlaceholderBaseline(filePath = PLACEHOLDER_BASELINE_PATH) {
+    if (!fs.existsSync(filePath)) throw new Error(`${toPosix(path.relative(REPO_ROOT, filePath))} is missing`);
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function writePlaceholderBaseline(report, filePath = PLACEHOLDER_BASELINE_PATH) {
+    fs.writeFileSync(filePath, `${JSON.stringify(buildPlaceholderBaseline(report), null, 2)}\n`, 'utf8');
+}
+
 function checkReportFreshness(markdown, reportPath) {
     const expected = `${markdown}\n`;
     const rel = toPosix(path.relative(REPO_ROOT, reportPath));
@@ -313,6 +368,9 @@ function printHelp() {
         '  --warn-feature-identical-above <n>   Warn when unresolved feature copy exceeds n',
         '  --fail-above <n>                     Exit non-zero when any locale has more than n placeholder-identical keys',
         '  --check-report                       Exit non-zero when the markdown report is stale',
+        '  --placeholder-baseline <path>         Per-locale unresolved-copy baseline JSON',
+        '  --check-placeholder-baseline          Require every locale to match its ratcheted baseline',
+        '  --update-placeholder-baseline         Rewrite the baseline from current locale files',
         '  --no-write                           Analyze without writing the report',
         '  -h, --help                           Show this help'
     ].join('\n'));
@@ -325,6 +383,13 @@ function main(argv = process.argv.slice(2)) {
         return;
     }
     const report = buildCoverageReport({ localesDir: options.localesDir });
+    if (options.checkPlaceholderBaseline && options.updatePlaceholderBaseline) {
+        throw new Error('choose either --check-placeholder-baseline or --update-placeholder-baseline');
+    }
+    if (options.updatePlaceholderBaseline) {
+        writePlaceholderBaseline(report, options.placeholderBaselinePath);
+        console.log(`[i18n-coverage] updated ${toPosix(path.relative(REPO_ROOT, options.placeholderBaselinePath))}`);
+    }
     const markdown = renderMarkdown(report, options);
     if (options.writeReport) {
         fs.writeFileSync(options.reportPath, `${markdown}\n`, 'utf8');
@@ -337,7 +402,13 @@ function main(argv = process.argv.slice(2)) {
         ? checkReportFreshness(markdown, options.reportPath)
         : [];
     const failures = checkThreshold(report, options.failAbove);
-    if (freshnessFailures.length > 0 || failures.length > 0) {
+    const baselineFailures = options.checkPlaceholderBaseline
+        ? checkPlaceholderBaseline(report, loadPlaceholderBaseline(options.placeholderBaselinePath))
+        : [];
+    for (const failure of baselineFailures) {
+        console.error(`[i18n-coverage] FAIL ${failure}`);
+    }
+    if (freshnessFailures.length > 0 || failures.length > 0 || baselineFailures.length > 0) {
         process.exitCode = 1;
     }
 }
@@ -353,7 +424,9 @@ if (require.main === module) {
 
 module.exports = {
     analyzeLocale,
+    buildPlaceholderBaseline,
     buildCoverageReport,
+    checkPlaceholderBaseline,
     checkReportFreshness,
     checkThreshold,
     DEFAULT_FEATURE_WARNING_BASELINE,

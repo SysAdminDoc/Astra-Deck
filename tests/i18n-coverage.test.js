@@ -7,7 +7,9 @@ const os = require('os');
 const path = require('path');
 
 const {
+    buildPlaceholderBaseline,
     buildCoverageReport,
+    checkPlaceholderBaseline,
     checkReportFreshness,
     DEFAULT_FEATURE_WARNING_BASELINE,
     emitWarnings,
@@ -76,6 +78,7 @@ test('i18n coverage parses warning threshold and emits non-fatal warnings', () =
         '--output', path.join(os.tmpdir(), 'i18n-report.md'),
         '--warn-feature-identical-above', '0',
         '--check-report',
+        '--check-placeholder-baseline',
         '--no-write'
     ]);
     const report = buildCoverageReport({ localesDir: parsed.localesDir });
@@ -91,11 +94,27 @@ test('i18n coverage parses warning threshold and emits non-fatal warnings', () =
 
     assert.equal(parsed.writeReport, false);
     assert.equal(parsed.checkReport, true);
+    assert.equal(parsed.checkPlaceholderBaseline, true);
     assert.equal(parsed.warnFeatureIdenticalAbove, 0);
     assert.deepEqual(warnings, ['de: 1 unresolved feature messages exceed threshold 0']);
     assert.deepEqual(captured, ['[i18n-coverage] WARN de: 1 unresolved feature messages exceed threshold 0']);
     assert.throws(() => parseArgs(['--wat']), /unknown argument/);
     assert.throws(() => parseArgs(['--warn-feature-identical-above', 'bad']), /non-negative integer/);
+});
+
+test('per-locale placeholder baseline fails on regressions and requires improvements to ratchet down', () => {
+    const { localesDir } = writeLocaleFixture();
+    const report = buildCoverageReport({ localesDir });
+    const baseline = buildPlaceholderBaseline(report);
+    assert.deepEqual(checkPlaceholderBaseline(report, baseline), []);
+
+    const regression = structuredClone(report);
+    regression.rows[0].placeholderIdentical += 1;
+    assert.match(checkPlaceholderBaseline(regression, baseline)[0], /exceed baseline/);
+
+    const improvement = structuredClone(report);
+    improvement.rows[0].placeholderIdentical -= 1;
+    assert.match(checkPlaceholderBaseline(improvement, baseline)[0], /ratchet the baseline down/);
 });
 
 test('i18n coverage freshness gate fails on stale markdown reports', () => {
@@ -164,4 +183,6 @@ test('i18n warning command is exposed through package scripts', () => {
     assert.equal(DEFAULT_FEATURE_WARNING_BASELINE, 582);
     assert.match(pkg.scripts['i18n:coverage:warn'] || '', /--warn-feature-identical-above 582/);
     assert.match(pkg.scripts['i18n:coverage:gate'] || '', /--check-report/);
+    assert.match(pkg.scripts['i18n:coverage:gate'] || '', /--check-placeholder-baseline/);
+    assert.doesNotMatch(pkg.scripts['i18n:coverage:gate'] || '', /--fail-above/);
 });
