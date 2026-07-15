@@ -353,6 +353,11 @@ const STORAGE_KEYS = {
     allowedVideos: 'ytkit-video-hider-allowed-videos',
     blockedChannels: 'ytkit-blocked-channels',
     bookmarks: 'ytkit-bookmarks',
+    watchProgress: 'ytkit-watch-progress',
+    watchTime: 'ytkit-watch-time',
+    channelSpeeds: 'ytkit-channel-speeds',
+    resumePositions: 'ytkit_resume_positions',
+    persistentQueue: 'ytkit-queue',
     legacySidebarOrder: 'ytkit_sidebar_order'
 };
 
@@ -374,6 +379,9 @@ const YOUTUBE_TAB_URLS = [
     '*://*.youtube-nocookie.com/*',
     '*://youtu.be/*'
 ];
+
+const PERSISTED_DATA_MESSAGE = 'YTKIT_PERSISTED_DATA';
+const persistedDomains = globalThis.YTKitCore?.persistedDomains;
 
 const popupState = {
     settings: {},
@@ -1434,6 +1442,59 @@ function sendTabMessage(tabId, message) {
             });
         } catch { resolve(false); }
     });
+}
+
+function sendTabMessageResponse(tabId, message) {
+    return new Promise((resolve, reject) => {
+        if (!tabId) { reject(new Error('No YouTube tab is available')); return; }
+        try {
+            chrome.tabs.sendMessage(tabId, message, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else if (!response?.ok) {
+                    reject(new Error(response?.error || 'YouTube data operation failed'));
+                } else {
+                    resolve(response);
+                }
+            });
+        } catch (error) { reject(error); }
+    });
+}
+
+function queryYoutubeTabs() {
+    return new Promise((resolve) => {
+        try {
+            chrome.tabs.query({ url: YOUTUBE_TAB_URLS }, (tabs) => {
+                if (chrome.runtime.lastError) resolve([]);
+                else resolve(Array.isArray(tabs) ? tabs : []);
+            });
+        } catch (_) { resolve([]); }
+    });
+}
+
+function getTabOrigin(tab) {
+    try { return new URL(tab?.url || '').origin; } catch (_) { return ''; }
+}
+
+async function sendPersistedDataMessage(message, requiredOrigin = '') {
+    const tabs = await queryYoutubeTabs();
+    const ordered = tabs
+        .filter((tab) => tab?.id && !/\/live_chat(?:\?|$)/.test(tab.url || ''))
+        .filter((tab) => !requiredOrigin || getTabOrigin(tab) === requiredOrigin)
+        .sort((left, right) => {
+            const score = (tab) => (tab.active ? 4 : 0) + (getTabOrigin(tab) === 'https://www.youtube.com' ? 2 : 0) + (tab.id === popupState.activeTab?.id ? 1 : 0);
+            return score(right) - score(left);
+        });
+    let lastError = null;
+    for (const tab of ordered) {
+        try {
+            const response = await sendTabMessageResponse(tab.id, { type: PERSISTED_DATA_MESSAGE, ...message });
+            return { response, origin: getTabOrigin(tab), tabId: tab.id };
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw new Error(lastError?.message || 'Open a YouTube tab so Astra Deck can include its transcript index');
 }
 
 function sendRuntimeMessage(message) {
@@ -3730,7 +3791,7 @@ function mergeLegacySettings(settings, legacySidebarOrder = null) {
     return merged;
 }
 
-function buildExportData(allStorage) {
+function buildExportData(allStorage, transcriptRecords = []) {
     const mergedSettings = mergeLegacySettings(
         allStorage[STORAGE_KEYS.settings] || {},
         getLegacySidebarOrder(allStorage)
@@ -3747,16 +3808,28 @@ function buildExportData(allStorage) {
     const rawBookmarks = allStorage[STORAGE_KEYS.bookmarks];
     const bookmarks = (rawBookmarks && typeof rawBookmarks === 'object' && !Array.isArray(rawBookmarks)) ? rawBookmarks : {};
     const exportSettings = buildSchemaValidatedExportSettings(mergedSettings);
+    const domains = persistedDomains?.buildIncludedDomainPayload(allStorage, {
+        settings: exportSettings.settings
+    }) || {
+        settings: exportSettings.settings,
+        hiddenVideos,
+        allowedVideos,
+        blockedChannels,
+        bookmarks
+    };
+    domains.transcriptIndex = persistedDomains?.sanitizeTranscriptRecords(transcriptRecords) || transcriptRecords;
     return {
         astraDeckBackup: true,
         settings: exportSettings.settings,
-        hiddenVideos,
-        filteredVideoPosts: hiddenVideos,
-        allowedVideos,
-        blockedChannels,
-        bookmarks,
-        exportVersion: 4,
-        backupSchemaVersion: 1,
+        hiddenVideos: domains.hiddenVideos || hiddenVideos,
+        filteredVideoPosts: domains.hiddenVideos || hiddenVideos,
+        allowedVideos: domains.allowedVideos || allowedVideos,
+        blockedChannels: domains.blockedChannels || blockedChannels,
+        bookmarks: domains.bookmarks || bookmarks,
+        domains,
+        exclusions: (persistedDomains?.EXCLUDED_DOMAINS || []).map(({ id, reason }) => ({ id, reason })),
+        exportVersion: persistedDomains?.BACKUP_EXPORT_VERSION || 5,
+        backupSchemaVersion: persistedDomains?.BACKUP_SCHEMA_VERSION || 2,
         settingsSchemaVersion: SETTINGS_VERSION_FALLBACK,
         settingsProfile: exportSettings.effectiveProfile,
         scrubbedSettings: exportSettings.scrubbedKeys,
@@ -3783,12 +3856,67 @@ function buildExportData(allStorage) {
 
 // ── Export / Import / Reset ──
 
+async function readAllTranscriptRecords() {
+    if (!persistedDomains) throw new Error('Persisted-domain service unavailable');
+    const records = [];
+    let afterKey = '';
+    let origin = '';
+    for (let chunkIndex = 0; chunkIndex < 1100; chunkIndex += 1) {
+        const { response, origin: responseOrigin } = await sendPersistedDataMessage({
+            action: 'export-chunk',
+            afterKey,
+            maxBytes: persistedDomains.MAX_MESSAGE_BYTES
+        }, origin);
+        origin = responseOrigin;
+        records.push(...(Array.isArray(response.records) ? response.records : []));
+        if (response.done) return { records: persistedDomains.sanitizeTranscriptRecords(records), origin };
+        if (!response.nextCursor || response.nextCursor === afterKey) throw new Error('Transcript export did not advance');
+        afterKey = response.nextCursor;
+    }
+    throw new Error('Transcript export exceeded the bounded record count');
+}
+
+function chunkTranscriptRecords(records) {
+    const chunks = [];
+    let chunk = [];
+    let bytes = 2;
+    for (const record of records) {
+        const recordBytes = persistedDomains.estimateJsonBytes(record) + 1;
+        if (chunk.length && bytes + recordBytes > persistedDomains.MAX_MESSAGE_BYTES) {
+            chunks.push(chunk);
+            chunk = [];
+            bytes = 2;
+        }
+        chunk.push(record);
+        bytes += recordBytes;
+    }
+    if (chunk.length || chunks.length === 0) chunks.push(chunk);
+    return chunks;
+}
+
+async function replaceTranscriptDomain(records, origin) {
+    const chunks = chunkTranscriptRecords(persistedDomains.sanitizeTranscriptRecords(records));
+    let written = 0;
+    for (let index = 0; index < chunks.length; index += 1) {
+        const result = await sendPersistedDataMessage({
+            action: 'replace-chunk',
+            clearFirst: index === 0,
+            records: chunks[index]
+        }, origin);
+        written += Number(result.response.written) || 0;
+    }
+    return written;
+}
+
 async function exportSettings() {
     exportButton.setAttribute('aria-busy', 'true');
     exportButton.disabled = true;
     try {
-        const allStorage = await chrome.storage.local.get(null);
-        const exportData = buildExportData(allStorage);
+        const [allStorage, transcript] = await Promise.all([
+            chrome.storage.local.get(null),
+            readAllTranscriptRecords()
+        ]);
+        const exportData = buildExportData(allStorage, transcript.records);
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
 
@@ -3833,76 +3961,75 @@ async function importSettings(file) {
     importButton.setAttribute('aria-busy', 'true');
     importButton.disabled = true;
     try {
-        if (file.size > 10 * 1024 * 1024) throw new Error('Import file exceeds 10 MB limit');
+        if (!persistedDomains) throw new Error('Persisted-domain service unavailable');
+        if (file.size > persistedDomains.MAX_BACKUP_BYTES) throw new Error('Import file exceeds the 512 MB safety limit');
         const text = await file.text();
         const data = JSON.parse(text);
-        if (!data || typeof data !== 'object') throw new Error('Invalid format');
-
+        // Version validation happens before any snapshot or write. A backup
+        // from a future Astra version must be a strict no-op, not a best-effort
+        // partial import that silently drops unknown domains.
+        const migrated = persistedDomains.migrateBackup(data);
         const importCatalog = await loadSettingsImportCatalog();
-        const writes = {};
-        let importedSettings = null;
-        if (data.exportVersion >= 3) {
-            const filteredVideoPosts = getImportedFilteredVideoPosts(data);
-            if (isPlainObject(data.settings)) importedSettings = data.settings;
-            if (filteredVideoPosts) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(filteredVideoPosts);
-            if (Array.isArray(data.allowedVideos)) writes[STORAGE_KEYS.allowedVideos] = sanitizeImportedVideoIdList(data.allowedVideos, IMPORT_LIMITS.allowedVideos);
-            if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
-            if (isPlainObject(data.bookmarks)) writes[STORAGE_KEYS.bookmarks] = sanitizeImportedBookmarks(data.bookmarks);
-        } else if (data.exportVersion >= 2) {
-            const filteredVideoPosts = getImportedFilteredVideoPosts(data);
-            if (isPlainObject(data.settings)) importedSettings = data.settings;
-            if (filteredVideoPosts) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(filteredVideoPosts);
-            if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
-        } else if (isPlainObject(data)) {
-            importedSettings = data;
-        }
-
-        if (importedSettings) {
-            writes[STORAGE_KEYS.settings] = mergeImportedSettingsWithDefaults(
+        const sanitized = persistedDomains.sanitizeMigratedDomains(migrated, (importedSettings) => (
+            mergeImportedSettingsWithDefaults(
                 importedSettings,
                 importCatalog.defaults,
                 importCatalog.settingsVersion,
                 'popup-import',
-                // Backup-level schema version stamped by buildExportData.
-                // Lets the migration chain start from the exporter's
-                // version even though schemaOnly exports strip the inner
-                // `_settingsVersion` marker.
-                { backupSchemaVersion: data.settingsSchemaVersion }
-            );
-        }
+                { backupSchemaVersion: migrated.settingsSchemaVersion }
+            )
+        ));
+        const writes = persistedDomains.domainsToExtensionWrites(sanitized.domains);
+        const hasTranscriptDomain = Object.prototype.hasOwnProperty.call(sanitized.domains, 'transcriptIndex');
+        if (Object.keys(writes).length === 0 && !hasTranscriptDomain) throw new Error('No valid portable data found in file');
+        if (estimateSerializedBytes(writes) > 64 * 1024 * 1024) throw new Error('Extension-local import data exceeds the 64 MB safety limit');
 
-        if (Object.keys(writes).length === 0) throw new Error('No valid settings found in file');
-        if (estimateSerializedBytes(writes) > IMPORT_LIMITS.totalBytes) throw new Error('Import data is too large for extension storage');
+        const preview = persistedDomains.buildImportPreview(
+            sanitized.domains,
+            sanitized.droppedByDomain,
+            sanitized.appliedByDomain
+        );
+        const previewText = persistedDomains.formatImportPreview(preview);
+        showStatus(`Import preview: ${previewText}. Applying with rollback…`, 'success', 6000);
+        await new Promise((resolve) => (globalThis.requestAnimationFrame || setTimeout)(resolve, 0));
 
-        const snapshot = await readLocalStorageSnapshot();
+        const currentLocal = await readLocalStorageSnapshot();
+        const keysToRemove = persistedDomains.extensionKeysToRemove(sanitized.domains, currentLocal);
+        const snapshot = await createCoordinatedSnapshot('import', {
+            includePage: hasTranscriptDomain,
+            localSnapshot: currentLocal
+        });
         const snapped = await writeImportSnapshot(snapshot);
-        if (!snapped && sessionStorageAvailable()) {
+        if (!snapped) {
+            await discardCoordinatedSnapshot(snapshot);
             showStatus(t('statusImportSnapshotFail',
                 'Import aborted - could not stage an undo snapshot. Export a backup first.'),
                 'error', 6000);
             return;
         }
-        const undoAvailable = snapped && sessionStorageAvailable();
+        const undoAvailable = true;
         try {
             const importedSettingsToApply = writes[STORAGE_KEYS.settings];
             const nonSettingWrites = { ...writes };
             delete nonSettingWrites[STORAGE_KEYS.settings];
+            if (keysToRemove.length) await storageRemove(keysToRemove);
             if (Object.keys(nonSettingWrites).length) await storageSet(nonSettingWrites);
             if (importedSettingsToApply) {
                 const result = await replaceSettings(importedSettingsToApply);
                 writes[STORAGE_KEYS.settings] = result.settings;
             }
-        } catch (error) {
-            if (snapped) {
-                await restoreLocalStorageSnapshot(snapshot);
-                await clearImportSnapshot();
-                await refreshUndoImportVisibility();
-                showStatus(t('statusSettingsImportFailed',
-                    'Import failed while applying data; previous state was restored.'),
-                    'error', 6000);
-                return;
+            if (hasTranscriptDomain) {
+                await replaceTranscriptDomain(sanitized.domains.transcriptIndex, snapshot.pageOrigin);
             }
-            throw error;
+        } catch (error) {
+            await restoreCoordinatedSnapshot(snapshot);
+            await clearImportSnapshot();
+            await discardCoordinatedSnapshot(snapshot);
+            await refreshUndoImportVisibility();
+            showStatus(t('statusSettingsImportFailed',
+                'Import failed while applying data; previous state was restored.'),
+                'error', 6000);
+            return;
         }
         if (writes[STORAGE_KEYS.settings]) {
             await chrome.storage.local.remove(STORAGE_KEYS.legacySidebarOrder).catch(() => { /* reason: legacy key may not exist */ });
@@ -3911,11 +4038,12 @@ async function importSettings(file) {
         await loadSettings();
         render(popupState.settings, q.value);
         await refreshUndoImportVisibility();
-        showStatus(undoAvailable
+        const importedStatus = undoAvailable
             ? t('statusBackupImportedUndo',
                 'Backup imported. Click Undo Import to restore the previous state until you close the browser.')
             : t('statusBackupImportedNoUndo',
-                'Backup imported. Undo is unavailable on this browser.'),
+                'Backup imported. Undo is unavailable on this browser.');
+        showStatus(`${importedStatus} Preview: ${previewText}.`,
             'success', 6000);
     } catch (error) {
         showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
@@ -3939,15 +4067,15 @@ async function undoImportSettings() {
                 'error', 4200);
             return;
         }
-        await restoreLocalStorageSnapshot(snap);
+        const restoredLocal = await restoreCoordinatedSnapshot(snap);
         await clearImportSnapshot();
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
         renderDataFlowPanel();
         renderSchemaOverview();
-        if (snap[STORAGE_KEYS.settings]) {
-            void broadcastSettingsReplaced(snap[STORAGE_KEYS.settings]);
+        if (restoredLocal[STORAGE_KEYS.settings]) {
+            void broadcastSettingsReplaced(restoredLocal[STORAGE_KEYS.settings]);
         }
         setUndoImportVisible(false);
         showStatus(t('statusSettingsImportUndone',
@@ -4192,6 +4320,75 @@ function sessionStorageAvailable() {
     return !!(chrome && chrome.storage && chrome.storage.session);
 }
 
+function createSnapshotId(kind) {
+    const randomPart = globalThis.crypto?.randomUUID?.()
+        || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    return `${kind}-${randomPart}`;
+}
+
+async function createCoordinatedSnapshot(kind, options = {}) {
+    if (!persistedDomains) throw new Error('Persisted-domain service unavailable');
+    if (!sessionStorageAvailable()) throw new Error('Session storage is unavailable; recoverable changes are disabled');
+    const snapshotId = createSnapshotId(kind);
+    const local = options.localSnapshot || await readLocalStorageSnapshot();
+    await persistedDomains.writeExtensionSnapshot(snapshotId, local);
+    let pageOrigin = '';
+    try {
+        if (options.includePage) {
+            const page = await sendPersistedDataMessage({ action: 'snapshot', snapshotId });
+            pageOrigin = page.origin;
+        }
+        return {
+            schemaVersion: 2,
+            kind,
+            snapshotId,
+            pageSnapshotId: options.includePage ? snapshotId : '',
+            pageOrigin,
+            createdAt: Date.now()
+        };
+    } catch (error) {
+        await persistedDomains.deleteExtensionSnapshot(snapshotId).catch(() => {});
+        throw error;
+    }
+}
+
+async function restoreCoordinatedSnapshot(snapshot) {
+    if (!snapshot?.snapshotId) throw new Error('Recovery snapshot is invalid or expired');
+    // Read before mutating either domain so an expired extension token cannot
+    // cause a valid page snapshot to be consumed.
+    const local = await persistedDomains.readExtensionSnapshot(snapshot.snapshotId);
+    // Restore the page-origin domain first. If its tab is unavailable, no
+    // extension-local mutation occurs and the snapshot remains retryable.
+    if (snapshot.pageSnapshotId) {
+        await sendPersistedDataMessage({
+            action: 'restore-snapshot',
+            snapshotId: snapshot.pageSnapshotId,
+            keepSnapshot: true
+        }, snapshot.pageOrigin || '');
+    }
+    await restoreLocalStorageSnapshot(local);
+    if (snapshot.pageSnapshotId) {
+        await sendPersistedDataMessage({
+            action: 'discard-snapshot',
+            snapshotId: snapshot.pageSnapshotId
+        }, snapshot.pageOrigin || '');
+    }
+    await persistedDomains.deleteExtensionSnapshot(snapshot.snapshotId);
+    return local;
+}
+
+async function discardCoordinatedSnapshot(snapshot) {
+    if (!snapshot?.snapshotId || !persistedDomains) return;
+    const work = [persistedDomains.deleteExtensionSnapshot(snapshot.snapshotId)];
+    if (snapshot.pageSnapshotId) {
+        work.push(sendPersistedDataMessage({
+            action: 'discard-snapshot',
+            snapshotId: snapshot.pageSnapshotId
+        }, snapshot.pageOrigin || ''));
+    }
+    await Promise.allSettled(work);
+}
+
 async function readLocalStorageSnapshot() {
     return new Promise((resolve, reject) => {
         try {
@@ -4267,6 +4464,10 @@ async function readImportSnapshot() {
 }
 
 async function writeImportSnapshot(snapshot) {
+    const previous = await readImportSnapshot();
+    if (previous?.snapshotId && previous.snapshotId !== snapshot?.snapshotId) {
+        await discardCoordinatedSnapshot(previous);
+    }
     return writeSessionSnapshot(IMPORT_SNAPSHOT_KEY, snapshot);
 }
 
@@ -4279,6 +4480,10 @@ async function readResetSnapshot() {
 }
 
 async function writeResetSnapshot(snapshot) {
+    const previous = await readResetSnapshot();
+    if (previous?.snapshotId && previous.snapshotId !== snapshot?.snapshotId) {
+        await discardCoordinatedSnapshot(previous);
+    }
     return writeSessionSnapshot(RESET_SNAPSHOT_KEY, snapshot);
 }
 
@@ -4318,43 +4523,42 @@ async function resetAllData() {
     resetButton.disabled = true;
     if (storageBannerResetBtn) storageBannerResetBtn.disabled = true;
     try {
-        // Snapshot everything in storage.local BEFORE clearing so an
-        // Undo can restore byte-identical. Session storage is the right
-        // home — the snapshot must not survive a browser restart (that
-        // would let stale snapshots overwrite later real edits) but
-        // must survive a popup close/reopen so the user sees the Undo
-        // button on the next launch.
-        const snapshot = await readLocalStorageSnapshot();
+        // Snapshot extension-local data in extension IndexedDB and the
+        // YouTube-origin transcript store in its own origin. Session storage
+        // holds only the small capability token, avoiding its quota ceiling.
+        const snapshot = await createCoordinatedSnapshot('reset', { includePage: true });
         const snapped = await writeResetSnapshot(snapshot);
         if (!snapped) {
-            // Session API exists but the snapshot write failed (e.g. data too
-            // large) — abort so we never clear without a recoverable snapshot.
+            await discardCoordinatedSnapshot(snapshot);
             showStatus(t('statusResetSnapshotFail',
                 'Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first.'),
                 'error', 6000);
             return;
         }
         const undoAvailable = true;
-        await storageClear();
-        // Re-stamp the first-run / what's-new sentinels that storageClear()
-        // just wiped, so a reset doesn't re-trigger the welcome/onboarding
-        // card on the next popup open. Undo is unaffected — the pre-clear
-        // snapshot holds the originals and restores them verbatim.
-        await storageSet({
-            [FIRST_RUN_SEEN_KEY]: true,
-            [LAST_SEEN_VERSION_KEY]: (manifestVersion && manifestVersion !== '—') ? manifestVersion : '',
-        });
+        try {
+            await storageClear();
+            // Re-stamp the first-run / what's-new sentinels that storageClear()
+            // just wiped, so reset does not replay onboarding.
+            await storageSet({
+                [FIRST_RUN_SEEN_KEY]: true,
+                [LAST_SEEN_VERSION_KEY]: (manifestVersion && manifestVersion !== '—') ? manifestVersion : '',
+            });
+            await sendPersistedDataMessage({ action: 'clear' }, snapshot.pageOrigin);
+        } catch (error) {
+            await restoreCoordinatedSnapshot(snapshot);
+            await clearResetSnapshot();
+            throw new Error(`Reset did not complete; previous data was restored: ${error.message}`);
+        }
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
         await refreshUndoResetVisibility();
         undoResetButton?.focus?.({ preventScroll: true });
         showStatus(undoAvailable
-            ? t('statusAllDataClearedUndo',
-                'All data cleared. Click Undo Reset to restore (until you close the browser).')
-            : t('statusAllDataClearedNoUndo',
-                'All data cleared. Undo is unavailable on this browser, so this reset cannot be undone.'),
-            'success', 6000);
+            ? 'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.'
+            : 'Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser.',
+        'success', 6000);
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);
     } finally {
@@ -4382,13 +4586,16 @@ async function undoResetAllData() {
         // Wipe-and-replace so any new keys added between reset and undo
         // don't pollute the restored payload. The snapshot is the
         // single source of truth.
-        await restoreLocalStorageSnapshot(snap);
+        const restoredLocal = await restoreCoordinatedSnapshot(snap);
         await clearResetSnapshot();
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
         renderDataFlowPanel();
         renderSchemaOverview();
+        if (restoredLocal[STORAGE_KEYS.settings]) {
+            void broadcastSettingsReplaced(restoredLocal[STORAGE_KEYS.settings]);
+        }
         setUndoResetVisible(false);
         showStatus(t('statusResetUndone', 'Reset undone — all data restored.'), 'success', 3200);
     } catch (error) {

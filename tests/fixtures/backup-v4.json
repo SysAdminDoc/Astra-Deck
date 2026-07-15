@@ -1,0 +1,11 @@
+{
+  "astraDeckBackup": true,
+  "exportVersion": 4,
+  "backupSchemaVersion": 1,
+  "settingsSchemaVersion": 7,
+  "settings": { "hideHomeFeed": true },
+  "hiddenVideos": ["abcdefghijk"],
+  "allowedVideos": ["lmnopqrstuv"],
+  "blockedChannels": [],
+  "bookmarks": {}
+}
