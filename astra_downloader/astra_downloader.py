@@ -83,10 +83,13 @@ try:
     )
     from .health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
+        ExecutableVersionProbe,
         PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
         _compare_semver, _parse_ytdlp_release_date,
+        _run_captured as _owned_run_captured,
         build_javascript_runtime_args, build_youtube_extractor_args,
-        is_youtube_url, parse_ffmpeg_major, ytdlp_needs_external_runtime,
+        is_youtube_url, parse_ffmpeg_major, parse_ffmpeg_version_output,
+        parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
@@ -117,10 +120,13 @@ except ImportError:  # Direct script / flat source-path compatibility.
     )
     from health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
+        ExecutableVersionProbe,
         PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
         _compare_semver, _parse_ytdlp_release_date,
+        _run_captured as _owned_run_captured,
         build_javascript_runtime_args, build_youtube_extractor_args,
-        is_youtube_url, parse_ffmpeg_major, ytdlp_needs_external_runtime,
+        is_youtube_url, parse_ffmpeg_major, parse_ffmpeg_version_output,
+        parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
 
 # ══════════════════════════════════════════════════════════════
@@ -600,50 +606,33 @@ def cleanup_stale_cookie_jars(older_than_seconds=300):
     )
 
 
-# ── v1.2.0: cached version strings for /health ──
-# Audit fix: lock-guarded like _po_token_provider_cache / _deno_runtime_cache.
-# /health is served by concurrent waitress threads; the previous unguarded
-# read-modify-write was a benign race (worst case: duplicate subprocess probe)
-# but inconsistent with the other shared probe caches.
-_version_cache = {
-    'ytdlp': {'value': None, 'checked_at': 0.0},
-    'ffmpeg': {'value': None, 'checked_at': 0.0},
-}
-_VERSION_CACHE_TTL_SECONDS = 3600
-_VERSION_CACHE_LOCK = threading.Lock()
-
-
 def _run_captured(args, timeout=5):
-    """Capture subprocess output with CREATE_NO_WINDOW. Returns '' on failure."""
-    try:
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            creationflags=CREATE_NO_WINDOW,
-        )
-        return (result.stdout or '') + (result.stderr or '')
-    except Exception:
-        return ''
+    return _owned_run_captured(
+        args,
+        timeout=timeout,
+        runner=subprocess.run,
+        creationflags=CREATE_NO_WINDOW,
+    )
+
+
+_ytdlp_version_probe = ExecutableVersionProbe(
+    path=lambda: YTDLP_PATH,
+    args=('--version',),
+    parser=parse_ytdlp_version_output,
+    runner=lambda args: _run_captured(args),
+    clock=lambda: time.time(),
+)
+_ffmpeg_version_probe = ExecutableVersionProbe(
+    path=lambda: FFMPEG_PATH,
+    args=('-version',),
+    parser=parse_ffmpeg_version_output,
+    runner=lambda args: _run_captured(args),
+    clock=lambda: time.time(),
+)
 
 
 def get_ytdlp_version(force=False):
-    if not YTDLP_PATH.exists():
-        return None
-    with _VERSION_CACHE_LOCK:
-        cache = _version_cache['ytdlp']
-        now = time.time()
-        if not force and cache['value'] and (now - cache['checked_at']) < _VERSION_CACHE_TTL_SECONDS:
-            return cache['value']
-        output = _run_captured([str(YTDLP_PATH), '--version'])
-        version = output.strip().splitlines()[0] if output.strip() else ''
-        if re.match(r'^\d{4}\.\d{1,2}\.\d{1,2}', version):
-            cache['value'] = version
-        elif version:
-            cache['value'] = version[:32]
-        cache['checked_at'] = now
-        return cache['value']
+    return _ytdlp_version_probe.get(force=force)
 
 
 # v1.4.0 (N1): cached probe for bgutil-ytdlp-pot-provider.
@@ -1061,19 +1050,7 @@ def reset_deno_runtime_cache():
 
 
 def get_ffmpeg_version(force=False):
-    if not FFMPEG_PATH.exists():
-        return None
-    with _VERSION_CACHE_LOCK:
-        cache = _version_cache['ffmpeg']
-        now = time.time()
-        if not force and cache['value'] and (now - cache['checked_at']) < _VERSION_CACHE_TTL_SECONDS:
-            return cache['value']
-        output = _run_captured([str(FFMPEG_PATH), '-version'])
-        first = output.splitlines()[0] if output else ''
-        m = re.search(r'ffmpeg version (\S+)', first)
-        cache['value'] = (m.group(1) if m else '')[:64] or None
-        cache['checked_at'] = now
-        return cache['value']
+    return _ffmpeg_version_probe.get(force=force)
 
 
 # v1.4.0 (NX10): ffmpeg 8.0 dropped OpenSSL <=1.1.0; 8.1.1 removed the
@@ -1406,9 +1383,7 @@ def _run_ytdlp_self_update(config, source_tag):
             }
 
         mark_ytdlp_update_check(config)
-        with _VERSION_CACHE_LOCK:
-            _version_cache['ytdlp']['value'] = active_version
-            _version_cache['ytdlp']['checked_at'] = time.time()
+        _ytdlp_version_probe.prime(active_version)
         _write_update_state(
             _ytdlp_update_state_path(), status='active',
             active_version=active_version, rollback_version=rollback_version,
@@ -6742,8 +6717,7 @@ class MainWindow(QMainWindow):
         self.setup_status.setText("ffmpeg refresh complete." if ffmpeg_refresh else "Setup complete.")
         self._append_log("ffmpeg refresh complete." if ffmpeg_refresh else "Setup complete. Starting server...")
         if ffmpeg_refresh:
-            with _VERSION_CACHE_LOCK:
-                _version_cache['ffmpeg'] = {'value': None, 'checked_at': 0.0}
+            _ffmpeg_version_probe.reset()
             with _FFMPEG_CAPABILITIES_LOCK:
                 _ffmpeg_capabilities_cache['value'] = None
                 _ffmpeg_capabilities_cache['checked_at'] = 0.0

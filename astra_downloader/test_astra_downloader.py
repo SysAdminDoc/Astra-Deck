@@ -1389,6 +1389,34 @@ for forbidden in (
         self.assertIs(routes.create_api, ad.create_api)
         self.assertIs(gui.MainWindow, ad.MainWindow)
 
+    def test_health_version_probe_uses_injected_cache_dependencies(self):
+        import health
+
+        with tempfile.TemporaryDirectory() as tmp:
+            executable = Path(tmp) / "tool.exe"
+            executable.touch()
+            calls = []
+            current_time = [100.0]
+
+            def run(args):
+                calls.append(args)
+                return "tool 1.2.3"
+
+            probe = health.ExecutableVersionProbe(
+                path=executable,
+                args=("--version",),
+                parser=lambda output: output.rsplit(" ", 1)[-1],
+                runner=run,
+                clock=lambda: current_time[0],
+                ttl_seconds=60,
+            )
+            self.assertEqual(probe.get(), "1.2.3")
+            current_time[0] += 30
+            self.assertEqual(probe.get(), "1.2.3")
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(probe.get(force=True), "1.2.3")
+            self.assertEqual(len(calls), 2)
+
     def test_routes_module_owns_injected_wsgi_backend_selection_and_teardown(self):
         import routes
 
