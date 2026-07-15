@@ -67,6 +67,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/toast-dom.js',
     'extension/core/navigation.js',
     'extension/core/player.js',
+    'extension/core/date-time.js',
     'extension/core/runtime-flags.js',
     'extension/core/capability-probe.js',
     'extension/features/subtitles/index.js',

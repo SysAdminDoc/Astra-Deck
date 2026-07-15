@@ -158,6 +158,7 @@
         "core/api-limiter.js",
         "core/url.js",
         "core/text-metrics.js",
+        "core/date-time.js",
         "core/page.js",
         "core/navigation.js",
         "core/player.js",

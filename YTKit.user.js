@@ -5428,6 +5428,108 @@
         });
     })();
 
+    // ── bundled module: extension/core/date-time.js ──
+    (() => {
+        'use strict';
+
+        const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+        if (core.parseYouTubeDate) return;
+
+        function parseYouTubeDate(value) {
+            if (value instanceof Date) {
+                return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+            }
+
+            const raw = String(value || '').trim();
+            if (!raw) return null;
+            const calendarDate = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            const date = calendarDate
+                ? new Date(Number(calendarDate[1]), Number(calendarDate[2]) - 1, Number(calendarDate[3]))
+                : new Date(raw);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function hasExplicitTime(value) {
+            return typeof value === 'string' && /T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/i.test(value.trim());
+        }
+
+        function formatAbsoluteYouTubeDate(value, options = {}) {
+            const date = parseYouTubeDate(value);
+            if (!date) return '';
+
+            const includeTime = options.includeTime === undefined
+                ? hasExplicitTime(value)
+                : Boolean(options.includeTime);
+            const formatOptions = includeTime
+                ? { dateStyle: 'long', timeStyle: 'short' }
+                : { dateStyle: options.dateStyle || 'long' };
+
+            return new Intl.DateTimeFormat(options.locale, formatOptions).format(date);
+        }
+
+        function subtractCalendarUnits(date, amount, unit) {
+            const result = new Date(date.getTime());
+            const originalDay = result.getDate();
+
+            if (unit === 'month' || unit === 'year') {
+                result.setDate(1);
+                if (unit === 'month') result.setMonth(result.getMonth() - amount);
+                else result.setFullYear(result.getFullYear() - amount);
+                const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+                result.setDate(Math.min(originalDay, lastDay));
+                return result;
+            }
+
+            const unitMs = {
+                second: 1000,
+                minute: 60000,
+                hour: 3600000,
+                day: 86400000,
+                week: 604800000
+            }[unit];
+            return unitMs ? new Date(result.getTime() - (amount * unitMs)) : null;
+        }
+
+        function parseRelativeYouTubeAge(text, now = new Date()) {
+            const reference = parseYouTubeDate(now);
+            if (!reference) return null;
+
+            const normalized = String(text || '').replace(/\u00a0/g, ' ').trim();
+            if (!normalized) return null;
+            if (/\byesterday\b/i.test(normalized)) {
+                return { date: subtractCalendarUnits(reference, 1, 'day'), unit: 'day', approximate: true };
+            }
+            if (/\btoday\b/i.test(normalized) || /\bjust now\b/i.test(normalized)) {
+                return { date: new Date(reference.getTime()), unit: 'day', approximate: true };
+            }
+
+            const match = normalized.match(/\b(\d+(?:[.,]\d+)?)\s*(second|minute|hour|day|week|month|year)s?\s+ago\b/i);
+            if (!match) return null;
+            const amount = Number(match[1].replace(',', '.'));
+            if (!Number.isFinite(amount) || amount < 0) return null;
+            const unit = match[2].toLowerCase();
+            const date = subtractCalendarUnits(reference, amount, unit);
+            return date ? { date, unit, approximate: true } : null;
+        }
+
+        function formatApproximateYouTubeDate(relativeAge, options = {}) {
+            const date = parseYouTubeDate(relativeAge?.date);
+            if (!date) return '';
+
+            return new Intl.DateTimeFormat(options.locale, {
+                dateStyle: options.dateStyle || 'medium'
+            }).format(date);
+        }
+
+        Object.assign(core, {
+            formatAbsoluteYouTubeDate,
+            formatApproximateYouTubeDate,
+            hasExplicitTime,
+            parseRelativeYouTubeAge,
+            parseYouTubeDate
+        });
+    })();
+
     // ── bundled module: extension/core/runtime-flags.js ──
     (() => {
         'use strict';
@@ -30680,30 +30782,115 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'hash',
             pages: [PageTypes.WATCH],
+            _processTimer: null,
+            _dateEl: null,
+            _styleEl: null,
+
+            _scheduleProcess(delay = 1500) {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = setTimeout(() => {
+                    this._processTimer = null;
+                    this._process();
+                }, delay);
+            },
 
             _process() {
                 const infoEl = document.querySelector('ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata .view-count, #info-text .view-count, ytd-video-primary-info-renderer .view-count');
-                if (!infoEl || infoEl.dataset.ytkitPrecise) return;
                 try {
                     const playerResponse = window.ytInitialPlayerResponse;
                     const viewCount = playerResponse?.videoDetails?.viewCount;
-                    if (viewCount) {
+                    if (infoEl && !infoEl.dataset.ytkitPrecise && viewCount) {
                         const formatted = Number(viewCount).toLocaleString();
                         const text = infoEl.textContent;
                         if (text.includes('view')) {
+                            infoEl.dataset.ytkitPreciseOriginal = text;
                             infoEl.textContent = `${formatted} views`;
                             infoEl.dataset.ytkitPrecise = '1';
                         }
                     }
-                } catch(e) {}
+                } catch(e) { /* reason: precise view replacement can fall back to native text */ }
+
+                this._renderExactUploadDate();
+            },
+
+            _getUploadDateValue() {
+                const currentVideoId = getVideoId();
+                try {
+                    const playerResponse = window.ytInitialPlayerResponse;
+                    const responseVideoId = playerResponse?.videoDetails?.videoId;
+                    if (!responseVideoId || !currentVideoId || responseVideoId === currentVideoId) {
+                        const microformat = playerResponse?.microformat?.playerMicroformatRenderer;
+                        const raw = microformat?.liveBroadcastDetails?.startTimestamp
+                            || microformat?.publishDate
+                            || microformat?.uploadDate;
+                        if (globalThis.YTKitCore?.parseYouTubeDate?.(raw)) return raw;
+                    }
+                } catch { /* reason: player response metadata can be unavailable during navigation */ }
+
+                const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
+                const value = meta?.getAttribute('content');
+                return globalThis.YTKitCore?.parseYouTubeDate?.(value) ? value : null;
+            },
+
+            _getDateAnchor() {
+                const candidates = Array.from(document.querySelectorAll(
+                    '#info-strings yt-formatted-string, ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata #info-text yt-formatted-string'
+                ));
+                return candidates.find((el) => /(?:premiered|streamed|published|uploaded|\b\d{4}\b)/i.test(el.textContent || ''))
+                    || candidates[0]
+                    || null;
+            },
+
+            _renderExactUploadDate() {
+                this._dateEl?.remove();
+                this._dateEl = null;
+                const value = this._getUploadDateValue();
+                const dateText = globalThis.YTKitCore?.formatAbsoluteYouTubeDate?.(value);
+                const anchor = this._getDateAnchor();
+                if (!dateText || !anchor?.parentElement) return;
+
+                const exact = document.createElement('span');
+                exact.className = 'ytkit-exact-upload-date';
+                // i18n-static: locale-formatted date contains no translatable static copy
+                exact.textContent = `(${dateText})`;
+                exact.title = dateText;
+                exact.setAttribute('aria-label', dateText);
+                exact.setAttribute('translate', 'no');
+                anchor.insertAdjacentElement('afterend', exact);
+                this._dateEl = exact;
             },
 
             init() {
-                setTimeout(() => this._process(), 1500);
-                addNavigateRule('preciseViews', () => setTimeout(() => this._process(), 2000));
+                this._styleEl = injectStyle(`
+                    .ytkit-exact-upload-date {
+                        margin-inline-start: 6px;
+                        color: var(--yt-spec-text-secondary, #aaa);
+                        font: inherit;
+                        white-space: nowrap;
+                    }
+                `, this.id, true);
+                this._scheduleProcess(1500);
+                addNavigateRule('preciseViews', () => {
+                    this._dateEl?.remove();
+                    this._dateEl = null;
+                    this._scheduleProcess(2000);
+                });
             },
             destroy() {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = null;
                 removeNavigateRule('preciseViews');
+                this._dateEl?.remove();
+                this._dateEl = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
+                document.querySelectorAll('[data-ytkit-precise]').forEach((el) => {
+                    if (el.dataset.ytkitPreciseOriginal !== undefined) {
+                        el.textContent = el.dataset.ytkitPreciseOriginal;
+                    }
+                    delete el.dataset.ytkitPrecise;
+                    delete el.dataset.ytkitPreciseOriginal;
+                });
             }
         },
 
