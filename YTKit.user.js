@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.49.1
+// @name         YTKit v4.49.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.49.1
+// @version      4.49.2
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -269,6 +269,10 @@
                 --ytkit-v3-subtle: #7f8996;
                 --ytkit-v3-accent: #ff5a4f;
                 --ytkit-v3-accent-rgb: 255,90,79;
+                /* Filled controls carrying white text need a darker coral than
+                   the highlight accent: #fff on #ff5a4f is 3.08:1 (fails AA). */
+                --ytkit-v3-accent-fill: #cf352f;
+                --ytkit-v3-accent-fill-hover: #b92c27;
                 --ytkit-v3-success: #45d978;
                 width: min(1440px, calc(100vw - 48px)) !important;
                 height: min(94vh, 920px) !important;
@@ -838,7 +842,7 @@
 
             #ytkit-settings-panel .ytkit-mediadl-banner__btn--accent,
             #ytkit-settings-panel .ytkit-mediadl-banner__btn.is-success {
-                background: var(--ytkit-v3-accent) !important;
+                background: var(--ytkit-v3-accent-fill) !important;
                 color: #fff !important;
             }
 
@@ -953,6 +957,15 @@
                 left: 23px !important;
                 background: #fff !important;
                 transform: none !important;
+            }
+
+            /* The toggle's <input> is opacity:0 and this sheet resets the track's
+               box-shadow, so without an explicit rule here the panel's primary
+               control has NO visible keyboard focus indicator (the lower-
+               specificity command-center focus rules lose the !important war). */
+            #ytkit-settings-panel .ytkit-switch:focus-within .ytkit-switch-track {
+                border-color: var(--ytkit-v3-accent) !important;
+                box-shadow: 0 0 0 2px var(--ytkit-v3-bg), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb), 0.75) !important;
             }
 
             #ytkit-settings-panel .ytkit-switch-icon {
@@ -1183,13 +1196,13 @@
             #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
                 min-width: 120px !important;
                 padding-inline: 24px !important;
-                background: var(--ytkit-v3-accent) !important;
+                background: var(--ytkit-v3-accent-fill) !important;
                 color: #fff !important;
                 box-shadow: none !important;
             }
 
             #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary:hover {
-                background: #ff6b61 !important;
+                background: var(--ytkit-v3-accent-fill-hover) !important;
                 color: #fff !important;
             }
 
@@ -1202,7 +1215,9 @@
                 --ytkit-v3-border-strong: rgba(15,23,42,0.16);
                 --ytkit-v3-text: #17202b;
                 --ytkit-v3-muted: #5f6b79;
-                --ytkit-v3-subtle: #7d8997;
+                /* #7d8997 on #f7f8fa was 3.36:1 — below AA for the placeholder,
+                   version, and nav-count text that consume this token. */
+                --ytkit-v3-subtle: #66707d;
                 --ytkit-v3-accent: #cf352f;
                 --ytkit-v3-accent-rgb: 207,53,47;
                 --ytkit-v3-success: #168845;
@@ -4901,7 +4916,14 @@
                 const settings = getSettings();
                 if (!settings) return {};
                 settings.aiSummaryArtifactsData = artifactService.sanitizeArtifactStore(next);
-                try { void saveSettings(settings); } catch (_) { /* reason: caller surfaces persistence failures */ }
+                try {
+                    const write = saveSettings(settings);
+                    // An async save rejection is otherwise unobserved while the
+                    // UI already shows the artifact as saved.
+                    if (write?.catch) write.catch(() => {
+                        showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
+                    });
+                } catch (_) { /* reason: caller surfaces synchronous persistence failures */ }
                 return settings.aiSummaryArtifactsData;
             }
 
@@ -15258,8 +15280,20 @@
                 _beginDrag(event) {
                     if (!this._frame || event?.button > 0) return;
                     event?.preventDefault?.();
+                    // A second pointerdown while a drag is live must not overwrite
+                    // this._drag — that would permanently leak the previous
+                    // capture-phase move listener.
+                    this._removeDragListeners();
                     this._clampLayout();
                     const pointerId = event?.pointerId;
+                    // Capture the pointer so move/up events keep flowing when the
+                    // cursor outruns the frame into the cross-origin chat iframe
+                    // (or leaves the window); otherwise the drag strands with
+                    // listeners attached and the layout is never persisted.
+                    if (pointerId != null) {
+                        try { event.currentTarget?.setPointerCapture?.(pointerId); }
+                        catch { /* reason: capture is best-effort; drag still works inside the frame */ }
+                    }
                     const startX = Number(event?.clientX) || 0;
                     const startY = Number(event?.clientY) || 0;
                     const originX = this._layout.x;
@@ -17300,9 +17334,18 @@
                         });
                         this._mutationBudgetHandle = handle;
                         Promise.resolve(handle.promise).then((result) => {
+                            if (result?.cancelled && result.processed < cards.length) {
+                                // Requeue the cancelled tail ahead of newly
+                                // discovered cards — cancelling at index N used to
+                                // silently drop every card past N, leaving
+                                // hidden/blocked videos visible until the next
+                                // full navigation rescan.
+                                pendingMutationCards = cards.slice(result.processed).concat(pendingMutationCards);
+                            }
                             if (this._mutationBudgetHandle !== handle) return;
                             this._mutationBudgetHandle = null;
                             this._recordScanDiagnostics(result);
+                            if (pendingMutationCards.length) scheduleMutationBatch();
                             if (batchTimeout) clearTimeout(batchTimeout);
                             batchTimeout = setTimeout(processBatch, 300);
                         });
@@ -24960,10 +25003,24 @@
                 for (const card of Array.from(_cards.keys())) {
                     if (card?.isConnected === false) _forgetCard(card);
                 }
-                if (_cards.size <= _MAX_TRACKED_CARDS) return;
-                for (const card of Array.from(_cards.keys())) {
-                    if (_cards.size <= _MAX_TRACKED_CARDS) break;
-                    if (!_visibleCards.has(card)) _forgetCard(card);
+                if (_cards.size > _MAX_TRACKED_CARDS) {
+                    for (const card of Array.from(_cards.keys())) {
+                        if (_cards.size <= _MAX_TRACKED_CARDS) break;
+                        if (!_visibleCards.has(card)) _forgetCard(card);
+                    }
+                }
+                // _results / _negativeUntil accumulate one entry per videoId ever
+                // resolved; without eviction an hours-long feed session retains
+                // thousands of dead records. Keep results only for videos still
+                // tracked by a card, and sweep expired negative-cache entries.
+                if (_results.size > _MAX_TRACKED_CARDS) {
+                    for (const videoId of Array.from(_results.keys())) {
+                        if (!_cardsByVideo.has(videoId)) _results.delete(videoId);
+                    }
+                }
+                const nowTs = now();
+                for (const [videoId, until] of _negativeUntil) {
+                    if (until <= nowTs) _negativeUntil.delete(videoId);
                 }
             }
 
@@ -26154,7 +26211,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.49.1';
+    const YTKIT_VERSION = '4.49.2';
 
     // ── Z-Index Hierarchy ──
     const Z = {
