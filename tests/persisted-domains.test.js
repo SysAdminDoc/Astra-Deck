@@ -53,6 +53,37 @@ test('legacy backup fixtures v1-v4 migrate deterministically', () => {
     assert.equal(persisted.migrateBackup(fixture(4)).settingsSchemaVersion, 7);
 });
 
+test('AI summaries migrate from both v4 backup shapes into the aiSummaries domain', () => {
+    const artifact = {
+        artifactId: 'abcdefghijk_1720972800000',
+        videoId: 'abcdefghijk',
+        summary: 'A validated summary.',
+        bullets: [{ text: 'point', citations: ['C1'] }],
+        citations: { C1: { timestamp: '0:01', startSeconds: 1 } },
+        generatedAt: '2026-07-14T00:00:00.000Z'
+    };
+    // Pre-4.49.7 backups embedded the store inside the settings bag.
+    const legacyShape = persisted.migrateBackup({
+        exportVersion: 4,
+        backupSchemaVersion: 1,
+        settings: { hideHomeFeed: true, aiSummaryArtifactsData: { [artifact.artifactId]: artifact } }
+    });
+    assert.ok(legacyShape.domains.aiSummaries, 'legacy in-settings store must reach the aiSummaries domain');
+    assert.deepEqual(Object.keys(legacyShape.domains.aiSummaries), [artifact.artifactId]);
+    // 4.49.7+ v4 backups export the store as a top-level field.
+    const topLevelShape = persisted.migrateBackup({
+        exportVersion: 4,
+        backupSchemaVersion: 1,
+        settings: { hideHomeFeed: true },
+        aiSummaries: { [artifact.artifactId]: artifact }
+    });
+    assert.deepEqual(Object.keys(topLevelShape.domains.aiSummaries), [artifact.artifactId]);
+    // The registry classifies the new top-level key as an included domain.
+    const domain = persisted.DURABLE_DOMAIN_REGISTRY.find((entry) => entry.id === 'aiSummaries');
+    assert.equal(domain?.key, 'ytkit-ai-summaries');
+    assert.equal(domain?.backup, 'include');
+});
+
 test('legacy filtered-video alias and allowed-video exceptions migrate through the public boundary', () => {
     const migratedAlias = persisted.migrateBackup({
         exportVersion: 2,

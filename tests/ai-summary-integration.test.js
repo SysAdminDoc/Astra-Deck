@@ -20,11 +20,22 @@ test('AI artifact core loads before every summary consumer and is bundled for us
     assert.match(read('sync-userscript.js'), /extension\/core\/ai-summary-artifacts\.js/);
 });
 
-test('AI summaries persist through the settings backup schema without exposing credentials', () => {
-    assert.deepEqual(defaults.aiSummaryArtifactsData, {});
-    assert.match(read('extension/core/settings-schema.js'), /key: "aiSummaryArtifactsData"[\s\S]*type: "object"[\s\S]*risk: "safe"/);
-    assert.match(ytkit, /summarySanitizer\(sanitized\.aiSummaryArtifactsData\)/);
-    assert.match(ytkit, /settingsManager\.save\(appState\.settings\)/);
+test('AI summaries live in their own storage key, not the settings bag', () => {
+    // v4.49.7: artifacts moved out of ytSuiteSettings so settings saves and
+    // YTKIT_SETTINGS_REPLACED broadcasts stop shipping the ≤1.5 MB store to
+    // every tab. The bag must not re-grow the key and legacy stores must be
+    // extracted (never sanitize-dropped) on load and import.
+    assert.equal(Object.prototype.hasOwnProperty.call(defaults, 'aiSummaryArtifactsData'), false);
+    assert.doesNotMatch(read('extension/core/settings-schema.js'), /key: "aiSummaryArtifactsData"/);
+    assert.match(ytkit, /aiSummaries: 'ytkit-ai-summaries'/);
+    assert.match(ytkit, /_extractLegacyArtifacts\(savedSettings\)/);
+    assert.match(ytkit, /StorageManager\.setSync\(STORAGE_KEYS\.aiSummaries, clean\)/);
+    // Old backups carried the store inside settings; the raw copy must be
+    // read before sanitization and routed into the new key on import.
+    assert.match(ytkit, /importedData\.settings\?\.aiSummaryArtifactsData/);
+    assert.match(ytkit, /aiSummaries: StorageManager\.get\(STORAGE_KEYS\.aiSummaries, \{\}\)/);
+    // New backups export the store as a top-level field.
+    assert.match(ytkit, /\baiSummaries,\s*\n\s*exportVersion: 4/);
     assert.doesNotMatch(read('extension/core/ai-summary-artifacts.js'), /apiKey|credential/i);
 });
 
