@@ -63,6 +63,41 @@
     }
 
     // ──────────────────────────────────────────────────────────────────
+    // Background resource release (data-ytkit-resource-unlock)
+    // ──────────────────────────────────────────────────────────────────
+    // Install from document_start so YouTube cannot cache the native methods
+    // first. The ISOLATED-world CPU Tamer controls the opt-in through an html
+    // attribute; no extension APIs or settings cross into MAIN world.
+    var _resourceUnlock = null;
+    var _createResourceUnlockBridge = globalThis.YTKitCore &&
+        globalThis.YTKitCore.createResourceUnlockBridge;
+    if (typeof _createResourceUnlockBridge === 'function') {
+        _resourceUnlock = _createResourceUnlockBridge({
+            root: window,
+            document: document,
+            onStatus: function(stats) {
+                try {
+                    document.documentElement.setAttribute(
+                        'data-ytkit-resource-lock-stats',
+                        JSON.stringify(stats)
+                    );
+                } catch (e) {
+                    // reason: diagnostics must not affect page resource handling
+                }
+            }
+        });
+        _resourceUnlock.install();
+    }
+
+    function _syncResourceUnlock() {
+        if (!_resourceUnlock) return;
+        var enabled = document.documentElement.getAttribute('data-ytkit-resource-unlock') === 'on';
+        _resourceUnlock.setEnabled(enabled);
+    }
+    _obsRegister(['data-ytkit-resource-unlock'], _syncResourceUnlock);
+    _syncResourceUnlock();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 1: codec blocker (data-ytkit-codec)
     // ──────────────────────────────────────────────────────────────────
 (function() {
