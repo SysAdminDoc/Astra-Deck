@@ -3047,6 +3047,417 @@
   "settingsImportHistoryLabel": {
     "message": "Import History"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - Barra laterale di Firefox"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - Pannello di controllo"
+  },
+  "spAgeNever": {
+    "message": "mai"
+  },
+  "spCategory_comments": {
+    "message": "Commenti"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "Diagnostica sviluppo"
+  },
+  "spCategory_enrichment": {
+    "message": "Arricchimento"
+  },
+  "spCategory_feed": {
+    "message": "Feed"
+  },
+  "spCategory_general": {
+    "message": "Generale"
+  },
+  "spCategory_nav": {
+    "message": "Navigazione"
+  },
+  "spCategory_playback_audio": {
+    "message": "Riproduzione e audio"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "Profili privacy"
+  },
+  "spCategory_research_ai": {
+    "message": "IA di ricerca"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "Player video"
+  },
+  "spContextChecking": {
+    "message": "Controllo scheda"
+  },
+  "spContextYouTubeTab": {
+    "message": "Scheda YouTube"
+  },
+  "spEmptyNoTab": {
+    "message": "Nessuna scheda YouTube attiva."
+  },
+  "spEmptyTitleError": {
+    "message": "Richiede un aggiornamento"
+  },
+  "spEmptyTitleIdle": {
+    "message": "In attesa di segnale"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "Tutto a posto"
+  },
+  "spExternalBudgetTpl": {
+    "message": "budget {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "cache {state}"
+  },
+  "spExternalCopy": {
+    "message": "Monitora lo stato delle richieste di SponsorBlock, DeArrow e RYD."
+  },
+  "spExternalEmptyNoData": {
+    "message": "Nessun servizio esterno è stato usato in questa sessione. Riproduci o naviga una volta per raccogliere lo stato delle richieste."
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "Nessuna richiesta osservata finora"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "Lo script dei contenuti non risponde. Ricarica YouTube, poi aggiorna lo stato delle API esterne."
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "Riconnetti lo stato delle integrazioni"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "Apri YouTube per vedere lo stato delle richieste di SponsorBlock, DeArrow e RYD."
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "Apri YouTube per controllare le integrazioni"
+  },
+  "spExternalFallbackTpl": {
+    "message": "fallback {state}"
+  },
+  "spExternalKicker": {
+    "message": "Integrazioni"
+  },
+  "spExternalListAria": {
+    "message": "Elenco dello stato delle API esterne"
+  },
+  "spExternalNoRequests": {
+    "message": "Nessuna richiesta osservata finora."
+  },
+  "spExternalOkAgoTpl": {
+    "message": "ok {age} fa"
+  },
+  "spExternalTitle": {
+    "message": "Stato delle API esterne"
+  },
+  "spLocalOnly": {
+    "message": "Solo locale"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "Commenti"
+  },
+  "spMeta_feed": {
+    "message": "Feed"
+  },
+  "spMeta_global": {
+    "message": "Globale"
+  },
+  "spMeta_player": {
+    "message": "Player"
+  },
+  "spMeta_safe": {
+    "message": "Sicuro"
+  },
+  "spMeta_watch": {
+    "message": "Pagina di visione"
+  },
+  "spOverviewContextLabel": {
+    "message": "Contesto"
+  },
+  "spOverviewCopy": {
+    "message": "Apri una scheda YouTube per trasmettere la diagnostica, poi usa le impostazioni rapide per il ripristino in tempo reale."
+  },
+  "spOverviewKicker": {
+    "message": "Area di lavoro in tempo reale"
+  },
+  "spOverviewSummaryAria": {
+    "message": "Riepilogo del pannello"
+  },
+  "spOverviewTitle": {
+    "message": "Stato dell'area di lavoro a colpo d'occhio"
+  },
+  "spPerfCopy": {
+    "message": "Evidenzia le funzioni ad avvio lento nella scheda YouTube attiva."
+  },
+  "spPerfEmptyNoData": {
+    "message": "Avvia la riproduzione o naviga una volta, poi aggiorna per acquisire i tempi delle funzioni."
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "Ancora nessun tempo di avvio"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "Lo script dei contenuti non risponde. Ricarica la scheda YouTube, poi aggiorna la diagnostica."
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "Riconnetti la scheda attiva"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "Apri YouTube nella scheda attiva, poi aggiorna per misurare i tempi di avvio."
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "Apri YouTube per misurare l'avvio"
+  },
+  "spPerfKicker": {
+    "message": "Runtime"
+  },
+  "spPerfListAria": {
+    "message": "Elenco dei tempi di avvio delle funzioni"
+  },
+  "spPerfTitle": {
+    "message": "Tempi di avvio delle funzioni"
+  },
+  "spPerfTotalTpl": {
+    "message": "{count} misurate"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "Apre i video in modalità teatro."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "Scalda i colori del player per la visione notturna."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "Rimuove i parametri di tracciamento dai link copiati."
+  },
+  "spq_commentSearch_desc": {
+    "message": "Filtra i commenti della pagina di visione in linea."
+  },
+  "spq_deArrow_desc": {
+    "message": "Sostituisce titoli e miniature clickbait."
+  },
+  "spq_debugMode_desc": {
+    "message": "Registra diagnostica locale dettagliata per la risoluzione dei problemi."
+  },
+  "spq_debugMode_name": {
+    "message": "Registrazione diagnostica"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "Monitora le pause e il tempo di visione giornaliero."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "Impedisce l'avvio automatico del video successivo."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "Disattiva riproduzione automatica"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "Impedisce ai feed di caricarsi all'infinito."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "Limita lo scorrimento infinito"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "Svuota la colonna laterale della pagina di visione."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "Mantiene visibili i controlli essenziali durante lo scorrimento."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "Mantiene costante la velocità di riproduzione tra i video."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Esamina ogni servizio che Astra Deck può contattare."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "Pannello flussi di dati"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Rimuove le sezioni Shorts e i link di navigazione."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "Salta i segmenti sponsorizzati segnalati dalla community."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "Leggi, scorri ed esporta i sottotitoli."
+  },
+  "spRefreshAria": {
+    "message": "Aggiorna tutte le sezioni del pannello"
+  },
+  "spRefreshBtn": {
+    "message": "Aggiorna"
+  },
+  "spReloadPanel": {
+    "message": "Ricarica pannello"
+  },
+  "spReloadPanelAria": {
+    "message": "Ricarica il pannello Astra Deck"
+  },
+  "spRiskTpl": {
+    "message": "Rischio: {risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}. Salvataggio non riuscito. Prova ad aggiornare il pannello."
+  },
+  "spScopeTpl": {
+    "message": "Ambito: {scope}"
+  },
+  "spSelectorCopy": {
+    "message": "Rileva la deriva del DOM prima che rompa un controllo."
+  },
+  "spSelectorDriftTpl": {
+    "message": "{count} deriva"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "Naviga su YouTube una volta, poi aggiorna per campionare le superfici monitorate da questo pannello."
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "Nessuna superficie campionata finora"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "Lo script dei contenuti non risponde. Ricarica YouTube, poi aggiorna la diagnostica."
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "Riconnetti lo stato dei selettori"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "Apri YouTube nella scheda attiva per verificare se i selettori di pagina sono ancora validi."
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "Apri YouTube per controllare l'aderenza della pagina"
+  },
+  "spSelectorErrTpl": {
+    "message": "{count} err"
+  },
+  "spSelectorHighChurn": {
+    "message": "alta variabilità"
+  },
+  "spSelectorHitsTpl": {
+    "message": "{count} riscontri"
+  },
+  "spSelectorKicker": {
+    "message": "Aderenza pagina"
+  },
+  "spSelectorListAria": {
+    "message": "Elenco dello stato dei selettori"
+  },
+  "spSelectorMissTpl": {
+    "message": "{count} mancati"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "richiede acquisizione"
+  },
+  "spSelectorTitle": {
+    "message": "Salute selettori"
+  },
+  "spSelectorTotalTpl": {
+    "message": "{count} superfici"
+  },
+  "spSettingsClearAria": {
+    "message": "Cancella il filtro delle impostazioni"
+  },
+  "spSettingsClearFilter": {
+    "message": "Cancella filtro"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "Cancella il filtro delle impostazioni rapide"
+  },
+  "spSettingsCopy": {
+    "message": "Gli interruttori raggruppati salvano subito e si sincronizzano con le schede YouTube aperte."
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} attivi"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "Nessuna impostazione corrisponde."
+  },
+  "spSettingsEmptyMsg": {
+    "message": "Impossibile caricare le impostazioni rapide. Ricarica il pannello o usa il popup della barra degli strumenti su una scheda YouTube per gestire tutti i controlli di Astra Deck."
+  },
+  "spSettingsEmptyTitle": {
+    "message": "Nessuna impostazione rapida disponibile"
+  },
+  "spSettingsErrorMsg": {
+    "message": "Impossibile caricare le impostazioni rapide perché l'archiviazione del browser non è disponibile. Ricarica il pannello o usa il popup della barra degli strumenti quando il contesto dell'estensione è pronto."
+  },
+  "spSettingsErrorTitle": {
+    "message": "Impostazioni rapide non disponibili"
+  },
+  "spSettingsKicker": {
+    "message": "Applica live"
+  },
+  "spSettingsListAria": {
+    "message": "Interruttori delle impostazioni"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "Nessuna impostazione rapida corrispondente"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "Nessuna impostazione corrisponde a \"{query}\". Cancella il filtro per tornare a tutti i controlli."
+  },
+  "spSettingsSearchAria": {
+    "message": "Filtra le impostazioni per nome, rischio, ambito o categoria"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "Filtra impostazioni, rischio, ambito o categoria"
+  },
+  "spSettingsTitle": {
+    "message": "Impostazioni rapide"
+  },
+  "spSkipToSettings": {
+    "message": "Vai alle impostazioni"
+  },
+  "spStateUnknown": {
+    "message": "sconosciuto"
+  },
+  "spStatSize": {
+    "message": "Dimensione"
+  },
+  "spStatUnavailable": {
+    "message": "Non disponibile"
+  },
+  "spStatusDisabledTpl": {
+    "message": "{name} disattivato"
+  },
+  "spStatusEnabledTpl": {
+    "message": "{name} attivato"
+  },
+  "spStatusOpenYouTube": {
+    "message": "Apri YouTube per la diagnostica in tempo reale"
+  },
+  "spStatusRefreshFailed": {
+    "message": "Aggiornamento non riuscito — riprova"
+  },
+  "spStatusRefreshing": {
+    "message": "Aggiornamento..."
+  },
+  "spStatusSaveFailed": {
+    "message": "Impossibile salvare l'impostazione"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "Diagnostica aggiornata; impossibile caricare le impostazioni rapide"
+  },
+  "spStatusUpdated": {
+    "message": "Diagnostica in tempo reale aggiornata"
+  },
+  "spStorageCopy": {
+    "message": "Conta impostazioni locali, video nascosti, canali bloccati e note salvate."
+  },
+  "spStorageStatsAria": {
+    "message": "Statistiche di archiviazione"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "Ricarica il contesto dell'estensione per leggere i dati locali."
+  },
+  "spSubtitle": {
+    "message": "Diagnostica in tempo reale"
+  },
+  "spVersionAria": {
+    "message": "Versione dell'estensione"
+  },
   "speedBtnAriaTpl": {
     "message": "Velocita di riproduzione predefinita .... Clicca per cambiare."
   },

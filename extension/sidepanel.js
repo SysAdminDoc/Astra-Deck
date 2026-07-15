@@ -10,6 +10,113 @@ const ext = globalThis.YTKitBrowser?.hasNamespace
 
 const $ = (sel) => document.querySelector(sel);
 
+// ── i18n ──
+// Mirrors popup.js: resolves user-facing strings via ext.i18n by
+// default, honouring the manual locale override the popup language
+// dropdown persists to ext.storage.local `_localeOverride`. English
+// literals stay inline at every call site as the fallback so the
+// source remains self-documenting and static previews keep working.
+const I18N = { override: null, map: null, ready: false };
+
+// Bundled locales — must match the directories under extension/_locales/.
+const BUNDLED_LOCALES = Object.freeze([
+    'ar', 'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
+]);
+const BUNDLED_LOCALE_SET = new Set(BUNDLED_LOCALES);
+
+// Defense: reject locale strings that aren't on the allowlist or that
+// contain path-separator / parent-segment characters (same guard as
+// popup.js — the storage key is a public surface).
+function isValidLocaleTag(locale) {
+    if (typeof locale !== 'string') return false;
+    if (!locale || locale === 'auto') return false;
+    if (locale.length > 16) return false;
+    if (!/^[A-Za-z]{2,3}(?:[_-][A-Za-z0-9]{2,8})?$/.test(locale)) return false;
+    return BUNDLED_LOCALE_SET.has(locale);
+}
+
+async function initI18n() {
+    try {
+        const items = await ext.storage.local.get('_localeOverride') || {};
+        const locale = (items._localeOverride || '').trim();
+        if (!locale || locale === 'auto') { I18N.ready = true; return; }
+        if (!isValidLocaleTag(locale)) {
+            // Stale or hostile override — fall back to ext.i18n auto-detect.
+            I18N.ready = true;
+            return;
+        }
+        const url = ext.runtime.getURL(`_locales/${locale}/messages.json`);
+        const resp = await fetch(url);
+        if (!resp.ok) { I18N.ready = true; return; }
+        const json = await resp.json();
+        const flat = {};
+        for (const [k, v] of Object.entries(json)) {
+            if (v && typeof v === 'object' && typeof v.message === 'string') flat[k] = v.message;
+        }
+        I18N.override = locale;
+        I18N.map = flat;
+        I18N.ready = true;
+    } catch (_) { I18N.ready = true; }
+}
+
+// Keep <html lang>/<html dir> truthful for assistive tech and RTL
+// locales (ar/he/fa/ur), mirroring popup.js applyDocumentLanguage().
+// Locale tags are stored with an underscore (pt_BR) but the lang
+// attribute wants BCP-47 (pt-BR).
+const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur']);
+
+function applyDocumentLanguage() {
+    try {
+        const resolvedLocale = I18N.override
+            || (ext?.i18n?.getUILanguage && ext.i18n.getUILanguage())
+            || 'en';
+        if (resolvedLocale) {
+            const bcp47 = resolvedLocale.replace('_', '-');
+            document.documentElement.lang = bcp47;
+            const base = bcp47.split('-')[0].toLowerCase();
+            document.documentElement.dir = RTL_LOCALES.has(base) ? 'rtl' : 'ltr';
+        }
+    } catch (_) { /* reason: lang/dir attributes are best-effort a11y metadata */ }
+}
+
+function t(key, fallback) {
+    try {
+        if (I18N.map && Object.prototype.hasOwnProperty.call(I18N.map, key)) {
+            const m = I18N.map[key];
+            if (m) return m;
+        }
+        if (ext?.i18n?.getMessage) {
+            const m = ext.i18n.getMessage(key);
+            if (m) return m;
+        }
+    } catch (_) { /* reason: i18n is best-effort */ }
+    return (fallback != null) ? fallback : key;
+}
+
+function applyI18n(root = document) {
+    // Walk every element with data-i18n* attributes and populate text /
+    // title / aria-label / placeholder. Falls back to the existing inline
+    // text so an element without a translated key still reads English.
+    root.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (!key) return;
+        const fallback = el.textContent;
+        const v = t(key, fallback);
+        if (v !== fallback) el.textContent = v;
+    });
+    const ATTR_KEYS = ['title', 'placeholder', 'aria-label'];
+    ATTR_KEYS.forEach((attr) => {
+        const dataAttr = `data-i18n-attr-${attr}`;
+        root.querySelectorAll(`[${dataAttr}]`).forEach((el) => {
+            const key = el.getAttribute(dataAttr);
+            if (!key) return;
+            const fallback = el.getAttribute(attr) || '';
+            const v = t(key, fallback);
+            if (v !== fallback) el.setAttribute(attr, v);
+        });
+    });
+}
+
 const versionEl = $('#sp-version');
 const contextChip = $('#sp-context-chip');
 const overviewContext = $('#sp-overview-context');
@@ -60,9 +167,9 @@ function setRefreshStatus(label, state = 'idle') {
 }
 
 function emptyTitleForState(state) {
-    if (state === 'error') return 'Needs a refresh';
-    if (state === 'success') return 'All clear';
-    return 'Waiting for signal';
+    if (state === 'error') return t('spEmptyTitleError', 'Needs a refresh');
+    if (state === 'success') return t('spEmptyTitleSuccess', 'All clear');
+    return t('spEmptyTitleIdle', 'Waiting for signal');
 }
 
 function hasTabsCreate() {
@@ -177,19 +284,33 @@ function formatCategory(category) {
         .join(' ');
 }
 
+// Localized wrapper: schema category ids ("watch-player") map to
+// spCategory_* locale keys; the formatted English id stays the fallback
+// so unknown categories still render readable text.
+function localizeCategory(category) {
+    const id = String(category || 'general').replace(/-/g, '_');
+    return t(`spCategory_${id}`, formatCategory(category));
+}
+
 function formatMeta(value) {
     return String(value || '')
         .replace(/-/g, ' ')
         .replace(/^./, c => c.toUpperCase());
 }
 
+// Localized wrapper for schema metadata vocabulary (risk/scope values).
+function localizeMeta(value) {
+    const id = String(value || '').toLowerCase().replace(/-/g, '_');
+    return t(`spMeta_${id}`, formatMeta(value));
+}
+
 function rowLabel(humanName, on, entry) {
     const pieces = [
         humanName,
-        on ? 'Enabled' : 'Disabled',
-        formatCategory(entry.category),
-        `${formatMeta(entry.risk)} risk`,
-        `${formatMeta(entry.scope)} scope`
+        on ? t('toggleStateOn', 'Enabled') : t('toggleStateOff', 'Disabled'),
+        localizeCategory(entry.category),
+        t('spRiskTpl', '{risk} risk').replace('{risk}', localizeMeta(entry.risk)),
+        t('spScopeTpl', '{scope} scope').replace('{scope}', localizeMeta(entry.scope))
     ];
     return pieces.filter(Boolean).join('. ');
 }
@@ -199,9 +320,9 @@ async function renderPerf(tab) {
     perfList.textContent = '';
     setText(perfTotal, '');
     if (!tab) {
-        showEmpty(perfEmpty, 'Open YouTube in the active tab, then refresh to measure startup timing.', 'idle', {
-            title: 'Open YouTube to measure startup',
-            actionLabel: hasTabsCreate() ? 'Open YouTube' : '',
+        showEmpty(perfEmpty, t('spPerfEmptyNoTab', 'Open YouTube in the active tab, then refresh to measure startup timing.'), 'idle', {
+            title: t('spPerfEmptyNoTabTitle', 'Open YouTube to measure startup'),
+            actionLabel: hasTabsCreate() ? t('openYouTube', 'Open YouTube') : '',
             action: openYouTubeTab
         });
         return;
@@ -210,16 +331,16 @@ async function renderPerf(tab) {
 
     const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_FEATURE_PERF' });
     if (!resp || !resp.ok || !Array.isArray(resp.features)) {
-        showEmpty(perfEmpty, 'Content script is not responding. Reload the YouTube tab, then refresh diagnostics.', 'error', {
-            title: 'Reconnect the active tab'
+        showEmpty(perfEmpty, t('spPerfEmptyNoResponse', 'Content script is not responding. Reload the YouTube tab, then refresh diagnostics.'), 'error', {
+            title: t('spPerfEmptyNoResponseTitle', 'Reconnect the active tab')
         });
         return;
     }
-    setText(perfTotal, `${resp.totalFeatures} measured`);
+    setText(perfTotal, t('spPerfTotalTpl', '{count} measured').replace('{count}', String(resp.totalFeatures)));
     const top = resp.features.slice(0, 20);
     if (!top.length) {
-        showEmpty(perfEmpty, 'Start playback or navigate once, then refresh to capture feature timing.', 'idle', {
-            title: 'No startup timings yet'
+        showEmpty(perfEmpty, t('spPerfEmptyNoData', 'Start playback or navigate once, then refresh to capture feature timing.'), 'idle', {
+            title: t('spPerfEmptyNoDataTitle', 'No startup timings yet')
         });
         return;
     }
@@ -250,8 +371,8 @@ async function renderSelectorHealth(tab) {
     selectorList.textContent = '';
     setText(selectorTotal, '');
     if (!tab) {
-        showEmpty(selectorEmpty, 'Open YouTube in the active tab to check whether page selectors still fit.', 'idle', {
-            title: 'Open YouTube to check page fit'
+        showEmpty(selectorEmpty, t('spSelectorEmptyNoTab', 'Open YouTube in the active tab to check whether page selectors still fit.'), 'idle', {
+            title: t('spSelectorEmptyNoTabTitle', 'Open YouTube to check page fit')
         });
         return;
     }
@@ -259,16 +380,16 @@ async function renderSelectorHealth(tab) {
 
     const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_SELECTOR_HEALTH' });
     if (!resp || !resp.ok || !Array.isArray(resp.surfaces)) {
-        showEmpty(selectorEmpty, 'Content script is not responding. Reload YouTube, then refresh diagnostics.', 'error', {
-            title: 'Reconnect selector health'
+        showEmpty(selectorEmpty, t('spSelectorEmptyNoResponse', 'Content script is not responding. Reload YouTube, then refresh diagnostics.'), 'error', {
+            title: t('spSelectorEmptyNoResponseTitle', 'Reconnect selector health')
         });
         return;
     }
-    setText(selectorTotal, `${resp.totalSurfaces} surfaces`);
+    setText(selectorTotal, t('spSelectorTotalTpl', '{count} surfaces').replace('{count}', String(resp.totalSurfaces)));
     const top = resp.surfaces.slice(0, 12);
     if (!top.length) {
-        showEmpty(selectorEmpty, 'Navigate YouTube once, then refresh to sample the surfaces this dashboard tracks.', 'idle', {
-            title: 'No surfaces sampled yet'
+        showEmpty(selectorEmpty, t('spSelectorEmptyNoData', 'Navigate YouTube once, then refresh to sample the surfaces this dashboard tracks.'), 'idle', {
+            title: t('spSelectorEmptyNoDataTitle', 'No surfaces sampled yet')
         });
         return;
     }
@@ -277,14 +398,14 @@ async function renderSelectorHealth(tab) {
         const name = document.createElement('span');
         name.className = 'sh-name';
         name.textContent = surface.surface
-            + (surface.highChurn ? ' high churn' : '')
-            + (surface.needsFreshCapture ? ' needs capture' : '');
+            + (surface.highChurn ? ' ' + t('spSelectorHighChurn', 'high churn') : '')
+            + (surface.needsFreshCapture ? ' ' + t('spSelectorNeedsCapture', 'needs capture') : '');
         const stats = document.createElement('span');
         stats.className = 'sh-stats';
-        const parts = [`${surface.hits || 0} hits`];
-        if (surface.errors > 0) parts.push(`${surface.errors} err`);
-        if (surface.misses > 0) parts.push(`${surface.misses} miss`);
-        if (surface.shapeDrifts > 0) parts.push(`${surface.shapeDrifts} drift`);
+        const parts = [t('spSelectorHitsTpl', '{count} hits').replace('{count}', String(surface.hits || 0))];
+        if (surface.errors > 0) parts.push(t('spSelectorErrTpl', '{count} err').replace('{count}', String(surface.errors)));
+        if (surface.misses > 0) parts.push(t('spSelectorMissTpl', '{count} miss').replace('{count}', String(surface.misses)));
+        if (surface.shapeDrifts > 0) parts.push(t('spSelectorDriftTpl', '{count} drift').replace('{count}', String(surface.shapeDrifts)));
         stats.textContent = parts.join(' | ');
         if (surface.errors > 0) stats.classList.add('sh-errors');
         if (surface.shapeDrifts > 0) stats.classList.add('sh-drifts');
@@ -304,7 +425,7 @@ function externalTone(state) {
 
 function externalAge(ts) {
     const n = Number(ts);
-    if (!Number.isFinite(n) || n <= 0) return 'never';
+    if (!Number.isFinite(n) || n <= 0) return t('spAgeNever', 'never');
     const sec = Math.max(0, Math.round((Date.now() - n) / 1000));
     if (sec < 60) return `${sec}s`;
     const min = Math.round(sec / 60);
@@ -314,15 +435,23 @@ function externalAge(ts) {
 
 function externalDetail(service) {
     const parts = [];
-    if (service.lastSuccessTs) parts.push(`ok ${externalAge(service.lastSuccessTs)} ago`);
+    if (service.lastSuccessTs) {
+        parts.push(t('spExternalOkAgoTpl', 'ok {age} ago').replace('{age}', externalAge(service.lastSuccessTs)));
+    }
     if (service.lastErrorClass) parts.push(service.lastErrorClass);
-    if (service.cacheState && service.cacheState !== 'unknown') parts.push(`cache ${service.cacheState}`);
-    if (service.fallbackState) parts.push(`fallback ${service.fallbackState}`);
+    if (service.cacheState && service.cacheState !== 'unknown') {
+        parts.push(t('spExternalCacheTpl', 'cache {state}').replace('{state}', String(service.cacheState)));
+    }
+    if (service.fallbackState) {
+        parts.push(t('spExternalFallbackTpl', 'fallback {state}').replace('{state}', String(service.fallbackState)));
+    }
     const budget = service.requestBudget;
     if (budget && Number.isFinite(Number(budget.used)) && Number.isFinite(Number(budget.limit))) {
-        parts.push(`budget ${budget.used}/${budget.limit}`);
+        parts.push(t('spExternalBudgetTpl', 'budget {used}/{limit}')
+            .replace('{used}', String(budget.used))
+            .replace('{limit}', String(budget.limit)));
     }
-    return parts.join(' | ') || 'No requests observed yet.';
+    return parts.join(' | ') || t('spExternalNoRequests', 'No requests observed yet.');
 }
 
 async function renderExternalHealth(tab) {
@@ -330,8 +459,8 @@ async function renderExternalHealth(tab) {
     externalList.textContent = '';
     setText(externalTotal, '');
     if (!tab) {
-        showEmpty(externalEmpty, 'Open YouTube to see SponsorBlock, DeArrow, and RYD request health.', 'idle', {
-            title: 'Open YouTube to check integrations'
+        showEmpty(externalEmpty, t('spExternalEmptyNoTab', 'Open YouTube to see SponsorBlock, DeArrow, and RYD request health.'), 'idle', {
+            title: t('spExternalEmptyNoTabTitle', 'Open YouTube to check integrations')
         });
         return;
     }
@@ -339,15 +468,16 @@ async function renderExternalHealth(tab) {
 
     const resp = await sendToTab(tab.id, { type: 'YTKIT_GET_EXTERNAL_API_HEALTH' });
     if (!resp || !resp.ok || !Array.isArray(resp.services)) {
-        showEmpty(externalEmpty, 'Content script is not responding. Reload YouTube, then refresh external API health.', 'error', {
-            title: 'Reconnect integration health'
+        showEmpty(externalEmpty, t('spExternalEmptyNoResponse', 'Content script is not responding. Reload YouTube, then refresh external API health.'), 'error', {
+            title: t('spExternalEmptyNoResponseTitle', 'Reconnect integration health')
         });
         return;
     }
-    setText(externalTotal, `${resp.totalServices || resp.services.length} services`);
+    setText(externalTotal, t('externalHealthTotalTpl', '{count} services')
+        .replace('{count}', String(resp.totalServices || resp.services.length)));
     if (!resp.services.length) {
-        showEmpty(externalEmpty, 'No external services have been used in this session. Play or navigate once to collect request health.', 'idle', {
-            title: 'No requests observed yet'
+        showEmpty(externalEmpty, t('spExternalEmptyNoData', 'No external services have been used in this session. Play or navigate once to collect request health.'), 'idle', {
+            title: t('spExternalEmptyNoDataTitle', 'No requests observed yet')
         });
         return;
     }
@@ -359,7 +489,7 @@ async function renderExternalHealth(tab) {
         const state = document.createElement('span');
         state.className = 'eh-state';
         state.dataset.tone = externalTone(service.state);
-        state.textContent = service.state || 'unknown';
+        state.textContent = service.state || t('spStateUnknown', 'unknown');
         const detail = document.createElement('span');
         detail.className = 'eh-detail';
         detail.textContent = externalDetail(service);
@@ -380,10 +510,10 @@ async function renderStorage() {
         const settings = data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object'
             ? data[SETTINGS_KEY] : {};
         const stats = [
-            { label: 'Keys', value: String(keys.length) },
-            { label: 'Size', value: formatBytes(bytes) },
-            { label: 'Settings', value: String(Object.keys(settings).length) },
-            { label: 'Hidden', value: String(countStoredItems(data['ytkit-hidden-videos'])) },
+            { label: t('statKeys', 'Keys'), value: String(keys.length) },
+            { label: t('spStatSize', 'Size'), value: formatBytes(bytes) },
+            { label: t('panelTitle', 'Settings'), value: String(Object.keys(settings).length) },
+            { label: t('statHidden', 'Hidden'), value: String(countStoredItems(data['ytkit-hidden-videos'])) },
         ];
         for (const s of stats) {
             const div = document.createElement('div');
@@ -403,13 +533,13 @@ async function renderStorage() {
         div.className = 'sp-stat';
         const label = document.createElement('span');
         label.className = 'sp-stat-label';
-        label.textContent = 'Storage';
+        label.textContent = t('statStorage', 'Storage');
         const value = document.createElement('strong');
         value.className = 'sp-stat-value';
-        value.textContent = 'Unavailable';
+        value.textContent = t('spStatUnavailable', 'Unavailable');
         const detail = document.createElement('span');
         detail.className = 'sp-stat-detail';
-        detail.textContent = 'Reload the extension context to read local data.';
+        detail.textContent = t('spStorageUnavailableDetail', 'Reload the extension context to read local data.');
         div.appendChild(label);
         div.appendChild(value);
         div.appendChild(detail);
@@ -428,23 +558,28 @@ let _settingsSchema = null;
 let _settingsState = {};
 let _settingsLoadError = '';
 let _settingsMutationController = null;
+// Each entry: [nameKey, nameFallback, descKey, descFallback]. Locale keys
+// resolve through t() at getSchema() time (after initI18n); the English
+// literals stay inline as self-documenting fallbacks. Names reuse popup
+// qt_/feature_ keys where the copy is identical; sidepanel-specific copy
+// lives under spq_* keys.
 const QUICK_SETTINGS = Object.freeze({
-    removeAllShorts: ['Hide Shorts', 'Remove Shorts shelves and navigation links.'],
-    hideRelatedVideos: ['Hide Related Videos', 'Clear the watch-page side rail.'],
-    disableInfiniteScroll: ['Cap Infinite Scroll', 'Stop feeds from loading forever.'],
-    sponsorBlock: ['SponsorBlock', 'Skip crowd-marked sponsor segments.'],
-    deArrow: ['DeArrow', 'Replace clickbait titles and thumbnails.'],
-    commentSearch: ['Comment Search', 'Filter watch-page comments inline.'],
-    disableAutoplayNext: ['Disable Autoplay', 'Stop the next video from starting automatically.'],
-    persistentSpeed: ['Persistent Speed', 'Keep playback speed consistent between videos.'],
-    autoTheaterMode: ['Auto Theater Mode', 'Open videos in theater view.'],
-    blueLightFilter: ['Blue-Light Filter', 'Warm the player for late viewing.'],
-    miniPlayerBar: ['Mini Player Bar', 'Keep essential controls visible while scrolling.'],
-    digitalWellbeing: ['Digital Wellbeing', 'Track breaks and daily viewing time.'],
-    cleanShareUrls: ['Clean Share URLs', 'Remove tracking parameters from copied links.'],
-    transcriptViewer: ['Transcript Sidebar', 'Read, jump through, and export captions.'],
-    debugMode: ['Diagnostic Logging', 'Record detailed local diagnostics for troubleshooting.'],
-    privacyDataFlowPanel: ['Data-Flow Panel', 'Review every service Astra Deck can contact.']
+    removeAllShorts: ['qt_removeAllShorts_name', 'Hide Shorts', 'spq_removeAllShorts_desc', 'Remove Shorts shelves and navigation links.'],
+    hideRelatedVideos: ['feature_hideRelatedVideos_name', 'Hide Related Videos', 'spq_hideRelatedVideos_desc', 'Clear the watch-page side rail.'],
+    disableInfiniteScroll: ['spq_disableInfiniteScroll_name', 'Cap Infinite Scroll', 'spq_disableInfiniteScroll_desc', 'Stop feeds from loading forever.'],
+    sponsorBlock: ['qt_sponsorBlock_name', 'SponsorBlock', 'spq_sponsorBlock_desc', 'Skip crowd-marked sponsor segments.'],
+    deArrow: ['qt_deArrow_name', 'DeArrow', 'spq_deArrow_desc', 'Replace clickbait titles and thumbnails.'],
+    commentSearch: ['qt_commentSearch_name', 'Comment Search', 'spq_commentSearch_desc', 'Filter watch-page comments inline.'],
+    disableAutoplayNext: ['spq_disableAutoplayNext_name', 'Disable Autoplay', 'spq_disableAutoplayNext_desc', 'Stop the next video from starting automatically.'],
+    persistentSpeed: ['qt_persistentSpeed_name', 'Persistent Speed', 'spq_persistentSpeed_desc', 'Keep playback speed consistent between videos.'],
+    autoTheaterMode: ['feature_autoTheaterMode_name', 'Auto Theater Mode', 'spq_autoTheaterMode_desc', 'Open videos in theater view.'],
+    blueLightFilter: ['qt_blueLightFilter_name', 'Blue-Light Filter', 'spq_blueLightFilter_desc', 'Warm the player for late viewing.'],
+    miniPlayerBar: ['qt_miniPlayerBar_name', 'Mini Player Bar', 'spq_miniPlayerBar_desc', 'Keep essential controls visible while scrolling.'],
+    digitalWellbeing: ['qt_digitalWellbeing_name', 'Digital Wellbeing', 'spq_digitalWellbeing_desc', 'Track breaks and daily viewing time.'],
+    cleanShareUrls: ['feature_cleanShareUrls_name', 'Clean Share URLs', 'spq_cleanShareUrls_desc', 'Remove tracking parameters from copied links.'],
+    transcriptViewer: ['qt_transcriptViewer_name', 'Transcript Sidebar', 'spq_transcriptViewer_desc', 'Read, jump through, and export captions.'],
+    debugMode: ['spq_debugMode_name', 'Diagnostic Logging', 'spq_debugMode_desc', 'Record detailed local diagnostics for troubleshooting.'],
+    privacyDataFlowPanel: ['spq_privacyDataFlowPanel_name', 'Data-Flow Panel', 'spq_privacyDataFlowPanel_desc', 'Review every service Astra Deck can contact.']
 });
 
 function getSchema() {
@@ -453,11 +588,14 @@ function getSchema() {
     if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return [];
     _settingsSchema = scope.SETTINGS_SCHEMA
         .filter(entry => entry.type === 'boolean' && QUICK_SETTINGS[entry.key])
-        .map(entry => ({
-            ...entry,
-            quickLabel: QUICK_SETTINGS[entry.key][0],
-            quickDescription: QUICK_SETTINGS[entry.key][1]
-        }));
+        .map(entry => {
+            const spec = QUICK_SETTINGS[entry.key];
+            return {
+                ...entry,
+                quickLabel: t(spec[0], spec[1]),
+                quickDescription: t(spec[2], spec[3])
+            };
+        });
     return _settingsSchema;
 }
 
@@ -522,12 +660,12 @@ function renderSettings(filter) {
     if (_settingsLoadError) {
         setText(overviewSettings, String(schema.length));
         setText(overviewEnabled, '--');
-        if (settingsCount) settingsCount.textContent = 'Unavailable';
+        if (settingsCount) settingsCount.textContent = t('spStatUnavailable', 'Unavailable');
         if (settingsClear) settingsClear.hidden = !query;
-        showEmpty(settingsEmpty, 'Quick settings could not load because browser storage is unavailable. Reload the panel, or use the toolbar popup after the extension context is ready.', 'error', {
-            title: 'Quick settings unavailable',
-            actionLabel: 'Reload panel',
-            actionAriaLabel: 'Reload the Astra Deck panel',
+        showEmpty(settingsEmpty, t('spSettingsErrorMsg', 'Quick settings could not load because browser storage is unavailable. Reload the panel, or use the toolbar popup after the extension context is ready.'), 'error', {
+            title: t('spSettingsErrorTitle', 'Quick settings unavailable'),
+            actionLabel: t('spReloadPanel', 'Reload panel'),
+            actionAriaLabel: t('spReloadPanelAria', 'Reload the Astra Deck panel'),
             action: () => {
                 try { window.location.reload(); } catch (_) { /* reason: reload unavailable in static preview */ }
             }
@@ -546,17 +684,19 @@ function renderSettings(filter) {
     if (settingsCount) {
         settingsCount.textContent = query
             ? `${visible.length}/${schema.length}`
-            : `${enabled}/${schema.length} on`;
+            : t('spSettingsCountOnTpl', '{enabled}/{total} on')
+                .replace('{enabled}', String(enabled))
+                .replace('{total}', String(schema.length));
     }
     if (settingsClear) settingsClear.hidden = !query;
 
     if (visible.length) {
         hideEmpty(settingsEmpty);
     } else if (query) {
-        showEmpty(settingsEmpty, `No settings match "${filter}". Clear the filter to return to all controls.`, 'idle', {
-            title: 'No matching quick settings',
-            actionLabel: settingsClear ? 'Clear filter' : '',
-            actionAriaLabel: 'Clear quick settings filter',
+        showEmpty(settingsEmpty, t('spSettingsNoMatchTpl', 'No settings match "{query}". Clear the filter to return to all controls.').replace('{query}', String(filter)), 'idle', {
+            title: t('spSettingsNoMatchTitle', 'No matching quick settings'),
+            actionLabel: settingsClear ? t('spSettingsClearFilter', 'Clear filter') : '',
+            actionAriaLabel: t('spSettingsClearFilterAria', 'Clear quick settings filter'),
             action: () => {
                 if (!settingsSearch) return;
                 settingsSearch.value = '';
@@ -565,10 +705,10 @@ function renderSettings(filter) {
             }
         });
     } else {
-        showEmpty(settingsEmpty, 'Quick settings could not load. Reload the panel, or use the toolbar popup on a YouTube tab to manage every Astra Deck control.', 'idle', {
-            title: 'No quick settings available',
-            actionLabel: 'Reload panel',
-            actionAriaLabel: 'Reload the Astra Deck panel',
+        showEmpty(settingsEmpty, t('spSettingsEmptyMsg', 'Quick settings could not load. Reload the panel, or use the toolbar popup on a YouTube tab to manage every Astra Deck control.'), 'idle', {
+            title: t('spSettingsEmptyTitle', 'No quick settings available'),
+            actionLabel: t('spReloadPanel', 'Reload panel'),
+            actionAriaLabel: t('spReloadPanelAria', 'Reload the Astra Deck panel'),
             // There is no options page (retired into the popup); reloading the
             // panel re-runs the schema injection that this empty state implies
             // failed. openOptionsPage() here was a silent no-op.
@@ -582,13 +722,13 @@ function renderSettings(filter) {
         const group = document.createElement('section');
         group.className = 'sp-settings-group';
         group.setAttribute('role', 'group');
-        group.setAttribute('aria-label', formatCategory(category));
+        group.setAttribute('aria-label', localizeCategory(category));
 
         const head = document.createElement('div');
         head.className = 'sp-settings-group-head';
         const title = document.createElement('span');
         title.className = 'sp-settings-group-title';
-        title.textContent = formatCategory(category);
+        title.textContent = localizeCategory(category);
         const count = document.createElement('span');
         count.className = 'sp-settings-group-count';
         const enabledInGroup = entries.filter(entry => Boolean(_settingsState[entry.key] ?? entry.defaultValue)).length;
@@ -627,7 +767,7 @@ function renderSettings(filter) {
                 const chip = document.createElement('span');
                 chip.className = 'sp-setting-chip';
                 chip.dataset.tone = tone;
-                chip.textContent = formatMeta(label);
+                chip.textContent = localizeMeta(label);
                 meta.appendChild(chip);
             }
             meta.hidden = exceptionalMeta.length === 0;
@@ -658,8 +798,8 @@ function renderSettings(filter) {
                 if (!saved) {
                     row.dataset.error = 'true';
                     row.setAttribute('aria-checked', String(!next));
-                    row.setAttribute('aria-description', `${humanName}. Save failed. Try refreshing the dashboard.`);
-                    setRefreshStatus('Could not save setting', 'error');
+                    row.setAttribute('aria-description', t('spRowSaveFailedTpl', '{name}. Save failed. Try refreshing the dashboard.').replace('{name}', humanName));
+                    setRefreshStatus(t('spStatusSaveFailed', 'Could not save setting'), 'error');
                     return;
                 }
                 renderSettings(settingsSearch?.value || '');
@@ -669,7 +809,11 @@ function renderSettings(filter) {
                     const refocusTarget = settingsList?.querySelector(`[title^="${CSS.escape(entry.key)} "]`);
                     if (refocusTarget) refocusTarget.focus();
                 } catch (_) { /* reason: CSS.escape or querySelector may fail */ }
-                setRefreshStatus(`${humanName} ${next ? 'enabled' : 'disabled'}`, 'success');
+                setRefreshStatus(
+                    t(next ? 'spStatusEnabledTpl' : 'spStatusDisabledTpl', next ? '{name} enabled' : '{name} disabled')
+                        .replace('{name}', humanName),
+                    'success'
+                );
             });
             row.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -726,11 +870,14 @@ if (ext?.storage?.onChanged) {
 
 async function refresh() {
     setBusy(true);
-    setRefreshStatus('Refreshing...', 'busy');
+    setRefreshStatus(t('spStatusRefreshing', 'Refreshing...'), 'busy');
     try {
         const tab = await getActiveYouTubeTab();
         document.body.dataset.context = tab ? 'ready' : 'local';
-        setContextState(tab ? 'YouTube tab' : 'Local only', tab ? 'ready' : 'warn');
+        setContextState(
+            tab ? t('spContextYouTubeTab', 'YouTube tab') : t('spLocalOnly', 'Local only'),
+            tab ? 'ready' : 'warn'
+        );
         await Promise.all([
             renderPerf(tab),
             renderSelectorHealth(tab),
@@ -740,18 +887,32 @@ async function refresh() {
         const settingsLoaded = await loadSettings();
         renderSettings(settingsSearch?.value || '');
         if (!settingsLoaded) {
-            setRefreshStatus('Diagnostics updated; quick settings could not load', 'warn');
+            setRefreshStatus(t('spStatusSettingsLoadFailed', 'Diagnostics updated; quick settings could not load'), 'warn');
         } else {
-            setRefreshStatus(tab ? 'Live diagnostics updated' : 'Open YouTube for live diagnostics', tab ? 'success' : 'warn');
+            setRefreshStatus(
+                tab
+                    ? t('spStatusUpdated', 'Live diagnostics updated')
+                    : t('spStatusOpenYouTube', 'Open YouTube for live diagnostics'),
+                tab ? 'success' : 'warn'
+            );
         }
     } catch (_) {
         // reason: an unexpected render failure must not strand the only
         // recovery control disabled with a "Refreshing..." status forever.
-        setRefreshStatus('Refresh failed — try again', 'error');
+        setRefreshStatus(t('spStatusRefreshFailed', 'Refresh failed — try again'), 'error');
     } finally {
         setBusy(false);
     }
 }
 
 if (refreshBtn) refreshBtn.addEventListener('click', () => { void refresh(); });
-void refresh();
+
+// Boot: resolve the locale override first so every rendered string —
+// including the cached quick-settings schema labels — reflects the
+// user's language, then localize the static markup and set <html
+// lang/dir> before the first paint of dynamic content.
+void initI18n().then(() => {
+    applyDocumentLanguage();
+    applyI18n();
+    return refresh();
+});

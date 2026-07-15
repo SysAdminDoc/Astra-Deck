@@ -3047,6 +3047,417 @@
   "settingsImportHistoryLabel": {
     "message": "Import History"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - Firefox-Seitenleiste"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - Dashboard"
+  },
+  "spAgeNever": {
+    "message": "nie"
+  },
+  "spCategory_comments": {
+    "message": "Kommentare"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "Entwickler-Diagnose"
+  },
+  "spCategory_enrichment": {
+    "message": "Erweiterungen"
+  },
+  "spCategory_feed": {
+    "message": "Feed"
+  },
+  "spCategory_general": {
+    "message": "Allgemein"
+  },
+  "spCategory_nav": {
+    "message": "Navigation"
+  },
+  "spCategory_playback_audio": {
+    "message": "Wiedergabe und Audio"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "Datenschutzprofile"
+  },
+  "spCategory_research_ai": {
+    "message": "Recherche-KI"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "Video-Player"
+  },
+  "spContextChecking": {
+    "message": "Tab wird geprüft"
+  },
+  "spContextYouTubeTab": {
+    "message": "YouTube-Tab"
+  },
+  "spEmptyNoTab": {
+    "message": "Kein aktiver YouTube-Tab."
+  },
+  "spEmptyTitleError": {
+    "message": "Aktualisierung erforderlich"
+  },
+  "spEmptyTitleIdle": {
+    "message": "Warten auf Signal"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "Alles in Ordnung"
+  },
+  "spExternalBudgetTpl": {
+    "message": "Budget {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "Cache {state}"
+  },
+  "spExternalCopy": {
+    "message": "Verfolgt den Anfragestatus von SponsorBlock, DeArrow und RYD."
+  },
+  "spExternalEmptyNoData": {
+    "message": "In dieser Sitzung wurden keine externen Dienste genutzt. Einmal abspielen oder navigieren, um Anfragedaten zu sammeln."
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "Noch keine Anfragen beobachtet"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "Das Inhaltsskript antwortet nicht. YouTube neu laden und dann den Status externer APIs aktualisieren."
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "Integrationsstatus neu verbinden"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "YouTube öffnen, um den Anfragestatus von SponsorBlock, DeArrow und RYD zu sehen."
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "YouTube öffnen, um Integrationen zu prüfen"
+  },
+  "spExternalFallbackTpl": {
+    "message": "Fallback {state}"
+  },
+  "spExternalKicker": {
+    "message": "Integrationen"
+  },
+  "spExternalListAria": {
+    "message": "Liste des Status externer APIs"
+  },
+  "spExternalNoRequests": {
+    "message": "Noch keine Anfragen beobachtet."
+  },
+  "spExternalOkAgoTpl": {
+    "message": "ok vor {age}"
+  },
+  "spExternalTitle": {
+    "message": "Status externer APIs"
+  },
+  "spLocalOnly": {
+    "message": "Nur lokal"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "Kommentare"
+  },
+  "spMeta_feed": {
+    "message": "Feed"
+  },
+  "spMeta_global": {
+    "message": "Global"
+  },
+  "spMeta_player": {
+    "message": "Player"
+  },
+  "spMeta_safe": {
+    "message": "Sicher"
+  },
+  "spMeta_watch": {
+    "message": "Wiedergabeseite"
+  },
+  "spOverviewContextLabel": {
+    "message": "Kontext"
+  },
+  "spOverviewCopy": {
+    "message": "Öffne einen YouTube-Tab für Live-Diagnosen und nutze dann die Schnelleinstellungen zur sofortigen Korrektur."
+  },
+  "spOverviewKicker": {
+    "message": "Live-Arbeitsbereich"
+  },
+  "spOverviewSummaryAria": {
+    "message": "Dashboard-Übersicht"
+  },
+  "spOverviewTitle": {
+    "message": "Arbeitsbereich-Status auf einen Blick"
+  },
+  "spPerfCopy": {
+    "message": "Hebt langsam startende Funktionen im aktiven YouTube-Tab hervor."
+  },
+  "spPerfEmptyNoData": {
+    "message": "Starte die Wiedergabe oder navigiere einmal und aktualisiere dann, um Funktions-Timings zu erfassen."
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "Noch keine Start-Timings"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "Das Inhaltsskript antwortet nicht. Lade den YouTube-Tab neu und aktualisiere dann die Diagnose."
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "Aktiven Tab neu verbinden"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "Öffne YouTube im aktiven Tab und aktualisiere dann, um das Start-Timing zu messen."
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "YouTube öffnen, um den Start zu messen"
+  },
+  "spPerfKicker": {
+    "message": "Laufzeit"
+  },
+  "spPerfListAria": {
+    "message": "Liste der Funktions-Start-Timings"
+  },
+  "spPerfTitle": {
+    "message": "Funktions-Start-Timing"
+  },
+  "spPerfTotalTpl": {
+    "message": "{count} gemessen"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "Videos in der Theateransicht öffnen."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "Wärmt den Player für spätes Ansehen."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "Entfernt Tracking-Parameter aus kopierten Links."
+  },
+  "spq_commentSearch_desc": {
+    "message": "Filtert Kommentare auf der Wiedergabeseite direkt."
+  },
+  "spq_deArrow_desc": {
+    "message": "Ersetzt Clickbait-Titel und -Vorschaubilder."
+  },
+  "spq_debugMode_desc": {
+    "message": "Zeichnet detaillierte lokale Diagnosen zur Fehlersuche auf."
+  },
+  "spq_debugMode_name": {
+    "message": "Diagnoseprotokollierung"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "Verfolgt Pausen und tägliche Sehdauer."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "Verhindert den automatischen Start des nächsten Videos."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "Autoplay deaktivieren"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "Verhindert endloses Laden der Feeds."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "Endlos-Scrollen begrenzen"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "Leert die Seitenleiste der Wiedergabeseite."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "Hält wichtige Steuerelemente beim Scrollen sichtbar."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "Behält die Wiedergabegeschwindigkeit über Videos hinweg bei."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Überprüfe jeden Dienst, den Astra Deck kontaktieren kann."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "Datenfluss-Panel"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Entfernt Shorts-Regale und Navigationslinks."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "Überspringt von der Community markierte Sponsor-Segmente."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "Untertitel lesen, durchspringen und exportieren."
+  },
+  "spRefreshAria": {
+    "message": "Alle Dashboard-Bereiche aktualisieren"
+  },
+  "spRefreshBtn": {
+    "message": "Aktualisieren"
+  },
+  "spReloadPanel": {
+    "message": "Panel neu laden"
+  },
+  "spReloadPanelAria": {
+    "message": "Das Astra Deck-Panel neu laden"
+  },
+  "spRiskTpl": {
+    "message": "Risiko: {risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}. Speichern fehlgeschlagen. Aktualisiere das Dashboard."
+  },
+  "spScopeTpl": {
+    "message": "Bereich: {scope}"
+  },
+  "spSelectorCopy": {
+    "message": "Zeigt DOM-Abweichungen, bevor daraus defekte Steuerelemente werden."
+  },
+  "spSelectorDriftTpl": {
+    "message": "{count} Drift"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "Navigiere einmal auf YouTube und aktualisiere dann, um die überwachten Oberflächen zu erfassen."
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "Noch keine Oberflächen erfasst"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "Das Inhaltsskript antwortet nicht. YouTube neu laden und dann die Diagnose aktualisieren."
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "Selektor-Status neu verbinden"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "Öffne YouTube im aktiven Tab, um zu prüfen, ob die Seiten-Selektoren noch passen."
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "YouTube öffnen, um die Seitenpassung zu prüfen"
+  },
+  "spSelectorErrTpl": {
+    "message": "{count} Fehler"
+  },
+  "spSelectorHighChurn": {
+    "message": "hohe Fluktuation"
+  },
+  "spSelectorHitsTpl": {
+    "message": "{count} Treffer"
+  },
+  "spSelectorKicker": {
+    "message": "Seitenpassung"
+  },
+  "spSelectorListAria": {
+    "message": "Liste des Selektor-Status"
+  },
+  "spSelectorMissTpl": {
+    "message": "{count} Fehltreffer"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "Erfassung nötig"
+  },
+  "spSelectorTitle": {
+    "message": "Selektorzustand"
+  },
+  "spSelectorTotalTpl": {
+    "message": "{count} Oberflächen"
+  },
+  "spSettingsClearAria": {
+    "message": "Einstellungsfilter löschen"
+  },
+  "spSettingsClearFilter": {
+    "message": "Filter löschen"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "Filter der Schnelleinstellungen löschen"
+  },
+  "spSettingsCopy": {
+    "message": "Gruppierte Schalter speichern sofort und synchronisieren sich mit offenen YouTube-Tabs."
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} aktiv"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "Keine passenden Einstellungen."
+  },
+  "spSettingsEmptyMsg": {
+    "message": "Die Schnelleinstellungen konnten nicht geladen werden. Lade das Panel neu oder nutze das Symbolleisten-Popup in einem YouTube-Tab, um alle Astra Deck-Steuerungen zu verwalten."
+  },
+  "spSettingsEmptyTitle": {
+    "message": "Keine Schnelleinstellungen verfügbar"
+  },
+  "spSettingsErrorMsg": {
+    "message": "Die Schnelleinstellungen konnten nicht geladen werden, weil der Browserspeicher nicht verfügbar ist. Lade das Panel neu oder nutze das Symbolleisten-Popup, sobald der Erweiterungskontext bereit ist."
+  },
+  "spSettingsErrorTitle": {
+    "message": "Schnelleinstellungen nicht verfügbar"
+  },
+  "spSettingsKicker": {
+    "message": "Live anwenden"
+  },
+  "spSettingsListAria": {
+    "message": "Einstellungsschalter"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "Keine passenden Schnelleinstellungen"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "Keine Einstellungen entsprechen \"{query}\". Lösche den Filter, um alle Steuerungen anzuzeigen."
+  },
+  "spSettingsSearchAria": {
+    "message": "Einstellungen nach Name, Risiko, Bereich oder Kategorie filtern"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "Einstellungen, Risiko, Bereich oder Kategorie filtern"
+  },
+  "spSettingsTitle": {
+    "message": "Schnelleinstellungen"
+  },
+  "spSkipToSettings": {
+    "message": "Zu den Einstellungen springen"
+  },
+  "spStateUnknown": {
+    "message": "unbekannt"
+  },
+  "spStatSize": {
+    "message": "Größe"
+  },
+  "spStatUnavailable": {
+    "message": "Nicht verfügbar"
+  },
+  "spStatusDisabledTpl": {
+    "message": "{name} deaktiviert"
+  },
+  "spStatusEnabledTpl": {
+    "message": "{name} aktiviert"
+  },
+  "spStatusOpenYouTube": {
+    "message": "Öffne YouTube für Live-Diagnosen"
+  },
+  "spStatusRefreshFailed": {
+    "message": "Aktualisierung fehlgeschlagen — erneut versuchen"
+  },
+  "spStatusRefreshing": {
+    "message": "Wird aktualisiert..."
+  },
+  "spStatusSaveFailed": {
+    "message": "Einstellung konnte nicht gespeichert werden"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "Diagnose aktualisiert; Schnelleinstellungen konnten nicht geladen werden"
+  },
+  "spStatusUpdated": {
+    "message": "Live-Diagnose aktualisiert"
+  },
+  "spStorageCopy": {
+    "message": "Zählt lokale Einstellungen, ausgeblendete Videos, blockierte Kanäle und gespeicherte Notizen."
+  },
+  "spStorageStatsAria": {
+    "message": "Speicherstatistik"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "Lade den Erweiterungskontext neu, um lokale Daten zu lesen."
+  },
+  "spSubtitle": {
+    "message": "Live-Diagnose"
+  },
+  "spVersionAria": {
+    "message": "Erweiterungsversion"
+  },
   "speedBtnAriaTpl": {
     "message": "Standard-Wiedergabegeschwindigkeit …. Zum Ändern klicken."
   },

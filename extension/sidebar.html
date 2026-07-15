@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';">
-  <title>Astra Deck - Firefox Sidebar</title>
+  <title data-i18n="sidebarDocTitle">Astra Deck - Firefox Sidebar</title>
   <link rel="stylesheet" href="sidepanel.css">
   <link rel="stylesheet" href="surface-system.css">
 </head>
 <body>
-  <a class="sp-skip-link" href="#sp-settings-search">Skip to settings</a>
+  <a class="sp-skip-link" href="#sp-settings-search" data-i18n="spSkipToSettings">Skip to settings</a>
 
   <header class="sp-header" role="banner">
     <div class="sp-brand">
@@ -18,13 +18,13 @@
         <img src="icons/32.png" alt="" width="20" height="20">
       </span>
       <span class="sp-brand-copy">
-        <h1 class="sp-title" id="sp-title">Astra Deck</h1>
-        <span class="sp-subtitle">Live diagnostics</span>
+        <h1 class="sp-title" id="sp-title" data-i18n="brandName">Astra Deck</h1>
+        <span class="sp-subtitle" data-i18n="spSubtitle">Live diagnostics</span>
       </span>
     </div>
     <div class="sp-header-meta">
-      <span class="sp-context-chip" id="sp-context-chip" data-state="idle" role="status" aria-live="polite">Checking tab</span>
-      <span class="sp-version" id="sp-version" aria-label="Extension version"></span>
+      <span class="sp-context-chip" id="sp-context-chip" data-state="idle" role="status" aria-live="polite" data-i18n="spContextChecking">Checking tab</span>
+      <span class="sp-version" id="sp-version" data-i18n-attr-aria-label="spVersionAria" aria-label="Extension version"></span>
     </div>
   </header>
 
@@ -32,22 +32,22 @@
     <section class="sp-section sp-section--hero" id="sp-overview" aria-labelledby="sp-overview-heading">
       <header class="sp-section-head">
         <div>
-          <p class="sp-section-kicker">Live workspace</p>
-          <h2 class="sp-section-title" id="sp-overview-heading">Workspace health at a glance</h2>
-          <p class="sp-section-copy">Open a YouTube tab to stream diagnostics, then use quick settings for live recovery.</p>
+          <p class="sp-section-kicker" data-i18n="spOverviewKicker">Live workspace</p>
+          <h2 class="sp-section-title" id="sp-overview-heading" data-i18n="spOverviewTitle">Workspace health at a glance</h2>
+          <p class="sp-section-copy" data-i18n="spOverviewCopy">Open a YouTube tab to stream diagnostics, then use quick settings for live recovery.</p>
         </div>
       </header>
-      <div class="sp-overview-grid" id="sp-overview-grid" role="group" aria-label="Dashboard summary">
+      <div class="sp-overview-grid" id="sp-overview-grid" role="group" data-i18n-attr-aria-label="spOverviewSummaryAria" aria-label="Dashboard summary">
         <div class="sp-overview-card">
-          <span class="sp-overview-label">Context</span>
-          <strong class="sp-overview-value" id="sp-overview-context">Local</strong>
+          <span class="sp-overview-label" data-i18n="spOverviewContextLabel">Context</span>
+          <strong class="sp-overview-value" id="sp-overview-context" data-i18n="contextStateLocal">Local</strong>
         </div>
         <div class="sp-overview-card">
-          <span class="sp-overview-label">Settings</span>
+          <span class="sp-overview-label" data-i18n="panelTitle">Settings</span>
           <strong class="sp-overview-value" id="sp-overview-settings">-</strong>
         </div>
         <div class="sp-overview-card">
-          <span class="sp-overview-label">Enabled</span>
+          <span class="sp-overview-label" data-i18n="toggleStateOn">Enabled</span>
           <strong class="sp-overview-value" id="sp-overview-enabled">-</strong>
         </div>
       </div>
@@ -56,75 +56,75 @@
     <section class="sp-section" id="sp-perf" aria-labelledby="sp-perf-heading">
       <header class="sp-section-head">
         <div>
-          <p class="sp-section-kicker">Runtime</p>
-          <h2 class="sp-section-title" id="sp-perf-heading">Feature init timing</h2>
-          <p class="sp-section-copy">Highlights slow-starting features on the active YouTube tab.</p>
+          <p class="sp-section-kicker" data-i18n="spPerfKicker">Runtime</p>
+          <h2 class="sp-section-title" id="sp-perf-heading" data-i18n="spPerfTitle">Feature init timing</h2>
+          <p class="sp-section-copy" data-i18n="spPerfCopy">Highlights slow-starting features on the active YouTube tab.</p>
         </div>
         <span class="sp-section-meta" id="sp-perf-total" aria-live="polite"></span>
       </header>
-      <ul class="sp-perf-list" id="sp-perf-list" role="list" aria-label="Feature init timing list"></ul>
-      <div class="sp-empty" id="sp-perf-empty" hidden role="status">No YouTube tab active.</div>
+      <ul class="sp-perf-list" id="sp-perf-list" role="list" data-i18n-attr-aria-label="spPerfListAria" aria-label="Feature init timing list"></ul>
+      <div class="sp-empty" id="sp-perf-empty" hidden role="status" data-i18n="spEmptyNoTab">No YouTube tab active.</div>
     </section>
 
     <section class="sp-section" id="sp-selector" aria-labelledby="sp-selector-heading">
       <header class="sp-section-head">
         <div>
-          <p class="sp-section-kicker">Page fit</p>
-          <h2 class="sp-section-title" id="sp-selector-heading">Selector health</h2>
-          <p class="sp-section-copy">Surfaces DOM drift before it becomes a broken control.</p>
+          <p class="sp-section-kicker" data-i18n="spSelectorKicker">Page fit</p>
+          <h2 class="sp-section-title" id="sp-selector-heading" data-i18n="spSelectorTitle">Selector health</h2>
+          <p class="sp-section-copy" data-i18n="spSelectorCopy">Surfaces DOM drift before it becomes a broken control.</p>
         </div>
         <span class="sp-section-meta" id="sp-selector-total" aria-live="polite"></span>
       </header>
-      <ul class="sp-selector-list" id="sp-selector-list" role="list" aria-label="Selector health list"></ul>
-      <div class="sp-empty" id="sp-selector-empty" hidden role="status">No YouTube tab active.</div>
+      <ul class="sp-selector-list" id="sp-selector-list" role="list" data-i18n-attr-aria-label="spSelectorListAria" aria-label="Selector health list"></ul>
+      <div class="sp-empty" id="sp-selector-empty" hidden role="status" data-i18n="spEmptyNoTab">No YouTube tab active.</div>
     </section>
 
     <section class="sp-section" id="sp-external" aria-labelledby="sp-external-heading">
       <header class="sp-section-head">
         <div>
-          <p class="sp-section-kicker">Integrations</p>
-          <h2 class="sp-section-title" id="sp-external-heading">External API health</h2>
-          <p class="sp-section-copy">Tracks SponsorBlock, DeArrow, and RYD request health.</p>
+          <p class="sp-section-kicker" data-i18n="spExternalKicker">Integrations</p>
+          <h2 class="sp-section-title" id="sp-external-heading" data-i18n="spExternalTitle">External API health</h2>
+          <p class="sp-section-copy" data-i18n="spExternalCopy">Tracks SponsorBlock, DeArrow, and RYD request health.</p>
         </div>
         <span class="sp-section-meta" id="sp-external-total" aria-live="polite"></span>
       </header>
-      <ul class="sp-external-list" id="sp-external-list" role="list" aria-label="External API health list"></ul>
-      <div class="sp-empty" id="sp-external-empty" hidden role="status">No YouTube tab active.</div>
+      <ul class="sp-external-list" id="sp-external-list" role="list" data-i18n-attr-aria-label="spExternalListAria" aria-label="External API health list"></ul>
+      <div class="sp-empty" id="sp-external-empty" hidden role="status" data-i18n="spEmptyNoTab">No YouTube tab active.</div>
     </section>
 
     <section class="sp-section" id="sp-storage" aria-labelledby="sp-storage-heading">
       <header class="sp-section-head">
         <div>
-          <p class="sp-section-kicker">Local only</p>
-          <h2 class="sp-section-title" id="sp-storage-heading">Storage</h2>
-          <p class="sp-section-copy">Counts local settings, hidden videos, blocked channels, and saved notes.</p>
+          <p class="sp-section-kicker" data-i18n="spLocalOnly">Local only</p>
+          <h2 class="sp-section-title" id="sp-storage-heading" data-i18n="statStorage">Storage</h2>
+          <p class="sp-section-copy" data-i18n="spStorageCopy">Counts local settings, hidden videos, blocked channels, and saved notes.</p>
         </div>
       </header>
-      <div class="sp-storage-stats" id="sp-storage-stats" role="group" aria-label="Storage statistics"></div>
+      <div class="sp-storage-stats" id="sp-storage-stats" role="group" data-i18n-attr-aria-label="spStorageStatsAria" aria-label="Storage statistics"></div>
     </section>
 
     <section class="sp-section" id="sp-settings" aria-labelledby="sp-settings-heading">
       <header class="sp-section-head">
         <div>
-          <p class="sp-section-kicker">Live apply</p>
-          <h2 class="sp-section-title" id="sp-settings-heading">Quick settings</h2>
-          <p class="sp-section-copy">Grouped toggles save immediately and sync to open YouTube tabs.</p>
+          <p class="sp-section-kicker" data-i18n="spSettingsKicker">Live apply</p>
+          <h2 class="sp-section-title" id="sp-settings-heading" data-i18n="spSettingsTitle">Quick settings</h2>
+          <p class="sp-section-copy" data-i18n="spSettingsCopy">Grouped toggles save immediately and sync to open YouTube tabs.</p>
         </div>
         <span class="sp-section-meta" id="sp-settings-count" aria-live="polite"></span>
       </header>
       <div class="sp-search-wrap">
         <svg class="sp-search-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings, risk, scope, or category" autocomplete="off" spellcheck="false" aria-label="Filter settings by name, risk, scope, or category" aria-controls="sp-settings-list">
-        <button type="button" class="sp-search-clear" id="sp-settings-clear" aria-label="Clear settings filter" hidden>Clear</button>
+        <input type="search" class="sp-search" id="sp-settings-search" data-i18n-attr-placeholder="spSettingsSearchPlaceholder" placeholder="Filter settings, risk, scope, or category" autocomplete="off" spellcheck="false" data-i18n-attr-aria-label="spSettingsSearchAria" aria-label="Filter settings by name, risk, scope, or category" aria-controls="sp-settings-list">
+        <button type="button" class="sp-search-clear" id="sp-settings-clear" data-i18n-attr-aria-label="spSettingsClearAria" aria-label="Clear settings filter" hidden data-i18n="healthClearBtn">Clear</button>
       </div>
-      <div class="sp-settings-list" id="sp-settings-list" aria-label="Settings toggles"></div>
-      <div class="sp-empty" id="sp-settings-empty" hidden role="status">No settings match.</div>
+      <div class="sp-settings-list" id="sp-settings-list" data-i18n-attr-aria-label="spSettingsListAria" aria-label="Settings toggles"></div>
+      <div class="sp-empty" id="sp-settings-empty" hidden role="status" data-i18n="spSettingsEmptyDefault">No settings match.</div>
     </section>
   </main>
 
   <footer class="sp-footer" role="contentinfo">
-    <span class="sp-refresh-status" id="sp-refresh-status" role="status" aria-live="polite">Ready</span>
-    <button type="button" class="sp-refresh-btn" id="sp-refresh" aria-label="Refresh all dashboard sections">Refresh</button>
+    <span class="sp-refresh-status" id="sp-refresh-status" role="status" aria-live="polite" data-i18n="dlProgressReady">Ready</span>
+    <button type="button" class="sp-refresh-btn" id="sp-refresh" data-i18n-attr-aria-label="spRefreshAria" aria-label="Refresh all dashboard sections" data-i18n="spRefreshBtn">Refresh</button>
   </footer>
 
   <script src="core/browser-api.js"></script>
