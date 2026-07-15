@@ -595,6 +595,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
 class MainWindowCore(QMainWindow):
     log_message = pyqtSignal(str)
     instance_command = pyqtSignal(str)
+    tools_update_finished = pyqtSignal(dict)
 
     def __init__(self, config, dl_manager, history, start_minimized=False, *, dependencies):
         missing = sorted(set(_REQUIRED_MAIN_WINDOW_DEPENDENCIES) - set(dependencies))
@@ -613,6 +614,7 @@ class MainWindowCore(QMainWindow):
         self._downloads_signature = None
         self.log_message.connect(self._append_log)
         self.instance_command.connect(self._handle_instance_command)
+        self.tools_update_finished.connect(self._finish_ytdlp_update)
 
         self.setWindowTitle(self._value('APP_NAME'))
         self.setMinimumSize(900, 620)
@@ -1098,6 +1100,7 @@ class MainWindowCore(QMainWindow):
         self.cfg_token.setEchoMode(QLineEdit.EchoMode.Password)
         token_row.addWidget(self.cfg_token, 1)
         self.btn_token_reveal = self._make_tool_button("Reveal", QStyle.StandardPixmap.SP_FileDialogInfoView)
+        self.btn_token_reveal.setAccessibleName("Reveal private token")
         self.btn_token_reveal.clicked.connect(self._toggle_token_visible)
         token_row.addWidget(self.btn_token_reveal)
         btn_token_copy = self._make_tool_button("Copy", QStyle.StandardPixmap.SP_FileDialogContentsView)
@@ -1282,12 +1285,12 @@ class MainWindowCore(QMainWindow):
         tools_l.addWidget(self.tools_status)
         tools_row = QHBoxLayout()
         tools_row.setSpacing(8)
-        btn_check_updates = self._make_tool_button(
+        self.btn_check_updates = self._make_tool_button(
             "Check yt-dlp Update", QStyle.StandardPixmap.SP_BrowserReload,
         )
-        btn_check_updates.setToolTip("Force an immediate yt-dlp self-update and refresh the version readout.")
-        btn_check_updates.clicked.connect(self._force_ytdlp_update)
-        tools_row.addWidget(btn_check_updates)
+        self.btn_check_updates.setToolTip("Check for a yt-dlp update. Active downloads must finish first.")
+        self.btn_check_updates.clicked.connect(self._force_ytdlp_update)
+        tools_row.addWidget(self.btn_check_updates)
         btn_reinstall_ffmpeg = self._make_tool_button(
             "Reinstall ffmpeg", QStyle.StandardPixmap.SP_DialogResetButton, "danger",
         )
@@ -1837,32 +1840,62 @@ class MainWindowCore(QMainWindow):
     def _force_ytdlp_update(self):
         if not self._value('YTDLP_PATH').exists():
             self._append_log("yt-dlp is not installed yet — run setup first.")
+            self._show_settings_status("Install yt-dlp before checking for updates.", "warning")
+            return
+        active_downloads = self.dl_manager.active_count()
+        if active_downloads:
+            self._append_log(
+                f"yt-dlp update deferred: {active_downloads} download(s) are still active."
+            )
+            self._show_settings_status(
+                "Wait for active downloads to finish before updating yt-dlp.",
+                "warning",
+            )
             return
         self._append_log("Forcing yt-dlp self-update…")
+        self.btn_check_updates.setEnabled(False)
+        self.btn_check_updates.setText("Checking…")
+        self._show_settings_status(
+            "Checking yt-dlp. The verified current copy stays available until the update passes.",
+            "warning",
+        )
 
         def run():
             try:
                 result = self._dependencies['_run_ytdlp_self_update'](self.config, source_tag='gui')
-                if result.get('ok'):
-                    self.log_message.emit(
-                        f"yt-dlp active {result.get('version_after') or '?'}; "
-                        f"rollback {result.get('rollback_version') or 'not retained yet'}."
-                    )
-                else:
-                    recovery = (
-                        f" Restored {result.get('version_after')}."
-                        if result.get('rolled_back') else ''
-                    )
-                    self.log_message.emit(
-                        f"yt-dlp update failed: {result.get('error') or 'unknown error'}.{recovery}"
-                    )
             except Exception as e:
-                self.log_message.emit(f"yt-dlp update error: {e}")
-            finally:
-                # Marshal the UI refresh back to the Qt thread.
-                QTimer.singleShot(0, self._refresh_tools_status)
+                result = {
+                    'ok': False,
+                    'error': f'Unexpected update error: {e}',
+                    'error_code': 'unexpected-update-error',
+                }
+            # A queued Qt signal is the thread-safe boundary back to the GUI.
+            # QTimer.singleShot created inside this worker has no event loop and
+            # can silently strand the button in its busy state.
+            self.tools_update_finished.emit(result)
 
         threading.Thread(target=run, daemon=True).start()
+
+    def _finish_ytdlp_update(self, result):
+        self.btn_check_updates.setEnabled(True)
+        self.btn_check_updates.setText("Check yt-dlp Update")
+        self._refresh_tools_status()
+        if result.get('ok'):
+            version = result.get('version_after') or 'current'
+            rollback = result.get('rollback_version') or 'not retained yet'
+            self._append_log(f"yt-dlp active {version}; rollback {rollback}.")
+            self._show_settings_status(f"yt-dlp {version} is ready.", "success")
+            return
+        recovery = (
+            f" Restored {result.get('version_after')}."
+            if result.get('rolled_back') else ''
+        )
+        error = result.get('error') or 'Unknown update error.'
+        self._append_log(f"yt-dlp update failed: {str(error).rstrip('.')}.{recovery}")
+        self._show_settings_status(
+            "yt-dlp update failed. The previous working copy was kept; check the log for details.",
+            "danger",
+        )
 
     def _reinstall_ffmpeg(self):
         """Stage and verify a fresh ffmpeg before replacing the live binary."""
@@ -1892,9 +1925,13 @@ class MainWindowCore(QMainWindow):
         self._run_setup(force_ffmpeg=True)
 
     def _save_settings(self):
-        for field in (self.cfg_dl_path, self.cfg_audio_path, self.cfg_sublangs,
-                      self.cfg_ratelimit, self.cfg_proxy):
+        validated_fields = (
+            self.cfg_token, self.cfg_dl_path, self.cfg_audio_path,
+            self.cfg_sublangs, self.cfg_ratelimit, self.cfg_proxy,
+        )
+        for field in validated_fields:
             self._set_input_error(field, False)
+            field.setAccessibleDescription("")
 
         old_port = self._dependencies['clamp_int'](self.config.get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
         old_token = self.config.get("ServerToken", "")
@@ -1906,33 +1943,38 @@ class MainWindowCore(QMainWindow):
         rate = self._dependencies['normalize_rate_limit'](self.cfg_ratelimit.text())
         proxy = self.cfg_proxy.text().strip()
         has_error = False
+        first_error = None
+
+        def mark_error(field, message):
+            nonlocal has_error, first_error
+            self._set_input_error(field, True)
+            field.setAccessibleDescription(message)
+            has_error = True
+            if first_error is None:
+                first_error = field
 
         dl_path, dl_path_err = self._dependencies['normalize_output_dir'](dl_path, self._value('DEFAULT_CONFIG')["DownloadPath"])
         audio_path, audio_path_err = self._dependencies['normalize_output_dir'](audio_path, dl_path) if audio_path else ("", None)
 
         if dl_path_err:
-            self._set_input_error(self.cfg_dl_path, True)
-            has_error = True
+            mark_error(self.cfg_dl_path, "Choose a valid local video download folder.")
         if audio_path_err:
-            self._set_input_error(self.cfg_audio_path, True)
-            has_error = True
+            mark_error(self.cfg_audio_path, "Choose a valid local audio download folder.")
         if not sublangs:
-            self._set_input_error(self.cfg_sublangs, True)
-            has_error = True
+            mark_error(self.cfg_sublangs, "Enter one or more language codes, such as en or en,es.")
         if self.cfg_ratelimit.text().strip() and not rate:
-            self._set_input_error(self.cfg_ratelimit, True)
-            has_error = True
+            mark_error(self.cfg_ratelimit, "Use a rate such as 500K or 2M, or leave this blank.")
         if proxy and not self._dependencies['normalize_proxy'](proxy):
-            self._set_input_error(self.cfg_proxy, True)
-            has_error = True
+            mark_error(self.cfg_proxy, "Enter an http, https, or socks proxy URL.")
         else:
             proxy = self._dependencies['normalize_proxy'](proxy)
         if not new_token:
-            self._show_settings_status("Token cannot be empty.", "danger")
-            has_error = True
+            mark_error(self.cfg_token, "The private API token cannot be empty.")
 
         if has_error:
             self._show_settings_status("Check the highlighted fields before saving.", "danger")
+            if first_error is not None:
+                first_error.setFocus(Qt.FocusReason.OtherFocusReason)
             return
 
         connection_changed = new_port != old_port or new_token != old_token
@@ -2000,9 +2042,19 @@ class MainWindowCore(QMainWindow):
         QTimer.singleShot(1600, lambda: self.dash_hint.setText(old))
 
     def _copy_token(self):
-        QApplication.clipboard().setText(self.cfg_token.text())
-        self._show_settings_status("Token copied to clipboard.", "success")
-        QTimer.singleShot(2200, lambda: self._show_settings_status(""))
+        token = self.cfg_token.text()
+        QApplication.clipboard().setText(token)
+        self._show_settings_status(
+            "Token copied. It will clear from the clipboard in 60 seconds if unchanged.",
+            "success",
+        )
+        QTimer.singleShot(60_000, lambda expected=token: self._clear_copied_token(expected))
+
+    def _clear_copied_token(self, expected):
+        clipboard = QApplication.clipboard()
+        if clipboard.text() == expected:
+            clipboard.clear()
+            self._show_settings_status("Copied token cleared from the clipboard.", "neutral")
 
     def _copy_diagnostics(self):
         payload = self._dependencies['build_diagnostics_bundle'](
@@ -2054,6 +2106,7 @@ class MainWindowCore(QMainWindow):
         showing = self.cfg_token.echoMode() == QLineEdit.EchoMode.Normal
         self.cfg_token.setEchoMode(QLineEdit.EchoMode.Password if showing else QLineEdit.EchoMode.Normal)
         self.btn_token_reveal.setText("Reveal" if showing else "Hide")
+        self.btn_token_reveal.setAccessibleName("Reveal private token" if showing else "Hide private token")
 
     def _regenerate_token(self):
         self.cfg_token.setText(uuid.uuid4().hex)

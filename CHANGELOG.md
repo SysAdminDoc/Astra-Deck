@@ -19,6 +19,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Sensitive companion tokens now expire from the clipboard.** Copying the
+  private local API token schedules a 60-second clear that only runs when the
+  clipboard still contains that token, so newer clipboard content is never
+  overwritten.
 - **Companion API responses now minimize private local state.** Authenticated
   configuration requests expose only the download paths and supported format
   choices the extension consumes, while health and Deno provisioning omit local
@@ -61,6 +65,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Companion maintenance and validation states now recover cleanly.** Manual
+  yt-dlp updates defer while downloads are active, marshal completion back to
+  Qt's UI thread, restore the busy button on every outcome, and explain
+  rollback results. Invalid settings expose accessible field descriptions and
+  move focus to the first problem instead of showing only a generic footer.
 - **Extension fetch requests now fail before allocating network work.** The
   service worker rejects unsupported HTTP methods instead of silently issuing
   a GET, caps serialized request bodies at 2 MiB, and reports serialization
