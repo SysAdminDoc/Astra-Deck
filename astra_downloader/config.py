@@ -6,6 +6,7 @@ frameworks, which lets config tooling and tests run without PyQt or Flask.
 """
 
 import re
+from pathlib import Path
 from urllib.parse import urlparse
 
 try:
@@ -35,6 +36,7 @@ _OWNED_EXPORTS = {
     "clean_text", "clean_path_text", "coerce_bool", "clamp_int",
     "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "normalize_url", "validate_download_request_body",
+    "normalize_output_dir", "allowed_output_roots",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
 }
 _resolve_legacy = make_legacy_resolver(
@@ -145,6 +147,72 @@ def validate_download_request_body(body):
             "unsupported-download-fields",
         )
     return body, None, None
+
+
+def allowed_output_roots(config):
+    """Return unique, resolved directories that downloads may target."""
+    raw_roots = []
+    for key in ("DownloadPath", "AudioDownloadPath"):
+        value = config.get(key, "") if config else ""
+        if value:
+            raw_roots.append(value)
+    extra = (config.get("ExtraOutputRoots", []) if config else []) or []
+    if isinstance(extra, list):
+        raw_roots.extend(str(value) for value in extra if isinstance(value, str) and value)
+
+    resolved = []
+    seen = set()
+    for raw in raw_roots:
+        try:
+            path = Path(raw).expanduser()
+            if not path.is_absolute():
+                continue
+            candidate = path.resolve()
+        except (OSError, RuntimeError):
+            continue
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        resolved.append(candidate)
+    return resolved
+
+
+def normalize_output_dir(value, default_dir=None, allowed_roots=None):
+    """Validate, confine, create, and return an absolute output directory."""
+    raw, too_long = _normalize_long_text(value, "", _MAX_PATH_FIELD)
+    if too_long:
+        return None, "Output folder path is too long."
+    if not raw:
+        raw, too_long = _normalize_long_text(default_dir, "", _MAX_PATH_FIELD)
+        if too_long:
+            return None, "Default output folder path is too long."
+    if not raw:
+        raw = str(Path.home() / "Videos")
+    try:
+        path = Path(raw).expanduser()
+        if not path.is_absolute():
+            return None, "Choose an absolute output folder."
+        if allowed_roots:
+            try:
+                resolved = path.resolve()
+            except (OSError, RuntimeError):
+                return None, "Output folder path could not be resolved."
+            if not any(_is_path_under(resolved, root) for root in allowed_roots):
+                return None, "Output folder is outside the configured download locations."
+        path.mkdir(parents=True, exist_ok=True)
+        if not path.is_dir():
+            return None, "Output path is not a folder."
+        return str(path), None
+    except (OSError, RuntimeError) as error:
+        return None, f"Cannot use output folder: {error}"
+
+
+def _is_path_under(child, root):
+    try:
+        child.resolve().relative_to(root)
+        return True
+    except (ValueError, OSError, RuntimeError):
+        return False
 
 
 def __getattr__(name):

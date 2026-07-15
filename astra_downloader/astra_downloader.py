@@ -58,7 +58,8 @@ try:
     from .routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from .config import (
         DOWNLOAD_REQUEST_ALLOWED_FIELDS, DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
-        clamp_int, clean_path_text, clean_text, coerce_bool, normalize_proxy,
+        allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
+        normalize_output_dir, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url,
         validate_download_request_body,
     )
@@ -66,7 +67,8 @@ except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from config import (
         DOWNLOAD_REQUEST_ALLOWED_FIELDS, DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
-        clamp_int, clean_path_text, clean_text, coerce_bool, normalize_proxy,
+        allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
+        normalize_output_dir, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url,
         validate_download_request_body,
     )
@@ -661,49 +663,6 @@ def cleanup_stale_cookie_jars(older_than_seconds=300):
     except Exception:
         # reason: install dir unreadable — nothing actionable at this level.
         pass
-
-
-def allowed_output_roots(config):
-    """Return the resolved allowlist of directories downloads may land in.
-
-    Always includes DownloadPath + AudioDownloadPath (when set), plus any
-    explicitly configured ExtraOutputRoots. Non-existent paths are still
-    resolved so confinement checks work for subfolders that don't exist yet.
-    """
-    raw_roots = []
-    for key in ('DownloadPath', 'AudioDownloadPath'):
-        val = config.get(key, "") if config else ""
-        if val:
-            raw_roots.append(val)
-    extra = (config.get("ExtraOutputRoots", []) if config else []) or []
-    if isinstance(extra, list):
-        raw_roots.extend(str(x) for x in extra if isinstance(x, str) and x)
-    resolved = []
-    seen = set()
-    for raw in raw_roots:
-        try:
-            p = Path(raw).expanduser()
-            if not p.is_absolute():
-                continue
-            # Path.resolve(strict=False) follows symlinks on Windows too, and
-            # normalizes ".." / drive-case so confinement cannot be evaded.
-            resolved_path = p.resolve()
-        except Exception:
-            continue
-        if resolved_path in seen:
-            continue
-        seen.add(resolved_path)
-        resolved.append(resolved_path)
-    return resolved
-
-
-def is_path_under(child, root):
-    """True when `child` is equal to or inside `root`, resolved."""
-    try:
-        child.resolve().relative_to(root)
-        return True
-    except (ValueError, OSError):
-        return False
 
 
 # ── v1.2.0: cached version strings for /health ──
@@ -2380,54 +2339,6 @@ def normalize_long_text(value, default="", max_len=MAX_TEXT_FIELD):
 
 def ps_single_quote(value):
     return "'" + str(value).replace("'", "''") + "'"
-
-
-def normalize_output_dir(value, default_dir=None, allowed_roots=None):
-    """Validate and normalize an output directory.
-
-    When `allowed_roots` is supplied (v1.2.0 path confinement), the resolved
-    path must be inside one of the listed roots. This matters for the HTTP
-    `/download` endpoint where a client-supplied `outputDir` would otherwise
-    land anywhere the server user can write. The check runs BEFORE `mkdir` so
-    a rejected request doesn't leave a directory behind.
-    """
-    raw, too_long = normalize_long_text(value, "", MAX_PATH_FIELD)
-    if too_long:
-        return None, "Output folder path is too long."
-    if not raw:
-        raw, too_long = normalize_long_text(default_dir, "", MAX_PATH_FIELD)
-        if too_long:
-            return None, "Default output folder path is too long."
-    if not raw:
-        raw = str(Path.home() / "Videos")
-    try:
-        path = Path(raw).expanduser()
-        if not path.is_absolute():
-            return None, "Choose an absolute output folder."
-        if allowed_roots:
-            try:
-                # Path.resolve(strict=False) normalizes ".." and drive casing
-                # even for paths that don't exist yet, so users can target a
-                # not-yet-created subfolder like DownloadPath/channel-name.
-                resolved = path.resolve()
-            except Exception:
-                return None, "Output folder path could not be resolved."
-            inside = False
-            for root in allowed_roots:
-                try:
-                    resolved.relative_to(root)
-                    inside = True
-                    break
-                except ValueError:
-                    continue
-            if not inside:
-                return None, "Output folder is outside the configured download locations."
-        path.mkdir(parents=True, exist_ok=True)
-        if not path.is_dir():
-            return None, "Output path is not a folder."
-        return str(path), None
-    except Exception as e:
-        return None, f"Cannot use output folder: {e}"
 
 
 def sanitize_config(raw):

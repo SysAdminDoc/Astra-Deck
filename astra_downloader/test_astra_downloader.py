@@ -1291,6 +1291,8 @@ for forbidden in (
         self.assertIs(config.clean_text, ad.clean_text)
         self.assertIs(config.clamp_int, ad.clamp_int)
         self.assertIs(config.validate_download_request_body, ad.validate_download_request_body)
+        self.assertIs(config.allowed_output_roots, ad.allowed_output_roots)
+        self.assertIs(config.normalize_output_dir, ad.normalize_output_dir)
         self.assertIs(download.DownloadManager, ad.DownloadManager)
         self.assertIs(health.get_ytdlp_version, ad.get_ytdlp_version)
         self.assertIs(routes.create_api, ad.create_api)
