@@ -54,6 +54,11 @@ try:
 except ImportError as exc:
     raise ImportError(source_dependency_error(exc)) from exc
 
+try:
+    from .routes import _ServerAdapter, _build_wsgi_server
+except ImportError:  # Direct script / flat source-path compatibility.
+    from routes import _ServerAdapter, _build_wsgi_server
+
 # ══════════════════════════════════════════════════════════════
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
@@ -5000,67 +5005,6 @@ class DownloadManager(QObject):
 # ══════════════════════════════════════════════════════════════
 # HTTP SERVER (Flask in background thread)
 # ══════════════════════════════════════════════════════════════
-class _ServerAdapter:
-    """Uniform run()/stop() over waitress and werkzeug.
-
-    Waitress is the v1.2.0 production default: proper thread pool, graceful
-    close, not marked "dev only" by its upstream. Werkzeug's make_server is
-    kept only as a last-resort fallback for source runs where waitress isn't
-    installed (legacy dev environments / test containers).
-    """
-
-    def __init__(self, backend, server):
-        self.backend = backend
-        self._server = server
-
-    def run(self):
-        if self.backend == 'waitress':
-            self._server.run()
-        else:
-            self._server.serve_forever()
-
-    def stop(self):
-        try:
-            if self.backend == 'waitress':
-                # TcpWSGIServer.close() asks the worker threads to drain and
-                # the listener to stop accepting; run() returns shortly after.
-                self._server.close()
-            else:
-                self._server.shutdown()
-                self._server.server_close()
-        except Exception:
-            # reason: server teardown is best-effort from the UI thread; we
-            # log the warning at the call site.
-            pass
-
-
-def _build_wsgi_server(chosen_port, api):
-    """Build a running WSGI server on chosen_port. Prefers waitress."""
-    try:
-        from waitress.server import create_server as _waitress_create  # type: ignore
-        # threads=8 matches the extension's expected fan-out (up to
-        # MAX_CONCURRENT downloads + health + queue + status polls).
-        server = _waitress_create(
-            api,
-            host='127.0.0.1',
-            port=chosen_port,
-            threads=8,
-            ident='Astra Downloader',
-        )
-        return _ServerAdapter('waitress', server)
-    except ImportError:
-        # Fallback path — werkzeug's dev server.
-        from werkzeug.serving import make_server
-        try:
-            server = make_server('127.0.0.1', chosen_port, api, threaded=True)
-        except SystemExit:
-            # reason: werkzeug raises SystemExit on bind failure in some
-            # build configs; normalize into OSError so the caller's error
-            # UI path handles it.
-            raise OSError(f"Werkzeug aborted while binding port {chosen_port}")
-        return _ServerAdapter('werkzeug', server)
-
-
 def create_api(config, dl_manager, history):
     api = Flask(__name__)
     api.logger.disabled = True
