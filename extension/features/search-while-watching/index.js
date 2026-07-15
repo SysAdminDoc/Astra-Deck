@@ -339,7 +339,7 @@
                 copy.append(title, meta);
                 link.append(media, copy);
                 item.appendChild(link);
-                _resultsList.appendChild(item);
+                _resultsList?.appendChild(item);
             }
         }
 
@@ -368,12 +368,16 @@
             if (_panelInput) _panelInput.value = normalized;
             _clearResults();
             _setStatus(t('searchWatchLoading', 'Searching YouTube…'), 'loading');
+            // Every submission invalidates in-flight work — including cache
+            // hits. Otherwise a pending network search for query A resolves
+            // with a still-current token and overwrites the cached results
+            // rendered for query B.
+            const token = ++_requestToken;
             const cached = _cached(normalized);
             if (cached) {
                 _renderResults(cached, normalized);
                 return;
             }
-            const token = ++_requestToken;
             try {
                 const { text } = await extensionFetchText({
                     method: 'GET',
@@ -385,20 +389,32 @@
                 const initialData = extractInitialData(text);
                 if (!initialData) throw new Error('ytInitialData missing from search response');
                 const results = collectSearchResults(initialData);
-                _writeCache(normalized, results);
+                // Never cache an empty set: a transient degraded response
+                // (consent interstitial, renderer drift) would otherwise pin
+                // "no results" for the TTL with no way to retry the query.
+                if (results.length) _writeCache(normalized, results);
                 _renderResults(results, normalized);
+                if (!results.length) _appendRetry();
             } catch (error) {
                 if (_destroyed || token !== _requestToken) return;
                 DiagnosticLog?.record?.('searchWhileWatching', `search failed: ${error?.message || 'unknown error'}`);
                 _clearResults();
                 _setStatus(t('searchWatchError', 'Search results could not be loaded.'), 'error');
-                const retry = documentRef.createElement('button');
-                retry.type = 'button';
-                retry.className = 'ytkit-search-watch-retry';
-                retry.textContent = t('searchWatchRetry', 'Try again');
-                retry.addEventListener('click', () => _search(_activeQuery));
-                _resultsList?.appendChild(retry);
+                _appendRetry();
             }
+        }
+
+        function _appendRetry() {
+            if (!_resultsList) return;
+            const item = documentRef.createElement('li');
+            item.className = 'ytkit-search-watch-retry-item';
+            const retry = documentRef.createElement('button');
+            retry.type = 'button';
+            retry.className = 'ytkit-search-watch-retry';
+            retry.textContent = t('searchWatchRetry', 'Try again');
+            retry.addEventListener('click', () => _search(_activeQuery));
+            item.appendChild(retry);
+            _resultsList.appendChild(item);
         }
 
         function _createPanel() {

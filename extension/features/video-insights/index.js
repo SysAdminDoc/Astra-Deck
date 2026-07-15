@@ -195,6 +195,11 @@
             if (lastAttempt && now() - lastAttempt < RETRY_AFTER_MS) {
                 return { insights: local, source: 'page', fetched: false };
             }
+            // Expired entries are useless after RETRY_AFTER_MS; sweep them so
+            // long autoplay sessions cannot grow the map without bound.
+            for (const [id, ts] of attempts) {
+                if (now() - ts >= RETRY_AFTER_MS) attempts.delete(id);
+            }
             if (!allowRequest()) {
                 const budgetError = new Error('YouTube video insights request budget exhausted');
                 ExternalApiHealth?.recordFailure?.('videoInsights', budgetError, {
@@ -365,12 +370,24 @@
             panel.append(header, facts);
         }
 
+        let attachRetries = 0;
+
         async function attach() {
             if (!documentRef || !isWatchPagePath()) return;
             const videoId = getVideoId();
             if (!VIDEO_ID_PATTERN.test(videoId)) return;
             const target = documentRef.querySelector('ytd-watch-metadata #above-the-fold, ytd-watch-metadata');
-            if (!target) return;
+            if (!target) {
+                // Slow cold loads can hydrate watch metadata after the last
+                // navigate event; a one-shot timer would skip the panel for
+                // the whole video. Retry a bounded number of times.
+                if (attachRetries < 3) {
+                    attachRetries += 1;
+                    scheduleAttach(1200 * attachRetries);
+                }
+                return;
+            }
+            attachRetries = 0;
             const token = generation;
             documentRef.querySelectorAll('.ytkit-video-insights').forEach((element) => element.remove());
             panel = documentRef.createElement('section');
@@ -409,7 +426,10 @@
             pages: [PageTypes.WATCH],
             init() {
                 ensureStyles();
-                addNavigateRule('videoInsights', () => scheduleAttach(900));
+                addNavigateRule('videoInsights', () => {
+                    attachRetries = 0;
+                    scheduleAttach(900);
+                });
                 scheduleAttach(700);
             },
             destroy() {

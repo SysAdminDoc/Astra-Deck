@@ -107,7 +107,12 @@
         const fragment = documentRef?.createDocumentFragment?.();
         if (!fragment) return 0;
         for (const card of cards) fragment.appendChild(card);
-        container.appendChild?.(fragment);
+        // Keep the infinite-scroll trigger LAST: appending past the
+        // continuation renderer would pin a permanently-intersecting spinner
+        // at the top of the feed and misplace YouTube's continuation inserts.
+        const anchor = queryAll(container, ':scope > ytd-continuation-item-renderer')[0] || null;
+        if (anchor) container.insertBefore?.(fragment, anchor);
+        else container.appendChild?.(fragment);
         return cards.length;
     }
 
@@ -170,11 +175,16 @@
 
         function restoreOrder() {
             for (const container of queryAll(documentRef, CONTAINER_SELECTOR)) {
+                // Only containers we actually reordered carry stamped cards;
+                // running the restore sort against untouched feeds (home,
+                // search) is pure churn.
+                if (!container.querySelector?.(`[${ORIGINAL_INDEX_ATTRIBUTE}]`)) continue;
                 sortLoadedCards(container, 'native', documentRef);
             }
         }
 
         function clearCardState() {
+            if (!documentRef?.querySelector?.(`[${ORIGINAL_INDEX_ATTRIBUTE}]`)) return;
             restoreOrder();
             for (const card of queryAll(documentRef, `[${ORIGINAL_INDEX_ATTRIBUTE}]`)) {
                 card.removeAttribute?.(ORIGINAL_INDEX_ATTRIBUTE);
@@ -195,10 +205,17 @@
                 sorting = false;
             }
             if (status) {
-                status.textContent = mode === 'newest-loaded'
+                // Only write when changed: an unconditional textContent
+                // assignment replaces the text node every pass, and the
+                // resulting mutation record re-triggers this feature's own
+                // mutation rule — a self-sustaining loop that also re-runs
+                // every other unscoped rule.
+                const hint = mode === 'newest-loaded'
                     ? t('subscriptionLoadedOnlyHint', 'Newest first sorts only videos loaded on this page. Scroll to load more.')
                     : '';
-                status.dataset.loadedCount = String(count);
+                if (status.textContent !== hint) status.textContent = hint;
+                const loaded = String(count);
+                if (status.dataset.loadedCount !== loaded) status.dataset.loadedCount = loaded;
             }
         }
 
@@ -227,7 +244,12 @@
                 button.addEventListener('click', () => {
                     saveSetting('subscriptionViewMode', mode);
                     applyView();
-                    mountControls();
+                    // Update aria-pressed in place — rebuilding the toolbar
+                    // would detach the activated button and drop keyboard
+                    // focus to <body>.
+                    for (const sibling of queryAll(wrapper, 'button[data-view-mode]')) {
+                        sibling.setAttribute('aria-pressed', String(sibling.dataset.viewMode === mode));
+                    }
                 });
                 wrapper.appendChild(button);
             }
@@ -296,7 +318,10 @@
             scheduled = schedule(() => {
                 scheduled = null;
                 if (!isSubscriptionsPage()) {
-                    teardownPage();
+                    // Tear down once when leaving the feed; repeating the full
+                    // teardown on every off-page mutation batch would rescan
+                    // and re-stamp every card on unrelated feeds.
+                    if (controls || ownToolbar) teardownPage();
                     return;
                 }
                 if (!controls?.isConnected) mountControls();
@@ -327,6 +352,7 @@
                 .ytkit-sub-view-label{color:var(--yt-spec-text-secondary,#aaa);font-weight:700;}
                 .ytkit-sub-view-controls button,.ytkit-sub-view-controls select{min-height:36px;box-sizing:border-box;padding:6px 10px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.14));border-radius:7px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.07));color:inherit;font:600 12px/1 system-ui;cursor:pointer;}
                 .ytkit-sub-view-controls button[aria-pressed="true"]{border-color:var(--yt-spec-call-to-action,#3ea6ff);background:var(--yt-spec-call-to-action,#3ea6ff);color:#081018;}
+                html:not([dark]) .ytkit-sub-view-controls button[aria-pressed="true"]{color:#fff;}
                 .ytkit-sub-view-controls button:focus-visible,.ytkit-sub-view-controls select:focus-visible{outline:3px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px;}
                 .ytkit-sub-view-hint{color:var(--yt-spec-text-secondary,#aaa);font-size:11px;}
                 ytd-browse[${VIEW_ATTRIBUTE}="list"] ytd-rich-grid-renderer #contents,
