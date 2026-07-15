@@ -904,6 +904,20 @@ class DownloadManagerTests(unittest.TestCase):
         self.assertTrue(manager.cancel(ids[1]))
         self.assertEqual(manager.downloads[ids[1]].status, 'cancelled')
 
+    def test_persisted_intake_pause_survives_restart_with_empty_queue(self):
+        # Regression: intakePaused was serialized but never read back, so
+        # pausing intake with an empty pending list silently un-paused after
+        # an application restart.
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            config = FakeConfig({'DownloadPath': tmp, 'AudioDownloadPath': tmp})
+            manager = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertTrue(manager.pause_intake())
+            self.assertEqual(manager.pending_count(), 0)
+
+            restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertTrue(restored.intake_paused)
+
     def test_persisted_queue_restores_paused_and_never_serializes_cookies(self):
         cookies = [{
             'domain': '.youtube.com', 'name': 'SID', 'value': 'top-secret-cookie',
@@ -1032,7 +1046,9 @@ class DownloadManagerTests(unittest.TestCase):
 
             dl_id, err = manager.start_download('https://example.com/future-schema')
             self.assertIsNone(dl_id)
-            self.assertIn('Could not save', err)
+            # The surfaced error must name the real cause (schema mismatch),
+            # not the generic disk-space/permissions advice.
+            self.assertIn('incompatible Astra Downloader version', err)
             self.assertEqual(json.loads(queue_path.read_text(encoding='utf-8')), future)
             self.assertIn('incompatible', manager.queue_payload()['persistenceError'])
 
@@ -1115,6 +1131,49 @@ class DownloadFailureClassifierTests(unittest.TestCase):
         self.assertEqual(payload['error_code'], 'ffmpeg-missing-or-stale')
         self.assertEqual(payload['next_action'], 'refresh-ffmpeg')
         self.assertIn('ffmpeg', payload['advice'])
+
+
+class PickFolderRouteTests(unittest.TestCase):
+    """Flask-level coverage for /pick-folder.
+
+    Regression: a nested route handler named ``queue`` shadowed the stdlib
+    ``queue`` module inside create_api's closure scope, so every /pick-folder
+    request died with an AttributeError-driven 500 before reaching the GUI
+    bridge.
+    """
+
+    def test_pick_folder_round_trips_through_the_gui_bridge(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+
+        while not ad._folder_pick_q.empty():
+            ad._folder_pick_q.get_nowait()
+        original_service = ad._folder_picker_service
+        ad._folder_picker_service = object()  # non-None: picker "available"
+        picked = tempfile.gettempdir()
+
+        def serve_one_pick():
+            request = ad._folder_pick_q.get(timeout=10)
+            request['response'].put({'path': picked})
+
+        worker = threading.Thread(target=serve_one_pick, daemon=True)
+        worker.start()
+        try:
+            resp = api.test_client().post(
+                "/pick-folder",
+                json={},
+                headers={"X-Auth-Token": token},
+            )
+        finally:
+            worker.join(timeout=15)
+            ad._folder_picker_service = original_service
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertEqual(body.get('path'), picked)
+        self.assertIn('outsideAllowlist', body)
 
 
 class ApiSecurityTests(unittest.TestCase):

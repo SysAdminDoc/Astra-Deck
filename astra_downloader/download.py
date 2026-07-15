@@ -754,7 +754,10 @@ class DownloadManagerCore:
             dl._cookies = None
             if cookies:
                 jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"
-                dl.cookies_file = write_cookies_netscape(cookies, jar_path)
+                dl.cookies_file = write_cookies_netscape(
+                    cookies, jar_path,
+                    logger=self._dependencies['write_persistent_log'],
+                )
                 if not dl.cookies_file:
                     with self._lock:
                         self._running_ids.discard(dl.id)
@@ -966,6 +969,10 @@ class DownloadManagerCore:
                         dl.error, dl.error_code, dl.error_advice, dl.error_action,
                     ) = recovery_previous
                 dl._cookies = None
+                if not self._persistence_compatible:
+                    # Disk/permission advice is wrong for a schema mismatch;
+                    # surface the real cause so the user can recover.
+                    return None, self._persistence_error
                 return None, (
                     "Could not save the pending download queue. Check disk space and "
                     "permissions, then retry."
