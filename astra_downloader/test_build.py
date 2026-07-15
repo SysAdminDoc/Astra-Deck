@@ -20,6 +20,11 @@ class FakeDistribution:
 
 
 class ReleaseConstraintsTests(unittest.TestCase):
+    def test_frozen_build_keeps_lazy_boundary_modules_in_the_graph(self):
+        source = MODULE_PATH.read_text(encoding='utf-8')
+        for module_name in ('_compat', 'config', 'download', 'health', 'routes', 'gui'):
+            self.assertIn(f'"--hidden-import", "{module_name}"', source)
+
     def test_reviewed_constraints_are_exact_and_cover_release_roots(self):
         constraints = build.parse_release_constraints()
         self.assertGreaterEqual(len(constraints), 30)
