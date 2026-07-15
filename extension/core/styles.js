@@ -29,14 +29,39 @@
             category,
             buildCss,
             isRawCss,
-            bodyClass = `ytkit-${id}`
+            bodyClass = `ytkit-${id}`,
+            pageScopes = ['all']
         } = options;
+
+        const normalizedPageScopes = Object.freeze(
+            [...new Set((Array.isArray(pageScopes) ? pageScopes : [pageScopes])
+                .map((scope) => String(scope || '').trim().toLowerCase())
+                .filter(Boolean))]
+        );
+        const resolvedPageScopes = normalizedPageScopes.length
+            ? normalizedPageScopes
+            : Object.freeze(['all']);
+        const matchesPage = (page) => resolvedPageScopes.includes('all')
+            || resolvedPageScopes.includes(String(page || '').trim().toLowerCase());
+
+        function removeRecord() {
+            const record = lifecycleStyleRecords.get(id);
+            if (!record) return false;
+            record.style?.remove();
+            if (record.bodyClass && document.body) {
+                document.body.classList.remove(record.bodyClass);
+            }
+            lifecycleStyleRecords.delete(id);
+            return true;
+        }
 
         return {
             id,
             category,
             buildCss,
+            pageScopes: resolvedPageScopes,
             init(ctx = {}) {
+                if (!matchesPage(ctx.currentPage)) return;
                 const settings = ctx.settings || {};
                 const css = typeof buildCss === 'function'
                     ? buildCss(settings, ctx)
@@ -51,6 +76,10 @@
                 lifecycleStyleRecords.set(id, { style, bodyClass: className });
             },
             apply(ctx = {}) {
+                if (!matchesPage(ctx.currentPage)) {
+                    removeRecord();
+                    return;
+                }
                 if (typeof buildCss !== 'function') return;
                 const record = lifecycleStyleRecords.get(id);
                 const css = buildCss(ctx.settings || {}, ctx);
@@ -77,15 +106,7 @@
                 record.style.textContent = css;
             },
             destroy(ctx = {}) {
-                const record = lifecycleStyleRecords.get(id);
-                if (record) {
-                    record.style?.remove();
-                    if (record.bodyClass && document.body) {
-                        document.body.classList.remove(record.bodyClass);
-                    }
-                    lifecycleStyleRecords.delete(id);
-                    return;
-                }
+                if (removeRecord()) return;
                 const className = ctx.bodyClass || bodyClass;
                 document.getElementById(`yt-suite-style-${id}`)?.remove();
                 if (className && document.body) document.body.classList.remove(className);

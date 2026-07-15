@@ -104,6 +104,7 @@
     const featureSpec = Object.freeze({
         id: 'subtitleStyling',
         category: 'subtitles',
+        pageScopes: Object.freeze(['watch', 'shorts', 'embed']),
         buildCss: buildSubtitleCss,
         // No-op for wave 1 — ytkit.js inline block still owns the real
         // injectStyle / cleanup. Wave 2 will replace these with the

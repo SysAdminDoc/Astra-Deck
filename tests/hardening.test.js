@@ -9822,10 +9822,14 @@ test('v4.47.0 NF5 wave 3 — cssFeature delegates registered CSS injection to li
     const cssFeatureStart = ytkitSrc.indexOf('function cssFeature(');
     assert.ok(cssFeatureStart > -1, 'cssFeature factory must exist');
     const cssFeatureBody = ytkitSrc.slice(cssFeatureStart, cssFeatureStart + 2400);
-    assert.match(cssFeatureBody, /const hasLifecycleSpec = \(\) => !!\(Lifecycle && Lifecycle\._features && Lifecycle\._features\.has\(id\)\);/,
+    assert.match(cssFeatureBody, /const getLifecycleSpec = \(\) => Lifecycle\?\._features\?\.get\(id\)\?\.spec \|\| null;/,
+        'cssFeature must resolve registered lifecycle specs before injecting directly');
+    assert.match(cssFeatureBody, /const hasLifecycleSpec = \(\) => !!getLifecycleSpec\(\);/,
         'cssFeature must detect registered lifecycle specs before injecting directly');
-    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id,\s*\{ css, isRaw, bodyClass \}\);/,
-        'cssFeature.init must pass CSS context to Lifecycle.start for registered specs');
+    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id,\s*\{[\s\S]*?css,[\s\S]*?isRaw,[\s\S]*?bodyClass,[\s\S]*?currentPage: appState\.currentPage \|\| getCurrentPage\(\)[\s\S]*?\}\);/,
+        'cssFeature.init must pass CSS and current-page context to Lifecycle.start');
+    assert.match(cssFeatureBody, /\.\.\.\(lifecyclePages \? \{ pages: lifecyclePages \} : \{\}\)/,
+        'cssFeature must promote lifecycle page scopes onto the runtime feature');
     assert.match(cssFeatureBody, /this\._lifecycleDelegated = true;[\s\S]*?return;/,
         'cssFeature.init must return after successful lifecycle delegation');
     assert.match(cssFeatureBody, /this\._styleElement = injectStyle\(css, this\.id, isRaw\);/,

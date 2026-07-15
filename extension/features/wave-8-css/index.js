@@ -63,15 +63,16 @@
             @keyframes ytkit-nyan-rainbow { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }`;
     }
 
-    function createLifecycleSpec(id, category, buildCss) {
+    function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
         const factory = globalThis.YTKitCore
             && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
             && globalThis.YTKitCore.createCssLifecycleSpec;
-        if (factory) return factory({ id, category, buildCss });
+        if (factory) return factory({ id, category, buildCss, pageScopes });
         return {
             id,
             category,
             buildCss,
+            pageScopes: Object.freeze([...pageScopes]),
             init() { /* reason: styles core helper unavailable in this context */ },
             destroy() { /* reason: styles core helper unavailable in this context */ }
         };
@@ -82,11 +83,11 @@
     // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
     // is only the compatibility wrapper/fallback.
     const LIFECYCLE_SPECS = Object.freeze([
-        createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss),
-        createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss),
-        createLifecycleSpec('hideLatestPosts',        'feed',         buildHideLatestPostsCss),
-        createLifecycleSpec('disableMiniPlayer',      'watch-player', buildDisableMiniPlayerCss),
-        createLifecycleSpec('nyanCatProgressBar',     'shell',        buildNyanCatProgressBarCss),
+        createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss, ['all']),
+        createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss,         ['all']),
+        createLifecycleSpec('hideLatestPosts',        'feed',         buildHideLatestPostsCss,        ['home', 'subscriptions', 'channel']),
+        createLifecycleSpec('disableMiniPlayer',      'watch-player', buildDisableMiniPlayerCss,      ['all']),
+        createLifecycleSpec('nyanCatProgressBar',     'shell',        buildNyanCatProgressBarCss,     ['watch', 'shorts', 'embed']),
     ]);
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});

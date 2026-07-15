@@ -66,6 +66,7 @@
     const featureSpec = Object.freeze({
         id: 'blueLightFilter',
         category: 'playback-audio',
+        pageScopes: Object.freeze(['all']),
         buildRgba: buildBlueLightRgba,
         OVERLAY_FIXED_CSS,
         // v4.47.0 NF5 wave 1: register-only; inline ytkit.js owns
