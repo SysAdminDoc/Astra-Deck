@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.9] - 2026-07-15
+
+### Fixed
+
+- **Enabled settings toggles move their thumb again.** The v4 visual layer no
+  longer lets a physical `left:auto` declaration cancel its logical active
+  offset. Thumb motion now follows the inline direction in both LTR and RTL,
+  with rendered geometry coverage for active and inactive states.
+
 ## [4.49.8] - 2026-07-15
 
 ### Changed

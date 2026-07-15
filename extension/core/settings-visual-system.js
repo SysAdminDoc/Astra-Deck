@@ -713,7 +713,7 @@
         #ytkit-settings-panel .ytkit-switch .ytkit-switch-thumb {
             top: 3px !important;
             inset-inline-start: 3px !important;
-            left: auto !important;
+            inset-inline-end: auto !important;
             width: 20px !important;
             height: 20px !important;
             border: 0 !important;
@@ -731,7 +731,7 @@
 
         #ytkit-settings-panel .ytkit-switch.active .ytkit-switch-thumb {
             inset-inline-start: 23px !important;
-            left: auto !important;
+            inset-inline-end: auto !important;
             background: #fff !important;
             transform: none !important;
         }

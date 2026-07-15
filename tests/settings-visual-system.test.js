@@ -44,7 +44,11 @@ test('settings visual system replaces boxed dashboard chrome with a compact sett
     assert.match(visualSystemSource, /\.ytkit-nav-btn\.active::before\s*\{\s*background:\s*var\(--ytkit-v3-accent\)/);
     assert.match(
         visualSystemSource,
-        /\.ytkit-switch\.active \.ytkit-switch-thumb\s*\{[\s\S]*?inset-inline-start:\s*23px[\s\S]*?transform:\s*none/
+        /\.ytkit-switch\.active \.ytkit-switch-thumb\s*\{[\s\S]*?inset-inline-start:\s*23px[\s\S]*?inset-inline-end:\s*auto[\s\S]*?transform:\s*none/
+    );
+    assert.doesNotMatch(
+        visualSystemSource,
+        /\.ytkit-switch(?:\.active)? \.ytkit-switch-thumb\s*\{[\s\S]*?left:\s*auto !important;[\s\S]*?\}/
     );
     assert.match(visualSystemSource, /#ytkit-reset-active-section\s*\{\s*display:\s*none/);
     assert.match(
