@@ -1,0 +1,50 @@
+{
+  "status": "ok",
+  "service": "astra-downloader",
+  "api": 2,
+  "name": "Astra Downloader",
+  "version": "1.5.1",
+  "port": 9751,
+  "downloads": 0,
+  "token_required": true,
+  "ytDlpVersion": "2026.07.04",
+  "ffmpegCapabilities": {
+    "version": "7.1.1",
+    "majorVersion": 7,
+    "current": true,
+    "message": "ready"
+  },
+  "poTokenProvider": {
+    "ok": true,
+    "port": 4416,
+    "version": "1.2.2"
+  },
+  "javascriptRuntime": {
+    "runtime": "deno",
+    "installed": true,
+    "version": "2.4.1",
+    "supported": true,
+    "ejsReady": true,
+    "ytdlpNeedsRuntime": true,
+    "source": "bundled"
+  },
+  "denoRuntime": {
+    "runtime": "deno",
+    "installed": true,
+    "version": "2.4.1",
+    "supported": true,
+    "ejsReady": true,
+    "ytdlpNeedsRuntime": true,
+    "source": "bundled"
+  },
+  "sabrSupport": "limited",
+  "updateRecovery": {
+    "companion": {
+      "status": "active",
+      "activeVersion": "1.5.1"
+    }
+  },
+  "recentErrors": [
+    "must not cross the UI boundary"
+  ]
+}

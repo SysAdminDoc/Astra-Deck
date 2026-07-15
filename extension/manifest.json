@@ -152,6 +152,7 @@
         "core/transcript-service.js",
         "core/transcript-index.js",
         "core/persisted-domains.js",
+        "core/settings-import-transaction.js",
         "core/storage-manager.js",
         "core/icons.js",
         "core/api-limiter.js",
