@@ -1318,12 +1318,19 @@ for name in (
     assert module.__all__, f"{name} must expose its compatibility contract"
 
 config = importlib.import_module("astra_downloader.config")
+download = importlib.import_module("astra_downloader.download")
 assert config.normalize_url("https://example.com/video") == (
     "https://example.com/video", None
 )
 assert config.validate_download_request_body({"url": "https://example.com"})[1] is None
 assert config.sanitize_config({"ServerPort": 999999})["ServerPort"] == 65535
 assert config.DEFAULT_CONFIG["JavaScriptRuntime"] == "auto"
+model = download.Download("owned", "https://example.com", clock=lambda: 123.0)
+assert model.start_time == 123.0
+model.status = "complete"
+model.mark_terminal()
+assert model.finished_time == 123.0
+assert download.classify_download_failure("connection timed out") == "network-unreachable"
 
 for forbidden in (
     "astra_downloader.astra_downloader",
@@ -1360,6 +1367,10 @@ for forbidden in (
         self.assertIs(config.allowed_output_roots, ad.allowed_output_roots)
         self.assertIs(config.normalize_output_dir, ad.normalize_output_dir)
         self.assertIs(download.DownloadManager, ad.DownloadManager)
+        self.assertIs(download.Download, ad.Download)
+        self.assertIs(download.build_video_format_args, ad.build_video_format_args)
+        self.assertIs(download.classify_download_failure, ad.classify_download_failure)
+        self.assertIs(download.DOWNLOAD_ACTIVE_STATES, ad.DOWNLOAD_ACTIVE_STATES)
         self.assertIs(health.get_ytdlp_version, ad.get_ytdlp_version)
         self.assertIs(routes.create_api, ad.create_api)
         self.assertIs(gui.MainWindow, ad.MainWindow)
