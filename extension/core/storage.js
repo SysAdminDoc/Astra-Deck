@@ -282,7 +282,7 @@
             pendingStorageFlush = null;
         }
         if (!core.hasExtensionContext() || !hasPendingStorageWrites()) {
-            return storageFlushInFlight || Promise.resolve();
+            return storageFlushInFlight || Promise.resolve({ ok: true });
         }
         if (storageFlushInFlight) {
             // Serialize flushes: with two set() calls in flight, an OLDER
@@ -295,11 +295,15 @@
         const writes = pendingStorageWrites;
         pendingStorageWrites = Object.create(null);
 
+        // Never rejects: failures merge back for retry. The resolved
+        // { ok, error } result is how callers that need write confirmation
+        // (e.g. the settings-import transaction) observe a failed flush.
         storageFlushInFlight = chrome.storage.local.set(writes).then(() => {
             // Success — clear any backoff so the next flush runs on the
             // normal debounce schedule instead of the failure cadence.
             storageFlushBackoffMs = 0;
             storageFlushFailureCount = 0;
+            return { ok: true };
         }).catch((error) => {
             console.warn('[YTKit] Storage flush failed:', error);
             // Merge back onto a prototype-less target so retries cannot
@@ -318,6 +322,7 @@
                 STORAGE_FLUSH_MIN_BACKOFF_MS * Math.pow(2, Math.min(storageFlushFailureCount - 1, 8))
             );
             schedulePendingStorageFlush();
+            return { ok: false, error };
         }).finally(() => {
             storageFlushInFlight = null;
         });
@@ -333,7 +338,7 @@
         }
 
         schedulePendingStorageFlush();
-        return Promise.resolve();
+        return Promise.resolve({ ok: true, queued: true });
     }
 
     function storageWrite(key, value, options = {}) {

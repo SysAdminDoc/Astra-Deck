@@ -77,6 +77,51 @@ test('settings import transaction rolls back partial writes and does not expose 
     assert.equal(transaction.hasUndo(), false);
 });
 
+test('async apply commits only after the persistence promise resolves', async () => {
+    let state = { settings: { compactLayout: true } };
+    let persisted = false;
+    const transaction = createSettingsImportTransaction({ now: () => 1720972800000 });
+
+    const pending = transaction.run({
+        snapshot: () => clone(state),
+        apply: () => {
+            state.settings.compactLayout = false;
+            return Promise.resolve().then(() => { persisted = true; });
+        },
+        restore: (snapshot) => { state = clone(snapshot); }
+    });
+
+    assert.equal(typeof pending.then, 'function');
+    const result = await pending;
+    assert.equal(result.ok, true);
+    assert.equal(result.phase, 'applied');
+    assert.equal(persisted, true);
+    assert.equal(transaction.hasUndo(), true);
+});
+
+test('async apply rejection rolls back instead of reporting phantom success', async () => {
+    const original = { settings: { compactLayout: true } };
+    let state = clone(original);
+    const transaction = createSettingsImportTransaction({ now: () => 1720972800000 });
+    const failure = new Error('storage flush failed');
+
+    const result = await transaction.run({
+        snapshot: () => clone(state),
+        apply: () => {
+            state.settings.compactLayout = false;
+            return Promise.reject(failure);
+        },
+        restore: (snapshot) => { state = clone(snapshot); }
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.phase, 'apply');
+    assert.equal(result.rolledBack, true);
+    assert.equal(result.error, failure);
+    assert.deepEqual(state, original);
+    assert.equal(transaction.hasUndo(), false);
+});
+
 test('failed rollback keeps a retryable checkpoint until undo succeeds', () => {
     let restoreAttempts = 0;
     let state = { settings: { compactLayout: true } };

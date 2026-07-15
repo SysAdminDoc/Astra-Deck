@@ -55,6 +55,17 @@ test('gemini requests honor aiSummaryModel via a validated URL model substitutio
     assert.ok(revalidateIndex > substitutionIndex, 'the rewritten gemini URL must be re-validated');
 });
 
+test('userscript credential dialog renders inside a closed shadow root', () => {
+    // The password input lives on youtube.com — page scripts must not be able
+    // to read input.value or keylog while the dialog is open.
+    assert.match(userscriptFeature, /attachShadow\(\{ mode: 'closed' \}\)/);
+    const attachIndex = userscriptFeature.indexOf("attachShadow({ mode: 'closed' })");
+    const appendIndex = userscriptFeature.indexOf('doc.body.appendChild(host)');
+    assert.ok(attachIndex > -1 && appendIndex > attachIndex,
+        'the shadow root must be attached before the host enters the document');
+    assert.doesNotMatch(userscriptFeature, /doc\.body\.appendChild\(shell\)/);
+});
+
 test('userscript keeps isolated BYOK custody while sharing validated artifacts', () => {
     assert.match(userscriptFeature, /createUserscriptCredentialVault/);
     assert.match(userscriptFeature, /artifactService\.buildPrompt/);

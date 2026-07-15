@@ -27,8 +27,7 @@
             }
 
             const createdAt = now();
-            try {
-                const value = operation.apply(snapshot);
+            const finalize = (value) => {
                 checkpoint = {
                     snapshot,
                     summary: operation.summary || null,
@@ -43,7 +42,8 @@
                     createdAt,
                     value
                 };
-            } catch (error) {
+            };
+            const rollback = (error) => {
                 try {
                     operation.restore(snapshot);
                     checkpoint = null;
@@ -67,6 +67,18 @@
                         canUndo: true
                     };
                 }
+            };
+            try {
+                const value = operation.apply(snapshot);
+                if (value && typeof value.then === 'function') {
+                    // apply() surfaced its persistence promise — commit only
+                    // once the writes confirm, and roll back on rejection so a
+                    // real IO failure cannot report a successful import.
+                    return Promise.resolve(value).then(finalize, rollback);
+                }
+                return finalize(value);
+            } catch (error) {
+                return rollback(error);
             }
         }
 

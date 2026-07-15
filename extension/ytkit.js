@@ -3911,7 +3911,7 @@ return response;
             };
             return JSON.stringify(exportData, null, 2);
         },
-        importAllSettingsDetailed(jsonString) {
+        async importAllSettingsDetailed(jsonString) {
             try {
                 const importedData = JSON.parse(jsonString);
                 if (!isPlainObject(importedData)) return { ok: false, message: 'Invalid file format.' };
@@ -4012,17 +4012,31 @@ return response;
                 };
                 const transaction = this._getSettingsImportTransaction();
                 if (!transaction) throw new Error('Settings import transaction service unavailable');
-                const outcome = transaction.run({
+                const outcome = await transaction.run({
                     snapshot: () => backup,
                     summary,
                     restore,
                     apply: () => {
-                        StorageManager.setSync(STORAGE_KEYS.settings, newSettings);
-                        StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, null);
-                        if (hiddenVideos !== null) StorageManager.setSync(STORAGE_KEYS.hiddenVideos, hiddenVideos);
-                        if (allowedVideos !== null) StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos);
-                        if (blockedChannels !== null) StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels);
-                        if (bookmarks !== null) StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks);
+                        // setSync resolves { ok, error } without rejecting;
+                        // aggregate the immediate writes so a real IO failure
+                        // rejects the transaction and triggers rollback
+                        // instead of reporting a phantom success.
+                        const writes = [
+                            StorageManager.setSync(STORAGE_KEYS.settings, newSettings),
+                            StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, null)
+                        ];
+                        if (hiddenVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.hiddenVideos, hiddenVideos));
+                        if (allowedVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos));
+                        if (blockedChannels !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels));
+                        if (bookmarks !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks));
+                        return Promise.all(writes).then((results) => {
+                            const failed = results.find((result) => result && result.ok === false);
+                            if (failed) {
+                                throw failed.error instanceof Error
+                                    ? failed.error
+                                    : new Error('Extension storage rejected the imported data.');
+                            }
+                        });
                     }
                 });
                 if (!outcome.ok) {
@@ -4039,8 +4053,8 @@ return response;
                 return { ok: false, message: e?.message || 'Invalid file format.' };
             }
         },
-        importAllSettings(jsonString) {
-            return this.importAllSettingsDetailed(jsonString).ok;
+        async importAllSettings(jsonString) {
+            return (await this.importAllSettingsDetailed(jsonString)).ok;
         },
         undoLastSettingsImport() {
             const outcome = this._getSettingsImportTransaction()?.undo();
@@ -43147,7 +43161,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
             if (e.target.closest('#ytkit-import')) {
                 handleFileImport(async (content) => {
-                    const result = settingsManager.importAllSettingsDetailed(content);
+                    const result = await settingsManager.importAllSettingsDetailed(content);
                     if (result?.ok) {
                         handleExternalStorageChanges({
                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
