@@ -91,6 +91,11 @@ try:
         is_youtube_url, parse_ffmpeg_major, parse_ffmpeg_version_output,
         parse_ytdlp_version_output, ytdlp_needs_external_runtime,
     )
+    from .gui import (
+        download_status_tone, format_duration, human_status, make_card,
+        make_divider, make_empty_state, make_label, make_section_label,
+        make_stat, make_status_badge, repolish,
+    )
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from config import (
@@ -127,6 +132,11 @@ except ImportError:  # Direct script / flat source-path compatibility.
         build_javascript_runtime_args, build_youtube_extractor_args,
         is_youtube_url, parse_ffmpeg_major, parse_ffmpeg_version_output,
         parse_ytdlp_version_output, ytdlp_needs_external_runtime,
+    )
+    from gui import (
+        download_status_tone, format_duration, human_status, make_card,
+        make_divider, make_empty_state, make_label, make_section_label,
+        make_stat, make_status_badge, repolish,
     )
 
 # ══════════════════════════════════════════════════════════════
@@ -4793,129 +4803,6 @@ def spawn_delayed_install_dir_removal(path=INSTALL_DIR):
             stderr=subprocess.DEVNULL,
         )
     return True
-
-# ══════════════════════════════════════════════════════════════
-# GUI WIDGETS
-# ══════════════════════════════════════════════════════════════
-def repolish(widget):
-    widget.style().unpolish(widget)
-    widget.style().polish(widget)
-    widget.update()
-
-
-def make_label(text, class_name=None, word_wrap=False):
-    lbl = QLabel(text)
-    if class_name:
-        lbl.setProperty("class", class_name)
-    lbl.setWordWrap(word_wrap)
-    return lbl
-
-
-def make_section_label(text):
-    return make_label(text, "section")
-
-
-def make_divider():
-    divider = QFrame()
-    divider.setProperty("class", "divider")
-    return divider
-
-
-def make_card(class_name="card"):
-    f = QFrame()
-    f.setProperty("class", class_name)
-    return f
-
-
-def make_status_badge(text, tone="neutral"):
-    badge = QLabel(text)
-    badge.setProperty("class", "badge")
-    badge.setProperty("tone", tone)
-    badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    badge.setMinimumHeight(22)
-    return badge
-
-
-def download_status_tone(status):
-    if status in ("complete",):
-        return "success"
-    if status in ("failed", "cancelled"):
-        return "danger"
-    if status in ("merging", "extracting", "queued", "paused", "needs-auth"):
-        return "warning"
-    if status in ("downloading",):
-        return "info"
-    return "neutral"
-
-
-def human_status(status):
-    return {
-        "queued": "Queued",
-        "pending": "Pending",
-        "paused": "Paused",
-        "needs-auth": "Needs sign-in",
-        "downloading": "Downloading",
-        "merging": "Merging",
-        "extracting": "Extracting",
-        "complete": "Complete",
-        "failed": "Failed",
-        "cancelled": "Cancelled",
-    }.get(status, str(status).title())
-
-
-def format_duration(seconds):
-    try:
-        seconds = int(seconds or 0)
-    except (TypeError, ValueError):
-        return ""
-    if seconds <= 0:
-        return ""
-    mins, secs = divmod(seconds, 60)
-    hours, mins = divmod(mins, 60)
-    if hours:
-        return f"{hours}h {mins}m"
-    if mins:
-        return f"{mins}m {secs}s"
-    return f"{secs}s"
-
-
-def make_empty_state(title, body, action_text=None, action=None):
-    frame = make_card("empty")
-    layout = QVBoxLayout(frame)
-    layout.setContentsMargins(18, 18, 18, 18)
-    layout.setSpacing(6)
-    layout.addWidget(make_section_label("Ready when you are"))
-    layout.addWidget(make_label(title, "emptyTitle"))
-    layout.addWidget(make_label(body, "emptyBody", word_wrap=True))
-    if action_text and callable(action):
-        button = QPushButton(action_text)
-        button.setProperty("class", "secondary")
-        button.setAccessibleName(action_text)
-        button.setCursor(Qt.CursorShape.PointingHandCursor)
-        button.clicked.connect(action)
-        layout.addSpacing(6)
-        layout.addWidget(button, 0, Qt.AlignmentFlag.AlignLeft)
-    return frame
-
-
-def make_stat(label_text, value_text="0", hint_text=""):
-    f = QFrame()
-    f.setProperty("class", "stat")
-    layout = QVBoxLayout(f)
-    layout.setContentsMargins(16, 14, 16, 14)
-    layout.setSpacing(4)
-    lbl = make_label(label_text, "section")
-    val = QLabel(value_text)
-    val.setAlignment(Qt.AlignmentFlag.AlignLeft)
-    val.setStyleSheet("font-size: 25px; font-weight: 750; color: #f8fafc;")
-    val.setObjectName(f"stat_{label_text.lower()}")
-    layout.addWidget(lbl)
-    layout.addWidget(val)
-    if hint_text:
-        hint = make_label(hint_text, "fieldHint")
-        layout.addWidget(hint)
-    return f, val
-
 
 class ReadinessProbe(QObject):
     """Collect toolchain health away from the GUI thread."""
