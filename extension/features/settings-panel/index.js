@@ -63,6 +63,9 @@
         const persistCrashCounts = typeof deps.persistCrashCounts === 'function'
             ? deps.persistCrashCounts
             : () => {};
+        const requestFeatureOptionalHosts = typeof deps.requestFeatureOptionalHosts === 'function'
+            ? deps.requestFeatureOptionalHosts
+            : async () => true;
 
         let _panelCleanups = [];
         let _settingsPanelLastFocus = null;
@@ -2943,25 +2946,52 @@ function attachUIEventListeners() {
         _panelSearchUpdater = _handleSearch;
 
         // Feature toggles
-        doc.addEventListener('change', (e) => {
+        doc.addEventListener('change', async (e) => {
             if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-feature-cb')) {
-                const card = e.target.closest('[data-feature-id]');
+                const input = e.target;
+                const card = input.closest('[data-feature-id]');
                 if (!card) return;
                 const featureId = card.dataset.featureId;
-                const isEnabled = e.target.checked;
+                const isEnabled = input.checked;
+                const feature = getFeatureById(featureId);
+
+                if (isEnabled) {
+                    const wasDisabled = input.disabled;
+                    input.disabled = true;
+                    input.setAttribute('aria-busy', 'true');
+                    try {
+                        await requestFeatureOptionalHosts(featureId, true);
+                    } catch (error) {
+                        input.checked = false;
+                        const deniedSwitch = input.closest('.ytkit-switch');
+                        if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        const deniedCard = input.closest('.ytkit-feature-card');
+                        if (deniedCard && !deniedCard.classList.contains('ytkit-sub-card')) {
+                            deniedCard.classList.remove('ytkit-card-enabled');
+                        }
+                        const featureName = getFeatureName(feature) || featureId;
+                        const message = `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
+                        showToast(message, '#ef4444', { duration: 6 });
+                        setPanelStatus(message, 'error');
+                        DebugManager.log('Permissions', `${featureId} enable blocked: ${error?.message || 'host access denied'}`);
+                        updateAllToggleStates();
+                        return;
+                    } finally {
+                        input.disabled = wasDisabled;
+                        input.removeAttribute('aria-busy');
+                    }
+                }
 
                 // Update switch visual
-                const switchEl = e.target.closest('.ytkit-switch');
+                const switchEl = input.closest('.ytkit-switch');
                 if (switchEl) switchEl.classList.toggle('active', isEnabled);
 
                 // Update card enabled accent stripe
-                const cardEl = e.target.closest('.ytkit-feature-card');
+                const cardEl = input.closest('.ytkit-feature-card');
                 if (cardEl && !cardEl.classList.contains('ytkit-sub-card')) {
                     cardEl.classList.toggle('ytkit-card-enabled', isEnabled);
                 }
-
-                const feature = getFeatureById(featureId);
 
                 // Array-toggle sub-features: modify parent array instead of boolean
                 if (feature?._arrayKey) {
@@ -3066,6 +3096,28 @@ function attachUIEventListeners() {
                 const catId = e.target.dataset.category;
                 const pane = doc.getElementById(`ytkit-pane-${catId}`);
 
+                const changedInputs = pane
+                    ? Array.from(pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card) .ytkit-feature-cb'))
+                        .filter((cb) => cb.checked !== isEnabled)
+                    : [];
+                if (isEnabled && changedInputs.length) {
+                    const featureIds = changedInputs
+                        .map((cb) => cb.closest('[data-feature-id]')?.dataset.featureId)
+                        .filter(Boolean);
+                    try {
+                        await requestFeatureOptionalHosts(featureIds, true);
+                    } catch (error) {
+                        e.target.checked = false;
+                        const deniedSwitch = e.target.closest('.ytkit-switch');
+                        if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        const message = 'Some settings need host access. Try again and approve the browser prompt.';
+                        showToast(message, '#ef4444', { duration: 6 });
+                        setPanelStatus(message, 'error');
+                        DebugManager.log('Permissions', `Enable-all blocked: ${error?.message || 'host access denied'}`);
+                        return;
+                    }
+                }
+
                 // Update the switch visual state
                 const switchEl = e.target.closest('.ytkit-switch');
                 if (switchEl) {
@@ -3073,11 +3125,9 @@ function attachUIEventListeners() {
                 }
 
                 if (pane) {
-                    pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card) .ytkit-feature-cb').forEach(cb => {
-                        if (cb.checked !== isEnabled) {
-                            cb.checked = isEnabled;
-                            cb.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
+                    changedInputs.forEach(cb => {
+                        cb.checked = isEnabled;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
                     });
                     setPanelStatus(`${isEnabled ? 'Enabled' : 'Disabled'} all settings in this section.`, 'success');
                 }

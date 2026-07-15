@@ -41,11 +41,15 @@
 
     function classifyFailure(error, detail = {}) {
         if (detail.errorClass) return cleanText(detail.errorClass, 'unknown-error');
+        const message = cleanText(error?.message || detail.message || '').toLowerCase();
+        if (error?.code === 'OPTIONAL_HOST_PERMISSION_DENIED'
+            || /runtime host permission not granted|optional host permission|host access (?:was )?(?:not granted|denied)/.test(message)) {
+            return 'permission-denied';
+        }
         const status = getStatus(error, detail);
         if (status === 429) return 'rate-limited';
         if (status >= 500) return 'server-error';
         if (status >= 400) return 'client-error';
-        const message = cleanText(error?.message || detail.message || '').toLowerCase();
         if (/invalid|json|payload|schema/.test(message)) return 'invalid-payload';
         if (/timeout|network|offline|fetch|failed/.test(message)) return 'network-error';
         return 'unknown-error';
@@ -94,6 +98,7 @@
         'rate-limited': 'rate limited',
         'server-error': 'server error',
         'client-error': 'request rejected',
+        'permission-denied': 'host access needed — re-enable in Settings',
         'invalid-payload': 'unexpected response',
         'network-error': 'network error',
         'unknown-error': 'unavailable'

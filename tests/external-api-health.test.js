@@ -102,6 +102,12 @@ test('describeDegradation stays silent for healthy services and describes degrad
     const errored = health.recordFailure('sponsorBlock', new Error('fetch failed'));
     const erroredDesc = health.describeDegradation(errored);
     assert.match(erroredDesc.text, /SponsorBlock: network error/);
+
+    const permissionError = new Error('Runtime host permission not granted: https://sponsor.ajay.app/*');
+    const permissionDenied = health.recordFailure('deArrow', permissionError);
+    assert.equal(permissionDenied.lastErrorClass, 'permission-denied');
+    assert.match(health.describeDegradation(permissionDenied).text,
+        /DeArrow: host access needed — re-enable in Settings/);
 });
 
 test('health subscribers are notified on every record mutation and recovery', () => {
@@ -203,6 +209,48 @@ test('DeArrow reports invalid branding payload to ExternalApiHealth', async () =
     assert.equal(calls.length, 1);
     assert.equal(calls[0][0], 'deArrow');
     assert.equal(calls[0][2].errorClass, 'invalid-payload');
+});
+
+test('DeArrow treats HTTP 404 as an expected cached no-branding result', async () => {
+    const { mod } = loadFeatureModule(
+        '../extension/features/dearrow/index.js',
+        'createDeArrowFeature'
+    );
+    const calls = [];
+    let fetchCount = 0;
+    const notFound = new Error('HTTP 404');
+    notFound.response = { status: 404 };
+    notFound.data = {
+        titles: [],
+        thumbnails: [],
+        casualVotes: [],
+        randomTime: 0.2,
+        videoDuration: null
+    };
+    const feature = mod.createDeArrowFeature({
+        appState: { settings: { daCacheTTL: '4' } },
+        extensionFetchJson: async () => {
+            fetchCount += 1;
+            throw notFound;
+        },
+        storageWriteJSON() {},
+        ExternalApiHealth: {
+            recordFailure: (...args) => calls.push(['failure', ...args]),
+            recordSuccess: (...args) => calls.push(['success', ...args])
+        },
+        DiagnosticLog: { record() {} }
+    });
+    feature._schedulePersist = () => {};
+
+    const first = await feature._fetchBranding('aaaaaaaaaaa');
+    const second = await feature._fetchBranding('aaaaaaaaaaa');
+
+    assert.equal(fetchCount, 1, 'negative lookup must be cached instead of refetched');
+    assert.equal(first, second);
+    assert.deepEqual(first.titles, []);
+    assert.equal(calls.some(([kind]) => kind === 'failure'), false);
+    assert.equal(calls[0][0], 'success');
+    assert.equal(calls[0][2].source, 'network-miss');
 });
 
 test('Return Dislike reports invalid payload and request-budget exhaustion', async () => {

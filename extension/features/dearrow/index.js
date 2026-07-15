@@ -21,6 +21,7 @@
             removeNavigateRule = () => {},
             injectStyle = () => null,
             announceA11y = () => {},
+            VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
             PageTypes = { WATCH: 'watch' }
         } = deps;
 
@@ -157,51 +158,64 @@
             },
             async _doFetch(videoId) {
                 const gen = this._generation;
+                let data;
+                let expectedMiss = false;
                 try {
-                    const { data } = await extensionFetchJson({
+                    ({ data } = await extensionFetchJson({
                         method: 'GET',
                         url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
                         timeout: 8000,
-                    });
-                    // Feature was torn down while this request was in flight —
-                    // do not resurrect the freshly-cleared cache or arm a persist
-                    // timer that would write after destroy().
-                    if (gen !== this._generation) return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
-                    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-                        const payloadError = new Error('invalid DeArrow branding payload');
-                        ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
-                            errorClass: 'invalid-payload',
+                    }));
+                } catch (error) {
+                    // DeArrow uses HTTP 404 for a valid video with no submitted
+                    // title or thumbnail. It still returns an empty branding
+                    // object, so this is a normal negative lookup rather than
+                    // a rejected request or service outage.
+                    if (Number(error?.response?.status) === 404) {
+                        expectedMiss = true;
+                        data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
+                            ? error.data
+                            : { titles: [], thumbnails: [], casualVotes: [] };
+                    } else {
+                        ExternalApiHealth?.recordFailure?.('deArrow', error, {
                             endpoint: 'branding',
                             cacheState: 'miss'
                         });
-                        DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
+                        DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
                         return null;
                     }
-                    data._ts = Date.now();
-                    this._cache[videoId] = data;
-                    this._cacheMeta[videoId] = data._ts;
-                    // Evict oldest entries if in-memory cache exceeds 2000
-                    const cacheKeys = Object.keys(this._cache);
-                    if (cacheKeys.length > 2000) {
-                        cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
-                            .slice(0, cacheKeys.length - 1500)
-                            .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
-                    }
-                    this._schedulePersist();
-                    ExternalApiHealth?.recordSuccess?.('deArrow', {
-                        source: 'network',
-                        cacheState: 'refreshed',
-                        endpoint: 'branding'
-                    });
-                    return data;
-                } catch (error) {
-                    ExternalApiHealth?.recordFailure?.('deArrow', error, {
+                }
+                // Feature was torn down while this request was in flight —
+                // do not resurrect the freshly-cleared cache or arm a persist
+                // timer that would write after destroy().
+                if (gen !== this._generation) return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
+                if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                    const payloadError = new Error('invalid DeArrow branding payload');
+                    ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
+                        errorClass: 'invalid-payload',
                         endpoint: 'branding',
                         cacheState: 'miss'
                     });
-                    DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                    DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
                     return null;
                 }
+                data._ts = Date.now();
+                this._cache[videoId] = data;
+                this._cacheMeta[videoId] = data._ts;
+                // Evict oldest entries if in-memory cache exceeds 2000
+                const cacheKeys = Object.keys(this._cache);
+                if (cacheKeys.length > 2000) {
+                    cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
+                        .slice(0, cacheKeys.length - 1500)
+                        .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
+                }
+                this._schedulePersist();
+                ExternalApiHealth?.recordSuccess?.('deArrow', {
+                    source: expectedMiss ? 'network-miss' : 'network',
+                    cacheState: 'refreshed',
+                    endpoint: 'branding'
+                });
+                return data;
             },
             _schedulePersist() {
                 clearTimeout(this._persistTimer);
@@ -249,7 +263,7 @@
                     if (!link) continue;
                     const url = new URL(link.href, location.origin);
                     const videoId = url.searchParams.get('v');
-                    if (!videoId) continue;
+                    if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
                     // v3.28 deferred → v4.0+: honor per-channel override.
                     // 'off'      → skip title + thumb replacement entirely for this card
                     // 'original' → also skip (channel author wants original metadata)

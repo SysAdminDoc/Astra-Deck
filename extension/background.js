@@ -583,6 +583,36 @@ function getRuntimeOptionalHostPermissionsForUrl(url) {
         .filter((pattern) => hostPermissionMatchesUrl(pattern, url));
 }
 
+function validateRuntimeOptionalHostRequest(origins) {
+    if (!Array.isArray(origins) || origins.length === 0 || origins.length > 16) {
+        throw new Error('Optional host permission request is invalid.');
+    }
+    const declared = new Set(getRuntimeOptionalHostPermissions());
+    const normalized = Array.from(new Set(origins.map((origin) =>
+        typeof origin === 'string' ? origin.trim() : '')));
+    if (normalized.some((origin) => !origin || !declared.has(origin))) {
+        throw new Error('Optional host permission was not declared by this extension build.');
+    }
+    return normalized;
+}
+
+function requestRuntimeOptionalHostPermissions(origins) {
+    let normalized;
+    try {
+        normalized = validateRuntimeOptionalHostRequest(origins);
+    } catch (error) {
+        return Promise.reject(error);
+    }
+    const permissionsApi = ext.permissions;
+    if (!permissionsApi || typeof permissionsApi.request !== 'function') {
+        return Promise.reject(new Error('Runtime host permission prompts are unavailable.'));
+    }
+    // Call request() immediately in the message listener's user-gesture task.
+    // Chromium propagates a content-script gesture through runtime messaging;
+    // awaiting contains() first would risk consuming that transient activation.
+    return callExtensionApi(permissionsApi, 'request', { origins: normalized }).then(Boolean);
+}
+
 function permissionsContainsOrigins(origins) {
     if (!Array.isArray(origins) || origins.length === 0) return Promise.resolve(true);
     const permissionsApi = ext.permissions;
@@ -924,6 +954,19 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     code: 'MUTATION_SERVICE_FAILED',
                     message: error?.message || 'The settings service failed.'
                 }
+            });
+        });
+        return true;
+    }
+
+    if (msg.type === 'YTKIT_REQUEST_OPTIONAL_HOSTS') {
+        requestRuntimeOptionalHostPermissions(msg.origins).then((granted) => {
+            sendResponse({ ok: granted, granted });
+        }).catch((error) => {
+            sendResponse({
+                ok: false,
+                granted: false,
+                error: error?.message || 'Optional host permission request failed.'
             });
         });
         return true;

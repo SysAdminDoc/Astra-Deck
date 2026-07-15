@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const { sources, config } = require('../helpers/source');
 
 function loadFeatureModule(modulePath, namespaceKey) {
@@ -951,6 +952,7 @@ test('settingsPanel monolith prefers the module runtime before inline fallback',
         'liveFeatureList',
         'normalizeSelectOptions',
         'openExternalUrl',
+        'requestFeatureOptionalHosts',
         'safeDestroyFeature',
         'safeInitFeature',
         'settingsManager',
@@ -980,6 +982,32 @@ test('settingsPanel monolith prefers the module runtime before inline fallback',
         'attachUIEventListeners'
     ]) {
         assert.ok(sources.ytkit.includes(`runtime?.${method}`), 'ytkit.js must delegate ' + method + ' through the settingsPanel runtime');
+    }
+});
+
+test('settingsPanel requests optional hosts before enabling and rolls back denial', () => {
+    const moduleSource = fs.readFileSync(require.resolve(
+        '../../extension/features/settings-panel/index.js'
+    ), 'utf8');
+    for (const [label, source] of [
+        ['module', moduleSource],
+        ['inline fallback', sources.ytkit]
+    ]) {
+        const handlerStart = source.indexOf("doc.addEventListener('change', async (e) =>");
+        assert.ok(handlerStart > -1, `${label} must use an async settings change handler`);
+        const featureWrite = source.indexOf('appState.settings[featureId] = isEnabled', handlerStart);
+        assert.ok(featureWrite > handlerStart, `${label} must persist feature toggles`);
+        const handler = source.slice(handlerStart, featureWrite + 80);
+        assert.match(handler, /await requestFeatureOptionalHosts\(featureId, true\)/,
+            `${label} must request optional hosts before enabling a feature`);
+        assert.ok(
+            handler.indexOf('await requestFeatureOptionalHosts') < handler.indexOf('appState.settings[featureId] = isEnabled'),
+            `${label} must request host access before persisting enabled state`
+        );
+        assert.match(handler, /input\.checked = false/,
+            `${label} must restore the toggle when host access is denied`);
+        assert.match(handler, /approve the browser prompt/,
+            `${label} must explain how to recover from a denied prompt`);
     }
 });
 
