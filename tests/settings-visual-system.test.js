@@ -49,6 +49,15 @@ test('settings visual system replaces boxed cards and badges with a readable set
     assert.match(visualSystemSource, /#ytkit-reset-active-section\s*\{\s*display:\s*none/);
 });
 
+test('sticky settings section header stays opaque above scrolling controls', () => {
+    assert.match(
+        visualSystemSource,
+        /#ytkit-settings-panel \.ytkit-pane-header\s*\{[\s\S]*?position:\s*sticky !important;[\s\S]*?top:\s*0 !important;[\s\S]*?z-index:\s*4 !important;[\s\S]*?background:\s*var\(--ytkit-v3-bg\) !important;[\s\S]*?box-shadow:\s*0 -28px 0 var\(--ytkit-v3-bg\) !important;/
+    );
+    assert.match(overlaySmoke, /sticky section header background is not opaque after scrolling/);
+    assert.match(overlaySmoke, /scrolled-header\.png/);
+});
+
 test('settings visual system covers light, mobile, forced-color, and reduced-motion states', () => {
     assert.match(visualSystemSource, /html:not\(\[dark\]\) #ytkit-settings-panel/);
     assert.match(visualSystemSource, /@media \(max-width:\s*900px\)/);
