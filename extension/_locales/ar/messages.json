@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "تعذّر حذف بيانات الاعتماد."
+  },
+  "aiCredentialDeleted": {
+    "message": "تم حذف بيانات اعتماد الذكاء الاصطناعي."
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "أدخل للتعيين أو الاستبدال"
+  },
+  "aiCredentialInputRequired": {
+    "message": "أدخل بيانات اعتماد للحفظ."
+  },
+  "aiCredentialNewLabel": {
+    "message": "بيانات اعتماد جديدة"
+  },
+  "aiCredentialNote": {
+    "message": "القيمة المخزّنة لا تُعرض أبدًا ولا تُضمّن في تصدير الإعدادات."
+  },
+  "aiCredentialProviderLabel": {
+    "message": "المزوّد"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "التذكّر بعد إعادة تشغيل المتصفح"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "استبدال بيانات الاعتماد"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "حفظ بيانات الاعتماد"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "تعذّر حفظ بيانات الاعتماد."
+  },
+  "aiCredentialSaved": {
+    "message": "تم حفظ بيانات اعتماد الذكاء الاصطناعي دون كشف قيمتها."
+  },
+  "aiCredentialStatusError": {
+    "message": "حالة بيانات الاعتماد غير متاحة."
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "غير مُهيّأ"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "مُهيّأ · محفوظ"
+  },
+  "aiCredentialStatusSession": {
+    "message": "مُهيّأ · هذه الجلسة"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "الحالة غير متاحة"
+  },
+  "aiCredentialTitle": {
+    "message": "بيانات اعتماد مزوّد الذكاء الاصطناعي"
+  },
   "aiSummaryButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (إدارة بيانات الاعتماد من نافذة شريط أدوات Astra Deck)"
   },
@@ -3002,6 +3056,33 @@
   "resultsMatching": {
     "message": "مطابق"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "لا يسري هذا الإعداد إلا عند تفعيل ملف GitHub-Full."
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "محلي فقط"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "تُخزَّن هذه القيمة في تخزين الامتداد على هذا الجهاز. لا تتم مزامنتها مع حساب Google أبدًا، ولا تُرسل إلى خوادم Astra Deck، وتُحجب من حزمة تقرير الأخطاء (التشخيص ← حفظ)."
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type} (بدون محرّر مضمّن)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "غير متاح"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "يتطلب هذا الإعداد إمكانية غير متوفرة في هذا المتصفح: {capabilities}. لن يكون لتبديل الإعداد أي تأثير حتى تصبح الإمكانية متاحة."
+  },
+  "schemaJsonExpectedArray": {
+    "message": "المتوقع مصفوفة"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "المتوقع كائن"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "JSON غير صالح: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} إعداد مُفعَّل عبر {categories} فئة"
   },
@@ -3527,6 +3608,12 @@
   "statusImportFail": {
     "message": "فشل الاستيراد"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "معاينة الاستيراد: {preview}. يجري التطبيق مع إمكانية التراجع…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "المعاينة: {preview}."
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3550,6 +3637,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "تعذّر تحميل عناصر التحكم السريعة. حاول إعادة فتح النافذة المنبثقة."
+  },
+  "statusResetDoneNoUndo": {
+    "message": "تم مسح البيانات المحمولة؛ واحتُفظ ببيانات اعتماد الذكاء الاصطناعي المخزّنة. التراجع غير متاح في هذا المتصفح."
+  },
+  "statusResetDoneUndo": {
+    "message": "تم مسح الإعدادات المحمولة والسجلات وقوائم الانتظار وبيانات النصوص المفرّغة. يُحتفظ ببيانات اعتماد الذكاء الاصطناعي المخزّنة؛ استخدم حذف بيانات الاعتماد لإزالتها. انقر على التراجع عن إعادة التعيين للاستعادة حتى إغلاق المتصفح."
   },
   "statusResetFail": {
     "message": "فشلت إعادة التعيين"
@@ -3586,6 +3679,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "لم يتم العثور على إدخالات صالحة في سجل المشاهدة من YouTube Takeout."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "افتح علامة تبويب YouTube أولًا — تحتاج النافذة المنبثقة إليها للوصول إلى Astra Downloader."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "Не удалось удалить учётные данные."
+  },
+  "aiCredentialDeleted": {
+    "message": "Учётные данные ИИ удалены."
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "Введите, чтобы задать или заменить"
+  },
+  "aiCredentialInputRequired": {
+    "message": "Введите учётные данные для сохранения."
+  },
+  "aiCredentialNewLabel": {
+    "message": "Новые учётные данные"
+  },
+  "aiCredentialNote": {
+    "message": "Сохранённое значение никогда не отображается и не включается в экспорт настроек."
+  },
+  "aiCredentialProviderLabel": {
+    "message": "Провайдер"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "Запоминать после перезапуска браузера"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "Заменить учётные данные"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "Сохранить учётные данные"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "Не удалось сохранить учётные данные."
+  },
+  "aiCredentialSaved": {
+    "message": "Учётные данные ИИ сохранены без раскрытия значения."
+  },
+  "aiCredentialStatusError": {
+    "message": "Статус учётных данных недоступен."
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "Не настроено"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "Настроено · запомнено"
+  },
+  "aiCredentialStatusSession": {
+    "message": "Настроено · эта сессия"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "Статус недоступен"
+  },
+  "aiCredentialTitle": {
+    "message": "Учётные данные провайдера ИИ"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
@@ -3005,6 +3059,33 @@
   "resultsMatching": {
     "message": "совпадает"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "Эта настройка действует только при включённом профиле GitHub-Full."
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "только локально"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "Это значение хранится в хранилище расширения на этом устройстве. Оно никогда не синхронизируется с аккаунтом Google, не отправляется на серверы Astra Deck и удаляется из пакета отчёта об ошибке (Диагностика → Сохранить)."
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type} (без встроенного редактора)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "недоступно"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "Эта настройка требует возможности, недоступной в этом браузере: {capabilities}. Переключение настройки не даёт эффекта, пока возможность не станет доступной."
+  },
+  "schemaJsonExpectedArray": {
+    "message": "Ожидался массив"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "Ожидался объект"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "Некорректный JSON: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} настроек включено в {categories} категориях"
   },
@@ -3530,6 +3611,12 @@
   "statusImportFail": {
     "message": "Ошибка импорта"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "Предпросмотр импорта: {preview}. Применение с откатом…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "Предпросмотр: {preview}."
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3553,6 +3640,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Не удалось загрузить быстрые элементы. Попробуйте открыть окно повторно."
+  },
+  "statusResetDoneNoUndo": {
+    "message": "Переносимые данные удалены; сохранённые учётные данные ИИ оставлены. Отмена недоступна в этом браузере."
+  },
+  "statusResetDoneUndo": {
+    "message": "Переносимые настройки, истории, очереди и данные расшифровок удалены. Сохранённые учётные данные ИИ остаются; используйте «Удалить учётные данные», чтобы убрать их. Нажмите «Отменить сброс», чтобы восстановить данные до закрытия браузера."
   },
   "statusResetFail": {
     "message": "Ошибка сброса"
@@ -3589,6 +3682,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "Сначала откройте вкладку YouTube — попапу она нужна для связи с Astra Downloader."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

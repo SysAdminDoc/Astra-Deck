@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "无法删除凭据。"
+  },
+  "aiCredentialDeleted": {
+    "message": "已删除 AI 凭据。"
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "输入以设置或替换"
+  },
+  "aiCredentialInputRequired": {
+    "message": "请输入要保存的凭据。"
+  },
+  "aiCredentialNewLabel": {
+    "message": "新凭据"
+  },
+  "aiCredentialNote": {
+    "message": "存储的值绝不会被显示,也不会包含在设置导出中。"
+  },
+  "aiCredentialProviderLabel": {
+    "message": "提供商"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "浏览器重启后仍记住"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "替换凭据"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "保存凭据"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "无法保存凭据。"
+  },
+  "aiCredentialSaved": {
+    "message": "已保存 AI 凭据,且未暴露其值。"
+  },
+  "aiCredentialStatusError": {
+    "message": "凭据状态不可用。"
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "未配置"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "已配置 · 已记住"
+  },
+  "aiCredentialStatusSession": {
+    "message": "已配置 · 仅本次会话"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "状态不可用"
+  },
+  "aiCredentialTitle": {
+    "message": "AI 提供商凭据"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI 摘要（在 Astra Deck 工具栏弹窗中管理凭据）"
   },
@@ -3002,6 +3056,33 @@
   "resultsMatching": {
     "message": "项匹配"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "此设置仅在启用 GitHub-Full 配置档时生效。"
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "仅限本地"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "该值存储在此设备的扩展存储中。绝不会与 Google 账号同步,绝不会发送到 Astra Deck 服务器,并会从错误报告包中隐去(诊断 → 保存)。"
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type}(无内联编辑器)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "不可用"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "此设置需要此浏览器不具备的能力:{capabilities}。在该能力可用之前,切换此设置不会产生任何效果。"
+  },
+  "schemaJsonExpectedArray": {
+    "message": "应为数组"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "应为对象"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "无效的 JSON:{error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} 项设置已开启，分布在 {categories} 个分类中"
   },
@@ -3527,6 +3608,12 @@
   "statusImportFail": {
     "message": "导入失败"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "导入预览:{preview}。正在应用并支持回滚…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "预览:{preview}。"
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3550,6 +3637,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "无法加载快捷控件。请重新打开弹窗。"
+  },
+  "statusResetDoneNoUndo": {
+    "message": "已清除便携数据;已保留存储的 AI 凭据。此浏览器不支持撤销。"
+  },
+  "statusResetDoneUndo": {
+    "message": "已清除便携设置、历史记录、队列和转录数据。存储的 AI 凭据将保留;如需移除,请使用删除凭据。在关闭浏览器之前,点击撤销重置即可恢复。"
   },
   "statusResetFail": {
     "message": "重置失败"
@@ -3586,6 +3679,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "未找到有效的 YouTube Takeout 观看记录条目。"
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "请先打开一个 YouTube 标签页 — 弹窗需要它来连接 Astra Downloader。"
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

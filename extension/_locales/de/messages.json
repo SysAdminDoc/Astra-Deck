@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "Anmeldedaten konnten nicht gelöscht werden."
+  },
+  "aiCredentialDeleted": {
+    "message": "KI-Anmeldedaten gelöscht."
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "Eingeben zum Festlegen oder Ersetzen"
+  },
+  "aiCredentialInputRequired": {
+    "message": "Geben Sie Anmeldedaten zum Speichern ein."
+  },
+  "aiCredentialNewLabel": {
+    "message": "Neue Anmeldedaten"
+  },
+  "aiCredentialNote": {
+    "message": "Der gespeicherte Wert wird nie angezeigt und nicht in Einstellungs-Exporte aufgenommen."
+  },
+  "aiCredentialProviderLabel": {
+    "message": "Anbieter"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "Nach Browser-Neustart merken"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "Anmeldedaten ersetzen"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "Anmeldedaten speichern"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "Anmeldedaten konnten nicht gespeichert werden."
+  },
+  "aiCredentialSaved": {
+    "message": "KI-Anmeldedaten gespeichert, ohne den Wert offenzulegen."
+  },
+  "aiCredentialStatusError": {
+    "message": "Status der Anmeldedaten nicht verfügbar."
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "Nicht konfiguriert"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "Konfiguriert · gemerkt"
+  },
+  "aiCredentialStatusSession": {
+    "message": "Konfiguriert · diese Sitzung"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "Status nicht verfügbar"
+  },
+  "aiCredentialTitle": {
+    "message": "KI-Anbieter-Anmeldedaten"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
@@ -3005,6 +3059,33 @@
   "resultsMatching": {
     "message": "übereinstimmend"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "Diese Einstellung gilt nur, wenn das GitHub-Full-Profil aktiviert ist."
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "nur lokal"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "Dieser Wert wird im Erweiterungsspeicher auf diesem Gerät gespeichert. Er wird nie mit einem Google-Konto synchronisiert, nie an Astra Deck-Server gesendet und aus dem Fehlerbericht-Paket entfernt (Diagnose → Speichern)."
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type} (kein Inline-Editor)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "nicht verfügbar"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "Diese Einstellung erfordert eine Funktion, die in diesem Browser nicht verfügbar ist: {capabilities}. Das Umschalten der Einstellung hat keine Wirkung, bis die Funktion verfügbar wird."
+  },
+  "schemaJsonExpectedArray": {
+    "message": "Array erwartet"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "Objekt erwartet"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "Ungültiges JSON: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} Einstellungen aktiv in {categories} Kategorien"
   },
@@ -3530,6 +3611,12 @@
   "statusImportFail": {
     "message": "Import fehlgeschlagen"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "Import-Vorschau: {preview}. Anwendung mit Rollback…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "Vorschau: {preview}."
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3553,6 +3640,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Schnellsteuerungen konnten nicht geladen werden. Versuchen Sie, das Popup erneut zu öffnen."
+  },
+  "statusResetDoneNoUndo": {
+    "message": "Portable Daten gelöscht; gespeicherte KI-Anmeldedaten wurden beibehalten. Rückgängig ist in diesem Browser nicht verfügbar."
+  },
+  "statusResetDoneUndo": {
+    "message": "Portable Einstellungen, Verläufe, Warteschlangen und Transkriptdaten gelöscht. Gespeicherte KI-Anmeldedaten bleiben erhalten; verwenden Sie „Anmeldedaten löschen“, um sie zu entfernen. Klicken Sie auf „Zurücksetzen rückgängig“, um bis zum Schließen des Browsers wiederherzustellen."
   },
   "statusResetFail": {
     "message": "Zurücksetzen fehlgeschlagen"
@@ -3589,6 +3682,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "Öffnen Sie zuerst einen YouTube-Tab — das Popup benötigt ihn, um den Astra Downloader zu erreichen."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

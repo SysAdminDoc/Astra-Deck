@@ -1,4 +1,58 @@
 {
+  "aiCredentialDeleteFailed": {
+    "message": "Impossibile eliminare la credenziale."
+  },
+  "aiCredentialDeleted": {
+    "message": "Credenziale IA eliminata."
+  },
+  "aiCredentialInputPlaceholder": {
+    "message": "Digita per impostare o sostituire"
+  },
+  "aiCredentialInputRequired": {
+    "message": "Inserisci una credenziale da salvare."
+  },
+  "aiCredentialNewLabel": {
+    "message": "Nuova credenziale"
+  },
+  "aiCredentialNote": {
+    "message": "Il valore memorizzato non viene mai mostrato né incluso nelle esportazioni delle impostazioni."
+  },
+  "aiCredentialProviderLabel": {
+    "message": "Fornitore"
+  },
+  "aiCredentialRememberLabel": {
+    "message": "Ricorda dopo il riavvio del browser"
+  },
+  "aiCredentialReplaceBtn": {
+    "message": "Sostituisci credenziale"
+  },
+  "aiCredentialSaveBtn": {
+    "message": "Salva credenziale"
+  },
+  "aiCredentialSaveFailed": {
+    "message": "Impossibile salvare la credenziale."
+  },
+  "aiCredentialSaved": {
+    "message": "Credenziale IA salvata senza esporne il valore."
+  },
+  "aiCredentialStatusError": {
+    "message": "Stato della credenziale non disponibile."
+  },
+  "aiCredentialStatusNotConfigured": {
+    "message": "Non configurata"
+  },
+  "aiCredentialStatusRemembered": {
+    "message": "Configurata · memorizzata"
+  },
+  "aiCredentialStatusSession": {
+    "message": "Configurata · questa sessione"
+  },
+  "aiCredentialStatusUnavailable": {
+    "message": "Stato non disponibile"
+  },
+  "aiCredentialTitle": {
+    "message": "Credenziale del fornitore IA"
+  },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
   },
@@ -3005,6 +3059,33 @@
   "resultsMatching": {
     "message": "corrispondenti"
   },
+  "schemaBadgeGithubFullTitle": {
+    "message": "Questa impostazione si applica solo quando il profilo GitHub-Full è attivo."
+  },
+  "schemaBadgeLocalOnly": {
+    "message": "solo locale"
+  },
+  "schemaBadgeLocalOnlyTitle": {
+    "message": "Questo valore è archiviato nello storage dell'estensione su questo dispositivo. Non viene mai sincronizzato con un account Google, mai inviato ai server di Astra Deck ed è oscurato dal pacchetto di segnalazione bug (Diagnostica → Salva)."
+  },
+  "schemaBadgeNoEditorTpl": {
+    "message": "{type} (nessun editor in linea)"
+  },
+  "schemaBadgeUnavailable": {
+    "message": "non disponibile"
+  },
+  "schemaBadgeUnavailableTitleTpl": {
+    "message": "Questa impostazione richiede una capacità non disponibile in questo browser: {capabilities}. Attivare l'impostazione non ha effetto finché la capacità non diventa disponibile."
+  },
+  "schemaJsonExpectedArray": {
+    "message": "Era atteso un array"
+  },
+  "schemaJsonExpectedObject": {
+    "message": "Era atteso un oggetto"
+  },
+  "schemaJsonInvalidTpl": {
+    "message": "JSON non valido: {error}"
+  },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} impostazioni attive in {categories} categorie"
   },
@@ -3530,6 +3611,12 @@
   "statusImportFail": {
     "message": "Importazione fallita"
   },
+  "statusImportPreviewApplyTpl": {
+    "message": "Anteprima importazione: {preview}. Applicazione con ripristino…"
+  },
+  "statusImportPreviewSummaryTpl": {
+    "message": "Anteprima: {preview}."
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
@@ -3553,6 +3640,12 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Impossibile caricare i controlli rapidi. Prova a riaprire il popup."
+  },
+  "statusResetDoneNoUndo": {
+    "message": "Dati portabili cancellati; le credenziali IA memorizzate sono state conservate. Annulla non è disponibile in questo browser."
+  },
+  "statusResetDoneUndo": {
+    "message": "Impostazioni portabili, cronologie, code e dati di trascrizione cancellati. Le credenziali IA memorizzate sono conservate; usa Elimina credenziale per rimuoverle. Fai clic su Annulla ripristino per ripristinare finché non chiudi il browser."
   },
   "statusResetFail": {
     "message": "Reset fallito"
@@ -3589,6 +3682,9 @@
   },
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
+  },
+  "statusUpdateYtdlpNoTab": {
+    "message": "Apri prima una scheda YouTube — il popup ne ha bisogno per raggiungere Astra Downloader."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"

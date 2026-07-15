@@ -8628,8 +8628,8 @@ test('v4.41.0 popup JSON editor skips persistence + shows pill on parse error', 
     const persistIdx = popupSource.indexOf("const persist = async () => {", popupSource.indexOf('so-key-json'));
     assert.ok(persistIdx > -1, 'JSON editor persist arrow must be inside the array/object branch');
     const persistBody = popupSource.slice(persistIdx, persistIdx + 1500);
-    assert.match(persistBody, /errorPill\.textContent = 'Invalid JSON: '/,
-        'parse-error pill must use the "Invalid JSON: ..." prefix');
+    assert.match(persistBody, /errorPill\.textContent = t\('schemaJsonInvalidTpl', 'Invalid JSON: \{error\}'\)/,
+        'parse-error pill must render through the localized schemaJsonInvalidTpl template');
     assert.ok(persistBody.indexOf('errorPill.hidden = false') < persistBody.indexOf('writeSetting'),
         'pill must be shown BEFORE writeSetting could otherwise run on bad data');
 });
@@ -11655,4 +11655,85 @@ test('sidepanel.css carries motion, contrast, and system accessibility contracts
         'dashboard motion must respect reduced motion');
     assert.match(css, /@media \(forced-colors: active\)/,
         'dashboard must expose forced-colors accessibility support');
+});
+
+test('v4.49.7 popup residual i18n — AI credential section is data-i18n localized and companion no-tab copy uses t()', () => {
+    const popupHtml = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    const popupJs = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+
+    // The AI credential manager was the last major popup section with
+    // zero data-i18n coverage. Pin every localized surface so a markup
+    // refactor cannot silently revert it to hardcoded English.
+    const section = popupHtml.slice(
+        popupHtml.indexOf('id="ai-credential-manager"'),
+        popupHtml.indexOf('id="selector-health"')
+    );
+    assert.ok(section.length > 0, 'popup.html must keep the AI credential section before selector-health');
+    for (const key of [
+        'aiCredentialTitle',
+        'aiCredentialNote',
+        'aiCredentialStatusNotConfigured',
+        'aiCredentialProviderLabel',
+        'aiCredentialNewLabel',
+        'aiCredentialRememberLabel',
+        'aiCredentialSaveBtn',
+    ]) {
+        assert.ok(section.includes(`data-i18n="${key}"`),
+            `AI credential section must carry data-i18n="${key}"`);
+    }
+    assert.ok(section.includes('data-i18n-attr-placeholder="aiCredentialInputPlaceholder"'),
+        'credential input placeholder must localize via data-i18n-attr-placeholder');
+    assert.ok(section.includes('data-i18n="aiSummaryDelete"'),
+        'Delete button must reuse the existing aiSummaryDelete key');
+
+    // Companion self-update must localize its no-tab guidance through the
+    // same key as its yt-dlp twin (both render identical English copy).
+    const companionStart = popupJs.indexOf('async function updateCompanionNow');
+    assert.ok(companionStart > -1, 'popup.js must define updateCompanionNow');
+    const companionBody = popupJs.slice(companionStart, popupJs.indexOf('\n}', companionStart + 1));
+    assert.match(companionBody, /t\('statusUpdateYtdlpNoTab',/,
+        'companion no-tab message must route through t(statusUpdateYtdlpNoTab) like updateYtdlpNow');
+
+    // Dynamic credential statuses render through t() rather than literals.
+    for (const key of [
+        'aiCredentialStatusRemembered',
+        'aiCredentialStatusSession',
+        'aiCredentialStatusNotConfigured',
+        'aiCredentialReplaceBtn',
+        'aiCredentialSaveBtn',
+        'aiCredentialSaved',
+        'aiCredentialDeleted',
+    ]) {
+        assert.ok(popupJs.includes(`t('${key}'`),
+            `popup.js must resolve ${key} through t()`);
+    }
+
+    // i18n key parity for the new EN keys (cross-locale parity is gated
+    // separately via scripts/check-i18n.js).
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const k of [
+        'aiCredentialTitle',
+        'aiCredentialNote',
+        'aiCredentialStatusRemembered',
+        'aiCredentialStatusSession',
+        'aiCredentialStatusNotConfigured',
+        'schemaBadgeGithubFullTitle',
+        'schemaBadgeLocalOnly',
+        'schemaBadgeUnavailableTitleTpl',
+        'schemaJsonInvalidTpl',
+        'statusImportPreviewApplyTpl',
+        'statusImportPreviewSummaryTpl',
+        'statusResetDoneUndo',
+        'statusResetDoneNoUndo',
+        'statusUpdateYtdlpNoTab',
+    ]) {
+        assert.ok(enMessages[k] && enMessages[k].message,
+            `extension/_locales/en/messages.json must declare ${k}`);
+    }
 });
