@@ -1339,6 +1339,14 @@ assert download.classify_download_failure("connection timed out") == "network-un
 assert health.is_youtube_url("https://youtu.be/abcdefghijk")
 assert health.parse_ffmpeg_major("8.1.1") == 8
 assert health.ytdlp_needs_external_runtime("2026.04.01")
+runtime = health.evaluate_javascript_runtime(
+    "deno",
+    "/tools/deno",
+    "test",
+    runner=lambda args, timeout: "deno 2.3.0" if "--version" in args else "READY",
+    marker="READY",
+)
+assert runtime["supported"] and runtime["ejsReady"]
 assert download.build_subprocess_env(
     "/missing/deno", environ={"PATH": "safe", "SECRET": "drop"}
 ) == {"PATH": "safe"}
