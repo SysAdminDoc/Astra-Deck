@@ -202,6 +202,7 @@ function buildSettingsPanel() {
         // stylesheet itself. Otherwise the dialog renders at document origin
         // with no positioning shell in the normal module path.
         ensurePanelStyles?.();
+        globalThis.YTKitCore?.ensureSettingsVisualSystem?.();
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
 
@@ -2348,9 +2349,9 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             : (f.type !== 'select' && f.type !== 'color' && f.type !== 'range' && appState.settings[f.id]);
         if (_cardIsEnabled && !isSubFeature) card.classList.add('ytkit-card-enabled');
 
-        // Special styling for info cards
+        // Info cards span the document without reintroducing a one-off boxed surface.
         if (f.type === 'info') {
-            card.style.cssText = 'background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(34, 197, 94, 0.15)) !important; border: 1px solid rgba(249, 115, 22, 0.3) !important; grid-column: 1 / -1;';
+            card.style.gridColumn = '1 / -1';
         }
 
         const featureMain = document.createElement('div');

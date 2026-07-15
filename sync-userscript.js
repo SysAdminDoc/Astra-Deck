@@ -52,6 +52,7 @@ userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
 // in scripts/check-userscript-drift.js instead of leaving silent parity drift.
 const V5_BUNDLE_MODULES = [
     'extension/core/styles.js',
+    'extension/core/settings-visual-system.js',
     'extension/core/settings-schema.js',
     'extension/core/feature-lifecycle.js',
     'extension/core/policy-profile.js',

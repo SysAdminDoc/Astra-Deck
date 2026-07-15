@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings now use a calmer, readable visual system.** The extension and
+  userscript share an imagegen-led settings layout with larger type, continuous
+  divided rows instead of boxed cards, quieter category and status chrome,
+  simplified footer actions, consistent toggle geometry, and responsive
+  dark/light/RTL/mobile treatment. The rendered smoke now captures every
+  settings category in both desktop themes so secondary screens stay reviewed.
+
 ### Security
 
 - **Uninstall no longer terminates unrelated media processes.** Removal first

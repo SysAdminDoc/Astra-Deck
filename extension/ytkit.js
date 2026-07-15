@@ -42586,9 +42586,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             : (f.type !== 'select' && f.type !== 'color' && f.type !== 'range' && appState.settings[f.id]);
         if (_cardIsEnabled && !isSubFeature) card.classList.add('ytkit-card-enabled');
 
-        // Special styling for info cards
+        // Info cards span the document without reintroducing a one-off boxed surface.
         if (f.type === 'info') {
-            card.style.cssText = 'background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(34, 197, 94, 0.15)) !important; border: 1px solid rgba(249, 115, 22, 0.3) !important; grid-column: 1 / -1;';
+            card.style.gridColumn = '1 / -1';
         }
 
         const featureMain = document.createElement('div');
@@ -44924,6 +44924,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
 }`);
         // Mark complete only after every stylesheet append succeeds. A
         // transient injection failure must remain retryable on the next open.
+        globalThis.YTKitCore?.ensureSettingsVisualSystem?.();
         injectPanelStyles._done = true;
     }
 
