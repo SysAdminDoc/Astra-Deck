@@ -26,6 +26,7 @@ __all__ = (
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
     "ALLOWED_COOKIE_DOMAINS", "build_subprocess_env",
+    "DownloadQueueStore",
 )
 
 MAX_CONCURRENT = 3
@@ -454,6 +455,60 @@ class Download:
         return payload
 
 
+class DownloadQueueStore:
+    """Schema-checked durable queue storage with injected JSON collaborators."""
+
+    def __init__(self, *, path, reader, writer, logger, clean_text,
+                 clean_path_text, schema_version=1, max_records=MAX_QUEUED_TOTAL):
+        self.path = Path(path)
+        self._reader = reader
+        self._writer = writer
+        self._logger = logger
+        self._clean_text = clean_text
+        self._clean_path_text = clean_path_text
+        self.schema_version = int(schema_version)
+        self.max_records = max(1, int(max_records))
+
+    def load(self):
+        raw = self._reader(self.path, {})
+        if not isinstance(raw, dict):
+            return {}, True
+        compatible = not raw or raw.get('schemaVersion') == self.schema_version
+        return raw, compatible
+
+    def serialize(self, downloads, intake_paused=False):
+        unfinished = sorted(
+            (download for download in downloads if download.status in DOWNLOAD_ACTIVE_STATES),
+            key=lambda download: (download.queue_order, download.start_time, download.id),
+        )[:self.max_records]
+        records = [{
+            'id': self._clean_text(download.id, '', 120),
+            'url': download.url,
+            'title': self._clean_text(download.title, 'Unknown', 500) or 'Unknown',
+            'audioOnly': bool(download.audio_only),
+            'format': download.format,
+            'quality': download.quality,
+            'outputDir': self._clean_path_text(download.output_dir),
+            'referer': download.referer,
+            'requiresAuth': bool(download.requires_auth),
+            'createdAt': float(download.start_time),
+            'order': int(download.queue_order),
+        } for download in unfinished]
+        return {
+            'schemaVersion': self.schema_version,
+            'intakePaused': bool(intake_paused),
+            'downloads': records,
+        }
+
+    def save(self, downloads, intake_paused=False):
+        try:
+            self._writer(self.path, self.serialize(downloads, intake_paused))
+            return True
+        except Exception as error:
+            self._logger(f"Download queue save failed: {error}")
+            return False
+
+
 _OWNED_EXPORTS = {
     "Download", "build_video_format_args", "is_playlist_url",
     "download_error_payload", "classify_download_failure",
@@ -464,6 +519,7 @@ _OWNED_EXPORTS = {
     "DOWNLOAD_STALL_TIMEOUT_SECONDS", "DOWNLOAD_WATCHDOG_POLL_SECONDS",
     "write_cookies_netscape", "cleanup_stale_cookie_jars",
     "terminate_process_tree", "build_subprocess_env", "ALLOWED_COOKIE_DOMAINS",
+    "DownloadQueueStore",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS

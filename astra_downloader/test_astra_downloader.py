@@ -1379,6 +1379,7 @@ for forbidden in (
         self.assertIs(config.sanitize_history_entries, ad.sanitize_history_entries)
         self.assertIs(download.DownloadManager, ad.DownloadManager)
         self.assertIs(download.Download, ad.Download)
+        self.assertIs(download.DownloadQueueStore, ad.DownloadQueueStore)
         self.assertIs(download.build_video_format_args, ad.build_video_format_args)
         self.assertIs(download.classify_download_failure, ad.classify_download_failure)
         self.assertIs(download.DOWNLOAD_ACTIVE_STATES, ad.DOWNLOAD_ACTIVE_STATES)
