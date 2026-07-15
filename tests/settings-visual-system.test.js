@@ -55,7 +55,9 @@ test('sticky settings section header stays opaque above scrolling controls', () 
         /#ytkit-settings-panel \.ytkit-pane-header\s*\{[\s\S]*?position:\s*sticky !important;[\s\S]*?top:\s*0 !important;[\s\S]*?z-index:\s*4 !important;[\s\S]*?background:\s*var\(--ytkit-v3-bg\) !important;[\s\S]*?box-shadow:\s*0 -28px 0 var\(--ytkit-v3-bg\) !important;/
     );
     assert.match(overlaySmoke, /sticky section header background is not opaque after scrolling/);
-    assert.match(overlaySmoke, /scrolled-header\.png/);
+    assert.match(overlaySmoke, /for \(const categoryId of categoryIds\)/);
+    assert.match(overlaySmoke, /category-\$\{categorySlug\}-scrolled-header\.png/);
+    assert.match(overlaySmoke, /\.map\(\(failure\) => `\$\{categoryId\}: \$\{failure\}`\)/);
 });
 
 test('settings visual system covers light, mobile, forced-color, and reduced-motion states', () => {
