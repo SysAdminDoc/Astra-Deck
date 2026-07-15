@@ -1669,6 +1669,23 @@ class DownloadManagerCore:
         with self._lock:
             return len(self._running_ids)
 
+    def exists(self, dl_id):
+        """True while the download id is still tracked in the active queue."""
+        with self._lock:
+            return dl_id in self.downloads
+
+    def status_of(self, dl_id, default=None):
+        """Return the download's status string, or ``default`` when unknown."""
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            return dl.status if dl else default
+
+    def snapshot_of(self, dl_id):
+        """Return a ``to_dict()`` snapshot taken under the manager lock, or None."""
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            return dl.to_dict() if dl else None
+
     def pending_count(self):
         with self._lock:
             return sum(1 for d in self.downloads.values()
