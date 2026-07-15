@@ -345,6 +345,15 @@ def build():
         "--hidden-import", "flask",
         "--hidden-import", "werkzeug",
         "--hidden-import", "requests",
+        # Boundary modules are imported lazily while the extraction from the
+        # legacy composition root proceeds. Keep them explicit in the frozen
+        # graph so legacy imports remain available in packaged builds.
+        "--hidden-import", "_compat",
+        "--hidden-import", "config",
+        "--hidden-import", "download",
+        "--hidden-import", "health",
+        "--hidden-import", "routes",
+        "--hidden-import", "gui",
         # Exclude unused stdlib to shrink size
         "--exclude-module", "tkinter",
         "--exclude-module", "unittest",

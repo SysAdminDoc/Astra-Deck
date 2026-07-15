@@ -1242,6 +1242,51 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn("subprocess.check_call", source)
         self.assertIn("raise ImportError(source_dependency_error(exc))", source)
 
+    def test_boundary_module_imports_do_not_load_gui_server_or_legacy_root(self):
+        script = r'''
+import importlib
+import sys
+
+for name in (
+    "astra_downloader.config",
+    "astra_downloader.download",
+    "astra_downloader.health",
+):
+    module = importlib.import_module(name)
+    assert module.__all__, f"{name} must expose its compatibility contract"
+
+for forbidden in (
+    "astra_downloader.astra_downloader",
+    "PyQt6",
+    "PyQt6.QtCore",
+    "PyQt6.QtGui",
+    "PyQt6.QtWidgets",
+    "flask",
+):
+    assert forbidden not in sys.modules, f"boundary import loaded {forbidden}"
+'''
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_boundary_modules_preserve_legacy_symbol_identity_on_access(self):
+        import config
+        import download
+        import gui
+        import health
+        import routes
+
+        self.assertIs(config.Config, ad.Config)
+        self.assertIs(download.DownloadManager, ad.DownloadManager)
+        self.assertIs(health.get_ytdlp_version, ad.get_ytdlp_version)
+        self.assertIs(routes.create_api, ad.create_api)
+        self.assertIs(gui.MainWindow, ad.MainWindow)
+
     def test_importing_companion_modules_never_spawns_a_process(self):
         script = r'''
 import importlib
