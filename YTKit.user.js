@@ -2330,7 +2330,8 @@
 
         // ─── research-ai ───
         Object.freeze({ key: "aiVideoSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "aiSummaryArtifactsData", category: "research-ai", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: false, since: "4.49.0" }),
+        // aiSummaryArtifactsData retired in v4.49.7 — summary artifacts live in
+        // the top-level ytkit-ai-summaries storage key, not the settings bag.
         Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint — OpenAI, Anthropic, Gemini, or local Ollama." }),
         Object.freeze({ key: "aiSummaryModel", category: "research-ai", type: "string", defaultValue: "gpt-4o-mini", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary provider", descriptionKey: "Provider id — openai, anthropic, gemini, or ollama (local)." }),
@@ -4933,23 +4934,51 @@
                 };
             }
 
+            // Identity-memoized clean copy: the library search calls
+            // readArtifacts() per keystroke, and re-sanitizing (+ byte-measuring)
+            // the full store each time was the hot path this cache removes.
+            let artifactsClean = null;
+            let artifactsCleanSource = null;
+
+            // Hosts may supply dedicated store accessors (options.readArtifactStore
+            // / options.writeArtifactStore) so artifacts live outside the settings
+            // bag; the userscript's settings-bag path remains the default.
+            const readArtifactStore = typeof options.readArtifactStore === 'function'
+                ? options.readArtifactStore
+                : () => getSettings()?.aiSummaryArtifactsData;
+
             function readArtifacts() {
-                return artifactService.sanitizeArtifactStore(getSettings()?.aiSummaryArtifactsData);
+                const raw = readArtifactStore();
+                if (raw != null && raw === artifactsCleanSource && artifactsClean) return artifactsClean;
+                artifactsClean = artifactService.sanitizeArtifactStore(raw);
+                artifactsCleanSource = raw;
+                return artifactsClean;
             }
 
             function writeArtifacts(next) {
-                const settings = getSettings();
-                if (!settings) return {};
-                settings.aiSummaryArtifactsData = artifactService.sanitizeArtifactStore(next);
+                const clean = artifactService.sanitizeArtifactStore(next);
+                artifactsClean = clean;
+                artifactsCleanSource = null;
+                const onWriteFailure = () => {
+                    showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
+                };
                 try {
+                    if (typeof options.writeArtifactStore === 'function') {
+                        const write = options.writeArtifactStore(clean);
+                        if (write?.then) write.then((result) => {
+                            if (result && result.ok === false) onWriteFailure();
+                        }, onWriteFailure);
+                        return clean;
+                    }
+                    const settings = getSettings();
+                    if (!settings) return {};
+                    settings.aiSummaryArtifactsData = clean;
                     const write = saveSettings(settings);
                     // An async save rejection is otherwise unobserved while the
                     // UI already shows the artifact as saved.
-                    if (write?.catch) write.catch(() => {
-                        showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
-                    });
+                    if (write?.catch) write.catch(onWriteFailure);
                 } catch (_) { /* reason: caller surfaces synchronous persistence failures */ }
-                return settings.aiSummaryArtifactsData;
+                return clean;
             }
 
             function downloadArchive() {

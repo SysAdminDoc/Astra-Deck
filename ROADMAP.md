@@ -33,9 +33,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 - [ ] P2 — Fold the settings panel's five stacked !important style layers into one
   Why: the v3 visual system wins by out-!important-ing four older load-time restyle passes; every tweak risks a silent cascade casualty (the lost switch focus ring was one). The settings-visual-system tests already pin v3 behavior, so the superseded command-center layers can be deleted.
   Where: extension/ytkit.js (lazy base sheets ~43499-44910; restyle passes ~50919, ~52167, ~52672, ~53776), extension/core/settings-visual-system.js
-- [ ] P2 — Move AI summary artifacts out of the settings object
-  Why: aiSummaryArtifactsData (≤1.5 MB) rides inside ytSuiteSettings, so every settings save/YTKIT_SETTINGS_REPLACED broadcast ships it to every YouTube tab, and the library search re-sanitizes + TextEncoder-measures the full store per keystroke. Give artifacts their own storage key and search a cached clean copy. Needs a data migration (live settings + old exportVersion-4 backups must route into the new key), plus pin updates: SETTINGS_SCHEMA count, storage-size totalBytes, migration fixture, ai-summary-integration schema asserts.
-  Where: extension/core/ai-summary-artifacts.js (~231-267), extension/core/userscript-ai-summary.js, extension/core/settings-schema.js (~757), extension/ytkit.js (~3350, ~31802)
 - [ ] P3 — Localize the Watch Later Workbench and reaction sender surfaces
   Why: both shipped fully hardcoded-English (panel labels, placeholders, sort options, toasts) and the literals were baselined into scripts/i18n-ui-copy-baseline.json; the live-chat module does not even receive t(). Route through locale keys and shrink the ratchet baseline.
   Where: extension/ytkit.js (watchLaterWorkbench ~32535-32830), extension/features/live-chat/index.js (reaction panel ~301-429)

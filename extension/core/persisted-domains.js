@@ -61,6 +61,7 @@
         { id: 'powerPresetRecovery', location: 'extension-local', key: 'ytkit-preset-power-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
+        { id: 'aiSummaries', location: 'extension-local', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
 
         { id: 'credentialVault', location: 'extension-session-and-indexeddb', key: 'ytkit-credential-vault', backup: 'exclude', reason: 'Credentials are intentionally non-portable and write-only.', credentialScrub: 'entire-domain', migration: 'none' },
         { id: 'deArrowIdentity', location: 'extension-local', key: 'ytkit-da-user-id', backup: 'exclude', reason: 'Pseudonymous API identity must rotate with a new installation.', credentialScrub: 'entire-domain', migration: 'none' },
@@ -305,6 +306,13 @@
         case 'theaterSplitRatio': return Math.max(20, Math.min(85, Number(value) || 75));
         case 'digitalWellbeingDismissal': return typeof value === 'string' ? value.slice(0, 32) : '';
         case 'transcriptIndex': return sanitizeTranscriptRecords(value);
+        case 'aiSummaries': {
+            // Delegates to the artifact service's bounded/validated store
+            // sanitizer when it is loaded; falls back to a plain-object clone.
+            const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
+            if (typeof summarySanitizer === 'function') return summarySanitizer(value);
+            return isPlainObject(value) ? safeClone(value) : {};
+        }
         default: return safeClone(value);
         }
     }
@@ -388,6 +396,12 @@
             if (version >= 3 && Array.isArray(raw.allowedVideos)) domains.allowedVideos = raw.allowedVideos;
             if (version >= 2 && Array.isArray(raw.blockedChannels)) domains.blockedChannels = raw.blockedChannels;
             if (version >= 3 && isPlainObject(raw.bookmarks)) domains.bookmarks = raw.bookmarks;
+            // v4 backups: new-style top-level store, or the legacy in-settings
+            // aiSummaryArtifactsData copy from builds before v4.49.7.
+            const legacySummaries = isPlainObject(raw.aiSummaries)
+                ? raw.aiSummaries
+                : (isPlainObject(raw.settings?.aiSummaryArtifactsData) ? raw.settings.aiSummaryArtifactsData : null);
+            if (legacySummaries) domains.aiSummaries = legacySummaries;
         }
         return {
             sourceVersion: version,

@@ -132,23 +132,51 @@
             };
         }
 
+        // Identity-memoized clean copy: the library search calls
+        // readArtifacts() per keystroke, and re-sanitizing (+ byte-measuring)
+        // the full store each time was the hot path this cache removes.
+        let artifactsClean = null;
+        let artifactsCleanSource = null;
+
+        // Hosts may supply dedicated store accessors (options.readArtifactStore
+        // / options.writeArtifactStore) so artifacts live outside the settings
+        // bag; the userscript's settings-bag path remains the default.
+        const readArtifactStore = typeof options.readArtifactStore === 'function'
+            ? options.readArtifactStore
+            : () => getSettings()?.aiSummaryArtifactsData;
+
         function readArtifacts() {
-            return artifactService.sanitizeArtifactStore(getSettings()?.aiSummaryArtifactsData);
+            const raw = readArtifactStore();
+            if (raw != null && raw === artifactsCleanSource && artifactsClean) return artifactsClean;
+            artifactsClean = artifactService.sanitizeArtifactStore(raw);
+            artifactsCleanSource = raw;
+            return artifactsClean;
         }
 
         function writeArtifacts(next) {
-            const settings = getSettings();
-            if (!settings) return {};
-            settings.aiSummaryArtifactsData = artifactService.sanitizeArtifactStore(next);
+            const clean = artifactService.sanitizeArtifactStore(next);
+            artifactsClean = clean;
+            artifactsCleanSource = null;
+            const onWriteFailure = () => {
+                showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
+            };
             try {
+                if (typeof options.writeArtifactStore === 'function') {
+                    const write = options.writeArtifactStore(clean);
+                    if (write?.then) write.then((result) => {
+                        if (result && result.ok === false) onWriteFailure();
+                    }, onWriteFailure);
+                    return clean;
+                }
+                const settings = getSettings();
+                if (!settings) return {};
+                settings.aiSummaryArtifactsData = clean;
                 const write = saveSettings(settings);
                 // An async save rejection is otherwise unobserved while the
                 // UI already shows the artifact as saved.
-                if (write?.catch) write.catch(() => {
-                    showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
-                });
+                if (write?.catch) write.catch(onWriteFailure);
             } catch (_) { /* reason: caller surfaces synchronous persistence failures */ }
-            return settings.aiSummaryArtifactsData;
+            return clean;
         }
 
         function downloadArchive() {

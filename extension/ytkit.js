@@ -886,6 +886,7 @@ return response;
     });
     const STORAGE_KEYS = Object.freeze({
         settings: 'ytSuiteSettings',
+        aiSummaries: 'ytkit-ai-summaries',
         hiddenVideos: 'ytkit-hidden-videos',
         allowedVideos: 'ytkit-video-hider-allowed-videos',
         blockedChannels: 'ytkit-blocked-channels',
@@ -2873,6 +2874,11 @@ return response;
         // v4.49.0: credentials moved behind the extension background
         // worker (or the userscript manager's isolated value store).
         'aiSummaryApiKey',
+        // NOTE: aiSummaryArtifactsData (moved to the top-level
+        // ytkit-ai-summaries key in v4.49.7) is deliberately NOT retired:
+        // sanitize-stripping it would drop an unmoved legacy store on the
+        // next save if the artifact service were ever unavailable.
+        // _extractLegacyArtifacts() deletes it only after a confirmed move.
     ]);
 
     //  SECTION 1: SETTINGS MANAGER
@@ -3347,7 +3353,6 @@ return response;
             subStyleBottomOffset: 10,        // % from bottom
             subStyleTextShadow: true,
             aiVideoSummary: false,
-            aiSummaryArtifactsData: {},               // Bounded, validated local summary artifacts
             aiSummaryEndpoint: 'https://api.openai.com/v1/chat/completions',
             aiSummaryModel: 'gpt-4o-mini',
             aiSummaryProvider: 'openai',     // openai | anthropic | gemini | ollama
@@ -3620,11 +3625,38 @@ return response;
                     sanitized[key] = value;
                 }
             }
-            const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
-            if (typeof summarySanitizer === 'function' && Object.prototype.hasOwnProperty.call(sanitized, 'aiSummaryArtifactsData')) {
-                sanitized.aiSummaryArtifactsData = summarySanitizer(sanitized.aiSummaryArtifactsData);
-            }
             return sanitized;
+        },
+
+        // v4.49.7: AI summary artifacts moved from the settings bag to the
+        // top-level ytkit-ai-summaries key so settings saves/broadcasts stop
+        // shipping ≤1.5 MB to every YouTube tab. Extracts a legacy in-bag
+        // store into the new key (merging under the newer store) and strips
+        // the key from the bag. Idempotent; leaves the bag untouched when
+        // the artifact service is unavailable so data is never dropped.
+        _extractLegacyArtifacts(settings) {
+            if (!isPlainObject(settings)
+                || !Object.prototype.hasOwnProperty.call(settings, 'aiSummaryArtifactsData')) {
+                return { settings, moved: false };
+            }
+            const legacy = settings.aiSummaryArtifactsData;
+            const next = { ...settings };
+            if (!isPlainObject(legacy) || Object.keys(legacy).length === 0) {
+                delete next.aiSummaryArtifactsData;
+                return { settings: next, moved: true };
+            }
+            const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+            if (typeof service?.sanitizeArtifactStore !== 'function') {
+                return { settings, moved: false };
+            }
+            const current = StorageManager.get(STORAGE_KEYS.aiSummaries, {});
+            const merged = service.sanitizeArtifactStore({
+                ...legacy,
+                ...(isPlainObject(current) ? current : {})
+            });
+            StorageManager.setSync(STORAGE_KEYS.aiSummaries, merged);
+            delete next.aiSummaryArtifactsData;
+            return { settings: next, moved: true };
         },
 
         _normalizeProfileModel(settings = {}) {
@@ -3674,6 +3706,8 @@ return response;
                     sidebarOrder: [...legacySidebarOrder]
                 };
             }
+            const extraction = this._extractLegacyArtifacts(savedSettings);
+            savedSettings = extraction.settings;
             const storedVersion = savedSettings._settingsVersion;
             // Preserve a stamp written by a NEWER build instead of forcing it
             // down to the running version — otherwise opening older code against
@@ -3689,7 +3723,8 @@ return response;
             }));
             savedSettings = this._sanitize(this._migrate(savedSettings));
             const merged = this._normalizeProfileModel(this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: targetVersion }));
-            let shouldPersistMerged = normalizedStored !== targetVersion
+            let shouldPersistMerged = extraction.moved
+                || normalizedStored !== targetVersion
                 || JSON.stringify(rawSettingsSnapshot) !== JSON.stringify(savedSettings);
             if (
                 merged.reactionSpammer &&
@@ -3869,6 +3904,7 @@ return response;
             if (summary.allowedVideos) parts.push(`${summary.allowedVideos} allowed video${summary.allowedVideos === 1 ? '' : 's'}`);
             if (summary.blockedChannels) parts.push(`${summary.blockedChannels} blocked channel${summary.blockedChannels === 1 ? '' : 's'}`);
             if (summary.bookmarkVideos) parts.push(`${summary.bookmarkVideos} bookmark video${summary.bookmarkVideos === 1 ? '' : 's'}`);
+            if (summary.aiSummaries) parts.push(`${summary.aiSummaries} AI summar${summary.aiSummaries === 1 ? 'y' : 'ies'}`);
             const main = parts.length ? parts.join(', ') : 'no value changes';
             const extras = [];
             if (summary.skipped) extras.push(`${summary.skipped} skipped`);
@@ -3882,11 +3918,16 @@ return response;
             let allowedVideos = [];
             let blockedChannels = [];
             let bookmarks = {};
+            let aiSummaries = {};
             try {
                 hiddenVideos = StorageManager.get(STORAGE_KEYS.hiddenVideos, []);
                 allowedVideos = StorageManager.get(STORAGE_KEYS.allowedVideos, []);
                 blockedChannels = StorageManager.get(STORAGE_KEYS.blockedChannels, []);
                 bookmarks = StorageManager.get(STORAGE_KEYS.bookmarks, {});
+                const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
+                if (typeof summarySanitizer === 'function') {
+                    aiSummaries = summarySanitizer(StorageManager.get(STORAGE_KEYS.aiSummaries, {}));
+                }
             } catch(e) {
                 console.warn('[YTKit] Failed to load data for export:', e);
             }
@@ -3900,6 +3941,7 @@ return response;
                 allowedVideos: allowedVideosForExport,
                 blockedChannels: sanitizeImportedBlockedChannels(blockedChannels),
                 bookmarks: sanitizeImportedBookmarks(bookmarks),
+                aiSummaries,
                 exportVersion: 4,
                 backupSchemaVersion: 1,
                 settingsSchemaVersion: this.SETTINGS_VERSION,
@@ -3922,6 +3964,25 @@ return response;
                 let rawAllowedVideos = null;
                 let rawBlockedChannels = null;
                 let rawBookmarks = null;
+                // AI summaries: new backups carry a top-level aiSummaries
+                // store; pre-4.49.7 backups embedded aiSummaryArtifactsData
+                // inside the settings bag (now a retired settings key). Read
+                // the legacy copy BEFORE _sanitize strips it.
+                const rawAiSummaries = isPlainObject(importedData.aiSummaries)
+                    ? importedData.aiSummaries
+                    : (isPlainObject(importedData.settings?.aiSummaryArtifactsData)
+                        ? importedData.settings.aiSummaryArtifactsData
+                        : (isPlainObject(importedData.aiSummaryArtifactsData)
+                            ? importedData.aiSummaryArtifactsData
+                            : null));
+                const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
+                const aiSummaries = (rawAiSummaries && typeof summarySanitizer === 'function')
+                    ? summarySanitizer(rawAiSummaries)
+                    : null;
+                // The legacy in-bag copy is handled above as store data; keep
+                // it out of the settings bag being imported.
+                if (isPlainObject(importedData.settings)) delete importedData.settings.aiSummaryArtifactsData;
+                delete importedData.aiSummaryArtifactsData;
                 if (importedData.exportVersion >= 3) {
                     settings = this._sanitize(importedData.settings || {});
                     rawHiddenVideos = getImportedFilteredVideoPosts(importedData);
@@ -3956,7 +4017,8 @@ return response;
                     || (hiddenVideos !== null && hiddenVideos.length > 0)
                     || (allowedVideos !== null && allowedVideos.length > 0)
                     || (blockedChannels !== null && blockedChannels.length > 0)
-                    || (bookmarks !== null && Object.keys(bookmarks).length > 0);
+                    || (bookmarks !== null && Object.keys(bookmarks).length > 0)
+                    || (aiSummaries !== null && Object.keys(aiSummaries).length > 0);
                 if (Object.keys(settings).length > 0 && !hasValidKey) return { ok: false, message: 'No known settings found in file.' };
                 if (!hasImportedData) return { ok: false, message: 'No importable settings or local data found.' };
 
@@ -3968,6 +4030,7 @@ return response;
                     allowedVideos: StorageManager.get(STORAGE_KEYS.allowedVideos, []),
                     blockedChannels: StorageManager.get(STORAGE_KEYS.blockedChannels, []),
                     bookmarks: StorageManager.get(STORAGE_KEYS.bookmarks, {}),
+                    aiSummaries: StorageManager.get(STORAGE_KEYS.aiSummaries, {}),
                 };
 
                 const newSettings = this._prepareImportedSettings(settings, {
@@ -3978,7 +4041,8 @@ return response;
                     ...(hiddenVideos !== null ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
                     ...(allowedVideos !== null ? { [STORAGE_KEYS.allowedVideos]: allowedVideos } : {}),
                     ...(blockedChannels !== null ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
-                    ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {})
+                    ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {}),
+                    ...(aiSummaries !== null ? { [STORAGE_KEYS.aiSummaries]: aiSummaries } : {})
                 });
                 if (!Number.isFinite(bytesEstimate) || bytesEstimate > IMPORT_LIMITS.totalBytes) {
                     throw new Error('Import data exceeds extension storage budget');
@@ -3993,14 +4057,16 @@ return response;
                     }
                     : { imported: blockedChannels?.length || 0, skipped: 0, duplicates: 0 };
                 const bookmarkSummary = this._summarizeObjectMapImport(rawBookmarks, bookmarks);
+                const aiSummarySummary = this._summarizeObjectMapImport(rawAiSummaries, aiSummaries);
                 const summary = {
                     settingsUpdated: this._countChangedSettings(backup.settings, newSettings),
                     hiddenVideos: hiddenSummary.imported,
                     allowedVideos: allowedSummary.imported,
                     blockedChannels: blockedSummary.imported,
                     bookmarkVideos: bookmarkSummary.imported,
-                    skipped: hiddenSummary.skipped + allowedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped,
-                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates
+                    aiSummaries: aiSummarySummary.imported,
+                    skipped: hiddenSummary.skipped + allowedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
+                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
                 };
                 const restore = (snapshot) => {
                     StorageManager.setSync(STORAGE_KEYS.settings, snapshot.settings);
@@ -4009,6 +4075,7 @@ return response;
                     StorageManager.setSync(STORAGE_KEYS.allowedVideos, snapshot.allowedVideos);
                     StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels);
                     StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks);
+                    StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries);
                 };
                 const transaction = this._getSettingsImportTransaction();
                 if (!transaction) throw new Error('Settings import transaction service unavailable');
@@ -4029,6 +4096,7 @@ return response;
                         if (allowedVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos));
                         if (blockedChannels !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels));
                         if (bookmarks !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks));
+                        if (aiSummaries !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.aiSummaries, aiSummaries));
                         return Promise.all(writes).then((results) => {
                             const failed = results.find((result) => result && result.ok === false);
                             if (failed) {
@@ -31511,20 +31579,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             appState.settings.videoNotesData = cappedNotes;
                         }
                     }
-                    const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
-                    const summaries = appState.settings.aiSummaryArtifactsData;
-                    if (summaries && typeof summaries === 'object' && !Array.isArray(summaries) && typeof summarySanitizer === 'function') {
-                        const cappedSummaries = summarySanitizer(summaries);
-                        if (this._hasChanged(summaries, cappedSummaries)) {
-                            pruned += Math.max(0, this._countMapEntries(summaries) - this._countMapEntries(cappedSummaries));
-                            appState.settings.aiSummaryArtifactsData = cappedSummaries;
-                        }
-                    }
                     if (pruned > 0) {
                         settingsManager.save(appState.settings);
                         DiagnosticLog?.record('storageQuotaLRU', `pruned ${pruned} entries`);
                     }
 
+                    const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
+                    if (typeof summarySanitizer === 'function') {
+                        this._pruneTopLevelStore(STORAGE_KEYS.aiSummaries, summarySanitizer, 'ytkit-ai-summaries');
+                    }
                     this._pruneTopLevelStore(STORAGE_KEYS.bookmarks, sanitizeTimestampBookmarks, 'ytkit-bookmarks');
                     this._pruneTopLevelStore(STORAGE_KEYS.watchProgress, sanitizeWatchProgressStore, 'ytkit-watch-progress');
                     this._pruneTopLevelStore(STORAGE_KEYS.watchTime, sanitizeWatchTimeStats, 'ytkit-watch-time');
@@ -31796,22 +31859,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     prepared: artifactService.prepareCues(result.segments)
                 };
             },
+            _artifactsClean: null,
+            _artifactsCleanSource: null,
             _readArtifacts() {
                 const service = globalThis.YTKitCore?.aiSummaryArtifacts;
                 if (!service) return {};
-                return service.sanitizeArtifactStore(appState.settings.aiSummaryArtifactsData);
+                // Identity-memoized: StorageManager.get returns the same cached
+                // object until a write/external change replaces it, so the
+                // library search stops re-sanitizing + re-measuring the full
+                // store on every keystroke.
+                const raw = StorageManager.get(STORAGE_KEYS.aiSummaries, {});
+                if (raw === this._artifactsCleanSource && this._artifactsClean) return this._artifactsClean;
+                this._artifactsClean = service.sanitizeArtifactStore(raw);
+                this._artifactsCleanSource = raw;
+                return this._artifactsClean;
             },
             _writeArtifacts(next) {
                 const service = globalThis.YTKitCore?.aiSummaryArtifacts;
                 if (!service) return {};
                 const clean = service.sanitizeArtifactStore(next);
-                appState.settings.aiSummaryArtifactsData = clean;
+                this._artifactsClean = clean;
+                this._artifactsCleanSource = null;
                 try {
-                    const write = settingsManager.save(appState.settings);
-                    // An async save rejection is otherwise unobserved while
-                    // the library already shows the artifact as saved.
-                    if (write?.catch) write.catch((error) => {
-                        DiagnosticLog?.record('aiVideoSummary.store', error?.message || 'save failed');
+                    const write = StorageManager.setSync(STORAGE_KEYS.aiSummaries, clean);
+                    // setSync resolves { ok, error } and never rejects; a failed
+                    // flush is otherwise unobserved while the library already
+                    // shows the artifact as saved.
+                    if (write?.then) write.then((result) => {
+                        if (!result || result.ok !== false) return;
+                        DiagnosticLog?.record('aiVideoSummary.store', result.error?.message || 'save failed');
                         showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444', { tone: 'error' });
                     });
                 } catch (error) { DiagnosticLog?.record('aiVideoSummary.store', error.message); }
