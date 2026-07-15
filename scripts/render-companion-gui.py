@@ -78,6 +78,11 @@ def main():
                     raise RuntimeError(f"Companion navigation rail is incomplete on {page_name}")
                 if page_name == "History" and window.btn_clear_history.isEnabled():
                     raise RuntimeError("Clear History must be disabled when history is empty")
+                if page_name == "Downloads":
+                    if window.queue_capacity_badge.text() != "0 / 200":
+                        raise RuntimeError("Download queue capacity did not render")
+                    if not window.btn_queue_pause.isVisible():
+                        raise RuntimeError("Download queue intake control is not visible")
                 output = OUTPUT_DIR / f"{page_name.lower()}.png"
                 pixmap = QPixmap(window.size())
                 pixmap.fill(QColor("#080a0f"))

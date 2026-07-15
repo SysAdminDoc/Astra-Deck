@@ -1647,6 +1647,37 @@ test('download progress panel close button stops the poll loop immediately', () 
         'stopPolling must flip the stopped flag and clear any pending setTimeout');
 });
 
+test('download progress reports durable queue and authentication recovery states', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const sources = [
+        path.join(__dirname, '..', 'extension', 'ytkit.js'),
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+    ];
+
+    for (const sourcePath of sources) {
+        const source = fs.readFileSync(sourcePath, 'utf8');
+        const start = source.indexOf('function showDownloadProgress');
+        assert.ok(start > -1, `showDownloadProgress should exist in ${sourcePath}`);
+        const block = source.slice(start, start + 18000);
+        assert.ok(block.includes("['pending', 'queued', 'paused', 'needs-auth']"),
+            `queue states must be handled in ${sourcePath}`);
+        assert.match(block, /data\.status === 'needs-auth'[\s\S]*?dlProgressStateNeedsAttention/,
+            `authentication recovery must be actionable in ${sourcePath}`);
+        assert.match(block, /pendingStatus[\s\S]*?dlProgressQueue/,
+            `pending work must be labelled as queued in ${sourcePath}`);
+    }
+
+    const userscriptPath = path.join(__dirname, '..', 'YTKit.user.js');
+    const userscript = fs.readFileSync(userscriptPath, 'utf8');
+    const userscriptStart = userscript.indexOf('function showDownloadProgress');
+    const userscriptBlock = userscript.slice(userscriptStart, userscriptStart + 9000);
+    assert.ok(userscriptBlock.includes("['pending', 'queued', 'paused', 'needs-auth']"),
+        'userscript progress must recognize durable queue states');
+    assert.match(userscriptBlock, /data\.status === 'needs-auth' \? 'Needs sign-in' : 'Waiting'/,
+        'userscript progress must distinguish authentication recovery from ordinary waiting');
+});
+
 test('handleFileImport guards against oversized files and FileReader errors', () => {
     const fs = require('fs');
     const path = require('path');
