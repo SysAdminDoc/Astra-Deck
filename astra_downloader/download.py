@@ -1,11 +1,15 @@
 """Import-safe download domain model and policy boundary."""
 
 import os
+import json
+import math
 import re
 import subprocess
 import sys
+import threading
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -16,7 +20,7 @@ except ImportError:  # Flat source-path compatibility.
 
 
 __all__ = (
-    "Download", "DownloadManager", "build_video_format_args",
+    "Download", "DownloadManager", "DownloadManagerCore", "build_video_format_args",
     "terminate_process_tree", "is_playlist_url", "write_cookies_netscape",
     "cleanup_stale_cookie_jars", "DOWNLOAD_ACTIVE_STATES",
     "DOWNLOAD_RUNNING_STATES", "DOWNLOAD_PENDING_STATES",
@@ -26,13 +30,14 @@ __all__ = (
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
     "ALLOWED_COOKIE_DOMAINS", "build_subprocess_env",
-    "DownloadQueueStore",
+    "DownloadQueueStore", "DOWNLOAD_QUEUE_SCHEMA_VERSION",
 )
 
 MAX_CONCURRENT = 3
 MAX_QUEUED_TOTAL = 200
 DOWNLOAD_STALL_TIMEOUT_SECONDS = 1800
 DOWNLOAD_WATCHDOG_POLL_SECONDS = 15
+DOWNLOAD_QUEUE_SCHEMA_VERSION = 1
 DOWNLOAD_RUNNING_STATES = {'queued', 'downloading', 'merging', 'extracting'}
 DOWNLOAD_PENDING_STATES = {'pending', 'paused', 'needs-auth'}
 DOWNLOAD_ACTIVE_STATES = DOWNLOAD_RUNNING_STATES | DOWNLOAD_PENDING_STATES
@@ -509,6 +514,1180 @@ class DownloadQueueStore:
             return False
 
 
+_REQUIRED_MANAGER_DEPENDENCIES = frozenset({
+    'CREATE_NEW_PROCESS_GROUP',
+    'CREATE_NO_WINDOW',
+    'FFMPEG_PATH',
+    'INSTALL_DIR',
+    'YTDLP_PATH',
+    '_build_subprocess_env',
+    'allowed_output_roots',
+    'atomic_write_json',
+    'build_javascript_runtime_args',
+    'build_youtube_extractor_args',
+    'clamp_int',
+    'clean_path_text',
+    'clean_text',
+    'cleanup_stale_cookie_jars',
+    'coerce_bool',
+    'load_json_file',
+    'normalize_output_dir',
+    'normalize_url',
+    'probe_javascript_runtime',
+    'probe_po_token_provider',
+    'spawn_ytdlp',
+    'terminate_process_tree',
+    'write_persistent_log',
+})
+
+
+class DownloadManagerCore:
+    ALLOWED_VIDEO_FMT = {'mp4', 'mkv', 'webm'}
+    ALLOWED_AUDIO_FMT = {'mp3', 'm4a', 'opus', 'flac', 'wav'}
+    ALLOWED_QUALITY = {'best', '2160', '1440', '1080', '720', '480'}
+
+    def __init__(self, config, history, queue_path=None, *, dependencies, progress_updated, download_completed):
+        missing = sorted(set(_REQUIRED_MANAGER_DEPENDENCIES) - set(dependencies))
+        if missing:
+            raise ValueError("Missing download manager dependencies: " + ", ".join(missing))
+        self._dependencies = dict(dependencies)
+        self.progress_updated = progress_updated
+        self.download_completed = download_completed
+        self.config = config
+        self.history = history
+        self.downloads = {}
+        self._next_id = 0
+        self._next_order = 0
+        self._lock = threading.Lock()
+        self._running_ids = set()
+        self._queue_path = Path(queue_path) if queue_path else None
+        self._queue_store = (
+            DownloadQueueStore(
+                path=self._queue_path,
+                reader=lambda path, fallback: self._dependencies['load_json_file'](path, fallback),
+                writer=lambda path, data: self._dependencies['atomic_write_json'](path, data),
+                logger=lambda message: self._dependencies['write_persistent_log'](message),
+                clean_text=lambda *args, **kwargs: self._dependencies['clean_text'](*args, **kwargs),
+                clean_path_text=lambda *args, **kwargs: self._dependencies['clean_path_text'](*args, **kwargs),
+                schema_version=DOWNLOAD_QUEUE_SCHEMA_VERSION,
+                max_records=MAX_QUEUED_TOTAL,
+            )
+            if self._queue_path is not None else None
+        )
+        self._persistence_error = ""
+        self._persistence_compatible = True
+        self.intake_paused = False
+        self._closing = False
+        self.total_completed = 0
+        # v1.2.0: sweep any cookie jars left by a previous crash before any
+        # new download starts. Session cookies shouldn't outlive the process
+        # that needed them.
+        self._dependencies['cleanup_stale_cookie_jars']()
+        self._restore_pending_queue()
+
+    def _restore_pending_queue(self):
+        """Restore unfinished work without starting it or restoring secrets.
+
+        A crash can leave both running and pending records in the durable
+        queue. Every record is intentionally converted to an explicit recovery
+        state: unauthenticated work becomes ``paused`` and work that previously
+        used browser cookies becomes ``needs-auth``. This prevents duplicate
+        downloads from silently starting after an application restart.
+        """
+        if self._queue_store is None:
+            return
+        raw, compatible = self._queue_store.load()
+        if not compatible:
+            self._persistence_compatible = False
+            self._persistence_error = (
+                'The pending queue was created by an incompatible Astra Downloader version.'
+            )
+            self._dependencies['write_persistent_log'](
+                'Download queue schema is incompatible; preserving the file without changes.'
+            )
+            return
+        records = raw.get('downloads', [])
+        if not isinstance(records, list):
+            return
+
+        restored = []
+        seen_ids = set()
+        for index, item in enumerate(records[:MAX_QUEUED_TOTAL]):
+            if not isinstance(item, dict):
+                continue
+            url, err = self._dependencies['normalize_url'](item.get('url'))
+            if err:
+                continue
+            output_dir = self._dependencies['clean_path_text'](item.get('outputDir'))
+            try:
+                if not output_dir or not Path(output_dir).expanduser().is_absolute():
+                    continue
+            except (OSError, ValueError):
+                continue
+            audio_only = self._dependencies['coerce_bool'](item.get('audioOnly'), False)
+            if audio_only:
+                fmt = item.get('format') if item.get('format') in self.ALLOWED_AUDIO_FMT else 'mp3'
+            else:
+                fmt = item.get('format') if item.get('format') in self.ALLOWED_VIDEO_FMT else 'mp4'
+            quality = item.get('quality') if item.get('quality') in self.ALLOWED_QUALITY else 'best'
+            referer, _ = self._dependencies['normalize_url'](item.get('referer')) if item.get('referer') else (None, None)
+            dl_id = self._dependencies['clean_text'](item.get('id'), '', 120)
+            if not dl_id or dl_id in seen_ids:
+                self._next_id += 1
+                dl_id = f"dl_{self._next_id}_{uuid.uuid4().hex[:6]}"
+            seen_ids.add(dl_id)
+            requires_auth = self._dependencies['coerce_bool'](item.get('requiresAuth'), False)
+            self._next_order += 1
+            try:
+                created_at = float(item.get('createdAt') or time.time())
+            except (TypeError, ValueError, OverflowError):
+                created_at = time.time()
+            if not math.isfinite(created_at) or created_at <= 0:
+                created_at = time.time()
+            dl = Download(
+                dl_id,
+                url,
+                audio_only=audio_only,
+                fmt=fmt,
+                quality=quality,
+                output_dir=output_dir,
+                title=self._dependencies['clean_text'](item.get('title'), None, 500) or None,
+                referer=referer,
+                requires_auth=requires_auth,
+                created_at=created_at,
+                queue_order=self._next_order,
+            )
+            dl.status = 'needs-auth' if requires_auth else 'paused'
+            dl.error = (
+                'Fresh YouTube authentication is required before this recovered download can run.'
+                if requires_auth else
+                'Recovered after restart. Resume the queue when you are ready.'
+            )
+            restored.append(dl)
+
+        if not restored:
+            return
+        with self._lock:
+            for dl in restored:
+                self.downloads[dl.id] = dl
+            self.intake_paused = True
+            # Normalize any legacy/running statuses on disk immediately. The
+            # persisted form contains metadata only; cookie values and jar
+            # paths are deliberately absent from _serialize_queue_locked().
+            self._persist_locked()
+
+    def _serialize_queue_locked(self):
+        if self._queue_store is None:
+            return {
+                'schemaVersion': DOWNLOAD_QUEUE_SCHEMA_VERSION,
+                'intakePaused': bool(self.intake_paused),
+                'downloads': [],
+            }
+        return self._queue_store.serialize(self.downloads.values(), self.intake_paused)
+
+    def _persist_locked(self):
+        if self._queue_store is None or self._closing:
+            return True
+        if not self._persistence_compatible:
+            return False
+        if self._queue_store.save(self.downloads.values(), self.intake_paused):
+            self._persistence_error = ''
+            return True
+        self._persistence_error = 'Could not save the pending download queue.'
+        return False
+
+    def _capacity_locked(self):
+        running = len(self._running_ids)
+        pending = sum(
+            1 for dl in self.downloads.values()
+            if dl.status in DOWNLOAD_PENDING_STATES
+        )
+        total = running + pending
+        return {
+            'running': running,
+            'runningLimit': MAX_CONCURRENT,
+            'pending': pending,
+            'total': total,
+            'totalLimit': MAX_QUEUED_TOTAL,
+            'available': max(0, MAX_QUEUED_TOTAL - total),
+            'intakePaused': bool(self.intake_paused),
+        }
+
+    def capacity(self):
+        with self._lock:
+            return self._capacity_locked()
+
+    def _ordered_pending_locked(self):
+        return sorted(
+            (
+                dl for dl in self.downloads.values()
+                if dl.status in DOWNLOAD_PENDING_STATES
+            ),
+            key=lambda dl: (dl.queue_order, dl.start_time, dl.id),
+        )
+
+    def _auth_recovery_locked(self, url, cookies):
+        if not cookies:
+            return None
+        return next((
+            dl for dl in self._ordered_pending_locked()
+            if dl.status == 'needs-auth' and dl.url == url
+        ), None)
+
+    def _launch_workers(self, downloads):
+        for dl in downloads:
+            cookies = dl._cookies
+            dl._cookies = None
+            if cookies:
+                jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"
+                dl.cookies_file = write_cookies_netscape(cookies, jar_path)
+                if not dl.cookies_file:
+                    with self._lock:
+                        self._running_ids.discard(dl.id)
+                        dl.status = 'failed'
+                        dl.error = 'Could not prepare a protected YouTube cookie jar. Retry from Astra Deck.'
+                        dl.error_code = 'cookie-jar-failed'
+                        dl.error_advice = 'Retry from Astra Deck so fresh cookies can be supplied.'
+                        dl.error_action = 'sign-in-and-retry'
+                        dl.mark_terminal()
+                        self._persist_locked()
+                    self.progress_updated.emit()
+                    self.download_completed.emit(dl.id)
+                    continue
+            try:
+                thread = threading.Thread(
+                    target=self._worker_entry,
+                    args=(dl,),
+                    daemon=True,
+                )
+                thread.start()
+            except Exception as exc:
+                with self._lock:
+                    self._running_ids.discard(dl.id)
+                    dl.status = 'failed'
+                    dl.error = 'Could not start the download worker. Retry the download.'
+                    dl.error_code = 'worker-start-failed'
+                    dl.mark_terminal()
+                    if dl.cookies_file:
+                        try:
+                            Path(dl.cookies_file).unlink(missing_ok=True)
+                        except Exception:
+                            pass
+                        dl.cookies_file = None
+                    self._persist_locked()
+                self._dependencies['write_persistent_log'](f"Download worker {dl.id} failed to start: {exc}")
+                self.progress_updated.emit()
+                self.download_completed.emit(dl.id)
+        # A worker preparation failure frees a slot synchronously.
+        if downloads and not self._closing:
+            self._schedule()
+
+    def _worker_entry(self, dl):
+        try:
+            self._run_download(dl)
+        except Exception as exc:
+            # _run_download is defensive, but keep the scheduler correct if a
+            # future implementation lets an exception escape its boundary.
+            if dl.status not in DOWNLOAD_TERMINAL_STATES:
+                dl.status = 'failed'
+                dl.error = 'Unexpected download worker failure. Check Astra Downloader logs.'
+                dl.mark_terminal()
+            self._dependencies['write_persistent_log'](f"Download worker {dl.id} escaped unexpectedly: {exc}")
+        finally:
+            with self._lock:
+                self._running_ids.discard(dl.id)
+                if dl.status in DOWNLOAD_RUNNING_STATES:
+                    dl.status = 'failed'
+                    dl.error = 'Download worker stopped before reporting a result.'
+                    dl.mark_terminal()
+                self._persist_locked()
+            if not self._closing:
+                self._schedule()
+
+    def _schedule(self):
+        to_start = []
+        with self._lock:
+            if self._closing or self.intake_paused:
+                return
+            available = max(0, MAX_CONCURRENT - len(self._running_ids))
+            if available <= 0:
+                return
+            candidates = [
+                dl for dl in self._ordered_pending_locked()
+                if dl.status == 'pending'
+            ][:available]
+            for dl in candidates:
+                dl.status = 'queued'
+                self._running_ids.add(dl.id)
+                to_start.append(dl)
+        if to_start:
+            self.progress_updated.emit()
+            self._launch_workers(to_start)
+
+    def _reclaim_terminal_records_locked(self, required_slots=1):
+        """Free only terminal records when the bounded queue needs capacity."""
+        overflow = len(self.downloads) + max(0, required_slots) - MAX_QUEUED_TOTAL
+        if overflow <= 0:
+            return 0
+        terminal = sorted(
+            (
+                (getattr(download, 'finished_time', None) or download.start_time, dl_id)
+                for dl_id, download in self.downloads.items()
+                if download.status in DOWNLOAD_TERMINAL_STATES
+            ),
+            key=lambda item: item[0],
+        )
+        removed = 0
+        for _finished_at, dl_id in terminal[:overflow]:
+            del self.downloads[dl_id]
+            removed += 1
+        return removed
+
+    def start_download(self, url, audio_only=False, fmt=None, quality=None,
+                       output_dir=None, title=None, referer=None, cookies=None):
+        url, err = self._dependencies['normalize_url'](url)
+        if err:
+            return None, err
+        audio_only = self._dependencies['coerce_bool'](audio_only, False)
+
+        with self._lock:
+            self._reclaim_terminal_records_locked()
+            auth_recovery = self._auth_recovery_locked(url, cookies)
+            if not auth_recovery and self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
+                return None, (
+                    f"Download queue is full ({MAX_QUEUED_TOTAL}/{MAX_QUEUED_TOTAL}). "
+                    "Cancel a pending item or wait for a running download to finish, then retry."
+                )
+
+        # Sanitize format/quality
+        if audio_only:
+            fmt = fmt if fmt in self.ALLOWED_AUDIO_FMT else 'mp3'
+        else:
+            fmt = fmt if fmt in self.ALLOWED_VIDEO_FMT else 'mp4'
+        quality = quality if quality in self.ALLOWED_QUALITY else 'best'
+
+        # Output directory — path-confined to the server's configured roots.
+        # A compromised extension or malicious content script would otherwise
+        # be able to hand us any absolute path and watch us mkdir + write
+        # there. See HARDENING.md Pass 6 S2 (outputDir allowlist).
+        client_supplied_output = bool(output_dir)
+        if not output_dir:
+            if audio_only and self.config.get("AudioDownloadPath"):
+                output_dir = self.config.get("AudioDownloadPath")
+            else:
+                output_dir = self.config.get("DownloadPath", str(Path.home() / "Videos"))
+        # Only enforce confinement when the client supplied the path. The
+        # fallback defaults above are always inside the allowlist by
+        # construction, and enforcing for them would create a chicken-and-egg
+        # when the user is first setting DownloadPath from the Settings UI.
+        roots = self._dependencies['allowed_output_roots'](self.config) if client_supplied_output else None
+        output_dir, err = self._dependencies['normalize_output_dir'](
+            output_dir,
+            self.config.get("DownloadPath", str(Path.home() / "Videos")),
+            allowed_roots=roots,
+        )
+        if err:
+            return None, err
+        title = self._dependencies['clean_text'](title, None, 500) or None
+        referer, _ = self._dependencies['normalize_url'](referer) if referer else (None, None)
+
+        with self._lock:
+            # Re-check capacity under the lock. The first check released the
+            # lock for URL/output normalization, so concurrent requests could
+            # otherwise overfill the durable queue.
+            self._reclaim_terminal_records_locked()
+            auth_recovery = self._auth_recovery_locked(url, cookies)
+            if not auth_recovery and self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
+                return None, (
+                    f"Download queue is full ({MAX_QUEUED_TOTAL}/{MAX_QUEUED_TOTAL}). "
+                    "Cancel a pending item or wait for a running download to finish, then retry."
+                )
+            recovery_previous = None
+            if auth_recovery:
+                dl = auth_recovery
+                dl_id = dl.id
+                recovery_previous = (
+                    dl.audio_only, dl.format, dl.quality, dl.output_dir,
+                    dl.title, dl.referer, dl.requires_auth, dl.status,
+                    dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                )
+                dl.audio_only = audio_only
+                dl.format = fmt
+                dl.quality = quality
+                dl.output_dir = output_dir
+                dl.title = title or dl.title
+                dl.referer = referer
+                dl.requires_auth = True
+                dl._cookies = list(cookies)
+                dl.status = 'pending'
+                dl.error = ''
+                dl.error_code = ''
+                dl.error_advice = ''
+                dl.error_action = ''
+            else:
+                self._next_id += 1
+                dl_id = f"dl_{self._next_id}_{uuid.uuid4().hex[:6]}"
+                self._next_order += 1
+                dl = Download(
+                    dl_id,
+                    url,
+                    audio_only,
+                    fmt,
+                    quality,
+                    output_dir,
+                    title,
+                    referer,
+                    requires_auth=bool(cookies),
+                    queue_order=self._next_order,
+                )
+                dl._cookies = list(cookies) if cookies else None
+                self.downloads[dl_id] = dl
+            if not self._persist_locked():
+                if not auth_recovery:
+                    del self.downloads[dl_id]
+                else:
+                    (
+                        dl.audio_only, dl.format, dl.quality, dl.output_dir,
+                        dl.title, dl.referer, dl.requires_auth, dl.status,
+                        dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                    ) = recovery_previous
+                dl._cookies = None
+                return None, (
+                    "Could not save the pending download queue. Check disk space and "
+                    "permissions, then retry."
+                )
+
+        self._schedule()
+
+        return dl_id, None
+
+    def _run_download(self, dl):
+        dl.status = "downloading"
+        self.progress_updated.emit()
+
+        ytdlp = str(self._dependencies['YTDLP_PATH']())
+        ffmpeg_dir = str(self._dependencies['FFMPEG_PATH']().parent)
+        is_playlist = is_playlist_url(dl.url)
+
+        # Output template
+        if is_playlist:
+            out_tpl = str(Path(dl.output_dir) / "%(playlist_title).200B" / "%(title).200B.%(ext)s")
+        else:
+            out_tpl = str(Path(dl.output_dir) / "%(title).200B.%(ext)s")
+
+        # Build args. v1.2.0: emit progress as JSON alongside the legacy MDLP
+        # line so we can parse robustly when yt-dlp tweaks its human-readable
+        # format. We keep the legacy line as a fallback.
+        args = [ytdlp, '--ignore-config', '--newline', '--progress', '--no-colors',
+                '--trim-filenames', '180',
+                '--replace-in-metadata', 'title,playlist_title',
+                '[\":<>|*?/\\\\]', '_',
+                '--ffmpeg-location', ffmpeg_dir, '-o', out_tpl,
+                '--progress-template',
+                'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s',
+                '--progress-template',
+                'download:MDLP_JSON %(progress)j']
+
+        frags = self._dependencies['clamp_int'](self.config.get("ConcurrentFragments", 4), 4, 1, 32)
+        args += ['--concurrent-fragments', str(frags)]
+        if self.config.get("EmbedMetadata"):
+            args.append('--embed-metadata')
+        if self.config.get("EmbedThumbnail"):
+            args.append('--embed-thumbnail')
+        if self.config.get("EmbedChapters"):
+            args.append('--embed-chapters')
+        if self.config.get("EmbedSubs"):
+            langs = re.sub(r'[^a-zA-Z0-9,\-]', '', self.config.get("SubLangs", "en"))
+            args += ['--embed-subs', '--write-subs', '--write-auto-subs', '--sub-langs', langs]
+        if self.config.get("SponsorBlock"):
+            action = 'mark' if self.config.get("SponsorBlockAction") == 'mark' else 'remove'
+            args += [f'--sponsorblock-{action}', 'all']
+        # v1.3.0: --force-overwrites lets the user re-download the same URL
+        # repeatedly. Without it, yt-dlp refuses to overwrite an existing
+        # output file and prints "[download] Title.mp4 has already been
+        # downloaded" — same UX failure mode as the now-removed
+        # --download-archive feature.
+        args.append('--force-overwrites')
+        rate = str(self.config.get("RateLimit", "")).strip().upper()
+        if rate and re.match(r'^\d+[KMG]?$', rate):
+            args += ['--limit-rate', rate]
+        proxy = self.config.get("Proxy", "")
+        if proxy and re.match(r'^(socks(?:4a?|5h?)?|https?)://', proxy):
+            args += ['--proxy', proxy]
+        max_filesize = int(self.config.get("MaxFileSizeMB", 0) or 0)
+        if max_filesize > 0:
+            args += ['--max-filesize', f'{max_filesize}M']
+        if dl.referer:
+            args += ['--referer', dl.referer]
+        if dl.cookies_file:
+            args += ['--cookies', dl.cookies_file]
+        if is_playlist:
+            args.append('--yes-playlist')
+
+        # Format selection
+        if dl.audio_only:
+            args += ['-f', 'bestaudio', '--extract-audio',
+                     '--audio-format', dl.format, '--audio-quality', '0']
+        else:
+            args += build_video_format_args(dl.format, dl.quality)
+
+        # v1.4.0 (N1): YouTube extractor-args — PO Token routing when the
+        # bgutil-ytdlp-pot-provider HTTP server is reachable. No-op on
+        # non-YouTube URLs and silently absent when the provider isn't
+        # running (the user-facing surface for that absence is the popup
+        # health banner driven by /health.poTokenProvider).
+        args += self._dependencies['build_youtube_extractor_args'](
+            dl.url,
+            po_token_provider=self._dependencies['probe_po_token_provider'](),
+        )
+        runtime = self._dependencies['probe_javascript_runtime'](
+            configured_runtime=self.config.get('JavaScriptRuntime', 'auto')
+        )
+        args += self._dependencies['build_javascript_runtime_args'](runtime)
+
+        args.append(dl.url)
+
+        # Watchdog sentinels declared before the try so the finally can stop the
+        # thread even if Popen() raises before the watchdog is created.
+        stop_watchdog = None
+        watchdog_thread = None
+        watchdog_killed = {'value': None}
+        try:
+            env = self._dependencies['_build_subprocess_env']()
+            proc = self._dependencies['spawn_ytdlp'](
+                args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding='utf-8', errors='replace', bufsize=1,
+                creationflags=self._dependencies['CREATE_NO_WINDOW'] | self._dependencies['CREATE_NEW_PROCESS_GROUP'],
+                env=env,
+            )
+            dl.process = proc
+            last_lines = []
+            last_error = None
+
+            # Stall watchdog (see DOWNLOAD_STALL_TIMEOUT_SECONDS): kill a wedged
+            # yt-dlp/ffmpeg tree that produces no output for too long so it can't
+            # block a worker thread / hold a concurrency slot forever.
+            activity = {'at': time.monotonic()}
+            stop_watchdog = threading.Event()
+
+            # Bind the stop event and process into the closure via default args.
+            # The retry path (below) rebinds `stop_watchdog` and `proc`; without
+            # this binding a still-running original watchdog would re-read those
+            # names and start polling the retry's event/process, becoming a
+            # duplicate watchdog that can cross-kill or mis-attribute a stall.
+            def _stall_watchdog(ev=stop_watchdog, watched_proc=proc):
+                while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+                    if dl.status == 'cancelled':
+                        return
+                    if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
+                        watchdog_killed['value'] = 'stall'
+                        try:
+                            self._dependencies['terminate_process_tree'](watched_proc)
+                        except Exception:
+                            # reason: best-effort kill; process may already be gone
+                            pass
+                        return
+
+            watchdog_thread = threading.Thread(
+                target=_stall_watchdog, name='download-stall-watchdog', daemon=True
+            )
+            watchdog_thread.start()
+
+            for line in proc.stdout:
+                activity['at'] = time.monotonic()
+                line = line.strip()
+                if not line:
+                    continue
+                last_lines.append(line)
+                if len(last_lines) > 30:
+                    last_lines = last_lines[-30:]
+                if 'ERROR' in line.upper():
+                    last_error = line
+
+                # Preferred structured progress (JSON — robust to yt-dlp
+                # format changes). Falls through to the legacy MDLP regex
+                # only if JSON parsing fails.
+                if line.startswith('MDLP_JSON '):
+                    try:
+                        payload = json.loads(line[len('MDLP_JSON '):])
+                        total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
+                        downloaded_bytes = payload.get('downloaded_bytes') or 0
+                        if isinstance(total, (int, float)) and total > 0:
+                            dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
+                        spd = (payload.get('_speed_str') or '').strip()
+                        eta = (payload.get('_eta_str') or '').strip()
+                        if spd and spd not in ('NA', 'Unknown'):
+                            dl.speed = spd
+                        if eta and eta not in ('NA', 'Unknown'):
+                            dl.eta = eta
+                        self.progress_updated.emit()
+                        continue
+                    except Exception:
+                        # reason: yt-dlp occasionally emits a malformed JSON
+                        # line on extractor exit. Fall through to MDLP.
+                        pass
+
+                # Structured progress (MDLP prefix, legacy fallback)
+                m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
+                if m:
+                    dl.progress = float(m.group(1))
+                    spd, eta = m.group(2), m.group(3)
+                    if spd not in ('NA', 'Unknown'):
+                        dl.speed = spd
+                    if eta not in ('NA', 'Unknown'):
+                        dl.eta = eta
+                    self.progress_updated.emit()
+                    continue
+
+                # Legacy progress
+                m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
+                if m:
+                    dl.progress = float(m.group(1))
+                    m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
+                    if m2:
+                        dl.speed = m2.group(1)
+                        dl.eta = m2.group(2)
+                    self.progress_updated.emit()
+                    continue
+
+                # Status changes
+                if '[Merger]' in line or 'Merging formats' in line:
+                    dl.status = "merging"
+                    self.progress_updated.emit()
+                elif '[ExtractAudio]' in line or '[extract]' in line:
+                    dl.status = "extracting"
+                    self.progress_updated.emit()
+
+                # Filename detection
+                m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
+                if m:
+                    dl.filename = m.group(1)
+                else:
+                    m = re.search(r'\[download\] Destination: (.+)', line)
+                    if m:
+                        dl.filename = m.group(1)
+
+            proc.wait()
+
+            if dl.status != "complete":
+                if dl.status == "cancelled":
+                    dl.error = dl.error or "Cancelled by user."
+                elif watchdog_killed['value'] == 'stall':
+                    dl.status = "failed"
+                    dl.error = (
+                        "Download stalled (no progress for "
+                        f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
+                    )
+                    apply_download_failure_classification(dl, 'network-unreachable')
+                elif proc.returncode == 0:
+                    dl.status = "complete"
+                    dl.progress = 100
+                else:
+                    dl.status = "failed"
+                    # Audit pass: truncate the last ERROR line like the
+                    # fallback branch already does. yt-dlp ERROR lines can
+                    # carry a full Python traceback; an untruncated value used
+                    # to round-trip through /status to the extension popup and
+                    # blow past the JSON payload UI budget.
+                    if last_error:
+                        dl.error = last_error[-240:]
+                    elif last_lines:
+                        dl.error = " ".join(last_lines)[-240:]
+                    else:
+                        dl.error = "Unknown error"
+                    combined = " ".join(last_lines).lower()
+                    if 'live event has ended' in combined and dl.cookies_file:
+                        self._dependencies['write_persistent_log'](
+                            f"Download {dl.id}: 'live event has ended' with cookies — "
+                            "retrying without cookies"
+                        )
+                        retry_args = [a for i, a in enumerate(args)
+                                      if a != '--cookies' and (i == 0 or args[i - 1] != '--cookies')]
+                        dl.status = "downloading"
+                        dl.error = ""
+                        dl.progress = 0
+                        self.progress_updated.emit()
+                        if stop_watchdog is not None:
+                            stop_watchdog.set()
+                        # Join the original watchdog before rebinding so it can't
+                        # linger and poll the retry's process/event.
+                        if watchdog_thread is not None:
+                            watchdog_thread.join(timeout=DOWNLOAD_WATCHDOG_POLL_SECONDS + 1)
+                        # The first process reached EOF, but Popen keeps the
+                        # TextIOWrapper open until it is explicitly closed (or
+                        # garbage-collected). Close it before rebinding `proc`
+                        # so repeated cookie-less retries cannot leak one pipe
+                        # handle per attempt.
+                        previous_stdout = getattr(proc, 'stdout', None)
+                        try:
+                            if previous_stdout is not None:
+                                previous_stdout.close()
+                        except Exception:
+                            # reason: test doubles and already-closed streams
+                            # may not expose a conventional close operation
+                            pass
+                        activity['at'] = time.monotonic()
+                        stop_watchdog = threading.Event()
+                        proc = self._dependencies['spawn_ytdlp'](
+                            retry_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding='utf-8', errors='replace', bufsize=1,
+                            creationflags=self._dependencies['CREATE_NO_WINDOW'] | self._dependencies['CREATE_NEW_PROCESS_GROUP'],
+                            env=env,
+                        )
+                        dl.process = proc
+                        last_lines = []
+                        last_error = None
+
+                        def _retry_watchdog(ev=stop_watchdog, watched_proc=proc):
+                            while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+                                if dl.status == 'cancelled':
+                                    return
+                                if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
+                                    watchdog_killed['value'] = 'stall'
+                                    try:
+                                        self._dependencies['terminate_process_tree'](watched_proc)
+                                    except Exception:
+                                        pass
+                                    return
+
+                        watchdog_thread = threading.Thread(
+                            target=_retry_watchdog, name='download-stall-watchdog-retry', daemon=True
+                        )
+                        watchdog_thread.start()
+
+                        for line in proc.stdout:
+                            activity['at'] = time.monotonic()
+                            line = line.strip()
+                            if not line:
+                                continue
+                            last_lines.append(line)
+                            if len(last_lines) > 30:
+                                last_lines = last_lines[-30:]
+                            if 'ERROR' in line.upper():
+                                last_error = line
+                            if line.startswith('MDLP_JSON '):
+                                try:
+                                    payload = json.loads(line[len('MDLP_JSON '):])
+                                    total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
+                                    downloaded_bytes = payload.get('downloaded_bytes') or 0
+                                    if isinstance(total, (int, float)) and total > 0:
+                                        dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
+                                    spd = (payload.get('_speed_str') or '').strip()
+                                    eta = (payload.get('_eta_str') or '').strip()
+                                    if spd and spd not in ('NA', 'Unknown'):
+                                        dl.speed = spd
+                                    if eta and eta not in ('NA', 'Unknown'):
+                                        dl.eta = eta
+                                    self.progress_updated.emit()
+                                    continue
+                                except Exception:
+                                    pass
+                            m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
+                            if m:
+                                dl.progress = float(m.group(1))
+                                spd, eta = m.group(2), m.group(3)
+                                if spd not in ('NA', 'Unknown'):
+                                    dl.speed = spd
+                                if eta not in ('NA', 'Unknown'):
+                                    dl.eta = eta
+                                self.progress_updated.emit()
+                                continue
+                            m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
+                            if m:
+                                dl.progress = float(m.group(1))
+                                m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
+                                if m2:
+                                    dl.speed = m2.group(1)
+                                    dl.eta = m2.group(2)
+                                self.progress_updated.emit()
+                                continue
+                            if '[Merger]' in line or 'Merging formats' in line:
+                                dl.status = "merging"
+                                self.progress_updated.emit()
+                            elif '[ExtractAudio]' in line or '[extract]' in line:
+                                dl.status = "extracting"
+                                self.progress_updated.emit()
+                            m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
+                            if m:
+                                dl.filename = m.group(1)
+                            else:
+                                m = re.search(r'\[download\] Destination: (.+)', line)
+                                if m:
+                                    dl.filename = m.group(1)
+
+                        proc.wait()
+                        if dl.status == 'cancelled':
+                            dl.error = dl.error or "Cancelled by user."
+                        elif watchdog_killed['value'] == 'stall':
+                            dl.status = "failed"
+                            dl.error = (
+                                "Download stalled (no progress for "
+                                f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
+                            )
+                            apply_download_failure_classification(dl, 'network-unreachable')
+                        elif proc.returncode == 0:
+                            dl.status = "complete"
+                            dl.progress = 100
+                        else:
+                            dl.status = "failed"
+                            if last_error:
+                                dl.error = last_error[-240:]
+                            elif last_lines:
+                                dl.error = " ".join(last_lines)[-240:]
+                            else:
+                                dl.error = "Unknown error"
+                            apply_download_failure_classification(
+                                dl,
+                                classify_download_failure(dl.error, last_lines),
+                            )
+                    elif 'live event has ended' in combined:
+                        dl.error = (
+                            "YouTube reports this live stream has ended. "
+                            "The VOD archive may still be processing — "
+                            "try again in a few minutes."
+                        )
+                    elif ('sabr' in combined or 'no video formats' in combined
+                            or 'requested format is not available' in combined):
+                        apply_download_failure_classification(dl, 'sabr-limited')
+                    else:
+                        apply_download_failure_classification(
+                            dl,
+                            classify_download_failure(dl.error, last_lines),
+                        )
+
+        except FileNotFoundError:
+            if dl.status != "cancelled":
+                dl.status = "failed"
+                dl.error = "yt-dlp not found. Run setup first."
+        except Exception as e:
+            if dl.status != "cancelled":
+                dl.status = "failed"
+                dl.error = "Unexpected download error. Check Astra Downloader logs for details."
+                self._dependencies['write_persistent_log'](f"Download {dl.id} failed unexpectedly: {e}")
+        finally:
+            # Signal the watchdog to stop; it's a daemon thread that wakes from
+            # its wait() the moment the event is set and exits on its own. We do
+            # NOT join() it here — joining adds latency between status becoming
+            # terminal (which unblocks observers/tests) and the post-finally
+            # history write, which can let an observer see "complete" before the
+            # history entry exists.
+            if stop_watchdog is not None:
+                stop_watchdog.set()
+            # Audit fix: if we got here via the generic except (e.g. an
+            # unexpected error inside the output-parsing loop), yt-dlp and any
+            # ffmpeg child may still be running — without this they'd be
+            # orphaned (holding a MAX_CONCURRENT slot's process alive and
+            # keeping the cookie jar in use while we unlink it below). The
+            # normal-completion and cancelled paths are unaffected:
+            # terminate_process_tree() returns immediately when the process
+            # has already exited, and the cancel() thread's own kill is
+            # idempotent with this one.
+            orphan = dl.process
+            if orphan is not None and orphan.poll() is None:
+                try:
+                    self._dependencies['terminate_process_tree'](orphan)
+                except Exception:
+                    # reason: best-effort kill; never mask the original error
+                    pass
+            # Popen does not close PIPE-backed TextIOWrapper objects merely
+            # because wait() reached EOF. Explicit closure prevents descriptor
+            # leaks in the long-running GUI after each completed, failed, or
+            # cancelled download.
+            process_stdout = getattr(orphan, 'stdout', None)
+            try:
+                if process_stdout is not None:
+                    process_stdout.close()
+            except Exception:
+                # reason: cleanup must never replace the download result
+                pass
+            dl.process = None
+            # Cookie jar holds session credentials — purge it as soon as the
+            # download process exits so it never outlives the one request that
+            # needed it.
+            if dl.cookies_file:
+                try:
+                    Path(dl.cookies_file).unlink(missing_ok=True)
+                except Exception:
+                    pass
+                dl.cookies_file = None
+
+        dl.mark_terminal()
+        if dl.status == "complete":
+            self.total_completed += 1
+            duration = int(time.time() - dl.start_time)
+            self.history.add({
+                "id": dl.id, "url": dl.url, "title": dl.title,
+                "filename": dl.filename, "format": dl.format,
+                "quality": dl.quality, "audioOnly": dl.audio_only,
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "duration": duration,
+            })
+
+        self.progress_updated.emit()
+        self.download_completed.emit(dl.id)
+
+    def pause_intake(self):
+        with self._lock:
+            if self.intake_paused:
+                return True
+            self.intake_paused = True
+            if self._persist_locked():
+                return True
+            self.intake_paused = False
+            return False
+
+    def resume_intake(self):
+        with self._lock:
+            restored = []
+            self.intake_paused = False
+            for dl in self.downloads.values():
+                if dl.status == 'paused':
+                    restored.append((dl, dl.error))
+                    dl.status = 'pending'
+                    dl.error = ''
+            if not self._persist_locked():
+                self.intake_paused = True
+                for dl, error in restored:
+                    dl.status = 'paused'
+                    dl.error = error
+                return False
+        self.progress_updated.emit()
+        self._schedule()
+        return True
+
+    def resume_download(self, dl_id, cookies=None):
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            if not dl:
+                return False, 'Download no longer exists in the queue.'
+            if dl.status not in DOWNLOAD_PENDING_STATES:
+                return False, 'Only pending or recovered downloads can be resumed.'
+            if dl.status == 'needs-auth' and not cookies:
+                return False, (
+                    'Fresh YouTube cookies are required. Retry from Astra Deck so the '
+                    'browser can authorize this download.'
+                )
+            previous = (
+                dl.status, dl.error, dl.error_code, dl.error_advice,
+                dl.error_action, dl.requires_auth, dl._cookies,
+            )
+            if cookies:
+                dl.requires_auth = True
+                dl._cookies = list(cookies)
+            dl.status = 'pending'
+            dl.error = ''
+            dl.error_code = ''
+            dl.error_advice = ''
+            dl.error_action = ''
+            if not self._persist_locked():
+                (
+                    dl.status, dl.error, dl.error_code, dl.error_advice,
+                    dl.error_action, dl.requires_auth, dl._cookies,
+                ) = previous
+                return False, self._persistence_error
+        self.progress_updated.emit()
+        self._schedule()
+        return True, None
+
+    def retry(self, dl_id, cookies=None):
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            if not dl:
+                return False, 'Download no longer exists in the queue.'
+            if dl.status != 'failed':
+                return False, 'Only failed downloads can be retried.'
+            if dl.error_code not in DOWNLOAD_RETRYABLE_ERROR_CODES:
+                return False, 'This failure needs its recovery action before it can be retried.'
+            if self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
+                return False, (
+                    f"Download queue is full ({MAX_QUEUED_TOTAL}/{MAX_QUEUED_TOTAL}). "
+                    "Cancel a pending item or wait for a running download to finish, then retry."
+                )
+            previous = (
+                dl.status, dl.progress, dl.speed, dl.eta, dl.filename,
+                dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                dl.finished_time, dl.start_time, dl.queue_order,
+                dl.requires_auth, dl._cookies,
+            )
+            if dl.requires_auth and not cookies:
+                dl.status = 'needs-auth'
+                dl.error = (
+                    'Fresh YouTube authentication is required before this download can retry.'
+                )
+                dl.error_code = ''
+                dl.error_advice = ''
+                dl.error_action = 'sign-in-and-retry'
+                dl.finished_time = None
+                self._next_order += 1
+                dl.queue_order = self._next_order
+                if not self._persist_locked():
+                    (
+                        dl.status, dl.progress, dl.speed, dl.eta, dl.filename,
+                        dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                        dl.finished_time, dl.start_time, dl.queue_order,
+                        dl.requires_auth, dl._cookies,
+                    ) = previous
+                    return False, self._persistence_error
+                return False, (
+                    'Fresh YouTube cookies are required. Retry from Astra Deck so the '
+                    'browser can authorize this download.'
+                )
+            if cookies:
+                dl.requires_auth = True
+                dl._cookies = list(cookies)
+            dl.status = 'pending'
+            dl.progress = 0.0
+            dl.speed = ''
+            dl.eta = ''
+            dl.filename = ''
+            dl.error = ''
+            dl.error_code = ''
+            dl.error_advice = ''
+            dl.error_action = ''
+            dl.finished_time = None
+            dl.start_time = time.time()
+            self._next_order += 1
+            dl.queue_order = self._next_order
+            if not self._persist_locked():
+                (
+                    dl.status, dl.progress, dl.speed, dl.eta, dl.filename,
+                    dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                    dl.finished_time, dl.start_time, dl.queue_order,
+                    dl.requires_auth, dl._cookies,
+                ) = previous
+                return False, self._persistence_error
+        self.progress_updated.emit()
+        self._schedule()
+        return True, None
+
+    def move_pending(self, dl_id, position):
+        with self._lock:
+            pending = self._ordered_pending_locked()
+            current = next((index for index, dl in enumerate(pending) if dl.id == dl_id), None)
+            if current is None:
+                return False, 'Only pending downloads can be reordered.'
+            try:
+                target = int(position)
+            except (TypeError, ValueError):
+                return False, 'Queue position must be an integer.'
+            target = max(0, min(target, len(pending) - 1))
+            if target == current:
+                return True, None
+            previous_orders = {dl.id: dl.queue_order for dl in pending}
+            item = pending.pop(current)
+            pending.insert(target, item)
+            for index, dl in enumerate(pending, start=1):
+                dl.queue_order = index
+            self._next_order = max(self._next_order, len(pending))
+            if not self._persist_locked():
+                for dl in pending:
+                    dl.queue_order = previous_orders[dl.id]
+                return False, self._persistence_error
+        self.progress_updated.emit()
+        return True, None
+
+    def move_pending_by(self, dl_id, offset):
+        with self._lock:
+            pending = self._ordered_pending_locked()
+            current = next((index for index, dl in enumerate(pending) if dl.id == dl_id), None)
+        if current is None:
+            return False, 'Only pending downloads can be reordered.'
+        return self.move_pending(dl_id, current + int(offset))
+
+    def cancel(self, dl_id):
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            if not dl or dl.status in DOWNLOAD_TERMINAL_STATES:
+                return False
+            dl.status = "cancelled"
+            dl.error = "Cancelled by user."
+            dl._cookies = None
+            if dl.cookies_file and dl.process is None:
+                try:
+                    Path(dl.cookies_file).unlink(missing_ok=True)
+                except Exception:
+                    pass
+                dl.cookies_file = None
+            dl.mark_terminal()
+            proc = dl.process
+            was_running = dl_id in self._running_ids
+            self._persist_locked()
+        if proc and proc.poll() is None:
+            def terminate():
+                self._dependencies['terminate_process_tree'](proc)
+            threading.Thread(target=terminate, daemon=True).start()
+        self.progress_updated.emit()
+        if not was_running:
+            self._schedule()
+        return True
+
+    def cancel_all(self):
+        with self._lock:
+            # Keep the last durable unfinished snapshot intact. A new process
+            # will restore those records paused/needs-auth rather than silently
+            # starting them or losing user intent.
+            self._closing = True
+            active = [d for d in self.downloads.values() if d.status in DOWNLOAD_ACTIVE_STATES]
+        for dl in active:
+            dl.status = "cancelled"
+            dl.error = "Cancelled (app shutdown)."
+            dl._cookies = None
+            dl.mark_terminal()
+            proc = dl.process
+            if proc and proc.poll() is None:
+                try:
+                    self._dependencies['terminate_process_tree'](proc)
+                except Exception as e:
+                    self._dependencies['write_persistent_log'](f"cancel_all termination warning: {e}")
+
+    def active_count(self):
+        with self._lock:
+            return len(self._running_ids)
+
+    def pending_count(self):
+        with self._lock:
+            return sum(1 for d in self.downloads.values()
+                       if d.status in DOWNLOAD_PENDING_STATES)
+
+    def snapshot(self):
+        with self._lock:
+            return sorted(
+                self.downloads.values(),
+                key=lambda dl: (dl.queue_order, dl.start_time, dl.id),
+            )
+
+    def queue_payload(self):
+        with self._lock:
+            pending = self._ordered_pending_locked()
+            pending_positions = {dl.id: index for index, dl in enumerate(pending)}
+            items = []
+            for dl in sorted(
+                    self.downloads.values(),
+                    key=lambda item: (item.queue_order, item.start_time, item.id)):
+                payload = dl.to_dict()
+                if dl.id in pending_positions:
+                    payload['queuePosition'] = pending_positions[dl.id]
+                items.append(payload)
+            return {
+                'downloads': items,
+                'count': len(items),
+                'capacity': self._capacity_locked(),
+                'persistenceError': self._persistence_error or None,
+            }
+
+    def cleanup_old(self):
+        cutoff = time.time() - 300  # 5 min
+        with self._lock:
+            to_remove = [k for k, d in self.downloads.items()
+                         if d.status in DOWNLOAD_TERMINAL_STATES
+                         and (getattr(d, 'finished_time', None) or d.start_time) < cutoff]
+            for k in to_remove:
+                del self.downloads[k]
+
+
+DownloadManager = DownloadManagerCore
+
+
 _OWNED_EXPORTS = {
     "Download", "build_video_format_args", "is_playlist_url",
     "download_error_payload", "classify_download_failure",
@@ -519,7 +1698,8 @@ _OWNED_EXPORTS = {
     "DOWNLOAD_STALL_TIMEOUT_SECONDS", "DOWNLOAD_WATCHDOG_POLL_SECONDS",
     "write_cookies_netscape", "cleanup_stale_cookie_jars",
     "terminate_process_tree", "build_subprocess_env", "ALLOWED_COOKIE_DOMAINS",
-    "DownloadQueueStore",
+    "DownloadQueueStore", "DownloadManager", "DownloadManagerCore",
+    "DOWNLOAD_QUEUE_SCHEMA_VERSION",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS

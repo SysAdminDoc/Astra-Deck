@@ -1,4 +1,5 @@
 import hashlib
+import inspect
 import io
 import json
 import os
@@ -1388,7 +1389,8 @@ for forbidden in (
         self.assertIs(config.atomic_write_json, ad.atomic_write_json)
         self.assertIs(config.load_json_file, ad.load_json_file)
         self.assertIs(config.sanitize_history_entries, ad.sanitize_history_entries)
-        self.assertIs(download.DownloadManager, ad.DownloadManager)
+        self.assertIs(download.DownloadManager, download.DownloadManagerCore)
+        self.assertTrue(issubclass(ad.DownloadManager, download.DownloadManagerCore))
         self.assertIs(download.Download, ad.Download)
         self.assertIs(download.DownloadQueueStore, ad.DownloadQueueStore)
         self.assertIs(download.build_video_format_args, ad.build_video_format_args)
@@ -2483,7 +2485,9 @@ class NoArchiveLockTests(unittest.TestCase):
                          "yt-dlp argv must not include --download-archive.")
 
     def test_source_passes_force_overwrites_to_ytdlp(self):
-        src = Path(ad.__file__).read_text(encoding='utf-8')
+        import download
+
+        src = inspect.getsource(download.DownloadManagerCore._run_download)
         self.assertIn("'--force-overwrites'", src,
                       "yt-dlp argv must include --force-overwrites so "
                       "re-downloads of the same URL aren't skipped because "
