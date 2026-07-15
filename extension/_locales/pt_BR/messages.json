@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Inverter Vídeo"
   },
+  "feature_videoInsights_desc": {
+    "message": "Mostra a categoria, a data exata de envio, o ID do canal e as tags publicadas nos metadados da página do YouTube, com uma consulta alternativa limitada no GitHub-full."
+  },
+  "feature_videoInsights_name": {
+    "message": "Informações do vídeo"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Adicionar um botão de alternância de loop nos controles do player para repetição do vídeo com um clique"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Categoria"
+  },
+  "videoInsightsChannelId": {
+    "message": "ID do canal"
+  },
+  "videoInsightsLoading": {
+    "message": "Carregando detalhes do vídeo…"
+  },
+  "videoInsightsNoTags": {
+    "message": "Nenhuma tag publicada"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Detalhes do YouTube em cache"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Atualizado pelo YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "Desta página"
+  },
+  "videoInsightsTags": {
+    "message": "Marcadores"
+  },
+  "videoInsightsTitle": {
+    "message": "Informações do vídeo"
+  },
+  "videoInsightsUnavailable": {
+    "message": "Não informado"
+  },
+  "videoInsightsUploaded": {
+    "message": "Enviado"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

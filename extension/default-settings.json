@@ -163,6 +163,7 @@
   "reversePlaylist": false,
   "rssFeedLink": false,
   "preciseViewCounts": false,
+  "videoInsights": false,
   "videoScreenshot": false,
   "perChannelSpeed": false,
   "hideWatchedVideos": false,

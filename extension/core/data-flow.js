@@ -38,8 +38,8 @@
     const ORIGIN_CATALOGUE = Object.freeze([
         Object.freeze({
             origin: 'https://*.youtube.com',
-            purpose: 'YouTube DOM, Innertube fallback player response, caption tracks.',
-            requiredByFeatures: ['transcriptViewer', 'autoSubtitles'],
+            purpose: 'YouTube DOM, InnerTube fallback player response, caption tracks, and opt-in video insights.',
+            requiredByFeatures: ['transcriptViewer', 'autoSubtitles', 'videoInsights'],
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
             hostGrant: 'required',

@@ -69,7 +69,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // empty array) + 6 CSS-toggle booleans + uiFontSize number (232 bytes).
     // The background-owned AI credential vault removes the 21-byte empty
     // aiSummaryApiKey field from ordinary settings.
-    assert.equal(assessment.totalBytes, 179168);
+    // GitHub-full videoInsights adds a 22-byte false-by-default preference.
+    assert.equal(assessment.totalBytes, 179190);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "视频翻转"
   },
+  "feature_videoInsights_desc": {
+    "message": "从 YouTube 页面元数据中显示类别、精确上传日期、频道 ID 和已发布标签；缺失时仅在 GitHub-full 中进行有限补充。"
+  },
+  "feature_videoInsights_name": {
+    "message": "视频详细信息"
+  },
   "feature_videoLoopButton_desc": {
     "message": "在播放器控件中添加循环切换按钮，一键循环播放视频"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "类别"
+  },
+  "videoInsightsChannelId": {
+    "message": "频道 ID"
+  },
+  "videoInsightsLoading": {
+    "message": "正在加载视频详细信息…"
+  },
+  "videoInsightsNoTags": {
+    "message": "未发布标签"
+  },
+  "videoInsightsSourceCache": {
+    "message": "已缓存的 YouTube 详细信息"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "已从 YouTube 刷新"
+  },
+  "videoInsightsSourcePage": {
+    "message": "来自此页面"
+  },
+  "videoInsightsTags": {
+    "message": "标签"
+  },
+  "videoInsightsTitle": {
+    "message": "视频详细信息"
+  },
+  "videoInsightsUnavailable": {
+    "message": "未提供"
+  },
+  "videoInsightsUploaded": {
+    "message": "上传时间"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

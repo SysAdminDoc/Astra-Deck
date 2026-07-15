@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Отражение видео"
   },
+  "feature_videoInsights_desc": {
+    "message": "Показывает категорию, точную дату загрузки, ID канала и опубликованные теги из метаданных страницы YouTube с ограниченным резервным запросом GitHub-full."
+  },
+  "feature_videoInsights_name": {
+    "message": "Сведения о видео"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Добавить кнопку переключения зацикливания в элементы управления плеера для повтора видео в один клик"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Категория"
+  },
+  "videoInsightsChannelId": {
+    "message": "ID канала"
+  },
+  "videoInsightsLoading": {
+    "message": "Загрузка сведений о видео…"
+  },
+  "videoInsightsNoTags": {
+    "message": "Теги не опубликованы"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Кешированные сведения YouTube"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Обновлено с YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "С этой страницы"
+  },
+  "videoInsightsTags": {
+    "message": "Теги"
+  },
+  "videoInsightsTitle": {
+    "message": "Сведения о видео"
+  },
+  "videoInsightsUnavailable": {
+    "message": "Не указано"
+  },
+  "videoInsightsUploaded": {
+    "message": "Загружено"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

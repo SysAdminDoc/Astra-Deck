@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "قلب الفيديو"
   },
+  "feature_videoInsights_desc": {
+    "message": "يعرض الفئة وتاريخ الرفع الدقيق ومعرّف القناة والوسوم المنشورة من بيانات صفحة YouTube، مع استعلام احتياطي محدود في GitHub-full."
+  },
+  "feature_videoInsights_name": {
+    "message": "تفاصيل الفيديو"
+  },
   "feature_videoLoopButton_desc": {
     "message": "إضافة زر تبديل التكرار إلى عناصر تحكم المشغّل لتكرار الفيديو بنقرة واحدة"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "الفئة"
+  },
+  "videoInsightsChannelId": {
+    "message": "معرّف القناة"
+  },
+  "videoInsightsLoading": {
+    "message": "جارٍ تحميل تفاصيل الفيديو…"
+  },
+  "videoInsightsNoTags": {
+    "message": "لم تُنشر وسوم"
+  },
+  "videoInsightsSourceCache": {
+    "message": "تفاصيل YouTube مخزّنة مؤقتًا"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "تم التحديث من YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "من هذه الصفحة"
+  },
+  "videoInsightsTags": {
+    "message": "الوسوم"
+  },
+  "videoInsightsTitle": {
+    "message": "تفاصيل الفيديو"
+  },
+  "videoInsightsUnavailable": {
+    "message": "غير متوفر"
+  },
+  "videoInsightsUploaded": {
+    "message": "تاريخ الرفع"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

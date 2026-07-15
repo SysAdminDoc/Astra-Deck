@@ -15,6 +15,12 @@
             origin: 'https://sponsor.ajay.app',
             feature: 'deArrow'
         },
+        videoInsights: {
+            // i18n-static: stable provider diagnostic identity
+            label: 'YouTube video insights',
+            origin: 'https://www.youtube.com',
+            feature: 'videoInsights'
+        },
         returnDislike: {
             label: 'Return YouTube Dislike',
             origin: 'https://returnyoutubedislikeapi.com',

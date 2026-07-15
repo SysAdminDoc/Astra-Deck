@@ -5122,10 +5122,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // hideCommentComposer/hideCommentReplyButton and the uiFontSize number (399 → 408).
     // aiSummaryApiKey then moved out of ordinary settings into credential
     // vaults, so the canonical schema intentionally returned to 407.
+    // GitHub-full video insights adds one bounded opt-in (407 → 408).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 407,
-        'SETTINGS_SCHEMA must cover all 407 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 408,
+        'SETTINGS_SCHEMA must cover all 408 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
