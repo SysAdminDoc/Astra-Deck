@@ -1550,6 +1550,17 @@ class RateLimiterTests(unittest.TestCase):
         self.assertFalse(limiter.allow('a')[0])
         self.assertTrue(limiter.allow('b')[0])
 
+    def test_routes_owns_rate_limiter_and_clock_is_injectable(self):
+        import routes
+
+        now = [100.0]
+        limiter = routes.RateLimiter(1, 10, clock=lambda: now[0])
+        self.assertIs(routes.RateLimiter, ad.RateLimiter)
+        self.assertTrue(limiter.allow('download')[0])
+        self.assertFalse(limiter.allow('download')[0])
+        now[0] = 111.0
+        self.assertTrue(limiter.allow('download')[0])
+
 
 class Sha256VerifyTests(unittest.TestCase):
     """v1.2.0 S3 — binary integrity verification for yt-dlp/ffmpeg."""

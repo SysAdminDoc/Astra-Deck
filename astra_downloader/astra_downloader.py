@@ -55,9 +55,9 @@ except ImportError as exc:
     raise ImportError(source_dependency_error(exc)) from exc
 
 try:
-    from .routes import _ServerAdapter, _build_wsgi_server
+    from .routes import RateLimiter, _ServerAdapter, _build_wsgi_server
 except ImportError:  # Direct script / flat source-path compatibility.
-    from routes import _ServerAdapter, _build_wsgi_server
+    from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
 
 # ══════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -715,40 +715,6 @@ def is_path_under(child, root):
         return True
     except (ValueError, OSError):
         return False
-
-
-class RateLimiter:
-    """Sliding-window rate limiter.
-
-    Local-only service, so per-IP bucketing is unnecessary — every client is
-    127.0.0.1. Bucket key exists so we can separate /download (strict) from
-    eventual other endpoints without reshuffling state.
-    """
-
-    def __init__(self, max_events, window_seconds):
-        from collections import deque as _deque
-        self._deque = _deque
-        self.max_events = max_events
-        self.window_seconds = window_seconds
-        self._lock = threading.Lock()
-        self._buckets = {}
-
-    def allow(self, key='default'):
-        """Returns (allowed: bool, retry_after_seconds: float)."""
-        now = time.monotonic()
-        cutoff = now - self.window_seconds
-        with self._lock:
-            q = self._buckets.get(key)
-            if q is None:
-                q = self._deque()
-                self._buckets[key] = q
-            while q and q[0] < cutoff:
-                q.popleft()
-            if len(q) >= self.max_events:
-                retry = max(0.0, self.window_seconds - (now - q[0]))
-                return False, retry
-            q.append(now)
-            return True, 0.0
 
 
 # ── v1.2.0: cached version strings for /health ──
