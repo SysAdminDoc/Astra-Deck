@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.49.8
+// @name         YTKit v4.49.9
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.49.8
+// @version      4.49.9
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -964,7 +964,7 @@
             #ytkit-settings-panel .ytkit-switch .ytkit-switch-thumb {
                 top: 3px !important;
                 inset-inline-start: 3px !important;
-                left: auto !important;
+                inset-inline-end: auto !important;
                 width: 20px !important;
                 height: 20px !important;
                 border: 0 !important;
@@ -982,7 +982,7 @@
 
             #ytkit-settings-panel .ytkit-switch.active .ytkit-switch-thumb {
                 inset-inline-start: 23px !important;
-                left: auto !important;
+                inset-inline-end: auto !important;
                 background: #fff !important;
                 transform: none !important;
             }
@@ -26408,7 +26408,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.49.8';
+    const YTKIT_VERSION = '4.49.9';
 
     // ── Z-Index Hierarchy ──
     const Z = {

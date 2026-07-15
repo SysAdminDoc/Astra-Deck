@@ -231,6 +231,23 @@ const IN_PAGE_CHECKS = `(() => {
         if (headerRect && headerRect.height > 66) failures.push('desktop settings header is taller than 66px');
         if (footerRect && footerRect.height > 60) failures.push('desktop settings footer is taller than 60px');
     }
+    const inactiveSwitch = panel.querySelector('#ytkit-toggle-videoScreenshot')?.closest('.ytkit-switch');
+    const activeSwitch = panel.querySelector('#ytkit-toggle-autoMaxResolution')?.closest('.ytkit-switch');
+    const inlineStartOffset = (switchEl) => {
+        const trackRect = switchEl?.querySelector('.ytkit-switch-track')?.getBoundingClientRect();
+        const thumbRect = switchEl?.querySelector('.ytkit-switch-thumb')?.getBoundingClientRect();
+        if (!trackRect || !thumbRect) return null;
+        return panel.getAttribute('dir') === 'rtl'
+            ? trackRect.right - thumbRect.right
+            : thumbRect.left - trackRect.left;
+    };
+    const inactiveOffset = inlineStartOffset(inactiveSwitch);
+    const activeOffset = inlineStartOffset(activeSwitch);
+    if (inactiveOffset === null || activeOffset === null) {
+        failures.push('could not measure settings toggle thumb positions');
+    } else if (activeOffset < inactiveOffset + 12) {
+        failures.push('active toggle thumb does not move toward inline end (' + inactiveOffset.toFixed(1) + ' -> ' + activeOffset.toFixed(1) + ')');
+    }
     if (panel.getAttribute('dir') === 'rtl' && headerSearch) {
         const searchIcon = panel.querySelector('.ytkit-command-search .ytkit-search-icon');
         const searchActions = panel.querySelector('.ytkit-command-search .ytkit-search-actions');
