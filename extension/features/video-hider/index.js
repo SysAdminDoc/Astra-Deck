@@ -1856,9 +1856,18 @@
                     });
                     this._mutationBudgetHandle = handle;
                     Promise.resolve(handle.promise).then((result) => {
+                        if (result?.cancelled && result.processed < cards.length) {
+                            // Requeue the cancelled tail ahead of newly
+                            // discovered cards — cancelling at index N used to
+                            // silently drop every card past N, leaving
+                            // hidden/blocked videos visible until the next
+                            // full navigation rescan.
+                            pendingMutationCards = cards.slice(result.processed).concat(pendingMutationCards);
+                        }
                         if (this._mutationBudgetHandle !== handle) return;
                         this._mutationBudgetHandle = null;
                         this._recordScanDiagnostics(result);
+                        if (pendingMutationCards.length) scheduleMutationBatch();
                         if (batchTimeout) clearTimeout(batchTimeout);
                         batchTimeout = setTimeout(processBatch, 300);
                     });

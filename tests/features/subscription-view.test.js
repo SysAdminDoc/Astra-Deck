@@ -28,11 +28,22 @@ class FakeCard {
     querySelectorAll() { return [{ textContent: this.metadata }]; }
 }
 
-function sortableHarness(cards) {
+function sortableHarness(cards, continuation = null) {
     const container = {
         cards: [...cards],
-        querySelectorAll() { return [...this.cards]; },
-        appendChild(fragment) { this.cards = [...fragment.children]; }
+        continuation,
+        insertBeforeAnchors: [],
+        querySelectorAll(selector) {
+            if (String(selector).includes('continuation')) {
+                return this.continuation ? [this.continuation] : [];
+            }
+            return [...this.cards];
+        },
+        appendChild(fragment) { this.cards = [...fragment.children]; },
+        insertBefore(fragment, anchor) {
+            this.insertBeforeAnchors.push(anchor);
+            this.cards = [...fragment.children];
+        }
     };
     const documentRef = {
         createDocumentFragment() {
@@ -80,6 +91,21 @@ test('newest-loaded sorting is stable, deterministic, and reverses to the stampe
 
     sortLoadedCards(container, 'native', documentRef);
     assert.deepEqual(container.cards, original);
+});
+
+test('sorting keeps the infinite-scroll continuation renderer after the cards', () => {
+    // Regression: the sorted fragment was appended past the continuation
+    // renderer, pinning a permanently-intersecting spinner at the top of
+    // the feed and misplacing YouTube's continuation inserts.
+    const continuation = { label: 'continuation' };
+    const { container, documentRef } = sortableHarness([
+        new FakeCard('old', '2 days ago'),
+        new FakeCard('new', '5 minutes ago')
+    ], continuation);
+    assert.equal(sortLoadedCards(container, 'newest-loaded', documentRef), 2);
+    assert.deepEqual(container.cards.map((card) => card.label), ['new', 'old']);
+    assert.deepEqual(container.insertBeforeAnchors, [continuation],
+        'the sorted cards must be inserted before the continuation renderer');
 });
 
 test('exact datetime metadata takes priority over relative card text', () => {

@@ -95,14 +95,31 @@ test('safe YouTube result paths stay same-origin and reject executable or foreig
     assert.equal(safeYouTubePath('javascript:alert(1)'), '');
 });
 
+function fakeDocumentRef() {
+    const makeElement = () => ({
+        className: '',
+        classList: { add() {}, remove() {}, toggle() {} },
+        children: [],
+        dataset: {},
+        style: {},
+        setAttribute() {},
+        addEventListener() {},
+        appendChild(child) { this.children.push(child); },
+        append(...nodes) { this.children.push(...nodes); },
+        remove() {}
+    });
+    return {
+        addEventListener() {},
+        removeEventListener() {},
+        createElement: makeElement,
+        body: null
+    };
+}
+
 test('search responses are cached and stale async results cannot replace a newer query', async () => {
     const requests = [];
     let resolveFirst;
-    const documentRef = {
-        addEventListener() {},
-        removeEventListener() {},
-        body: null
-    };
+    const documentRef = fakeDocumentRef();
     const feature = createSearchWhileWatchingFeature({
         documentRef,
         isWatchPagePath: () => true,
@@ -112,7 +129,10 @@ test('search responses are cached and stale async results cannot replace a newer
             if (url.includes('first')) {
                 return new Promise((resolve) => { resolveFirst = resolve; });
             }
-            return Promise.resolve({ text: searchHtml({}) });
+            if (url.includes('empty')) {
+                return Promise.resolve({ text: searchHtml({}) });
+            }
+            return Promise.resolve({ text: searchHtml(SEARCH_DATA) });
         }
     });
     feature.init();
@@ -125,6 +145,39 @@ test('search responses are cached and stale async results cannot replace a newer
     assert.equal(feature._getState().cachedQueries, 1, 'only the current response may enter the cache');
     await feature._search('second');
     assert.equal(requests.length, 2, 'a repeated query must use the five-minute cache');
+
+    // Empty result sets are rendered but never cached — a transient degraded
+    // response must not pin "no results" for the TTL.
+    await feature._search('empty');
+    assert.equal(feature._getState().cachedQueries, 1, 'empty result sets must not enter the cache');
+    await feature._search('empty');
+    assert.equal(requests.length, 4, 'repeating an empty query retries the network');
+    feature.destroy();
+});
+
+test('a cache hit invalidates an in-flight network search for the previous query', async () => {
+    let resolveSlow;
+    const documentRef = fakeDocumentRef();
+    const feature = createSearchWhileWatchingFeature({
+        documentRef,
+        isWatchPagePath: () => true,
+        injectStyle: () => ({ remove() {} }),
+        extensionFetchText: ({ url }) => {
+            if (url.includes('slow')) {
+                return new Promise((resolve) => { resolveSlow = resolve; });
+            }
+            return Promise.resolve({ text: searchHtml(SEARCH_DATA) });
+        }
+    });
+    feature.init();
+    await feature._search('warm');            // populates the cache
+    const slow = feature._search('slow');     // network, left pending
+    await feature._search('warm');            // cache hit — must invalidate slow
+    resolveSlow({ text: searchHtml(SEARCH_DATA) });
+    await slow;
+    assert.equal(feature._getState().activeQuery, 'warm');
+    assert.equal(feature._getState().cachedQueries, 1,
+        'the stale slow response must not render or cache over the cache-hit query');
     feature.destroy();
 });
 
