@@ -1398,6 +1398,7 @@ for forbidden in (
         self.assertIs(gui.make_empty_state, ad.make_empty_state)
         self.assertIs(gui.human_status, ad.human_status)
         self.assertTrue(issubclass(ad.ReadinessProbe, gui.ReadinessProbe))
+        self.assertTrue(issubclass(ad.FolderPickerService, gui.FolderPickerService))
 
     def test_gui_boundary_imports_pyqt_without_creating_application(self):
         script = r'''
@@ -2237,15 +2238,16 @@ class FolderPickerWatchdogTests(unittest.TestCase):
         )
 
     def test_watchdog_emits_log_when_dialog_blocks_past_threshold(self):
-        # Source-pin the log emission shape: when dialog_elapsed exceeds
+        # Source-pin the log emission shape: when elapsed exceeds
         # the threshold, write_persistent_log must be called with a
         # message that names the elapsed time and the threshold so an
         # operator reading the log can correlate.
-        src = Path(ad.__file__).read_text(encoding='utf-8')
+        import inspect
+        src = inspect.getsource(ad.FolderPickerService._tick)
         self.assertIn(
-            "dialog_elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS",
+            "elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS",
             src,
-            "FolderPickerService._tick must check dialog_elapsed against the threshold",
+            "FolderPickerService._tick must check elapsed time against the threshold",
         )
         self.assertIn(
             "FolderPickerService: dialog blocked for",
@@ -2262,13 +2264,14 @@ class FolderPickerWatchdogTests(unittest.TestCase):
         # The threshold gate ensures fast dialog interactions don't
         # spam the log. We pin this via source-shape rather than a
         # live Qt test — the gate is a single boolean check.
-        src = Path(ad.__file__).read_text(encoding='utf-8')
-        # The log call must sit INSIDE the `if dialog_elapsed > ...`
+        import inspect
+        src = inspect.getsource(ad.FolderPickerService._tick)
+        # The log call must sit INSIDE the `if elapsed > ...`
         # block, not outside. We test this by ensuring the log line
         # is preceded by the watchdog conditional within a reasonable
         # window.
         log_line = "FolderPickerService: dialog blocked for"
-        cond_line = "dialog_elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS"
+        cond_line = "elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS"
         log_idx = src.find(log_line)
         cond_idx = src.find(cond_line)
         self.assertGreater(log_idx, cond_idx,

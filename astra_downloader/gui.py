@@ -1,7 +1,11 @@
 """PyQt presentation helpers and lazy legacy GUI compatibility boundary."""
 
-from PyQt6.QtCore import QObject, Qt, pyqtSignal
-from PyQt6.QtWidgets import QLabel, QPushButton, QFrame, QVBoxLayout
+import queue
+import time
+from pathlib import Path
+
+from PyQt6.QtCore import QObject, QTimer, Qt, pyqtSignal
+from PyQt6.QtWidgets import QFileDialog, QLabel, QPushButton, QFrame, QVBoxLayout
 
 try:
     from ._compat import make_legacy_resolver
@@ -172,11 +176,69 @@ class ReadinessProbe(QObject):
         self.completed.emit(payload)
 
 
+class FolderPickerService(QObject):
+    """Bridge HTTP folder requests onto the Qt GUI thread."""
+
+    DIALOG_WATCHDOG_THRESHOLD_SECONDS = 60
+
+    def __init__(self, *, request_queue, dialog_factory=None, dialog_types=None,
+                 clock=time.time, logger=None, parent=None):
+        super().__init__(parent)
+        self._request_queue = request_queue
+        self._dialog_factory = dialog_factory or QFileDialog
+        self._dialog_types = dialog_types or (lambda: QFileDialog)
+        self._clock = clock
+        self._logger = logger or (lambda _message: None)
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start(150)
+
+    def _tick(self):
+        try:
+            request = self._request_queue.get_nowait()
+        except queue.Empty:
+            return
+        response_queue = request['response']
+        try:
+            initial = request.get('initial') or str(Path.home() / "Videos")
+            dialog_class = self._dialog_types()
+            dialog = self._dialog_factory(None, "Choose download folder", initial)
+            dialog.setFileMode(dialog_class.FileMode.Directory)
+            dialog.setOption(dialog_class.Option.ShowDirsOnly, True)
+            dialog.setOption(dialog_class.Option.DontResolveSymlinks, True)
+            dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+            dialog.activateWindow()
+            dialog.raise_()
+            started_at = self._clock()
+            result = dialog.exec()
+            elapsed = self._clock() - started_at
+            if elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS:
+                self._logger(
+                    f"FolderPickerService: dialog blocked for {elapsed:.1f}s "
+                    f"(threshold {self.DIALOG_WATCHDOG_THRESHOLD_SECONDS}s; "
+                    f"initial='{initial}'). Possible Qt event-loop or file-system hang."
+                )
+            if result == dialog_class.DialogCode.Accepted:
+                paths = dialog.selectedFiles()
+                response_queue.put({
+                    'path': paths[0] if paths else None,
+                    'cancelled': not bool(paths),
+                })
+            else:
+                response_queue.put({'path': None, 'cancelled': True})
+        except Exception:
+            self._logger("FolderPickerService failed")
+            response_queue.put({
+                'error': 'Folder picker failed. Check Astra Downloader logs for details.'
+            })
+
+
 _OWNED_EXPORTS = {
     "repolish", "make_label", "make_section_label", "make_divider",
     "make_card", "make_status_badge", "download_status_tone",
     "human_status", "format_duration", "make_empty_state", "make_stat",
     "ReadinessProbe",
+    "FolderPickerService",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS
