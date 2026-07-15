@@ -116,6 +116,28 @@ test('browser-api call normalizes Promise-only Firefox APIs', async () => {
     assert.deepEqual({ ...result }, { key: 'value' });
 });
 
+test('browser-api call resolves void no-callback APIs instead of reporting false failures', async () => {
+    // Chromium's downloads.show(downloadId) takes NO callback and returns
+    // undefined. The callback-shaped first attempt throws, and the bare
+    // retry succeeds with a non-thenable result. Regression: the wrapper
+    // rejected that path, logging every successful reveal as a failure.
+    let calls = 0;
+    const chrome = {
+        runtime: { id: 'chrome', lastError: null },
+        downloads: {
+            show(...args) {
+                calls += 1;
+                if (args.length !== 1 || typeof args[0] !== 'number') {
+                    throw new TypeError('downloads.show takes a single numeric downloadId');
+                }
+            }
+        }
+    };
+    const ctx = loadWrapper({ chrome, setTimeout, clearTimeout, Promise, Error, TypeError });
+    await assert.doesNotReject(ctx.YTKitBrowser.call(chrome.downloads, 'show', [42]));
+    assert.equal(calls, 2, 'the wrapper retries once with the bare signature');
+});
+
 test('browser-api loads first in every content-script group and every extension page', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
     for (const group of manifest.content_scripts) {

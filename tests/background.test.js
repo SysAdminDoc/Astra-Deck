@@ -60,7 +60,16 @@ function loadBackground({
         },
         downloads: {
             download: downloadsDownloadImpl || ((opts, callback) => callback(1)),
-            show() {}
+            // Chromium's downloads.show is a void API with NO callback
+            // parameter and no promise form. Mirror that strictly so the
+            // wrapper's callback-shaped first attempt throws, exercising
+            // the bare-retry path (regression: successful reveals were
+            // logged as reveal-failed).
+            show(...args) {
+                if (args.length !== 1 || typeof args[0] !== 'number') {
+                    throw new TypeError('downloads.show takes a single numeric downloadId');
+                }
+            }
         },
         permissions: {
             contains: permissionsContainsImpl || ((_payload, callback) => callback(true))

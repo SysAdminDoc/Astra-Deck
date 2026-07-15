@@ -51,7 +51,12 @@ function callExtensionApi(target, method, ...args) {
                         (error) => finish(reject, error)
                     );
                 } else {
-                    finish(reject, callbackError);
+                    // The callback-shaped call threw but the bare retry
+                    // returned without throwing: this is a void API with no
+                    // callback parameter (e.g. downloads.show on Chromium).
+                    // The call succeeded — rejecting here would log every
+                    // successful invocation as a failure.
+                    finish(resolve, result);
                 }
             } catch (promiseError) {
                 finish(reject, promiseError);
@@ -1333,7 +1338,11 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 });
                 port.onDisconnect.addListener(() => {
                     clearTimeout(timeout);
-                    const lastError = ext.runtime.lastError?.message || '';
+                    // Firefox reports the disconnect reason on port.error;
+                    // runtime.lastError is the Chrome-only channel for ports.
+                    const lastError = port.error?.message
+                        || ext.runtime.lastError?.message
+                        || '';
                     respond({ token: null, error: lastError || 'Native host disconnected' });
                 });
                 port.postMessage({ type: 'get-token' });

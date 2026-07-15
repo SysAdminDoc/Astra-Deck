@@ -615,7 +615,9 @@ if (versionEl) {
 // ── Storage wrappers ──
 
 function hasChromeStorageLocal(method) {
-    return typeof ext !== 'undefined'
+    // `ext` is null (not undefined) when popup.html is opened outside an
+    // extension context — the exact case the preview-mode banner handles.
+    return !!ext
         && !!ext.storage
         && !!ext.storage.local
         && (!method || typeof ext.storage.local[method] === 'function');
@@ -624,7 +626,7 @@ function hasChromeStorageLocal(method) {
 function isExtensionStorageUnavailable(error) {
     if (!hasChromeStorageLocal('get')) return true;
     const message = String(error?.message || error || '');
-    return /Extension storage is unavailable|Cannot read properties of undefined \(reading 'local'\)|ext\.storage\.local/i.test(message);
+    return /Extension storage is unavailable|Extension API unavailable|Cannot read properties of (?:undefined|null) \(reading 'local'\)/i.test(message);
 }
 
 function getStorageUnavailableMessage() {
@@ -1415,10 +1417,26 @@ function renderEmpty(filter) {
     list.appendChild(empty);
 }
 
-async function sendTabMessage(tabId, message) {
+async function sendPanelOpenMessage(tabId) {
+    // The panel-open ack must distinguish "no receiver in the tab" (reject →
+    // open a fresh tab) from "receiver busy hydrating" (timeout → trust
+    // delivery). Collapsing both to a 2s null previously opened a duplicate
+    // youtube.com tab whenever a watch page blocked the main thread past the
+    // ack window.
     if (!tabId) return false;
-    const response = await browserApi.sendTabMessage(tabId, message, { timeoutMs: 2000 });
-    return response !== null && response?.ok !== false;
+    let timeoutId;
+    try {
+        const response = await Promise.race([
+            callExtensionApi(ext?.tabs, 'sendMessage', tabId, { type: PANEL_OPEN_MESSAGE }),
+            new Promise((resolve) => { timeoutId = setTimeout(() => resolve('ytkit-ack-timeout'), 8000); })
+        ]);
+        if (response === 'ytkit-ack-timeout') return true;
+        return response?.ok !== false;
+    } catch (_) {
+        return false;
+    } finally {
+        clearTimeout(timeoutId);
+    }
 }
 
 async function sendTabMessageResponse(tabId, message) {
@@ -3565,12 +3583,15 @@ if (whatsNewOpenBtn) {
         // the changelog and scrolls to the top entry.
         const url = CHANGELOG_BASE_URL;
         try {
-            if (ext.tabs?.create) {
+            // Dismiss BEFORE opening the tab: creating an active tab closes
+            // the popup, and any work scheduled after the await races popup
+            // teardown — the banner would reappear on every popup open.
+            void dismissWhatsNew();
+            if (ext?.tabs?.create) {
                 await callExtensionApi(ext.tabs, 'create', { url, active: true });
             } else {
                 window.open(url, '_blank', 'noopener,noreferrer');
             }
-            void dismissWhatsNew();
         } catch (err) {
             console.warn('[Astra Deck popup] whats-new open failed:', err);
         }
@@ -4818,7 +4839,7 @@ function installWheelScrolling() {
             const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
             const nextContext = getTabContext(tab || null);
             if (nextContext.mode === 'inline-panel' && tab?.id) {
-                const opened = await sendTabMessage(tab.id, { type: PANEL_OPEN_MESSAGE });
+                const opened = await sendPanelOpenMessage(tab.id);
                 if (opened) { window.close(); return; }
             }
             await callExtensionApi(ext?.tabs, 'create', { url: 'https://www.youtube.com/' });
