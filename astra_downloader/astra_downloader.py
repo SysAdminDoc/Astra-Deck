@@ -57,8 +57,9 @@ except ImportError as exc:
 try:
     from .routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from .config import (
-        DEFAULT_CONFIG, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
+        DEFAULT_CONFIG, ConfigStore, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
+        HistoryStore,
         allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
         normalize_output_dir, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
@@ -67,8 +68,9 @@ try:
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from config import (
-        DEFAULT_CONFIG, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
+        DEFAULT_CONFIG, ConfigStore, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
+        HistoryStore,
         allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
         normalize_output_dir, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
@@ -3007,91 +3009,30 @@ QMenu::item:selected { background-color: #2b1919; }
 # ══════════════════════════════════════════════════════════════
 # CONFIG
 # ══════════════════════════════════════════════════════════════
-class Config:
+class Config(ConfigStore):
     def __init__(self):
-        INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.RLock()
-        self._data = sanitize_config(load_json_file(CONFIG_PATH, {}))
-        self._persisted_data = dict(self._data)
-        self.save()
-
-    def get(self, key, default=None):
-        with self._lock:
-            return self._data.get(key, default)
-
-    def set(self, key, value):
-        with self._lock:
-            self._data[key] = value
-
-    def update(self, mapping):
-        with self._lock:
-            candidate = dict(self._data)
-            candidate.update(mapping)
-            return self._save_candidate_unlocked(candidate)
-
-    def save(self):
-        with self._lock:
-            return self._save_candidate_unlocked(self._data)
-
-    def _save_candidate_unlocked(self, candidate):
-        candidate = sanitize_config(candidate)
-        try:
-            atomic_write_json(CONFIG_PATH, candidate)
-        except Exception as e:
-            # Keep memory aligned with the last durable file. Callers can safely
-            # retry without the failed values leaking into the running server.
-            self._data = dict(self._persisted_data)
-            write_persistent_log(f"Config save failed: {e}")
-            return False
-        self._data = candidate
-        self._persisted_data = dict(candidate)
-        return True
-
-    @property
-    def data(self):
-        with self._lock:
-            return dict(self._data)
+        super().__init__(
+            install_dir=lambda: INSTALL_DIR,
+            path=lambda: CONFIG_PATH,
+            sanitizer=sanitize_config,
+            loader=load_json_file,
+            writer=lambda path, data: atomic_write_json(path, data),
+            logger=lambda message: write_persistent_log(message),
+        )
 
 # ══════════════════════════════════════════════════════════════
 # HISTORY
 # ══════════════════════════════════════════════════════════════
-class History:
+class History(HistoryStore):
     def __init__(self):
-        self._lock = threading.Lock()
-        if not HISTORY_PATH.exists():
-            self._write([])
-
-    def load(self):
-        with self._lock:
-            return sanitize_history_entries(load_json_file(HISTORY_PATH, []))
-
-    def add(self, entry):
-        with self._lock:
-            data = sanitize_history_entries(load_json_file(HISTORY_PATH, []))
-            data.append(entry)
-            if len(data) > 500:
-                data = data[-500:]
-            return self._write_unlocked(data)
-
-    def clear(self):
-        with self._lock:
-            return self._write_unlocked([])
-
-    def replace(self, entries):
-        with self._lock:
-            return self._write_unlocked(entries)
-
-    def _write(self, data):
-        with self._lock:
-            return self._write_unlocked(data)
-
-    def _write_unlocked(self, data):
-        try:
-            atomic_write_json(HISTORY_PATH, sanitize_history_entries(data))
-            return True
-        except Exception as e:
-            write_persistent_log(f"History save failed: {e}")
-            return False
+        super().__init__(
+            path=lambda: HISTORY_PATH,
+            sanitizer=sanitize_history_entries,
+            loader=load_json_file,
+            writer=lambda path, data: atomic_write_json(path, data),
+            logger=lambda message: write_persistent_log(message),
+            limit=500,
+        )
 
 
 def is_playlist_url(url):
