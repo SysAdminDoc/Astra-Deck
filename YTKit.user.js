@@ -23893,6 +23893,12 @@
                     if (data.speed) spd.textContent = data.speed;
                     if (data.eta)   eta.textContent = 'ETA ' + data.eta;
 
+                    if (['pending', 'queued', 'paused', 'needs-auth'].includes(data.status)) {
+                        pct.textContent = data.status === 'needs-auth' ? 'Needs sign-in' : 'Waiting';
+                        spd.textContent = '';
+                        eta.textContent = data.error || 'Queued in Astra Downloader';
+                    }
+
                     if (data.status === 'done' || data.status === 'complete') {
                         clearInterval(pollInterval);
                         fill.style.width = '100%';

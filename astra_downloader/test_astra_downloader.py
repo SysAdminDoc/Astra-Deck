@@ -525,24 +525,28 @@ class UninstallCleanupTests(unittest.TestCase):
 
 
 class DownloadManagerTests(unittest.TestCase):
-    def test_queued_downloads_count_toward_concurrency_limit(self):
+    def test_fourth_download_is_retained_pending_while_three_run(self):
         manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        release = threading.Event()
 
-        def hold_queued(_download):
-            time.sleep(0.2)
+        def hold_queued(download):
+            download.status = 'downloading'
+            release.wait(2)
+            download.status = 'complete'
+            download.mark_terminal()
 
         manager._run_download = hold_queued
 
         ids = []
-        for i in range(ad.MAX_CONCURRENT):
+        for i in range(ad.MAX_CONCURRENT + 1):
             dl_id, err = manager.start_download(f"https://example.com/{i}")
             self.assertIsNone(err)
             ids.append(dl_id)
 
-        dl_id, err = manager.start_download("https://example.com/overflow")
-        self.assertIsNone(dl_id)
-        self.assertIn("limit", err.lower())
         self.assertEqual(manager.active_count(), ad.MAX_CONCURRENT)
+        self.assertEqual(manager.pending_count(), 1)
+        self.assertEqual(manager.downloads[ids[-1]].status, 'pending')
+        release.set()
 
     def test_cancel_does_not_relabel_completed_downloads(self):
         manager = ad.DownloadManager(FakeConfig(), FakeHistory())
@@ -615,6 +619,166 @@ class DownloadManagerTests(unittest.TestCase):
         self.assertIsNotNone(dl_id)
         self.assertIn(active.id, manager.downloads)
         self.assertLessEqual(len(manager.downloads), ad.MAX_QUEUED_TOTAL)
+
+    def test_pause_reorder_cancel_and_resume_control_pending_intake(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        self.assertTrue(manager.pause_intake())
+        ids = []
+        for index in range(3):
+            dl_id, err = manager.start_download(f"https://example.com/{index}")
+            self.assertIsNone(err)
+            ids.append(dl_id)
+
+        self.assertEqual(manager.active_count(), 0)
+        self.assertEqual(manager.pending_count(), 3)
+        ok, err = manager.move_pending(ids[2], 0)
+        self.assertTrue(ok, err)
+        self.assertEqual(manager.queue_payload()['downloads'][0]['id'], ids[2])
+
+        running = ad.Download('running', 'https://example.com/running')
+        running.status = 'downloading'
+        manager.downloads[running.id] = running
+        ok, err = manager.move_pending(running.id, 0)
+        self.assertFalse(ok)
+        self.assertIn('pending', err.lower())
+
+        self.assertTrue(manager.cancel(ids[1]))
+        self.assertEqual(manager.downloads[ids[1]].status, 'cancelled')
+
+    def test_persisted_queue_restores_paused_and_never_serializes_cookies(self):
+        cookies = [{
+            'domain': '.youtube.com', 'name': 'SID', 'value': 'top-secret-cookie',
+            'path': '/', 'secure': True,
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            config = FakeConfig({
+                'DownloadPath': tmp,
+                'AudioDownloadPath': tmp,
+            })
+            manager = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertTrue(manager.pause_intake())
+            plain_id, plain_err = manager.start_download(
+                'https://www.youtube.com/watch?v=plainQueue',
+            )
+            auth_id, auth_err = manager.start_download(
+                'https://www.youtube.com/watch?v=authQueue1',
+                cookies=cookies,
+            )
+            self.assertIsNone(plain_err)
+            self.assertIsNone(auth_err)
+
+            persisted = queue_path.read_text(encoding='utf-8')
+            self.assertNotIn('top-secret-cookie', persisted)
+            self.assertNotIn('cookies_file', persisted)
+            self.assertNotIn('cookiesFile', persisted)
+            self.assertNotIn('.cookies.', persisted)
+
+            restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertEqual(restored.active_count(), 0)
+            self.assertTrue(restored.intake_paused)
+            self.assertEqual(restored.downloads[plain_id].status, 'paused')
+            self.assertEqual(restored.downloads[auth_id].status, 'needs-auth')
+
+            started = []
+
+            def complete(download):
+                started.append(download.id)
+                download.status = 'complete'
+                download.mark_terminal()
+
+            restored._run_download = complete
+            self.assertTrue(restored.resume_intake())
+            deadline = time.time() + 2
+            while time.time() < deadline and plain_id not in started:
+                time.sleep(0.01)
+            self.assertIn(plain_id, started)
+            self.assertNotIn(auth_id, started)
+            self.assertEqual(restored.downloads[auth_id].status, 'needs-auth')
+
+            ok, err = restored.resume_download(auth_id)
+            self.assertFalse(ok)
+            self.assertIn('Fresh YouTube cookies', err)
+
+            before_count = len(restored.downloads)
+            with mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)):
+                recovered_id, recovery_err = restored.start_download(
+                    'https://www.youtube.com/watch?v=authQueue1',
+                    cookies=[{
+                        'domain': '.youtube.com', 'name': 'SID', 'value': 'fresh-cookie',
+                        'path': '/', 'secure': True,
+                    }],
+                )
+            self.assertIsNone(recovery_err)
+            self.assertEqual(recovered_id, auth_id)
+            self.assertEqual(len(restored.downloads), before_count)
+            self.assertNotIn('fresh-cookie', queue_path.read_text(encoding='utf-8'))
+
+    def test_future_queue_schema_is_preserved_and_blocks_destructive_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            future = {
+                'schemaVersion': ad.DOWNLOAD_QUEUE_SCHEMA_VERSION + 1,
+                'futureOnly': {'preserve': True},
+                'downloads': [],
+            }
+            queue_path.write_text(json.dumps(future), encoding='utf-8')
+            manager = ad.DownloadManager(
+                FakeConfig({'DownloadPath': tmp}),
+                FakeHistory(),
+                queue_path=queue_path,
+            )
+
+            dl_id, err = manager.start_download('https://example.com/future-schema')
+            self.assertIsNone(dl_id)
+            self.assertIn('Could not save', err)
+            self.assertEqual(json.loads(queue_path.read_text(encoding='utf-8')), future)
+            self.assertIn('incompatible', manager.queue_payload()['persistenceError'])
+
+    def test_only_classified_transient_failures_can_retry(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        manager.pause_intake()
+        transient = ad.Download('transient', 'https://example.com/transient')
+        transient.status = 'failed'
+        transient.error_code = 'network-unreachable'
+        transient.mark_terminal()
+        permanent = ad.Download('permanent', 'https://example.com/permanent')
+        permanent.status = 'failed'
+        permanent.error_code = 'ffmpeg-missing-or-stale'
+        permanent.mark_terminal()
+        manager.downloads[transient.id] = transient
+        manager.downloads[permanent.id] = permanent
+
+        ok, err = manager.retry(transient.id)
+        self.assertTrue(ok, err)
+        self.assertEqual(transient.status, 'pending')
+        ok, err = manager.retry(permanent.id)
+        self.assertFalse(ok)
+        self.assertIn('recovery action', err)
+
+    def test_total_running_and_pending_capacity_remains_bounded(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        manager.pause_intake()
+        for index in range(ad.MAX_QUEUED_TOTAL):
+            dl_id, err = manager.start_download(f"https://example.com/{index}")
+            self.assertIsNone(err)
+            self.assertIsNotNone(dl_id)
+
+        dl_id, err = manager.start_download('https://example.com/overflow')
+        self.assertIsNone(dl_id)
+        self.assertIn(f'{ad.MAX_QUEUED_TOTAL}/{ad.MAX_QUEUED_TOTAL}', err)
+        capacity = manager.capacity()
+        self.assertEqual(capacity['total'], ad.MAX_QUEUED_TOTAL)
+        self.assertEqual(capacity['available'], 0)
+        failed = ad.Download('failed-retry', 'https://example.com/failed-retry')
+        failed.status = 'failed'
+        failed.error_code = 'network-unreachable'
+        failed.mark_terminal()
+        manager.downloads[failed.id] = failed
+        ok, retry_err = manager.retry(failed.id)
+        self.assertFalse(ok)
+        self.assertIn('queue is full', retry_err.lower())
+        self.assertEqual(manager.capacity()['total'], ad.MAX_QUEUED_TOTAL)
 
 
 class DownloadFailureClassifierTests(unittest.TestCase):
@@ -913,6 +1077,100 @@ class ApiSecurityTests(unittest.TestCase):
                 self.assertEqual(resp.status_code, 200, ok_url)
 
         self.assertEqual(start.call_count, 3)
+
+    def test_download_endpoint_queue_full_response_includes_capacity_and_remediation(self):
+        token = 'q' * 32
+        config = FakeConfig({'ServerToken': token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        manager.intake_paused = True
+        for index in range(ad.MAX_QUEUED_TOTAL):
+            dl = ad.Download(
+                f'pending-{index}',
+                f'https://www.youtube.com/watch?v={index:011d}',
+                output_dir=config.get('DownloadPath'),
+                queue_order=index + 1,
+            )
+            manager.downloads[dl.id] = dl
+        api = ad.create_api(config, manager, FakeHistory())
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value={
+            'ytdlpNeedsRuntime': False,
+            'supported': True,
+            'ejsReady': True,
+        }):
+            resp = api.test_client().post(
+                '/download',
+                json={'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},
+                headers={'X-Auth-Token': token},
+            )
+
+        self.assertEqual(resp.status_code, 429)
+        payload = resp.get_json()
+        self.assertEqual(payload['code'], 'queue-full')
+        self.assertEqual(payload['capacity']['total'], ad.MAX_QUEUED_TOTAL)
+        self.assertEqual(payload['capacity']['available'], 0)
+        self.assertIn('Cancel a pending item', payload['remediation'])
+
+        failed = ad.Download(
+            'failed-retry',
+            'https://www.youtube.com/watch?v=failedRetry',
+            output_dir=config.get('DownloadPath'),
+        )
+        failed.status = 'failed'
+        failed.error_code = 'network-unreachable'
+        failed.mark_terminal()
+        manager.downloads[failed.id] = failed
+        retry_resp = api.test_client().post(
+            f'/queue/{failed.id}/retry',
+            headers={'X-Auth-Token': token},
+        )
+        retry_payload = retry_resp.get_json()
+        self.assertEqual(retry_resp.status_code, 429)
+        self.assertEqual(retry_payload['code'], 'queue-full')
+        self.assertEqual(retry_payload['capacity']['available'], 0)
+        self.assertIn('Cancel a pending item', retry_payload['remediation'])
+
+    def test_queue_api_controls_pause_reorder_and_fresh_auth_resume(self):
+        token = 'r' * 32
+        config = FakeConfig({'ServerToken': token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        manager.pause_intake()
+        first, _ = manager.start_download('https://www.youtube.com/watch?v=firstQueue1')
+        second, _ = manager.start_download('https://www.youtube.com/watch?v=secondQueue')
+        auth = ad.Download(
+            'auth-recovery',
+            'https://www.youtube.com/watch?v=authRecover',
+            output_dir=config.get('DownloadPath'),
+            requires_auth=True,
+            queue_order=3,
+        )
+        auth.status = 'needs-auth'
+        manager.downloads[auth.id] = auth
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        headers = {'X-Auth-Token': token}
+
+        moved = client.post(f'/queue/{second}/move', json={'position': 0}, headers=headers)
+        self.assertEqual(moved.status_code, 200)
+        self.assertEqual(moved.get_json()['queue']['downloads'][0]['id'], second)
+
+        missing = client.post(f'/queue/{auth.id}/resume', json={}, headers=headers)
+        self.assertEqual(missing.status_code, 409)
+        self.assertEqual(missing.get_json()['code'], 'fresh-auth-required')
+
+        resumed = client.post(
+            f'/queue/{auth.id}/resume',
+            json={'cookies': [{
+                'domain': '.youtube.com', 'name': 'SID', 'value': 'fresh-secret',
+                'path': '/', 'secure': True,
+            }]},
+            headers=headers,
+        )
+        self.assertEqual(resumed.status_code, 200)
+        self.assertEqual(manager.downloads[auth.id].status, 'pending')
+        queue_payload = client.get('/queue', headers=headers).get_json()
+        self.assertTrue(queue_payload['capacity']['intakePaused'])
+        self.assertNotIn('fresh-secret', json.dumps(queue_payload))
+        self.assertIn(first, {item['id'] for item in queue_payload['downloads']})
 
     def test_history_limit_is_clamped(self):
         token = "d" * 32

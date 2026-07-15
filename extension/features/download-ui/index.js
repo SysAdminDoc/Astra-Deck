@@ -680,15 +680,31 @@
                     const p = Math.min(data.progress || 0, 100);
                     fill.style.width = p + '%';
                     pct.textContent = p.toFixed(1) + '%';
-                    spd.textContent = data.speed || t('dlProgressLocal', 'Local');
-                    eta.textContent = data.eta ? t('dlProgressEtaPrefix', 'ETA') + ' ' + data.eta : (p >= 99 ? t('dlProgressWrappingUp', 'Wrapping up') : t('dlProgressInProgress', 'In progress'));
-                    setProgressState(
-                        'active',
-                        data.status === 'processing' ? t('dlProgressStateFinishing', 'Finishing') : t('dlProgressStateDownloading', 'Downloading'),
-                        data.eta
-                            ? t('dlProgressActiveEtaTpl', `${p.toFixed(1)}% complete. ${data.eta} remaining.`).replace('{pct}', p.toFixed(1)).replace('{eta}', data.eta)
-                            : t('dlProgressActiveTpl', `${p.toFixed(1)}% complete. Stay on YouTube while Astra Downloader finishes.`).replace('{pct}', p.toFixed(1))
-                    );
+                    const pendingStatus = ['pending', 'queued', 'paused', 'needs-auth'].includes(data.status);
+                    if (pendingStatus) {
+                        pct.textContent = data.status === 'needs-auth'
+                            ? t('dlProgressStateNeedsAttention', 'Needs Attention')
+                            : t('dlProgressWaiting', 'Waiting');
+                        spd.textContent = '';
+                        eta.textContent = '';
+                        setProgressState(
+                            data.status === 'needs-auth' ? 'error' : 'active',
+                            data.status === 'needs-auth'
+                                ? t('dlProgressStateNeedsAttention', 'Needs Attention')
+                                : t('dlProgressQueue', 'Queue'),
+                            data.error || t('dlProgressWaiting', 'Waiting')
+                        );
+                    } else {
+                        spd.textContent = data.speed || t('dlProgressLocal', 'Local');
+                        eta.textContent = data.eta ? t('dlProgressEtaPrefix', 'ETA') + ' ' + data.eta : (p >= 99 ? t('dlProgressWrappingUp', 'Wrapping up') : t('dlProgressInProgress', 'In progress'));
+                        setProgressState(
+                            'active',
+                            data.status === 'processing' ? t('dlProgressStateFinishing', 'Finishing') : t('dlProgressStateDownloading', 'Downloading'),
+                            data.eta
+                                ? t('dlProgressActiveEtaTpl', `${p.toFixed(1)}% complete. ${data.eta} remaining.`).replace('{pct}', p.toFixed(1)).replace('{eta}', data.eta)
+                                : t('dlProgressActiveTpl', `${p.toFixed(1)}% complete. Stay on YouTube while Astra Downloader finishes.`).replace('{pct}', p.toFixed(1))
+                        );
+                    }
 
                     if (data.status === 'done' || data.status === 'complete') {
                         stopPolling();

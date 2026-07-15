@@ -6,7 +6,7 @@ Manages yt-dlp downloads with a PyQt6 GUI, system tray, and REST API on port 975
 First run auto-downloads yt-dlp + ffmpeg. No separate installer needed.
 """
 
-import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil, traceback, hmac, struct
+import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil, traceback, hmac, struct, math
 import queue
 from pathlib import Path
 from datetime import datetime
@@ -90,6 +90,7 @@ DOWNLOAD_WATCHDOG_POLL_SECONDS = 15
 INSTALL_DIR = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local')) / 'AstraDownloader'
 CONFIG_PATH = INSTALL_DIR / 'config.json'
 HISTORY_PATH = INSTALL_DIR / 'history.json'
+DOWNLOAD_QUEUE_PATH = INSTALL_DIR / 'download-queue.json'
 ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
 LOG_PATH = INSTALL_DIR / 'server.log'
 CRASH_LOG_PATH = INSTALL_DIR / 'crash.log'
@@ -267,8 +268,17 @@ JS_RUNTIME_CAPABILITY_MARKER = "ASTRA_EJS_RUNTIME_OK"
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-DOWNLOAD_ACTIVE_STATES = {'queued', 'downloading', 'merging', 'extracting'}
+DOWNLOAD_RUNNING_STATES = {'queued', 'downloading', 'merging', 'extracting'}
+DOWNLOAD_PENDING_STATES = {'pending', 'paused', 'needs-auth'}
+DOWNLOAD_ACTIVE_STATES = DOWNLOAD_RUNNING_STATES | DOWNLOAD_PENDING_STATES
 DOWNLOAD_TERMINAL_STATES = {'complete', 'failed', 'cancelled'}
+DOWNLOAD_RETRYABLE_ERROR_CODES = {
+    'network-unreachable',
+    'po-provider-stale',
+    'po-token-required',
+    'worker-start-failed',
+}
+DOWNLOAD_QUEUE_SCHEMA_VERSION = 1
 CONTROL_CHARS_RE = re.compile(r'[\x00-\x1f\x7f]')
 MAX_TEXT_FIELD = 500
 MAX_PATH_FIELD = 2048
@@ -3705,7 +3715,8 @@ def apply_download_failure_classification(download, error_code, error=None, advi
 
 class Download:
     def __init__(self, dl_id, url, audio_only=False, fmt=None, quality='best',
-                 output_dir=None, title=None, referer=None, cookies_file=None):
+                 output_dir=None, title=None, referer=None, cookies_file=None,
+                 requires_auth=False, created_at=None, queue_order=0):
         self.id = dl_id
         self.url = url
         self.audio_only = audio_only
@@ -3715,7 +3726,11 @@ class Download:
         self.title = title or "Unknown"
         self.referer = referer
         self.cookies_file = cookies_file  # optional path to a Netscape cookie jar
-        self.status = "queued"
+        self.requires_auth = bool(requires_auth)
+        # Cookie values exist only in process memory until the worker is
+        # launched. They are never included in to_dict() or queue persistence.
+        self._cookies = None
+        self.status = "pending"
         self.progress = 0.0
         self.speed = ""
         self.eta = ""
@@ -3724,7 +3739,8 @@ class Download:
         self.error_code = ""
         self.error_advice = ""
         self.error_action = ""
-        self.start_time = time.time()
+        self.start_time = float(created_at or time.time())
+        self.queue_order = max(0, int(queue_order or 0))
         self.finished_time = None
         self.process = None
 
@@ -3739,6 +3755,11 @@ class Download:
             "speed": self.speed, "eta": self.eta, "filename": self.filename,
             "error": self.error, "audioOnly": self.audio_only,
             "format": self.format, "quality": self.quality,
+            "requiresAuth": self.requires_auth,
+            "retryable": bool(
+                self.status == 'failed'
+                and self.error_code in DOWNLOAD_RETRYABLE_ERROR_CODES
+            ),
         }
         if self.error_code:
             payload["error_code"] = self.error_code
@@ -3831,18 +3852,290 @@ class DownloadManager(QObject):
     ALLOWED_AUDIO_FMT = {'mp3', 'm4a', 'opus', 'flac', 'wav'}
     ALLOWED_QUALITY = {'best', '2160', '1440', '1080', '720', '480'}
 
-    def __init__(self, config, history):
+    def __init__(self, config, history, queue_path=None):
         super().__init__()
         self.config = config
         self.history = history
         self.downloads = {}
         self._next_id = 0
+        self._next_order = 0
         self._lock = threading.Lock()
+        self._running_ids = set()
+        self._queue_path = Path(queue_path) if queue_path else None
+        self._persistence_error = ""
+        self._persistence_compatible = True
+        self.intake_paused = False
+        self._closing = False
         self.total_completed = 0
         # v1.2.0: sweep any cookie jars left by a previous crash before any
         # new download starts. Session cookies shouldn't outlive the process
         # that needed them.
         cleanup_stale_cookie_jars()
+        self._restore_pending_queue()
+
+    def _restore_pending_queue(self):
+        """Restore unfinished work without starting it or restoring secrets.
+
+        A crash can leave both running and pending records in the durable
+        queue. Every record is intentionally converted to an explicit recovery
+        state: unauthenticated work becomes ``paused`` and work that previously
+        used browser cookies becomes ``needs-auth``. This prevents duplicate
+        downloads from silently starting after an application restart.
+        """
+        if self._queue_path is None:
+            return
+        raw = load_json_file(self._queue_path, {})
+        if not isinstance(raw, dict):
+            return
+        if raw and raw.get('schemaVersion') != DOWNLOAD_QUEUE_SCHEMA_VERSION:
+            self._persistence_compatible = False
+            self._persistence_error = (
+                'The pending queue was created by an incompatible Astra Downloader version.'
+            )
+            write_persistent_log(
+                'Download queue schema is incompatible; preserving the file without changes.'
+            )
+            return
+        records = raw.get('downloads', [])
+        if not isinstance(records, list):
+            return
+
+        restored = []
+        seen_ids = set()
+        for index, item in enumerate(records[:MAX_QUEUED_TOTAL]):
+            if not isinstance(item, dict):
+                continue
+            url, err = normalize_url(item.get('url'))
+            if err:
+                continue
+            output_dir = clean_path_text(item.get('outputDir'))
+            try:
+                if not output_dir or not Path(output_dir).expanduser().is_absolute():
+                    continue
+            except (OSError, ValueError):
+                continue
+            audio_only = coerce_bool(item.get('audioOnly'), False)
+            if audio_only:
+                fmt = item.get('format') if item.get('format') in self.ALLOWED_AUDIO_FMT else 'mp3'
+            else:
+                fmt = item.get('format') if item.get('format') in self.ALLOWED_VIDEO_FMT else 'mp4'
+            quality = item.get('quality') if item.get('quality') in self.ALLOWED_QUALITY else 'best'
+            referer, _ = normalize_url(item.get('referer')) if item.get('referer') else (None, None)
+            dl_id = clean_text(item.get('id'), '', 120)
+            if not dl_id or dl_id in seen_ids:
+                self._next_id += 1
+                dl_id = f"dl_{self._next_id}_{uuid.uuid4().hex[:6]}"
+            seen_ids.add(dl_id)
+            requires_auth = coerce_bool(item.get('requiresAuth'), False)
+            self._next_order += 1
+            try:
+                created_at = float(item.get('createdAt') or time.time())
+            except (TypeError, ValueError, OverflowError):
+                created_at = time.time()
+            if not math.isfinite(created_at) or created_at <= 0:
+                created_at = time.time()
+            dl = Download(
+                dl_id,
+                url,
+                audio_only=audio_only,
+                fmt=fmt,
+                quality=quality,
+                output_dir=output_dir,
+                title=clean_text(item.get('title'), None, 500) or None,
+                referer=referer,
+                requires_auth=requires_auth,
+                created_at=created_at,
+                queue_order=self._next_order,
+            )
+            dl.status = 'needs-auth' if requires_auth else 'paused'
+            dl.error = (
+                'Fresh YouTube authentication is required before this recovered download can run.'
+                if requires_auth else
+                'Recovered after restart. Resume the queue when you are ready.'
+            )
+            restored.append(dl)
+
+        if not restored:
+            return
+        with self._lock:
+            for dl in restored:
+                self.downloads[dl.id] = dl
+            self.intake_paused = True
+            # Normalize any legacy/running statuses on disk immediately. The
+            # persisted form contains metadata only; cookie values and jar
+            # paths are deliberately absent from _serialize_queue_locked().
+            self._persist_locked()
+
+    def _serialize_queue_locked(self):
+        records = []
+        unfinished = sorted(
+            (
+                dl for dl in self.downloads.values()
+                if dl.status in DOWNLOAD_ACTIVE_STATES
+            ),
+            key=lambda dl: (dl.queue_order, dl.start_time, dl.id),
+        )[:MAX_QUEUED_TOTAL]
+        for dl in unfinished:
+            records.append({
+                'id': clean_text(dl.id, '', 120),
+                'url': dl.url,
+                'title': clean_text(dl.title, 'Unknown', 500) or 'Unknown',
+                'audioOnly': bool(dl.audio_only),
+                'format': dl.format,
+                'quality': dl.quality,
+                'outputDir': clean_path_text(dl.output_dir),
+                'referer': dl.referer,
+                'requiresAuth': bool(dl.requires_auth),
+                'createdAt': float(dl.start_time),
+                'order': int(dl.queue_order),
+            })
+        return {
+            'schemaVersion': DOWNLOAD_QUEUE_SCHEMA_VERSION,
+            'intakePaused': bool(self.intake_paused),
+            'downloads': records,
+        }
+
+    def _persist_locked(self):
+        if self._queue_path is None or self._closing:
+            return True
+        if not self._persistence_compatible:
+            return False
+        try:
+            atomic_write_json(self._queue_path, self._serialize_queue_locked())
+            self._persistence_error = ''
+            return True
+        except Exception as exc:
+            self._persistence_error = 'Could not save the pending download queue.'
+            write_persistent_log(f"Download queue save failed: {exc}")
+            return False
+
+    def _capacity_locked(self):
+        running = len(self._running_ids)
+        pending = sum(
+            1 for dl in self.downloads.values()
+            if dl.status in DOWNLOAD_PENDING_STATES
+        )
+        total = running + pending
+        return {
+            'running': running,
+            'runningLimit': MAX_CONCURRENT,
+            'pending': pending,
+            'total': total,
+            'totalLimit': MAX_QUEUED_TOTAL,
+            'available': max(0, MAX_QUEUED_TOTAL - total),
+            'intakePaused': bool(self.intake_paused),
+        }
+
+    def capacity(self):
+        with self._lock:
+            return self._capacity_locked()
+
+    def _ordered_pending_locked(self):
+        return sorted(
+            (
+                dl for dl in self.downloads.values()
+                if dl.status in DOWNLOAD_PENDING_STATES
+            ),
+            key=lambda dl: (dl.queue_order, dl.start_time, dl.id),
+        )
+
+    def _auth_recovery_locked(self, url, cookies):
+        if not cookies:
+            return None
+        return next((
+            dl for dl in self._ordered_pending_locked()
+            if dl.status == 'needs-auth' and dl.url == url
+        ), None)
+
+    def _launch_workers(self, downloads):
+        for dl in downloads:
+            cookies = dl._cookies
+            dl._cookies = None
+            if cookies:
+                jar_path = INSTALL_DIR / f".cookies.{dl.id}.txt"
+                dl.cookies_file = write_cookies_netscape(cookies, jar_path)
+                if not dl.cookies_file:
+                    with self._lock:
+                        self._running_ids.discard(dl.id)
+                        dl.status = 'failed'
+                        dl.error = 'Could not prepare a protected YouTube cookie jar. Retry from Astra Deck.'
+                        dl.error_code = 'cookie-jar-failed'
+                        dl.error_advice = 'Retry from Astra Deck so fresh cookies can be supplied.'
+                        dl.error_action = 'sign-in-and-retry'
+                        dl.mark_terminal()
+                        self._persist_locked()
+                    self.progress_updated.emit()
+                    self.download_completed.emit(dl.id)
+                    continue
+            try:
+                thread = threading.Thread(
+                    target=self._worker_entry,
+                    args=(dl,),
+                    daemon=True,
+                )
+                thread.start()
+            except Exception as exc:
+                with self._lock:
+                    self._running_ids.discard(dl.id)
+                    dl.status = 'failed'
+                    dl.error = 'Could not start the download worker. Retry the download.'
+                    dl.error_code = 'worker-start-failed'
+                    dl.mark_terminal()
+                    if dl.cookies_file:
+                        try:
+                            Path(dl.cookies_file).unlink(missing_ok=True)
+                        except Exception:
+                            pass
+                        dl.cookies_file = None
+                    self._persist_locked()
+                write_persistent_log(f"Download worker {dl.id} failed to start: {exc}")
+                self.progress_updated.emit()
+                self.download_completed.emit(dl.id)
+        # A worker preparation failure frees a slot synchronously.
+        if downloads and not self._closing:
+            self._schedule()
+
+    def _worker_entry(self, dl):
+        try:
+            self._run_download(dl)
+        except Exception as exc:
+            # _run_download is defensive, but keep the scheduler correct if a
+            # future implementation lets an exception escape its boundary.
+            if dl.status not in DOWNLOAD_TERMINAL_STATES:
+                dl.status = 'failed'
+                dl.error = 'Unexpected download worker failure. Check Astra Downloader logs.'
+                dl.mark_terminal()
+            write_persistent_log(f"Download worker {dl.id} escaped unexpectedly: {exc}")
+        finally:
+            with self._lock:
+                self._running_ids.discard(dl.id)
+                if dl.status in DOWNLOAD_RUNNING_STATES:
+                    dl.status = 'failed'
+                    dl.error = 'Download worker stopped before reporting a result.'
+                    dl.mark_terminal()
+                self._persist_locked()
+            if not self._closing:
+                self._schedule()
+
+    def _schedule(self):
+        to_start = []
+        with self._lock:
+            if self._closing or self.intake_paused:
+                return
+            available = max(0, MAX_CONCURRENT - len(self._running_ids))
+            if available <= 0:
+                return
+            candidates = [
+                dl for dl in self._ordered_pending_locked()
+                if dl.status == 'pending'
+            ][:available]
+            for dl in candidates:
+                dl.status = 'queued'
+                self._running_ids.add(dl.id)
+                to_start.append(dl)
+        if to_start:
+            self.progress_updated.emit()
+            self._launch_workers(to_start)
 
     def _reclaim_terminal_records_locked(self, required_slots=1):
         """Free only terminal records when the bounded queue needs capacity."""
@@ -3872,13 +4165,12 @@ class DownloadManager(QObject):
 
         with self._lock:
             self._reclaim_terminal_records_locked()
-            total = len(self.downloads)
-            if total >= MAX_QUEUED_TOTAL:
-                return None, "Download queue is full. Wait for some downloads to complete."
-            active = sum(1 for d in self.downloads.values()
-                         if d.status in DOWNLOAD_ACTIVE_STATES)
-            if active >= MAX_CONCURRENT:
-                return None, "Download limit reached. Wait for an active download to finish."
+            auth_recovery = self._auth_recovery_locked(url, cookies)
+            if not auth_recovery and self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
+                return None, (
+                    f"Download queue is full ({MAX_QUEUED_TOTAL}/{MAX_QUEUED_TOTAL}). "
+                    "Cancel a pending item or wait for a running download to finish, then retry."
+                )
 
         # Sanitize format/quality
         if audio_only:
@@ -3913,32 +4205,72 @@ class DownloadManager(QObject):
         referer, _ = normalize_url(referer) if referer else (None, None)
 
         with self._lock:
-            # Re-check both caps under the lock. The first check released the
-            # lock for URL/output normalization, so N concurrent requests could
-            # each pass it while the queue sat one slot below the cap and then
-            # all insert — a TOCTOU that lets the dict grow past MAX_QUEUED_TOTAL.
+            # Re-check capacity under the lock. The first check released the
+            # lock for URL/output normalization, so concurrent requests could
+            # otherwise overfill the durable queue.
             self._reclaim_terminal_records_locked()
-            if len(self.downloads) >= MAX_QUEUED_TOTAL:
-                return None, "Download queue is full. Wait for some downloads to complete."
-            active = sum(1 for d in self.downloads.values()
-                         if d.status in DOWNLOAD_ACTIVE_STATES)
-            if active >= MAX_CONCURRENT:
-                return None, "Download limit reached. Wait for an active download to finish."
-            self._next_id += 1
-            dl_id = f"dl_{self._next_id}_{uuid.uuid4().hex[:6]}"
-            cookies_file = None
-            if cookies:
-                # Scope the cookie jar to this download so concurrent downloads
-                # cannot stomp each other's jar. Best-effort: if the write
-                # fails we still proceed without cookies rather than fail the
-                # whole request.
-                jar_path = INSTALL_DIR / f".cookies.{dl_id}.txt"
-                cookies_file = write_cookies_netscape(cookies, jar_path)
-            dl = Download(dl_id, url, audio_only, fmt, quality, output_dir, title, referer, cookies_file)
-            self.downloads[dl_id] = dl
+            auth_recovery = self._auth_recovery_locked(url, cookies)
+            if not auth_recovery and self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
+                return None, (
+                    f"Download queue is full ({MAX_QUEUED_TOTAL}/{MAX_QUEUED_TOTAL}). "
+                    "Cancel a pending item or wait for a running download to finish, then retry."
+                )
+            recovery_previous = None
+            if auth_recovery:
+                dl = auth_recovery
+                dl_id = dl.id
+                recovery_previous = (
+                    dl.audio_only, dl.format, dl.quality, dl.output_dir,
+                    dl.title, dl.referer, dl.requires_auth, dl.status,
+                    dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                )
+                dl.audio_only = audio_only
+                dl.format = fmt
+                dl.quality = quality
+                dl.output_dir = output_dir
+                dl.title = title or dl.title
+                dl.referer = referer
+                dl.requires_auth = True
+                dl._cookies = list(cookies)
+                dl.status = 'pending'
+                dl.error = ''
+                dl.error_code = ''
+                dl.error_advice = ''
+                dl.error_action = ''
+            else:
+                self._next_id += 1
+                dl_id = f"dl_{self._next_id}_{uuid.uuid4().hex[:6]}"
+                self._next_order += 1
+                dl = Download(
+                    dl_id,
+                    url,
+                    audio_only,
+                    fmt,
+                    quality,
+                    output_dir,
+                    title,
+                    referer,
+                    requires_auth=bool(cookies),
+                    queue_order=self._next_order,
+                )
+                dl._cookies = list(cookies) if cookies else None
+                self.downloads[dl_id] = dl
+            if not self._persist_locked():
+                if not auth_recovery:
+                    del self.downloads[dl_id]
+                else:
+                    (
+                        dl.audio_only, dl.format, dl.quality, dl.output_dir,
+                        dl.title, dl.referer, dl.requires_auth, dl.status,
+                        dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                    ) = recovery_previous
+                dl._cookies = None
+                return None, (
+                    "Could not save the pending download queue. Check disk space and "
+                    "permissions, then retry."
+                )
 
-        thread = threading.Thread(target=self._run_download, args=(dl,), daemon=True)
-        thread.start()
+        self._schedule()
 
         return dl_id, None
 
@@ -4407,30 +4739,212 @@ class DownloadManager(QObject):
         self.progress_updated.emit()
         self.download_completed.emit(dl.id)
 
+    def pause_intake(self):
+        with self._lock:
+            if self.intake_paused:
+                return True
+            self.intake_paused = True
+            if self._persist_locked():
+                return True
+            self.intake_paused = False
+            return False
+
+    def resume_intake(self):
+        with self._lock:
+            restored = []
+            self.intake_paused = False
+            for dl in self.downloads.values():
+                if dl.status == 'paused':
+                    restored.append((dl, dl.error))
+                    dl.status = 'pending'
+                    dl.error = ''
+            if not self._persist_locked():
+                self.intake_paused = True
+                for dl, error in restored:
+                    dl.status = 'paused'
+                    dl.error = error
+                return False
+        self.progress_updated.emit()
+        self._schedule()
+        return True
+
+    def resume_download(self, dl_id, cookies=None):
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            if not dl:
+                return False, 'Download no longer exists in the queue.'
+            if dl.status not in DOWNLOAD_PENDING_STATES:
+                return False, 'Only pending or recovered downloads can be resumed.'
+            if dl.status == 'needs-auth' and not cookies:
+                return False, (
+                    'Fresh YouTube cookies are required. Retry from Astra Deck so the '
+                    'browser can authorize this download.'
+                )
+            previous = (
+                dl.status, dl.error, dl.error_code, dl.error_advice,
+                dl.error_action, dl.requires_auth, dl._cookies,
+            )
+            if cookies:
+                dl.requires_auth = True
+                dl._cookies = list(cookies)
+            dl.status = 'pending'
+            dl.error = ''
+            dl.error_code = ''
+            dl.error_advice = ''
+            dl.error_action = ''
+            if not self._persist_locked():
+                (
+                    dl.status, dl.error, dl.error_code, dl.error_advice,
+                    dl.error_action, dl.requires_auth, dl._cookies,
+                ) = previous
+                return False, self._persistence_error
+        self.progress_updated.emit()
+        self._schedule()
+        return True, None
+
+    def retry(self, dl_id, cookies=None):
+        with self._lock:
+            dl = self.downloads.get(dl_id)
+            if not dl:
+                return False, 'Download no longer exists in the queue.'
+            if dl.status != 'failed':
+                return False, 'Only failed downloads can be retried.'
+            if dl.error_code not in DOWNLOAD_RETRYABLE_ERROR_CODES:
+                return False, 'This failure needs its recovery action before it can be retried.'
+            if self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
+                return False, (
+                    f"Download queue is full ({MAX_QUEUED_TOTAL}/{MAX_QUEUED_TOTAL}). "
+                    "Cancel a pending item or wait for a running download to finish, then retry."
+                )
+            previous = (
+                dl.status, dl.progress, dl.speed, dl.eta, dl.filename,
+                dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                dl.finished_time, dl.start_time, dl.queue_order,
+                dl.requires_auth, dl._cookies,
+            )
+            if dl.requires_auth and not cookies:
+                dl.status = 'needs-auth'
+                dl.error = (
+                    'Fresh YouTube authentication is required before this download can retry.'
+                )
+                dl.error_code = ''
+                dl.error_advice = ''
+                dl.error_action = 'sign-in-and-retry'
+                dl.finished_time = None
+                self._next_order += 1
+                dl.queue_order = self._next_order
+                if not self._persist_locked():
+                    (
+                        dl.status, dl.progress, dl.speed, dl.eta, dl.filename,
+                        dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                        dl.finished_time, dl.start_time, dl.queue_order,
+                        dl.requires_auth, dl._cookies,
+                    ) = previous
+                    return False, self._persistence_error
+                return False, (
+                    'Fresh YouTube cookies are required. Retry from Astra Deck so the '
+                    'browser can authorize this download.'
+                )
+            if cookies:
+                dl.requires_auth = True
+                dl._cookies = list(cookies)
+            dl.status = 'pending'
+            dl.progress = 0.0
+            dl.speed = ''
+            dl.eta = ''
+            dl.filename = ''
+            dl.error = ''
+            dl.error_code = ''
+            dl.error_advice = ''
+            dl.error_action = ''
+            dl.finished_time = None
+            dl.start_time = time.time()
+            self._next_order += 1
+            dl.queue_order = self._next_order
+            if not self._persist_locked():
+                (
+                    dl.status, dl.progress, dl.speed, dl.eta, dl.filename,
+                    dl.error, dl.error_code, dl.error_advice, dl.error_action,
+                    dl.finished_time, dl.start_time, dl.queue_order,
+                    dl.requires_auth, dl._cookies,
+                ) = previous
+                return False, self._persistence_error
+        self.progress_updated.emit()
+        self._schedule()
+        return True, None
+
+    def move_pending(self, dl_id, position):
+        with self._lock:
+            pending = self._ordered_pending_locked()
+            current = next((index for index, dl in enumerate(pending) if dl.id == dl_id), None)
+            if current is None:
+                return False, 'Only pending downloads can be reordered.'
+            try:
+                target = int(position)
+            except (TypeError, ValueError):
+                return False, 'Queue position must be an integer.'
+            target = max(0, min(target, len(pending) - 1))
+            if target == current:
+                return True, None
+            previous_orders = {dl.id: dl.queue_order for dl in pending}
+            item = pending.pop(current)
+            pending.insert(target, item)
+            for index, dl in enumerate(pending, start=1):
+                dl.queue_order = index
+            self._next_order = max(self._next_order, len(pending))
+            if not self._persist_locked():
+                for dl in pending:
+                    dl.queue_order = previous_orders[dl.id]
+                return False, self._persistence_error
+        self.progress_updated.emit()
+        return True, None
+
+    def move_pending_by(self, dl_id, offset):
+        with self._lock:
+            pending = self._ordered_pending_locked()
+            current = next((index for index, dl in enumerate(pending) if dl.id == dl_id), None)
+        if current is None:
+            return False, 'Only pending downloads can be reordered.'
+        return self.move_pending(dl_id, current + int(offset))
+
     def cancel(self, dl_id):
         with self._lock:
             dl = self.downloads.get(dl_id)
-        if not dl:
-            return False
-        if dl.status in DOWNLOAD_TERMINAL_STATES:
-            return False
-        dl.status = "cancelled"
-        dl.error = "Cancelled by user."
-        dl.mark_terminal()
-        proc = dl.process
+            if not dl or dl.status in DOWNLOAD_TERMINAL_STATES:
+                return False
+            dl.status = "cancelled"
+            dl.error = "Cancelled by user."
+            dl._cookies = None
+            if dl.cookies_file and dl.process is None:
+                try:
+                    Path(dl.cookies_file).unlink(missing_ok=True)
+                except Exception:
+                    pass
+                dl.cookies_file = None
+            dl.mark_terminal()
+            proc = dl.process
+            was_running = dl_id in self._running_ids
+            self._persist_locked()
         if proc and proc.poll() is None:
             def terminate():
                 terminate_process_tree(proc)
             threading.Thread(target=terminate, daemon=True).start()
         self.progress_updated.emit()
+        if not was_running:
+            self._schedule()
         return True
 
     def cancel_all(self):
         with self._lock:
+            # Keep the last durable unfinished snapshot intact. A new process
+            # will restore those records paused/needs-auth rather than silently
+            # starting them or losing user intent.
+            self._closing = True
             active = [d for d in self.downloads.values() if d.status in DOWNLOAD_ACTIVE_STATES]
         for dl in active:
             dl.status = "cancelled"
             dl.error = "Cancelled (app shutdown)."
+            dl._cookies = None
             dl.mark_terminal()
             proc = dl.process
             if proc and proc.poll() is None:
@@ -4441,12 +4955,38 @@ class DownloadManager(QObject):
 
     def active_count(self):
         with self._lock:
+            return len(self._running_ids)
+
+    def pending_count(self):
+        with self._lock:
             return sum(1 for d in self.downloads.values()
-                       if d.status in DOWNLOAD_ACTIVE_STATES)
+                       if d.status in DOWNLOAD_PENDING_STATES)
 
     def snapshot(self):
         with self._lock:
-            return list(self.downloads.values())
+            return sorted(
+                self.downloads.values(),
+                key=lambda dl: (dl.queue_order, dl.start_time, dl.id),
+            )
+
+    def queue_payload(self):
+        with self._lock:
+            pending = self._ordered_pending_locked()
+            pending_positions = {dl.id: index for index, dl in enumerate(pending)}
+            items = []
+            for dl in sorted(
+                    self.downloads.values(),
+                    key=lambda item: (item.queue_order, item.start_time, item.id)):
+                payload = dl.to_dict()
+                if dl.id in pending_positions:
+                    payload['queuePosition'] = pending_positions[dl.id]
+                items.append(payload)
+            return {
+                'downloads': items,
+                'count': len(items),
+                'capacity': self._capacity_locked(),
+                'persistenceError': self._persistence_error or None,
+            }
 
     def cleanup_old(self):
         cutoff = time.time() - 300  # 5 min
@@ -4642,6 +5182,7 @@ def create_api(config, dl_manager, history):
             "name": APP_NAME, "version": APP_VERSION,
             "port": clamp_int(config.get("ServerPort", SERVER_PORT), SERVER_PORT, 1024, 65535),
             "downloads": dl_manager.active_count(),
+            "queue": dl_manager.capacity(),
             "token_required": True,
             "legacyTokenEcho": legacy_health_token_echo,
             "nativeChannelRequired": not legacy_health_token_echo,
@@ -4815,8 +5356,27 @@ def create_api(config, dl_manager, history):
             cookies=cookies,
         )
         if err:
-            return cors_response({"error": err}, 429 if "limit" in err.lower() else 400)
-        return cors_response({"id": dl_id, "status": "downloading"})
+            if 'queue is full' in err.lower():
+                return cors_response({
+                    "error": err,
+                    "code": "queue-full",
+                    "capacity": dl_manager.capacity(),
+                    "remediation": (
+                        "Cancel a pending item or wait for a running download to finish, "
+                        "then retry."
+                    ),
+                }, 429)
+            if 'could not save' in err.lower():
+                return cors_response({"error": err, "code": "queue-persistence-failed"}, 503)
+            return cors_response({"error": err}, 400)
+        with dl_manager._lock:
+            queued = dl_manager.downloads.get(dl_id)
+            status_value = queued.status if queued else 'pending'
+        return cors_response({
+            "id": dl_id,
+            "status": status_value,
+            "capacity": dl_manager.capacity(),
+        })
 
     @api.route('/status/<dl_id>')
     def status(dl_id):
@@ -4832,8 +5392,89 @@ def create_api(config, dl_manager, history):
     def queue():
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        items = [d.to_dict() for d in dl_manager.snapshot()]
-        return cors_response({"downloads": items, "count": len(items)})
+        return cors_response(dl_manager.queue_payload())
+
+    @api.route('/queue/pause', methods=['POST'])
+    def pause_queue():
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        if not dl_manager.pause_intake():
+            return cors_response({
+                "error": "Could not save the paused queue state. Check disk space and permissions.",
+                "code": "queue-persistence-failed",
+            }, 503)
+        return cors_response({"paused": True, "capacity": dl_manager.capacity()})
+
+    @api.route('/queue/resume', methods=['POST'])
+    def resume_queue():
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        if not dl_manager.resume_intake():
+            return cors_response({
+                "error": "Could not save the resumed queue state. Check disk space and permissions.",
+                "code": "queue-persistence-failed",
+            }, 503)
+        return cors_response({"paused": False, "capacity": dl_manager.capacity()})
+
+    def _fresh_cookies_from_body():
+        body = request.get_json(silent=True) or {}
+        raw = body.get('cookies')
+        if raw is None:
+            return None, None
+        if not isinstance(raw, list):
+            return None, 'cookies must be a JSON array.'
+        return raw[:200], None
+
+    @api.route('/queue/<dl_id>/resume', methods=['POST'])
+    def resume_queued_download(dl_id):
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        cookies, cookie_error = _fresh_cookies_from_body()
+        if cookie_error:
+            return cors_response({"error": cookie_error, "code": "invalid-cookies"}, 400)
+        ok, err = dl_manager.resume_download(dl_id, cookies=cookies)
+        if not ok:
+            code = 'fresh-auth-required' if err and 'Fresh YouTube cookies' in err else 'queue-resume-rejected'
+            status_code = 404 if err and 'no longer exists' in err else 409
+            return cors_response({"error": err, "code": code}, status_code)
+        return cors_response({"id": dl_id, "resumed": True, "capacity": dl_manager.capacity()})
+
+    @api.route('/queue/<dl_id>/retry', methods=['POST'])
+    def retry_queued_download(dl_id):
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        cookies, cookie_error = _fresh_cookies_from_body()
+        if cookie_error:
+            return cors_response({"error": cookie_error, "code": "invalid-cookies"}, 400)
+        ok, err = dl_manager.retry(dl_id, cookies=cookies)
+        if not ok:
+            if err and 'queue is full' in err.lower():
+                return cors_response({
+                    "error": err,
+                    "code": "queue-full",
+                    "capacity": dl_manager.capacity(),
+                    "remediation": (
+                        "Cancel a pending item or wait for a running download to finish, "
+                        "then retry."
+                    ),
+                }, 429)
+            code = 'fresh-auth-required' if err and 'Fresh YouTube cookies' in err else 'retry-rejected'
+            status_code = 404 if err and 'no longer exists' in err else 409
+            return cors_response({"error": err, "code": code}, status_code)
+        return cors_response({"id": dl_id, "retried": True, "capacity": dl_manager.capacity()})
+
+    @api.route('/queue/<dl_id>/move', methods=['POST'])
+    def move_queued_download(dl_id):
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        body = request.get_json(silent=True) or {}
+        if 'position' not in body:
+            return cors_response({"error": "position is required.", "code": "invalid-position"}, 400)
+        ok, err = dl_manager.move_pending(dl_id, body.get('position'))
+        if not ok:
+            status_code = 400 if err and 'integer' in err else 409
+            return cors_response({"error": err, "code": "queue-move-rejected"}, status_code)
+        return cors_response({"id": dl_id, "moved": True, "queue": dl_manager.queue_payload()})
 
     @api.route('/history')
     def hist():
@@ -5431,7 +6072,7 @@ def download_status_tone(status):
         return "success"
     if status in ("failed", "cancelled"):
         return "danger"
-    if status in ("merging", "extracting", "queued"):
+    if status in ("merging", "extracting", "queued", "paused", "needs-auth"):
         return "warning"
     if status in ("downloading",):
         return "info"
@@ -5441,6 +6082,9 @@ def download_status_tone(status):
 def human_status(status):
     return {
         "queued": "Queued",
+        "pending": "Pending",
+        "paused": "Paused",
+        "needs-auth": "Needs sign-in",
         "downloading": "Downloading",
         "merging": "Merging",
         "extracting": "Extracting",
@@ -5931,10 +6575,23 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
         layout.setSpacing(16)
-        layout.addLayout(self._make_page_header(
+        header = QHBoxLayout()
+        header.addLayout(self._make_page_header(
             "Downloads",
-            "Live queue activity from Astra Deck, including progress, speed, failures, and recent completions."
-        ))
+            "A restart-safe queue with three concurrent jobs, controlled recovery, and clear failure guidance."
+        ), 1)
+        self.queue_capacity_badge = make_status_badge("0 / 200", "neutral")
+        self.queue_capacity_badge.setToolTip("Running and pending downloads stored in the durable queue.")
+        header.addWidget(self.queue_capacity_badge, 0, Qt.AlignmentFlag.AlignTop)
+        self.btn_queue_pause = self._make_tool_button(
+            "Pause Intake", QStyle.StandardPixmap.SP_MediaPause, "ghost"
+        )
+        self.btn_queue_pause.setToolTip(
+            "Pause starting pending downloads. Downloads already running will continue."
+        )
+        self.btn_queue_pause.clicked.connect(self._toggle_queue_intake)
+        header.addWidget(self.btn_queue_pause, 0, Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(header)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -6458,11 +7115,33 @@ class MainWindow(QMainWindow):
         title = make_label(dl.title if dl.title and dl.title != "Unknown" else "Preparing download", "fieldLabel", word_wrap=True)
         top.addWidget(title, 1)
         top.addWidget(make_status_badge(human_status(dl.status), download_status_tone(dl.status)))
-        if not recent and dl.status in ("queued", "downloading", "merging", "extracting"):
+        if not recent and dl.status in DOWNLOAD_PENDING_STATES:
+            if dl.status != 'needs-auth':
+                btn_up = self._make_tool_button("Up", QStyle.StandardPixmap.SP_ArrowUp, "ghost")
+                btn_up.setToolTip("Move this pending download earlier.")
+                btn_up.clicked.connect(
+                    lambda checked=False, dl_id=dl.id: self._move_pending_download(dl_id, -1)
+                )
+                top.addWidget(btn_up)
+                btn_down = self._make_tool_button("Down", QStyle.StandardPixmap.SP_ArrowDown, "ghost")
+                btn_down.setToolTip("Move this pending download later.")
+                btn_down.clicked.connect(
+                    lambda checked=False, dl_id=dl.id: self._move_pending_download(dl_id, 1)
+                )
+                top.addWidget(btn_down)
+            if dl.status == 'paused':
+                btn_resume = self._make_tool_button("Resume Queue", QStyle.StandardPixmap.SP_MediaPlay, "ghost")
+                btn_resume.setToolTip("Resume recovered, unauthenticated downloads explicitly.")
+                btn_resume.clicked.connect(self._resume_download_queue)
+                top.addWidget(btn_resume)
             btn_cancel = self._make_tool_button("Cancel", QStyle.StandardPixmap.SP_DialogCancelButton, "ghost")
             btn_cancel.clicked.connect(lambda checked=False, dl_id=dl.id: self.dl_manager.cancel(dl_id))
             top.addWidget(btn_cancel)
-        elif recent and dl.status in ("failed", "cancelled"):
+        elif not recent and dl.status in DOWNLOAD_RUNNING_STATES:
+            btn_cancel = self._make_tool_button("Cancel", QStyle.StandardPixmap.SP_DialogCancelButton, "ghost")
+            btn_cancel.clicked.connect(lambda checked=False, dl_id=dl.id: self.dl_manager.cancel(dl_id))
+            top.addWidget(btn_cancel)
+        elif recent and dl.status == "failed" and dl.error_code in DOWNLOAD_RETRYABLE_ERROR_CODES:
             btn_retry = self._make_tool_button("Retry", QStyle.StandardPixmap.SP_BrowserReload, "ghost")
             btn_retry.clicked.connect(lambda checked=False, item=dl: self._retry_download(item))
             top.addWidget(btn_retry)
@@ -6472,7 +7151,7 @@ class MainWindow(QMainWindow):
             top.addWidget(btn_show)
         card_l.addLayout(top)
 
-        if dl.status in ("queued", "downloading", "merging", "extracting"):
+        if dl.status in DOWNLOAD_RUNNING_STATES:
             bar = QProgressBar()
             bar.setRange(0, 100)
             bar.setValue(int(min(max(dl.progress, 0), 100)))
@@ -6527,22 +7206,40 @@ class MainWindow(QMainWindow):
 
         # Downloads tab
         downloads = self.dl_manager.snapshot()
-        active = [d for d in downloads
-                  if d.status in ('queued', 'downloading', 'merging', 'extracting')]
+        active = [d for d in downloads if d.status in DOWNLOAD_RUNNING_STATES]
+        pending = [d for d in downloads if d.status in DOWNLOAD_PENDING_STATES]
         recent = [d for d in downloads
                   if d.status in ('complete', 'failed', 'cancelled')]
-        active.sort(key=lambda d: d.start_time, reverse=True)
+        active.sort(key=lambda d: d.start_time)
+        pending.sort(key=lambda d: (d.queue_order, d.start_time))
         recent.sort(key=lambda d: d.start_time, reverse=True)
-        signature = tuple(
-            (d.id, d.status, round(d.progress, 1), d.speed, d.eta, d.title, d.error, d.filename)
-            for d in active + recent[:8]
+        capacity = self.dl_manager.capacity()
+        self.queue_capacity_badge.setText(
+            f"{capacity['total']} / {capacity['totalLimit']}"
         )
+        self.btn_queue_pause.setText(
+            "Resume Queue" if capacity['intakePaused'] else "Pause Intake"
+        )
+        self.btn_queue_pause.setIcon(self.style().standardIcon(
+            QStyle.StandardPixmap.SP_MediaPlay
+            if capacity['intakePaused'] else QStyle.StandardPixmap.SP_MediaPause
+        ))
+        self.btn_queue_pause.setToolTip(
+            "Resume pending downloads explicitly. Items needing sign-in remain paused."
+            if capacity['intakePaused'] else
+            "Pause starting pending downloads. Downloads already running will continue."
+        )
+        signature = tuple(
+            (d.id, d.status, d.queue_order, round(d.progress, 1), d.speed, d.eta,
+             d.title, d.error, d.filename)
+            for d in active + pending + recent[:8]
+        ) + ((capacity['intakePaused'], capacity['total']),)
         if signature == self._downloads_signature:
             return
         self._downloads_signature = signature
 
         self._clear_layout(self.downloads_list_layout)
-        if not active and not recent:
+        if not active and not pending and not recent:
             self.downloads_list_layout.addWidget(make_empty_state(
                 "Queue is clear",
                 "Start the local server, then use Astra Deck's download action on YouTube. Active jobs will show progress, speed, and recovery guidance here.",
@@ -6552,6 +7249,10 @@ class MainWindow(QMainWindow):
         if active:
             self.downloads_list_layout.addWidget(make_section_label("In progress"))
             for dl in active:
+                self.downloads_list_layout.addWidget(self._download_card(dl))
+        if pending:
+            self.downloads_list_layout.addWidget(make_section_label("Pending"))
+            for dl in pending:
                 self.downloads_list_layout.addWidget(self._download_card(dl))
         if recent:
             self.downloads_list_layout.addWidget(make_section_label("Recent activity"))
@@ -6638,20 +7339,32 @@ class MainWindow(QMainWindow):
         self._append_log(f"Restored {restored} download history entr{'y' if restored == 1 else 'ies'}")
 
     def _retry_download(self, dl):
-        dl_id, err = self.dl_manager.start_download(
-            url=dl.url,
-            audio_only=dl.audio_only,
-            fmt=dl.format,
-            quality=dl.quality,
-            output_dir=dl.output_dir,
-            title=dl.title if dl.title != "Unknown" else None,
-            referer=dl.referer,
-        )
-        if err:
+        ok, err = self.dl_manager.retry(dl.id)
+        if not ok:
             self._append_log(f"Retry failed: {err}")
             return
         self._append_log(f"Retry queued: {dl.title if dl.title != 'Unknown' else dl.url}")
         self._nav_click("Downloads")
+
+    def _toggle_queue_intake(self):
+        if self.dl_manager.capacity()['intakePaused']:
+            self._resume_download_queue()
+            return
+        if self.dl_manager.pause_intake():
+            self._append_log("Download intake paused. Running jobs will finish; new jobs will wait.")
+        else:
+            self._append_log("Could not persist the paused queue state. Check disk permissions.")
+
+    def _resume_download_queue(self):
+        if self.dl_manager.resume_intake():
+            self._append_log("Download queue resumed. Items needing sign-in remain paused.")
+        else:
+            self._append_log("Could not persist the resumed queue state. Check disk permissions.")
+
+    def _move_pending_download(self, dl_id, offset):
+        ok, err = self.dl_manager.move_pending_by(dl_id, offset)
+        if not ok:
+            self._append_log(f"Could not reorder pending download: {err}")
 
     def _show_download_location(self, file_path):
         if not file_path:
@@ -7390,7 +8103,7 @@ def main():
     # Init
     config = Config()
     history = History()
-    dl_manager = DownloadManager(config, history)
+    dl_manager = DownloadManager(config, history, queue_path=DOWNLOAD_QUEUE_PATH)
 
     # v1.2.2: GUI-thread folder picker bridge for /pick-folder requests.
     # Module-scoped reference keeps the QTimer alive for the app lifetime.
