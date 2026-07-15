@@ -199,7 +199,9 @@
                 if (message.dataset?.ytkitChatFilterSignature === signature) return;
                 const author = message.querySelector?.('#author-name')?.textContent?.toLowerCase() || '';
                 const text = message.querySelector?.('#message')?.textContent?.toLowerCase() || '';
-                const reason = hideBots && author.includes('bot')
+                // Word-boundary/suffix match only: a bare substring test hid
+                // legitimate users like "Abbott" or "Botany" by default.
+                const reason = hideBots && /\bbot\b|bot$/.test(author)
                     ? 'bot'
                     : (keywords.some((keyword) => author.includes(keyword) || text.includes(keyword)) ? 'keyword' : '');
                 if (reason) {
@@ -225,6 +227,9 @@
             let timer = null;
             let running = false;
             let state = { selected: [], intervalMs: 600 };
+            // The top-frame reaction spammer persists extra fields (pos,
+            // collapsed) under the same storage key; preserve them on write.
+            let persistedExtras = {};
 
             function clampInterval(value) {
                 const configuredFloor = Math.max(500, Math.min(60000, Number(settings.reactionSpammerMinIntervalMs) || 500));
@@ -238,6 +243,7 @@
                     const stored = await browser?.storage?.local?.get?.(REACTION_STATE_KEY);
                     const value = stored?.[REACTION_STATE_KEY];
                     if (value && typeof value === 'object') {
+                        persistedExtras = { ...value };
                         state.selected = Array.isArray(value.selected)
                             ? value.selected.filter((item) => typeof item === 'string')
                             : [];
@@ -250,7 +256,9 @@
 
             function saveState() {
                 try {
-                    const write = browser?.storage?.local?.set?.({ [REACTION_STATE_KEY]: state });
+                    const write = browser?.storage?.local?.set?.({
+                        [REACTION_STATE_KEY]: { ...persistedExtras, ...state }
+                    });
                     if (write?.catch) write.catch(() => {
                         // reason: reaction preferences remain usable in memory when storage is unavailable.
                     });
@@ -261,10 +269,13 @@
 
             function reactionButtons() {
                 const buttons = new Map();
+                // Accept any labelled reaction image: the "Send X" alt prefix
+                // is English-only, and requiring it made the sender list
+                // nothing on the 10 non-English locales the extension ships.
                 doc.querySelectorAll('#expanded-buttons yt-reaction-control-panel-button-view-model button')
                     .forEach((button) => {
-                        const image = button.querySelector?.('img[alt^="Send "]');
-                        const emoji = image?.alt?.replace(/^Send\s+/, '').trim();
+                        const image = button.querySelector?.('img[alt]');
+                        const emoji = image?.alt?.replace(/^Send\s+/i, '').trim();
                         if (emoji && !buttons.has(emoji)) buttons.set(emoji, button);
                     });
                 return buttons;
@@ -471,10 +482,18 @@
         }
 
         async function syncReactionController() {
+            if (destroyed) return;
             if (isReactionSpammerAllowed()) {
                 if (!reactionController) {
                     reactionController = createReactionController();
                     await reactionController.init();
+                    if (destroyed) {
+                        // destroy() ran while init was awaiting storage —
+                        // tear the fresh controller down so nothing leaks
+                        // into a bfcache'd document.
+                        reactionController?.destroy();
+                        reactionController = null;
+                    }
                 }
             } else if (reactionController) {
                 reactionController.destroy();
@@ -498,6 +517,7 @@
         }
 
         async function applySettings(nextSettings) {
+            if (destroyed) return;
             settings = { ...defaults, ...(nextSettings && typeof nextSettings === 'object' ? nextSettings : {}) };
             restoreEngagementNodes();
             restorePremiumMessages();

@@ -14744,6 +14744,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         from { opacity: 0; transform: translateY(8px); }
                         to { opacity: 1; transform: translateY(0); }
                     }
+
+                    @media (prefers-reduced-motion: reduce) {
+                        html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer,
+                        html[data-ytkit-livechat-premium] yt-live-chat-membership-item-renderer,
+                        html[data-ytkit-livechat-premium] yt-live-chat-viewer-engagement-message-renderer {
+                            animation: none !important;
+                        }
+                    }
                 `;
 
                 this._styleElement = injectStyle(css, this.id, true);
