@@ -6351,6 +6351,11 @@ return response;
                     try { videoHider._processAllVideos?.(); } catch (error) {
                         DebugManager.log('Storage', `Video Hider refresh failed: ${error.message}`);
                     }
+                    if (filteredChanges[STORAGE_KEYS.blockedChannels]) {
+                        try { videoHider._evaluateDirectWatchBlock?.(); } catch (error) {
+                            DebugManager.log('Storage', `Direct-watch block refresh failed: ${error.message}`);
+                        }
+                    }
                 }
             }
         }
@@ -17438,6 +17443,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             PredicateSandbox,
             addNavigateRule,
             removeNavigateRule,
+            getVideoId,
+            getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+            t,
             runBudgetedElementBatch,
             injectStyle
         }) || {
