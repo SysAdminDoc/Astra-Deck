@@ -298,12 +298,20 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         class TextField:
             def __init__(self, value=""):
                 self.value_text = value
+                self.accessible_description = ""
+                self.focused = False
 
             def text(self):
                 return self.value_text
 
             def setText(self, value):
                 self.value_text = value
+
+            def setAccessibleDescription(self, value):
+                self.accessible_description = value
+
+            def setFocus(self, _reason):
+                self.focused = True
 
         class NumberField:
             def __init__(self, value):
@@ -386,6 +394,162 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertEqual(window.statuses[-1][1], "danger")
         self.assertIn("Nothing changed", window.statuses[-1][0])
         self.assertIn("server state were preserved", window.logs[-1])
+
+    def test_settings_validation_focuses_and_describes_first_invalid_field(self):
+        class Field:
+            def __init__(self, value=""):
+                self.value_text = value
+                self.description = None
+                self.focused = False
+
+            def text(self):
+                return self.value_text
+
+            def setText(self, value):
+                self.value_text = value
+
+            def setAccessibleDescription(self, value):
+                self.description = value
+
+            def setFocus(self, _reason):
+                self.focused = True
+
+        class NumberField:
+            def value(self):
+                return ad.SERVER_PORT
+
+        class Harness:
+            pass
+
+        window = Harness()
+        window.config = FakeConfig({"ServerPort": ad.SERVER_PORT, "ServerToken": "a" * 32})
+        window.cfg_port = NumberField()
+        window.cfg_token = Field("a" * 32)
+        window.cfg_dl_path = Field("bad-video")
+        window.cfg_audio_path = Field("bad-audio")
+        window.cfg_sublangs = Field("en")
+        window.cfg_ratelimit = Field("")
+        window.cfg_proxy = Field("")
+        window.statuses = []
+        window._set_input_error = lambda field, value: setattr(field, "has_error", value)
+        window._show_settings_status = lambda message, tone="neutral": window.statuses.append((message, tone))
+        window._dependencies = {
+            "clamp_int": ad.clamp_int,
+            "normalize_output_dir": lambda value, fallback: (fallback, "invalid"),
+            "normalize_proxy": ad.normalize_proxy,
+            "normalize_rate_limit": ad.normalize_rate_limit,
+            "normalize_sublangs": ad.normalize_sublangs,
+        }
+        window._value = {"DEFAULT_CONFIG": ad.DEFAULT_CONFIG, "SERVER_PORT": ad.SERVER_PORT}.__getitem__
+
+        ad.MainWindow._save_settings(window)
+
+        self.assertTrue(window.cfg_dl_path.has_error)
+        self.assertTrue(window.cfg_audio_path.has_error)
+        self.assertTrue(window.cfg_dl_path.focused)
+        self.assertIn("video download folder", window.cfg_dl_path.description)
+        self.assertEqual(window.statuses[-1][1], "danger")
+
+    def test_manual_ytdlp_update_defers_while_downloads_are_active(self):
+        class ExistingPath:
+            @staticmethod
+            def exists():
+                return True
+
+        class Manager:
+            @staticmethod
+            def active_count():
+                return 2
+
+        class Button:
+            def setEnabled(self, _value):
+                raise AssertionError("deferred update must not enter a busy state")
+
+        class Harness:
+            pass
+
+        window = Harness()
+        window.dl_manager = Manager()
+        window.btn_check_updates = Button()
+        window.logs = []
+        window.statuses = []
+        window._append_log = window.logs.append
+        window._show_settings_status = lambda message, tone="neutral": window.statuses.append((message, tone))
+        window._value = lambda name: ExistingPath() if name == "YTDLP_PATH" else None
+
+        ad.MainWindow._force_ytdlp_update(window)
+
+        self.assertIn("2 download(s)", window.logs[-1])
+        self.assertIn("active downloads", window.statuses[-1][0])
+        self.assertEqual(window.statuses[-1][1], "warning")
+
+    def test_manual_ytdlp_completion_restores_button_and_reports_recovery(self):
+        class Button:
+            def __init__(self):
+                self.enabled = False
+                self.text = "Checking…"
+
+            def setEnabled(self, value):
+                self.enabled = value
+
+            def setText(self, value):
+                self.text = value
+
+        class Harness:
+            pass
+
+        window = Harness()
+        window.btn_check_updates = Button()
+        window.logs = []
+        window.statuses = []
+        window.refreshes = 0
+        window._append_log = window.logs.append
+        window._show_settings_status = lambda message, tone="neutral": window.statuses.append((message, tone))
+        window._refresh_tools_status = lambda: setattr(window, "refreshes", window.refreshes + 1)
+
+        ad.MainWindow._finish_ytdlp_update(window, {
+            "ok": False,
+            "error": "staged update failed",
+            "rolled_back": True,
+            "version_after": "2026.07.01",
+        })
+
+        self.assertTrue(window.btn_check_updates.enabled)
+        self.assertEqual(window.btn_check_updates.text, "Check yt-dlp Update")
+        self.assertEqual(window.refreshes, 1)
+        self.assertIn("Restored 2026.07.01", window.logs[-1])
+        self.assertEqual(window.statuses[-1][1], "danger")
+
+    def test_token_clipboard_clear_preserves_newer_user_content(self):
+        class Clipboard:
+            def __init__(self, text):
+                self.value = text
+                self.clear_calls = 0
+
+            def text(self):
+                return self.value
+
+            def clear(self):
+                self.value = ""
+                self.clear_calls += 1
+
+        class Harness:
+            pass
+
+        window = Harness()
+        window.statuses = []
+        window._show_settings_status = lambda message, tone="neutral": window.statuses.append((message, tone))
+        clipboard = Clipboard("newer clipboard content")
+        qapplication = ad.MainWindow._clear_copied_token.__globals__["QApplication"]
+        with mock.patch.object(qapplication, "clipboard", return_value=clipboard):
+            ad.MainWindow._clear_copied_token(window, "private-token")
+            self.assertEqual(clipboard.clear_calls, 0)
+
+            clipboard.value = "private-token"
+            ad.MainWindow._clear_copied_token(window, "private-token")
+
+        self.assertEqual(clipboard.clear_calls, 1)
+        self.assertIn("cleared", window.statuses[-1][0])
 
     def test_failed_history_clear_and_undo_preserve_recovery_state(self):
         class History:
