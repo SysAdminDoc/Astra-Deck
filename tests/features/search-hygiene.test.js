@@ -27,11 +27,15 @@ class FakeNode {
     querySelector(selector) {
         if (this.kind === 'related-shelf' && selector === 'yt-related-chip-cloud-renderer') return RELATED;
         if (this.kind === 'watched' && selector.includes('resume-playback')) return WATCHED_MARKER;
+        // Locale-independent structural marker (data-content-type) — the
+        // primary recommendation-reason detection path.
+        if (this.kind === 'reason-result' && selector.includes('recommendation-reason')) return REASON;
         return null;
     }
 
     querySelectorAll(selector) {
-        if (selector.includes('recommendation-reason') && this.kind === 'reason-result') return [REASON];
+        // English reason text without the structural marker — the fallback path.
+        if (selector.includes('#metadata-line') && this.kind === 'text-reason-result') return [REASON];
         return [];
     }
 }
@@ -90,7 +94,10 @@ function harness() {
 
 test('watched and recommendation classification uses structural markers and bounded reason text', () => {
     assert.equal(isWatchedOrRecommended(new FakeNode('watched')), true);
-    assert.equal(isWatchedOrRecommended(new FakeNode('reason-result')), true);
+    assert.equal(isWatchedOrRecommended(new FakeNode('reason-result')), true,
+        'structural data-content-type marker must classify without any text match');
+    assert.equal(isWatchedOrRecommended(new FakeNode('text-reason-result')), true,
+        'English reason text remains a fallback when the marker is absent');
     assert.equal(isWatchedOrRecommended(new FakeNode('plain-result')), false);
 });
 

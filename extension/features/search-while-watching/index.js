@@ -295,8 +295,12 @@
                 return;
             }
             const count = Number(results.length).toLocaleString();
-            const prefix = t('searchWatchResultsFor', 'Results for');
-            _setStatus(`${count} · ${prefix} “${query}”`, 'ready');
+            // Single template so RTL/CJK locales can reorder the count, label,
+            // and quoted query instead of receiving a fixed `count · label
+            // "query"` composition with hardcoded curly quotes.
+            _setStatus(t('searchWatchResultsStatus', '{count} results for "{query}"')
+                .replace('{count}', count)
+                .replace('{query}', query), 'ready');
             for (const result of results) {
                 const item = documentRef.createElement('li');
                 item.className = 'ytkit-search-watch-item';
