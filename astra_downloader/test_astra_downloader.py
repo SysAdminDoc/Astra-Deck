@@ -721,6 +721,10 @@ class DownloadManagerTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn('pending', err.lower())
 
+        ok, err = manager.move_pending(ids[0], 0.5)
+        self.assertFalse(ok)
+        self.assertIn('integer', err.lower())
+
         self.assertTrue(manager.cancel(ids[1]))
         self.assertEqual(manager.downloads[ids[1]].status, 'cancelled')
 
@@ -792,6 +796,48 @@ class DownloadManagerTests(unittest.TestCase):
             self.assertEqual(recovered_id, auth_id)
             self.assertEqual(len(restored.downloads), before_count)
             self.assertNotIn('fresh-cookie', queue_path.read_text(encoding='utf-8'))
+
+    def test_empty_paused_queue_restores_paused_intake(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            config = FakeConfig({'DownloadPath': tmp})
+            manager = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertTrue(manager.pause_intake())
+
+            restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+
+        self.assertTrue(restored.intake_paused)
+        self.assertEqual(restored.pending_count(), 0)
+
+    def test_restore_rejects_non_youtube_and_outside_root_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            outside = str(Path(tmp).parent / 'outside-downloads')
+            queue_path.write_text(json.dumps({
+                'schemaVersion': ad.DOWNLOAD_QUEUE_SCHEMA_VERSION,
+                'intakePaused': True,
+                'downloads': [
+                    {
+                        'id': 'non-youtube',
+                        'url': 'https://127.0.0.1/internal',
+                        'outputDir': tmp,
+                    },
+                    {
+                        'id': 'outside-root',
+                        'url': 'https://www.youtube.com/watch?v=outsideRoot',
+                        'outputDir': outside,
+                    },
+                ],
+            }), encoding='utf-8')
+
+            restored = ad.DownloadManager(
+                FakeConfig({'DownloadPath': tmp}),
+                FakeHistory(),
+                queue_path=queue_path,
+            )
+
+        self.assertEqual(restored.downloads, {})
+        self.assertTrue(restored.intake_paused)
 
     def test_future_queue_schema_is_preserved_and_blocks_destructive_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1093,6 +1139,37 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.get_json()["error"], "Missing download URL.")
 
+    def test_queue_mutations_reject_non_object_json_bodies(self):
+        token = "c" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        manager.pause_intake()
+        dl_id, _ = manager.start_download(
+            "https://www.youtube.com/watch?v=jsonBoundary",
+        )
+        api = ad.create_api(config, manager, FakeHistory())
+        headers = {"X-Auth-Token": token}
+        client = api.test_client()
+
+        for endpoint in (
+            f"/queue/{dl_id}/resume",
+            f"/queue/{dl_id}/retry",
+            f"/queue/{dl_id}/move",
+        ):
+            with self.subTest(endpoint=endpoint):
+                resp = client.post(endpoint, json=["not", "an", "object"], headers=headers)
+                self.assertEqual(resp.status_code, 400)
+                self.assertIn("JSON object", resp.get_json()["error"])
+
+        with mock.patch.object(ad, "_folder_picker_service", object()):
+            resp = client.post(
+                "/pick-folder",
+                json=["not", "an", "object"],
+                headers=headers,
+            )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json()["code"], "invalid-request-body")
+
     def test_download_request_body_allows_reviewed_extension_fields(self):
         body = {
             "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -1304,6 +1381,20 @@ class ApiSecurityTests(unittest.TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.get_json()["count"], 1)
+
+    def test_history_rejects_malformed_limit(self):
+        token = "d" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+
+        resp = api.test_client().get(
+            "/history?limit=many",
+            headers={"X-Auth-Token": token},
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json()["code"], "invalid-limit")
 
     def test_cancel_finished_download_returns_conflict_not_not_found(self):
         token = "b" * 32
@@ -1715,6 +1806,19 @@ class CookieJarTests(unittest.TestCase):
             # httpOnly cookie gets the #HttpOnly_ prefix yt-dlp expects.
             self.assertIn("#HttpOnly_.youtube.com\tTRUE\t/\tTRUE\t1700000000\tSID\tabc", body)
             self.assertIn("youtube.com\tFALSE\t/\tFALSE\t0\tPREF\ttz=UTC", body)
+
+    def test_non_finite_expiry_degrades_to_session_cookie(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "cookies.txt"
+            result = ad.write_cookies_netscape([{
+                "domain": ".youtube.com",
+                "name": "SID",
+                "value": "secret",
+                "expirationDate": float("inf"),
+            }], target)
+
+            self.assertEqual(result, str(target))
+            self.assertIn("\t0\tSID\tsecret", self._read(target))
 
     def test_strips_control_chars_that_would_corrupt_tsv(self):
         with tempfile.TemporaryDirectory() as tmp:

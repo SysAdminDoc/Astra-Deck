@@ -61,6 +61,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Downloader recovery and malformed-input paths now fail safely.** Durable
+  queue restores re-check YouTube URLs and configured output roots, retain an
+  explicitly paused empty queue across restarts, and reject fractional reorder
+  positions. Non-object API bodies and malformed history limits return clear
+  400 responses, while non-finite browser-cookie expiries degrade to session
+  cookies instead of stranding a queued download before its worker starts.
 - **The settings version no longer has a dismiss-only notification badge.**
   The footer version is passive text in the extension, fallback, and userscript;
   the separate popup release-notes surface is unchanged.

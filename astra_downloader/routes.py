@@ -250,6 +250,14 @@ def create_api(config, dl_manager, history, *, dependencies):
         provided = request.headers.get("X-Auth-Token", "")
         return bool(token and provided and hmac.compare_digest(str(provided), str(token)))
 
+    def request_json_object():
+        body = request.get_json(silent=True)
+        if body is None:
+            return {}, None
+        if not isinstance(body, dict):
+            return None, "Request body must be a JSON object."
+        return body, None
+
     def is_allowed_extension_origin(origin):
         normalized = normalize_extension_origin(origin)
         return bool(normalized and normalized in legacy_health_token_origins)
@@ -578,7 +586,9 @@ def create_api(config, dl_manager, history, *, dependencies):
         return cors_response({"paused": False, "capacity": dl_manager.capacity()})
 
     def _fresh_cookies_from_body():
-        body = request.get_json(silent=True) or {}
+        body, body_error = request_json_object()
+        if body_error:
+            return None, body_error
         raw = body.get('cookies')
         if raw is None:
             return None, None
@@ -628,7 +638,9 @@ def create_api(config, dl_manager, history, *, dependencies):
     def move_queued_download(dl_id):
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        body = request.get_json(silent=True) or {}
+        body, body_error = request_json_object()
+        if body_error:
+            return cors_response({"error": body_error, "code": "invalid-request-body"}, 400)
         if 'position' not in body:
             return cors_response({"error": "position is required.", "code": "invalid-position"}, 400)
         ok, err = dl_manager.move_pending(dl_id, body.get('position'))
@@ -642,8 +654,16 @@ def create_api(config, dl_manager, history, *, dependencies):
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
         h = history.load()
-        limit = request.args.get('limit', type=int)
-        if limit is not None:
+        raw_limit = request.args.get('limit')
+        limit = None
+        if raw_limit is not None:
+            try:
+                limit = int(raw_limit)
+            except (TypeError, ValueError):
+                return cors_response({
+                    "error": "History limit must be an integer.",
+                    "code": "invalid-limit",
+                }, 400)
             limit = clamp_int(limit, 50, 1, 500)
         if limit and len(h) > limit:
             h = h[-limit:]
@@ -689,7 +709,9 @@ def create_api(config, dl_manager, history, *, dependencies):
                 429,
                 extra_headers={"Retry-After": str(int(retry_after) + 1)},
             )
-        body = request.get_json(silent=True) or {}
+        body, body_error = request_json_object()
+        if body_error:
+            return cors_response({"error": body_error, "code": "invalid-request-body"}, 400)
         initial = clean_text(body.get('initial'), '', 1024)
         response_q = queue.Queue(maxsize=1)
         try:

@@ -2641,6 +2641,7 @@ class DownloadManager(DownloadManagerCore):
                 'clean_text': lambda *args, **kwargs: clean_text(*args, **kwargs),
                 'cleanup_stale_cookie_jars': lambda *args, **kwargs: cleanup_stale_cookie_jars(*args, **kwargs),
                 'coerce_bool': lambda *args, **kwargs: coerce_bool(*args, **kwargs),
+                'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
                 'load_json_file': lambda *args, **kwargs: load_json_file(*args, **kwargs),
                 'normalize_output_dir': lambda *args, **kwargs: normalize_output_dir(*args, **kwargs),
                 'normalize_url': lambda *args, **kwargs: normalize_url(*args, **kwargs),
