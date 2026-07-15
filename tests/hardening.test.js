@@ -373,8 +373,11 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
     const mainEntry = manifest.content_scripts.find(entry => entry.world === 'MAIN');
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
-    assert.deepEqual(mainEntry.js.slice(0, 2), ['core/player.js', 'ytkit-main.js'],
-        'core/player.js must load before ytkit-main.js in MAIN world');
+    assert.deepEqual(
+        mainEntry.js,
+        ['core/resource-unlock.js', 'core/player.js', 'ytkit-main.js'],
+        'resource unlock and player helpers must load before ytkit-main.js in MAIN world'
+    );
 
     const playerCore = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'player.js'), 'utf8');
     assert.match(playerCore, /createPlayerTaskManager/,
@@ -6876,6 +6879,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/toast-dom.js',
         'extension/core/navigation.js',
         'extension/core/player.js',
+        'extension/core/resource-unlock.js',
         'extension/core/date-time.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
@@ -6991,6 +6995,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/toast-dom.js',
         'extension/core/navigation.js',
         'extension/core/player.js',
+        'extension/core/resource-unlock.js',
         'extension/core/date-time.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',

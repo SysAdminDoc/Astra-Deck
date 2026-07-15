@@ -28080,8 +28080,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'cpu',
             _originals: null,
             _pumpInterval: null,
+            _resourceUnlock: null,
             _patched: false,
             init() {
+                document.documentElement.setAttribute('data-ytkit-resource-unlock', 'on');
+                const createResourceUnlockBridge = globalThis.YTKitCore?.createResourceUnlockBridge;
+                if (typeof createResourceUnlockBridge === 'function') {
+                    this._resourceUnlock = createResourceUnlockBridge({ root: window, document });
+                    this._resourceUnlock.install();
+                    this._resourceUnlock.setEnabled(true);
+                }
                 if (RuntimeFlags.getCpuTamerActive()) return;
                 const win = window;
                 const PromiseCtor = (async () => {})().constructor;
@@ -28138,6 +28146,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._patched = true;
             },
             destroy() {
+                document.documentElement.removeAttribute('data-ytkit-resource-unlock');
+                this._resourceUnlock?.setEnabled(false);
+                this._resourceUnlock?.destroy();
+                this._resourceUnlock = null;
                 // Use the preserved native clearInterval (not the patched one) so the
                 // pump is actually cleared even while the wrapper is still in place.
                 if (this._pumpInterval && this._originals?.clearInterval) {

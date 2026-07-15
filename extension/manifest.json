@@ -86,6 +86,7 @@
         "https://*.youtube.com/live_chat*"
       ],
       "js": [
+        "core/resource-unlock.js",
         "core/player.js",
         "ytkit-main.js"
       ],
