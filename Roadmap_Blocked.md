@@ -2,6 +2,45 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+## P2 — Documentation Publication Constraint (2026-07-14)
+
+- [ ] P2 — Force DVR on live streams
+  Why: Streams with DVR disabled cannot rewind; a MAIN-world player-response interceptor can enable DVR when the expected response shape is present.
+  Evidence: DVR-chan 4.1 source; `extension/ytkit-main.js`; schema and i18n coverage gates.
+  Where: `extension/ytkit-main.js`, settings schema/defaults/locales, generated i18n coverage report, player-response fixtures.
+  Acceptance: On a DVR-disabled live fixture, the seekbar becomes scrubable; the feature is off by default and reports degradation when the player-response shape drifts.
+  Complexity: M
+  Blocker: A new off-by-default setting requires locale catalog changes, and the clean-clone i18n gate requires the tracked generated `docs/i18n-coverage.md` to change with them. This run forbids staging Markdown other than README/CHANGELOG, so the feature cannot be committed with a passing clean-clone check under the current file-hygiene constraint.
+
+## P0 — Legal / Distribution Decision (2026-07-14)
+
+- [ ] P0 — Select and record the PyQt6/Qt companion redistribution route
+  Why: the artifact-linked license inventory and readiness gate now identify the exact embedded/runtime components, but binary release remains blocked until the maintainer chooses GPL-compatible distribution with corresponding source or records a valid Riverbank commercial entitlement and completes the Qt notice/source obligations.
+  Where: `astra_downloader/license-policy.json`, `scripts/companion-license-inventory.js`, release SBOM/readiness output.
+  Acceptance: `pyqt6` and `pyqt6-qt6` policy entries contain the selected license expressions, non-secret approval evidence, exact notice/source routes, and approved decisions; the companion license readiness check passes without suppressions after the exact helper versions/digests are also resolved.
+  Complexity: S
+  Blocker: Requires maintainer legal/commercial judgment and, for the commercial route, entitlement evidence unavailable to an autonomous coding agent.
+
+## P2/P3 — Product Decisions (2026-07-12 audit)
+
+- [ ] P2 — Bound companion playlist downloads
+  Why: `is_playlist_url` adds `--yes-playlist` with no `--playlist-end`/`--max-downloads`, so one accepted `/download` can spawn an unbounded multi-hundred-item job that holds a MAX_CONCURRENT slot and fills the confined output root; the stall watchdog never fires because an active playlist keeps producing output. Rate limiting caps request count, not per-request work.
+  Where: `astra_downloader/astra_downloader.py` (`is_playlist_url` ~2764; invocation ~3266/3317).
+  Complexity: M
+  Blocker: Product decision — choose a sane default cap (for example `MaxPlaylistItems`, with 0 meaning unlimited). Silently capping could surprise users who intentionally download full playlists, so the default and GUI/config surface require maintainer judgment.
+
+- [ ] P3 — Reconsider `.google.com` breadth in the cookie allowlist
+  Why: `ALLOWED_COOKIE_DOMAINS` includes the `.google.com` wildcard, which is genuinely required for authenticated YouTube downloads (SAPISID/SID live there) but also matches non-YouTube Google cookies. yt-dlp only sends cookies whose domain matches the youtube.com request, so the incremental exfil risk is low — but a tighter scheme (only forward the specific auth cookie names) would shrink the credential surface.
+  Where: `astra_downloader/astra_downloader.py:1991` (`ALLOWED_COOKIE_DOMAINS`).
+  Complexity: M
+  Blocker: Product decision — decide whether to allowlist the google.com set by cookie name rather than domain without breaking authenticated or members-only downloads.
+
+- [ ] P3 — Native-host token handshake assumes a single message
+  Why: `NATIVE_MSG_GET_TOKEN` responds on the first `port.onMessage` and disconnects; a native host that sends a hello/handshake frame before the token reply would consume the single response slot and the real token frame would never be read.
+  Where: `extension/background.js` (~947-961).
+  Complexity: S
+  Blocker: Protocol decision — confirm the native host never sends a pre-token frame. If it can, the client must ignore non-terminal frames until a token/terminal-error arrives or the timeout fires.
+
 ## P1 — Trust / Reliability / Distribution
 
 - [ ] P1 — Chrome Web Store submission (store-safe profile)
@@ -131,6 +170,14 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Userscript Structural Drift (Browser-Gated)
 
+- [ ] P2 — Establish one canonical implementation per extracted extension feature
+  Why: The extension-only download UI is canonical as of commit `0ee9e49`, but every remaining extracted module is shared with the generated userscript; deleting those fallbacks before the stale userscript bundle is repaired would break a shipped vehicle.
+  Evidence: `extension/manifest.json`, `extension/ytkit.js`, `extension/features/*`, `scripts/sync-userscript.js`, `scripts/check-userscript-drift.js`.
+  Touches: feature registry/composition, extracted modules, monolith fallback blocks, userscript bundle generation, behavioral boundary tests.
+  Acceptance: each migrated shared feature has one source implementation consumed by extension and userscript; explicit exclusions remain tested; duplicate fallback code is deleted; manifest/generated-bundle drift and lifecycle parity fail CI; migration proceeds in reviewable feature-sized batches.
+  Complexity: XL
+  Blocker: All remaining extracted modules are bundled into the userscript. Resolve the stale userscript settings/import contract below and verify the regenerated bundle in a Tampermonkey browser session before removing any remaining shared fallback.
+
 - [ ] P2 — Userscript bundle is stale; next sync will break Import
   Why: `YTKit.user.js` still bundles the pre-4.46.26 settings-panel and
   pre-4.46.27 subscription-groups modules, so the shipped userscript lacks the
@@ -164,3 +211,117 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Where: extension/ytkit-main.js (~395-512)
   Blocker: Requires loading the extension in Chrome/Edge with audio features
   enabled and navigating between videos to verify audio continuity.
+
+## P1 — Documentation Publication Constraint (2026-07-14)
+
+- [ ] P2 — Replay chat-density highlight chart
+  Why: Chat-activity spikes locate VOD highlights; the feature must remain optional because it observes and aggregates replay-chat activity.
+  Evidence: VOD Highlight Analyzer (SkAnon), Live Replay Comment Collector (yuyuyzl).
+  Touches: new `extension/features/` module, chat replay frame observation, canvas sparkline over progress bar, settings schema/locales.
+  Acceptance: On VODs with chat replay, an opt-in density sparkline renders above the progress bar; clicking a spike seeks there; sampling is budgeted and cancelled on navigation.
+  Complexity: L
+  Blocker: A truthful opt-in requires a new schema entry and localized setting copy. The clean-clone `npm run check` contract requires the tracked `docs/i18n-coverage.md` report to be regenerated with those locale changes, but this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`.
+
+- [ ] P2 — Dual-language subtitles
+  Why: A second independently selected caption track is valuable for language learners but must be explicitly enabled and configured.
+  Evidence: YtDLS (CY Fung), Youtube dual subtitle (0xjax), vanadis bilingual persist.
+  Touches: timedtext track fetch, subtitle renderer/styling pipeline, settings schema/locales.
+  Acceptance: An opt-in second caption track renders below native captions with an independent language picker and clean unavailable-track fallback.
+  Complexity: M
+  Blocker: The independent enable/language controls require new localized schema entries, which in turn require committing the regenerated tracked `docs/i18n-coverage.md`; this run forbids staging that Markdown file.
+
+- [ ] P2 — Allowlist hiding mode
+  Why: Inverse channel filtering needs a deliberate mode control and an empty-list safety guard to avoid hiding all of YouTube accidentally.
+  Evidence: BlockTube issue #133; FocusTube HN subscriptions-only demand.
+  Touches: `extension/features/video-hider/`, settings schema/locales, blocked/allowed channel storage.
+  Acceptance: An explicitly labelled mode toggle switches home/search/related filtering to allowlist semantics; card and settings management remain recoverable.
+  Complexity: M
+  Blocker: The safety-critical mode toggle and warning copy need new localized schema/UI strings, which require committing `docs/i18n-coverage.md`; this run forbids staging that Markdown file.
+
+- [ ] P2 — Opt-in settings/blocklist sync (`storage.sync`)
+  Why: Browser-account sync must be a distinct default-off consent decision; the existing `syncSafePrefs` field only governs safe-profile export filtering and defaults on.
+  Evidence: BlockTube issue #59; `extension/ytkit.js:5528-5660`; no `storage.sync` runtime call sites.
+  Touches: storage layer, policy-profile scrub, popup settings/import recovery, settings schema/locales.
+  Acceptance: A default-off toggle syncs schema-validated, secret-scrubbed preferences and blocklists within quota, resolves newest-write-wins conflicts, and offers local Undo.
+  Complexity: L
+  Blocker: Reusing `syncSafePrefs` would silently change an existing export-policy setting; a truthful consent setting requires new localized copy and a committed `docs/i18n-coverage.md` update forbidden by this run.
+
+- [ ] P2 — Logarithmic volume curve
+  Why: A low-volume curve changes core playback semantics and must remain independently optional.
+  Evidence: Youtube Music fix volume ratio (Nemo64); Volume Curve Designer.
+  Touches: shared player/audio path, settings schema/locales, rememberVolume integration.
+  Acceptance: A toggle remaps native slider position to logarithmic gain without double-scaling volumeBoost or persisted volume.
+  Complexity: S
+  Blocker: No existing setting truthfully represents logarithmic remapping; adding the required opt-in and localized copy requires a committed `docs/i18n-coverage.md` update forbidden by this run.
+
+- [ ] P2 — Audio chain completion: auto-gain + high-pass
+  Why: Astra already implements compressor-backed `audioNormalization`; the remaining independently selectable nodes are auto-gain and high-pass filtering.
+  Evidence: Tweaks for YouTube feature set; `extension/ytkit-main.js` audio graph and `audioNormalization` setting.
+  Touches: MAIN-world audio graph, isolated-world bridge, settings schema/locales.
+  Acceptance: Auto-gain and high-pass nodes toggle independently with sane defaults, live-apply, and never double-connect across SPA navigation.
+  Complexity: M
+  Blocker: Independent node controls require new localized schema entries and therefore a committed regenerated `docs/i18n-coverage.md`, which this run forbids staging.
+
+- [ ] P2 — Enforced Shorts daily limit
+  Why: A Shorts-specific budget and hard-block/snooze policy are distinct from the existing all-video `dwDailyCapMin` setting.
+  Evidence: TechCrunch 2025-10-22 Shorts timer coverage; Shorts Addiction Helper scripts; `extension/features/digital-wellbeing/`.
+  Touches: digitalWellbeing runtime, Shorts route detection, settings schema/locales.
+  Acceptance: Users configure daily Shorts minutes and hard-block versus five-minute snooze; usage resets at local midnight and the block is accessible.
+  Complexity: M
+  Blocker: The budget and enforcement-policy controls need new localized schema/UI strings and a committed `docs/i18n-coverage.md` update forbidden by this run.
+
+- [ ] P2 — Hide AI surfaces pack
+  Why: Independent controls are needed because Ask, Gemini, AI summaries, and context panels are separate surfaces with different user value.
+  Evidence: Control Panel for YouTube; Remove YouTube Gemini buttons; Youtube without fact checking.
+  Touches: `extension/early.css`, CSS feature registrations, selector packs, settings schema/locales.
+  Acceptance: Independent toggles hide each verified surface with capture-backed selector canaries.
+  Complexity: S
+  Blocker: Independent toggles require new localized schema entries and fresh authenticated selector captures; this run forbids the required `docs/i18n-coverage.md` commit and active-desktop rules prohibit interactive capture.
+
+- [ ] P2 — Notification menu controls: cap count + hide read
+  Why: Count and read-state filtering are user-selected policies, not safe unconditional behavior under chronological sorting.
+  Evidence: competitor notification options; `chronologicalNotifications` in `extension/ytkit.js`.
+  Touches: chronologicalNotifications runtime, settings schema/locales.
+  Acceptance: Independent options cap rendered notifications and hide read entries without observer/re-render loops.
+  Complexity: S
+  Blocker: No existing setting represents either policy; new localized controls require a committed `docs/i18n-coverage.md` update forbidden by this run.
+
+- [ ] P2 — Comment intelligence pack
+  Why: Language selection and duplicate expansion need discoverable controls; the existing `commentFilterRules` textarea already persists `@author` block rules but its localized contract does not cover language or duplicate behavior.
+  Evidence: YouTube Comment Language Filter (GF 558814), Similar Comments Hider (hjk789), user-block scripts; `commentFilterManager` in `extension/ytkit.js`.
+  Touches: comment filter runtime, settings-panel controls, settings schema/locales.
+  Acceptance: A localized language allowlist hides other-language comments without network access; near duplicates collapse under an accessible expander; author blocks persist and remain manageable.
+  Complexity: M
+  Blocker: Shipping undiscoverable rule syntax or English-only expander copy would fail product/accessibility quality. The necessary localized controls require a committed regenerated `docs/i18n-coverage.md`, which this run forbids staging.
+
+- [ ] P2 — Playlist power pack
+  Why: Duration sorting, per-playlist resume, and auto-skip-watched are user-selected actions/policies that need clear accessible controls in the existing Playlist Enhancer toolbar.
+  Evidence: Sort Youtube Playlist by Duration (KohGeek), playlists playback tracker (andrybak), Playlist Auto Skip Watched (neverlandeverland).
+  Touches: playlistEnhancer runtime, resume storage, settings/localized UI copy.
+  Acceptance: The playlist panel offers duration sort and last-video resume; an explicit persisted option auto-skips entries watched at least 90%.
+  Complexity: M
+  Blocker: The new toolbar actions and persisted auto-skip option require localized strings/schema entries and therefore a committed `docs/i18n-coverage.md` update forbidden by this run.
+
+- [ ] P1 — Generate volatile project facts and fail documentation drift
+  Why: docs inspected on 2026-07-14 disagree with source on locale count, schema size, module count, extension surfaces, Firefox floor, themes, and bounded YouTube Music/embed behavior, which makes release and contributor guidance unreliable.
+  Evidence: `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`; `extension/core/settings-schema.js`; manifests; `scripts/check-versions.js`.
+  Touches: source-of-truth scripts/tests, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`, package check pipeline.
+  Acceptance: stale claims are corrected; generated/validated facts cover version, browser floors, locales, schema entries, peeled modules, shipped surfaces, profiles, themes, and compatibility modes; changing a source fact without its rendered documentation fails `npm run check`.
+  Complexity: M
+  Blocker: This run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`, but completion requires committed corrections in tracked `CONTRIBUTING.md` and `docs/architecture.md`; a code-only generator would fail in a clean clone while those verified stale claims remain.
+
+- [ ] P1 — Make build profiles immutable capability ceilings with a verified permission matrix
+  Why: staged artifacts are not stamped store-safe/GitHub-full and runtime settings can resolve a store-safe install to GitHub-full UI behavior; store-safe intentionally keeps the local companion, so its permissions must follow the documented capability matrix rather than an assumed blanket reduction.
+  Evidence: `build-extension.js:491-505`, `extension/core/policy-profile.js`, `extension/manifest.json`, `docs/store-permission-rationale.md:95-118`, `README.md:57,178`; Chrome permission-declaration guidance.
+  Touches: build-profile staging, schema/profile capability catalogue, manifest permission matrix, runtime flags/policy profile, onboarding/import gates, Chrome/Firefox build tests.
+  Acceptance: each artifact contains a tested immutable profile ceiling; imports and UI settings cannot exceed it; store-safe retains authenticated local-companion behavior but cannot activate any `profile: github-full` feature or host such as Cobalt/AI/Ollama; every required/optional API and host permission is generated from and tested against the documented per-profile rationale; the existing blocked side-panel permission-request verification remains separate.
+  Complexity: M
+  Blocker: The required store-safe companion matrix contradicts the tracked `docs/store-permission-rationale.md`, which currently assigns all six companion loopback hosts to GitHub-full and says store-safe excludes them. Completing the acceptance requires committing that Markdown correction, but this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`.
+
+- [ ] P3 — Filmot deleted-video title restore (GitHub-full)
+  Why: Restoring titles of deleted/private playlist entries is uniquely valuable for old playlists; external API so GitHub-full only.
+  Evidence: Filmot Title Restorer (Jopik1, 4.5k).
+  Touches: playlist rendering path, data-flow registration, external-api-health.
+  Acceptance: On playlists, [Deleted video] rows optionally resolve via Filmot with cache + rate budget; store-safe artifacts strip the host grant automatically.
+  Complexity: M
+  Blocker: Repository research names the userscript but contains no verified Filmot host, request/response schema, public API terms, or fallback contract. This development pass forbids fresh research, so implementing an endpoint would be speculative.
