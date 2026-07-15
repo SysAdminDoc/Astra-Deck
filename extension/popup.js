@@ -467,6 +467,8 @@ const importButton = $('#import-btn');
 const importFileInput = $('#import-file');
 const undoImportButton = $('#undo-import-btn');
 const resetButton = $('#reset-btn');
+const resetYoutubeStateButton = $('#reset-youtube-state-btn');
+const undoYoutubeStateButton = $('#undo-youtube-state-btn');
 const statKeys = $('#stat-keys');
 const statSize = $('#stat-size');
 const statHidden = $('#stat-hidden-videos');
@@ -4100,6 +4102,10 @@ function sortPopupBridgeTabs(tabs) {
 }
 
 async function sendPopupBridgeMessageToYouTubeTabs(messageType) {
+    return sendPopupBridgeMessageToYouTubeTabsWithPayload(messageType);
+}
+
+async function sendPopupBridgeMessageToYouTubeTabsWithPayload(messageType, payload = {}) {
     let tabs = [];
     try { tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS }); }
     catch (_) { /* reason: extension suspended or tabs API unavailable */ }
@@ -4115,16 +4121,34 @@ async function sendPopupBridgeMessageToYouTubeTabs(messageType) {
             ext?.tabs,
             'sendMessage',
             tab.id,
-            { type: messageType }
+            { type: messageType, ...payload }
         ).catch((error) => ({
             ok: false,
             status: 0,
             error: error?.message || 'Could not message the YouTube tab.'
         })) || { ok: false, status: 0, error: 'No response from the YouTube tab.' };
-        if (result?.ok || (result && result.status !== 0)) return result;
+        if (result?.ok || (result && result.status !== 0)) {
+            return { ...result, tabId: tab.id, origin: getTabOrigin(tab) };
+        }
         lastNoResponse = result;
     }
     return lastNoResponse || { ok: false, status: 0, error: 'No response from any YouTube tab.' };
+}
+
+async function sendPopupBridgeMessageToTab(tabId, messageType, payload = {}) {
+    if (!Number.isFinite(Number(tabId))) {
+        return { ok: false, status: 0, error: 'The original YouTube tab is unavailable.' };
+    }
+    return await callExtensionApi(
+        ext?.tabs,
+        'sendMessage',
+        tabId,
+        { type: messageType, ...payload }
+    ).catch((error) => ({
+        ok: false,
+        status: 0,
+        error: error?.message || 'Could not message the original YouTube tab.'
+    })) || { ok: false, status: 0, error: 'No response from the original YouTube tab.' };
 }
 
 async function updateYtdlpNow() {
@@ -4209,7 +4233,127 @@ async function updateCompanionNow() {
 // it's consumed or absent.
 const IMPORT_SNAPSHOT_KEY = '_importSnapshot';
 const RESET_SNAPSHOT_KEY = '_resetSnapshot';
+const YOUTUBE_STATE_RESET_SNAPSHOT_KEY = '_youtubeStateResetSnapshot';
 const undoResetButton = $('#undo-reset-btn');
+
+async function readYoutubeStateResetSnapshot() {
+    if (!sessionStorageAvailable()) return null;
+    try {
+        const items = await callExtensionApi(ext.storage.session, 'get', YOUTUBE_STATE_RESET_SNAPSHOT_KEY);
+        return items?.[YOUTUBE_STATE_RESET_SNAPSHOT_KEY] || null;
+    } catch (_) {
+        // reason: session storage can be unavailable in restricted Firefox contexts
+        return null;
+    }
+}
+
+async function clearYoutubeStateResetSnapshot() {
+    if (!sessionStorageAvailable()) return;
+    await callExtensionApi(ext.storage.session, 'remove', YOUTUBE_STATE_RESET_SNAPSHOT_KEY);
+}
+
+function setUndoYoutubeStateVisible(visible) {
+    if (!undoYoutubeStateButton) return;
+    undoYoutubeStateButton.hidden = !visible;
+    if (visible) undoYoutubeStateButton.closest('details')?.setAttribute('open', '');
+}
+
+async function refreshUndoYoutubeStateVisibility() {
+    const snapshot = await readYoutubeStateResetSnapshot();
+    setUndoYoutubeStateVisible(Boolean(snapshot?.snapshot && snapshot?.tabId));
+}
+
+async function resetYoutubeState() {
+    if (!resetYoutubeStateButton) return;
+    resetYoutubeStateButton.setAttribute('aria-busy', 'true');
+    resetYoutubeStateButton.disabled = true;
+    try {
+        if (!sessionStorageAvailable()) {
+            throw new Error('Session recovery storage is unavailable; reset was not started');
+        }
+        const captured = await sendPopupBridgeMessageToYouTubeTabsWithPayload(
+            'YTKIT_RESET_YOUTUBE_STATE',
+            { action: 'snapshot' }
+        );
+        if (captured?.noYouTubeTab) {
+            showStatus(t('statusYoutubeStateNoTab', 'Open a YouTube tab before resetting its local page state.'), 'error', 5200);
+            return;
+        }
+        if (!captured?.ok) throw new Error(captured?.error || 'Could not capture YouTube page state');
+        if (!captured.count) {
+            showStatus(t('statusYoutubeStateEmpty', 'No stale YouTube page-state keys were found.'), 'info', 3600);
+            return;
+        }
+
+        const staged = {
+            schemaVersion: 1,
+            tabId: captured.tabId,
+            origin: captured.origin,
+            createdAt: Date.now(),
+            snapshot: captured.snapshot
+        };
+        await callExtensionApi(ext.storage.session, 'set', {
+            [YOUTUBE_STATE_RESET_SNAPSHOT_KEY]: staged
+        });
+
+        const cleared = await sendPopupBridgeMessageToTab(
+            staged.tabId,
+            'YTKIT_RESET_YOUTUBE_STATE',
+            { action: 'clear', snapshot: staged.snapshot }
+        );
+        if (!cleared?.ok) {
+            await clearYoutubeStateResetSnapshot();
+            throw new Error(cleared?.error || 'YouTube page-state reset failed');
+        }
+        if (!cleared.cleared?.length) {
+            await clearYoutubeStateResetSnapshot();
+            showStatus(t('statusYoutubeStateChanged',
+                'YouTube changed its page state before reset, so nothing was cleared.'), 'info', 4200);
+            return;
+        }
+
+        setUndoYoutubeStateVisible(true);
+        showStatus(t('statusYoutubeStateReset',
+            `Cleared ${cleared.cleared.length} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open.`),
+        'success', 7200);
+    } catch (error) {
+        showStatus(t('statusYoutubeStateResetFail', 'YouTube state reset failed') + ': ' + error.message, 'error', 6200);
+    } finally {
+        resetYoutubeStateButton.removeAttribute('aria-busy');
+        resetYoutubeStateButton.disabled = false;
+    }
+}
+
+async function undoYoutubeStateReset() {
+    if (!undoYoutubeStateButton) return;
+    undoYoutubeStateButton.setAttribute('aria-busy', 'true');
+    undoYoutubeStateButton.disabled = true;
+    try {
+        const staged = await readYoutubeStateResetSnapshot();
+        if (!staged?.snapshot || !staged?.tabId) {
+            setUndoYoutubeStateVisible(false);
+            showStatus(t('statusYoutubeStateUndoExpired',
+                'YouTube state Undo is no longer available for the original tab.'), 'info', 4200);
+            return;
+        }
+        const restored = await sendPopupBridgeMessageToTab(
+            staged.tabId,
+            'YTKIT_RESET_YOUTUBE_STATE',
+            { action: 'restore', snapshot: staged.snapshot }
+        );
+        if (!restored?.ok) throw new Error(restored?.error || 'Could not restore YouTube page state');
+        await clearYoutubeStateResetSnapshot();
+        setUndoYoutubeStateVisible(false);
+        showStatus(t('statusYoutubeStateRestored',
+            `Restored ${restored.restored?.length || 0} YouTube page-state keys. Reload YouTube to apply them.`),
+        'success', 5200);
+    } catch (error) {
+        showStatus(t('statusYoutubeStateUndoFail', 'YouTube state Undo failed') + ': ' + error.message, 'error', 6200);
+    } finally {
+        undoYoutubeStateButton.removeAttribute('aria-busy');
+        undoYoutubeStateButton.disabled = false;
+    }
+}
 
 function sessionStorageAvailable() {
     return !!(ext && ext.storage && ext.storage.session);
@@ -4724,6 +4868,13 @@ function installWheelScrolling() {
         // reopened it). Best-effort — failure leaves the button hidden which
         // is the safe default.
         void refreshUndoResetVisibility();
+    }
+    if (resetYoutubeStateButton) {
+        resetYoutubeStateButton.addEventListener('click', () => { void resetYoutubeState(); });
+    }
+    if (undoYoutubeStateButton) {
+        undoYoutubeStateButton.addEventListener('click', () => { void undoYoutubeStateReset(); });
+        void refreshUndoYoutubeStateVisibility();
     }
     if (reenableMediadlButton) {
         reenableMediadlButton.addEventListener('click', () => { void reenableMediadlPrompts(); });

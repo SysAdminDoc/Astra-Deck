@@ -21,6 +21,165 @@
     let storageFlushBackoffMs = 0;
     let storageFlushFailureCount = 0;
 
+    // Support-only reset surface for stale YouTube page state. This is an
+    // exact allowlist: never broaden it to prefixes because YouTube and other
+    // extensions can store unrelated data on the same origin. In particular,
+    // no `ytkit-*` / Astra settings, cookies, Cache Storage, or IndexedDB data
+    // are in scope.
+    const YOUTUBE_RESET_STATE_KEYS = Object.freeze([
+        'yt.config_',
+        'yt.global_',
+        'yt.innertube::nextId',
+        'yt.innertube::requests',
+        'yt.logging.errors',
+        'yt-player-audio-track-language',
+        'yt-player-bandwidth',
+        'yt-player-caption-display-settings',
+        'yt-player-caption-language',
+        'yt-player-live-latency',
+        'yt-player-performance-cap',
+        'yt-player-quality',
+        'yt-player-volume',
+        'yt-remote-cast-installed',
+        'yt-remote-connected-devices',
+        'yt-remote-device-id',
+        'yt-remote-fast-check-period',
+        'yt-remote-session-app',
+        'yt-remote-session-browser-channel',
+        'yt-remote-session-name'
+    ]);
+    const YOUTUBE_RESET_STATE_KEY_SET = new Set(YOUTUBE_RESET_STATE_KEYS);
+    const YOUTUBE_RESET_MAX_VALUE_BYTES = 128 * 1024;
+    const YOUTUBE_RESET_MAX_SNAPSHOT_BYTES = 512 * 1024;
+
+    function createYouTubeStateManager(options = {}) {
+        const localStore = options.localStorage;
+        const sessionStore = options.sessionStorage;
+        const origin = String(options.origin || '');
+        if (!localStore || !sessionStore) throw new Error('YouTube storage is unavailable');
+        if (!/^https:\/\/(?:(?:[a-z0-9-]+\.)?(?:youtube\.com|youtube-nocookie\.com)|youtu\.be)$/i.test(origin)) {
+            throw new Error('YouTube state reset is restricted to YouTube origins');
+        }
+
+        const areas = Object.freeze({ local: localStore, session: sessionStore });
+
+        function readRecords(store) {
+            const records = [];
+            for (const key of YOUTUBE_RESET_STATE_KEYS) {
+                const value = store.getItem(key);
+                if (value === null) continue;
+                if (new Blob([value]).size > YOUTUBE_RESET_MAX_VALUE_BYTES) {
+                    throw new Error(`YouTube state value is too large to reset safely: ${key}`);
+                }
+                records.push([key, value]);
+            }
+            return records;
+        }
+
+        function validateRecords(records) {
+            if (!Array.isArray(records) || records.length > YOUTUBE_RESET_STATE_KEYS.length) {
+                throw new Error('YouTube state snapshot has an invalid record list');
+            }
+            const seen = new Set();
+            return records.map((record) => {
+                if (!Array.isArray(record) || record.length !== 2) throw new Error('YouTube state snapshot record is malformed');
+                const [key, value] = record;
+                if (!YOUTUBE_RESET_STATE_KEY_SET.has(key) || seen.has(key) || typeof value !== 'string') {
+                    throw new Error('YouTube state snapshot contains an unsupported record');
+                }
+                if (new Blob([value]).size > YOUTUBE_RESET_MAX_VALUE_BYTES) {
+                    throw new Error('YouTube state snapshot value exceeds the recovery limit');
+                }
+                seen.add(key);
+                return [key, value];
+            });
+        }
+
+        function validateSnapshot(snapshot) {
+            if (!snapshot || snapshot.schemaVersion !== 1 || snapshot.origin !== origin) {
+                throw new Error('YouTube state snapshot does not match this tab');
+            }
+            const normalized = {
+                schemaVersion: 1,
+                origin,
+                local: validateRecords(snapshot.local),
+                session: validateRecords(snapshot.session)
+            };
+            if (new Blob([JSON.stringify(normalized)]).size > YOUTUBE_RESET_MAX_SNAPSHOT_BYTES) {
+                throw new Error('YouTube state snapshot exceeds the recovery limit');
+            }
+            return normalized;
+        }
+
+        function snapshot() {
+            return validateSnapshot({
+                schemaVersion: 1,
+                origin,
+                local: readRecords(localStore),
+                session: readRecords(sessionStore)
+            });
+        }
+
+        function clear(snapshotValue) {
+            const normalized = validateSnapshot(snapshotValue);
+            const cleared = [];
+            const skipped = [];
+            try {
+                for (const [area, records] of [['local', normalized.local], ['session', normalized.session]]) {
+                    const store = areas[area];
+                    for (const [key, value] of records) {
+                        if (store.getItem(key) !== value) {
+                            skipped.push(`${area}:${key}`);
+                            continue;
+                        }
+                        store.removeItem(key);
+                        cleared.push([area, key, value]);
+                    }
+                }
+            } catch (error) {
+                for (const [area, key, value] of cleared) areas[area].setItem(key, value);
+                throw error;
+            }
+            return {
+                cleared: cleared.map(([area, key]) => `${area}:${key}`),
+                skipped
+            };
+        }
+
+        function restore(snapshotValue) {
+            const normalized = validateSnapshot(snapshotValue);
+            const candidates = [
+                ...normalized.local.map(([key, value]) => ['local', key, value]),
+                ...normalized.session.map(([key, value]) => ['session', key, value])
+            ];
+            // Undo never overwrites state YouTube recreated after the reset.
+            // Restore only keys that are still absent; this also makes the
+            // original staged snapshot safe when clear() skipped a changed key.
+            const targets = candidates.filter(([area, key]) => areas[area].getItem(key) === null);
+            const skipped = candidates
+                .filter(([area, key]) => areas[area].getItem(key) !== null)
+                .map(([area, key]) => `${area}:${key}`);
+            const before = targets.map(([area, key]) => [area, key, areas[area].getItem(key)]);
+            const applied = [];
+            try {
+                for (const [area, key, value] of targets) {
+                    areas[area].setItem(key, value);
+                    applied.push(`${area}:${key}`);
+                }
+            } catch (error) {
+                for (const [area, key, previous] of before) {
+                    if (!applied.includes(`${area}:${key}`)) continue;
+                    if (previous === null) areas[area].removeItem(key);
+                    else areas[area].setItem(key, previous);
+                }
+                throw error;
+            }
+            return { restored: applied, skipped };
+        }
+
+        return Object.freeze({ clear, restore, snapshot });
+    }
+
     function emitStorageUpdate(changes, source = 'chrome-storage') {
         try {
             window.dispatchEvent(new CustomEvent('ytkit-storage-changed', {
@@ -188,6 +347,7 @@
     }
 
     Object.assign(core, {
+        createYouTubeStateManager,
         flushPendingStorageWrites,
         installStorageChangeListener,
         installStorageFlushGuards,
@@ -198,4 +358,5 @@
         storageWriteJSON,
         storageWriteMany
     });
+    core.YOUTUBE_RESET_STATE_KEYS = YOUTUBE_RESET_STATE_KEYS;
 })();

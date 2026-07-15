@@ -302,6 +302,10 @@
              unhid when a `_resetSnapshot` exists in chrome.storage.session
              (set by resetAllData, cleared on Undo or browser-close). -->
         <button id="undo-reset-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="undoResetAria" aria-label="Restore data from the most recent Reset" data-i18n="undoResetBtn">Undo Reset</button>
+        <!-- i18n-static: YouTube product maintenance action; localized status text is rendered at runtime -->
+        <button id="reset-youtube-state-btn" class="undo-action" type="button" aria-label="Reset stale YouTube page state">Reset YouTube State</button>
+        <!-- i18n-static: paired recovery action for the YouTube product maintenance command -->
+        <button id="undo-youtube-state-btn" class="undo-action" type="button" hidden aria-label="Restore YouTube page state from the latest reset">Undo YouTube State Reset</button>
         <!-- v4.47.0 NF6: re-enable Astra Downloader install prompts when
              the user previously hit "Skip for now". Hidden by default;
              shown when `ytkit_mediadl_prompt_dismissed === true` in
