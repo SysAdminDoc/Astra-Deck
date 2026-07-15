@@ -48550,9 +48550,9 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
 
         .ytkit-dl-popup {
             position: fixed;
-            width: 260px;
+            width: 292px;
             padding: 0;
-            border-radius: 10px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(14,17,22,0.97);
             color: rgba(255,255,255,0.94);
@@ -48572,7 +48572,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 8px 0;
+            padding: 10px 10px 0;
         }
 
         .ytkit-dl-popup__close {
@@ -48581,13 +48581,13 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             padding: 0;
             border-radius: 6px;
             border: 1px solid transparent;
             background: transparent;
-            color: rgba(255,255,255,0.36);
+            color: rgba(255,255,255,0.62);
             cursor: pointer;
             flex-shrink: 0;
             font-size: 11px;
@@ -48621,13 +48621,13 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             appearance: none;
             -webkit-appearance: none;
             flex: 1;
-            height: 26px;
+            height: 30px;
             padding: 0 10px;
             border-radius: 5px;
             border: none;
             background: transparent;
-            color: rgba(255,255,255,0.45);
-            font-size: 11px;
+            color: rgba(255,255,255,0.62);
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 140ms ease;
@@ -48646,9 +48646,9 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         }
 
         .ytkit-dl-popup__body {
-            padding: 8px 10px 4px;
+            padding: 10px 12px 5px;
             display: grid;
-            gap: 8px;
+            gap: 10px;
         }
 
         .ytkit-dl-popup__row {
@@ -48657,11 +48657,11 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         }
 
         .ytkit-dl-popup__label {
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: rgba(255,255,255,0.36);
+            color: rgba(255,255,255,0.62);
             line-height: 1;
         }
 
@@ -48674,8 +48674,8 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         .ytkit-dl-popup__chip {
             appearance: none;
             -webkit-appearance: none;
-            height: 26px;
-            padding: 0 9px;
+            height: 30px;
+            padding: 0 10px;
             border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.07);
             background: rgba(255,255,255,0.04);
@@ -48705,14 +48705,14 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             display: flex;
             align-items: center;
             gap: 6px;
-            min-height: 24px;
+            min-height: 28px;
         }
 
         .ytkit-dl-popup__dir-path {
             flex: 1;
             min-width: 0;
-            font-size: 10px;
-            color: rgba(255,255,255,0.42);
+            font-size: 11px;
+            color: rgba(255,255,255,0.62);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -48741,13 +48741,13 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         .ytkit-dl-popup__dir-btn {
             appearance: none;
             -webkit-appearance: none;
-            height: 24px;
+            height: 28px;
             padding: 0 8px;
             border-radius: 5px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.5);
-            font-size: 10px;
+            color: rgba(255,255,255,0.68);
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             flex-shrink: 0;
@@ -48762,7 +48762,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         }
 
         .ytkit-dl-popup__footer {
-            padding: 6px 10px 10px;
+            padding: 8px 12px 12px;
         }
 
         .ytkit-dl-popup__go {
@@ -48770,7 +48770,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             -webkit-appearance: none;
             position: relative;
             width: 100%;
-            height: 32px;
+            height: 36px;
             padding: 0;
             border-radius: 7px;
             border: none;
@@ -48792,6 +48792,81 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         .ytkit-dl-popup__go:active {
             transform: scale(0.98);
             background: #e85d3f;
+        }
+
+        html:not([dark]) .ytkit-dl-popup {
+            border-color: #d8dde5;
+            background: rgba(255,255,255,0.98);
+            color: #17202b;
+            box-shadow: 0 18px 48px rgba(15,23,42,0.18);
+        }
+
+        html:not([dark]) .ytkit-dl-popup__close {
+            color: #5f6b79;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__close:hover {
+            background: #eef1f5;
+            color: #17202b;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__close:focus-visible,
+        html:not([dark]) .ytkit-dl-popup__tab:focus-visible,
+        html:not([dark]) .ytkit-dl-popup__chip:focus-visible,
+        html:not([dark]) .ytkit-dl-popup__dir-btn:focus-visible,
+        html:not([dark]) .ytkit-dl-popup__go:focus-visible {
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(207,53,47,0.42);
+        }
+
+        html:not([dark]) .ytkit-dl-popup__tabs {
+            background: #eef1f5;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__tab {
+            color: #5f6b79;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__tab:hover {
+            color: #263442;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__tab.is-active,
+        html:not([dark]) .ytkit-dl-popup__tab[aria-selected="true"] {
+            background: #ffffff;
+            color: #17202b;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.12);
+        }
+
+        html:not([dark]) .ytkit-dl-popup__label,
+        html:not([dark]) .ytkit-dl-popup__dir-path {
+            color: #5f6b79;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__chip,
+        html:not([dark]) .ytkit-dl-popup__dir-btn {
+            border-color: #d8dde5;
+            background: #f1f3f6;
+            color: #4e5b6a;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__chip:hover,
+        html:not([dark]) .ytkit-dl-popup__dir-btn:hover {
+            border-color: #c7ced8;
+            background: #e7ebf0;
+            color: #17202b;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__chip.is-active,
+        html:not([dark]) .ytkit-dl-popup__chip[aria-pressed="true"] {
+            border-color: #e6aaa6;
+            background: #fff0ef;
+            color: #a12a25;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__dir-input {
+            border-color: #d8dde5;
+            background: #ffffff;
+            color: #17202b;
         }
 
         #ytkit-subs-load-banner {
@@ -50246,6 +50321,90 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             color: rgba(255,255,255,0.88);
             font-size: 13px;
             line-height: 1.45;
+        }
+
+        html:not([dark]) .ytkit-transcript-panel {
+            border-color: #d8dde5;
+            background: #ffffff;
+            box-shadow: 0 18px 38px rgba(15,23,42,0.12);
+        }
+
+        html:not([dark]) .ytkit-transcript-header,
+        html:not([dark]) .ytkit-transcript-meta,
+        html:not([dark]) .ytkit-transcript-export {
+            border-color: #dfe3e8;
+        }
+
+        html:not([dark]) .ytkit-transcript-eyebrow,
+        html:not([dark]) .ytkit-transcript-toggle,
+        html:not([dark]) .ytkit-transcript-meta__pill,
+        html:not([dark]) .ytkit-transcript-export__btn {
+            border-color: #d8dde5;
+            background: #f1f3f6;
+            color: #4e5b6a;
+        }
+
+        html:not([dark]) .ytkit-transcript-title,
+        html:not([dark]) .ytkit-transcript-state__title,
+        html:not([dark]) .ytkit-transcript-line__text {
+            color: #17202b;
+        }
+
+        html:not([dark]) .ytkit-transcript-toggle:hover,
+        html:not([dark]) .ytkit-transcript-export__btn:hover,
+        html:not([dark]) .ytkit-transcript-line:hover {
+            border-color: #c7ced8;
+            background: #e8ecf1;
+            color: #17202b;
+        }
+
+        html:not([dark]) .ytkit-transcript-toggle:focus-visible,
+        html:not([dark]) .ytkit-transcript-line:focus-visible {
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.34);
+        }
+
+        html:not([dark]) .ytkit-transcript-meta__copy,
+        html:not([dark]) .ytkit-transcript-state__copy,
+        html:not([dark]) .ytkit-transcript-body {
+            color: #5f6b79;
+        }
+
+        html:not([dark]) .ytkit-transcript-meta__pill[data-tone="success"] {
+            background: #e8f7ee;
+            border-color: #a9dfbc;
+            color: #116b37;
+        }
+
+        html:not([dark]) .ytkit-transcript-meta__pill[data-tone="warning"] {
+            background: #fff6dd;
+            border-color: #efd18a;
+            color: #7a4b00;
+        }
+
+        html:not([dark]) .ytkit-transcript-meta__pill[data-tone="danger"] {
+            background: #fff0ef;
+            border-color: #efb1ad;
+            color: #9f241f;
+        }
+
+        html:not([dark]) .ytkit-transcript-meta__pill[data-tone="info"] {
+            background: #edf4ff;
+            border-color: #b8cdf5;
+            color: #174ea6;
+        }
+
+        html:not([dark]) .ytkit-transcript-state {
+            border-color: #dfe3e8;
+            background: #f7f8fa;
+        }
+
+        html:not([dark]) .ytkit-transcript-state__skeleton-line {
+            background: linear-gradient(90deg, #e8ecf1, #d6dce4, #e8ecf1);
+            background-size: 180% 100%;
+        }
+
+        html:not([dark]) .ytkit-transcript-line__ts {
+            color: #075985;
         }
 
         .ytkit-mini-player-bar {

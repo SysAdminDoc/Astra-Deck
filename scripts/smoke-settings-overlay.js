@@ -352,7 +352,15 @@ function buildFixture(stageDir, { fallbackOnly = false } = {}) {
 <head>
 <meta charset="utf-8">
 <title>Astra Deck settings overlay smoke fixture</title>
-<style>body{margin:0;background:#0f0f0f;font-family:Roboto,system-ui,sans-serif;}</style>
+<script>
+if (new URLSearchParams(location.search).get('theme') === 'light') {
+    document.documentElement.removeAttribute('dark');
+}
+</script>
+<style>
+body{margin:0;background:#0f0f0f;color:#e5e7eb;font-family:Roboto,system-ui,sans-serif;}
+html:not([dark]) body{background:#f7f8fa;color:#17202b;}
+</style>
 </head>
 <body>
     <div id="fixture-note" style="color:#666;padding:16px;">settings overlay smoke fixture</div>

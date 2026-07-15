@@ -51,6 +51,9 @@ test('headless accessibility smoke checks reflow, focus visibility, and obscurin
     assert.match(source, /root\.scrollWidth > inventory\.root\.clientWidth/);
     assert.match(source, /document\.scrollWidth > inventory\.document\.clientWidth/);
     assert.match(source, /Input\.dispatchKeyEvent/);
+    assert.match(source, /Page\.captureScreenshot/);
+    assert.match(source, /build', 'headless-a11y/);
+    assert.match(source, /searchParams\.set\('theme', theme\)/);
 });
 
 test('headless accessibility smoke CLI parsing stays deterministic', () => {

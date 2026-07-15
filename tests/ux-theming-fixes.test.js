@@ -285,6 +285,8 @@ test('every dark-only inline widget family has a light-theme override block', ()
         'html:not([dark]) .ytkit-sub-toolbar',
         'html:not([dark]) .ytkit-sub-group-chip',
         'html:not([dark]) .ytkit-transcript-search-btn',
+        'html:not([dark]) .ytkit-transcript-panel',
+        'html:not([dark]) .ytkit-dl-popup',
         'html:not([dark]) .ytkit-monet-pill[data-tone="paid"]',
         'html:not([dark]) .ytkit-monet-pill[data-tone="sponsored"]',
         'html:not([dark]) .ytkit-monet-pill[data-tone="clean"]'
@@ -298,6 +300,30 @@ test('every dark-only inline widget family has a light-theme override block', ()
         'light overrides must use --yt-spec-text-primary with a fallback');
     assert.ok(ytkitSource.includes('var(--yt-spec-text-secondary,#606060)'),
         'light overrides must use --yt-spec-text-secondary with a fallback');
+});
+
+test('download and transcript light surfaces use readable semantic neutrals', () => {
+    for (const [foreground, background, label] of [
+        ['#5f6b79', '#ffffff', 'secondary text on white'],
+        ['#4e5b6a', '#f1f3f6', 'control text on raised surface'],
+        ['#a12a25', '#fff0ef', 'selected download option'],
+        ['#075985', '#ffffff', 'transcript timestamp'],
+    ]) {
+        const parse = (hex) => [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16));
+        const luminance = (hex) => {
+            const [r, g, b] = parse(hex).map((value) => {
+                const channel = value / 255;
+                return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const first = luminance(foreground);
+        const second = luminance(background);
+        const ratio = (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+        assert.ok(ratio >= 4.5, `${label} must meet WCAG AA (got ${ratio.toFixed(2)}:1)`);
+    }
+    assert.match(ytkitSource, /html:not\(\[dark\]\) \.ytkit-transcript-meta__pill\[data-tone="warning"\]/);
+    assert.match(ytkitSource, /html:not\(\[dark\]\) \.ytkit-dl-popup__chip\.is-active/);
 });
 
 // ── 4. Muted-text contrast ──

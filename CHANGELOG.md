@@ -8,6 +8,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- **Secondary download and transcript surfaces now share the full theme system.**
+  The download chooser uses larger, calmer controls and clearer muted text,
+  while both it and the transcript panel now have dedicated light-theme
+  surfaces, borders, status colors, hover states, and focus rings. The isolated
+  accessibility smoke retains dark/light screenshots for all rendered surfaces
+  so visual regressions are reviewable after every run.
 - **Settings now use a calmer, readable visual system.** The extension and
   userscript share an imagegen-led settings layout with larger type, continuous
   divided rows instead of boxed cards, quieter category and status chrome,
