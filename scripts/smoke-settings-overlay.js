@@ -548,8 +548,40 @@ async function main() {
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
             failuresByState[state.name] = [...directionFailures, ...(report.failures || [])];
 
-            const shot = await client.send('Page.captureScreenshot', { format: 'png' });
+            const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
             fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            if (['desktop-dark', 'desktop-light'].includes(state.name) && !opts.fallbackOnly) {
+                const categoryIds = await client.evaluate(`Array.from(
+                    document.querySelectorAll('.ytkit-nav-btn[data-tab]'),
+                    (tab) => tab.dataset.tab
+                )`);
+                for (const categoryId of categoryIds) {
+                    const staged = await client.evaluate(`(() => {
+                        const tab = document.querySelector('.ytkit-nav-btn[data-tab=${JSON.stringify(categoryId)}]');
+                        if (!tab) return false;
+                        tab.click();
+                        window.scrollTo(0, 0);
+                        const content = document.querySelector('.ytkit-content');
+                        if (content) content.scrollTop = 0;
+                        return true;
+                    })()`);
+                    if (!staged) {
+                        failuresByState[state.name].push(`could not stage category ${categoryId}`);
+                        continue;
+                    }
+                    await sleep(120);
+                    await client.evaluate('window.scrollTo(0, 0)');
+                    const categoryShot = await client.send('Page.captureScreenshot', {
+                        format: 'png',
+                        captureBeyondViewport: false
+                    });
+                    const categorySlug = String(categoryId).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    fs.writeFileSync(
+                        path.join(outDir, `${state.name}-category-${categorySlug}.png`),
+                        Buffer.from(categoryShot.data, 'base64')
+                    );
+                }
+            }
             if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
                 const featureReady = await client.evaluate(`(() => {
                     const toggle = document.getElementById('ytkit-toggle-blueLightFilter');
@@ -563,7 +595,10 @@ async function main() {
                 })()`);
                 if (!featureReady) failuresByState[state.name].push('could not stage the Blue Light Filter visual proof');
                 await sleep(300);
-                const featureShot = await client.send('Page.captureScreenshot', { format: 'png' });
+                const featureShot = await client.send('Page.captureScreenshot', {
+                    format: 'png',
+                    captureBeyondViewport: false
+                });
                 fs.writeFileSync(path.join(outDir, 'blue-light-default.png'), Buffer.from(featureShot.data, 'base64'));
             }
             console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);

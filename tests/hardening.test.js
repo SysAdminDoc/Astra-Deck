@@ -6982,6 +6982,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
     // content_scripts.js load order for these modules.
     const expectedOrder = [
         'extension/core/styles.js',
+        'extension/core/settings-visual-system.js',
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',

@@ -1,0 +1,112 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const repoRoot = path.join(__dirname, '..');
+const visualSystemPath = path.join(repoRoot, 'extension', 'core', 'settings-visual-system.js');
+const visualSystemSource = fs.readFileSync(visualSystemPath, 'utf8');
+const manifest = require('../extension/manifest.json');
+const syncUserscript = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
+const settingsPanel = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'features', 'settings-panel', 'index.js'),
+    'utf8'
+);
+const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+
+test('settings visual system replaces boxed cards and badges with a readable settings document', () => {
+    assert.match(visualSystemSource, /settings visual system v3 — imagegen mockup parity/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*80px[\s\S]*?border:\s*0[\s\S]*?border-bottom:\s*1px solid var\(--ytkit-v3-border\)[\s\S]*?background:\s*transparent/
+    );
+    assert.match(visualSystemSource, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*28px/);
+    assert.match(visualSystemSource, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
+    assert.match(visualSystemSource, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*13\.5px/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-feature-glyph,[\s\S]*?\.ytkit-feature-meta,[\s\S]*?\.ytkit-feature-badge\s*\{\s*display:\s*none/
+    );
+    assert.match(visualSystemSource, /\.ytkit-info-card\s*\{\s*grid-column:\s*1 \/ -1/);
+    assert.doesNotMatch(settingsPanel, /card\.style\.cssText = 'background: linear-gradient/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-feature-card\.ytkit-card-enabled\s*\{[\s\S]*?background:\s*transparent[\s\S]*?box-shadow:\s*none/
+    );
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-mediadl-banner\[data-state\][\s\S]*?background:\s*transparent[\s\S]*?\.ytkit-mediadl-banner__status[\s\S]*?color:\s*var\(--ytkit-v3-muted\)/
+    );
+    assert.match(visualSystemSource, /\.ytkit-nav-btn\.active::before\s*\{\s*background:\s*var\(--ytkit-v3-accent\)/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-switch\.active \.ytkit-switch-thumb\s*\{[\s\S]*?left:\s*23px[\s\S]*?transform:\s*none/
+    );
+    assert.match(visualSystemSource, /#ytkit-reset-active-section\s*\{\s*display:\s*none/);
+});
+
+test('settings visual system covers light, mobile, forced-color, and reduced-motion states', () => {
+    assert.match(visualSystemSource, /html:not\(\[dark\]\) #ytkit-settings-panel/);
+    assert.match(visualSystemSource, /@media \(max-width:\s*900px\)/);
+    assert.match(visualSystemSource, /@media \(max-width:\s*560px\)/);
+    assert.match(visualSystemSource, /@media \(forced-colors:\s*active\)/);
+    assert.match(visualSystemSource, /@media \(prefers-reduced-motion:\s*reduce\)/);
+});
+
+test('extension and userscript load the shared settings visual system before the panel', () => {
+    const mainScripts = manifest.content_scripts.find((entry) =>
+        entry.js?.includes('features/settings-panel/index.js')
+    ).js;
+    const stylesIndex = mainScripts.indexOf('core/styles.js');
+    const visualIndex = mainScripts.indexOf('core/settings-visual-system.js');
+    const panelIndex = mainScripts.indexOf('features/settings-panel/index.js');
+
+    assert.ok(stylesIndex >= 0);
+    assert.equal(visualIndex, stylesIndex + 1);
+    assert.ok(visualIndex < panelIndex);
+    assert.match(
+        syncUserscript,
+        /'extension\/core\/styles\.js',\s*'extension\/core\/settings-visual-system\.js',/
+    );
+    assert.match(settingsPanel, /ensurePanelStyles\?\.\(\);\s*globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);/);
+    assert.match(
+        shell,
+        /globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);\s*injectPanelStyles\._done = true;/
+    );
+});
+
+test('settings visual-system injection is safe and idempotent', () => {
+    const previousCore = globalThis.YTKitCore;
+    const previousDocument = globalThis.document;
+    const injections = [];
+    globalThis.YTKitCore = {
+        injectStyle(css, id, raw) {
+            injections.push({ css, id, raw });
+            return { id: `yt-suite-style-${id}` };
+        }
+    };
+    const modulePath = require.resolve(visualSystemPath);
+    delete require.cache[modulePath];
+    const visualSystem = require(modulePath);
+
+    try {
+        const existing = { id: 'yt-suite-style-ytkit-settings-visual-v3' };
+        const existingDocument = { getElementById: () => existing };
+        assert.equal(visualSystem.ensureSettingsVisualSystem(existingDocument), existing);
+        assert.equal(injections.length, 0);
+
+        const activeDocument = { getElementById: () => null };
+        globalThis.document = activeDocument;
+        const inserted = visualSystem.ensureSettingsVisualSystem();
+        assert.equal(inserted.id, existing.id);
+        assert.equal(injections.length, 1);
+        assert.equal(injections[0].id, visualSystem.STYLE_ID);
+        assert.equal(injections[0].raw, true);
+    } finally {
+        globalThis.YTKitCore = previousCore;
+        globalThis.document = previousDocument;
+        delete require.cache[modulePath];
+    }
+});

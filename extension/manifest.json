@@ -109,6 +109,7 @@
         "core/env.js",
         "core/storage.js",
         "core/styles.js",
+        "core/settings-visual-system.js",
         "core/registry.js",
         "core/runtime-flags.js",
         "core/capability-probe.js",
