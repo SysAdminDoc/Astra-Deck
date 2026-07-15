@@ -5054,6 +5054,57 @@ return response;
                     return false;
                 }
 
+                if (message.type === 'YTKIT_RESET_YOUTUBE_STATE') {
+                    const run = async () => {
+                        const factory = globalThis.YTKitCore?.createYouTubeStateManager;
+                        if (typeof factory !== 'function') throw new Error('YouTube state reset service unavailable');
+                        const manager = factory({
+                            localStorage: window.localStorage,
+                            sessionStorage: window.sessionStorage,
+                            origin: location.origin
+                        });
+                        if (message.action === 'snapshot') {
+                            const snapshot = manager.snapshot();
+                            return {
+                                snapshot,
+                                count: snapshot.local.length + snapshot.session.length
+                            };
+                        }
+                        if (message.action === 'clear') {
+                            const result = manager.clear(message.snapshot);
+                            DiagnosticLog?.record?.(
+                                'youtube-state-reset',
+                                `cleared=${result.cleared.join(',') || 'none'}; skipped=${result.skipped.join(',') || 'none'}`
+                            );
+                            console.info('[Astra Deck] YouTube state reset', {
+                                cleared: result.cleared,
+                                skipped: result.skipped
+                            });
+                            showToast(t('youtubeStateResetToast',
+                                `YouTube state cleared (${result.cleared.length}). Use Undo in Astra Deck before closing this tab.`),
+                            '#22c55e', { duration: 7 });
+                            return result;
+                        }
+                        if (message.action === 'restore') {
+                            const result = manager.restore(message.snapshot);
+                            DiagnosticLog?.record?.(
+                                'youtube-state-reset',
+                                `restored=${result.restored.join(',') || 'none'}; skipped=${result.skipped.join(',') || 'none'}`
+                            );
+                            showToast(t('youtubeStateRestoreToast',
+                                `YouTube state restored (${result.restored.length}). Reload the page to apply it.`),
+                            '#22c55e', { duration: 7 });
+                            return result;
+                        }
+                        throw new Error('Unsupported YouTube state reset action');
+                    };
+                    run().then(
+                        (result) => sendResponse?.({ ok: true, ...result }),
+                        (error) => sendResponse?.({ ok: false, status: 0, error: String(error?.message || error) })
+                    );
+                    return true;
+                }
+
                 // Portable data bridge. YouTube-origin IndexedDB cannot be
                 // reached from the extension popup, so the popup coordinates
                 // bounded chunks through the already-injected content script.
