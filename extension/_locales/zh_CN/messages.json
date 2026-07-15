@@ -2054,6 +2054,15 @@
   "searchWatchTitle": {
     "message": "搜索时不中断播放"
   },
+  "subscriptionLoadedOnlyHint": { "message": "最新优先仅排序本页已加载的视频。滚动以加载更多内容。" },
+  "subscriptionOrderLabel": { "message": "顺序" },
+  "subscriptionOrderNative": { "message": "YouTube 顺序" },
+  "subscriptionOrderNewestLoaded": { "message": "最新优先（仅已加载）" },
+  "subscriptionViewCompact": { "message": "紧凑" },
+  "subscriptionViewGrid": { "message": "网格" },
+  "subscriptionViewLabel": { "message": "视图" },
+  "subscriptionViewList": { "message": "列表" },
+  "subscriptionViewToolbarLabel": { "message": "订阅视图控制" },
   "ui_rydCardRatioSuffix": {
     "message": "点赞 · Return YouTube Dislike 估算"
   },
@@ -2290,6 +2299,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "订阅分组"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "为订阅内容选择网格、列表或紧凑布局，并可将当前已加载的卡片按最新优先排序。"
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "订阅视图控制"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "在订阅页面使用更紧凑的网格布局"

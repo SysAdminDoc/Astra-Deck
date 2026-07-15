@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Поиск без остановки воспроизведения"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Сортировка по новизне применяется только к видео, загруженным на этой странице. Прокрутите, чтобы загрузить ещё."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Порядок"
+  },
+  "subscriptionOrderNative": {
+    "message": "Порядок YouTube"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Сначала новые (только загруженные)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Компактно"
+  },
+  "subscriptionViewGrid": {
+    "message": "Сетка"
+  },
+  "subscriptionViewLabel": {
+    "message": "Вид"
+  },
+  "subscriptionViewList": {
+    "message": "Список"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Настройки вида подписок"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "лайков · оценка Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Группы подписок"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Выберите сетку, список или компактный вид подписок и при необходимости отсортируйте загруженные карточки от новых к старым."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Вид подписок"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Использовать более плотную сетку на странице подписок"

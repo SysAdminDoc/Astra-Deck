@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Cerca senza interrompere la riproduzione"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Più recenti prima ordina solo i video caricati in questa pagina. Scorri per caricarne altri."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Ordine"
+  },
+  "subscriptionOrderNative": {
+    "message": "Ordine di YouTube"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Più recenti prima (solo caricati)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Compatta"
+  },
+  "subscriptionViewGrid": {
+    "message": "Griglia"
+  },
+  "subscriptionViewLabel": {
+    "message": "Vista"
+  },
+  "subscriptionViewList": {
+    "message": "Elenco"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Controlli visualizzazione iscrizioni"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "Mi piace · stima Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Gruppi iscrizioni"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Scegli la visualizzazione Griglia, Elenco o Compatta delle iscrizioni e, facoltativamente, ordina prima le schede caricate più recenti."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Visualizzazione iscrizioni"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Usa un layout a griglia piu denso nella pagina iscrizioni"

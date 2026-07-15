@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Pesquisar sem interromper a reprodução"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Mais recentes primeiro ordena apenas os vídeos carregados nesta página. Role para carregar mais."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Ordem"
+  },
+  "subscriptionOrderNative": {
+    "message": "Ordem do YouTube"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Mais recentes primeiro (somente carregados)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Compacta"
+  },
+  "subscriptionViewGrid": {
+    "message": "Grade"
+  },
+  "subscriptionViewLabel": {
+    "message": "Visualização"
+  },
+  "subscriptionViewList": {
+    "message": "Lista"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Controles de visualização de inscrições"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "curtidas · estimativa do Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Grupos de Inscrições"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Escolha a visualização Grade, Lista ou Compacta das inscrições e, opcionalmente, ordene primeiro os cartões carregados mais recentes."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Visualização de inscrições"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Usar um layout de grade mais denso na página de inscrições"

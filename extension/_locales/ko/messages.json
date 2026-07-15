@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "재생을 멈추지 않고 검색"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "최신순은 이 페이지에 로드된 동영상만 정렬합니다. 더 로드하려면 스크롤하세요."
+  },
+  "subscriptionOrderLabel": {
+    "message": "순서"
+  },
+  "subscriptionOrderNative": {
+    "message": "YouTube 순서"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "최신순(로드된 항목만)"
+  },
+  "subscriptionViewCompact": {
+    "message": "압축"
+  },
+  "subscriptionViewGrid": {
+    "message": "그리드"
+  },
+  "subscriptionViewLabel": {
+    "message": "보기"
+  },
+  "subscriptionViewList": {
+    "message": "목록"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "구독 보기 컨트롤"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "좋아요 · Return YouTube Dislike 추정"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "구독 그룹"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "구독 피드를 그리드, 목록 또는 압축 보기로 선택하고 필요하면 현재 로드된 카드를 최신순으로 정렬합니다."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "구독 보기 설정"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "구독 페이지에서 더 밀집된 그리드 레이아웃 사용"

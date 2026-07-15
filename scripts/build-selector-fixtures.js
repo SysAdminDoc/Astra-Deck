@@ -38,6 +38,7 @@ const SOURCES = [
     { mhtml: 'SearchResults.mhtml', out: 'yt-search-results.tokens.txt' },
     { mhtml: 'Channel.mhtml', out: 'yt-channel.tokens.txt' },
     { mhtml: 'EmbedPlayer.mhtml', out: 'yt-embed-player.tokens.txt' },
+    { source: 'Subscriptions - YouTube.mhtml', out: 'yt-subscriptions.tokens.txt' },
 ];
 
 const SURFACE_MATCH_SOURCES = [
@@ -72,6 +73,7 @@ const SURFACE_MATCH_SOURCES = [
     { id: 'searchResults.feedSponsored', surface: 'feedSponsored', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.thumbnail', surface: 'thumbnail', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.nav', surface: 'nav', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
+    { id: 'subscriptions.root', surface: 'subscriptions', source: 'Subscriptions - YouTube.mhtml', fixture: 'yt-subscriptions.tokens.txt' },
     { id: 'channel.profile', surface: 'profile', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
     { id: 'channel.channelProfile', surface: 'channelProfile', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
     { id: 'channel.feedCard', surface: 'feedCard', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
@@ -432,8 +434,9 @@ function main() {
         fs.mkdirSync(FIXTURE_DIR, { recursive: true });
     }
 
-    for (const { mhtml, out } of SOURCES) {
-        const mhtmlPath = path.join(MHTML_DIR, mhtml);
+    for (const { mhtml, source, out } of SOURCES) {
+        const sourceName = source || `mhtml/${mhtml}`;
+        const mhtmlPath = path.join(REPO_ROOT, sourceName);
         if (!fs.existsSync(mhtmlPath)) {
             console.error(`[build-selector-fixtures] missing: ${mhtmlPath}`);
             process.exit(1);
@@ -443,7 +446,7 @@ function main() {
         const outPath = path.join(FIXTURE_DIR, out);
         const header = [
             '# Selector-regression canary fixture.',
-            `# Source: mhtml/${mhtml}`,
+            `# Source: ${sourceName}`,
             '# Regenerated via: npm run build:fixtures',
             `# Captured tokens: ${tokens.length}`,
             '# Encoding: one token per line, sorted.',

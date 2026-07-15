@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Suchen, ohne die Wiedergabe anzuhalten"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Neueste zuerst sortiert nur die auf dieser Seite geladenen Videos. Scrollen Sie, um weitere zu laden."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Reihenfolge"
+  },
+  "subscriptionOrderNative": {
+    "message": "YouTube-Reihenfolge"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Neueste zuerst (nur geladen)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Kompakt"
+  },
+  "subscriptionViewGrid": {
+    "message": "Raster"
+  },
+  "subscriptionViewLabel": {
+    "message": "Ansicht"
+  },
+  "subscriptionViewList": {
+    "message": "Liste"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Ansichtssteuerung für Abonnements"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "gefällt · geschätzt durch Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Abonnement-Gruppen"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Wählen Sie Raster-, Listen- oder Kompaktansicht für Abonnements und sortieren Sie optional die aktuell geladenen Karten nach den neuesten."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Ansicht für Abonnements"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Dichteres Rasterlayout auf der Abonnementseite verwenden"

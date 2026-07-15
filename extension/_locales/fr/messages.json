@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Rechercher sans arrêter la lecture"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Le tri par nouveauté ne concerne que les vidéos chargées sur cette page. Faites défiler pour en charger davantage."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Ordre"
+  },
+  "subscriptionOrderNative": {
+    "message": "Ordre YouTube"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Plus récentes d’abord (chargées uniquement)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Compacte"
+  },
+  "subscriptionViewGrid": {
+    "message": "Grille"
+  },
+  "subscriptionViewLabel": {
+    "message": "Vue"
+  },
+  "subscriptionViewList": {
+    "message": "Liste"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Commandes d’affichage des abonnements"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "J’aime · estimation Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Groupes d'abonnements"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Choisissez une vue Grille, Liste ou Compacte des abonnements et triez éventuellement les cartes chargées des plus récentes aux plus anciennes."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Affichage des abonnements"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Utiliser une grille plus dense sur la page d'abonnements"

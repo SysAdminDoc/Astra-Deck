@@ -42,6 +42,10 @@ const T = {};
 
 // ── German (de) ──
 T.de = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Wählen Sie Raster-, Listen- oder Kompaktansicht für Abonnements und sortieren Sie optional die aktuell geladenen Karten nach den neuesten.',
+  'Subscription View Controls': 'Ansicht für Abonnements', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Neueste zuerst sortiert nur die auf dieser Seite geladenen Videos. Scrollen Sie, um weitere zu laden.',
+  'Order': 'Reihenfolge', 'YouTube order': 'YouTube-Reihenfolge', 'Newest first (loaded only)': 'Neueste zuerst (nur geladen)',
+  'Compact': 'Kompakt', 'Grid': 'Raster', 'View': 'Ansicht', 'List': 'Liste', 'Subscription view controls': 'Ansichtssteuerung für Abonnements',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Blendet Blöcke mit verwandten Suchanfragen aus, ohne Filter, Korrekturen oder direkte Ergebnisse zu entfernen.',
   'Hide Related Search Blocks': 'Blöcke mit verwandten Suchanfragen ausblenden',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Behält direkte Video-, Kanal- und Playlist-Ergebnisse bei und blendet sachfremde Suchseitenbereiche aus.',
@@ -225,6 +229,10 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Elige Cuadrícula, Lista o Compacta para las suscripciones y, opcionalmente, ordena primero las tarjetas cargadas más recientes.',
+  'Subscription View Controls': 'Controles de vista de suscripciones', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Más recientes primero solo ordena los vídeos cargados en esta página. Desplázate para cargar más.',
+  'Order': 'Orden', 'YouTube order': 'Orden de YouTube', 'Newest first (loaded only)': 'Más recientes primero (solo cargados)',
+  'Compact': 'Compacta', 'Grid': 'Cuadrícula', 'View': 'Vista', 'List': 'Lista', 'Subscription view controls': 'Controles de vista de suscripciones',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Oculta los bloques de búsquedas relacionadas sin quitar filtros, correcciones ni resultados directos.',
   'Hide Related Search Blocks': 'Ocultar búsquedas relacionadas',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Conserva los resultados directos de vídeos, canales y listas mientras oculta secciones no relacionadas.',
@@ -396,6 +404,10 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Выберите сетку, список или компактный вид подписок и при необходимости отсортируйте загруженные карточки от новых к старым.',
+  'Subscription View Controls': 'Вид подписок', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Сортировка по новизне применяется только к видео, загруженным на этой странице. Прокрутите, чтобы загрузить ещё.',
+  'Order': 'Порядок', 'YouTube order': 'Порядок YouTube', 'Newest first (loaded only)': 'Сначала новые (только загруженные)',
+  'Compact': 'Компактно', 'Grid': 'Сетка', 'View': 'Вид', 'List': 'Список', 'Subscription view controls': 'Настройки вида подписок',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Скрывает блоки связанных запросов, не удаляя фильтры, исправления и прямые результаты.',
   'Hide Related Search Blocks': 'Скрывать связанные запросы',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Сохраняет прямые результаты видео, каналов и плейлистов, скрывая посторонние разделы поиска.',
@@ -567,6 +579,10 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Choisissez une vue Grille, Liste ou Compacte des abonnements et triez éventuellement les cartes chargées des plus récentes aux plus anciennes.',
+  'Subscription View Controls': 'Affichage des abonnements', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Le tri par nouveauté ne concerne que les vidéos chargées sur cette page. Faites défiler pour en charger davantage.',
+  'Order': 'Ordre', 'YouTube order': 'Ordre YouTube', 'Newest first (loaded only)': 'Plus récentes d’abord (chargées uniquement)',
+  'Compact': 'Compacte', 'Grid': 'Grille', 'View': 'Vue', 'List': 'Liste', 'Subscription view controls': 'Commandes d’affichage des abonnements',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Masque les blocs de recherches associées sans retirer les filtres, corrections ni résultats directs.',
   'Hide Related Search Blocks': 'Masquer les recherches associées',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Conserve les résultats directs de vidéos, chaînes et playlists tout en masquant les sections sans rapport.',
@@ -736,6 +752,10 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Scegli la visualizzazione Griglia, Elenco o Compatta delle iscrizioni e, facoltativamente, ordina prima le schede caricate più recenti.',
+  'Subscription View Controls': 'Visualizzazione iscrizioni', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Più recenti prima ordina solo i video caricati in questa pagina. Scorri per caricarne altri.',
+  'Order': 'Ordine', 'YouTube order': 'Ordine di YouTube', 'Newest first (loaded only)': 'Più recenti prima (solo caricati)',
+  'Compact': 'Compatta', 'Grid': 'Griglia', 'View': 'Vista', 'List': 'Elenco', 'Subscription view controls': 'Controlli visualizzazione iscrizioni',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Nasconde i blocchi delle ricerche correlate senza rimuovere filtri, correzioni o risultati diretti.',
   'Hide Related Search Blocks': 'Nascondi ricerche correlate',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Mantiene i risultati diretti di video, canali e playlist nascondendo le sezioni non correlate.',
@@ -898,6 +918,10 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Escolha a visualização Grade, Lista ou Compacta das inscrições e, opcionalmente, ordene primeiro os cartões carregados mais recentes.',
+  'Subscription View Controls': 'Visualização de inscrições', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Mais recentes primeiro ordena apenas os vídeos carregados nesta página. Role para carregar mais.',
+  'Order': 'Ordem', 'YouTube order': 'Ordem do YouTube', 'Newest first (loaded only)': 'Mais recentes primeiro (somente carregados)',
+  'Compact': 'Compacta', 'Grid': 'Grade', 'View': 'Visualização', 'List': 'Lista', 'Subscription view controls': 'Controles de visualização de inscrições',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Oculta blocos de pesquisas relacionadas sem remover filtros, correções ou resultados diretos.',
   'Hide Related Search Blocks': 'Ocultar pesquisas relacionadas',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Mantém resultados diretos de vídeos, canais e playlists enquanto oculta seções não relacionadas.',
@@ -1060,6 +1084,10 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': '登録チャンネルをグリッド、リスト、コンパクト表示から選び、必要に応じて現在読み込まれているカードを新しい順に並べます。',
+  'Subscription View Controls': '登録チャンネルの表示設定', 'Newest first sorts only videos loaded on this page. Scroll to load more.': '新しい順では、このページに読み込まれた動画のみを並べ替えます。スクロールしてさらに読み込んでください。',
+  'Order': '順序', 'YouTube order': 'YouTube の順序', 'Newest first (loaded only)': '新しい順（読み込み済みのみ）',
+  'Compact': 'コンパクト', 'Grid': 'グリッド', 'View': '表示', 'List': 'リスト', 'Subscription view controls': '登録チャンネルの表示コントロール',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'フィルター、修正候補、直接の検索結果を残したまま、関連検索ブロックを非表示にします。',
   'Hide Related Search Blocks': '関連検索ブロックを非表示',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': '動画、チャンネル、再生リストの直接結果を残し、無関係な検索セクションを非表示にします。',
@@ -1225,6 +1253,10 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': '구독 피드를 그리드, 목록 또는 압축 보기로 선택하고 필요하면 현재 로드된 카드를 최신순으로 정렬합니다.',
+  'Subscription View Controls': '구독 보기 설정', 'Newest first sorts only videos loaded on this page. Scroll to load more.': '최신순은 이 페이지에 로드된 동영상만 정렬합니다. 더 로드하려면 스크롤하세요.',
+  'Order': '순서', 'YouTube order': 'YouTube 순서', 'Newest first (loaded only)': '최신순(로드된 항목만)',
+  'Compact': '압축', 'Grid': '그리드', 'View': '보기', 'List': '목록', 'Subscription view controls': '구독 보기 컨트롤',
   'Hide related-search chip blocks without removing filters, corrections, or direct results.': '필터, 검색어 교정 및 직접 검색 결과는 유지하면서 관련 검색어 블록을 숨깁니다.',
   'Hide Related Search Blocks': '관련 검색어 블록 숨기기',
   'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': '동영상, 채널 및 재생목록 직접 결과는 유지하면서 관련 없는 검색 섹션을 숨깁니다.',
