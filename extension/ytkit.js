@@ -354,15 +354,22 @@
             ? requestBody.toString()
             : requestBody;
 
+        const bridgeDetails = {
+            method: details.method || 'GET',
+            url: details.url,
+            headers: details.headers || {},
+            data: serializedBody,
+            timeout: details.timeout || 0
+        };
+        // Downgrade-only: callers may force an anonymous request even to
+        // origins the background would normally send cookies to. 'include'
+        // is never forwarded — the background's origin allowlist stays the
+        // only path that can attach credentials.
+        if (details.credentials === 'omit') bridgeDetails.credentials = 'omit';
+
         sendRuntimeMessage({
             type: 'EXT_FETCH',
-            details: {
-                method: details.method || 'GET',
-                url: details.url,
-                headers: details.headers || {},
-                data: serializedBody,
-                timeout: details.timeout || 0
-            }
+            details: bridgeDetails
         }).then((response) => {
             if (!response) {
                 details.onerror?.({ error: 'No response from background' });
@@ -5116,24 +5123,30 @@ return response;
                         });
                         if (message.action === 'snapshot') {
                             const snapshot = manager.snapshot();
+                            // Oversized values can't be snapshotted but ARE
+                            // clearable — count them so the reset proceeds for
+                            // exactly the bloated-state case it exists for.
                             return {
                                 snapshot,
+                                oversized: snapshot.oversized || [],
                                 count: snapshot.local.length + snapshot.session.length
+                                    + (snapshot.oversized?.length || 0)
                             };
                         }
                         if (message.action === 'clear') {
                             const result = manager.clear(message.snapshot);
                             DiagnosticLog?.record?.(
                                 'youtube-state-reset',
-                                `cleared=${result.cleared.join(',') || 'none'}; skipped=${result.skipped.join(',') || 'none'}`
+                                `cleared=${result.cleared.join(',') || 'none'}; skipped=${result.skipped.join(',') || 'none'}; notUndoable=${result.notUndoable?.join(',') || 'none'}`
                             );
                             console.info('[Astra Deck] YouTube state reset', {
                                 cleared: result.cleared,
-                                skipped: result.skipped
+                                skipped: result.skipped,
+                                notUndoable: result.notUndoable
                             });
                             showToast(t('youtubeStateResetToast',
                                 'YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab.')
-                                .replace('{count}', String(result.cleared.length)),
+                                .replace('{count}', String(result.cleared.length + (result.notUndoable?.length || 0))),
                             '#22c55e', { duration: 7 });
                             return result;
                         }
@@ -8192,15 +8205,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
             _clipboardHandler: null,
             init() {
-                // Intercept clipboard writes
+                // Intercept selection copies. clipboardData.getData() is empty
+                // while a copy event is dispatching, so the outgoing text must
+                // come from the live selection; only single-URL selections are
+                // rewritten so larger text copies pass through untouched.
                 this._clipboardHandler = (e) => {
-                    const text = e.clipboardData?.getData('text/plain') || '';
-                    if (text) {
-                        const cleaned = cleanYouTubeShareUrl(text);
-                        if (cleaned !== text) {
-                            e.preventDefault();
-                            e.clipboardData.setData('text/plain', cleaned);
-                        }
+                    if (!e.clipboardData) return;
+                    const selected = String(window.getSelection?.() || '').trim();
+                    if (!selected || selected.length > 2048 || /\s/.test(selected)) return;
+                    const cleaned = cleanYouTubeShareUrl(selected);
+                    if (cleaned !== selected) {
+                        e.preventDefault();
+                        e.clipboardData.setData('text/plain', cleaned);
                     }
                 };
                 document.addEventListener('copy', this._clipboardHandler, true);

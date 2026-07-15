@@ -45,6 +45,16 @@ test('extension summary UI validates citations before saving and exposes searcha
     assert.match(block, /forced-colors:active/);
 });
 
+test('gemini requests honor aiSummaryModel via a validated URL model substitution', () => {
+    // The model rides in the URL path for Gemini; the setting must be
+    // substituted (validated) instead of silently ignored.
+    assert.match(userscriptFeature, /\$\{model\}:generateContent/);
+    assert.match(userscriptFeature, /\^\[a-zA-Z0-9\]\[a-zA-Z0-9\._-\]\{0,99\}\$/);
+    const substitutionIndex = userscriptFeature.indexOf('${model}:generateContent');
+    const revalidateIndex = userscriptFeature.indexOf('validateAiProviderEndpoint(provider, rewritten)');
+    assert.ok(revalidateIndex > substitutionIndex, 'the rewritten gemini URL must be re-validated');
+});
+
 test('userscript keeps isolated BYOK custody while sharing validated artifacts', () => {
     assert.match(userscriptFeature, /createUserscriptCredentialVault/);
     assert.match(userscriptFeature, /artifactService\.buildPrompt/);

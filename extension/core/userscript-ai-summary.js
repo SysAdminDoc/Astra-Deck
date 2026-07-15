@@ -32,7 +32,23 @@
             const configuredEndpoint = knownDefaults.has(settings.aiSummaryEndpoint)
                 ? policies[provider]?.defaultEndpoint
                 : settings.aiSummaryEndpoint;
-            const validated = core.validateAiProviderEndpoint(provider, configuredEndpoint);
+            let validated = core.validateAiProviderEndpoint(provider, configuredEndpoint);
+            if (provider === 'gemini') {
+                // Gemini's model lives in the URL path, not the payload — honor
+                // aiSummaryModel by substituting a validated model segment so the
+                // setting isn't silently ignored. Invalid names fall back to the
+                // endpoint's model unchanged.
+                const model = String(settings.aiSummaryModel || '').trim();
+                if (model && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$/.test(model)) {
+                    const rewritten = validated.url.replace(
+                        /\/models\/[^/:?#]+:generateContent/,
+                        `/models/${model}:generateContent`
+                    );
+                    if (rewritten !== validated.url) {
+                        validated = core.validateAiProviderEndpoint(provider, rewritten);
+                    }
+                }
+            }
             const payload = provider === 'gemini'
                 ? { contents: [{ parts: [{ text: prompt }] }] }
                 : provider === 'anthropic'

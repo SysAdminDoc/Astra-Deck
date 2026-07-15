@@ -66,15 +66,21 @@
 
         function readRecords(store) {
             const records = [];
+            const oversized = [];
             for (const key of YOUTUBE_RESET_STATE_KEYS) {
                 const value = store.getItem(key);
                 if (value === null) continue;
                 if (new Blob([value]).size > YOUTUBE_RESET_MAX_VALUE_BYTES) {
-                    throw new Error(`YouTube state value is too large to reset safely: ${key}`);
+                    // Bloated values (yt.innertube::requests is the usual
+                    // offender) are exactly what reset targets. They cannot be
+                    // snapshotted for Undo, but they must not block the reset —
+                    // clear() removes them without a recovery record.
+                    oversized.push(key);
+                    continue;
                 }
                 records.push([key, value]);
             }
-            return records;
+            return { records, oversized };
         }
 
         function validateRecords(records) {
@@ -113,12 +119,21 @@
         }
 
         function snapshot() {
-            return validateSnapshot({
+            const localRead = readRecords(localStore);
+            const sessionRead = readRecords(sessionStore);
+            const normalized = validateSnapshot({
                 schemaVersion: 1,
                 origin,
-                local: readRecords(localStore),
-                session: readRecords(sessionStore)
+                local: localRead.records,
+                session: sessionRead.records
             });
+            // Advisory only — validateSnapshot() drops this field, so staged
+            // clear/restore snapshots stay schema-exact.
+            normalized.oversized = [
+                ...localRead.oversized.map((key) => `local:${key}`),
+                ...sessionRead.oversized.map((key) => `session:${key}`)
+            ];
+            return normalized;
         }
 
         function clear(snapshotValue) {
@@ -141,9 +156,30 @@
                 for (const [area, key, value] of cleared) areas[area].setItem(key, value);
                 throw error;
             }
+            // Oversized values were excluded from the snapshot (no Undo
+            // record fits the recovery limit). Clear them anyway — after the
+            // undoable clears committed — and report them as not-undoable.
+            const notUndoable = [];
+            for (const [area, records] of [['local', normalized.local], ['session', normalized.session]]) {
+                const store = areas[area];
+                const snapshotted = new Set(records.map(([key]) => key));
+                for (const key of YOUTUBE_RESET_STATE_KEYS) {
+                    if (snapshotted.has(key)) continue;
+                    try {
+                        const value = store.getItem(key);
+                        if (value === null) continue;
+                        if (new Blob([value]).size <= YOUTUBE_RESET_MAX_VALUE_BYTES) continue;
+                        store.removeItem(key);
+                        notUndoable.push(`${area}:${key}`);
+                    } catch (_) {
+                        skipped.push(`${area}:${key}`);
+                    }
+                }
+            }
             return {
                 cleared: cleared.map(([area, key]) => `${area}:${key}`),
-                skipped
+                skipped,
+                notUndoable
             };
         }
 

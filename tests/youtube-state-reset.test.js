@@ -92,6 +92,38 @@ test('YouTube state reset snapshots and clears only the exact allowlist', () => 
     assert.equal(session.getItem('yt-remote-session-name'), 'Living room');
 });
 
+test('YouTube state reset clears oversized values without a snapshot instead of failing', () => {
+    const core = loadStorageCore();
+    const bloated = 'x'.repeat(200 * 1024);
+    const local = new MockStorage({
+        'yt.innertube::requests': bloated,
+        'yt-player-volume': '88'
+    });
+    const session = new MockStorage();
+    const manager = core.createYouTubeStateManager({
+        localStorage: local,
+        sessionStorage: session,
+        origin: 'https://www.youtube.com'
+    });
+
+    // The bloated key is exactly what reset targets — snapshot must not throw.
+    const snapshot = manager.snapshot();
+    assert.deepEqual(Array.from(snapshot.local, (entry) => Array.from(entry)), [
+        ['yt-player-volume', '88']
+    ]);
+    assert.deepEqual(Array.from(snapshot.oversized), ['local:yt.innertube::requests']);
+
+    const result = manager.clear(snapshot);
+    assert.deepEqual(Array.from(result.cleared), ['local:yt-player-volume']);
+    assert.deepEqual(Array.from(result.notUndoable), ['local:yt.innertube::requests']);
+    assert.equal(local.getItem('yt.innertube::requests'), null);
+
+    // Undo restores only the snapshotted key; the oversized one stays cleared.
+    const restored = manager.restore(snapshot);
+    assert.deepEqual(Array.from(restored.restored), ['local:yt-player-volume']);
+    assert.equal(local.getItem('yt.innertube::requests'), null);
+});
+
 test('YouTube state reset skips values changed after capture', () => {
     const core = loadStorageCore();
     const local = new MockStorage({ 'yt-player-quality': 'hd720' });

@@ -1009,7 +1009,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
-        const { method, url, headers, data, timeout } = details;
+        const { method, url, headers, data, timeout, credentials } = details;
         if (typeof url !== 'string' || !url) {
             sendResponse({ error: 'Invalid fetch URL.' });
             return false;
@@ -1086,7 +1086,11 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 sendResponse({ timeout: true });
             }, clampedTimeout);
 
-            const sendsCredentials = shouldSendCredentials(url);
+            // Origin allowlist decides whether cookies MAY be sent; a caller-
+            // supplied credentials:'omit' downgrades an allowlisted request to
+            // anonymous. Any other caller value is ignored — the bridge can
+            // never upgrade a non-allowlisted origin to 'include'.
+            const sendsCredentials = shouldSendCredentials(url) && credentials !== 'omit';
             const fetchOpts = {
                 method: normalizedMethod,
                 signal: controller.signal,

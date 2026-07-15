@@ -17,7 +17,12 @@ function featureBlock(id, nextId) {
 
 test('cleanShareUrls delegates tracker stripping to the shared URL policy', () => {
     const block = featureBlock('cleanShareUrls', 'expandVideoWidth');
-    assert.match(block, /cleanYouTubeShareUrl\(text\)/);
+    // Copy interception must read the live selection: clipboardData.getData()
+    // is empty while a copy event dispatches, so a getData-driven branch is
+    // dead code (v4.49.x audit).
+    assert.match(block, /window\.getSelection\?\.\(\)/);
+    assert.match(block, /cleanYouTubeShareUrl\(selected\)/);
+    assert.doesNotMatch(block, /clipboardData\?\.getData/);
     assert.match(block, /cleanYouTubeShareUrl\(url, \{ shortenWatch: false \}\)/);
     assert.doesNotMatch(block, /const STRIP_PARAMS/,
         'tracking policy must not drift into a second inline list');

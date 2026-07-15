@@ -4334,18 +4334,34 @@ async function resetYoutubeState() {
             }
             throw new Error(cleared?.error || 'YouTube page-state reset failed');
         }
-        if (!cleared.cleared?.length) {
+        const undoableCount = cleared.cleared?.length || 0;
+        const notUndoableCount = cleared.notUndoable?.length || 0;
+        if (!undoableCount && !notUndoableCount) {
             await clearYoutubeStateResetSnapshot();
             showStatus(t('statusYoutubeStateChanged',
                 'YouTube changed its page state before reset, so nothing was cleared.'), 'info', 4200);
             return;
         }
 
-        setUndoYoutubeStateVisible(true);
-        showStatus(t('statusYoutubeStateReset',
-            'Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open.')
-            .replace('{count}', String(cleared.cleared.length)),
-        'success', 7200);
+        if (undoableCount) {
+            setUndoYoutubeStateVisible(true);
+        } else {
+            // Only oversized (never-snapshotted) keys were cleared — there is
+            // nothing Undo could restore, so don't offer it.
+            await clearYoutubeStateResetSnapshot();
+        }
+        if (notUndoableCount) {
+            showStatus(t('statusYoutubeStateResetPartialUndo',
+                'Cleared {count} stale YouTube page-state keys. {big} exceeded the backup limit, so Undo cannot restore them.')
+                .replace('{count}', String(undoableCount + notUndoableCount))
+                .replace('{big}', String(notUndoableCount)),
+            'success', 7200);
+        } else {
+            showStatus(t('statusYoutubeStateReset',
+                'Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open.')
+                .replace('{count}', String(undoableCount)),
+            'success', 7200);
+        }
     } catch (error) {
         showStatus(t('statusYoutubeStateResetFail', 'YouTube state reset failed') + ': ' + error.message, 'error', 6200);
     } finally {
