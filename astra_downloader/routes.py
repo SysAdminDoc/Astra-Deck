@@ -535,6 +535,15 @@ def create_api(config, dl_manager, history, *, dependencies):
                         "then retry."
                     ),
                 }, 429)
+            if 'incompatible astra downloader version' in err.lower():
+                return cors_response({
+                    "error": err,
+                    "code": "queue-schema-incompatible",
+                    "remediation": (
+                        "Update Astra Downloader, or delete the pending "
+                        "download-queue.json file to start a fresh queue."
+                    ),
+                }, 503)
             if 'could not save' in err.lower():
                 return cors_response({"error": err, "code": "queue-persistence-failed"}, 503)
             return cors_response({"error": err}, 400)
@@ -557,8 +566,11 @@ def create_api(config, dl_manager, history, *, dependencies):
             return cors_response({"error": "Download no longer exists in the active queue."}, 404)
         return cors_response(dl.to_dict())
 
+    # NOTE: must not be named `queue` — a nested function named `queue` would
+    # shadow the stdlib `queue` module for every sibling closure in create_api
+    # (pick_folder uses queue.Queue / queue.Full / queue.Empty).
     @api.route('/queue')
-    def queue():
+    def queue_endpoint():
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
         return cors_response(dl_manager.queue_payload())
