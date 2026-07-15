@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Proporción de Me gusta en miniaturas"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "Oculta los bloques de búsquedas relacionadas sin quitar filtros, correcciones ni resultados directos."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "Ocultar búsquedas relacionadas"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "Conserva los resultados directos de vídeos, canales y listas mientras oculta secciones no relacionadas."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "Ocultar secciones no relacionadas"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "Oculta resultados con progreso de reproducción y recomendaciones intercaladas en la búsqueda de YouTube."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "Ocultar resultados vistos y recomendados"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "Muestra resultados de búsqueda de YouTube en un panel ligero de la página de reproducción sin interrumpirla."
   },

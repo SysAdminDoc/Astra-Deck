@@ -3355,6 +3355,9 @@ return response;
             hideCommentComposer: false,
             hideCommentReplyButton: false,
             hideSearchSidebar: false,
+            searchHideUnrelatedShelves: false,
+            searchHideRelatedSearches: false,
+            searchHideWatchedRecommended: false,
             uiFontSize: 0,                      // 0 = YouTube default; else 8-20px base font
 
             // v3.17.0 — userscript-inspired additions (all default OFF so existing
@@ -5472,6 +5475,35 @@ return response;
             'ytd-masthead #avatar-btn, ytd-masthead #buttons #avatar-btn'),
         cssFeature('hideSearchSidebar', 'Hide Search Sidebar', 'Remove the right-hand sidebar on search results pages', 'Home / Subscriptions', 'panel-right-close',
             'ytd-search #secondary'),
+        ...((globalThis.YTKitFeatures?.createSearchHygieneFeatures?.({
+            isSearchPagePath: globalThis.YTKitCore?.isSearchPagePath,
+            addMutationRule,
+            removeMutationRule,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            getSurfaceSelectorChain: globalThis.YTKitCore?.getSurfaceSelectorChain,
+            documentRef: document
+        })) || [
+            {
+                id: 'searchHideUnrelatedShelves',
+                name: t('feature_searchHideUnrelatedShelves_name', 'Hide Unrelated Search Shelves'),
+                description: t('feature_searchHideUnrelatedShelves_desc', 'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.'),
+                group: 'Content', icon: 'layout-list', init() {}, destroy() {}
+            },
+            {
+                id: 'searchHideRelatedSearches',
+                name: t('feature_searchHideRelatedSearches_name', 'Hide Related Search Blocks'),
+                description: t('feature_searchHideRelatedSearches_desc', 'Hide related-search chip blocks without removing filters, corrections, or direct results.'),
+                group: 'Content', icon: 'search-x', init() {}, destroy() {}
+            },
+            {
+                id: 'searchHideWatchedRecommended',
+                name: t('feature_searchHideWatchedRecommended_name', 'Hide Watched and Recommended Results'),
+                description: t('feature_searchHideWatchedRecommended_desc', 'Hide watched-progress results and recommendation interleaves from YouTube search.'),
+                group: 'Content', icon: 'eye-off', init() {}, destroy() {}
+            }
+        ]),
         cssFeature('removeScrubber', 'Hide Scrubber Handle', 'Remove the round scrubber handle from the video progress bar', 'Watch Page', 'circle-off',
             '.ytp-scrubber-container { display: none !important; }'),
         cssFeature('softBottomGradient', 'Soften Bottom Gradient', 'Reduce the dark gradient behind the player control bar', 'Watch Page', 'gauge',

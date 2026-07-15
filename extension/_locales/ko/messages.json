@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "썸네일 좋아요 비율"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "필터, 검색어 교정 및 직접 검색 결과는 유지하면서 관련 검색어 블록을 숨깁니다."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "관련 검색어 블록 숨기기"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "동영상, 채널 및 재생목록 직접 결과는 유지하면서 관련 없는 검색 섹션을 숨깁니다."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "관련 없는 검색 섹션 숨기기"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "YouTube 검색에서 시청한 결과와 삽입된 추천을 숨깁니다."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "시청한 결과 및 추천 결과 숨기기"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "재생을 중단하지 않고 가벼운 시청 페이지 패널에 YouTube 검색 결과를 표시합니다."
   },

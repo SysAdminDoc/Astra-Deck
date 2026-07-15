@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Thumbnail Like-Ratio Bars"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "Hide related-search chip blocks without removing filters, corrections, or direct results."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "Hide Related Search Blocks"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "Keep direct video, channel, and playlist results while hiding unrelated search-page shelves."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "Hide Unrelated Search Shelves"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "Hide watched-progress results and recommendation interleaves from YouTube search."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "Hide Watched and Recommended Results"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "Show YouTube search results in a lightweight watch-page panel without interrupting playback."
   },

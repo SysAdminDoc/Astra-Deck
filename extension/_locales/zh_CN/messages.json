@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "缩略图点赞比例"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "隐藏相关搜索词块，同时保留筛选器、搜索纠正和直接结果。"
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "隐藏相关搜索块"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "保留视频、频道和播放列表的直接结果，同时隐藏无关的搜索页面分区。"
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "隐藏无关搜索分区"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "从 YouTube 搜索中隐藏带观看进度的结果和穿插的推荐。"
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "隐藏已观看和推荐结果"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "在轻量的观看页面板中显示 YouTube 搜索结果，同时不中断播放。"
   },

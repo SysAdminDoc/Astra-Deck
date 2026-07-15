@@ -81,6 +81,8 @@ const MAX_NOT_YET_PORTED_FEATURES = 19;
 const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     'features/download-ui/index.js': 'native-companion',
     'features/search-while-watching/index.js': 'intentional-extension-only',
+    'features/search-hygiene/index.js': 'intentional-extension-only',
+    'core/selector-packs/searchResults.js': 'intentional-extension-only',
     'features/video-insights/index.js': 'intentional-extension-only',
     // The extension loads this minimal frame runtime instead of the normal-page
     // monolith. The userscript keeps its existing live-chat implementation.
@@ -103,6 +105,9 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     persistentQueue: 'intentional-extension-only',
     playbackErrorRecovery: 'intentional-extension-only',
     searchWhileWatching: 'intentional-extension-only',
+    searchHideUnrelatedShelves: 'intentional-extension-only',
+    searchHideRelatedSearches: 'intentional-extension-only',
+    searchHideWatchedRecommended: 'intentional-extension-only',
     shortsAutoAdvance: 'intentional-extension-only',
     shortsSpeedControl: 'intentional-extension-only',
     watchLaterWorkbench: 'intentional-extension-only',

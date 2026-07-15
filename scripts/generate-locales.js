@@ -42,6 +42,12 @@ const T = {};
 
 // ── German (de) ──
 T.de = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Blendet Blöcke mit verwandten Suchanfragen aus, ohne Filter, Korrekturen oder direkte Ergebnisse zu entfernen.',
+  'Hide Related Search Blocks': 'Blöcke mit verwandten Suchanfragen ausblenden',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Behält direkte Video-, Kanal- und Playlist-Ergebnisse bei und blendet sachfremde Suchseitenbereiche aus.',
+  'Hide Unrelated Search Shelves': 'Sachfremde Suchbereiche ausblenden',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'Blendet Ergebnisse mit Wiedergabefortschritt und eingeschobene Empfehlungen aus der YouTube-Suche aus.',
+  'Hide Watched and Recommended Results': 'Angesehene und empfohlene Ergebnisse ausblenden',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Zeigt YouTube-Suchergebnisse in einem kompakten Wiedergabeseiten-Panel an, ohne die Wiedergabe zu unterbrechen.',
   'Search While Watching': 'Suchen während der Wiedergabe',
   'Close search results': 'Suchergebnisse schließen', 'No supported results found.': 'Keine unterstützten Ergebnisse gefunden.',
@@ -219,6 +225,12 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Oculta los bloques de búsquedas relacionadas sin quitar filtros, correcciones ni resultados directos.',
+  'Hide Related Search Blocks': 'Ocultar búsquedas relacionadas',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Conserva los resultados directos de vídeos, canales y listas mientras oculta secciones no relacionadas.',
+  'Hide Unrelated Search Shelves': 'Ocultar secciones no relacionadas',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'Oculta resultados con progreso de reproducción y recomendaciones intercaladas en la búsqueda de YouTube.',
+  'Hide Watched and Recommended Results': 'Ocultar resultados vistos y recomendados',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Muestra resultados de búsqueda de YouTube en un panel ligero de la página de reproducción sin interrumpirla.',
   'Search While Watching': 'Buscar mientras miras',
   'Close search results': 'Cerrar resultados de búsqueda', 'No supported results found.': 'No se encontraron resultados compatibles.',
@@ -384,6 +396,12 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Скрывает блоки связанных запросов, не удаляя фильтры, исправления и прямые результаты.',
+  'Hide Related Search Blocks': 'Скрывать связанные запросы',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Сохраняет прямые результаты видео, каналов и плейлистов, скрывая посторонние разделы поиска.',
+  'Hide Unrelated Search Shelves': 'Скрывать посторонние разделы поиска',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'Скрывает просмотренные результаты и вставленные рекомендации в поиске YouTube.',
+  'Hide Watched and Recommended Results': 'Скрывать просмотренные и рекомендованные результаты',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Показывать результаты поиска YouTube в компактной панели страницы просмотра, не прерывая воспроизведение.',
   'Search While Watching': 'Поиск во время просмотра',
   'Close search results': 'Закрыть результаты поиска', 'No supported results found.': 'Поддерживаемые результаты не найдены.',
@@ -549,6 +567,12 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Masque les blocs de recherches associées sans retirer les filtres, corrections ni résultats directs.',
+  'Hide Related Search Blocks': 'Masquer les recherches associées',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Conserve les résultats directs de vidéos, chaînes et playlists tout en masquant les sections sans rapport.',
+  'Hide Unrelated Search Shelves': 'Masquer les sections de recherche sans rapport',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'Masque les résultats déjà regardés et les recommandations intercalées dans la recherche YouTube.',
+  'Hide Watched and Recommended Results': 'Masquer les résultats vus et recommandés',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Affiche les résultats de recherche YouTube dans un panneau léger de la page de lecture sans interrompre celle-ci.',
   'Search While Watching': 'Rechercher pendant le visionnage',
   'Close search results': 'Fermer les résultats de recherche', 'No supported results found.': 'Aucun résultat pris en charge trouvé.',
@@ -712,6 +736,12 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Nasconde i blocchi delle ricerche correlate senza rimuovere filtri, correzioni o risultati diretti.',
+  'Hide Related Search Blocks': 'Nascondi ricerche correlate',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Mantiene i risultati diretti di video, canali e playlist nascondendo le sezioni non correlate.',
+  'Hide Unrelated Search Shelves': 'Nascondi sezioni di ricerca non correlate',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'Nasconde i risultati già guardati e i consigli inseriti nella ricerca di YouTube.',
+  'Hide Watched and Recommended Results': 'Nascondi risultati visti e consigliati',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Mostra i risultati di ricerca di YouTube in un pannello leggero della pagina di riproduzione senza interromperla.',
   'Search While Watching': 'Cerca durante la visione',
   'Close search results': 'Chiudi i risultati di ricerca', 'No supported results found.': 'Nessun risultato supportato trovato.',
@@ -868,6 +898,12 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'Oculta blocos de pesquisas relacionadas sem remover filtros, correções ou resultados diretos.',
+  'Hide Related Search Blocks': 'Ocultar pesquisas relacionadas',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': 'Mantém resultados diretos de vídeos, canais e playlists enquanto oculta seções não relacionadas.',
+  'Hide Unrelated Search Shelves': 'Ocultar seções de pesquisa não relacionadas',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'Oculta resultados já assistidos e recomendações intercaladas na pesquisa do YouTube.',
+  'Hide Watched and Recommended Results': 'Ocultar resultados assistidos e recomendados',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Mostra resultados de busca do YouTube em um painel leve na página de exibição sem interromper a reprodução.',
   'Search While Watching': 'Pesquisar enquanto assiste',
   'Close search results': 'Fechar resultados da pesquisa', 'No supported results found.': 'Nenhum resultado compatível encontrado.',
@@ -1024,6 +1060,12 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': 'フィルター、修正候補、直接の検索結果を残したまま、関連検索ブロックを非表示にします。',
+  'Hide Related Search Blocks': '関連検索ブロックを非表示',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': '動画、チャンネル、再生リストの直接結果を残し、無関係な検索セクションを非表示にします。',
+  'Hide Unrelated Search Shelves': '無関係な検索セクションを非表示',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'YouTube 検索から視聴済みの結果と挿入されたおすすめを非表示にします。',
+  'Hide Watched and Recommended Results': '視聴済みとおすすめの結果を非表示',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': '再生を中断せずに、軽量な視聴ページパネルへ YouTube の検索結果を表示します。',
   'Search While Watching': '視聴しながら検索',
   'Close search results': '検索結果を閉じる', 'No supported results found.': '対応する結果が見つかりませんでした。',
@@ -1183,6 +1225,12 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Hide related-search chip blocks without removing filters, corrections, or direct results.': '필터, 검색어 교정 및 직접 검색 결과는 유지하면서 관련 검색어 블록을 숨깁니다.',
+  'Hide Related Search Blocks': '관련 검색어 블록 숨기기',
+  'Keep direct video, channel, and playlist results while hiding unrelated search-page shelves.': '동영상, 채널 및 재생목록 직접 결과는 유지하면서 관련 없는 검색 섹션을 숨깁니다.',
+  'Hide Unrelated Search Shelves': '관련 없는 검색 섹션 숨기기',
+  'Hide watched-progress results and recommendation interleaves from YouTube search.': 'YouTube 검색에서 시청한 결과와 삽입된 추천을 숨깁니다.',
+  'Hide Watched and Recommended Results': '시청한 결과 및 추천 결과 숨기기',
   'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': '재생을 중단하지 않고 가벼운 시청 페이지 패널에 YouTube 검색 결과를 표시합니다.',
   'Search While Watching': '시청하며 검색',
   'Close search results': '검색 결과 닫기', 'No supported results found.': '지원되는 결과를 찾지 못했습니다.',

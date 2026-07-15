@@ -64,6 +64,7 @@ const SURFACE_MATCH_SOURCES = [
     { id: 'shorts.media', surface: 'media', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
     { id: 'shorts.thumbnail', surface: 'thumbnail', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
     { id: 'searchResults.search', surface: 'search', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
+    { id: 'searchResults.root', surface: 'searchResults', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.feedCard', surface: 'feedCard', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.feedExperimentChips', surface: 'feedExperimentChips', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
     { id: 'searchResults.feedPlayables', surface: 'feedPlayables', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt', allowZeroMatches: true },
