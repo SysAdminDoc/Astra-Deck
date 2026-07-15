@@ -18,6 +18,10 @@
             --ytkit-v3-subtle: #7f8996;
             --ytkit-v3-accent: #ff5a4f;
             --ytkit-v3-accent-rgb: 255,90,79;
+            /* Filled controls carrying white text need a darker coral than
+               the highlight accent: #fff on #ff5a4f is 3.08:1 (fails AA). */
+            --ytkit-v3-accent-fill: #cf352f;
+            --ytkit-v3-accent-fill-hover: #b92c27;
             --ytkit-v3-success: #45d978;
             width: min(1440px, calc(100vw - 48px)) !important;
             height: min(94vh, 920px) !important;
@@ -587,7 +591,7 @@
 
         #ytkit-settings-panel .ytkit-mediadl-banner__btn--accent,
         #ytkit-settings-panel .ytkit-mediadl-banner__btn.is-success {
-            background: var(--ytkit-v3-accent) !important;
+            background: var(--ytkit-v3-accent-fill) !important;
             color: #fff !important;
         }
 
@@ -702,6 +706,15 @@
             left: 23px !important;
             background: #fff !important;
             transform: none !important;
+        }
+
+        /* The toggle's <input> is opacity:0 and this sheet resets the track's
+           box-shadow, so without an explicit rule here the panel's primary
+           control has NO visible keyboard focus indicator (the lower-
+           specificity command-center focus rules lose the !important war). */
+        #ytkit-settings-panel .ytkit-switch:focus-within .ytkit-switch-track {
+            border-color: var(--ytkit-v3-accent) !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb), 0.75) !important;
         }
 
         #ytkit-settings-panel .ytkit-switch-icon {
@@ -932,13 +945,13 @@
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
             min-width: 120px !important;
             padding-inline: 24px !important;
-            background: var(--ytkit-v3-accent) !important;
+            background: var(--ytkit-v3-accent-fill) !important;
             color: #fff !important;
             box-shadow: none !important;
         }
 
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary:hover {
-            background: #ff6b61 !important;
+            background: var(--ytkit-v3-accent-fill-hover) !important;
             color: #fff !important;
         }
 
@@ -951,7 +964,9 @@
             --ytkit-v3-border-strong: rgba(15,23,42,0.16);
             --ytkit-v3-text: #17202b;
             --ytkit-v3-muted: #5f6b79;
-            --ytkit-v3-subtle: #7d8997;
+            /* #7d8997 on #f7f8fa was 3.36:1 — below AA for the placeholder,
+               version, and nav-count text that consume this token. */
+            --ytkit-v3-subtle: #66707d;
             --ytkit-v3-accent: #cf352f;
             --ytkit-v3-accent-rgb: 207,53,47;
             --ytkit-v3-success: #168845;

@@ -5094,7 +5094,8 @@ return response;
                                 skipped: result.skipped
                             });
                             showToast(t('youtubeStateResetToast',
-                                `YouTube state cleared (${result.cleared.length}). Use Undo in Astra Deck before closing this tab.`),
+                                'YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab.')
+                                .replace('{count}', String(result.cleared.length)),
                             '#22c55e', { duration: 7 });
                             return result;
                         }
@@ -5105,7 +5106,8 @@ return response;
                                 `restored=${result.restored.join(',') || 'none'}; skipped=${result.skipped.join(',') || 'none'}`
                             );
                             showToast(t('youtubeStateRestoreToast',
-                                `YouTube state restored (${result.restored.length}). Reload the page to apply it.`),
+                                'YouTube state restored ({count}). Reload the page to apply it.')
+                                .replace('{count}', String(result.restored.length)),
                             '#22c55e', { duration: 7 });
                             return result;
                         }
@@ -32676,8 +32678,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!menuBtn) return false;
                 menuBtn.click();
                 await new Promise(r => setTimeout(r, 120));
-                const removeItem = [...document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item')]
-                    .find(n => /remove from/i.test(n.textContent || ''));
+                // Prefer the structural playlistEditEndpoint match — the
+                // "Remove from" text test is English-only and made removal a
+                // silent no-op on the 10 non-English locales.
+                const items = [...document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item')];
+                const removeItem = items.find(n => {
+                    const host = n.matches?.('ytd-menu-service-item-renderer') ? n : n.closest?.('ytd-menu-service-item-renderer');
+                    const actions = host?.data?.serviceEndpoint?.playlistEditEndpoint?.actions;
+                    return Array.isArray(actions) && actions.some(a => String(a?.action || '').startsWith('ACTION_REMOVE'));
+                }) || items.find(n => /remove from/i.test(n.textContent || ''));
                 if (!removeItem) { document.body.click(); return false; }
                 removeItem.click();
                 await new Promise(r => setTimeout(r, this._PACE_MS));
@@ -32755,6 +32764,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const status = document.createElement('div');
                 status.className = 'ytkit-wlwb-status';
+                status.setAttribute('role', 'status');
+                status.setAttribute('aria-live', 'polite');
                 const list = document.createElement('div');
                 list.className = 'ytkit-wlwb-list';
 
@@ -32778,8 +32789,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.appendChild(status);
                 panel.appendChild(list);
                 panel.appendChild(actions);
+                panel.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.stopPropagation();
+                        this._togglePanel();
+                        this._btn?.focus?.({ preventScroll: true });
+                    }
+                });
                 document.body.appendChild(panel);
                 this._panel = panel;
+                close.focus({ preventScroll: true });
                 this._refreshPreview();
             },
 
@@ -32820,6 +32839,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wlwb-actions button { border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: transparent; color: #fff; font-size: 11.5px; padding: 5px 9px; cursor: pointer; }
                     .ytkit-wlwb-actions button:hover:not(:disabled) { border-color: rgba(255, 143, 64, 0.7); }
                     .ytkit-wlwb-actions button:disabled { opacity: 0.6; cursor: progress; }
+                    .ytkit-wlwb-panel button:focus-visible, .ytkit-wlwb-panel input:focus-visible, .ytkit-wlwb-panel select:focus-visible, .ytkit-wlwb-open:focus-visible { outline: 2px solid #ff8f40; outline-offset: 2px; }
+                    @media (forced-colors: active) { .ytkit-wlwb-panel, .ytkit-wlwb-open { border: 1px solid ButtonText; } }
                 `, this.id, true);
                 this._navRule = () => setTimeout(() => this._injectButton(), 1500);
                 addNavigateRule('watchLaterWorkbench', this._navRule);
