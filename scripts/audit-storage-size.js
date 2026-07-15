@@ -366,16 +366,18 @@ function formatReport(payloads) {
     for (const [name, payload] of Object.entries(payloads)) {
         sections.push(formatAssessment(name, payload));
     }
-    const safe = assessSyncEligibility(payloads.safeStoreProfile);
-    const ui = assessSyncEligibility(payloads.uiPreferences);
-    const typical = assessSyncEligibility(payloads.typicalLocal);
-    sections.push([
-        'Decision:',
-        `  Safe-store profile sync candidate: ${safe.ok ? 'viable' : 'not viable'} (${formatBytes(safe.totalBytes)}, largest ${formatBytes(safe.largestItem.bytes)}).`,
-        `  Full UI preferences payload: ${ui.ok ? 'viable' : 'not viable'} for sync (${formatBytes(ui.totalBytes)}, largest ${formatBytes(ui.largestItem.bytes)}).`,
-        `  Whole chrome.storage.local payload: ${typical.ok ? 'viable' : 'not viable'} for sync (${formatBytes(typical.totalBytes)}, largest ${formatBytes(typical.largestItem.bytes)}).`,
-        '  Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only.'
-    ].join('\n'));
+    if (payloads.safeStoreProfile && payloads.uiPreferences && payloads.typicalLocal) {
+        const safe = assessSyncEligibility(payloads.safeStoreProfile);
+        const ui = assessSyncEligibility(payloads.uiPreferences);
+        const typical = assessSyncEligibility(payloads.typicalLocal);
+        sections.push([
+            'Decision:',
+            `  Safe-store profile sync candidate: ${safe.ok ? 'viable' : 'not viable'} (${formatBytes(safe.totalBytes)}, largest ${formatBytes(safe.largestItem.bytes)}).`,
+            `  Full UI preferences payload: ${ui.ok ? 'viable' : 'not viable'} for sync (${formatBytes(ui.totalBytes)}, largest ${formatBytes(ui.largestItem.bytes)}).`,
+            `  Whole chrome.storage.local payload: ${typical.ok ? 'viable' : 'not viable'} for sync (${formatBytes(typical.totalBytes)}, largest ${formatBytes(typical.largestItem.bytes)}).`,
+            '  Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only.'
+        ].join('\n'));
+    }
     return sections.join('\n\n');
 }
 

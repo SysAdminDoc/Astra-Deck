@@ -90,6 +90,14 @@ test('typical local payload is not storage.sync eligible', () => {
     );
 });
 
+test('storage audit report handles arbitrary --file payloads without the built-in decision inputs', () => {
+    const report = formatReport({ filePayload: { [STORAGE_KEYS.settings]: { theme: 'dark' } } });
+
+    assert.match(report, /Astra Deck storage size audit/);
+    assert.match(report, /filePayload: \d+ B across 1 items/);
+    assert.doesNotMatch(report, /Decision:/);
+});
+
 test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
