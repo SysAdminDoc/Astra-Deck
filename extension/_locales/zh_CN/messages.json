@@ -2114,8 +2114,8 @@
   "searchWatchPlaceholder": {
     "message": "边看边搜…"
   },
-  "searchWatchResultsFor": {
-    "message": "搜索结果："
+  "searchWatchResultsStatus": {
+    "message": "{count} 条 \"{query}\" 的搜索结果"
   },
   "searchWatchRetry": {
     "message": "重试"

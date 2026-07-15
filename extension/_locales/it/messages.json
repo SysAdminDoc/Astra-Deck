@@ -2117,8 +2117,8 @@
   "searchWatchPlaceholder": {
     "message": "Cerca durante la visione…"
   },
-  "searchWatchResultsFor": {
-    "message": "Risultati per"
+  "searchWatchResultsStatus": {
+    "message": "{count} results for \"{query}\""
   },
   "searchWatchRetry": {
     "message": "Riprova"

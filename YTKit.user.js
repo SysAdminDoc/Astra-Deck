@@ -531,7 +531,7 @@
                 background: transparent !important;
                 color: var(--ytkit-v3-muted) !important;
                 box-shadow: none !important;
-                text-align: left !important;
+                text-align: start !important;
             }
 
             #ytkit-settings-panel .ytkit-nav-btn::before {
@@ -539,7 +539,7 @@
                 position: absolute !important;
                 top: 10px !important;
                 bottom: 10px !important;
-                left: 0 !important;
+                inset-inline-start: 0 !important;
                 width: 2px !important;
                 border-radius: 2px !important;
                 background: transparent !important;
@@ -942,7 +942,8 @@
 
             #ytkit-settings-panel .ytkit-switch .ytkit-switch-thumb {
                 top: 3px !important;
-                left: 3px !important;
+                inset-inline-start: 3px !important;
+                left: auto !important;
                 width: 20px !important;
                 height: 20px !important;
                 border: 0 !important;
@@ -959,7 +960,8 @@
             }
 
             #ytkit-settings-panel .ytkit-switch.active .ytkit-switch-thumb {
-                left: 23px !important;
+                inset-inline-start: 23px !important;
+                left: auto !important;
                 background: #fff !important;
                 transform: none !important;
             }
@@ -997,10 +999,12 @@
 
             #ytkit-settings-panel .ytkit-sub-features {
                 display: block !important;
-                margin: 0 0 8px 18px !important;
-                padding: 0 0 0 18px !important;
+                margin-block: 0 8px !important;
+                margin-inline: 18px 0 !important;
+                padding-block: 0 !important;
+                padding-inline: 18px 0 !important;
                 border: 0 !important;
-                border-left: 1px solid rgba(var(--ytkit-v3-accent-rgb),0.28) !important;
+                border-inline-start: 1px solid rgba(var(--ytkit-v3-accent-rgb),0.28) !important;
                 border-radius: 0 !important;
                 background: transparent !important;
                 box-shadow: none !important;

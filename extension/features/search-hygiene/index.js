@@ -32,11 +32,15 @@
         'ytd-compact-channel-recommendation-card-renderer',
         'ytd-channel-recommendation-card-renderer'
     ].join(', ');
+    // Structural hook first: YouTube stamps reason rows with a
+    // data-content-type marker that is locale-independent. The English
+    // phrase regex below is only a fallback for surfaces that render the
+    // reason as plain metadata text without the marker.
+    const STRUCTURAL_REASON_SELECTOR = '[data-content-type="recommendation-reason"]';
     const REASON_SELECTOR = [
         'ytd-badge-supported-renderer',
         '#metadata-line',
-        '.metadata-snippet-text',
-        '[data-content-type="recommendation-reason"]'
+        '.metadata-snippet-text'
     ].join(', ');
     const RECOMMENDATION_REASON = /\b(?:recommended for you|because you watched|people also watched|previously watched)\b/i;
 
@@ -53,6 +57,7 @@
     function isWatchedOrRecommended(node) {
         if (!node) return false;
         if (hasDescendant(node, WATCHED_MARKER_SELECTOR)) return true;
+        if (hasDescendant(node, STRUCTURAL_REASON_SELECTOR)) return true;
         return queryAll(node, REASON_SELECTOR).some((reason) =>
             RECOMMENDATION_REASON.test(String(reason?.textContent || '').slice(0, 400))
         );
