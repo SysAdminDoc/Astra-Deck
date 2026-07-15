@@ -199,11 +199,13 @@ const IN_PAGE_CHECKS = `(() => {
     const sidebarFooter = panel.querySelector('.ytkit-sidebar > .ytkit-sidebar-footer');
     const footerActions = panel.querySelectorAll('.ytkit-footer-actions > button');
     const historyImport = panel.querySelector('.ytkit-insights #ytkit-import-history');
+    const obsoleteVersionBadge = panel.querySelector('#ytkit-whats-new-badge');
     if (!headerSearch) failures.push('command search is not mounted in the header');
     if (!liveBadge || getComputedStyle(liveBadge).display === 'none') failures.push('live connection badge is not visible');
     if (!sidebarFooter) failures.push('version and project tools are not mounted in the sidebar footer');
     if (footerActions.length !== 4) failures.push('footer action parity expected 4 buttons, found ' + footerActions.length);
     if (!historyImport) failures.push('history import action is not mounted in the insights rail');
+    if (obsoleteVersionBadge) failures.push('obsolete version notification badge is visible');
     if (panel.getAttribute('dir') === 'rtl' && headerSearch) {
         const searchIcon = panel.querySelector('.ytkit-command-search .ytkit-search-icon');
         const searchActions = panel.querySelector('.ytkit-command-search .ytkit-search-actions');

@@ -22693,23 +22693,6 @@
             const versionSpan = document.createElement('span');
             versionSpan.className = 'ytkit-version';
             versionSpan.textContent = 'v' + YTKIT_VERSION;
-            versionSpan.style.position = 'relative';
-            versionSpan.style.cursor = 'pointer';
-            // What's New badge
-            const CURRENT_VER = YTKIT_VERSION;
-            const lastSeenVer = storageRead('ytkit_last_seen_version', '');
-            if (lastSeenVer !== CURRENT_VER) {
-                const badge = document.createElement('span');
-                badge.id = 'ytkit-whats-new-badge';
-                badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
-                versionSpan.appendChild(badge);
-                versionSpan.title = `Astra Deck updated to v${YTKIT_VERSION} — click for the changelog`;
-                versionSpan.onclick = () => {
-                    storageWrite('ytkit_last_seen_version', CURRENT_VER);
-                    badge.remove();
-                    showToast(`Updated to v${YTKIT_VERSION}. See the changelog on GitHub for what's new.`, '#3b82f6', { duration: 6 });
-                };
-            }
 
             footerLeft.appendChild(githubLink);
             footerLeft.appendChild(ytToolsLink);
@@ -41669,23 +41652,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
         versionSpan.textContent = 'v' + YTKIT_VERSION;
-        versionSpan.style.position = 'relative';
-        versionSpan.style.cursor = 'pointer';
-        // What's New badge
-        const CURRENT_VER = YTKIT_VERSION;
-        const lastSeenVer = GM_getValue('ytkit_last_seen_version', '');
-        if (lastSeenVer !== CURRENT_VER) {
-            const badge = document.createElement('span');
-            badge.id = 'ytkit-whats-new-badge';
-            badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
-            versionSpan.appendChild(badge);
-            versionSpan.title = `New in v${YTKIT_VERSION}: Ultra-condensed settings panel — removed logo, pane icons, status badges, recently changed section; zero-padding layout`;
-            versionSpan.onclick = () => {
-                GM_setValue('ytkit_last_seen_version', CURRENT_VER);
-                badge.remove();
-                showToast(`v${YTKIT_VERSION}: Ultra-condensed settings — removed logo, pane icons, status badges, recently changed; zero-padding`, '#3b82f6', { duration: 6 });
-            };
-        }
 
         footerLeft.appendChild(githubLink);
         footerLeft.appendChild(ytToolsLink);

@@ -15,6 +15,7 @@ const settingsPanel = fs.readFileSync(
     'utf8'
 );
 const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
 
 test('settings visual system replaces boxed cards and badges with a readable settings document', () => {
@@ -67,6 +68,20 @@ test('settings brand lockup cannot collapse into stacked oversized labels', () =
     );
     assert.match(shell, /brandCopy\.appendChild\(brandLockup\);/);
     assert.match(overlaySmoke, /name:\s*'tablet-dark',\s*width:\s*760/);
+});
+
+test('settings version is passive text without a dismiss-only notification badge', () => {
+    for (const [label, source] of [
+        ['settings module', settingsPanel],
+        ['fallback shell', shell],
+        ['userscript', userscript]
+    ]) {
+        assert.doesNotMatch(source, /ytkit-whats-new-badge/, `${label} must not render the obsolete badge`);
+    }
+    assert.doesNotMatch(settingsPanel, /versionSpan\.(?:onclick|style\.cursor)/);
+    assert.doesNotMatch(shell, /versionSpan\.(?:onclick|style\.cursor)/);
+    assert.doesNotMatch(userscript, /versionSpan\.(?:onclick|style\.cursor)/);
+    assert.match(overlaySmoke, /obsolete version notification badge is visible/);
 });
 
 test('extension and userscript load the shared settings visual system before the panel', () => {
