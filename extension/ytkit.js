@@ -23,6 +23,7 @@
         schedulePlayerTask,
         cancelPlayerTask,
         classifyAgeRestriction,
+        cleanYouTubeShareUrl,
         getRegisteredFeature,
         getFeatureHealthSnapshot,
         getSelectorHealthSnapshot,
@@ -52,6 +53,7 @@
         storageWriteJSON,
         storageWriteMany,
         stripCommentRestyleCss,
+        unwrapYouTubeRedirectUrl,
         waitForElement,
         waitForPageContent
     } = globalThis.YTKitCore || {};
@@ -93,6 +95,7 @@
         !schedulePlayerTask ||
         !cancelPlayerTask ||
         !classifyAgeRestriction ||
+        !cleanYouTubeShareUrl ||
         !getRegisteredFeature ||
         !getFeatureHealthSnapshot ||
         !getSelectorHealthSnapshot ||
@@ -120,6 +123,7 @@
         !storageReadJSON ||
         !storageWrite ||
         !storageWriteJSON ||
+        !unwrapYouTubeRedirectUrl ||
         !waitForElement ||
         !waitForPageContent ||
         !RuntimeFlags
@@ -8026,7 +8030,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
                 // Auto-generated Content sub-features
         ...([['joinButton','Join Button','Hide join/membership button'],['askButton','Ask Button','Hide Ask AI button'],['saveButton','Save Button','Hide save to playlist button'],['moreActions','More Actions (...)','Hide more actions menu button'],['askAISection','Ask AI Section','Hide AI section in description'],['podcastSection','Podcast/Course Section','Hide podcast/course section in description'],['transcriptSection','Transcript Section','Hide transcript section in description'],['channelInfoCards','Channel Info Cards','Hide channel info cards in description']].map(([v,n,d])=>({id:'wpHide_'+v,name:n,description:d,group:'Watch Page',icon:'eye-off',isSubFeature:true,parentId:'hiddenWatchElementsManager',_arrayKey:'hiddenWatchElements',_arrayValue:v,init(){},destroy(){}}))),
-                                                                {
+        {
             id: 'cleanShareUrls',
             name: 'Clean Share URLs',
             description: 'Strip tracking params (si, pp, feature) from copied/shared YouTube links',
@@ -8035,35 +8039,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
             _clipboardHandler: null,
             init() {
-                const STRIP_PARAMS = [
-                    // YouTube-internal tracking
-                    'si', 'pp', 'feature', 'cbrd', 'ucbcb', 'app', 'sttick',
-                    // Cross-platform analytics tracking
-                    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id',
-                    // Click-tracking IDs
-                    'gclid', 'fbclid', 'mc_cid', 'mc_eid', 'igshid', 'twclid', 'yclid',
-                ];
-                const cleanUrl = (url) => {
-                    try {
-                        const u = new URL(url);
-                        if (!isYouTubeHostname(u.hostname)) return url;
-                        STRIP_PARAMS.forEach(p => u.searchParams.delete(p));
-                        // Convert to short URL if it's a watch page
-                        const videoId = getVideoId(u);
-                        if (videoId && (u.pathname === '/watch' || u.hostname === 'youtu.be' || u.hostname === 'www.youtu.be')) {
-                            const remainingParams = new URLSearchParams(u.searchParams);
-                            remainingParams.delete('v');
-                            const remaining = remainingParams.toString();
-                            return `https://youtu.be/${videoId}${remaining ? '?' + remaining : ''}`;
-                        }
-                        return u.toString();
-                    } catch { return url; }
-                };
                 // Intercept clipboard writes
                 this._clipboardHandler = (e) => {
                     const text = e.clipboardData?.getData('text/plain') || '';
                     if (text) {
-                        const cleaned = cleanUrl(text);
+                        const cleaned = cleanYouTubeShareUrl(text);
                         if (cleaned !== text) {
                             e.preventDefault();
                             e.clipboardData.setData('text/plain', cleaned);
@@ -8075,7 +8055,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._cleanShareUrl = () => {
                     const input = document.querySelector('input#share-url');
                     if (input && input.value && !input.dataset.ytkitCleaned) {
-                        const cleaned = cleanUrl(input.value);
+                        const cleaned = cleanYouTubeShareUrl(input.value);
                         if (cleaned !== input.value) { input.value = cleaned; input.dataset.ytkitCleaned = '1'; }
                     }
                 };
@@ -8083,14 +8063,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Also clean address bar on navigation
                 this._cleanAddressBar = () => {
                     const url = window.location.href;
-                    const cleaned = cleanUrl(url);
+                    const cleaned = cleanYouTubeShareUrl(url, { shortenWatch: false });
                     // Don't convert to youtu.be for address bar (would break SPA)
                     if (cleaned !== url) {
                         try {
-                            const u = new URL(url);
-                            let modified = false;
-                            STRIP_PARAMS.forEach(p => { if (u.searchParams.has(p)) { u.searchParams.delete(p); modified = true; } });
-                            if (modified) history.replaceState(history.state, '', u.toString());
+                            history.replaceState(history.state, '', cleaned);
                         } catch { /* reason: address-bar cleanup is best-effort */ }
                     }
                 };
@@ -25976,6 +25953,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'share-2',
             _styleEl: null,
+            _linkSelector: 'a[href*="/redirect?"]',
+            _scopeSelector: '#description, ytd-comments, ytd-comment-thread-renderer, ytd-comment-view-model, ytd-comment-renderer',
+            _rewritten: null,
+            _originals: null,
+
+            _restoreAttribute(link, name, value) {
+                if (value === null) link.removeAttribute(name);
+                else link.setAttribute(name, value);
+            },
+
+            _rewriteLink(link) {
+                if (!link?.closest?.(this._scopeSelector) || this._rewritten.has(link)) return;
+                const originalHref = link.getAttribute('href');
+                const directHref = unwrapYouTubeRedirectUrl(link.href || originalHref || '');
+                if (!directHref || directHref === link.href || directHref === originalHref) return;
+
+                this._originals.set(link, {
+                    href: originalHref,
+                    ping: link.getAttribute('ping'),
+                    rel: link.getAttribute('rel')
+                });
+                this._rewritten.add(link);
+                link.setAttribute('href', directHref);
+                link.removeAttribute('ping');
+                const rel = new Set(String(link.getAttribute('rel') || '').split(/\s+/).filter(Boolean));
+                rel.add('noopener');
+                rel.add('noreferrer');
+                link.setAttribute('rel', [...rel].join(' '));
+            },
+
+            _processRoot(root) {
+                for (const link of [...this._rewritten]) {
+                    if (!link.isConnected) this._rewritten.delete(link);
+                }
+                const links = [];
+                if (root?.matches?.(this._linkSelector)) links.push(root);
+                if (root?.querySelectorAll) links.push(...root.querySelectorAll(this._linkSelector));
+                for (const link of links) this._rewriteLink(link);
+            },
 
             init() {
                 const css = `
@@ -25992,8 +26008,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
+                this._rewritten = new Set();
+                this._originals = new WeakMap();
+                addScopedMutationRule(this.id, this._linkSelector, (target, addedElements) => {
+                    if (!addedElements.length) {
+                        this._processRoot(target);
+                        return;
+                    }
+                    for (const element of addedElements) this._processRoot(element);
+                });
             },
-            destroy() { this._styleEl?.remove(); this._styleEl = null; }
+            destroy() {
+                removeScopedMutationRule(this.id);
+                for (const link of this._rewritten || []) {
+                    const original = this._originals?.get(link);
+                    if (!original) continue;
+                    this._restoreAttribute(link, 'href', original.href);
+                    this._restoreAttribute(link, 'ping', original.ping);
+                    this._restoreAttribute(link, 'rel', original.rel);
+                }
+                this._rewritten?.clear();
+                this._rewritten = null;
+                this._originals = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
+            }
         },
         {
             id: 'autoClosePopups',
