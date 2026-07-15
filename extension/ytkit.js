@@ -8169,10 +8169,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Also intercept the share panel URL display via shared observer
                 this._cleanShareUrl = () => {
                     const input = document.querySelector('input#share-url');
-                    if (input && input.value && !input.dataset.ytkitCleaned) {
-                        const cleaned = cleanYouTubeShareUrl(input.value);
-                        if (cleaned !== input.value) { input.value = cleaned; input.dataset.ytkitCleaned = '1'; }
-                    }
+                    if (!input || !input.value) return;
+                    // Key the guard on the cleaned VALUE, not a boolean: the
+                    // share dialog updates the same input in place (e.g.
+                    // toggling "Start at"), and a one-shot flag left the
+                    // refreshed URL uncleaned.
+                    if (input.dataset.ytkitCleaned === input.value) return;
+                    const cleaned = cleanYouTubeShareUrl(input.value);
+                    if (cleaned !== input.value) input.value = cleaned;
+                    input.dataset.ytkitCleaned = input.value;
                 };
                 addMutationRule(this.id, this._cleanShareUrl);
                 // Also clean address bar on navigation
@@ -31664,8 +31669,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!service) return {};
                 const clean = service.sanitizeArtifactStore(next);
                 appState.settings.aiSummaryArtifactsData = clean;
-                try { void settingsManager.save(appState.settings); }
-                catch (error) { DiagnosticLog?.record('aiVideoSummary.store', error.message); }
+                try {
+                    const write = settingsManager.save(appState.settings);
+                    // An async save rejection is otherwise unobserved while
+                    // the library already shows the artifact as saved.
+                    if (write?.catch) write.catch((error) => {
+                        DiagnosticLog?.record('aiVideoSummary.store', error?.message || 'save failed');
+                        showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444', { tone: 'error' });
+                    });
+                } catch (error) { DiagnosticLog?.record('aiVideoSummary.store', error.message); }
                 return clean;
             },
             _ensurePanel() {

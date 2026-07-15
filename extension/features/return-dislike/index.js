@@ -631,10 +631,24 @@
             for (const card of Array.from(_cards.keys())) {
                 if (card?.isConnected === false) _forgetCard(card);
             }
-            if (_cards.size <= _MAX_TRACKED_CARDS) return;
-            for (const card of Array.from(_cards.keys())) {
-                if (_cards.size <= _MAX_TRACKED_CARDS) break;
-                if (!_visibleCards.has(card)) _forgetCard(card);
+            if (_cards.size > _MAX_TRACKED_CARDS) {
+                for (const card of Array.from(_cards.keys())) {
+                    if (_cards.size <= _MAX_TRACKED_CARDS) break;
+                    if (!_visibleCards.has(card)) _forgetCard(card);
+                }
+            }
+            // _results / _negativeUntil accumulate one entry per videoId ever
+            // resolved; without eviction an hours-long feed session retains
+            // thousands of dead records. Keep results only for videos still
+            // tracked by a card, and sweep expired negative-cache entries.
+            if (_results.size > _MAX_TRACKED_CARDS) {
+                for (const videoId of Array.from(_results.keys())) {
+                    if (!_cardsByVideo.has(videoId)) _results.delete(videoId);
+                }
+            }
+            const nowTs = now();
+            for (const [videoId, until] of _negativeUntil) {
+                if (until <= nowTs) _negativeUntil.delete(videoId);
             }
         }
 
