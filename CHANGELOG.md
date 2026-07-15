@@ -6,6 +6,68 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.6] - 2026-07-15
+
+Deep-audit backlog drain plus a fresh audit sweep over the companion app,
+popup, and build tooling.
+
+### Security
+
+- **Anonymous fetches stay anonymous.** The extension fetch bridge now honors
+  a downgrade-only `credentials: 'omit'`, so the video-insights InnerTube
+  probe no longer sends YouTube session cookies. Callers can never upgrade a
+  non-allowlisted origin to credentialed.
+- **The userscript AI credential dialog renders inside a closed shadow root.**
+  Page scripts on youtube.com could previously read the password input's
+  value (or keylog it) while the dialog was open.
+
+### Fixed
+
+- **Settings imports confirm persistence before reporting success.** A real
+  `chrome.storage` write failure now rolls the import back instead of
+  returning a success summary while the rollback paths stayed unreachable.
+- **YouTube state reset handles the bloated stores it exists for.** Values
+  over the 128 KB backup limit (typically `yt.innertube::requests`) are now
+  cleared without a snapshot and reported as not undoable instead of failing
+  the whole reset with "too large to reset safely".
+- **Popup quick toggles tell the truth on fresh installs.** Default-on
+  features no longer render as Disabled (with a 0 enabled count) before their
+  first explicit write, and the first click disables them instead of
+  re-writing `true`. Diagnostic and legacy-migration writes now go through
+  the serialized mutation controller, closing a lost-update race.
+- **Companion race fixes.** `/update` re-checks in-flight downloads right
+  before restarting (and pauses queue intake for the whole window) so the
+  self-update can no longer orphan freshly spawned yt-dlp processes; a cancel
+  can no longer be revived by a slow-starting worker; retry/resume return 409
+  while the failing worker is still finalizing; and the folder picker can no
+  longer stack a second native dialog.
+- **Gemini honors the `aiSummaryModel` setting** by substituting a validated
+  model into the request path instead of silently pinning the default.
+- **Clean Share URLs copy interception works now.** The old handler read
+  `clipboardData` during dispatch (always empty) and never fired; single-URL
+  selection copies are now cleaned via the live selection.
+- **Search filtering works beyond English.** Recommendation interleaves are
+  detected by YouTube's structural `data-content-type` marker first, and the
+  search-while-watching status line is a reorderable `{count}`/`{query}`
+  template for RTL/CJK locales.
+- **Settings panel mirrors correctly in RTL.** The v3 visual layer's nav
+  accent bar, switch thumb, and sub-feature indents use logical inline
+  properties; insight-rail visibility keys on stable data attributes instead
+  of fragile nth-child positions.
+- **Build tooling:** `audit-storage-size --file` no longer crashes before
+  printing, and `i18n-coverage --check-report` no longer overwrites the
+  report it is checking (a guaranteed-pass gate).
+
+### Changed
+
+- CPU Tamer's description now discloses its hidden-tab lock and database
+  force-release behavior, its lock queue replaces the oldest entry instead of
+  silently dropping new work, and the extension build no longer installs a
+  redundant ISOLATED-world resource-unlock twin.
+- Companion HTTP routes use real `DownloadManager` accessors
+  (`exists`/`status_of`/`snapshot_of`) instead of reaching into the manager's
+  private lock and map.
+
 ## [4.49.5] - 2026-07-15
 
 ### Fixed
