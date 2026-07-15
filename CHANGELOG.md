@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.5] - 2026-07-15
+
+### Fixed
+
+- **DeArrow no longer reports ordinary database misses as rejected requests.**
+  The DeArrow API returns HTTP 404 plus an empty branding payload when a video
+  has no crowdsourced replacement. Astra Deck now treats and caches that as a
+  healthy negative lookup, preserving fallback title formatting and avoiding
+  repeated requests. Malformed video IDs are rejected locally.
+- **Full Settings can safely enable store-safe API features.** Enabling DeArrow,
+  SponsorBlock, or another runtime-host feature from the in-page panel now
+  requests only the host patterns declared by the active build before saving
+  the setting. Denied grants restore the toggle and provide recovery guidance;
+  permission failures are identified separately from upstream HTTP errors.
+- **Sticky-header coverage now spans every Settings category.** Both modular
+  and fallback headless smoke lanes scroll and validate all ten category
+  headers in dark and light themes, preventing a submenu-specific regression.
+
 ## [4.49.4] - 2026-07-15
 
 ### Fixed

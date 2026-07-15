@@ -19,6 +19,7 @@ function loadBackground({
     downloadsDownloadImpl,
     optionalHostPermissions = [],
     permissionsContainsImpl,
+    permissionsRequestImpl,
     initialSettings = {},
     apiNamespace = 'chrome'
 } = {}) {
@@ -72,7 +73,8 @@ function loadBackground({
             }
         },
         permissions: {
-            contains: permissionsContainsImpl || ((_payload, callback) => callback(true))
+            contains: permissionsContainsImpl || ((_payload, callback) => callback(true)),
+            request: permissionsRequestImpl || ((_payload, callback) => callback(true))
         },
         cookies: {
             getAll: async () => []
@@ -530,6 +532,50 @@ test('background EXT_FETCH allows runtime optional hosts after grant is present'
     assert.equal(capturedUrl, 'https://www.reddit.com/search.json?q=url%3Ayoutube.com');
     assert.equal(response.status, 200);
     assert.equal(response.responseText, '{"ok":true}');
+});
+
+test('background requests only declared optional hosts from an in-page user gesture', async () => {
+    let requestedPayload = null;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: ['https://sponsor.ajay.app/*'],
+        permissionsRequestImpl(payload, callback) {
+            requestedPayload = payload;
+            callback(true);
+        }
+    });
+
+    const granted = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://sponsor.ajay.app/*']
+    });
+    const rejected = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://attacker.example/*']
+    });
+
+    assert.equal(granted.ok, true);
+    assert.equal(granted.granted, true);
+    assert.deepEqual(Array.from(requestedPayload.origins), ['https://sponsor.ajay.app/*']);
+    assert.equal(rejected.ok, false);
+    assert.equal(rejected.granted, false);
+    assert.match(rejected.error, /not declared/);
+});
+
+test('background reports optional-host denial without persisting a false grant', async () => {
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: ['https://sponsor.ajay.app/*'],
+        permissionsRequestImpl(_payload, callback) {
+            callback(false);
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://sponsor.ajay.app/*']
+    });
+
+    assert.equal(response.ok, false);
+    assert.equal(response.granted, false);
 });
 
 test('background DOWNLOAD_FILE sanitizes reserved Windows filenames', async () => {

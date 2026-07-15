@@ -870,7 +870,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.49.4';
+    const YTKIT_VERSION = '4.49.5';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4747,6 +4747,43 @@ return response;
     let _settingsPanelRuntimeInitialized = false;
     let _settingsPanelRuntimeReady = false;
 
+    function getDeclaredOptionalHostsForFeatures(featureIds) {
+        if (!hasExtensionContext()) return [];
+        let declared;
+        try {
+            declared = globalThis.YTKitBrowser?.runtime?.getManifest?.().optional_host_permissions;
+        } catch (_) {
+            return [];
+        }
+        if (!Array.isArray(declared) || declared.length === 0) return [];
+        const getHosts = globalThis.YTKitCore?.getOptionalHostPermissionsForFeature;
+        if (typeof getHosts !== 'function') return [];
+        const declaredSet = new Set(declared);
+        const ids = Array.isArray(featureIds) ? featureIds : [featureIds];
+        const requested = [];
+        for (const featureId of ids) {
+            for (const origin of getHosts(featureId) || []) {
+                if (declaredSet.has(origin)) requested.push(origin);
+            }
+        }
+        return Array.from(new Set(requested));
+    }
+
+    async function requestFeatureOptionalHosts(featureIds, enabling) {
+        if (enabling !== true) return true;
+        const origins = getDeclaredOptionalHostsForFeatures(featureIds);
+        if (!origins.length) return true;
+        const response = await sendRuntimeMessage({
+            type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+            origins
+        });
+        if (response?.granted === true) return true;
+        const error = new Error(response?.error
+            || 'Host access was not granted. Enable the setting again and approve the browser prompt.');
+        error.code = 'OPTIONAL_HOST_PERMISSION_DENIED';
+        throw error;
+    }
+
     function getSettingsPanelRuntime() {
         if (!_settingsPanelRuntimeReady) return null;
         if (_settingsPanelRuntimeInitialized) return _settingsPanelRuntime;
@@ -4788,6 +4825,7 @@ return response;
                 liveFeatureList,
                 normalizeSelectOptions,
                 openExternalUrl,
+                requestFeatureOptionalHosts,
                 safeDestroyFeature,
                 safeInitFeature,
                 settingsManager,
@@ -29369,6 +29407,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             removeNavigateRule,
             injectStyle,
             announceA11y,
+            VIDEO_ID_PATTERN,
             PageTypes
         }) || {
             id: 'deArrow',
@@ -29493,32 +29532,63 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _doFetch(videoId) {
                 const gen = this._generation;
+                let data;
+                let expectedMiss = false;
                 try {
-                    const { data } = await extensionFetchJson({
+                    ({ data } = await extensionFetchJson({
                         method: 'GET',
                         url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
                         timeout: 8000,
-                    });
-                    // Feature torn down mid-flight — don't resurrect the cleared
-                    // cache or arm a persist timer that writes after destroy().
-                    if (gen !== this._generation) return data;
-                    data._ts = Date.now();
-                    const existing = this._cache[videoId];
-                    if (existing && existing._ts && existing._ts > data._ts) return existing;
-                    this._cache[videoId] = data;
-                    this._cacheMeta[videoId] = data._ts;
-                    // Evict oldest entries if in-memory cache exceeds 2000
-                    const cacheKeys = Object.keys(this._cache);
-                    if (cacheKeys.length > 2000) {
-                        cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
-                            .slice(0, cacheKeys.length - 1500)
-                            .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
+                    }));
+                } catch (error) {
+                    // DeArrow uses 404 for a normal negative lookup and still
+                    // returns an empty branding payload. Cache that result so
+                    // fallback mode does not report or refetch ordinary misses.
+                    if (Number(error?.response?.status) === 404) {
+                        expectedMiss = true;
+                        data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
+                            ? error.data
+                            : { titles: [], thumbnails: [], casualVotes: [] };
+                    } else {
+                        ExternalApiHealth?.recordFailure?.('deArrow', error, {
+                            endpoint: 'branding',
+                            cacheState: 'miss'
+                        });
+                        DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                        return null;
                     }
-                    this._schedulePersist();
-                    return data;
-                } catch (_) {
+                }
+                // Feature torn down mid-flight — don't resurrect the cleared
+                // cache or arm a persist timer that writes after destroy().
+                if (gen !== this._generation) return data;
+                if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                    const payloadError = new Error('invalid DeArrow branding payload');
+                    ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
+                        errorClass: 'invalid-payload',
+                        endpoint: 'branding',
+                        cacheState: 'miss'
+                    });
                     return null;
                 }
+                data._ts = Date.now();
+                const existing = this._cache[videoId];
+                if (existing && existing._ts && existing._ts > data._ts) return existing;
+                this._cache[videoId] = data;
+                this._cacheMeta[videoId] = data._ts;
+                // Evict oldest entries if in-memory cache exceeds 2000
+                const cacheKeys = Object.keys(this._cache);
+                if (cacheKeys.length > 2000) {
+                    cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
+                        .slice(0, cacheKeys.length - 1500)
+                        .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
+                }
+                this._schedulePersist();
+                ExternalApiHealth?.recordSuccess?.('deArrow', {
+                    source: expectedMiss ? 'network-miss' : 'network',
+                    cacheState: 'refreshed',
+                    endpoint: 'branding'
+                });
+                return data;
             },
             _schedulePersist() {
                 clearTimeout(this._persistTimer);
@@ -29566,7 +29636,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!link) continue;
                     const url = new URL(link.href, location.origin);
                     const videoId = url.searchParams.get('v');
-                    if (!videoId) continue;
+                    if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
                     // v3.28 deferred → v4.0+: honor per-channel override.
                     // 'off'      → skip title + thumb replacement entirely for this card
                     // 'original' → also skip (channel author wants original metadata)
@@ -43319,25 +43389,52 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         _panelSearchUpdater = _handleSearch;
 
         // Feature toggles
-        doc.addEventListener('change', (e) => {
+        doc.addEventListener('change', async (e) => {
             if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-feature-cb')) {
-                const card = e.target.closest('[data-feature-id]');
+                const input = e.target;
+                const card = input.closest('[data-feature-id]');
                 if (!card) return;
                 const featureId = card.dataset.featureId;
-                const isEnabled = e.target.checked;
+                const isEnabled = input.checked;
+                const feature = getFeatureById(featureId);
+
+                if (isEnabled) {
+                    const wasDisabled = input.disabled;
+                    input.disabled = true;
+                    input.setAttribute('aria-busy', 'true');
+                    try {
+                        await requestFeatureOptionalHosts(featureId, true);
+                    } catch (error) {
+                        input.checked = false;
+                        const deniedSwitch = input.closest('.ytkit-switch');
+                        if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        const deniedCard = input.closest('.ytkit-feature-card');
+                        if (deniedCard && !deniedCard.classList.contains('ytkit-sub-card')) {
+                            deniedCard.classList.remove('ytkit-card-enabled');
+                        }
+                        const featureName = getFeatureName(feature) || featureId;
+                        const message = `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
+                        showToast(message, '#ef4444', { duration: 6 });
+                        setPanelStatus(message, 'error');
+                        DebugManager.log('Permissions', `${featureId} enable blocked: ${error?.message || 'host access denied'}`);
+                        updateAllToggleStates();
+                        return;
+                    } finally {
+                        input.disabled = wasDisabled;
+                        input.removeAttribute('aria-busy');
+                    }
+                }
 
                 // Update switch visual
-                const switchEl = e.target.closest('.ytkit-switch');
+                const switchEl = input.closest('.ytkit-switch');
                 if (switchEl) switchEl.classList.toggle('active', isEnabled);
 
                 // Update card enabled accent stripe
-                const cardEl = e.target.closest('.ytkit-feature-card');
+                const cardEl = input.closest('.ytkit-feature-card');
                 if (cardEl && !cardEl.classList.contains('ytkit-sub-card')) {
                     cardEl.classList.toggle('ytkit-card-enabled', isEnabled);
                 }
-
-                const feature = getFeatureById(featureId);
 
                 // Array-toggle sub-features: modify parent array instead of boolean
                 if (feature?._arrayKey) {
@@ -43442,6 +43539,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const catId = e.target.dataset.category;
                 const pane = doc.getElementById(`ytkit-pane-${catId}`);
 
+                const changedInputs = pane
+                    ? Array.from(pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card) .ytkit-feature-cb'))
+                        .filter((cb) => cb.checked !== isEnabled)
+                    : [];
+                if (isEnabled && changedInputs.length) {
+                    const featureIds = changedInputs
+                        .map((cb) => cb.closest('[data-feature-id]')?.dataset.featureId)
+                        .filter(Boolean);
+                    try {
+                        await requestFeatureOptionalHosts(featureIds, true);
+                    } catch (error) {
+                        e.target.checked = false;
+                        const deniedSwitch = e.target.closest('.ytkit-switch');
+                        if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        const message = 'Some settings need host access. Try again and approve the browser prompt.';
+                        showToast(message, '#ef4444', { duration: 6 });
+                        setPanelStatus(message, 'error');
+                        DebugManager.log('Permissions', `Enable-all blocked: ${error?.message || 'host access denied'}`);
+                        return;
+                    }
+                }
+
                 // Update the switch visual state
                 const switchEl = e.target.closest('.ytkit-switch');
                 if (switchEl) {
@@ -43449,11 +43568,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 if (pane) {
-                    pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card) .ytkit-feature-cb').forEach(cb => {
-                        if (cb.checked !== isEnabled) {
-                            cb.checked = isEnabled;
-                            cb.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
+                    changedInputs.forEach(cb => {
+                        cb.checked = isEnabled;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
                     });
                     setPanelStatus(`${isEnabled ? 'Enabled' : 'Disabled'} all settings in this section.`, 'success');
                 }
