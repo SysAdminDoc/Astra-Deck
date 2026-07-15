@@ -5679,15 +5679,26 @@ return response;
     function cssFeature(id, name, description, group, icon, css, extra) {
         const isRaw = css.includes('{');
         const bodyClass = `ytkit-${id}`;
-        const hasLifecycleSpec = () => !!(Lifecycle && Lifecycle._features && Lifecycle._features.has(id));
+        const getLifecycleSpec = () => Lifecycle?._features?.get(id)?.spec || null;
+        const hasLifecycleSpec = () => !!getLifecycleSpec();
+        const pageScopes = getLifecycleSpec()?.pageScopes;
+        const lifecyclePages = Array.isArray(pageScopes) && !pageScopes.includes('all')
+            ? [...pageScopes]
+            : null;
         const f = {
             id, name, description, group, icon,
+            ...(lifecyclePages ? { pages: lifecyclePages } : {}),
             _styleElement: null,
             _lifecycleDelegated: false,
             init() {
                 if (hasLifecycleSpec()) {
                     try {
-                        Lifecycle.start(this.id, { css, isRaw, bodyClass });
+                        Lifecycle.start(this.id, {
+                            css,
+                            isRaw,
+                            bodyClass,
+                            currentPage: appState.currentPage || getCurrentPage()
+                        });
                         this._lifecycleDelegated = true;
                         return;
                     } catch (_) {

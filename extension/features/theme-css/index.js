@@ -119,15 +119,16 @@
             + '                    }\n                ';
     }
 
-    function createLifecycleSpec(id, category, buildCss) {
+    function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
         const factory = globalThis.YTKitCore
             && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
             && globalThis.YTKitCore.createCssLifecycleSpec;
-        if (factory) return factory({ id, category, buildCss });
+        if (factory) return factory({ id, category, buildCss, pageScopes });
         return {
             id,
             category,
             buildCss,
+            pageScopes: Object.freeze([...pageScopes]),
             init() { /* reason: styles core helper unavailable in this context */ },
             destroy() { /* reason: styles core helper unavailable in this context */ }
         };
@@ -140,13 +141,13 @@
     // The categories below match the settings-schema entries — schema
     // parity is pinned by the hardening test.
     const LIFECYCLE_SPECS = Object.freeze([
-        createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss),
-        createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss),
-        createLifecycleSpec('grayscaleThumbnails',    'shell',        buildGrayscaleThumbnailsCss),
-        createLifecycleSpec('forceDarkEverywhere',    'shell',        buildForceDarkEverywhereCss),
-        createLifecycleSpec('themeAccentColor',       'shell',        buildAccentColorCss),
-        createLifecycleSpec('compactUnfixedHeader',   'shell',        buildCompactUnfixedHeaderCss),
-        createLifecycleSpec('hideVideoEndContent',    'watch-player', buildHideVideoEndContentCss),
+        createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss,          ['watch', 'shorts', 'embed']),
+        createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss,       ['all']),
+        createLifecycleSpec('grayscaleThumbnails',    'shell',        buildGrayscaleThumbnailsCss,  ['home', 'subscriptions', 'search', 'channel', 'watch']),
+        createLifecycleSpec('forceDarkEverywhere',    'shell',        buildForceDarkEverywhereCss,  ['all']),
+        createLifecycleSpec('themeAccentColor',       'shell',        buildAccentColorCss,          ['all']),
+        createLifecycleSpec('compactUnfixedHeader',   'shell',        buildCompactUnfixedHeaderCss, ['all']),
+        createLifecycleSpec('hideVideoEndContent',    'watch-player', buildHideVideoEndContentCss,  ['watch', 'shorts', 'embed']),
     ]);
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});

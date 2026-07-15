@@ -45,15 +45,16 @@
         return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
     }
 
-    function createLifecycleSpec(id, category, buildCss) {
+    function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
         const factory = globalThis.YTKitCore
             && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
             && globalThis.YTKitCore.createCssLifecycleSpec;
-        if (factory) return factory({ id, category, buildCss });
+        if (factory) return factory({ id, category, buildCss, pageScopes });
         return {
             id,
             category,
             buildCss,
+            pageScopes: Object.freeze([...pageScopes]),
             init() { /* reason: styles core helper unavailable in this context */ },
             destroy() { /* reason: styles core helper unavailable in this context */ }
         };
@@ -64,12 +65,12 @@
     // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
     // is only the compatibility wrapper/fallback.
     const LIFECYCLE_SPECS = Object.freeze([
-        createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss),
-        createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss),
-        createLifecycleSpec('widenSearchBar',          'shell',        buildWidenSearchBarCss),
-        createLifecycleSpec('disablePlayOnHover',      'shorts',       buildDisablePlayOnHoverCss),
-        createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss),
-        createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss),
+        createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss,        ['all']),
+        createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss,         ['all']),
+        createLifecycleSpec('widenSearchBar',          'shell',        buildWidenSearchBarCss,          ['all']),
+        createLifecycleSpec('disablePlayOnHover',      'shorts',       buildDisablePlayOnHoverCss,      ['home', 'subscriptions', 'search', 'channel']),
+        createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss,  ['subscriptions']),
+        createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss, ['subscriptions']),
     ]);
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});

@@ -97,14 +97,39 @@
                 category,
                 buildCss,
                 isRawCss,
-                bodyClass = `ytkit-${id}`
+                bodyClass = `ytkit-${id}`,
+                pageScopes = ['all']
             } = options;
+
+            const normalizedPageScopes = Object.freeze(
+                [...new Set((Array.isArray(pageScopes) ? pageScopes : [pageScopes])
+                    .map((scope) => String(scope || '').trim().toLowerCase())
+                    .filter(Boolean))]
+            );
+            const resolvedPageScopes = normalizedPageScopes.length
+                ? normalizedPageScopes
+                : Object.freeze(['all']);
+            const matchesPage = (page) => resolvedPageScopes.includes('all')
+                || resolvedPageScopes.includes(String(page || '').trim().toLowerCase());
+
+            function removeRecord() {
+                const record = lifecycleStyleRecords.get(id);
+                if (!record) return false;
+                record.style?.remove();
+                if (record.bodyClass && document.body) {
+                    document.body.classList.remove(record.bodyClass);
+                }
+                lifecycleStyleRecords.delete(id);
+                return true;
+            }
 
             return {
                 id,
                 category,
                 buildCss,
+                pageScopes: resolvedPageScopes,
                 init(ctx = {}) {
+                    if (!matchesPage(ctx.currentPage)) return;
                     const settings = ctx.settings || {};
                     const css = typeof buildCss === 'function'
                         ? buildCss(settings, ctx)
@@ -119,6 +144,10 @@
                     lifecycleStyleRecords.set(id, { style, bodyClass: className });
                 },
                 apply(ctx = {}) {
+                    if (!matchesPage(ctx.currentPage)) {
+                        removeRecord();
+                        return;
+                    }
                     if (typeof buildCss !== 'function') return;
                     const record = lifecycleStyleRecords.get(id);
                     const css = buildCss(ctx.settings || {}, ctx);
@@ -145,15 +174,7 @@
                     record.style.textContent = css;
                 },
                 destroy(ctx = {}) {
-                    const record = lifecycleStyleRecords.get(id);
-                    if (record) {
-                        record.style?.remove();
-                        if (record.bodyClass && document.body) {
-                            document.body.classList.remove(record.bodyClass);
-                        }
-                        lifecycleStyleRecords.delete(id);
-                        return;
-                    }
+                    if (removeRecord()) return;
                     const className = ctx.bodyClass || bodyClass;
                     document.getElementById(`yt-suite-style-${id}`)?.remove();
                     if (className && document.body) document.body.classList.remove(className);
@@ -5801,6 +5822,7 @@
         const featureSpec = Object.freeze({
             id: 'subtitleStyling',
             category: 'subtitles',
+            pageScopes: Object.freeze(['watch', 'shorts', 'embed']),
             buildCss: buildSubtitleCss,
             // No-op for wave 1 — ytkit.js inline block still owns the real
             // injectStyle / cleanup. Wave 2 will replace these with the
@@ -5914,6 +5936,7 @@
         const featureSpec = Object.freeze({
             id: 'videoVisualFilters',
             category: 'playback-audio',
+            pageScopes: Object.freeze(['watch', 'shorts', 'embed']),
             buildCss: buildVideoFilterCss,
             isIdentity: isVideoFilterIdentity,
             // v4.47.0 NF5 wave 1: register-only.
@@ -6015,6 +6038,7 @@
         const featureSpec = Object.freeze({
             id: 'blueLightFilter',
             category: 'playback-audio',
+            pageScopes: Object.freeze(['all']),
             buildRgba: buildBlueLightRgba,
             OVERLAY_FIXED_CSS,
             // v4.47.0 NF5 wave 1: register-only; inline ytkit.js owns
@@ -6166,15 +6190,16 @@
                 + '                    }\n                ';
         }
 
-        function createLifecycleSpec(id, category, buildCss) {
+        function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
             const factory = globalThis.YTKitCore
                 && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
                 && globalThis.YTKitCore.createCssLifecycleSpec;
-            if (factory) return factory({ id, category, buildCss });
+            if (factory) return factory({ id, category, buildCss, pageScopes });
             return {
                 id,
                 category,
                 buildCss,
+                pageScopes: Object.freeze([...pageScopes]),
                 init() { /* reason: styles core helper unavailable in this context */ },
                 destroy() { /* reason: styles core helper unavailable in this context */ }
             };
@@ -6187,13 +6212,13 @@
         // The categories below match the settings-schema entries — schema
         // parity is pinned by the hardening test.
         const LIFECYCLE_SPECS = Object.freeze([
-            createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss),
-            createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss),
-            createLifecycleSpec('grayscaleThumbnails',    'shell',        buildGrayscaleThumbnailsCss),
-            createLifecycleSpec('forceDarkEverywhere',    'shell',        buildForceDarkEverywhereCss),
-            createLifecycleSpec('themeAccentColor',       'shell',        buildAccentColorCss),
-            createLifecycleSpec('compactUnfixedHeader',   'shell',        buildCompactUnfixedHeaderCss),
-            createLifecycleSpec('hideVideoEndContent',    'watch-player', buildHideVideoEndContentCss),
+            createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss,          ['watch', 'shorts', 'embed']),
+            createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss,       ['all']),
+            createLifecycleSpec('grayscaleThumbnails',    'shell',        buildGrayscaleThumbnailsCss,  ['home', 'subscriptions', 'search', 'channel', 'watch']),
+            createLifecycleSpec('forceDarkEverywhere',    'shell',        buildForceDarkEverywhereCss,  ['all']),
+            createLifecycleSpec('themeAccentColor',       'shell',        buildAccentColorCss,          ['all']),
+            createLifecycleSpec('compactUnfixedHeader',   'shell',        buildCompactUnfixedHeaderCss, ['all']),
+            createLifecycleSpec('hideVideoEndContent',    'watch-player', buildHideVideoEndContentCss,  ['watch', 'shorts', 'embed']),
         ]);
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -6303,15 +6328,16 @@
                 @keyframes ytkit-nyan-rainbow { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }`;
         }
 
-        function createLifecycleSpec(id, category, buildCss) {
+        function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
             const factory = globalThis.YTKitCore
                 && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
                 && globalThis.YTKitCore.createCssLifecycleSpec;
-            if (factory) return factory({ id, category, buildCss });
+            if (factory) return factory({ id, category, buildCss, pageScopes });
             return {
                 id,
                 category,
                 buildCss,
+                pageScopes: Object.freeze([...pageScopes]),
                 init() { /* reason: styles core helper unavailable in this context */ },
                 destroy() { /* reason: styles core helper unavailable in this context */ }
             };
@@ -6322,11 +6348,11 @@
         // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
         // is only the compatibility wrapper/fallback.
         const LIFECYCLE_SPECS = Object.freeze([
-            createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss),
-            createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss),
-            createLifecycleSpec('hideLatestPosts',        'feed',         buildHideLatestPostsCss),
-            createLifecycleSpec('disableMiniPlayer',      'watch-player', buildDisableMiniPlayerCss),
-            createLifecycleSpec('nyanCatProgressBar',     'shell',        buildNyanCatProgressBarCss),
+            createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss, ['all']),
+            createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss,         ['all']),
+            createLifecycleSpec('hideLatestPosts',        'feed',         buildHideLatestPostsCss,        ['home', 'subscriptions', 'channel']),
+            createLifecycleSpec('disableMiniPlayer',      'watch-player', buildDisableMiniPlayerCss,      ['all']),
+            createLifecycleSpec('nyanCatProgressBar',     'shell',        buildNyanCatProgressBarCss,     ['watch', 'shorts', 'embed']),
         ]);
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -6414,15 +6440,16 @@
             return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
         }
 
-        function createLifecycleSpec(id, category, buildCss) {
+        function createLifecycleSpec(id, category, buildCss, pageScopes = ['all']) {
             const factory = globalThis.YTKitCore
                 && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
                 && globalThis.YTKitCore.createCssLifecycleSpec;
-            if (factory) return factory({ id, category, buildCss });
+            if (factory) return factory({ id, category, buildCss, pageScopes });
             return {
                 id,
                 category,
                 buildCss,
+                pageScopes: Object.freeze([...pageScopes]),
                 init() { /* reason: styles core helper unavailable in this context */ },
                 destroy() { /* reason: styles core helper unavailable in this context */ }
             };
@@ -6433,12 +6460,12 @@
         // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
         // is only the compatibility wrapper/fallback.
         const LIFECYCLE_SPECS = Object.freeze([
-            createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss),
-            createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss),
-            createLifecycleSpec('widenSearchBar',          'shell',        buildWidenSearchBarCss),
-            createLifecycleSpec('disablePlayOnHover',      'shorts',       buildDisablePlayOnHoverCss),
-            createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss),
-            createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss),
+            createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss,        ['all']),
+            createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss,         ['all']),
+            createLifecycleSpec('widenSearchBar',          'shell',        buildWidenSearchBarCss,          ['all']),
+            createLifecycleSpec('disablePlayOnHover',      'shorts',       buildDisablePlayOnHoverCss,      ['home', 'subscriptions', 'search', 'channel']),
+            createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss,  ['subscriptions']),
+            createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss, ['subscriptions']),
         ]);
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});

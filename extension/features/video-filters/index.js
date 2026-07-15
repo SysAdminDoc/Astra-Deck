@@ -75,6 +75,7 @@
     const featureSpec = Object.freeze({
         id: 'videoVisualFilters',
         category: 'playback-audio',
+        pageScopes: Object.freeze(['watch', 'shorts', 'embed']),
         buildCss: buildVideoFilterCss,
         isIdentity: isVideoFilterIdentity,
         // v4.47.0 NF5 wave 1: register-only.
