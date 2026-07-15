@@ -9,14 +9,19 @@ const { spawn, spawnSync } = require('child_process');
 const WebSocket = require('ws');
 const {
     copyDir,
+    getPageAccessibleResourceInventory,
     patchManifestForBuildProfile,
     shouldStageEntry,
+    WEB_ACCESSIBLE_RESOURCE_POLICY,
 } = require('../build-extension.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const EXT_DIR = path.join(REPO_ROOT, 'extension');
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const DEVTOOLS_FETCH_TIMEOUT_MS = 2000;
+const PAGE_ACCESSIBLE_RESOURCES = Object.freeze(
+    getPageAccessibleResourceInventory().map((entry) => entry.resource)
+);
 const POPUP_BOOT_SETTINGS = Object.freeze({
     sponsorBlock: true,
     returnDislike: true,
@@ -34,8 +39,35 @@ function createChromiumStage(stageRoot) {
     const manifestPath = path.join(stageDir, 'manifest.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     patchManifestForBuildProfile(manifest, 'store-safe');
+    validateDynamicWebAccessibleResourceManifest(manifest);
     fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     return { manifest, stageDir };
+}
+
+function validateDynamicWebAccessibleResourceManifest(manifest) {
+    const entries = manifest.web_accessible_resources || [];
+    if (entries.length !== 1) {
+        throw new Error(`Expected one web-accessible resource entry; found ${entries.length}.`);
+    }
+    const [entry] = entries;
+    const actualResources = [...(entry.resources || [])].sort();
+    const expectedResources = [...PAGE_ACCESSIBLE_RESOURCES].sort();
+    if (JSON.stringify(actualResources) !== JSON.stringify(expectedResources)) {
+        throw new Error(
+            `Web-accessible resources exceed the generated consumer inventory: ${actualResources.join(', ')}`
+        );
+    }
+    if (actualResources.some((resource) => resource.includes('*'))) {
+        throw new Error('Web-accessible resource paths must not contain wildcards.');
+    }
+    if (entry.use_dynamic_url !== true) {
+        throw new Error('Chromium web-accessible resources must use a per-session dynamic URL.');
+    }
+    const actualMatches = [...(entry.matches || [])].sort();
+    const expectedMatches = [...WEB_ACCESSIBLE_RESOURCE_POLICY.matches].sort();
+    if (JSON.stringify(actualMatches) !== JSON.stringify(expectedMatches)) {
+        throw new Error(`Unexpected web-accessible resource matches: ${actualMatches.join(', ')}`);
+    }
 }
 
 function pushIfFile(candidates, label, filePath) {
@@ -285,6 +317,80 @@ async function evaluate(client, expression) {
         throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
     }
     return result.result?.value;
+}
+
+function validateDynamicWebAccessibleResourceResults(results, extensionId) {
+    if (!Array.isArray(results) || results.length !== PAGE_ACCESSIBLE_RESOURCES.length) {
+        throw new Error('Dynamic web-accessible resource probe returned an incomplete result set.');
+    }
+    const expected = [...PAGE_ACCESSIBLE_RESOURCES].sort();
+    const actual = results.map((entry) => entry.resource).sort();
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(`Dynamic resource probe returned unexpected paths: ${actual.join(', ')}`);
+    }
+
+    const dynamicHosts = new Set();
+    for (const result of results) {
+        if (!result.ok || result.status !== 200 || !Number.isFinite(result.bytes) || result.bytes <= 0) {
+            throw new Error(
+                `Dynamic resource did not load: ${result.resource} `
+                + `(${result.status || 0}${result.error ? `; ${result.error}` : ''})`
+            );
+        }
+        const url = new URL(result.url);
+        if (url.protocol !== 'chrome-extension:') {
+            throw new Error(`Dynamic resource used an unexpected protocol: ${result.url}`);
+        }
+        if (decodeURIComponent(url.pathname.replace(/^\//, '')) !== result.resource) {
+            throw new Error(`Dynamic resource URL did not preserve its path: ${result.url}`);
+        }
+        if (!url.hostname || url.hostname === extensionId) {
+            throw new Error(`Resource URL did not use a per-session dynamic host: ${result.url}`);
+        }
+        dynamicHosts.add(url.hostname);
+    }
+    if (dynamicHosts.size !== 1) {
+        throw new Error('Web-accessible resources did not share one per-session dynamic host.');
+    }
+    return [...dynamicHosts][0];
+}
+
+async function probeDynamicWebAccessibleResources(backgroundTarget, extensionId) {
+    const client = await connectCdp(backgroundTarget.webSocketDebuggerUrl);
+    try {
+        await client.send('Runtime.enable');
+        const resourcesJson = JSON.stringify(PAGE_ACCESSIBLE_RESOURCES);
+        const results = await evaluate(client, `(async () => Promise.all(${resourcesJson}.map(async (resource) => {
+            const url = chrome.runtime.getURL(resource);
+            try {
+                const response = await fetch(url);
+                const body = await response.arrayBuffer();
+                return {
+                    resource,
+                    url,
+                    ok: response.ok,
+                    status: response.status,
+                    bytes: body.byteLength,
+                    contentType: response.headers.get('content-type') || '',
+                    error: ''
+                };
+            } catch (error) {
+                return {
+                    resource,
+                    url,
+                    ok: false,
+                    status: 0,
+                    bytes: 0,
+                    contentType: '',
+                    error: error?.message || String(error)
+                };
+            }
+        })))()`);
+        const dynamicHost = validateDynamicWebAccessibleResourceResults(results, extensionId);
+        return { dynamicHost, resources: results };
+    } finally {
+        client.close();
+    }
 }
 
 function extensionIdFromTarget(target) {
@@ -609,6 +715,10 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
         await waitForDevTools(devToolsPort, opts.timeoutMs);
         const backgroundTarget = await waitForBackgroundTarget(devToolsPort, opts.timeoutMs);
         const extensionId = extensionIdFromTarget(backgroundTarget);
+        const webAccessibleResources = await probeDynamicWebAccessibleResources(
+            backgroundTarget,
+            extensionId
+        );
         const popup = await openPopupFromToolbar(
             backgroundTarget,
             devToolsPort,
@@ -664,6 +774,7 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
             revokeState,
             stageDir,
             stderr,
+            webAccessibleResources,
         };
     } catch (error) {
         if (!opts.headed && /chrome\.action\.openPopup is unavailable/i.test(error.message || '')) {
@@ -733,6 +844,10 @@ async function main(argv = process.argv.slice(2)) {
         console.log(`[smoke-chromium-optional-hosts] ${blocked.label}: --load-extension blocked by local Chrome policy; tried next browser`);
     }
     console.log(`[smoke-chromium-optional-hosts] ${result.browser}: loaded store-safe MV3 ${result.extensionId}`);
+    console.log(
+        `[smoke-chromium-optional-hosts] dynamic page resources loaded from ${result.webAccessibleResources.dynamicHost}: `
+        + result.webAccessibleResources.resources.map((entry) => entry.resource).join(', ')
+    );
     console.log(`[smoke-chromium-optional-hosts] optional hosts before grant: ${result.expectedOptionalOrigins.length} missing`);
     console.log(`[smoke-chromium-optional-hosts] banner: ${result.promptState.bannerText}`);
     if (opts.expectDeny) {
@@ -756,6 +871,7 @@ if (require.main === module) {
 
 module.exports = {
     POPUP_BOOT_SETTINGS,
+    PAGE_ACCESSIBLE_RESOURCES,
     browserCandidates,
     buildIsolatedHeadedCommand,
     chromiumArgs,
@@ -768,12 +884,15 @@ module.exports = {
     killProcessTree,
     missingValues,
     parseArgs,
+    probeDynamicWebAccessibleResources,
     removeDirWithRetries,
     reserveLoopbackPort,
     shouldStageEntry,
     sleep,
     validateGrantCompleted,
     validateGrantDenied,
+    validateDynamicWebAccessibleResourceManifest,
+    validateDynamicWebAccessibleResourceResults,
     validatePromptReady,
     validateRevokedState,
     waitForBackgroundTarget,

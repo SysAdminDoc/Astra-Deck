@@ -938,9 +938,7 @@ return response;
     }
 
     const BRAND_ASSETS = Object.freeze({
-        glyph: getBrandAssetUrl('32.png'),
-        wordmarkDark: getBrandAssetUrl('brand-wordmark-dark.svg'),
-        wordmarkLight: getBrandAssetUrl('brand-wordmark-light.svg')
+        glyph: getBrandAssetUrl('32.png')
     });
 
     function isPlainObject(value) {
