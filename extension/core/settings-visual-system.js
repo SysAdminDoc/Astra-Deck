@@ -400,6 +400,9 @@
         }
 
         #ytkit-settings-panel .ytkit-pane-header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 4 !important;
             display: flex !important;
             align-items: flex-start !important;
             justify-content: space-between !important;
@@ -409,7 +412,9 @@
             padding: 0 0 22px !important;
             border: 0 !important;
             border-bottom: 1px solid var(--ytkit-v3-border) !important;
-            background: transparent !important;
+            background: var(--ytkit-v3-bg) !important;
+            box-shadow: 0 -28px 0 var(--ytkit-v3-bg) !important;
+            isolation: isolate !important;
         }
 
         #ytkit-settings-panel .ytkit-pane-title {

@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.4] - 2026-07-15
+
+### Fixed
+
+- **Settings section headers remain readable while scrolling.** The active category header now owns an opaque, theme-aware sticky surface and explicit stacking context, preventing feature names, descriptions, and toggles from showing through the Playback/section title in dark or light mode. The headless settings smoke now scrolls the real panel and captures this state in both extension-module and userscript-fallback paths.
+
 ## [4.49.3] - 2026-07-15
 
 ### Fixed

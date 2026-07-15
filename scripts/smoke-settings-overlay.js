@@ -316,6 +316,36 @@ const IN_PAGE_CHECKS = `(() => {
     return JSON.stringify({ failures, controls: controls.length, rect: { w: Math.round(rect.width), h: Math.round(rect.height) } });
 })()`;
 
+const SCROLLED_HEADER_CHECKS = `(() => {
+    const failures = [];
+    const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
+    const header = document.querySelector('#ytkit-settings-panel .ytkit-pane.active .ytkit-pane-header');
+    if (!content || !header) {
+        return JSON.stringify({ failures: ['could not stage sticky section header scroll check'] });
+    }
+    const style = getComputedStyle(header);
+    const color = String(style.backgroundColor || '');
+    const rgba = color.match(/rgba?\\(([^)]+)\\)/);
+    const alpha = rgba && rgba[1].split(',').length >= 4
+        ? Number(rgba[1].split(',')[3])
+        : (rgba ? 1 : 0);
+    if (style.position !== 'sticky') {
+        failures.push('section header is not sticky after scrolling');
+    }
+    if (!Number.isFinite(alpha) || alpha < 0.98) {
+        failures.push('sticky section header background is not opaque after scrolling (' + color + ')');
+    }
+    if (Number(style.zIndex) < 2) {
+        failures.push('sticky section header does not stack above scrolling controls');
+    }
+    const contentRect = content.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    if (headerRect.top < contentRect.top - 1 || headerRect.top > contentRect.top + 32) {
+        failures.push('sticky section header escaped its scroll viewport (header ' + Math.round(headerRect.top) + ', content ' + Math.round(contentRect.top) + ')');
+    }
+    return JSON.stringify({ failures });
+})()`;
+
 function buildFixture(stageDir, { fallbackOnly = false } = {}) {
     copyDir(EXT_DIR, stageDir);
     fs.writeFileSync(path.join(stageDir, 'chrome-stub.js'), CHROME_STUB, 'utf8');
@@ -561,6 +591,36 @@ async function main() {
 
             const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
             fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            if (['desktop-dark', 'desktop-light'].includes(state.name)) {
+                const stagedScroll = await client.evaluate(`(() => {
+                    const tab = document.querySelector('.ytkit-nav-btn[data-tab="Playback"]')
+                        || document.querySelector('.ytkit-nav-btn[data-tab="playback"]');
+                    if (tab) tab.click();
+                    const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
+                    if (!content) return false;
+                    content.scrollTop = Math.min(220, Math.max(0, content.scrollHeight - content.clientHeight));
+                    return content.scrollTop > 0;
+                })()`);
+                if (!stagedScroll) {
+                    failuresByState[state.name].push('could not scroll settings content for sticky header proof');
+                } else {
+                    await sleep(120);
+                    const scrolledReport = JSON.parse(await client.evaluate(SCROLLED_HEADER_CHECKS));
+                    failuresByState[state.name].push(...(scrolledReport.failures || []));
+                    const scrolledShot = await client.send('Page.captureScreenshot', {
+                        format: 'png',
+                        captureBeyondViewport: false
+                    });
+                    fs.writeFileSync(
+                        path.join(outDir, `${state.name}-scrolled-header.png`),
+                        Buffer.from(scrolledShot.data, 'base64')
+                    );
+                    await client.evaluate(`(() => {
+                        const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
+                        if (content) content.scrollTop = 0;
+                    })()`);
+                }
+            }
             if (['desktop-dark', 'desktop-light'].includes(state.name) && !opts.fallbackOnly) {
                 const categoryIds = await client.evaluate(`Array.from(
                     document.querySelectorAll('.ytkit-nav-btn[data-tab]'),
@@ -657,6 +717,7 @@ if (require.main === module) {
 module.exports = {
     buildFixture,
     CHROME_STUB,
+    SCROLLED_HEADER_CHECKS,
     DevtoolsClient,
     findBrowser,
     PANEL_SELECTOR,
