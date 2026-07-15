@@ -6,6 +6,73 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.2] - 2026-07-15
+
+Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
+
+### Fixed
+
+- **Companion folder picker worked again.** Every `/pick-folder` request
+  returned HTTP 500: the nested `/queue` route handler was named `queue`,
+  shadowing the stdlib `queue` module for every sibling closure in
+  `create_api`. The extension popup's "Change folder" button was fully broken;
+  a Flask-level round-trip test now pins the path.
+- **Companion queue recovery is truthful.** A schema-incompatible pending
+  queue now surfaces its real cause (with a distinct `queue-schema-incompatible`
+  code and remediation) instead of generic disk-space advice; cookie-jar write
+  failures regained their server-log diagnostics.
+- **Cross-browser wrapper drift.** Successful `downloads.show` reveals were
+  logged as `reveal-failed` in the service-worker lifecycle ring (the void
+  no-callback API rejected in the retry path); popup preview mode crashed on
+  its own degraded-path classifier; the What's New dismissal raced popup
+  teardown so the banner could reappear forever; a slow-hydrating watch page
+  could get a duplicate youtube.com tab from the panel-open ack timeout; and
+  Firefox native-messaging disconnects lost their reason (`port.error`).
+- **Feed features under mutation pressure.** Subscription View no longer
+  self-triggers a ~10 Hz mutation loop, no longer sorts cards past the
+  infinite-scroll continuation renderer (which pinned a permanently
+  intersecting spinner at the top of the feed), skips off-page teardown churn,
+  and keeps keyboard focus when switching Grid/List/Compact. Video Hider
+  requeues the unprocessed tail of a cancelled mutation batch instead of
+  leaving hidden videos visible. Search While Watching invalidates in-flight
+  searches on cache hits, stops caching empty result sets, and offers retry in
+  the empty state. Video Insights sweeps its attempt map and retries panel
+  attachment on slow cold loads.
+- **Live chat and floating chat.** Dragging the fullscreen floating chat no
+  longer strands when the cursor enters the chat iframe (pointer capture +
+  drag-state reset); the iframe reaction controller no longer wipes the
+  top-frame panel's saved position; reaction discovery and Watch Later
+  Workbench removal no longer depend on English YouTube strings (removal was
+  a silent no-op on the 10 non-English locales); the default bot filter no
+  longer hides users merely containing "bot" (Abbott, Botany); message entry
+  animation respects reduced motion.
+- **Data safety.** The YouTube state-reset undo snapshot survives
+  transport-level failures (the channel can die after state was already
+  cleared — deleting the snapshot destroyed the only recovery); overlapping
+  storage flushes are serialized so a failed older write cannot resurrect
+  stale values over newer persisted ones; AI summary artifact saves surface
+  async persistence failures; Return YouTube Dislike session caches are
+  evicted with card pruning; Clean Share URLs re-cleans in-place share-input
+  updates.
+
+### Accessibility
+
+- **Settings toggles regained a visible keyboard focus ring** — the v3 visual
+  system's box-shadow reset had silenced every focus cue on the panel's
+  primary control in both themes.
+- **AA contrast repaired**: filled coral controls (Save) moved from 3.08:1 to
+  4.99:1 via a dedicated accent-fill token; light-theme subtle text raised
+  from 3.36:1 to 4.6:1; the Subscription View active button is readable in
+  the light theme. The Watch Later Workbench dialog gained Escape-to-close,
+  initial focus, a live status region, and focus-visible rings.
+
+### Localization
+
+- The 10 YouTube state-reset status/toast strings and the artifact
+  save-failure toast referenced locale keys that were never registered;
+  keys now exist in all 11 locales with `{count}` templates for dynamic
+  values.
+
 ## [4.49.1] - 2026-07-15
 
 ### Changed
