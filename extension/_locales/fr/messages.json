@@ -1,4 +1,76 @@
 {
+  "aiSummaryButtonTitle": {
+    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+  },
+  "aiSummaryCalling": {
+    "message": "Appel du fournisseur d’IA…"
+  },
+  "aiSummaryCallingTruncated": {
+    "message": "Calling AI provider with the first 120,000 transcript characters…"
+  },
+  "aiSummaryCitationLabel": {
+    "message": "Citation de la transcription"
+  },
+  "aiSummaryClose": {
+    "message": "Fermer le résumé IA"
+  },
+  "aiSummaryCopied": {
+    "message": "Résumé copié avec les citations"
+  },
+  "aiSummaryCopy": {
+    "message": "Copier avec les citations"
+  },
+  "aiSummaryDelete": {
+    "message": "Supprimer"
+  },
+  "aiSummaryDeleted": {
+    "message": "Saved summary deleted"
+  },
+  "aiSummaryDialogLabel": {
+    "message": "Résumé vidéo par IA"
+  },
+  "aiSummaryExport": {
+    "message": "Exporter l’archive"
+  },
+  "aiSummaryExported": {
+    "message": "Saved summaries exported"
+  },
+  "aiSummaryFailed": {
+    "message": "Summary failed"
+  },
+  "aiSummaryFetchingTranscript": {
+    "message": "Récupération de la transcription…"
+  },
+  "aiSummaryInvalid": {
+    "message": "The saved summary is invalid and cannot be displayed."
+  },
+  "aiSummaryLibrary": {
+    "message": "Résumés enregistrés"
+  },
+  "aiSummaryNoExport": {
+    "message": "No saved summaries to export."
+  },
+  "aiSummaryNoSaved": {
+    "message": "Aucun résumé enregistré ne correspond à cette recherche."
+  },
+  "aiSummaryRestored": {
+    "message": "Saved summary restored"
+  },
+  "aiSummarySearchLabel": {
+    "message": "Rechercher les résumés enregistrés"
+  },
+  "aiSummarySearchPlaceholder": {
+    "message": "Rechercher les résumés enregistrés…"
+  },
+  "aiSummaryTitle": {
+    "message": "Résumé par IA"
+  },
+  "aiSummaryTldr": {
+    "message": "En bref"
+  },
+  "aiSummaryUserscriptButtonTitle": {
+    "message": "AI Summary (right-click to manage the provider credential)"
+  },
   "brandName": {
     "message": "Astra Deck"
   },

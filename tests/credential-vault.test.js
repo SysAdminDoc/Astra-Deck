@@ -8,6 +8,7 @@ const {
     createUserscriptCredentialVault,
     validateProviderEndpoint
 } = require('../extension/core/credential-vault');
+require('../extension/core/ai-summary-artifacts');
 const { createUserscriptAiSummaryFeature } = require('../extension/core/userscript-ai-summary');
 
 function createHarness(options = {}) {

@@ -14,8 +14,8 @@
       "digest": "4c50f3c01414595cb4de438c817debdd2df321738b8e792ac9ea30d3446db92c"
     },
     "extension/core/userscript-ai-summary.js": {
-      "count": 11,
-      "digest": "40d476d8611c1dcb6508257328cb1af4752cb074d3bf1715de8da3cdd5a1debf"
+      "count": 10,
+      "digest": "b2b83b88af11f05d8ad6b3dd747d120eb2016989e7041155b932471caddcfb51"
     },
     "extension/features/dearrow/index.js": {
       "count": 1,
@@ -94,8 +94,8 @@
       "digest": "7cd34d4d191ed8555010d837e20d027b572020577722097cc92b1477e2952268"
     },
     "extension/ytkit.js": {
-      "count": 1414,
-      "digest": "8471ef66e24c5ed8a9ed3c0e88860a63cfa6e67d769550a1c4cef12c5522f03f"
+      "count": 1406,
+      "digest": "6bfc906271d44e43417d93b71726e0ece417080e18dfca795e17bf9e9108bbe9"
     }
   }
 }

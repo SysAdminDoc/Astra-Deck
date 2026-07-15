@@ -1,4 +1,76 @@
 {
+  "aiSummaryButtonTitle": {
+    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+  },
+  "aiSummaryCalling": {
+    "message": "AIプロバイダーを呼び出しています…"
+  },
+  "aiSummaryCallingTruncated": {
+    "message": "Calling AI provider with the first 120,000 transcript characters…"
+  },
+  "aiSummaryCitationLabel": {
+    "message": "文字起こしの引用"
+  },
+  "aiSummaryClose": {
+    "message": "AI要約を閉じる"
+  },
+  "aiSummaryCopied": {
+    "message": "引用付きの要約をコピーしました"
+  },
+  "aiSummaryCopy": {
+    "message": "引用付きでコピー"
+  },
+  "aiSummaryDelete": {
+    "message": "削除"
+  },
+  "aiSummaryDeleted": {
+    "message": "Saved summary deleted"
+  },
+  "aiSummaryDialogLabel": {
+    "message": "AI動画要約"
+  },
+  "aiSummaryExport": {
+    "message": "アーカイブをエクスポート"
+  },
+  "aiSummaryExported": {
+    "message": "Saved summaries exported"
+  },
+  "aiSummaryFailed": {
+    "message": "Summary failed"
+  },
+  "aiSummaryFetchingTranscript": {
+    "message": "文字起こしを取得しています…"
+  },
+  "aiSummaryInvalid": {
+    "message": "The saved summary is invalid and cannot be displayed."
+  },
+  "aiSummaryLibrary": {
+    "message": "保存済みの要約"
+  },
+  "aiSummaryNoExport": {
+    "message": "No saved summaries to export."
+  },
+  "aiSummaryNoSaved": {
+    "message": "検索に一致する保存済みの要約はありません。"
+  },
+  "aiSummaryRestored": {
+    "message": "Saved summary restored"
+  },
+  "aiSummarySearchLabel": {
+    "message": "保存済みの要約を検索"
+  },
+  "aiSummarySearchPlaceholder": {
+    "message": "保存済みの要約を検索…"
+  },
+  "aiSummaryTitle": {
+    "message": "AI要約"
+  },
+  "aiSummaryTldr": {
+    "message": "要点"
+  },
+  "aiSummaryUserscriptButtonTitle": {
+    "message": "AI Summary (right-click to manage the provider credential)"
+  },
   "brandName": {
     "message": "Astra Deck"
   },
