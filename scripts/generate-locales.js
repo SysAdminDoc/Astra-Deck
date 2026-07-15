@@ -42,6 +42,12 @@ const T = {};
 
 // ── German (de) ──
 T.de = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Zeigt Kategorie, genaues Upload-Datum, Kanal-ID und veröffentlichte Tags aus den YouTube-Seitenmetadaten an, mit einem begrenzten GitHub-full-Fallback.',
+  'Video Insights': 'Videoinformationen', 'Video insights': 'Videoinformationen',
+  'Category': 'Kategorie', 'Channel ID': 'Kanal-ID', 'Loading video details…': 'Videodetails werden geladen…',
+  'No tags published': 'Keine Tags veröffentlicht', 'Cached YouTube details': 'Zwischengespeicherte YouTube-Details',
+  'Refreshed from YouTube': 'Von YouTube aktualisiert', 'From this page': 'Von dieser Seite',
+  'Tags': 'Schlagwörter', 'Not provided': 'Nicht angegeben', 'Uploaded': 'Hochgeladen',
   '简体中文 (Simplified Chinese)': '简体中文 (Vereinfachtes Chinesisch)',
   'Deutsch (German)': 'Deutsch',
   'Español (Spanish)': 'Español (Spanisch)',
@@ -202,6 +208,12 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Muestra la categoría, la fecha exacta de subida, el ID del canal y las etiquetas publicadas desde los metadatos de la página de YouTube, con un respaldo limitado de GitHub-full.',
+  'Video Insights': 'Información del video', 'Video insights': 'Información del video',
+  'Category': 'Categoría', 'Channel ID': 'ID del canal', 'Loading video details…': 'Cargando detalles del video…',
+  'No tags published': 'No hay etiquetas publicadas', 'Cached YouTube details': 'Detalles de YouTube en caché',
+  'Refreshed from YouTube': 'Actualizado desde YouTube', 'From this page': 'De esta página',
+  'Tags': 'Etiquetas', 'Not provided': 'No proporcionado', 'Uploaded': 'Subido',
   '简体中文 (Simplified Chinese)': '简体中文 (Chino simplificado)',
   'Deutsch (German)': 'Deutsch (Alemán)',
   'Español (Spanish)': 'Español',
@@ -350,6 +362,12 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Показывает категорию, точную дату загрузки, ID канала и опубликованные теги из метаданных страницы YouTube с ограниченным резервным запросом GitHub-full.',
+  'Video Insights': 'Сведения о видео', 'Video insights': 'Сведения о видео',
+  'Category': 'Категория', 'Channel ID': 'ID канала', 'Loading video details…': 'Загрузка сведений о видео…',
+  'No tags published': 'Теги не опубликованы', 'Cached YouTube details': 'Кешированные сведения YouTube',
+  'Refreshed from YouTube': 'Обновлено с YouTube', 'From this page': 'С этой страницы',
+  'Tags': 'Теги', 'Not provided': 'Не указано', 'Uploaded': 'Загружено',
   '简体中文 (Simplified Chinese)': '简体中文 (Упрощённый китайский)',
   'Deutsch (German)': 'Deutsch (Немецкий)',
   'Español (Spanish)': 'Español (Испанский)',
@@ -498,6 +516,12 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Affiche la catégorie, la date exacte de mise en ligne, l’identifiant de chaîne et les tags publiés depuis les métadonnées de la page YouTube, avec un repli GitHub-full limité.',
+  'Video Insights': 'Informations sur la vidéo', 'Video insights': 'Informations sur la vidéo',
+  'Category': 'Catégorie', 'Channel ID': 'ID de la chaîne', 'Loading video details…': 'Chargement des détails de la vidéo…',
+  'No tags published': 'Aucun tag publié', 'Cached YouTube details': 'Détails YouTube en cache',
+  'Refreshed from YouTube': 'Actualisé depuis YouTube', 'From this page': 'Depuis cette page',
+  'Tags': 'Mots-clés', 'Not provided': 'Non renseigné', 'Uploaded': 'Mise en ligne',
   '简体中文 (Simplified Chinese)': '简体中文 (Chinois simplifié)',
   'Deutsch (German)': 'Deutsch (Allemand)',
   'Español (Spanish)': 'Español (Espagnol)',
@@ -644,6 +668,12 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Mostra categoria, data esatta di caricamento, ID del canale e tag pubblicati dai metadati della pagina YouTube, con un recupero GitHub-full limitato.',
+  'Video Insights': 'Informazioni sul video', 'Video insights': 'Informazioni sul video',
+  'Category': 'Categoria', 'Channel ID': 'ID canale', 'Loading video details…': 'Caricamento dettagli video…',
+  'No tags published': 'Nessun tag pubblicato', 'Cached YouTube details': 'Dettagli YouTube nella cache',
+  'Refreshed from YouTube': 'Aggiornato da YouTube', 'From this page': 'Da questa pagina',
+  'Tags': 'Tag', 'Not provided': 'Non fornito', 'Uploaded': 'Caricato',
   '简体中文 (Simplified Chinese)': '简体中文 (Cinese semplificato)',
   'Deutsch (German)': 'Deutsch (Tedesco)', 'Español (Spanish)': 'Español (Spagnolo)',
   'Français (French)': 'Français (Francese)', 'Italiano (Italian)': 'Italiano',
@@ -783,6 +813,12 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Mostra a categoria, a data exata de envio, o ID do canal e as tags publicadas nos metadados da página do YouTube, com uma consulta alternativa limitada no GitHub-full.',
+  'Video Insights': 'Informações do vídeo', 'Video insights': 'Informações do vídeo',
+  'Category': 'Categoria', 'Channel ID': 'ID do canal', 'Loading video details…': 'Carregando detalhes do vídeo…',
+  'No tags published': 'Nenhuma tag publicada', 'Cached YouTube details': 'Detalhes do YouTube em cache',
+  'Refreshed from YouTube': 'Atualizado pelo YouTube', 'From this page': 'Desta página',
+  'Tags': 'Marcadores', 'Not provided': 'Não informado', 'Uploaded': 'Enviado',
   '简体中文 (Simplified Chinese)': '简体中文 (Chinês simplificado)',
   'Deutsch (German)': 'Deutsch (Alemão)', 'Español (Spanish)': 'Español (Espanhol)',
   'Français (French)': 'Français (Francês)', 'Italiano (Italian)': 'Italiano (Italiano)',
@@ -922,6 +958,12 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'YouTube ページのメタデータから、カテゴリ、正確なアップロード日時、チャンネル ID、公開タグを表示します。不足時は GitHub-full で制限付きの補完を行います。',
+  'Video Insights': '動画の詳細情報', 'Video insights': '動画の詳細情報',
+  'Category': 'カテゴリ', 'Channel ID': 'チャンネル ID', 'Loading video details…': '動画の詳細を読み込んでいます…',
+  'No tags published': '公開タグはありません', 'Cached YouTube details': 'キャッシュされた YouTube の詳細',
+  'Refreshed from YouTube': 'YouTube から更新', 'From this page': 'このページから取得',
+  'Tags': 'タグ', 'Not provided': '未提供', 'Uploaded': 'アップロード日時',
   '简体中文 (Simplified Chinese)': '简体中文 (簡体字中国語)',
   'Deutsch (German)': 'Deutsch (ドイツ語)', 'Español (Spanish)': 'Español (スペイン語)',
   'Français (French)': 'Français (フランス語)', 'Italiano (Italian)': 'Italiano (イタリア語)',
@@ -1064,6 +1106,12 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'YouTube 페이지 메타데이터에서 카테고리, 정확한 업로드 날짜, 채널 ID 및 공개 태그를 표시하며, 부족한 경우 GitHub-full에서 제한적으로 보완합니다.',
+  'Video Insights': '동영상 세부정보', 'Video insights': '동영상 세부정보',
+  'Category': '카테고리', 'Channel ID': '채널 ID', 'Loading video details…': '동영상 세부정보 불러오는 중…',
+  'No tags published': '공개된 태그 없음', 'Cached YouTube details': '캐시된 YouTube 세부정보',
+  'Refreshed from YouTube': 'YouTube에서 새로고침됨', 'From this page': '이 페이지에서 가져옴',
+  'Tags': '태그', 'Not provided': '제공되지 않음', 'Uploaded': '업로드 날짜',
   '简体中文 (Simplified Chinese)': '简体中文 (간체 중국어)',
   'Deutsch (German)': 'Deutsch (독일어)', 'Español (Spanish)': 'Español (스페인어)',
   'Français (French)': 'Français (프랑스어)', 'Italiano (Italian)': 'Italiano (이탈리아어)',

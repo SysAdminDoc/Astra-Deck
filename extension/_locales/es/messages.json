@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Voltear video"
   },
+  "feature_videoInsights_desc": {
+    "message": "Muestra la categoría, la fecha exacta de subida, el ID del canal y las etiquetas publicadas desde los metadatos de la página de YouTube, con un respaldo limitado de GitHub-full."
+  },
+  "feature_videoInsights_name": {
+    "message": "Información del video"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Agregar un botón toggle de bucle a los controles del reproductor para repetición del video con un solo clic"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Categoría"
+  },
+  "videoInsightsChannelId": {
+    "message": "ID del canal"
+  },
+  "videoInsightsLoading": {
+    "message": "Cargando detalles del video…"
+  },
+  "videoInsightsNoTags": {
+    "message": "No hay etiquetas publicadas"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Detalles de YouTube en caché"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Actualizado desde YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "De esta página"
+  },
+  "videoInsightsTags": {
+    "message": "Etiquetas"
+  },
+  "videoInsightsTitle": {
+    "message": "Información del video"
+  },
+  "videoInsightsUnavailable": {
+    "message": "No proporcionado"
+  },
+  "videoInsightsUploaded": {
+    "message": "Subido"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

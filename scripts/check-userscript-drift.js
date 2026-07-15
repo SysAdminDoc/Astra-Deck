@@ -80,6 +80,7 @@ const MAX_NOT_YET_PORTED_FEATURES = 19;
 
 const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     'features/download-ui/index.js': 'native-companion',
+    'features/video-insights/index.js': 'intentional-extension-only',
     // The extension loads this minimal frame runtime instead of the normal-page
     // monolith. The userscript keeps its existing live-chat implementation.
     'features/live-chat/index.js': 'intentional-extension-only',
@@ -170,6 +171,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     tokenThemeBridge: 'intentional-extension-only',
     transcriptAiHandoff: 'unsafe-in-userscript',
     videoAgeColors: 'not-yet-ported',
+    videoInsights: 'intentional-extension-only',
     vlcMpvHandoff: 'native-companion',
     volumeBoost: 'intentional-extension-only',
     volumeBoostLevel: 'intentional-extension-only',

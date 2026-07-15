@@ -22,6 +22,7 @@ test('external API health core module loads before crowd API feature modules', (
         const coreIndex = scripts.indexOf('core/external-api-health.js');
         if (coreIndex === -1) continue;
         for (const featurePath of [
+            'features/video-insights/index.js',
             'features/return-dislike/index.js',
             'features/sponsorblock/index.js',
             'features/dearrow/index.js'
@@ -50,6 +51,7 @@ test('ytkit exposes external API health message handler and passes tracker into 
     assert.match(sources.ytkit, /createExternalApiHealth/, 'ytkit must instantiate ExternalApiHealth');
     assert.match(sources.ytkit, /YTKIT_GET_EXTERNAL_API_HEALTH/, 'ytkit must expose the health snapshot message');
     for (const factoryName of [
+        'createVideoInsightsFeature',
         'createSponsorBlockFeature',
         'createDeArrowFeature',
         'createReturnDislikeFeature'

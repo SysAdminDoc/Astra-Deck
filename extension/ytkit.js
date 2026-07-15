@@ -3026,6 +3026,7 @@ return response;
             reversePlaylist: false,
             rssFeedLink: false,
             preciseViewCounts: false,
+            videoInsights: false,
             videoScreenshot: false,
             perChannelSpeed: false,
             hideWatchedVideos: false,
@@ -19614,6 +19615,41 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
             }
         },
+
+        (globalThis.YTKitFeatures?.createVideoInsightsFeature?.({
+            PageTypes,
+            DiagnosticLog,
+            ExternalApiHealth,
+            addNavigateRule,
+            removeNavigateRule,
+            extensionFetchJson,
+            formatAbsoluteDate: (value) => globalThis.YTKitCore?.formatAbsoluteYouTubeDate?.(value) || '',
+            getInnertubeConfig: () => ({
+                apiKey: TranscriptService?._getInnertubeApiKey?.() || '',
+                clientVersion: TranscriptService?._getClientVersion?.() || ''
+            }),
+            getPlayerResponse: () => _rw.ytInitialPlayerResponse,
+            getVideoId,
+            injectStyle,
+            isGithubFullArtifact: () => globalThis.YTKitFeatures?.isGithubFullArtifactManifest?.(
+                globalThis.YTKitBrowser?.runtime?.getManifest?.()
+            ) === true,
+            isGithubFullProfile: () => getProfileExportMode(appState?.settings || {}) === 'github-full',
+            isWatchPagePath,
+            t,
+            documentRef: document
+        }) || {
+            id: 'videoInsights',
+            // i18n-static: resolved through feature_videoInsights_name at runtime
+            name: 'Video Insights',
+            // i18n-static: resolved through feature_videoInsights_desc at runtime
+            description: 'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.',
+            group: 'Watch Page',
+            icon: 'info',
+            pages: [PageTypes.WATCH],
+            init() {},
+            destroy() {}
+        }),
 
         // ─── v3.2.0: Medium Effort ───
         {

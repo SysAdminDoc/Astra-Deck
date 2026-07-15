@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "동영상 반전"
   },
+  "feature_videoInsights_desc": {
+    "message": "YouTube 페이지 메타데이터에서 카테고리, 정확한 업로드 날짜, 채널 ID 및 공개 태그를 표시하며, 부족한 경우 GitHub-full에서 제한적으로 보완합니다."
+  },
+  "feature_videoInsights_name": {
+    "message": "동영상 세부정보"
+  },
   "feature_videoLoopButton_desc": {
     "message": "원클릭 동영상 반복을 위한 반복 토글 버튼을 플레이어 컨트롤에 추가"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "카테고리"
+  },
+  "videoInsightsChannelId": {
+    "message": "채널 ID"
+  },
+  "videoInsightsLoading": {
+    "message": "동영상 세부정보 불러오는 중…"
+  },
+  "videoInsightsNoTags": {
+    "message": "공개된 태그 없음"
+  },
+  "videoInsightsSourceCache": {
+    "message": "캐시된 YouTube 세부정보"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "YouTube에서 새로고침됨"
+  },
+  "videoInsightsSourcePage": {
+    "message": "이 페이지에서 가져옴"
+  },
+  "videoInsightsTags": {
+    "message": "태그"
+  },
+  "videoInsightsTitle": {
+    "message": "동영상 세부정보"
+  },
+  "videoInsightsUnavailable": {
+    "message": "제공되지 않음"
+  },
+  "videoInsightsUploaded": {
+    "message": "업로드 날짜"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

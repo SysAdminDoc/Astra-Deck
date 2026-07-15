@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "動画の反転"
   },
+  "feature_videoInsights_desc": {
+    "message": "YouTube ページのメタデータから、カテゴリ、正確なアップロード日時、チャンネル ID、公開タグを表示します。不足時は GitHub-full で制限付きの補完を行います。"
+  },
+  "feature_videoInsights_name": {
+    "message": "動画の詳細情報"
+  },
   "feature_videoLoopButton_desc": {
     "message": "プレーヤーコントロールにワンクリックで動画をループさせるトグルボタンを追加"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "カテゴリ"
+  },
+  "videoInsightsChannelId": {
+    "message": "チャンネル ID"
+  },
+  "videoInsightsLoading": {
+    "message": "動画の詳細を読み込んでいます…"
+  },
+  "videoInsightsNoTags": {
+    "message": "公開タグはありません"
+  },
+  "videoInsightsSourceCache": {
+    "message": "キャッシュされた YouTube の詳細"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "YouTube から更新"
+  },
+  "videoInsightsSourcePage": {
+    "message": "このページから取得"
+  },
+  "videoInsightsTags": {
+    "message": "タグ"
+  },
+  "videoInsightsTitle": {
+    "message": "動画の詳細情報"
+  },
+  "videoInsightsUnavailable": {
+    "message": "未提供"
+  },
+  "videoInsightsUploaded": {
+    "message": "アップロード日時"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

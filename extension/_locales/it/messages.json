@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Capovolgi video"
   },
+  "feature_videoInsights_desc": {
+    "message": "Mostra categoria, data esatta di caricamento, ID del canale e tag pubblicati dai metadati della pagina YouTube, con un recupero GitHub-full limitato."
+  },
+  "feature_videoInsights_name": {
+    "message": "Informazioni sul video"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Aggiungi un pulsante toggle loop ai controlli del player per la ripetizione video con un clic"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Categoria"
+  },
+  "videoInsightsChannelId": {
+    "message": "ID canale"
+  },
+  "videoInsightsLoading": {
+    "message": "Caricamento dettagli video…"
+  },
+  "videoInsightsNoTags": {
+    "message": "Nessun tag pubblicato"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Dettagli YouTube nella cache"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Aggiornato da YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "Da questa pagina"
+  },
+  "videoInsightsTags": {
+    "message": "Tag"
+  },
+  "videoInsightsTitle": {
+    "message": "Informazioni sul video"
+  },
+  "videoInsightsUnavailable": {
+    "message": "Non fornito"
+  },
+  "videoInsightsUploaded": {
+    "message": "Caricato"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

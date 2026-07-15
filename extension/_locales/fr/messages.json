@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Miroir vidéo"
   },
+  "feature_videoInsights_desc": {
+    "message": "Affiche la catégorie, la date exacte de mise en ligne, l’identifiant de chaîne et les tags publiés depuis les métadonnées de la page YouTube, avec un repli GitHub-full limité."
+  },
+  "feature_videoInsights_name": {
+    "message": "Informations sur la vidéo"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Ajouter un bouton boucle aux commandes du Player pour la lecture en boucle en un clic"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Catégorie"
+  },
+  "videoInsightsChannelId": {
+    "message": "ID de la chaîne"
+  },
+  "videoInsightsLoading": {
+    "message": "Chargement des détails de la vidéo…"
+  },
+  "videoInsightsNoTags": {
+    "message": "Aucun tag publié"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Détails YouTube en cache"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Actualisé depuis YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "Depuis cette page"
+  },
+  "videoInsightsTags": {
+    "message": "Mots-clés"
+  },
+  "videoInsightsTitle": {
+    "message": "Informations sur la vidéo"
+  },
+  "videoInsightsUnavailable": {
+    "message": "Non renseigné"
+  },
+  "videoInsightsUploaded": {
+    "message": "Mise en ligne"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Video Flip"
   },
+  "feature_videoInsights_desc": {
+    "message": "Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback."
+  },
+  "feature_videoInsights_name": {
+    "message": "Video Insights"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Add a loop toggle button to the player controls for one-click video looping"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Category"
+  },
+  "videoInsightsChannelId": {
+    "message": "Channel ID"
+  },
+  "videoInsightsLoading": {
+    "message": "Loading video details…"
+  },
+  "videoInsightsNoTags": {
+    "message": "No tags published"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Cached YouTube details"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Refreshed from YouTube"
+  },
+  "videoInsightsSourcePage": {
+    "message": "From this page"
+  },
+  "videoInsightsTags": {
+    "message": "Tags"
+  },
+  "videoInsightsTitle": {
+    "message": "Video insights"
+  },
+  "videoInsightsUnavailable": {
+    "message": "Not provided"
+  },
+  "videoInsightsUploaded": {
+    "message": "Uploaded"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."

@@ -2339,6 +2339,12 @@
   "feature_videoFlip_name": {
     "message": "Video spiegeln"
   },
+  "feature_videoInsights_desc": {
+    "message": "Zeigt Kategorie, genaues Upload-Datum, Kanal-ID und veröffentlichte Tags aus den YouTube-Seitenmetadaten an, mit einem begrenzten GitHub-full-Fallback."
+  },
+  "feature_videoInsights_name": {
+    "message": "Videoinformationen"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Schleifen-Umschalter zu den Player-Steuerelementen für Ein-Klick-Videoschleife hinzufügen"
   },
@@ -3076,6 +3082,39 @@
   },
   "updateCompanionBtn": {
     "message": "Update Astra Downloader"
+  },
+  "videoInsightsCategory": {
+    "message": "Kategorie"
+  },
+  "videoInsightsChannelId": {
+    "message": "Kanal-ID"
+  },
+  "videoInsightsLoading": {
+    "message": "Videodetails werden geladen…"
+  },
+  "videoInsightsNoTags": {
+    "message": "Keine Tags veröffentlicht"
+  },
+  "videoInsightsSourceCache": {
+    "message": "Zwischengespeicherte YouTube-Details"
+  },
+  "videoInsightsSourceNetwork": {
+    "message": "Von YouTube aktualisiert"
+  },
+  "videoInsightsSourcePage": {
+    "message": "Von dieser Seite"
+  },
+  "videoInsightsTags": {
+    "message": "Schlagwörter"
+  },
+  "videoInsightsTitle": {
+    "message": "Videoinformationen"
+  },
+  "videoInsightsUnavailable": {
+    "message": "Nicht angegeben"
+  },
+  "videoInsightsUploaded": {
+    "message": "Hochgeladen"
   },
   "welcomePresetBody": {
     "message": "How will you use YouTube? Pick a preset or skip to configure manually."
