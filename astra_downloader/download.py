@@ -750,14 +750,37 @@ class DownloadManagerCore:
 
     def _launch_workers(self, downloads):
         for dl in downloads:
-            cookies = dl._cookies
-            dl._cookies = None
+            with self._lock:
+                if dl.status != 'queued':
+                    # cancel() can land between _schedule() marking this item
+                    # queued and this launch loop. The item is already
+                    # terminal, and no worker thread will run its finally
+                    # block, so release the reserved slot here.
+                    self._running_ids.discard(dl.id)
+                    dl._cookies = None
+                    continue
+                cookies = dl._cookies
+                dl._cookies = None
             if cookies:
                 jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"
                 dl.cookies_file = write_cookies_netscape(
                     cookies, jar_path,
                     logger=self._dependencies['write_persistent_log'],
                 )
+                with self._lock:
+                    if dl.status != 'queued':
+                        # Cancelled while the jar was being written. cancel()
+                        # could not unlink a jar it didn't know about yet, so
+                        # clean it up here and release the slot.
+                        self._running_ids.discard(dl.id)
+                        jar = dl.cookies_file
+                        dl.cookies_file = None
+                        if jar:
+                            try:
+                                Path(jar).unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                        continue
                 if not dl.cookies_file:
                     with self._lock:
                         self._running_ids.discard(dl.id)
@@ -983,7 +1006,16 @@ class DownloadManagerCore:
         return dl_id, None
 
     def _run_download(self, dl):
-        dl.status = "downloading"
+        with self._lock:
+            if dl.status != 'queued':
+                # cancel() can land between _schedule() releasing the lock and
+                # this worker thread's first statement. The item is already
+                # terminal (cancel() persisted it and unlinked its cookie jar),
+                # so reviving it would run a download the user just cancelled.
+                # _worker_entry's finally block releases the slot and
+                # re-schedules; nothing else to tear down here.
+                return
+            dl.status = "downloading"
         self.progress_updated.emit()
 
         ytdlp = str(self._dependencies['YTDLP_PATH']())
@@ -1476,11 +1508,32 @@ class DownloadManagerCore:
         self._schedule()
         return True
 
+    def persist_intake_flag(self, paused):
+        """Persist ``intakePaused`` as *paused* without changing the live flag.
+
+        Used by the companion self-update immediately before the process
+        exits: intake must stay paused in this process so nothing can spawn
+        yt-dlp during the exit window, but the relaunched companion should
+        restore the user's pre-update setting.
+        """
+        with self._lock:
+            previous = self.intake_paused
+            self.intake_paused = bool(paused)
+            ok = self._persist_locked()
+            self.intake_paused = previous
+            return ok
+
     def resume_download(self, dl_id, cookies=None):
         with self._lock:
             dl = self.downloads.get(dl_id)
             if not dl:
                 return False, 'Download no longer exists in the queue.'
+            if dl_id in self._running_ids:
+                # The worker that owns this id has not run its finally block
+                # yet. Flipping the item back to pending now would let
+                # _schedule() start a second worker whose slot registration
+                # the first worker's teardown then discards.
+                return False, 'Download is still finalizing — retry in a moment.'
             if dl.status not in DOWNLOAD_PENDING_STATES:
                 return False, 'Only pending or recovered downloads can be resumed.'
             if dl.status == 'needs-auth' and not cookies:
@@ -1515,6 +1568,13 @@ class DownloadManagerCore:
             dl = self.downloads.get(dl_id)
             if not dl:
                 return False, 'Download no longer exists in the queue.'
+            if dl_id in self._running_ids:
+                # A worker can stamp a retryable failure milliseconds before
+                # its finally block discards the id from _running_ids. A retry
+                # accepted in that gap starts a second worker, then the first
+                # worker's teardown discards the second worker's slot and
+                # marks the retrying download failed.
+                return False, 'Download is still finalizing — retry in a moment.'
             if dl.status != 'failed':
                 return False, 'Only failed downloads can be retried.'
             if dl.error_code not in DOWNLOAD_RETRYABLE_ERROR_CODES:
