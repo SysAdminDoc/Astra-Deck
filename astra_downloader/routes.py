@@ -1,5 +1,9 @@
 """HTTP server boundary for Astra Downloader."""
 
+import threading
+import time
+from collections import deque
+
 try:
     from ._compat import make_legacy_resolver
 except ImportError:  # Flat source-path compatibility.
@@ -14,9 +18,35 @@ __all__ = (
 )
 
 _LEGACY_EXPORTS = tuple(
-    name for name in __all__ if name not in {"_ServerAdapter", "_build_wsgi_server"}
+    name for name in __all__
+    if name not in {"_ServerAdapter", "_build_wsgi_server", "RateLimiter"}
 )
 _resolve_legacy = make_legacy_resolver(_LEGACY_EXPORTS)
+
+
+class RateLimiter:
+    """Thread-safe sliding-window limiter with an injectable monotonic clock."""
+
+    def __init__(self, max_events, window_seconds, clock=None):
+        self.max_events = max_events
+        self.window_seconds = window_seconds
+        self._clock = clock or time.monotonic
+        self._lock = threading.Lock()
+        self._buckets = {}
+
+    def allow(self, key="default"):
+        """Return ``(allowed, retry_after_seconds)`` for one bucket."""
+        now = self._clock()
+        cutoff = now - self.window_seconds
+        with self._lock:
+            events = self._buckets.setdefault(key, deque())
+            while events and events[0] < cutoff:
+                events.popleft()
+            if len(events) >= self.max_events:
+                retry = max(0.0, self.window_seconds - (now - events[0]))
+                return False, retry
+            events.append(now)
+            return True, 0.0
 
 
 class _ServerAdapter:
