@@ -2054,6 +2054,15 @@
   "searchWatchTitle": {
     "message": "البحث دون إيقاف التشغيل"
   },
+  "subscriptionLoadedOnlyHint": { "message": "يرتّب الأحدث أولًا الفيديوهات المحمّلة في هذه الصفحة فقط. مرّر لتحميل المزيد." },
+  "subscriptionOrderLabel": { "message": "الترتيب" },
+  "subscriptionOrderNative": { "message": "ترتيب YouTube" },
+  "subscriptionOrderNewestLoaded": { "message": "الأحدث أولًا (المحمّل فقط)" },
+  "subscriptionViewCompact": { "message": "مضغوط" },
+  "subscriptionViewGrid": { "message": "شبكة" },
+  "subscriptionViewLabel": { "message": "العرض" },
+  "subscriptionViewList": { "message": "قائمة" },
+  "subscriptionViewToolbarLabel": { "message": "عناصر تحكم عرض الاشتراكات" },
   "ui_rydCardRatioSuffix": {
     "message": "إعجاب · تقدير Return YouTube Dislike"
   },
@@ -2290,6 +2299,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "مجموعات الاشتراكات"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "اختر تخطيط الشبكة أو القائمة أو العرض المضغوط للاشتراكات، ويمكنك ترتيب البطاقات المحمّلة حاليًا من الأحدث إلى الأقدم."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "عناصر تحكم عرض الاشتراكات"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "استخدام تخطيط شبكي أكثر كثافة في صفحة الاشتراكات"

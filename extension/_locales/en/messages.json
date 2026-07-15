@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Search without stopping playback"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Newest first sorts only videos loaded on this page. Scroll to load more."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Order"
+  },
+  "subscriptionOrderNative": {
+    "message": "YouTube order"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Newest first (loaded only)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Compact"
+  },
+  "subscriptionViewGrid": {
+    "message": "Grid"
+  },
+  "subscriptionViewLabel": {
+    "message": "View"
+  },
+  "subscriptionViewList": {
+    "message": "List"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Subscription view controls"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "liked · estimated by Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Subscription Groups"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Subscription View Controls"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Use a denser grid layout on the subscriptions page"

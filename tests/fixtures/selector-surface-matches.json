@@ -940,6 +940,46 @@
         "#masthead-container div.style-scope"
       ]
     },
+    "subscriptions.root": {
+      "surface": "subscriptions",
+      "source": "Subscriptions - YouTube.mhtml",
+      "fixture": "yt-subscriptions.tokens.txt",
+      "elementCount": 8276,
+      "stable": [
+        {
+          "selector": "ytd-browse ytd-rich-grid-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-rich-grid-renderer ytd-rich-item-renderer[lockup]",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-item-renderer yt-lockup-view-model",
+          "matched": true,
+          "matchCount": 68
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-browse",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-section-list-renderer ytd-video-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-browse ytd-rich-grid-renderer",
+        "ytd-rich-item-renderer yt-lockup-view-model",
+        "ytd-browse"
+      ]
+    },
     "channel.profile": {
       "surface": "profile",
       "source": "mhtml/Channel.mhtml",

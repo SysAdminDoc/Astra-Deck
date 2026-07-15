@@ -2878,6 +2878,9 @@ return response;
             squareSearchBar: true,
             squareAvatars: true,
             subscriptionsGrid: true,
+            subscriptionViewControls: false,
+            subscriptionViewMode: 'grid',
+            subscriptionOrderMode: 'native',
             homepageGridAlign: true,
             styledFilterChips: true,
             hideSidebar: true,
@@ -5533,6 +5536,26 @@ return response;
             },
             init() { this._apply(); },
             destroy() { this._styleElement?.remove(); this._styleElement = null; }
+        },
+        {
+            ...(globalThis.YTKitFeatures?.subscriptionView?.createSubscriptionViewFeature?.({
+                appState,
+                settingsManager,
+                addNavigateRule,
+                removeNavigateRule,
+                addMutationRule,
+                removeMutationRule,
+                injectStyle,
+                getSurfaceSelectorChain: globalThis.YTKitCore?.getSurfaceSelectorChain,
+                documentRef: document,
+                windowRef: window,
+                t
+            }) || {
+                id: 'subscriptionViewControls',
+                name: t('feature_subscriptionViewControls_name', 'Subscription View Controls'),
+                description: t('feature_subscriptionViewControls_desc', 'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.'),
+                group: 'Subscriptions', icon: 'list-filter', init() {}, destroy() {}
+            })
         },
         {
             id: 'subscriptionsGrid',
@@ -34741,7 +34764,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             removeScopedMutationRule,
             runBudgetedElementBatch,
             handleFileExport,
-            isSafeObjectKey
+            isSafeObjectKey,
+            t
         }) || {
             id: 'subscriptionGroups',
             name: 'Subscription Groups',

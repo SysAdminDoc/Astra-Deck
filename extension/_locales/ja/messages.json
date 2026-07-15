@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "再生を止めずに検索"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "新しい順では、このページに読み込まれた動画のみを並べ替えます。スクロールしてさらに読み込んでください。"
+  },
+  "subscriptionOrderLabel": {
+    "message": "順序"
+  },
+  "subscriptionOrderNative": {
+    "message": "YouTube の順序"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "新しい順（読み込み済みのみ）"
+  },
+  "subscriptionViewCompact": {
+    "message": "コンパクト"
+  },
+  "subscriptionViewGrid": {
+    "message": "グリッド"
+  },
+  "subscriptionViewLabel": {
+    "message": "表示"
+  },
+  "subscriptionViewList": {
+    "message": "リスト"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "登録チャンネルの表示コントロール"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "高評価 · Return YouTube Dislike による推定"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "登録チャンネルグループ"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "登録チャンネルをグリッド、リスト、コンパクト表示から選び、必要に応じて現在読み込まれているカードを新しい順に並べます。"
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "登録チャンネルの表示設定"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "登録チャンネルページでより密なグリッドレイアウトを使用"

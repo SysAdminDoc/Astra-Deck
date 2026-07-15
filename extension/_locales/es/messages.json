@@ -2054,6 +2054,33 @@
   "searchWatchTitle": {
     "message": "Buscar sin detener la reproducción"
   },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Más recientes primero solo ordena los vídeos cargados en esta página. Desplázate para cargar más."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Orden"
+  },
+  "subscriptionOrderNative": {
+    "message": "Orden de YouTube"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Más recientes primero (solo cargados)"
+  },
+  "subscriptionViewCompact": {
+    "message": "Compacta"
+  },
+  "subscriptionViewGrid": {
+    "message": "Cuadrícula"
+  },
+  "subscriptionViewLabel": {
+    "message": "Vista"
+  },
+  "subscriptionViewList": {
+    "message": "Lista"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Controles de vista de suscripciones"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "Me gusta · estimado por Return YouTube Dislike"
   },
@@ -2290,6 +2317,12 @@
   },
   "feature_subscriptionGroups_name": {
     "message": "Grupos de suscripciones"
+  },
+  "feature_subscriptionViewControls_desc": {
+    "message": "Elige Cuadrícula, Lista o Compacta para las suscripciones y, opcionalmente, ordena primero las tarjetas cargadas más recientes."
+  },
+  "feature_subscriptionViewControls_name": {
+    "message": "Controles de vista de suscripciones"
   },
   "feature_subscriptionsGrid_desc": {
     "message": "Usar un diseño de cuadrícula más denso en la página de suscripciones"

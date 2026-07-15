@@ -42,7 +42,8 @@
                 };
             },
             handleFileExport = () => {},
-            isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || ''))
+            isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || '')),
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
@@ -65,7 +66,15 @@
             _UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData',
             _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
             _STALE_CHANNEL_MIN_AGE_DAYS: 365,
-            _SORT_MODES: Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']),
+            _SORT_MODES: Object.freeze([
+                'default',
+                ...(globalThis.YTKitFeatures?.subscriptionView?.extractLoadedAgeMs ? ['newest-loaded'] : []),
+                'date-desc',
+                'duration-asc',
+                'unwatched',
+                'new-since-last-visit',
+                'popular'
+            ]),
             _budgetHandles: null,
             _lastScanDiagnostics: null,
 
@@ -1270,6 +1279,10 @@
                 const lastVisit = mode === 'new-since-last-visit' ? this._readLastVisit() : null;
                 const score = (card) => {
                     const text = card.textContent || '';
+                    if (mode === 'newest-loaded') {
+                        const age = globalThis.YTKitFeatures?.subscriptionView?.extractLoadedAgeMs?.(card);
+                        return age == null ? Number.POSITIVE_INFINITY : age;
+                    }
                     if (mode === 'duration-asc') {
                         // Prefer the duration badge (classic renderer + newer
                         // lockup badge-shape surfaces) so a title timestamp
@@ -1310,7 +1323,16 @@
                     }
                     return 0;
                 };
-                cards.sort((a, b) => score(a) - score(b));
+                cards.sort((a, b) => {
+                    const left = score(a);
+                    const right = score(b);
+                    if (left !== right) {
+                        if (!Number.isFinite(left)) return 1;
+                        if (!Number.isFinite(right)) return -1;
+                        return left - right;
+                    }
+                    return (Number(a.dataset.ytkitOrigIdx) || 0) - (Number(b.dataset.ytkitOrigIdx) || 0);
+                });
                 const sortFrag = document.createDocumentFragment();
                 cards.forEach(card => sortFrag.appendChild(card));
                 container.appendChild(sortFrag);
@@ -1584,14 +1606,19 @@
                 const sortSelect = document.createElement('select');
                 sortSelect.setAttribute('aria-label', 'Sort subscriptions');
                 const activeSortMode = this._getActiveSortMode(groups);
-                for (const [v, label] of [
+                const sortOptions = [
                     ['default', 'YouTube default'],
                     ['date-desc', 'Latest first'],
                     ['duration-asc', 'Shortest first'],
                     ['unwatched', 'Unwatched first'],
                     ['new-since-last-visit', 'New since last visit'],
                     ['popular', 'Most popular (views)']
-                ]) {
+                ];
+                if (globalThis.YTKitFeatures?.subscriptionView?.extractLoadedAgeMs) {
+                    sortOptions.splice(1, 0, ['newest-loaded', t('subscriptionOrderNewestLoaded', 'Newest first (loaded only)')]);
+                    sortSelect.setAttribute('aria-description', t('subscriptionLoadedOnlyHint', 'Newest first sorts only videos loaded on this page. Scroll to load more.'));
+                }
+                for (const [v, label] of sortOptions) {
                     const opt = document.createElement('option');
                     opt.value = v; opt.textContent = label;
                     if (activeSortMode === v) opt.selected = true;
