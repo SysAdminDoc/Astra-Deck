@@ -2561,8 +2561,8 @@ test('popup.js defines clearDiagnosticLog and wires the health-clear-btn', () =>
     const clearFnBody = popupSource.slice(clearFnStart, clearFnStart + 1000);
     assert.doesNotMatch(clearFnBody, /confirmAction\s*\(/,
         'clearDiagnosticLog must apply immediately — confirmAction was retired in v4.47.0 NF14');
-    assert.match(clearFnBody, /delete settings\._errors/,
-        'clearDiagnosticLog must delete _errors from the stored settings object');
+    assert.match(clearFnBody, /getSettingsMutationController\(\)\.mutate\('_errors', \[\]\)/,
+        'clearDiagnosticLog must clear _errors through the background-serialized mutation controller (not a full-object storageSet)');
     assert.match(clearFnBody, /renderHealthBanner\s*\(\s*null\s*\)/,
         'clearDiagnosticLog must hide the banner after clearing via renderHealthBanner(null)');
 });

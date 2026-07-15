@@ -150,6 +150,21 @@ function getSchemaIndex() {
     return _schemaIndex;
 }
 
+// Resolve a quick-toggle's effective on/off state. Raw storage
+// truthiness is wrong on a fresh install (or right after Reset):
+// default-on features (removeAllShorts, hideRelatedVideos,
+// sponsorBlock, cleanShareUrls) have no stored value yet, so
+// `Boolean(settings[key])` rendered them as Disabled, miscounted the
+// enabled summary, and made the first click a no-op write of the
+// already-effective value. Mirror the sidepanel's resolution
+// (`_settingsState[key] ?? entry.defaultValue`) by falling back to the
+// schema default when the key was never written.
+function isQuickToggleOn(settings, key) {
+    const raw = settings ? settings[key] : undefined;
+    const value = raw ?? getSchemaIndex()?.get(key)?.defaultValue;
+    return Boolean(value);
+}
+
 // Resolves user-facing strings via ext.i18n by default. A manual
 // override (popup language dropdown) writes to ext.storage.local
 // `_localeOverride`; when set, we fetch that locale's bundled
@@ -874,8 +889,29 @@ async function loadSettings() {
     const normalized = normalizeStoredSettings(items);
 
     if (normalized.legacyKeys.length > 0) {
-        await storageSet({ [SETTINGS_STORAGE_KEY]: normalized.settings });
-        await storageRemove(normalized.legacyKeys);
+        // Merge the legacy top-level values into ytSuiteSettings through
+        // the background-serialized mutation controller — the old direct
+        // storageSet of the full object could clobber a concurrent write
+        // from another surface (lost-update race). mutateMany merges into
+        // the freshest stored object, and the legacy keys are only removed
+        // after the merge persisted, so a failed migration retries on the
+        // next popup open instead of losing data.
+        let migrated = null;
+        try {
+            migrated = await getSettingsMutationController().mutateMany(
+                Object.fromEntries(normalized.legacyKeys.map((key) => [key, normalized.settings[key]]))
+            );
+        } catch (_) {
+            // reason: controller unavailable (core script failed to load) —
+            // keep the merged in-memory view and retry the migration later.
+        }
+        if (migrated?.ok) {
+            await storageRemove(normalized.legacyKeys);
+            popupState.settings = isPlainObject(migrated.settings)
+                ? migrated.settings
+                : normalized.settings;
+            return popupState.settings;
+        }
     }
 
     popupState.settings = normalized.settings;
@@ -1339,7 +1375,7 @@ function installPopupFocusManagement() {
 // ── Summary ──
 
 function updateSummary(settings) {
-    const enabled = QUICK_TOGGLE_KEYS.reduce((count, key) => count + (settings[key] ? 1 : 0), 0);
+    const enabled = QUICK_TOGGLE_KEYS.reduce((count, key) => count + (isQuickToggleOn(settings, key) ? 1 : 0), 0);
     enabledCount.textContent = String(enabled);
 }
 
@@ -1681,7 +1717,7 @@ function render(settings, filter) {
         const sectionId = `toggle-group-${groupName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
         section.setAttribute('aria-labelledby', sectionId);
 
-        const groupEnabled = groupItems.reduce((count, item) => count + (settings[item.key] ? 1 : 0), 0);
+        const groupEnabled = groupItems.reduce((count, item) => count + (isQuickToggleOn(settings, item.key) ? 1 : 0), 0);
         section.dataset.active = groupEnabled > 0 ? 'true' : 'false';
 
         const groupHead = document.createElement('div');
@@ -1706,7 +1742,7 @@ function render(settings, filter) {
         section.appendChild(groupHead);
 
         for (const item of groupItems) {
-            const on = Boolean(settings[item.key]);
+            const on = isQuickToggleOn(settings, item.key);
             const tName = t(`qt_${item.key}_name`, item.name);
             const tDesc = t(`qt_${item.key}_desc`, item.desc);
             const stateLabel = on ? t('toggleStateOn', 'Enabled') : t('toggleStateOff', 'Disabled');
@@ -1772,7 +1808,7 @@ function installToggleClickDelegation() {
         const tName = t(`qt_${toggle.key}_name`, toggle.name);
         row.disabled = true;
         try {
-            const next = !Boolean(popupState.settings[key]);
+            const next = !isQuickToggleOn(popupState.settings, key);
             await writeSetting(key, next);
             render(popupState.settings, q.value);
             const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
@@ -2619,6 +2655,11 @@ function renderSchemaOverview() {
                 schemaOverviewState.expanded.add(cat);
             }
             renderSchemaOverview();
+            // renderSchemaOverview() rebuilds the list, destroying the
+            // focused disclosure button and dropping keyboard focus to
+            // <body>. Refocus the rebuilt equivalent by data-category —
+            // same pattern as the quick-toggle click delegation.
+            refocusSchemaOverviewCategory(cat);
             // v4.29.0: best-effort persist so the user's chosen
             // expansion survives the next popup open.
             void persistSchemaOverviewExpanded();
@@ -2642,6 +2683,33 @@ function renderSchemaOverview() {
 
         schemaOverviewList.appendChild(li);
     }
+}
+
+// Keyboard-focus restoration after a renderSchemaOverview() rebuild.
+// The overview re-renders wholesale on expand/collapse, per-key toggle,
+// and per-key reset — destroying the focused element and silently
+// dropping keyboard focus to <body>. Mirror the quick-toggle click
+// delegation, which refocuses the rebuilt control by data-key.
+function refocusSchemaOverviewCategory(cat) {
+    if (!schemaOverviewList || typeof cat !== 'string') return;
+    const head = schemaOverviewList.querySelector(
+        `.so-row-head[data-category="${CSS.escape(cat)}"]`);
+    if (head) head.focus();
+}
+
+function refocusSchemaOverviewKey(entry) {
+    if (!schemaOverviewList || !entry?.key) return;
+    const esc = CSS.escape(entry.key);
+    // Prefer the row's interactive control (switch / inline editor —
+    // they all carry data-key). A per-key reset removes its own button
+    // on success, so fall back to the row's control, then the category
+    // disclosure so focus never lands on <body>.
+    const control = schemaOverviewList.querySelector(
+        `.so-key-row[data-key="${esc}"] button[data-key="${esc}"], `
+        + `.so-key-row[data-key="${esc}"] input[data-key="${esc}"], `
+        + `.so-key-row[data-key="${esc}"] .so-key-reset-btn`);
+    if (control) { control.focus(); return; }
+    refocusSchemaOverviewCategory(entry.category);
 }
 
 // v4.24.0: per-key row inside an expanded category. Booleans become a
@@ -2764,8 +2832,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             btn.disabled = true;
             try {
                 await writeSetting(entry.key, next);
-                // Re-render the overview to refresh the count + this row.
+                // Re-render the overview to refresh the count + this row,
+                // then restore keyboard focus to the rebuilt switch.
                 renderSchemaOverview();
+                refocusSchemaOverviewKey(entry);
             } catch (err) {
                 console.warn('[Astra Deck popup] schema-overview toggle failed:', err);
                 showStatus(formatSettingWriteError(entry.key, err), 'error', 5200);
@@ -3055,6 +3125,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                     showStatus(t('statusPerKeyReset',
                         `${entry.key} reset to default.`), 'ok', 2400);
                     renderSchemaOverview();
+                    // The rebuild removed this reset button (value is back
+                    // at default) — refocus the row's remaining control so
+                    // keyboard focus doesn't fall to <body>.
+                    refocusSchemaOverviewKey(entry);
                 } catch (err) {
                     showStatus(t('statusPerKeyResetFail',
                         'Could not reset') + ': ' + err.message, 'error', 3600);
@@ -3149,7 +3223,7 @@ async function recordCorruptionDiagnostic(corruption) {
     try {
         const items = await storageGet([SETTINGS_STORAGE_KEY]);
         const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
-            ? { ...items[SETTINGS_STORAGE_KEY] }
+            ? items[SETTINGS_STORAGE_KEY]
             : {};
         const arr = Array.isArray(settings._errors)
             ? settings._errors.filter(isPlainObject).slice(-499)
@@ -3162,8 +3236,11 @@ async function recordCorruptionDiagnostic(corruption) {
                 .join('|')
                 .slice(0, 500)
         });
-        settings._errors = arr;
-        await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
+        // Persist only the `_errors` key through the background-serialized
+        // mutation controller — the old full-object storageSet could
+        // clobber concurrent ytSuiteSettings writes (lost-update race).
+        const result = await getSettingsMutationController().mutate('_errors', arr);
+        if (!result.ok) return;
         _lastCorruptionSignature = signature;
     } catch (_) {
         // reason: best-effort — if even writing the diagnostic fails the
@@ -3602,13 +3679,17 @@ async function clearDiagnosticLog() {
     // v4.47.0 NF14: applies immediately — the diagnostic log is a ring
     // buffer of runtime errors, not user-authored data. No confirm
     // dialog needed (project policy bans them).
+    //
+    // Routed through the background-serialized mutation controller: the
+    // old read-modify-write of the full ytSuiteSettings object raced
+    // concurrent writes from other surfaces (lost-update). Resetting
+    // `_errors` to its schema default (empty array) only touches that key.
     try {
-        const items = await storageGet([SETTINGS_STORAGE_KEY]);
-        const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
-            ? { ...items[SETTINGS_STORAGE_KEY] }
-            : {};
-        delete settings._errors;
-        await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
+        const result = await getSettingsMutationController().mutate('_errors', []);
+        if (!result.ok) {
+            throw new Error(result.error?.message || 'Settings write failed.');
+        }
+        if (isPlainObject(result.settings)) popupState.settings = result.settings;
         renderHealthBanner(null);
         showStatus(t('statusDiagCleared', 'Diagnostic log cleared.'), 'success', 2400);
     } catch (error) {
@@ -4109,8 +4190,10 @@ async function reenableMediadlPrompts() {
 // - 500 ok:false (exit code)   -> "yt-dlp -U failed: <stderr>"
 // - status=0  (no MediaDL/SW)  -> "Start Astra Downloader and try again"
 function rankPopupBridgeTab(tab) {
+    // tabs.Tab has no `currentWindow` property (that name is a tabs.query
+    // filter, not a Tab field), so an earlier ranking criterion that read
+    // it off the tab object was a permanent no-op and was dropped.
     return (tab?.active ? 0 : 4)
-        + (tab?.currentWindow ? 0 : 2)
         + (tab?.highlighted ? 0 : 1);
 }
 
@@ -4848,7 +4931,10 @@ function installWheelScrolling() {
         });
         void renderStorageInfo();
     };
-    if (ext.storage?.onChanged) {
+    // `ext` is null (not undefined) in preview mode — a bare
+    // `ext.storage` here threw and killed every listener wired after
+    // this point in the bootstrap IIFE.
+    if (ext?.storage?.onChanged) {
         ext.storage.onChanged.addListener(onStorageChanged);
         // The popup can be torn down mid-flight (it closes on blur). Remove the
         // listener and cancel the status timer on pagehide so a late storage

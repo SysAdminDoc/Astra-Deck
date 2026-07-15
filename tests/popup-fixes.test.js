@@ -213,11 +213,19 @@ test('recordCorruptionDiagnostic dedupes by corruption signature so the write lo
         'recordCorruptionDiagnostic must early-return when the signature matches the last recorded one');
     assert.match(block, /_lastCorruptionSignature = signature;/,
         'the signature must only be committed after a successful storage write');
-    // The commit must come after the storageSet so a failed write can retry.
-    const writeIdx = block.indexOf('await storageSet(');
+    // The commit must come after the controller write so a failed write can
+    // retry (the write goes through the mutation controller — see below).
+    const writeIdx = block.indexOf(".mutate('_errors', arr)");
     const commitIdx = block.indexOf('_lastCorruptionSignature = signature;');
     assert.ok(writeIdx > -1 && commitIdx > writeIdx,
         'signature commit must follow the diagnostic write');
+    // Lost-update guard: the diagnostic write must route through the
+    // background-serialized mutation controller and touch only `_errors`
+    // — never storageSet the full ytSuiteSettings object.
+    assert.match(block, /getSettingsMutationController\(\)\.mutate\('_errors', arr\)/,
+        'recordCorruptionDiagnostic must persist through the settings mutation controller');
+    assert.doesNotMatch(block, /storageSet\(/,
+        'recordCorruptionDiagnostic must not write the full settings object directly');
 });
 
 // ── 3. Schema overview clear-path sync ──
@@ -238,6 +246,28 @@ test('clearing the search via Escape re-renders the schema overview', () => {
         'search Escape must un-filter the schema overview too');
 });
 
+// ── 2b. Full-object settings writes route through the mutation controller ──
+
+test('legacy-key migration merges through mutateMany instead of storageSet-ing the full object', () => {
+    const start = popupSource.indexOf('async function loadSettings');
+    assert.ok(start > -1, 'loadSettings must exist');
+    const end = popupSource.indexOf('let _settingsMutationController', start);
+    assert.ok(end > start, 'loadSettings block must be found');
+    const block = popupSource.slice(start, end);
+    assert.match(block, /getSettingsMutationController\(\)\.mutateMany\(/,
+        'legacy migration must merge through the background-serialized controller');
+    assert.doesNotMatch(block, /storageSet\(/,
+        'loadSettings must not write the full ytSuiteSettings object directly (lost-update race)');
+    // Legacy keys may only be removed after the merge persisted, so a
+    // failed write retries on the next popup open instead of losing data.
+    const mergeIdx = block.indexOf('.mutateMany(');
+    const removeIdx = block.indexOf('await storageRemove(normalized.legacyKeys)');
+    assert.ok(mergeIdx > -1 && removeIdx > mergeIdx,
+        'storageRemove of the legacy keys must follow a successful controller merge');
+    assert.match(block, /migrated\?\.ok/,
+        'legacy-key removal must be gated on the controller result');
+});
+
 // ── 4. Inline editors clamp through policy-profile ──
 
 test('inline number and string editors clamp through policy clampSettingValue before persisting', () => {
@@ -252,4 +282,146 @@ test('inline number and string editors clamp through policy clampSettingValue be
         'number editor must clamp the parsed value against the schema entry');
     assert.match(numBlock, /input\.value = String\(next\)/,
         'number editor must reflect the clamped value back into the input');
+});
+
+// ── 5. Quick toggles resolve schema defaults for never-written keys ──
+// On a fresh install (or right after Reset) default-on features have no
+// stored value, so raw storage truthiness rendered them as Disabled,
+// counted them as 0 enabled, and made the first click compute the wrong
+// `next` value. The popup must fall back to the schema defaultValue —
+// same resolution the sidepanel uses.
+
+function extractQuickToggleResolver() {
+    const start = popupSource.indexOf('let _schemaIndex = null;');
+    const end = popupSource.indexOf('// Resolves user-facing strings');
+    assert.ok(start > -1 && end > start,
+        'popup.js must declare the schema-index + isQuickToggleOn block before the i18n resolver');
+    const block = popupSource.slice(start, end);
+    return new Function('window', block + '\nreturn isQuickToggleOn;');
+}
+
+test('isQuickToggleOn falls back to the schema defaultValue for never-written keys', () => {
+    const makeResolver = extractQuickToggleResolver();
+    const isQuickToggleOn = makeResolver({
+        __YTKIT_SETTINGS_SCHEMA__: {
+            SETTINGS_SCHEMA: [
+                { key: 'removeAllShorts', type: 'boolean', defaultValue: true },
+                { key: 'debugMode', type: 'boolean', defaultValue: false },
+            ]
+        }
+    });
+    assert.equal(isQuickToggleOn({}, 'removeAllShorts'), true,
+        'a never-written default-on key must render as enabled');
+    assert.equal(isQuickToggleOn({}, 'debugMode'), false,
+        'a never-written default-off key must render as disabled');
+    assert.equal(isQuickToggleOn({ removeAllShorts: false }, 'removeAllShorts'), false,
+        'an explicit stored false must win over the schema default');
+    assert.equal(isQuickToggleOn({ removeAllShorts: null }, 'removeAllShorts'), true,
+        'a stored null must fall back to the schema default (?? semantics, matching sidepanel.js)');
+    assert.equal(isQuickToggleOn({}, 'noSuchKey'), false,
+        'an unknown key with no schema entry must resolve to disabled');
+    assert.equal(isQuickToggleOn(null, 'removeAllShorts'), true,
+        'a missing settings object must still resolve the schema default');
+});
+
+test('isQuickToggleOn resolves the real schema: audit-named default-on quick toggles', () => {
+    const schema = require('../extension/core/settings-schema');
+    const makeResolver = extractQuickToggleResolver();
+    const isQuickToggleOn = makeResolver({ __YTKIT_SETTINGS_SCHEMA__: schema });
+    for (const key of ['removeAllShorts', 'hideRelatedVideos', 'sponsorBlock', 'cleanShareUrls']) {
+        const entry = schema.findSettingEntry(key);
+        assert.ok(entry, `schema must declare ${key}`);
+        assert.equal(entry.defaultValue, true, `${key} must be default-on in the schema`);
+        assert.equal(isQuickToggleOn({}, key), true,
+            `fresh-install popup must render ${key} as enabled`);
+    }
+});
+
+test('render, updateSummary, and the click handler all resolve through isQuickToggleOn', () => {
+    // updateSummary (enabled count).
+    const summaryStart = popupSource.indexOf('function updateSummary(settings)');
+    assert.ok(summaryStart > -1, 'updateSummary must exist');
+    const summaryBlock = popupSource.slice(summaryStart, summaryStart + 300);
+    assert.match(summaryBlock, /isQuickToggleOn\(settings, key\)/,
+        'updateSummary must count enabled toggles through the schema-default resolver');
+    // render(): per-row state and per-group count.
+    assert.match(popupSource, /const on = isQuickToggleOn\(settings, item\.key\);/,
+        'render must resolve each row state through the schema-default resolver');
+    assert.match(popupSource, /isQuickToggleOn\(settings, item\.key\) \? 1 : 0/,
+        'render must compute the per-group enabled count through the schema-default resolver');
+    // Click handler `next` computation.
+    assert.match(popupSource, /const next = !isQuickToggleOn\(popupState\.settings, key\);/,
+        'the toggle click handler must compute next from the resolved (default-aware) state');
+    assert.doesNotMatch(popupSource, /Boolean\(settings\[item\.key\]\)/,
+        'raw storage truthiness must not drive quick-toggle rendering');
+});
+
+// ── 6. Preview-mode bootstrap must not crash on a null ext ──
+
+test('storage.onChanged wiring is guarded against a null ext (preview mode)', () => {
+    assert.match(popupSource, /if \(ext\?\.storage\?\.onChanged\)/,
+        'the onChanged wiring must optional-chain ext — it is null in preview mode');
+    assert.doesNotMatch(popupSource, /if \(ext\.storage\?\.onChanged\)/,
+        'a bare ext.storage access throws in preview mode and kills every listener wired after it');
+});
+
+// ── 7. Bridge-tab ranking must not read nonexistent Tab fields ──
+
+test('rankPopupBridgeTab does not consult tab.currentWindow (not a tabs.Tab property)', () => {
+    const start = popupSource.indexOf('function rankPopupBridgeTab');
+    assert.ok(start > -1, 'rankPopupBridgeTab must exist');
+    const end = popupSource.indexOf('function sortPopupBridgeTabs', start);
+    assert.ok(end > start, 'rankPopupBridgeTab block must be found');
+    const block = popupSource.slice(start, end);
+    assert.doesNotMatch(block, /tab\?\.currentWindow|tab\.currentWindow/,
+        'currentWindow is a tabs.query filter, not a Tab field — ranking on it is a permanent no-op');
+    assert.match(block, /tab\?\.active/, 'active-tab preference must remain');
+    assert.match(block, /tab\?\.highlighted/, 'highlighted-tab preference must remain');
+});
+
+// ── 8. Schema-overview interactions keep keyboard focus ──
+
+test('schema-overview expand/toggle/reset refocus the rebuilt control after re-render', () => {
+    assert.match(popupSource, /function refocusSchemaOverviewCategory\(cat\)/,
+        'popup.js must declare the category refocus helper');
+    assert.match(popupSource, /function refocusSchemaOverviewKey\(entry\)/,
+        'popup.js must declare the per-key refocus helper');
+    assert.match(popupSource, /\.so-row-head\[data-category="\$\{CSS\.escape\(cat\)\}"\]/,
+        'category refocus must locate the rebuilt disclosure by data-category');
+
+    // Category expand/collapse.
+    const headStart = popupSource.indexOf("head.addEventListener('click'");
+    assert.ok(headStart > -1, 'category head click handler must exist');
+    const headBlock = popupSource.slice(headStart, headStart + 900);
+    const headRender = headBlock.indexOf('renderSchemaOverview()');
+    const headRefocus = headBlock.indexOf('refocusSchemaOverviewCategory(cat)');
+    assert.ok(headRender > -1 && headRefocus > headRender,
+        'expand/collapse must refocus the disclosure after the re-render destroys it');
+
+    // Per-key boolean switch.
+    const switchStart = popupSource.indexOf("btn.addEventListener('click'");
+    assert.ok(switchStart > -1, 'schema-overview switch handler must exist');
+    const switchBlock = popupSource.slice(switchStart, switchStart + 900);
+    const switchRender = switchBlock.indexOf('renderSchemaOverview()');
+    const switchRefocus = switchBlock.indexOf('refocusSchemaOverviewKey(entry)');
+    assert.ok(switchRender > -1 && switchRefocus > switchRender,
+        'the per-key switch must refocus its rebuilt control after re-render');
+
+    // Per-key reset.
+    const resetStart = popupSource.indexOf("resetBtn.addEventListener('click'");
+    assert.ok(resetStart > -1, 'per-key reset handler must exist');
+    const resetBlock = popupSource.slice(resetStart, resetStart + 1100);
+    const resetRender = resetBlock.indexOf('renderSchemaOverview()');
+    const resetRefocus = resetBlock.indexOf('refocusSchemaOverviewKey(entry)');
+    assert.ok(resetRender > -1 && resetRefocus > resetRender,
+        'per-key reset must refocus the row after its own button disappears');
+});
+
+// ── 9. Filter input hint is programmatically associated ──
+
+test('#q carries aria-describedby pointing at the mini-DSL hint', () => {
+    assert.match(popupHtmlSource, /<input id="q"[^>]*aria-describedby="search-hint"/,
+        'the filter input must reference #search-hint via aria-describedby (the comment above it promises this wiring)');
+    assert.match(popupHtmlSource, /id="search-hint"/,
+        'the hint element #search-hint must exist');
 });
