@@ -19,6 +19,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Companion API responses now minimize private local state.** Authenticated
+  configuration requests expose only the download paths and supported format
+  choices the extension consumes, while health and Deno provisioning omit local
+  executable paths. Preflight responses now advertise every supported auth
+  header, and indeterminate folder paths are no longer presented as trusted.
 - **Uninstall no longer terminates unrelated media processes.** Removal first
   asks the running companion to close and cancel its own jobs, then limits the
   fallback process-tree cleanup to `AstraDownloader.exe`; unrelated yt-dlp and

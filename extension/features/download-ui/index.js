@@ -1593,8 +1593,6 @@
                                 }
                             }, { once: true });
                         }
-                    } else if (deno.path) {
-                        pill.title = deno.path;
                     }
                     this._container.appendChild(pill);
                 }
