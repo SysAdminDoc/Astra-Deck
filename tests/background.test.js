@@ -281,6 +281,74 @@ test('background EXT_FETCH rejects binary bodies instead of silently corrupting 
     assert.match(response.error, /Binary and form-data request bodies are not supported/);
 });
 
+test('background EXT_FETCH rejects unsupported methods instead of downgrading to GET', async () => {
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POStt',
+            url: 'https://www.youtube.com/api/test',
+            data: 'must-not-be-sent-as-get'
+        }
+    });
+
+    assert.equal(fetchCalled, false);
+    assert.match(response.error, /Unsupported fetch method: POSTT/);
+});
+
+test('background EXT_FETCH rejects oversized request bodies before fetch', async () => {
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://www.youtube.com/api/test',
+            data: 'x'.repeat((2 * 1024 * 1024) + 1)
+        }
+    });
+
+    assert.equal(fetchCalled, false);
+    assert.match(response.error, /Request body too large/);
+});
+
+test('background EXT_FETCH rejects unserializable bodies before arming fetch', async () => {
+    let fetchCalled = false;
+    const cyclic = {};
+    cyclic.self = cyclic;
+    const { messageListener } = loadBackground({
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://www.youtube.com/api/test',
+            data: cyclic
+        }
+    });
+
+    assert.equal(fetchCalled, false);
+    assert.match(response.error, /could not be serialized/);
+});
+
 test('background EXT_FETCH uses manual redirect for credentialed (cookie-bearing) requests', async () => {
     let capturedOptions = null;
     const { messageListener } = loadBackground({

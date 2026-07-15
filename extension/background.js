@@ -121,6 +121,7 @@ async function broadcastSettingsMutation(result, source = '') {
 }
 
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_REQUEST_BYTES = 2 * 1024 * 1024; // 2 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 const MAX_AI_REQUEST_BYTES = 512 * 1024;
 const MAX_AI_RESPONSE_BYTES = 2 * 1024 * 1024;
@@ -993,7 +994,33 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const startFetch = () => {
             const validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
             const normalizedMethod = String(method || 'GET').toUpperCase();
-            const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
+            if (!validMethods.includes(normalizedMethod)) {
+                responded = true;
+                sendResponse({ error: `Unsupported fetch method: ${normalizedMethod}` });
+                return;
+            }
+
+            const filteredHeaders = filterRequestHeaders(headers, url);
+            if (isJsonLikePayload(data) && !hasHeader(filteredHeaders, 'content-type')) {
+                filteredHeaders['Content-Type'] = 'application/json';
+            }
+            let requestBody = null;
+            if (data !== null && data !== undefined
+                && normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD') {
+                try {
+                    requestBody = normalizeRequestBody(data, filteredHeaders);
+                } catch (_) {
+                    responded = true;
+                    sendResponse({ error: 'Request body could not be serialized.' });
+                    return;
+                }
+                const requestBytes = new TextEncoder().encode(requestBody).byteLength;
+                if (requestBytes > MAX_REQUEST_BYTES) {
+                    responded = true;
+                    sendResponse({ error: `Request body too large (${requestBytes} bytes)` });
+                    return;
+                }
+            }
 
             const controller = new AbortController();
             const DEFAULT_FETCH_TIMEOUT_MS = 30000;
@@ -1013,15 +1040,11 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
             const sendsCredentials = shouldSendCredentials(url);
             const fetchOpts = {
-                method: safeMethod,
+                method: normalizedMethod,
                 signal: controller.signal,
                 credentials: sendsCredentials ? 'include' : 'omit'
             };
 
-            const filteredHeaders = filterRequestHeaders(headers, url);
-            if (isJsonLikePayload(data) && !hasHeader(filteredHeaders, 'content-type')) {
-                filteredHeaders['Content-Type'] = 'application/json';
-            }
             if (Object.keys(filteredHeaders).length > 0) {
                 fetchOpts.headers = filteredHeaders;
             }
@@ -1038,8 +1061,8 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (sendsCredentials || hasSensitiveAuthHeader(filteredHeaders)) {
                 fetchOpts.redirect = 'manual';
             }
-            if (data !== null && data !== undefined && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
-                fetchOpts.body = normalizeRequestBody(data, filteredHeaders);
+            if (requestBody !== null) {
+                fetchOpts.body = requestBody;
             }
 
             fetch(url, fetchOpts).then(async (resp) => {
