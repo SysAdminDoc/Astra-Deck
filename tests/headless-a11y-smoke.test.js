@@ -83,10 +83,7 @@ test('rendered accessibility fixes remain pinned at their root causes', () => {
 });
 
 test('download dialog positioning and keyboard containment stay resilient', () => {
-    for (const [label, implementation] of [
-        ['module', downloadUi],
-        ['fallback', ytkit],
-    ]) {
+    for (const [label, implementation] of [['canonical module', downloadUi]]) {
         assert.match(implementation, /popup\.setAttribute\('aria-modal', 'true'\)/,
             `${label} must expose modal dialog semantics`);
         assert.match(implementation, /const dialogKeydown = \(event\) =>/,
@@ -100,6 +97,8 @@ test('download dialog positioning and keyboard containment stay resilient', () =
         assert.match(implementation, /popup\.style\.inset = 'auto'/,
             `${label} manual positioning must reset popover UA insets`);
     }
+    assert.doesNotMatch(ytkit, /function showDownloadPopup/,
+        'ytkit.js must not retain a drifting inline download-dialog fallback');
     assert.match(ytkit, /\.ytkit-dl-popup \[hidden\]\s*\{\s*display:\s*none !important/,
         'inactive format rows must not remain visually rendered or tabbable');
 });

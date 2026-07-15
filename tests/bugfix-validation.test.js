@@ -1526,7 +1526,10 @@ test('selector health panel exposes refresh and JSON export controls', () => {
 test('MediaDL probe rejects legacy localhost services without Astra health identity', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
 
     const start = source.indexOf('const MediaDLManager = {');
     const end = source.indexOf('showInstallPrompt(mode)', start);
@@ -1631,7 +1634,10 @@ test('blocked channel avatar initial survives surrogate-pair names', () => {
 test('download progress panel close button stops the poll loop immediately', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
 
     // The close handler synchronously flips `stopped` and clears the pending
     // setTimeout (via stopPolling()) so we don't keep hitting the local
@@ -1651,7 +1657,6 @@ test('download progress reports durable queue and authentication recovery states
     const fs = require('fs');
     const path = require('path');
     const sources = [
-        path.join(__dirname, '..', 'extension', 'ytkit.js'),
         path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
     ];
 

@@ -396,15 +396,21 @@ test('downloadUI module loads before ytkit.js in content scripts', () => {
     }
 });
 
-test('downloadUI monolith delegates feature objects through the module factory', () => {
-    // Verify the monolith constructs _downloadUI from the module factory
-    const factoryNeedle = 'globalThis.YTKitFeatures?.createDownloadUIFeature?.({';
+test('downloadUI monolith requires the canonical module factory', () => {
+    const factoryLookup = 'const createDownloadUIFeature = globalThis.YTKitFeatures?.createDownloadUIFeature;';
+    assert.ok(sources.ytkit.includes(factoryLookup),
+        'ytkit.js must resolve the preloaded downloadUI factory explicitly');
+    assert.ok(sources.ytkit.includes('Download UI module is unavailable; aborting ytkit initialization.'),
+        'ytkit.js must fail closed when the required module is unavailable');
+
+    // Verify the monolith constructs _downloadUI from the required module factory.
+    const factoryNeedle = 'const _downloadUI = createDownloadUIFeature({';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must construct _downloadUI through the module factory');
 
     // Verify the dependency bag includes key deps
-    const bagEnd = sources.ytkit.indexOf('}) || null;', factoryIndex);
-    assert.ok(bagEnd > factoryIndex, 'factory construction must fall back to null');
+    const bagEnd = sources.ytkit.indexOf('});', factoryIndex);
+    assert.ok(bagEnd > factoryIndex, 'factory construction must close normally');
     const dependencyBag = sources.ytkit.slice(factoryIndex, bagEnd);
     for (const dep of [
         'appState',
@@ -425,38 +431,36 @@ test('downloadUI monolith delegates feature objects through the module factory',
         'requestNativeDownloaderToken',
         'browserCookies',
         'getProfileExportMode',
-        'normalizeCookieExpiry',
         'BRAND',
         't',
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
 
-    // Verify each feature object delegates through _downloadUI with inline fallback
+    // Every extension download feature must come from the module; retaining an
+    // inline fallback creates two independently drifting implementations.
     for (const featureId of [
         'downloadHealthPanel',
         'downloadStreamLinksPanel',
         'downloadCobaltFallback',
         'downloadHistoryPanel'
     ]) {
-        // Accept both parenthesized and bare delegation forms
-        const delegateNeedle = `_downloadUI?.${featureId} || {`;
-        const delegateNeedleAlt = `(_downloadUI?.${featureId} || {`;
-        const hasDelegation = sources.ytkit.includes(delegateNeedle) || sources.ytkit.includes(delegateNeedleAlt);
-        assert.ok(
-            hasDelegation,
-            `ytkit.js must delegate ${featureId} through _downloadUI with inline fallback`
-        );
-        const fallbackNeedle = `id: '${featureId}'`;
-        const delegateIndex = Math.max(
-            sources.ytkit.indexOf(delegateNeedle),
-            sources.ytkit.indexOf(delegateNeedleAlt)
-        );
-        const fallbackIndex = sources.ytkit.indexOf(fallbackNeedle, delegateIndex);
-        assert.ok(
-            fallbackIndex > delegateIndex,
-            `ytkit.js must retain inline ${featureId} fallback after the delegation`
-        );
+        assert.ok(sources.ytkit.includes(`_downloadUI.${featureId}`),
+            `ytkit.js must use the canonical ${featureId} object`);
+        assert.ok(!sources.ytkit.includes(`_downloadUI?.${featureId} || {`),
+            `ytkit.js must not retain an inline ${featureId} fallback`);
+        assert.ok(!sources.ytkit.includes(`id: '${featureId}'`),
+            `ytkit.js must not duplicate the ${featureId} implementation`);
+    }
+
+    for (const duplicate of [
+        'function showDownloadProgress',
+        'const MediaDLManager = {',
+        'function showDownloadPopup',
+        'function normalizeCookieExpiry',
+    ]) {
+        assert.ok(!sources.ytkit.includes(duplicate),
+            `ytkit.js must not duplicate canonical download implementation: ${duplicate}`);
     }
 });
 

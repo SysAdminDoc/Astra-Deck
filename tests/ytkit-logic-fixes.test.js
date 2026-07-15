@@ -14,6 +14,10 @@ const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
 
 const repoRoot = path.join(__dirname, '..');
 const ytkitSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+const downloadUiSource = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
+    'utf8'
+);
 const stickySource = fs.readFileSync(
     path.join(repoRoot, 'extension', 'features', 'sticky-video', 'index.js'),
     'utf8'
@@ -27,9 +31,12 @@ const defaultSettings = JSON.parse(
 );
 
 function featureBlock(id, length = 170000) {
-    const start = ytkitSource.indexOf(`id: '${id}'`);
-    assert.ok(start > -1, `feature '${id}' must exist in ytkit.js`);
-    return ytkitSource.slice(start, start + length);
+    const source = ['downloadCobaltFallback', 'downloadStreamLinksPanel'].includes(id)
+        ? downloadUiSource
+        : ytkitSource;
+    const start = source.indexOf(`id: '${id}'`);
+    assert.ok(start > -1, `feature '${id}' must exist in its canonical source`);
+    return source.slice(start, start + length);
 }
 
 function methodSlice(block, marker, length = 3000) {
@@ -194,8 +201,8 @@ test('downloadCobaltFallback tracks its navigate-rule timer and gates on _hooked
 test('downloadStreamLinksPanel validates player-response videoId and closes the panel on navigation', () => {
     const block = featureBlock('downloadStreamLinksPanel', 14000);
     const extract = methodSlice(block, '_extractFormats() {', 1600);
-    assert.match(extract, /_rw\.ytInitialPlayerResponse/,
-        '_extractFormats must prefer the shared _rw player-response bridge');
+    assert.match(extract, /getPlayerResponseGlobal\(\)/,
+        '_extractFormats must prefer the injected player-response bridge');
     assert.match(extract, /data\?\.videoDetails\?\.videoId\s*!==\s*getVideoId\(\)/,
         '_extractFormats must reject a player response that belongs to a different (previous) video');
     assert.match(extract, /return\s*\{\s*formats:\s*\[\],\s*adaptive:\s*\[\]\s*\}/,
