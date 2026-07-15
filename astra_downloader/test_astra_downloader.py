@@ -1287,6 +1287,50 @@ for forbidden in (
         self.assertIs(routes.create_api, ad.create_api)
         self.assertIs(gui.MainWindow, ad.MainWindow)
 
+    def test_routes_module_owns_injected_wsgi_backend_selection_and_teardown(self):
+        import routes
+
+        calls = []
+
+        class FakeServer:
+            def run(self):
+                calls.append("run")
+
+            def close(self):
+                calls.append("close")
+
+        def make_waitress(api, **kwargs):
+            calls.append((api, kwargs))
+            return FakeServer()
+
+        adapter = routes._build_wsgi_server(9751, "api", waitress_factory=make_waitress)
+        self.assertIs(routes._ServerAdapter, ad._ServerAdapter)
+        self.assertIs(routes._build_wsgi_server, ad._build_wsgi_server)
+        self.assertEqual(adapter.backend, "waitress")
+        self.assertEqual(calls[0][1], {
+            "host": "127.0.0.1",
+            "port": 9751,
+            "threads": 8,
+            "ident": "Astra Downloader",
+        })
+        adapter.run()
+        adapter.stop()
+        self.assertEqual(calls[-2:], ["run", "close"])
+
+    def test_routes_module_normalizes_werkzeug_bind_abort_without_opening_socket(self):
+        import routes
+
+        def abort_bind(*_args, **_kwargs):
+            raise SystemExit(1)
+
+        with self.assertRaisesRegex(OSError, "Werkzeug aborted while binding port 9761"):
+            routes._build_wsgi_server(
+                9761,
+                "api",
+                waitress_factory=False,
+                werkzeug_factory=abort_bind,
+            )
+
     def test_importing_companion_modules_never_spawns_a_process(self):
         script = r'''
 import importlib
