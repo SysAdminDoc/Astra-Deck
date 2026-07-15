@@ -49,6 +49,24 @@ test('settings visual system replaces boxed cards and badges with a readable set
     assert.match(visualSystemSource, /#ytkit-reset-active-section\s*\{\s*display:\s*none/);
 });
 
+test('insight-rail curation keys on stable data attributes, not nth-child position', () => {
+    // Inserting one makeStatusRow/makeInsightSection call used to silently
+    // swap which stats were visible because the visual system selected by
+    // position across files.
+    assert.doesNotMatch(visualSystemSource, /\.ytkit-insight-section:nth-child/);
+    assert.doesNotMatch(visualSystemSource, /\.ytkit-status-row:nth-child/);
+    assert.match(visualSystemSource, /data-ytkit-insight-section="recent-activity"/);
+    for (const key of ['extension', 'enabled', 'profile']) {
+        assert.match(visualSystemSource, new RegExp(`data-ytkit-insight="${key}"`));
+    }
+    for (const source of [settingsPanel, shell]) {
+        assert.match(source, /dataset\.ytkitInsightSection = insightKey/);
+        assert.match(source, /dataset\.ytkitInsight = insightKey/);
+        assert.match(source, /makeInsightSection\('Recent Activity', 'recent-activity'\)/);
+        assert.match(source, /'ytkit-insight-profile-name', 'profile'\)/);
+    }
+});
+
 test('sticky settings section header stays opaque above scrolling controls', () => {
     assert.match(
         visualSystemSource,

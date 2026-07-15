@@ -28308,7 +28308,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'enableCPU_Tamer',
             name: 'CPU Tamer',
-            description: 'Reduce CPU usage by throttling background timers via requestAnimationFrame gating',
+            description: 'Reduce CPU usage by throttling background timers; in hidden tabs it also force-releases YouTube web locks and closes idle database connections',
             group: 'Advanced',
             icon: 'cpu',
             _originals: null,
@@ -28317,8 +28317,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _patched: false,
             init() {
                 document.documentElement.setAttribute('data-ytkit-resource-unlock', 'on');
+                // In the extension build the MAIN-world bridge (ytkit-main.js)
+                // reacts to the attribute above and patches the page's real
+                // navigator.locks/indexedDB. An ISOLATED-world twin would only
+                // patch the content script's own globals — pure overhead — so
+                // the inline bridge is userscript-only (MAIN world there).
                 const createResourceUnlockBridge = globalThis.YTKitCore?.createResourceUnlockBridge;
-                if (typeof createResourceUnlockBridge === 'function') {
+                if (!hasExtensionContext() && typeof createResourceUnlockBridge === 'function') {
                     this._resourceUnlock = createResourceUnlockBridge({ root: window, document });
                     this._resourceUnlock.install();
                     this._resourceUnlock.setEnabled(true);
@@ -42346,9 +42351,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             return button;
         }
 
-        function makeInsightSection(title) {
+        function makeInsightSection(title, insightKey = '') {
             const section = document.createElement('section');
             section.className = 'ytkit-insight-section';
+            // Stable curation hook: the visual system shows/hides sections and
+            // rows by these keys instead of nth-child position, so inserting a
+            // section or row cannot silently swap which stats are visible.
+            if (insightKey) section.dataset.ytkitInsightSection = insightKey;
             const heading = document.createElement('h2');
             heading.className = 'ytkit-insight-heading';
             heading.textContent = title;
@@ -42356,10 +42365,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             return section;
         }
 
-        function makeStatusRow(label, value, tone = 'neutral', id = '') {
+        function makeStatusRow(label, value, tone = 'neutral', id = '', insightKey = '') {
             const row = document.createElement('div');
             row.className = 'ytkit-status-row';
             row.dataset.tone = tone;
+            if (insightKey) row.dataset.ytkitInsight = insightKey;
             const dot = document.createElement('span');
             dot.className = 'ytkit-status-dot';
             dot.setAttribute('aria-hidden', 'true');
@@ -42383,7 +42393,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             rail.className = 'ytkit-insights';
             rail.setAttribute('aria-label', 'Settings status and backup actions');
 
-            const statusSection = makeInsightSection('Status');
+            const statusSection = makeInsightSection('Status', 'status');
             const statusCard = document.createElement('div');
             statusCard.className = 'ytkit-insight-card ytkit-status-card';
             const statusHero = document.createElement('div');
@@ -42403,15 +42413,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             statusHero.appendChild(statusHeroIcon);
             statusHero.appendChild(statusHeroCopy);
             statusCard.appendChild(statusHero);
-            statusCard.appendChild(makeStatusRow('Extension', `v${YTKIT_VERSION}`, 'ok'));
-            statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok'));
-            statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count'));
-            statusCard.appendChild(makeStatusRow('Sections', String(populatedSections), 'neutral', 'ytkit-insight-section-count'));
-            statusCard.appendChild(makeStatusRow('Profile', getActiveSettingsProfileLabel(), 'neutral', 'ytkit-insight-profile-name'));
+            statusCard.appendChild(makeStatusRow('Extension', `v${YTKIT_VERSION}`, 'ok', '', 'extension'));
+            statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok', '', 'live-apply'));
+            statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count', 'enabled'));
+            statusCard.appendChild(makeStatusRow('Sections', String(populatedSections), 'neutral', 'ytkit-insight-section-count', 'sections'));
+            statusCard.appendChild(makeStatusRow('Profile', getActiveSettingsProfileLabel(), 'neutral', 'ytkit-insight-profile-name', 'profile'));
             statusSection.appendChild(statusCard);
             rail.appendChild(statusSection);
 
-            const backupSection = makeInsightSection('Health');
+            const backupSection = makeInsightSection('Health', 'health');
             const backupCard = document.createElement('div');
             backupCard.className = 'ytkit-insight-card ytkit-backup-card';
             backupCard.appendChild(makeStatusRow('Last save', 'Saved locally', 'ok', 'ytkit-insight-saved-state'));
@@ -42430,7 +42440,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             backupSection.appendChild(backupCard);
             rail.appendChild(backupSection);
 
-            const changesSection = makeInsightSection('Recent Activity');
+            const changesSection = makeInsightSection('Recent Activity', 'recent-activity');
             const changesCard = document.createElement('div');
             changesCard.className = 'ytkit-insight-card';
             const recentList = document.createElement('dl');

@@ -115,9 +115,14 @@
 
         function queueLock(args) {
             if (queuedLocks.length >= MAX_QUEUED_LOCKS) {
+                // Replace the oldest queued request instead of silently
+                // swallowing the newest: later lock requests reflect the
+                // page's current state, and the displaced caller still gets
+                // the same completed-without-running resolution it would have
+                // received under the old drop-newest policy.
+                const oldest = queuedLocks.shift();
                 droppedLocks += 1;
-                report();
-                return PromiseCtor.resolve(undefined);
+                oldest.resolve(undefined);
             }
             return new PromiseCtor((resolve, reject) => {
                 queuedLocks.push({ args: Array.from(args), resolve, reject });
