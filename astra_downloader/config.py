@@ -5,7 +5,9 @@ Importing this boundary itself is dependency-light and never imports GUI/server
 frameworks, which lets config tooling and tests run without PyQt or Flask.
 """
 
+import os
 import re
+import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -37,6 +39,7 @@ _OWNED_EXPORTS = {
     "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "normalize_url", "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
+    "DEFAULT_CONFIG", "sanitize_config",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
 }
 _resolve_legacy = make_legacy_resolver(
@@ -55,6 +58,51 @@ DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
     "postprocessorArgs", "postprocessor_args", "externalDownloaderArgs",
     "ytDlpArgs", "ytdlpArgs", "yt_dlp_args",
 })
+
+
+def _env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    lowered = str(value).strip().lower()
+    if lowered in {"1", "true", "yes", "on"}:
+        return True
+    if lowered in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+DEFAULT_CONFIG = {
+    "DownloadPath": str(Path.home() / "Videos"),
+    "AudioDownloadPath": "",
+    "ServerPort": 9751,
+    "ServerToken": "",
+    "LegacyHealthTokenEcho": _env_bool("ASTRA_LEGACY_HEALTH_TOKEN_ECHO", False),
+    "LegacyHealthTokenOrigins": os.environ.get("ASTRA_LEGACY_HEALTH_TOKEN_ORIGINS", ""),
+    "EmbedMetadata": True,
+    "EmbedThumbnail": True,
+    "EmbedChapters": True,
+    "EmbedSubs": False,
+    "SubLangs": "en",
+    "SponsorBlock": False,
+    "SponsorBlockAction": "remove",
+    "ConcurrentFragments": 4,
+    "JavaScriptRuntime": "auto",
+    "AutoUpdateYtDlp": True,
+    "RateLimit": "",
+    "Proxy": "",
+    "StartMinimized": False,
+    "CloseToTray": True,
+    "LastYtDlpUpdateCheck": "",
+    "ExtraOutputRoots": [],
+    "LastFfmpegCheck": "",
+    "MaxFileSizeMB": 0,
+    "NativeChromeExtensionIds": os.environ.get("ASTRA_NATIVE_CHROME_EXTENSION_IDS", ""),
+    "NativeFirefoxExtensionIds": os.environ.get(
+        "ASTRA_NATIVE_FIREFOX_EXTENSION_IDS",
+        "ytkit@sysadmindoc.github.io",
+    ),
+}
 
 
 def clean_text(value, default="", max_len=_MAX_TEXT_FIELD):
@@ -213,6 +261,48 @@ def _is_path_under(child, root):
         return True
     except (ValueError, OSError, RuntimeError):
         return False
+
+
+def sanitize_config(raw):
+    """Return the bounded, schema-known companion configuration."""
+    source = raw if isinstance(raw, dict) else {}
+    data = {
+        key: source.get(key, value)
+        for key, value in DEFAULT_CONFIG.items()
+    }
+    data["DownloadPath"] = clean_path_text(data.get("DownloadPath")) or DEFAULT_CONFIG["DownloadPath"]
+    data["AudioDownloadPath"] = clean_path_text(data.get("AudioDownloadPath"))
+    data["ServerPort"] = clamp_int(data.get("ServerPort"), 9751, 1024, 65535)
+    token = clean_text(data.get("ServerToken"), "", 128)
+    data["ServerToken"] = token if re.fullmatch(r"[A-Za-z0-9_\-]{16,128}", token) else uuid.uuid4().hex
+    for key in (
+        "EmbedMetadata", "EmbedThumbnail", "EmbedChapters", "EmbedSubs",
+        "SponsorBlock", "AutoUpdateYtDlp", "StartMinimized", "CloseToTray",
+        "LegacyHealthTokenEcho",
+    ):
+        data[key] = coerce_bool(data.get(key), DEFAULT_CONFIG[key])
+    data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))
+    data["SponsorBlockAction"] = "mark" if data.get("SponsorBlockAction") == "mark" else "remove"
+    data["ConcurrentFragments"] = clamp_int(data.get("ConcurrentFragments"), 4, 1, 32)
+    runtime = clean_text(data.get("JavaScriptRuntime"), "auto", 16).lower()
+    data["JavaScriptRuntime"] = runtime if runtime in {"auto", "deno", "node"} else "auto"
+    data["RateLimit"] = normalize_rate_limit(data.get("RateLimit"))
+    data["Proxy"] = normalize_proxy(data.get("Proxy"))
+    data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
+    data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
+    data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
+    data["NativeChromeExtensionIds"] = clean_text(data.get("NativeChromeExtensionIds"), "", 2048)
+    data["NativeFirefoxExtensionIds"] = clean_text(data.get("NativeFirefoxExtensionIds"), "", 2048)
+    data["LegacyHealthTokenOrigins"] = clean_text(data.get("LegacyHealthTokenOrigins"), "", 2048)
+    extra = data.get("ExtraOutputRoots")
+    if not isinstance(extra, list):
+        extra = []
+    data["ExtraOutputRoots"] = [
+        cleaned
+        for item in extra[:16]
+        if isinstance(item, str) and (cleaned := clean_path_text(item))
+    ]
+    return data
 
 
 def __getattr__(name):

@@ -57,19 +57,21 @@ except ImportError as exc:
 try:
     from .routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from .config import (
-        DOWNLOAD_REQUEST_ALLOWED_FIELDS, DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
+        DEFAULT_CONFIG, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
+        DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
         allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
         normalize_output_dir, normalize_proxy,
-        normalize_rate_limit, normalize_sublangs, normalize_url,
+        normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
         validate_download_request_body,
     )
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from config import (
-        DOWNLOAD_REQUEST_ALLOWED_FIELDS, DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
+        DEFAULT_CONFIG, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
+        DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
         allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
         normalize_output_dir, normalize_proxy,
-        normalize_rate_limit, normalize_sublangs, normalize_url,
+        normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
         validate_download_request_body,
     )
 
@@ -144,65 +146,6 @@ COMPANION_ROLLBACK_FILENAME = '.AstraDownloader.last-known-good.exe'
 # not be able to fill the disk before the SHA-256 check ever runs.
 HELPER_DOWNLOAD_MAX_BYTES = 500 * 1024 * 1024  # 500 MB
 
-
-def env_bool(name, default=False):
-    value = os.environ.get(name)
-    if value is None:
-        return default
-    lowered = str(value).strip().lower()
-    if lowered in ("1", "true", "yes", "on"):
-        return True
-    if lowered in ("0", "false", "no", "off"):
-        return False
-    return default
-
-
-DEFAULT_CONFIG = {
-    # v1.2.2: default to the profile's Videos folder directly (was Videos/YouTube
-    # subfolder). Premiere/Resolve/FCP users typically import straight out of
-    # the system Videos folder; the YouTube subfolder added a step everyone
-    # had to manually delete or change.
-    "DownloadPath": str(Path.home() / "Videos"),
-    "AudioDownloadPath": "",
-    "ServerPort": SERVER_PORT,
-    "ServerToken": "",
-    "LegacyHealthTokenEcho": env_bool("ASTRA_LEGACY_HEALTH_TOKEN_ECHO", False),
-    "LegacyHealthTokenOrigins": os.environ.get("ASTRA_LEGACY_HEALTH_TOKEN_ORIGINS", ""),
-    "EmbedMetadata": True,
-    "EmbedThumbnail": True,
-    "EmbedChapters": True,
-    "EmbedSubs": False,
-    "SubLangs": "en",
-    "SponsorBlock": False,
-    "SponsorBlockAction": "remove",
-    "ConcurrentFragments": 4,
-    # Deno is yt-dlp's default and recommended runtime. "auto" prefers a
-    # working Deno and falls back to an explicitly enabled Node 22+ command.
-    "JavaScriptRuntime": "auto",
-    "AutoUpdateYtDlp": True,
-    "RateLimit": "",
-    "Proxy": "",
-    "StartMinimized": False,
-    "CloseToTray": True,
-    # v1.2.0: throttled auto-update (was fire-and-forget on every launch).
-    # ISO-ish timestamp of the last successful yt-dlp -U attempt. Empty = never.
-    "LastYtDlpUpdateCheck": "",
-    # v1.2.0: optional explicit allowlist of extra output roots. The server
-    # always allows DownloadPath + AudioDownloadPath; this adds more without
-    # forcing users to widen DownloadPath itself.
-    "ExtraOutputRoots": [],
-    # v1.2.0: last ffmpeg freshness stamp (used for the monthly update nag).
-    "LastFfmpegCheck": "",
-    "MaxFileSizeMB": 0,
-    # Comma/semicolon/newline-separated extension IDs allowed to launch the
-    # native-messaging token bootstrap host. Chrome IDs are empty until a store
-    # ID or release key ID is known; Firefox can use the fixed Gecko ID.
-    "NativeChromeExtensionIds": os.environ.get("ASTRA_NATIVE_CHROME_EXTENSION_IDS", ""),
-    "NativeFirefoxExtensionIds": os.environ.get(
-        "ASTRA_NATIVE_FIREFOX_EXTENSION_IDS",
-        ",".join(DEFAULT_FIREFOX_EXTENSION_IDS),
-    ),
-}
 
 # v1.2.0: rate-limit for /download. Token-bucket sliding window — tuned so a
 # legitimate user spamming the download button hits MAX_CONCURRENT long before
@@ -2339,49 +2282,6 @@ def normalize_long_text(value, default="", max_len=MAX_TEXT_FIELD):
 
 def ps_single_quote(value):
     return "'" + str(value).replace("'", "''") + "'"
-
-
-def sanitize_config(raw):
-    raw = raw if isinstance(raw, dict) else {}
-    data = dict(DEFAULT_CONFIG)
-    for key in DEFAULT_CONFIG:
-        if key in raw:
-            data[key] = raw[key]
-
-    data["DownloadPath"] = clean_path_text(data.get("DownloadPath")) or DEFAULT_CONFIG["DownloadPath"]
-    data["AudioDownloadPath"] = clean_path_text(data.get("AudioDownloadPath"))
-    data["ServerPort"] = clamp_int(data.get("ServerPort"), SERVER_PORT, 1024, 65535)
-    token = clean_text(data.get("ServerToken"), "", 128)
-    data["ServerToken"] = token if re.fullmatch(r'[A-Za-z0-9_\-]{16,128}', token) else uuid.uuid4().hex
-    for key in ("EmbedMetadata", "EmbedThumbnail", "EmbedChapters", "EmbedSubs",
-                "SponsorBlock", "AutoUpdateYtDlp",
-                "StartMinimized", "CloseToTray", "LegacyHealthTokenEcho"):
-        data[key] = coerce_bool(data.get(key), DEFAULT_CONFIG[key])
-    data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))
-    data["SponsorBlockAction"] = "mark" if data.get("SponsorBlockAction") == "mark" else "remove"
-    data["ConcurrentFragments"] = clamp_int(data.get("ConcurrentFragments"), 4, 1, 32)
-    runtime = clean_text(data.get("JavaScriptRuntime"), "auto", 16).lower()
-    data["JavaScriptRuntime"] = runtime if runtime in {"auto", "deno", "node"} else "auto"
-    data["RateLimit"] = normalize_rate_limit(data.get("RateLimit"))
-    data["Proxy"] = normalize_proxy(data.get("Proxy"))
-    data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
-    data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
-    data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
-    data["NativeChromeExtensionIds"] = clean_text(data.get("NativeChromeExtensionIds"), "", 2048)
-    data["NativeFirefoxExtensionIds"] = clean_text(data.get("NativeFirefoxExtensionIds"), "", 2048)
-    data["LegacyHealthTokenOrigins"] = clean_text(data.get("LegacyHealthTokenOrigins"), "", 2048)
-    extra = data.get("ExtraOutputRoots")
-    if not isinstance(extra, list):
-        extra = []
-    clean_extra = []
-    for item in extra[:16]:  # bound the list so a corrupt config can't balloon memory
-        if not isinstance(item, str):
-            continue
-        candidate = clean_path_text(item)
-        if candidate:
-            clean_extra.append(candidate)
-    data["ExtraOutputRoots"] = clean_extra
-    return data
 
 
 def _netscape_bool(value):
