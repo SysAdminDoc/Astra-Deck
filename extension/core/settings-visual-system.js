@@ -82,6 +82,16 @@
             min-width: 0 !important;
         }
 
+        #ytkit-settings-panel .ytkit-brand-lockup {
+            display: inline-flex !important;
+            flex: 0 1 auto !important;
+            flex-direction: row !important;
+            align-items: baseline !important;
+            gap: 12px !important;
+            min-width: 0 !important;
+            white-space: nowrap !important;
+        }
+
         #ytkit-settings-panel .ytkit-eyebrow {
             color: var(--ytkit-v3-text) !important;
             font-size: 18px !important;
@@ -1075,6 +1085,10 @@
             }
 
             #ytkit-settings-panel .ytkit-brand-copy {
+                gap: 9px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-brand-lockup {
                 gap: 9px !important;
             }
 

@@ -12,8 +12,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   userscript share an imagegen-led settings layout with larger type, continuous
   divided rows instead of boxed cards, quieter category and status chrome,
   simplified footer actions, consistent toggle geometry, and responsive
-  dark/light/RTL/mobile treatment. The rendered smoke now captures every
-  settings category in both desktop themes so secondary screens stay reviewed.
+  dark/light/RTL/mobile treatment. The compact brand lockup now keeps the logo,
+  product name, and Settings label aligned at intermediate window widths. The
+  rendered smoke captures every settings category in both desktop themes plus
+  a dedicated tablet-width state so secondary screens stay reviewed.
 
 ### Security
 

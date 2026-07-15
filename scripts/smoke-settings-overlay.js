@@ -32,6 +32,7 @@ const STATES = [
     { name: 'desktop-dark', width: 1356, height: 920, dark: true, dir: 'ltr', mobile: false },
     { name: 'desktop-light', width: 1356, height: 920, dark: false, dir: 'ltr', mobile: false },
     { name: 'desktop-rtl', width: 1356, height: 920, dark: true, dir: 'rtl', mobile: false },
+    { name: 'tablet-dark', width: 760, height: 900, dark: true, dir: 'ltr', mobile: false },
     // mobile: false is deliberate — YouTube desktop is not a mobile-UA site;
     // the honest narrow-screen case is a desktop window at phone width, where
     // window.innerWidth really is 390 (mobile emulation without a viewport
