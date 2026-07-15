@@ -69,7 +69,10 @@
                                 (error) => finish(reject, error)
                             );
                         } else {
-                            finish(reject, callbackError);
+                            // Non-thenable, no throw: a void API with no
+                            // callback parameter (e.g. downloads.show on
+                            // Chromium). The retry succeeded — resolve.
+                            finish(resolve, result);
                         }
                     } catch (promiseError) {
                         finish(reject, promiseError);
