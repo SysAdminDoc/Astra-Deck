@@ -1444,6 +1444,22 @@ for forbidden in (
         self.assertEqual(probe.probe(), first)
         self.assertEqual(len(calls), 2)
 
+    def test_ffmpeg_capability_probe_uses_injected_floor_and_cache(self):
+        import health
+
+        versions = iter(["6.1.1", "8.1.1"])
+        probe = health.FfmpegCapabilitiesProbe(
+            version_getter=lambda: next(versions),
+            clock=lambda: 100.0,
+            minimum_major=7,
+            ttl_seconds=60,
+        )
+        first = probe.check()
+        self.assertFalse(first["current"])
+        first["current"] = True
+        self.assertFalse(probe.check()["current"], "cached payload must be defensive")
+        self.assertTrue(probe.check(force=True)["current"])
+
     def test_routes_module_owns_injected_wsgi_backend_selection_and_teardown(self):
         import routes
 
