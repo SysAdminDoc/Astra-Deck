@@ -3695,11 +3695,10 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_1(self):
-        # v1.5.1 adds the EI12 HTTP-surface size cap (MAX_REQUEST_BYTES +
-        # MAX_RESPONSE_BYTES). APP_VERSION must move so the /health
-        # surface advertises the bumped service.
-        self.assertEqual(ad.APP_VERSION, "1.5.1")
+    def test_app_version_bumped_to_1_5_2(self):
+        # v1.5.2 identifies the bounded helper installation, rollback, and
+        # maintenance-state hardening in every companion version surface.
+        self.assertEqual(ad.APP_VERSION, "1.5.2")
 
 
 class EndToEndDownloadTests(unittest.TestCase):
