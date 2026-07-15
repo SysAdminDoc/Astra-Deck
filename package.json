@@ -41,6 +41,7 @@
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "smoke:settings-overlay": "node scripts/smoke-settings-overlay.js",
+    "smoke:a11y": "node scripts/smoke-headless-a11y.js",
     "smoke:transcript-index": "node scripts/smoke-transcript-index.js",
     "smoke:mv3-lifecycle": "node scripts/smoke-mv3-worker-lifecycle.js",
     "smoke:settings-overlay:fallback": "node scripts/smoke-settings-overlay.js --fallback-only",

@@ -49,13 +49,13 @@
 }
 
 html {
-  min-width: 240px;
+  min-width: 0;
   background: var(--bg);
 }
 
 body {
   margin: 0;
-  min-width: 240px;
+  min-width: 0;
   font-family: var(--font);
   color: var(--text-primary);
   background:
