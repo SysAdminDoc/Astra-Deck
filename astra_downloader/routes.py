@@ -614,7 +614,12 @@ def create_api(config, dl_manager, history, *, dependencies):
             return cors_response({"error": cookie_error, "code": "invalid-cookies"}, 400)
         ok, err = dl_manager.resume_download(dl_id, cookies=cookies)
         if not ok:
-            code = 'fresh-auth-required' if err and 'Fresh YouTube cookies' in err else 'queue-resume-rejected'
+            if err and 'still finalizing' in err:
+                code = 'download-finalizing'
+            elif err and 'Fresh YouTube cookies' in err:
+                code = 'fresh-auth-required'
+            else:
+                code = 'queue-resume-rejected'
             status_code = 404 if err and 'no longer exists' in err else 409
             return cors_response({"error": err, "code": code}, status_code)
         return cors_response({"id": dl_id, "resumed": True, "capacity": dl_manager.capacity()})
@@ -638,7 +643,12 @@ def create_api(config, dl_manager, history, *, dependencies):
                         "then retry."
                     ),
                 }, 429)
-            code = 'fresh-auth-required' if err and 'Fresh YouTube cookies' in err else 'retry-rejected'
+            if err and 'still finalizing' in err:
+                code = 'download-finalizing'
+            elif err and 'Fresh YouTube cookies' in err:
+                code = 'fresh-auth-required'
+            else:
+                code = 'retry-rejected'
             status_code = 404 if err and 'no longer exists' in err else 409
             return cors_response({"error": err, "code": code}, status_code)
         return cors_response({"id": dl_id, "retried": True, "capacity": dl_manager.capacity()})
@@ -825,9 +835,15 @@ def create_api(config, dl_manager, history, *, dependencies):
                 },
                 409,
             )
-        result = _run_companion_self_update(restart=True)
+        result = _run_companion_self_update(restart=True, dl_manager=dl_manager)
         if result.get('ok'):
             return cors_response(result, 200)
+        if result.get('error_code') == 'downloads-in-flight':
+            # A download slipped in on another waitress thread during the
+            # update download/verify window; the pre-restart re-check aborted
+            # before os._exit(0) could orphan its yt-dlp tree. Same 409
+            # contract as the entry check above.
+            return cors_response(result, 409)
         status = 502 if result.get('error_code') == 'version-check-failed' else 500
         return cors_response(result, status)
 

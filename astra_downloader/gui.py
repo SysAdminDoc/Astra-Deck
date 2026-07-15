@@ -206,16 +206,26 @@ class FolderPickerService(QObject):
         self._dialog_types = dialog_types or (lambda: QFileDialog)
         self._clock = clock
         self._logger = logger or (lambda _message: None)
+        self._dialog_open = False
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
         self._timer.start(150)
 
     def _tick(self):
+        if self._dialog_open:
+            # dialog.exec() below spins a nested event loop that keeps
+            # delivering this 150 ms timer. Draining the queue here would
+            # stack a second native dialog on top of the open one. Leave the
+            # request queued — the bounded request queue keeps the route's
+            # 409 "already open" contract for further callers — and service
+            # it on the first tick after the open dialog closes.
+            return
         try:
             request = self._request_queue.get_nowait()
         except queue.Empty:
             return
         response_queue = request['response']
+        self._dialog_open = True
         try:
             initial = request.get('initial') or str(Path.home() / "Videos")
             dialog_class = self._dialog_types()
@@ -248,6 +258,8 @@ class FolderPickerService(QObject):
             response_queue.put({
                 'error': 'Folder picker failed. Check Astra Downloader logs for details.'
             })
+        finally:
+            self._dialog_open = False
 
 
 _REQUIRED_SETUP_DEPENDENCIES = frozenset({

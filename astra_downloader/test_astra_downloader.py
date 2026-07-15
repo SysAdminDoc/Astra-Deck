@@ -3885,6 +3885,7 @@ class EndToEndDownloadTests(unittest.TestCase):
                 "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 output_dir=tmpdir,
             )
+            download.status = "queued"  # the state _schedule() hands to the worker
             with mock.patch.object(ad.subprocess, 'Popen', capture), \
                  mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
                  mock.patch.object(ad, 'probe_javascript_runtime', return_value={
@@ -3920,6 +3921,7 @@ class EndToEndDownloadTests(unittest.TestCase):
                 "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 output_dir=tmpdir,
             )
+            dl.status = "queued"  # the state _schedule() hands to the worker
 
             class FakeProc:
                 def __init__(self):
@@ -4494,6 +4496,64 @@ class GuiSmokeTests(unittest.TestCase):
         self.assertTrue(result.get('cancelled'),
                         "Rejected dialog must report cancelled=True")
 
+    def test_folder_picker_nested_timer_tick_does_not_stack_second_dialog(self):
+        # dialog.exec() spins a nested Qt event loop that keeps delivering
+        # the 150 ms QTimer. Before the _dialog_open guard, a /pick-folder
+        # request arriving mid-exec was drained by the re-entrant tick and
+        # opened a second native dialog stacked on the first. The nested
+        # tick must now no-op, leaving the request queued for the first
+        # tick after the open dialog closes.
+        import queue as queue_mod
+        response_a = queue_mod.Queue(maxsize=1)
+        response_b = queue_mod.Queue(maxsize=1)
+        ad._folder_pick_q.put({'initial': '', 'response': response_a})
+
+        from PyQt6.QtWidgets import QFileDialog as RealQFileDialog
+        created = []
+        svc_ref = {}
+
+        def fake_dialog(*_args, **_kwargs):
+            dialog = mock.MagicMock()
+            created.append(dialog)
+
+            def nested_exec():
+                if len(created) == 1:
+                    # Simulate a second /pick-folder arriving and the QTimer
+                    # firing inside the first dialog's nested event loop.
+                    ad._folder_pick_q.put({'initial': '', 'response': response_b})
+                    svc_ref['svc']._tick()
+                return RealQFileDialog.DialogCode.Rejected
+
+            dialog.exec.side_effect = nested_exec
+            dialog.windowFlags.return_value = 0
+            dialog.selectedFiles.return_value = []
+            return dialog
+
+        with mock.patch.object(ad, 'QFileDialog', autospec=False) as FakeFileDialog:
+            FakeFileDialog.side_effect = fake_dialog
+            FakeFileDialog.DialogCode = RealQFileDialog.DialogCode
+            FakeFileDialog.FileMode = RealQFileDialog.FileMode
+            FakeFileDialog.Option = RealQFileDialog.Option
+            svc = ad.FolderPickerService()
+            svc_ref['svc'] = svc
+            try:
+                svc._tick()
+                self.assertEqual(len(created), 1,
+                                 "the re-entrant tick must not stack a second dialog")
+                result_a = response_a.get(timeout=1.0)
+                self.assertTrue(result_a.get('cancelled'))
+                # The second request stayed queued (not dropped, not answered)
+                # and is serviced sequentially by the next tick.
+                self.assertTrue(response_b.empty())
+                self.assertFalse(ad._folder_pick_q.empty())
+                svc._tick()
+                self.assertEqual(len(created), 2)
+                result_b = response_b.get(timeout=1.0)
+                self.assertTrue(result_b.get('cancelled'))
+            finally:
+                svc._timer.stop()
+                svc.deleteLater()
+
     def test_folder_picker_watchdog_fires_when_dialog_blocks_past_threshold(self):
         # Mock time.time so the watchdog believes the dialog blocked
         # for (threshold + 5) seconds. write_persistent_log is
@@ -4771,10 +4831,40 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
             downloads = {}
             _lock = threading.Lock()
 
+            def __init__(_self):
+                # Sequence support: a list yields one value per active_count()
+                # call (last value sticky) so tests can model downloads that
+                # start during the update's download/verify window.
+                _self._in_flight = (
+                    list(in_flight) if isinstance(in_flight, (list, tuple))
+                    else [in_flight]
+                )
+                _self.intake_paused = False
+                _self.pause_calls = 0
+                _self.resume_calls = 0
+                _self.persisted_flags = []
+
             def active_count(_self):
-                return in_flight
+                if len(_self._in_flight) > 1:
+                    return _self._in_flight.pop(0)
+                return _self._in_flight[0]
+
+            def pause_intake(_self):
+                _self.pause_calls += 1
+                _self.intake_paused = True
+                return True
+
+            def resume_intake(_self):
+                _self.resume_calls += 1
+                _self.intake_paused = False
+                return True
+
+            def persist_intake_flag(_self, paused):
+                _self.persisted_flags.append(bool(paused))
+                return True
 
         manager = _FakeManager()
+        self._manager = manager
         api = ad.create_api(config, manager, FakeHistory())
         return api.test_client()
 
@@ -4908,6 +4998,102 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertEqual(body.get("latest_version"), "9.9.9")
         schedule.assert_called_once()
         exit_later.assert_called_once()
+
+    def test_download_started_during_update_window_aborts_restart_with_409(self):
+        # TOCTOU regression: the route checks active_count() once at entry,
+        # but the exe download + SHA fetch + staged probe can take minutes.
+        # A /download accepted on another waitress thread in that window must
+        # abort the restart (os._exit would orphan its yt-dlp tree). The
+        # in_flight sequence models exactly that: 0 at route entry, 2 at the
+        # pre-restart re-check.
+        client = self._client(in_flight=[0, 2])
+        payload = self._fake_payload()
+        expected_hash = hashlib.sha256(payload).hexdigest()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(payload)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected_hash), \
+             mock.patch.object(ad, 'schedule_companion_update_restart') as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+            leftovers = list(Path(tmp).glob("*.exe"))
+
+        self.assertEqual(resp.status_code, 409)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("error_code"), "downloads-in-flight")
+        self.assertEqual(body.get("inFlight"), 2)
+        self.assertIn("in flight", body.get("error", ""))
+        schedule.assert_not_called()
+        exit_later.assert_not_called()
+        self.assertEqual(leftovers, [], "aborted update must unlink the staged exe")
+        # Intake was paused for the update window and resumed on abort.
+        self.assertEqual(self._manager.pause_calls, 1)
+        self.assertEqual(self._manager.resume_calls, 1)
+        self.assertFalse(self._manager.intake_paused)
+
+    def test_update_pauses_intake_and_persists_prior_flag_on_restart(self):
+        client = self._client()
+        payload = self._fake_payload()
+        expected_hash = hashlib.sha256(payload).hexdigest()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(payload)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected_hash), \
+             mock.patch.object(ad, 'schedule_companion_update_restart',
+                               return_value={'scheduled': True, 'target': str(Path(tmp) / "AstraDownloader.exe")}), \
+             mock.patch.object(ad, 'schedule_companion_process_exit'):
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json().get("status"), "restart_scheduled")
+        self.assertEqual(self._manager.pause_calls, 1)
+        # The dying process must keep the live pause (nothing may spawn
+        # yt-dlp between the re-check and os._exit) ...
+        self.assertEqual(self._manager.resume_calls, 0)
+        self.assertTrue(self._manager.intake_paused)
+        # ... while the relaunched companion gets the user's pre-update flag.
+        self.assertEqual(self._manager.persisted_flags, [False])
+
+    def test_failed_update_resumes_intake(self):
+        client = self._client()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES))
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=None):
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(self._manager.pause_calls, 1)
+        self.assertEqual(self._manager.resume_calls, 1)
+        self.assertFalse(self._manager.intake_paused)
+        self.assertEqual(self._manager.persisted_flags, [])
+
+    def test_update_does_not_touch_a_user_paused_intake(self):
+        client = self._client()
+        self._manager.intake_paused = True
+        with mock.patch.object(ad, 'fetch_latest_companion_version', return_value=ad.APP_VERSION):
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self._manager.pause_calls, 0)
+        self.assertEqual(self._manager.resume_calls, 0)
+        self.assertTrue(self._manager.intake_paused)
 
     def test_companion_update_requires_sha256_sidecar(self):
         client = self._client()
@@ -5291,6 +5477,178 @@ class NativeMessagingBootstrapTests(unittest.TestCase):
             registry_keys = [call.args[0] for call in reg.call_args_list]
             self.assertIn(f"Software\\Google\\Chrome\\NativeMessagingHosts\\{ad.NATIVE_HOST_NAME}", registry_keys)
             self.assertIn(f"Software\\Mozilla\\NativeMessagingHosts\\{ad.NATIVE_HOST_NAME}", registry_keys)
+
+
+class DownloadWorkerRaceGuardTests(unittest.TestCase):
+    """Race guards between cancel()/worker teardown and (re)scheduling.
+
+    cancel() can land between _schedule() releasing the manager lock and the
+    worker thread's first statement, and retry()/resume_download() can land in
+    the millisecond gap where a worker has stamped a terminal status but its
+    finally block has not yet discarded the id from _running_ids. Both windows
+    previously revived or double-scheduled downloads.
+    """
+
+    def _manager(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        manager.pause_intake()  # keep _schedule() from starting real workers
+        return manager
+
+    def _reserved_download(self, manager, url="https://www.youtube.com/watch?v=raceguard1"):
+        """A download in the post-_schedule() state: queued + slot reserved."""
+        dl_id, err = manager.start_download(url)
+        self.assertIsNone(err)
+        dl = manager.downloads[dl_id]
+        with manager._lock:
+            dl.status = 'queued'
+            manager._running_ids.add(dl_id)
+        return dl
+
+    def test_run_download_bails_when_cancel_lands_before_worker_entry(self):
+        manager = self._manager()
+        dl = self._reserved_download(manager)
+        self.assertTrue(manager.cancel(dl.id))
+        self.assertEqual(dl.status, 'cancelled')
+
+        manager._run_download(dl)  # the worker thread arrives after cancel()
+
+        self.assertEqual(dl.status, 'cancelled',
+                         "a cancelled download must not be revived to 'downloading'")
+        self.assertIsNone(dl.process, "no yt-dlp subprocess may be spawned after cancel()")
+
+    def test_launch_workers_releases_slot_for_already_cancelled_download(self):
+        manager = self._manager()
+        dl = self._reserved_download(manager)
+        self.assertTrue(manager.cancel(dl.id))
+
+        started = threading.Event()
+        manager._worker_entry = lambda _dl: started.set()
+        manager._launch_workers([dl])
+
+        self.assertFalse(started.wait(0.2),
+                         "no worker thread may start for a cancelled download")
+        self.assertNotIn(dl.id, manager._running_ids,
+                         "the reserved slot must be released — no finally block will do it")
+        self.assertEqual(dl.status, 'cancelled')
+
+    def test_launch_workers_unlinks_cookie_jar_when_cancel_lands_mid_write(self):
+        import importlib
+        download_module = importlib.import_module("download")
+        manager = self._manager()
+        dl_id, err = manager.start_download(
+            "https://www.youtube.com/watch?v=raceguard2",
+            cookies=[{"name": "SID", "value": "secret", "domain": ".youtube.com"}],
+        )
+        self.assertIsNone(err)
+        dl = manager.downloads[dl_id]
+        with manager._lock:
+            dl.status = 'queued'
+            manager._running_ids.add(dl_id)
+
+        started = threading.Event()
+        manager._worker_entry = lambda _dl: started.set()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            def fake_write(cookies, jar_path, logger=None):
+                Path(jar_path).write_text("jar", encoding="utf-8")
+                # cancel() lands while the jar is being written; it cannot
+                # unlink a jar it doesn't know about yet.
+                self.assertTrue(manager.cancel(dl.id))
+                return str(jar_path)
+
+            with mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+                 mock.patch.object(download_module, 'write_cookies_netscape',
+                                   side_effect=fake_write):
+                manager._launch_workers([dl])
+
+            jar = Path(tmp) / f".cookies.{dl.id}.txt"
+            self.assertFalse(jar.exists(),
+                             "a jar written after cancel() must be unlinked by the launcher")
+
+        self.assertFalse(started.wait(0.2))
+        self.assertIsNone(dl.cookies_file)
+        self.assertNotIn(dl.id, manager._running_ids)
+        self.assertEqual(dl.status, 'cancelled')
+
+    def test_retry_is_rejected_while_worker_is_finalizing(self):
+        manager = self._manager()
+        dl = self._reserved_download(manager)
+        # Worker stamped a retryable failure but its finally block has not
+        # discarded the id from _running_ids yet.
+        with manager._lock:
+            dl.status = 'failed'
+            dl.error_code = 'network-unreachable'
+
+        ok, err = manager.retry(dl.id)
+        self.assertFalse(ok)
+        self.assertIn('still finalizing', err)
+        self.assertEqual(dl.status, 'failed', "the finalizing item must not flip to pending")
+
+        # Once the worker's finally block releases the slot, retry succeeds.
+        with manager._lock:
+            manager._running_ids.discard(dl.id)
+        ok, err = manager.retry(dl.id)
+        self.assertTrue(ok, err)
+        self.assertEqual(dl.status, 'pending')
+
+    def test_resume_is_rejected_while_worker_is_finalizing(self):
+        manager = self._manager()
+        dl = self._reserved_download(manager)
+        with manager._lock:
+            dl.status = 'pending'
+
+        ok, err = manager.resume_download(dl.id)
+        self.assertFalse(ok)
+        self.assertIn('still finalizing', err)
+
+        with manager._lock:
+            manager._running_ids.discard(dl.id)
+        ok, err = manager.resume_download(dl.id)
+        self.assertTrue(ok, err)
+
+    def test_retry_and_resume_routes_surface_409_download_finalizing(self):
+        token = "z" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        manager.pause_intake()
+        dl_id, err = manager.start_download("https://www.youtube.com/watch?v=raceguard3")
+        self.assertIsNone(err)
+        dl = manager.downloads[dl_id]
+        with manager._lock:
+            dl.status = 'failed'
+            dl.error_code = 'network-unreachable'
+            manager._running_ids.add(dl_id)
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        headers = {"X-Auth-Token": token}
+
+        resp = client.post(f"/queue/{dl_id}/retry", json={}, headers=headers)
+        self.assertEqual(resp.status_code, 409)
+        body = resp.get_json()
+        self.assertEqual(body["code"], "download-finalizing")
+        self.assertIn("still finalizing", body["error"])
+
+        with manager._lock:
+            dl.status = 'pending'
+        resp = client.post(f"/queue/{dl_id}/resume", json={}, headers=headers)
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.get_json()["code"], "download-finalizing")
+
+    def test_persist_intake_flag_writes_flag_without_changing_live_pause(self):
+        # Companion self-update support: persist the pre-update flag for the
+        # relaunched process while the dying process stays paused.
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            config = FakeConfig({'DownloadPath': tmp, 'AudioDownloadPath': tmp})
+            manager = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertTrue(manager.pause_intake())
+
+            self.assertTrue(manager.persist_intake_flag(False))
+            self.assertTrue(manager.intake_paused, "the live pause must be untouched")
+
+            restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertFalse(restored.intake_paused,
+                             "the relaunched manager must see the persisted flag")
 
 
 if __name__ == "__main__":

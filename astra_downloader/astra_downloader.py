@@ -1820,7 +1820,7 @@ def schedule_companion_process_exit(delay=0.6):
     threading.Thread(target=_exit_later, daemon=True, name='AstraDownloaderSelfUpdateExit').start()
 
 
-def _run_companion_self_update(restart=True):
+def _run_companion_self_update(restart=True, dl_manager=None):
     if not _COMPANION_UPDATE_LOCK.acquire(blocking=False):
         return {
             'ok': False,
@@ -1829,13 +1829,47 @@ def _run_companion_self_update(restart=True):
             'current_version': APP_VERSION,
             'latest_version': '',
         }
+    # TOCTOU guard: the /update route checks active_count() once at entry, but
+    # the version fetch + exe download + SHA fetch + staged health probe below
+    # can take minutes. Pause download intake for the duration so a /download
+    # or /queue/resume accepted on another waitress thread cannot spawn a
+    # yt-dlp tree that os._exit(0) would orphan; resume on every outcome that
+    # leaves this process running.
+    intake_was_paused = True
+    intake_paused_here = False
+    if dl_manager is not None:
+        intake_was_paused = bool(getattr(dl_manager, 'intake_paused', False))
+        if not intake_was_paused:
+            if dl_manager.pause_intake():
+                intake_paused_here = True
+            else:
+                write_persistent_log(
+                    'Companion update: could not pause download intake; '
+                    'relying on the pre-restart in-flight re-check.'
+                )
     try:
-        return _run_companion_self_update_unlocked(restart=restart)
+        result = _run_companion_self_update_unlocked(restart=restart, dl_manager=dl_manager)
+        if (intake_paused_here and restart and result.get('ok')
+                and result.get('status') == 'restart_scheduled'):
+            # This process is about to os._exit(0): keep the live intake pause
+            # so nothing can spawn yt-dlp in the exit window, but persist the
+            # user's pre-update flag so the relaunched companion doesn't come
+            # up silently paused.
+            intake_paused_here = False
+            try:
+                dl_manager.persist_intake_flag(intake_was_paused)
+            except Exception as e:  # noqa: BLE001
+                write_persistent_log(f"Companion update: could not persist the pre-update intake flag: {e}")
+        return result
     finally:
-        _COMPANION_UPDATE_LOCK.release()
+        try:
+            if intake_paused_here:
+                dl_manager.resume_intake()
+        finally:
+            _COMPANION_UPDATE_LOCK.release()
 
 
-def _run_companion_self_update_unlocked(restart=True):
+def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
     current_version = APP_VERSION
     try:
         latest_version = fetch_latest_companion_version()
@@ -1942,6 +1976,30 @@ def _run_companion_self_update_unlocked(restart=True):
                 'current_version': current_version,
                 'latest_version': latest_version,
             }
+        # Re-check in-flight work immediately before committing to the
+        # restart. The route's entry check ran minutes ago (download +
+        # verification above); anything accepted since then would be
+        # orphaned by schedule_companion_process_exit's os._exit(0).
+        if dl_manager is not None:
+            in_flight = dl_manager.active_count()
+            if in_flight > 0:
+                try:
+                    update_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                write_persistent_log(
+                    f"Companion update aborted: {in_flight} download(s) started "
+                    f"while the update was being prepared."
+                )
+                return {
+                    'ok': False,
+                    'error': f"{in_flight} download(s) in flight — wait for them to finish, then try again. "
+                             f"The companion update must restart Astra Downloader after atomically replacing the executable.",
+                    'error_code': 'downloads-in-flight',
+                    'inFlight': in_flight,
+                    'current_version': current_version,
+                    'latest_version': latest_version,
+                }
         _write_update_state(
             _companion_update_state_path(), status='activation-pending',
             active_version=current_version, rollback_version=current_version,
