@@ -1,4 +1,76 @@
 {
+  "aiSummaryButtonTitle": {
+    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+  },
+  "aiSummaryCalling": {
+    "message": "Обращение к ИИ-провайдеру…"
+  },
+  "aiSummaryCallingTruncated": {
+    "message": "Calling AI provider with the first 120,000 transcript characters…"
+  },
+  "aiSummaryCitationLabel": {
+    "message": "Ссылка на расшифровку"
+  },
+  "aiSummaryClose": {
+    "message": "Закрыть ИИ-сводку"
+  },
+  "aiSummaryCopied": {
+    "message": "Сводка со ссылками скопирована"
+  },
+  "aiSummaryCopy": {
+    "message": "Копировать со ссылками"
+  },
+  "aiSummaryDelete": {
+    "message": "Удалить"
+  },
+  "aiSummaryDeleted": {
+    "message": "Saved summary deleted"
+  },
+  "aiSummaryDialogLabel": {
+    "message": "ИИ-сводка видео"
+  },
+  "aiSummaryExport": {
+    "message": "Экспортировать архив"
+  },
+  "aiSummaryExported": {
+    "message": "Saved summaries exported"
+  },
+  "aiSummaryFailed": {
+    "message": "Summary failed"
+  },
+  "aiSummaryFetchingTranscript": {
+    "message": "Получение расшифровки…"
+  },
+  "aiSummaryInvalid": {
+    "message": "The saved summary is invalid and cannot be displayed."
+  },
+  "aiSummaryLibrary": {
+    "message": "Сохранённые сводки"
+  },
+  "aiSummaryNoExport": {
+    "message": "No saved summaries to export."
+  },
+  "aiSummaryNoSaved": {
+    "message": "Нет сохранённых сводок, соответствующих поиску."
+  },
+  "aiSummaryRestored": {
+    "message": "Saved summary restored"
+  },
+  "aiSummarySearchLabel": {
+    "message": "Искать сохранённые сводки"
+  },
+  "aiSummarySearchPlaceholder": {
+    "message": "Искать сохранённые сводки…"
+  },
+  "aiSummaryTitle": {
+    "message": "ИИ-сводка"
+  },
+  "aiSummaryTldr": {
+    "message": "Кратко"
+  },
+  "aiSummaryUserscriptButtonTitle": {
+    "message": "AI Summary (right-click to manage the provider credential)"
+  },
   "brandName": {
     "message": "Astra Deck"
   },

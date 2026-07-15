@@ -491,6 +491,7 @@
   "subStyleBottomOffset": 10,
   "subStyleTextShadow": true,
   "aiVideoSummary": false,
+  "aiSummaryArtifactsData": {},
   "aiSummaryEndpoint": "https://api.openai.com/v1/chat/completions",
   "aiSummaryModel": "gpt-4o-mini",
   "aiSummaryProvider": "openai",

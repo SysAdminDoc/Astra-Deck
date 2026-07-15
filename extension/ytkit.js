@@ -3340,6 +3340,7 @@ return response;
             subStyleBottomOffset: 10,        // % from bottom
             subStyleTextShadow: true,
             aiVideoSummary: false,
+            aiSummaryArtifactsData: {},               // Bounded, validated local summary artifacts
             aiSummaryEndpoint: 'https://api.openai.com/v1/chat/completions',
             aiSummaryModel: 'gpt-4o-mini',
             aiSummaryProvider: 'openai',     // openai | anthropic | gemini | ollama
@@ -3611,6 +3612,10 @@ return response;
                 if (isSafeObjectKey(key) && !RETIRED_SETTING_KEYS.has(key)) {
                     sanitized[key] = value;
                 }
+            }
+            const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
+            if (typeof summarySanitizer === 'function' && Object.prototype.hasOwnProperty.call(sanitized, 'aiSummaryArtifactsData')) {
+                sanitized.aiSummaryArtifactsData = summarySanitizer(sanitized.aiSummaryArtifactsData);
             }
             return sanitized;
         },
@@ -31354,6 +31359,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             appState.settings.videoNotesData = cappedNotes;
                         }
                     }
+                    const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
+                    const summaries = appState.settings.aiSummaryArtifactsData;
+                    if (summaries && typeof summaries === 'object' && !Array.isArray(summaries) && typeof summarySanitizer === 'function') {
+                        const cappedSummaries = summarySanitizer(summaries);
+                        if (this._hasChanged(summaries, cappedSummaries)) {
+                            pruned += Math.max(0, this._countMapEntries(summaries) - this._countMapEntries(cappedSummaries));
+                            appState.settings.aiSummaryArtifactsData = cappedSummaries;
+                        }
+                    }
                     if (pruned > 0) {
                         settingsManager.save(appState.settings);
                         DiagnosticLog?.record('storageQuotaLRU', `pruned ${pruned} entries`);
@@ -31608,7 +31622,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'sparkles',
             pages: [PageTypes.WATCH],
-            _btn: null, _panel: null, _navRule: null, _styleEl: null, _injectTimer: null,
+            _btn: null, _panel: null, _navRule: null, _styleEl: null, _injectTimer: null, _activeArtifact: null, _runToken: 0,
             _scheduleInject(delay = 2000) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = setTimeout(() => {
@@ -31617,17 +31631,249 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
             async _fetchTranscript(videoId) {
-                try {
-                    const pageData = document.querySelector('ytd-watch-flexy');
-                    const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
-                    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    // PO Token resilient fetch: tries json3 API, then engagement-panel DOM scrape
-                    const result = await fetchTranscriptWithFallback(tracks || []);
-                    if (result.cues && result.cues.length > 0) {
-                        return result.cues.map(c => c.text).filter(Boolean).join(' ');
+                const result = await TranscriptService.fetchTranscript(videoId);
+                if (result?.status !== 'ready' || !result.segments?.length) {
+                    throw new Error('No captions are available for this video.');
+                }
+                const artifactService = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!artifactService) throw new Error('AI summary artifact service is unavailable. Reload Astra Deck.');
+                return {
+                    videoId,
+                    title: result.title || videoId,
+                    language: result.language || '',
+                    prepared: artifactService.prepareCues(result.segments)
+                };
+            },
+            _readArtifacts() {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!service) return {};
+                return service.sanitizeArtifactStore(appState.settings.aiSummaryArtifactsData);
+            },
+            _writeArtifacts(next) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!service) return {};
+                const clean = service.sanitizeArtifactStore(next);
+                appState.settings.aiSummaryArtifactsData = clean;
+                try { void settingsManager.save(appState.settings); }
+                catch (error) { DiagnosticLog?.record('aiVideoSummary.store', error.message); }
+                return clean;
+            },
+            _ensurePanel() {
+                if (this._panel?.isConnected) return this._panel;
+                const panel = document.createElement('section');
+                panel.className = 'ytkit-aisum-panel';
+                panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', t('aiSummaryDialogLabel', 'AI video summary'));
+                const head = document.createElement('div');
+                head.className = 'ytkit-aisum-head';
+                const heading = document.createElement('h3');
+                heading.textContent = t('aiSummaryTitle', 'AI Summary');
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'ytkit-aisum-close';
+                close.textContent = '×';
+                close.setAttribute('aria-label', t('aiSummaryClose', 'Close AI summary'));
+                close.addEventListener('click', () => {
+                    this._runToken += 1;
+                    panel.remove();
+                    this._panel = null;
+                    this._activeArtifact = null;
+                });
+                const content = document.createElement('div');
+                content.className = 'ytkit-aisum-content';
+                head.append(heading, close);
+                panel.append(head, content);
+                document.body.appendChild(panel);
+                this._panel = panel;
+                return panel;
+            },
+            _showStatus(message, tone = 'normal') {
+                const content = this._ensurePanel().querySelector('.ytkit-aisum-content');
+                content.textContent = '';
+                const status = document.createElement('p');
+                status.className = `ytkit-aisum-status ytkit-aisum-status--${tone}`;
+                status.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+                status.textContent = message;
+                content.appendChild(status);
+            },
+            _citationLink(artifact, citationId) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const cue = artifact?.citations?.[citationId];
+                if (!service || !cue) return null;
+                const link = document.createElement('a');
+                link.className = 'ytkit-aisum-citation';
+                link.href = service.timestampUrl(artifact, cue);
+                link.textContent = cue.timestamp;
+                link.setAttribute('aria-label', t('aiSummaryCitationLabel', 'Transcript citation') + ' ' + cue.timestamp);
+                link.addEventListener('click', (event) => {
+                    if (getVideoId() !== artifact.videoId) return;
+                    const video = document.querySelector('video');
+                    if (!video) return;
+                    event.preventDefault();
+                    video.currentTime = cue.startSeconds;
+                    video.focus?.({ preventScroll: true });
+                });
+                return link;
+            },
+            _appendCitations(container, artifact, citations) {
+                for (const citationId of citations || []) {
+                    const link = this._citationLink(artifact, citationId);
+                    if (link) container.appendChild(link);
+                }
+            },
+            _deleteArtifact(artifactId) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const before = this._readArtifacts();
+                const removed = before[artifactId];
+                if (!service || !removed) return;
+                this._writeArtifacts(service.deleteArtifact(before, artifactId));
+                this._renderLibraryOnly();
+                showToast(t('aiSummaryDeleted', 'Saved summary deleted'), '#6b7280', {
+                    duration: 5,
+                    tone: 'neutral',
+                    action: {
+                        text: t('undo', 'Undo'),
+                        onClick: () => {
+                            this._writeArtifacts(service.mergeArtifact(this._readArtifacts(), removed));
+                            this._renderArtifact(removed);
+                            showToast(t('aiSummaryRestored', 'Saved summary restored'), '#22c55e');
+                        }
                     }
-                    throw new Error(result.error || 'No captions available');
-                } catch (e) { throw e; }
+                });
+            },
+            _appendLibrary(container) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!service) return;
+                const store = this._readArtifacts();
+                const details = document.createElement('details');
+                details.className = 'ytkit-aisum-library';
+                const summary = document.createElement('summary');
+                summary.textContent = t('aiSummaryLibrary', 'Saved summaries') + ` (${Object.keys(store).length})`;
+                const search = document.createElement('input');
+                search.type = 'search';
+                search.className = 'ytkit-aisum-search';
+                search.placeholder = t('aiSummarySearchPlaceholder', 'Search saved summaries…');
+                search.setAttribute('aria-label', t('aiSummarySearchLabel', 'Search saved summaries'));
+                const results = document.createElement('div');
+                results.className = 'ytkit-aisum-library-results';
+                const renderResults = () => {
+                    results.textContent = '';
+                    const matches = service.searchArtifacts(this._readArtifacts(), search.value);
+                    if (!matches.length) {
+                        const empty = document.createElement('p');
+                        empty.className = 'ytkit-aisum-empty';
+                        empty.textContent = t('aiSummaryNoSaved', 'No saved summaries match this search.');
+                        results.appendChild(empty);
+                        return;
+                    }
+                    for (const artifact of matches) {
+                        const row = document.createElement('div');
+                        row.className = 'ytkit-aisum-library-row';
+                        const open = document.createElement('button');
+                        open.type = 'button';
+                        open.className = 'ytkit-aisum-library-open';
+                        const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(artifact.generatedAt));
+                        open.textContent = `${artifact.title} · ${date}`;
+                        open.addEventListener('click', () => this._renderArtifact(artifact));
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'ytkit-aisum-delete';
+                        remove.textContent = t('aiSummaryDelete', 'Delete');
+                        remove.setAttribute('aria-label', t('aiSummaryDelete', 'Delete') + ': ' + artifact.title);
+                        remove.addEventListener('click', () => this._deleteArtifact(artifact.artifactId));
+                        row.append(open, remove);
+                        results.appendChild(row);
+                    }
+                };
+                search.addEventListener('input', renderResults);
+                details.append(summary, search, results);
+                container.appendChild(details);
+                renderResults();
+            },
+            _renderLibraryOnly() {
+                this._activeArtifact = null;
+                const content = this._ensurePanel().querySelector('.ytkit-aisum-content');
+                content.textContent = '';
+                this._appendLibrary(content);
+            },
+            _exportArtifacts() {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const payload = service?.exportArtifactStore(this._readArtifacts());
+                if (!payload?.count) {
+                    showToast(t('aiSummaryNoExport', 'No saved summaries to export.'), '#6b7280');
+                    return;
+                }
+                handleFileExport(`astra-deck-ai-summaries-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2));
+                showToast(t('aiSummaryExported', 'Saved summaries exported'), '#22c55e');
+            },
+            _renderArtifact(artifact) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const clean = service?.sanitizeArtifact(artifact);
+                if (!clean) {
+                    this._showStatus(t('aiSummaryInvalid', 'The saved summary is invalid and cannot be displayed.'), 'error');
+                    return;
+                }
+                this._activeArtifact = clean;
+                const content = this._ensurePanel().querySelector('.ytkit-aisum-content');
+                content.textContent = '';
+                const title = document.createElement('h4');
+                title.textContent = clean.title;
+                const meta = document.createElement('p');
+                meta.className = 'ytkit-aisum-meta';
+                const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(clean.generatedAt));
+                meta.textContent = [date, clean.transcriptLanguage || '—', `${clean.provider}/${clean.model}`].join(' · ');
+                const overview = document.createElement('p');
+                overview.className = 'ytkit-aisum-overview';
+                overview.textContent = clean.summary;
+                const bullets = document.createElement('ul');
+                bullets.className = 'ytkit-aisum-bullets';
+                for (const bullet of clean.bullets) {
+                    const item = document.createElement('li');
+                    const text = document.createElement('span');
+                    text.textContent = bullet.text;
+                    const citations = document.createElement('span');
+                    citations.className = 'ytkit-aisum-citations';
+                    this._appendCitations(citations, clean, bullet.citations);
+                    item.append(text, citations);
+                    bullets.appendChild(item);
+                }
+                const tldr = document.createElement('p');
+                tldr.className = 'ytkit-aisum-tldr';
+                tldr.hidden = !clean.tldr.text;
+                const tldrLabel = document.createElement('strong');
+                tldrLabel.textContent = t('aiSummaryTldr', 'TL;DR') + ': ';
+                const tldrText = document.createElement('span');
+                tldrText.textContent = clean.tldr.text;
+                const tldrCitations = document.createElement('span');
+                tldrCitations.className = 'ytkit-aisum-citations';
+                this._appendCitations(tldrCitations, clean, clean.tldr.citations);
+                tldr.append(tldrLabel, tldrText, tldrCitations);
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-aisum-actions';
+                const copy = document.createElement('button');
+                copy.type = 'button';
+                copy.textContent = t('aiSummaryCopy', 'Copy with citations');
+                copy.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(service.artifactToMarkdown(clean));
+                        showToast(t('aiSummaryCopied', 'Summary copied with citations'), '#22c55e');
+                    } catch (error) {
+                        DiagnosticLog?.record('aiVideoSummary.copy', error.message);
+                        showToast(t('clipboardWriteFailed', 'Clipboard write failed'), '#ef4444');
+                    }
+                });
+                const exportAll = document.createElement('button');
+                exportAll.type = 'button';
+                exportAll.textContent = t('aiSummaryExport', 'Export archive');
+                exportAll.addEventListener('click', () => this._exportArtifacts());
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'ytkit-aisum-delete';
+                remove.textContent = t('aiSummaryDelete', 'Delete');
+                remove.addEventListener('click', () => this._deleteArtifact(clean.artifactId));
+                actions.append(copy, exportAll, remove);
+                content.append(title, meta, overview, bullets, tldr, actions);
+                this._appendLibrary(content);
             },
             async _callLLM(prompt) {
                 const s = appState.settings;
@@ -31645,13 +31891,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     : provider === 'anthropic'
                         ? {
                             model: s.aiSummaryModel || 'claude-haiku-4-5-20251001',
-                            max_tokens: 800,
+                            max_tokens: 1400,
                             messages: [{ role: 'user', content: prompt }],
                         }
                         : {
                             model: s.aiSummaryModel,
                             messages: [{ role: 'user', content: prompt }],
-                            max_tokens: 800,
+                            max_tokens: 1400,
                         };
 
                 const result = await sendRuntimeMessage({
@@ -31676,51 +31922,52 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 throw new Error('Unknown provider: ' + provider);
             },
             async _run() {
-                if (this._panel) { this._panel.remove(); this._panel = null; return; }
-                const panel = document.createElement('div');
-                panel.className = 'ytkit-aisum-panel';
-                panel.textContent = 'Fetching transcript…';
-                document.body.appendChild(panel);
-                this._panel = panel;
-                const close = () => { panel.remove(); this._panel = null; };
-                panel.onclick = (e) => { if (e.target === panel) close(); };
+                if (this._panel) {
+                    this._runToken += 1;
+                    this._panel.remove();
+                    this._panel = null;
+                    this._activeArtifact = null;
+                    return;
+                }
+                const runToken = ++this._runToken;
+                this._showStatus(t('aiSummaryFetchingTranscript', 'Fetching transcript…'));
                 try {
-                    const vid = getVideoId();
-                    const transcript = await this._fetchTranscript(vid);
-                    if (transcript.length > 120000) {
-                        // crude chunking: keep first 120k chars
-                        panel.textContent = 'Transcript truncated to 120k chars. Calling LLM…';
-                    } else {
-                        panel.textContent = 'Calling LLM…';
+                    const videoId = getVideoId();
+                    if (!videoId) throw new Error('No video ID found.');
+                    const transcript = await this._fetchTranscript(videoId);
+                    if (runToken !== this._runToken || getVideoId() !== videoId) return;
+                    this._showStatus(transcript.prepared.truncated
+                        ? t('aiSummaryCallingTruncated', 'Calling AI provider with the first 120,000 transcript characters…')
+                        : t('aiSummaryCalling', 'Calling AI provider…'));
+                    const service = globalThis.YTKitCore.aiSummaryArtifacts;
+                    const prompt = service.buildPrompt({
+                        title: transcript.title,
+                        videoId,
+                        language: transcript.language,
+                        prepared: transcript.prepared
+                    });
+                    const response = await this._callLLM(prompt);
+                    if (runToken !== this._runToken || getVideoId() !== videoId) return;
+                    const parsed = service.parseSummaryResponse(response, transcript.prepared.cues);
+                    const settings = appState.settings;
+                    const artifact = service.createArtifact({
+                        videoId,
+                        title: transcript.title,
+                        language: transcript.language,
+                        provider: settings.aiSummaryProvider || 'openai',
+                        model: settings.aiSummaryModel || '',
+                        result: parsed,
+                        cues: transcript.prepared.cues
+                    });
+                    this._writeArtifacts(service.mergeArtifact(this._readArtifacts(), artifact));
+                    this._renderArtifact(artifact);
+                    if (parsed.invalidCitationCount) {
+                        DiagnosticLog?.record('aiVideoSummary.citations', `${parsed.invalidCitationCount} invented citation(s) removed`);
                     }
-                    const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string');
-                    const title = titleEl?.textContent?.trim() || '(video)';
-                    const prompt = `Summarize this YouTube video transcript in 5-8 bullet points, then add a one-line TL;DR at the end.\n\nTitle: ${title}\nURL: https://youtu.be/${vid}\n\nTranscript:\n${transcript.slice(0, 120000)}`;
-                    const result = await this._callLLM(prompt);
-                    panel.textContent = '';
-                    const head = document.createElement('div');
-                    head.className = 'ytkit-aisum-head';
-                    const h = document.createElement('h3'); h.textContent = '✨ AI Summary';
-                    const c = document.createElement('button'); c.textContent = '×'; c.className = 'ytkit-aisum-close'; c.onclick = close;
-                    head.append(h, c);
-                    const body = document.createElement('div');
-                    body.className = 'ytkit-aisum-body';
-                    body.textContent = result;
-                    const copy = document.createElement('button');
-                    copy.className = 'ytkit-aisum-copy';
-                    copy.textContent = 'Copy';
-                    copy.onclick = async () => {
-                        try {
-                            await navigator.clipboard.writeText(result);
-                            showToast('Summary copied', '#22c55e');
-                        } catch (_) {
-                            showToast('Clipboard write failed', '#ef4444');
-                        }
-                    };
-                    panel.append(head, body, copy);
                 } catch (e) {
+                    if (runToken !== this._runToken) return;
                     DiagnosticLog?.record('aiVideoSummary', e.message);
-                    panel.textContent = 'Failed: ' + e.message;
+                    this._showStatus(`${t('aiSummaryFailed', 'Summary failed')}: ${e.message}`, 'error');
                 }
             },
             _inject() {
@@ -31728,7 +31975,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!controls || controls.querySelector('.ytkit-aisum-btn')) return;
                 const btn = document.createElement('button');
                 btn.className = 'ytp-button ytkit-player-btn ytkit-aisum-btn';
-                btn.title = 'AI Summary (manage credentials in the Astra Deck toolbar popup)';
+                btn.title = t('aiSummaryButtonTitle', 'AI Summary (manage credentials in the Astra Deck toolbar popup)');
+                btn.setAttribute('aria-label', t('aiSummaryTitle', 'AI Summary'));
                 TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z"/></svg>');
                 btn.onclick = (e) => { e.stopPropagation(); this._run(); };
                 controls.insertBefore(btn, controls.firstChild);
@@ -31738,33 +31986,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl = injectStyle(`
                     .ytkit-aisum-panel {
                         position: fixed; top: 80px; right: 20px; z-index: 2147483647;
-                        width: 420px; max-height: 70vh; overflow: auto;
+                        width: min(520px, calc(100vw - 32px)); max-height: 75vh; overflow: auto; box-sizing: border-box;
                         background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
                         border-radius: 12px; padding: 16px; font: 14px/1.5 Roboto, system-ui;
                         box-shadow: 0 10px 40px rgba(0,0,0,0.6);
                     }
                     .ytkit-aisum-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
                     .ytkit-aisum-head h3 { margin: 0; color: #f5c2e7; font-size: 16px; }
-                    .ytkit-aisum-close { background: transparent; border: none; color: #cdd6f4; font-size: 20px; cursor: pointer; }
-                    .ytkit-aisum-body { white-space: pre-wrap; font-size: 13px; }
-                    .ytkit-aisum-copy {
-                        margin-top: 12px; background: #89b4fa; color: #1e1e2e; border: none;
-                        border-radius: 6px; padding: 6px 14px; cursor: pointer; font-weight: 600;
-                    }
+                    .ytkit-aisum-close { min-width:36px; min-height:36px; background: transparent; border: none; color: #cdd6f4; font-size: 20px; cursor: pointer; }
+                    .ytkit-aisum-content h4{margin:0 0 4px;color:#fff;font-size:15px}.ytkit-aisum-meta{margin:0 0 12px;color:#bac2de;font-size:11px}.ytkit-aisum-overview{margin:0 0 12px}.ytkit-aisum-bullets{display:grid;gap:8px;margin:0 0 12px;padding-left:20px}.ytkit-aisum-bullets li{padding-left:2px}.ytkit-aisum-citations{display:inline-flex;gap:5px;margin-left:7px;vertical-align:baseline}.ytkit-aisum-citation{display:inline-flex;padding:2px 6px;border:1px solid #585b70;border-radius:5px;color:#89b4fa;text-decoration:none;font:700 11px/1.3 system-ui}.ytkit-aisum-tldr{margin:12px 0;padding:10px;border-left:3px solid #cba6f7;background:rgba(203,166,247,.08)}
+                    .ytkit-aisum-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.ytkit-aisum-actions button,.ytkit-aisum-library-row button{min-height:36px;padding:7px 10px;border:1px solid #585b70;border-radius:6px;background:#313244;color:#cdd6f4;font-weight:700;cursor:pointer}.ytkit-aisum-actions .ytkit-aisum-delete,.ytkit-aisum-library-row .ytkit-aisum-delete{color:#fecaca;border-color:#7f1d1d}.ytkit-aisum-library{margin-top:12px;border-top:1px solid #45475a;padding-top:10px}.ytkit-aisum-library summary{min-height:36px;cursor:pointer;font-weight:700}.ytkit-aisum-search{box-sizing:border-box;width:100%;min-height:40px;margin:8px 0;padding:8px 10px;border:1px solid #585b70;border-radius:6px;background:#11111b;color:#cdd6f4}.ytkit-aisum-library-results{display:grid;gap:6px}.ytkit-aisum-library-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.ytkit-aisum-library-open{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ytkit-aisum-empty,.ytkit-aisum-status{color:#bac2de}.ytkit-aisum-status--error{color:#fca5a5}
+                    .ytkit-aisum-panel :focus-visible{outline:3px solid #89b4fa;outline-offset:2px}html:not([dark]) .ytkit-aisum-panel{background:#fff;color:#1f2937;border-color:#cbd5e1}html:not([dark]) .ytkit-aisum-content h4{color:#111827}html:not([dark]) .ytkit-aisum-meta,html:not([dark]) .ytkit-aisum-empty,html:not([dark]) .ytkit-aisum-status{color:#4b5563}html:not([dark]) .ytkit-aisum-actions button,html:not([dark]) .ytkit-aisum-library-row button,html:not([dark]) .ytkit-aisum-search{background:#f8fafc;color:#1f2937;border-color:#94a3b8}
+                    @media(max-width:600px){.ytkit-aisum-panel{top:64px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 72px)}}@media(forced-colors:active){.ytkit-aisum-panel,.ytkit-aisum-actions button,.ytkit-aisum-library-row button,.ytkit-aisum-search,.ytkit-aisum-citation{border:1px solid CanvasText;color:CanvasText;background:Canvas}}@media(prefers-reduced-motion:reduce){.ytkit-aisum-panel *{transition:none!important;scroll-behavior:auto!important}}
                 `, this.id, true);
                 this._scheduleInject(2000);
                 this._navRule = () => {
+                    this._runToken += 1;
+                    this._panel?.remove();
+                    this._panel = null;
+                    this._activeArtifact = null;
                     this._btn = null;
                     this._scheduleInject(2000);
                 };
                 addNavigateRule('aiVideoSummary', this._navRule);
             },
             destroy() {
+                this._runToken += 1;
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
                 removeNavigateRule('aiVideoSummary');
                 this._btn?.remove(); this._btn = null;
                 this._panel?.remove(); this._panel = null;
+                this._activeArtifact = null;
                 this._styleEl?.remove(); this._styleEl = null;
             }
         },

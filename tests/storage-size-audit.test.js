@@ -72,7 +72,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // GitHub-full videoInsights adds a 22-byte false-by-default preference.
     // Search-while-watching adds a 28-byte false-by-default preference.
     // Subscription list/compact view and loaded-only ordering add 3 preferences (96 bytes).
-    assert.equal(assessment.totalBytes, 179420);
+    // The validated local AI summary archive adds one empty-object preference (28 bytes).
+    assert.equal(assessment.totalBytes, 179448);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

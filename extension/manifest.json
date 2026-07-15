@@ -154,6 +154,7 @@
         "core/playability.js",
         "core/transcript-service.js",
         "core/transcript-index.js",
+        "core/ai-summary-artifacts.js",
         "core/persisted-domains.js",
         "core/settings-import-transaction.js",
         "core/storage-manager.js",

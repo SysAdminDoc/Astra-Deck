@@ -1,4 +1,76 @@
 {
+  "aiSummaryButtonTitle": {
+    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+  },
+  "aiSummaryCalling": {
+    "message": "KI-Anbieter wird aufgerufen…"
+  },
+  "aiSummaryCallingTruncated": {
+    "message": "Calling AI provider with the first 120,000 transcript characters…"
+  },
+  "aiSummaryCitationLabel": {
+    "message": "Transkriptbeleg"
+  },
+  "aiSummaryClose": {
+    "message": "KI-Zusammenfassung schließen"
+  },
+  "aiSummaryCopied": {
+    "message": "Zusammenfassung mit Belegen kopiert"
+  },
+  "aiSummaryCopy": {
+    "message": "Mit Belegen kopieren"
+  },
+  "aiSummaryDelete": {
+    "message": "Löschen"
+  },
+  "aiSummaryDeleted": {
+    "message": "Saved summary deleted"
+  },
+  "aiSummaryDialogLabel": {
+    "message": "KI-Videozusammenfassung"
+  },
+  "aiSummaryExport": {
+    "message": "Archiv exportieren"
+  },
+  "aiSummaryExported": {
+    "message": "Saved summaries exported"
+  },
+  "aiSummaryFailed": {
+    "message": "Summary failed"
+  },
+  "aiSummaryFetchingTranscript": {
+    "message": "Transkript wird abgerufen…"
+  },
+  "aiSummaryInvalid": {
+    "message": "The saved summary is invalid and cannot be displayed."
+  },
+  "aiSummaryLibrary": {
+    "message": "Gespeicherte Zusammenfassungen"
+  },
+  "aiSummaryNoExport": {
+    "message": "No saved summaries to export."
+  },
+  "aiSummaryNoSaved": {
+    "message": "Keine gespeicherte Zusammenfassung entspricht dieser Suche."
+  },
+  "aiSummaryRestored": {
+    "message": "Saved summary restored"
+  },
+  "aiSummarySearchLabel": {
+    "message": "Gespeicherte Zusammenfassungen durchsuchen"
+  },
+  "aiSummarySearchPlaceholder": {
+    "message": "Gespeicherte Zusammenfassungen durchsuchen…"
+  },
+  "aiSummaryTitle": {
+    "message": "KI-Zusammenfassung"
+  },
+  "aiSummaryTldr": {
+    "message": "Kurz gesagt"
+  },
+  "aiSummaryUserscriptButtonTitle": {
+    "message": "AI Summary (right-click to manage the provider credential)"
+  },
   "brandName": {
     "message": "Astra Deck"
   },

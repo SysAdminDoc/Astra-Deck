@@ -1,4 +1,76 @@
 {
+  "aiSummaryButtonTitle": {
+    "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
+  },
+  "aiSummaryCalling": {
+    "message": "AI 제공업체를 호출하는 중…"
+  },
+  "aiSummaryCallingTruncated": {
+    "message": "Calling AI provider with the first 120,000 transcript characters…"
+  },
+  "aiSummaryCitationLabel": {
+    "message": "스크립트 인용"
+  },
+  "aiSummaryClose": {
+    "message": "AI 요약 닫기"
+  },
+  "aiSummaryCopied": {
+    "message": "인용과 함께 요약을 복사했습니다"
+  },
+  "aiSummaryCopy": {
+    "message": "인용과 함께 복사"
+  },
+  "aiSummaryDelete": {
+    "message": "삭제"
+  },
+  "aiSummaryDeleted": {
+    "message": "Saved summary deleted"
+  },
+  "aiSummaryDialogLabel": {
+    "message": "AI 동영상 요약"
+  },
+  "aiSummaryExport": {
+    "message": "보관함 내보내기"
+  },
+  "aiSummaryExported": {
+    "message": "Saved summaries exported"
+  },
+  "aiSummaryFailed": {
+    "message": "Summary failed"
+  },
+  "aiSummaryFetchingTranscript": {
+    "message": "스크립트를 가져오는 중…"
+  },
+  "aiSummaryInvalid": {
+    "message": "The saved summary is invalid and cannot be displayed."
+  },
+  "aiSummaryLibrary": {
+    "message": "저장된 요약"
+  },
+  "aiSummaryNoExport": {
+    "message": "No saved summaries to export."
+  },
+  "aiSummaryNoSaved": {
+    "message": "검색과 일치하는 저장된 요약이 없습니다."
+  },
+  "aiSummaryRestored": {
+    "message": "Saved summary restored"
+  },
+  "aiSummarySearchLabel": {
+    "message": "저장된 요약 검색"
+  },
+  "aiSummarySearchPlaceholder": {
+    "message": "저장된 요약 검색…"
+  },
+  "aiSummaryTitle": {
+    "message": "AI 요약"
+  },
+  "aiSummaryTldr": {
+    "message": "요약"
+  },
+  "aiSummaryUserscriptButtonTitle": {
+    "message": "AI Summary (right-click to manage the provider credential)"
+  },
   "brandName": {
     "message": "Astra Deck"
   },

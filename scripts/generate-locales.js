@@ -1624,6 +1624,74 @@ const PROOFED_FEATURE_TRANSLATION_OVERRIDES = {
   }
 };
 
+const AI_SUMMARY_TRANSLATIONS = {
+  de: {
+    'AI Summary': 'KI-Zusammenfassung', 'AI video summary': 'KI-Videozusammenfassung', 'Calling AI provider…': 'KI-Anbieter wird aufgerufen…',
+    'Transcript citation': 'Transkriptbeleg', 'Close AI summary': 'KI-Zusammenfassung schließen', 'Copy with citations': 'Mit Belegen kopieren',
+    'Summary copied with citations': 'Zusammenfassung mit Belegen kopiert', 'Delete': 'Löschen', 'Saved summaries': 'Gespeicherte Zusammenfassungen',
+    'Export archive': 'Archiv exportieren', 'Search saved summaries': 'Gespeicherte Zusammenfassungen durchsuchen',
+    'Search saved summaries…': 'Gespeicherte Zusammenfassungen durchsuchen…', 'No saved summaries match this search.': 'Keine gespeicherte Zusammenfassung entspricht dieser Suche.',
+    'Fetching transcript…': 'Transkript wird abgerufen…', 'TL;DR': 'Kurz gesagt'
+  },
+  es: {
+    'AI Summary': 'Resumen con IA', 'AI video summary': 'Resumen de video con IA', 'Calling AI provider…': 'Llamando al proveedor de IA…',
+    'Transcript citation': 'Cita de la transcripción', 'Close AI summary': 'Cerrar resumen con IA', 'Copy with citations': 'Copiar con citas',
+    'Summary copied with citations': 'Resumen copiado con citas', 'Delete': 'Eliminar', 'Saved summaries': 'Resúmenes guardados',
+    'Export archive': 'Exportar archivo', 'Search saved summaries': 'Buscar resúmenes guardados',
+    'Search saved summaries…': 'Buscar resúmenes guardados…', 'No saved summaries match this search.': 'Ningún resumen guardado coincide con esta búsqueda.',
+    'Fetching transcript…': 'Obteniendo transcripción…', 'TL;DR': 'En resumen'
+  },
+  fr: {
+    'AI Summary': 'Résumé par IA', 'AI video summary': 'Résumé vidéo par IA', 'Calling AI provider…': 'Appel du fournisseur d’IA…',
+    'Transcript citation': 'Citation de la transcription', 'Close AI summary': 'Fermer le résumé IA', 'Copy with citations': 'Copier avec les citations',
+    'Summary copied with citations': 'Résumé copié avec les citations', 'Delete': 'Supprimer', 'Saved summaries': 'Résumés enregistrés',
+    'Export archive': 'Exporter l’archive', 'Search saved summaries': 'Rechercher les résumés enregistrés',
+    'Search saved summaries…': 'Rechercher les résumés enregistrés…', 'No saved summaries match this search.': 'Aucun résumé enregistré ne correspond à cette recherche.',
+    'Fetching transcript…': 'Récupération de la transcription…', 'TL;DR': 'En bref'
+  },
+  it: {
+    'AI Summary': 'Riepilogo IA', 'AI video summary': 'Riepilogo video IA', 'Calling AI provider…': 'Chiamata al provider IA…',
+    'Transcript citation': 'Citazione della trascrizione', 'Close AI summary': 'Chiudi riepilogo IA', 'Copy with citations': 'Copia con citazioni',
+    'Summary copied with citations': 'Riepilogo copiato con citazioni', 'Delete': 'Elimina', 'Saved summaries': 'Riepiloghi salvati',
+    'Export archive': 'Esporta archivio', 'Search saved summaries': 'Cerca riepiloghi salvati',
+    'Search saved summaries…': 'Cerca riepiloghi salvati…', 'No saved summaries match this search.': 'Nessun riepilogo salvato corrisponde alla ricerca.',
+    'Fetching transcript…': 'Recupero della trascrizione…', 'TL;DR': 'In breve'
+  },
+  pt_BR: {
+    'AI Summary': 'Resumo por IA', 'AI video summary': 'Resumo de vídeo por IA', 'Calling AI provider…': 'Chamando o provedor de IA…',
+    'Transcript citation': 'Citação da transcrição', 'Close AI summary': 'Fechar resumo por IA', 'Copy with citations': 'Copiar com citações',
+    'Summary copied with citations': 'Resumo copiado com citações', 'Delete': 'Excluir', 'Saved summaries': 'Resumos salvos',
+    'Export archive': 'Exportar arquivo', 'Search saved summaries': 'Pesquisar resumos salvos',
+    'Search saved summaries…': 'Pesquisar resumos salvos…', 'No saved summaries match this search.': 'Nenhum resumo salvo corresponde a esta pesquisa.',
+    'Fetching transcript…': 'Buscando transcrição…', 'TL;DR': 'Em resumo'
+  },
+  ru: {
+    'AI Summary': 'ИИ-сводка', 'AI video summary': 'ИИ-сводка видео', 'Calling AI provider…': 'Обращение к ИИ-провайдеру…',
+    'Transcript citation': 'Ссылка на расшифровку', 'Close AI summary': 'Закрыть ИИ-сводку', 'Copy with citations': 'Копировать со ссылками',
+    'Summary copied with citations': 'Сводка со ссылками скопирована', 'Delete': 'Удалить', 'Saved summaries': 'Сохранённые сводки',
+    'Export archive': 'Экспортировать архив', 'Search saved summaries': 'Искать сохранённые сводки',
+    'Search saved summaries…': 'Искать сохранённые сводки…', 'No saved summaries match this search.': 'Нет сохранённых сводок, соответствующих поиску.',
+    'Fetching transcript…': 'Получение расшифровки…', 'TL;DR': 'Кратко'
+  },
+  ja: {
+    'AI Summary': 'AI要約', 'AI video summary': 'AI動画要約', 'Calling AI provider…': 'AIプロバイダーを呼び出しています…',
+    'Transcript citation': '文字起こしの引用', 'Close AI summary': 'AI要約を閉じる', 'Copy with citations': '引用付きでコピー',
+    'Summary copied with citations': '引用付きの要約をコピーしました', 'Delete': '削除', 'Saved summaries': '保存済みの要約',
+    'Export archive': 'アーカイブをエクスポート', 'Search saved summaries': '保存済みの要約を検索',
+    'Search saved summaries…': '保存済みの要約を検索…', 'No saved summaries match this search.': '検索に一致する保存済みの要約はありません。',
+    'Fetching transcript…': '文字起こしを取得しています…', 'TL;DR': '要点'
+  },
+  ko: {
+    'AI Summary': 'AI 요약', 'AI video summary': 'AI 동영상 요약', 'Calling AI provider…': 'AI 제공업체를 호출하는 중…',
+    'Transcript citation': '스크립트 인용', 'Close AI summary': 'AI 요약 닫기', 'Copy with citations': '인용과 함께 복사',
+    'Summary copied with citations': '인용과 함께 요약을 복사했습니다', 'Delete': '삭제', 'Saved summaries': '저장된 요약',
+    'Export archive': '보관함 내보내기', 'Search saved summaries': '저장된 요약 검색',
+    'Search saved summaries…': '저장된 요약 검색…', 'No saved summaries match this search.': '검색과 일치하는 저장된 요약이 없습니다.',
+    'Fetching transcript…': '스크립트를 가져오는 중…', 'TL;DR': '요약'
+  }
+};
+for (const [locale, messages] of Object.entries(AI_SUMMARY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {
