@@ -592,36 +592,6 @@ async function main() {
             const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
             fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
             if (['desktop-dark', 'desktop-light'].includes(state.name)) {
-                const stagedScroll = await client.evaluate(`(() => {
-                    const tab = document.querySelector('.ytkit-nav-btn[data-tab="Playback"]')
-                        || document.querySelector('.ytkit-nav-btn[data-tab="playback"]');
-                    if (tab) tab.click();
-                    const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
-                    if (!content) return false;
-                    content.scrollTop = Math.min(220, Math.max(0, content.scrollHeight - content.clientHeight));
-                    return content.scrollTop > 0;
-                })()`);
-                if (!stagedScroll) {
-                    failuresByState[state.name].push('could not scroll settings content for sticky header proof');
-                } else {
-                    await sleep(120);
-                    const scrolledReport = JSON.parse(await client.evaluate(SCROLLED_HEADER_CHECKS));
-                    failuresByState[state.name].push(...(scrolledReport.failures || []));
-                    const scrolledShot = await client.send('Page.captureScreenshot', {
-                        format: 'png',
-                        captureBeyondViewport: false
-                    });
-                    fs.writeFileSync(
-                        path.join(outDir, `${state.name}-scrolled-header.png`),
-                        Buffer.from(scrolledShot.data, 'base64')
-                    );
-                    await client.evaluate(`(() => {
-                        const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
-                        if (content) content.scrollTop = 0;
-                    })()`);
-                }
-            }
-            if (['desktop-dark', 'desktop-light'].includes(state.name) && !opts.fallbackOnly) {
                 const categoryIds = await client.evaluate(`Array.from(
                     document.querySelectorAll('.ytkit-nav-btn[data-tab]'),
                     (tab) => tab.dataset.tab
@@ -641,15 +611,50 @@ async function main() {
                         continue;
                     }
                     await sleep(120);
-                    await client.evaluate('window.scrollTo(0, 0)');
-                    const categoryShot = await client.send('Page.captureScreenshot', {
+                    const categorySlug = String(categoryId).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    if (!opts.fallbackOnly) {
+                        await client.evaluate('window.scrollTo(0, 0)');
+                        const categoryShot = await client.send('Page.captureScreenshot', {
+                            format: 'png',
+                            captureBeyondViewport: false
+                        });
+                        fs.writeFileSync(
+                            path.join(outDir, `${state.name}-category-${categorySlug}.png`),
+                            Buffer.from(categoryShot.data, 'base64')
+                        );
+                    }
+
+                    const scrollState = await client.evaluate(`(() => {
+                        const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
+                        if (!content) return { found: false, scrollable: false, scrollTop: 0 };
+                        const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight);
+                        content.scrollTop = Math.min(220, maxScroll);
+                        return {
+                            found: true,
+                            scrollable: maxScroll > 0,
+                            scrollTop: content.scrollTop
+                        };
+                    })()`);
+                    if (!scrollState?.found) {
+                        failuresByState[state.name].push(`could not find scroll viewport for category ${categoryId}`);
+                        continue;
+                    }
+                    if (scrollState.scrollable && scrollState.scrollTop <= 0) {
+                        failuresByState[state.name].push(`could not scroll category ${categoryId} for sticky header proof`);
+                        continue;
+                    }
+                    await sleep(120);
+                    const scrolledReport = JSON.parse(await client.evaluate(SCROLLED_HEADER_CHECKS));
+                    failuresByState[state.name].push(
+                        ...(scrolledReport.failures || []).map((failure) => `${categoryId}: ${failure}`)
+                    );
+                    const scrolledShot = await client.send('Page.captureScreenshot', {
                         format: 'png',
                         captureBeyondViewport: false
                     });
-                    const categorySlug = String(categoryId).toLowerCase().replace(/[^a-z0-9]+/g, '-');
                     fs.writeFileSync(
-                        path.join(outDir, `${state.name}-category-${categorySlug}.png`),
-                        Buffer.from(categoryShot.data, 'base64')
+                        path.join(outDir, `${state.name}-category-${categorySlug}-scrolled-header.png`),
+                        Buffer.from(scrolledShot.data, 'base64')
                     );
                 }
             }
