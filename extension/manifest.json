@@ -292,14 +292,15 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/*",
-        "assets/*"
+        "icons/32.png",
+        "assets/cat.gif"
       ],
       "matches": [
         "https://*.youtube.com/*",
         "https://*.youtube-nocookie.com/*",
         "https://youtu.be/*"
-      ]
+      ],
+      "use_dynamic_url": true
     }
   ],
   "content_security_policy": {

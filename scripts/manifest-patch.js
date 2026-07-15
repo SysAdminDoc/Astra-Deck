@@ -52,6 +52,17 @@ function patchManifestForFirefox(ffManifest) {
     if (Array.isArray(ffManifest.permissions)) {
         ffManifest.permissions = ffManifest.permissions.filter(p => p !== 'sidePanel');
     }
+    // Chromium's per-session web-accessible-resource alias is not part of the
+    // Firefox package contract. Firefox already serves resources from a
+    // per-install randomized moz-extension UUID, so omit the Chromium-only
+    // manifest key while preserving the exact resource and origin allowlist.
+    if (Array.isArray(ffManifest.web_accessible_resources)) {
+        ffManifest.web_accessible_resources = ffManifest.web_accessible_resources.map((entry) => {
+            const firefoxEntry = { ...entry };
+            delete firefoxEntry.use_dynamic_url;
+            return firefoxEntry;
+        });
+    }
     ffManifest.sidebar_action = {
         ...FIREFOX_SIDEBAR_ACTION,
         default_icon: { ...FIREFOX_SIDEBAR_ACTION.default_icon }

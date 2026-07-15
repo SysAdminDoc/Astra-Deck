@@ -61,11 +61,23 @@ const CONTENT_HOST_PERMISSIONS = Object.freeze([
     'https://youtu.be/*'
 ]);
 
+const WEB_ACCESSIBLE_RESOURCE_CONSUMERS = Object.freeze([
+    Object.freeze({
+        resource: 'icons/32.png',
+        source: 'extension/ytkit.js',
+        anchor: "getBrandAssetUrl('32.png')",
+        consumer: 'injected Astra glyph'
+    }),
+    Object.freeze({
+        resource: 'assets/cat.gif',
+        source: 'extension/ytkit.js',
+        anchor: "getRepoAssetUrl('cat.gif')",
+        consumer: 'nyan-cat progress scrubber'
+    })
+]);
+
 const WEB_ACCESSIBLE_RESOURCE_POLICY = Object.freeze({
-    resources: Object.freeze([
-        'icons/*',
-        'assets/*'
-    ]),
+    resources: Object.freeze(WEB_ACCESSIBLE_RESOURCE_CONSUMERS.map((entry) => entry.resource)),
     matches: CONTENT_HOST_PERMISSIONS
 });
 
@@ -481,14 +493,42 @@ function buildExtensionPagesCsp(profile) {
     ].join('; ');
 }
 
-function getManifestWebAccessibleResources() {
-    return [{
-        resources: WEB_ACCESSIBLE_RESOURCE_POLICY.resources.slice(),
-        matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
-    }];
+function getPageAccessibleResourceInventory(repoRoot = __dirname) {
+    const seen = new Set();
+    return WEB_ACCESSIBLE_RESOURCE_CONSUMERS.map((entry) => {
+        if (!entry.resource || path.isAbsolute(entry.resource)
+                || entry.resource.includes('*') || entry.resource.split(/[\\/]/).includes('..')) {
+            throw new Error(`Invalid page-accessible resource path: ${entry.resource}`);
+        }
+        if (seen.has(entry.resource)) {
+            throw new Error(`Duplicate page-accessible resource: ${entry.resource}`);
+        }
+        seen.add(entry.resource);
+        const resourcePath = path.join(repoRoot, 'extension', entry.resource);
+        const sourcePath = path.join(repoRoot, entry.source);
+        if (!fs.existsSync(resourcePath) || !fs.statSync(resourcePath).isFile()) {
+            throw new Error(`Page-accessible resource is missing: ${entry.resource}`);
+        }
+        const source = fs.readFileSync(sourcePath, 'utf8');
+        if (!source.includes(entry.anchor)) {
+            throw new Error(
+                `Page-accessible resource consumer is missing for ${entry.resource}: ${entry.anchor}`
+            );
+        }
+        return { ...entry };
+    });
 }
 
-function patchManifestForBuildProfile(profileManifest, profile) {
+function getManifestWebAccessibleResources(browser = 'chromium') {
+    const entry = {
+        resources: getPageAccessibleResourceInventory().map((consumer) => consumer.resource),
+        matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
+    };
+    if (browser !== 'firefox') entry.use_dynamic_url = true;
+    return [entry];
+}
+
+function patchManifestForBuildProfile(profileManifest, profile, browser = 'chromium') {
     const normalized = normalizeBuildProfile(profile);
     profileManifest.host_permissions = getManifestProfileHostPermissions(normalized);
     const optionalHostPermissions = getManifestProfileOptionalHostPermissions(normalized);
@@ -501,7 +541,7 @@ function patchManifestForBuildProfile(profileManifest, profile) {
         ...(profileManifest.content_security_policy || {}),
         extension_pages: buildExtensionPagesCsp(normalized)
     };
-    profileManifest.web_accessible_resources = getManifestWebAccessibleResources();
+    profileManifest.web_accessible_resources = getManifestWebAccessibleResources(browser);
     return profileManifest;
 }
 
@@ -512,7 +552,7 @@ function getArtifactBaseName(profile, browser, artifactVersion = version) {
 function patchStagedManifest(stageDir, profile, browser) {
     const manifestPath = path.join(stageDir, 'manifest.json');
     const stagedManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    patchManifestForBuildProfile(stagedManifest, profile);
+    patchManifestForBuildProfile(stagedManifest, profile, browser);
     if (browser === 'firefox') patchManifestForFirefox(stagedManifest);
     fs.writeFileSync(manifestPath, JSON.stringify(stagedManifest, null, 2) + '\n', 'utf8');
 }
@@ -758,9 +798,11 @@ module.exports = {
     getManifestProfileHostPermissions,
     getManifestProfileOptionalHostPermissions,
     getManifestWebAccessibleResources,
+    getPageAccessibleResourceInventory,
     listFiles,
     patchManifestForBuildProfile,
     resolveCrxSigningConfig,
     shouldStageEntry,
+    WEB_ACCESSIBLE_RESOURCE_CONSUMERS,
     WEB_ACCESSIBLE_RESOURCE_POLICY
 };

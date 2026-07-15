@@ -1389,6 +1389,15 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         FIREFOX_SIDEBAR_ACTION,
         'Firefox-patched manifest must expose the diagnostic dashboard through sidebar_action'
     );
+    assert.ok(
+        ffManifest.web_accessible_resources.every((entry) => entry.use_dynamic_url === undefined),
+        'Firefox-patched manifest must omit Chromium-only use_dynamic_url keys'
+    );
+    assert.deepEqual(
+        ffManifest.web_accessible_resources.flatMap((entry) => entry.resources),
+        ['icons/32.png', 'assets/cat.gif'],
+        'Firefox must retain the exact page-resource allowlist'
+    );
 
     // Running the patch twice must stay idempotent.
     patchManifestForFirefox(ffManifest);
@@ -3008,28 +3017,44 @@ test('build-extension gates web_accessible_resources policy for every profile', 
         path.join(__dirname, '..', 'extension', 'manifest.json'),
         'utf8',
     ));
-    const expectedWar = [{
-        resources: ['icons/*', 'assets/*'],
+    const expectedChromiumWar = [{
+        resources: ['icons/32.png', 'assets/cat.gif'],
         matches: [
             'https://*.youtube.com/*',
             'https://*.youtube-nocookie.com/*',
             'https://youtu.be/*'
-        ]
+        ],
+        use_dynamic_url: true
     }];
+    const expectedFirefoxWar = expectedChromiumWar.map(({ use_dynamic_url: _ignored, ...entry }) => entry);
+    const inventory = builder.getPageAccessibleResourceInventory();
 
-    assert.deepEqual(builder.getManifestWebAccessibleResources(), expectedWar,
-        'build policy must expose only the reviewed WAR entries');
-    assert.deepEqual(baseManifest.web_accessible_resources, expectedWar,
+    assert.deepEqual(inventory.map((entry) => entry.resource), ['icons/32.png', 'assets/cat.gif'],
+        'consumer inventory must contain only page-loaded assets');
+    assert.ok(inventory.every((entry) => entry.source && entry.anchor && entry.consumer),
+        'every page resource must carry a source anchor and named consumer');
+    assert.deepEqual(builder.getManifestWebAccessibleResources(), expectedChromiumWar,
+        'Chromium build policy must expose only reviewed resources through a dynamic ID');
+    assert.deepEqual(builder.getManifestWebAccessibleResources('firefox'), expectedFirefoxWar,
+        'Firefox build policy must omit the Chromium-only dynamic URL key');
+    assert.deepEqual(baseManifest.web_accessible_resources, expectedChromiumWar,
         'source manifest WAR must match the reviewed build policy exactly');
 
     for (const profile of ['store-safe', 'github-full']) {
         const manifest = builder.patchManifestForBuildProfile(
             JSON.parse(JSON.stringify(baseManifest)), profile);
-        assert.deepEqual(manifest.web_accessible_resources, expectedWar,
+        assert.deepEqual(manifest.web_accessible_resources, expectedChromiumWar,
             `${profile} manifest must keep the exact WAR allowlist`);
         const resources = manifest.web_accessible_resources.flatMap((entry) => entry.resources || []);
+        assert.equal(resources.some((resource) => resource.includes('*')), false,
+            `${profile} manifest must not expose directory wildcards`);
         assert.equal(resources.some((resource) => /\.(?:js|mjs|css|html|map|json)$/i.test(resource)), false,
             `${profile} manifest must not expose source, style, map, or data files`);
+
+        const firefoxManifest = builder.patchManifestForBuildProfile(
+            JSON.parse(JSON.stringify(baseManifest)), profile, 'firefox');
+        assert.deepEqual(firefoxManifest.web_accessible_resources, expectedFirefoxWar,
+            `${profile} Firefox manifest must keep resources exact without use_dynamic_url`);
     }
 });
 
@@ -9735,14 +9760,16 @@ test('v4.47.0 NF23 — nyan-cat theme asset resolves via getRepoAssetUrl, not a 
     assert.ok(fs.existsSync(bundledAsset),
         'extension/assets/cat.gif must exist so chrome.runtime.getURL resolves');
 
-    // The manifest's web_accessible_resources covers assets/*.
+    // The manifest exposes only the one asset consumed by page CSS.
     const manifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
     ));
     const resources = manifest.web_accessible_resources
         .flatMap((r) => r.resources || []);
-    assert.ok(resources.includes('assets/*'),
-        'manifest.json web_accessible_resources must include assets/*');
+    assert.ok(resources.includes('assets/cat.gif'),
+        'manifest.json web_accessible_resources must include assets/cat.gif');
+    assert.ok(!resources.includes('assets/*'),
+        'manifest.json must not expose the entire assets directory');
 });
 
 test('v4.47.0 R6 — policy-profile scrub regex catches the broader API-key shapes', () => {

@@ -32,6 +32,69 @@ test('optional-host Chromium smoke stages the store-safe manifest and falls back
         'smoke must include Edge as a Chromium-family fallback when Chrome is policy-blocked');
 });
 
+test('optional-host Chromium smoke gates the exact dynamic page-resource inventory', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(repoRoot, 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    assert.deepEqual(smoke.PAGE_ACCESSIBLE_RESOURCES, ['icons/32.png', 'assets/cat.gif']);
+    assert.doesNotThrow(() => smoke.validateDynamicWebAccessibleResourceManifest(manifest));
+    assert.match(smokeSource, /chrome\.runtime\.getURL\(resource\)/,
+        'package smoke must resolve page assets through the runtime API');
+    assert.match(smokeSource, /await fetch\(url\)/,
+        'package smoke must load each declared page asset from the packaged extension');
+
+    const broadManifest = structuredClone(manifest);
+    broadManifest.web_accessible_resources[0].resources = ['assets/*', 'icons/32.png'];
+    assert.throws(
+        () => smoke.validateDynamicWebAccessibleResourceManifest(broadManifest),
+        /exceed the generated consumer inventory/
+    );
+
+    const stableManifest = structuredClone(manifest);
+    delete stableManifest.web_accessible_resources[0].use_dynamic_url;
+    assert.throws(
+        () => smoke.validateDynamicWebAccessibleResourceManifest(stableManifest),
+        /per-session dynamic URL/
+    );
+});
+
+test('optional-host Chromium smoke validates loaded resources use a dynamic host', () => {
+    const results = smoke.PAGE_ACCESSIBLE_RESOURCES.map((resource) => ({
+        resource,
+        url: `chrome-extension://dynamic-session-id/${resource}`,
+        ok: true,
+        status: 200,
+        bytes: 16,
+        contentType: 'application/octet-stream',
+        error: '',
+    }));
+    assert.equal(
+        smoke.validateDynamicWebAccessibleResourceResults(results, 'stable-extension-id'),
+        'dynamic-session-id'
+    );
+
+    const stableResults = structuredClone(results);
+    stableResults[0].url = 'chrome-extension://stable-extension-id/icons/32.png';
+    assert.throws(
+        () => smoke.validateDynamicWebAccessibleResourceResults(
+            stableResults,
+            'stable-extension-id'
+        ),
+        /per-session dynamic host/
+    );
+
+    const emptyResults = structuredClone(results);
+    emptyResults[1].bytes = 0;
+    assert.throws(
+        () => smoke.validateDynamicWebAccessibleResourceResults(
+            emptyResults,
+            'stable-extension-id'
+        ),
+        /did not load/
+    );
+});
+
 test('optional-host Chromium smoke seeds enabled optional features and verifies the pre-grant popup state', () => {
     for (const key of [
         'sponsorBlock',
