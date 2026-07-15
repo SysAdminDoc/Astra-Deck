@@ -56,6 +56,9 @@
   "aiSummaryRestored": {
     "message": "Saved summary restored"
   },
+  "aiSummarySaveFailed": {
+    "message": "Saving the summary failed — it may disappear after a reload."
+  },
   "aiSummarySearchLabel": {
     "message": "Buscar resúmenes guardados"
   },

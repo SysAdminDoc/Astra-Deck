@@ -4323,7 +4323,15 @@ async function resetYoutubeState() {
             { action: 'clear', snapshot: staged.snapshot }
         );
         if (!cleared?.ok) {
-            await clearYoutubeStateResetSnapshot();
+            if (cleared?.status === 0) {
+                // Transport-level failure (tab navigating, port closed): the
+                // content script may already have cleared state, so keep the
+                // staged snapshot and surface Undo instead of destroying the
+                // only recovery path.
+                setUndoYoutubeStateVisible(true);
+            } else {
+                await clearYoutubeStateResetSnapshot();
+            }
             throw new Error(cleared?.error || 'YouTube page-state reset failed');
         }
         if (!cleared.cleared?.length) {

@@ -20,6 +20,7 @@
     const STORAGE_FLUSH_MAX_BACKOFF_MS = 60000;
     let storageFlushBackoffMs = 0;
     let storageFlushFailureCount = 0;
+    let storageFlushInFlight = null;
 
     // Support-only reset surface for stale YouTube page state. This is an
     // exact allowlist: never broaden it to prefixes because YouTube and other
@@ -245,13 +246,20 @@
             pendingStorageFlush = null;
         }
         if (!core.hasExtensionContext() || !hasPendingStorageWrites()) {
-            return Promise.resolve();
+            return storageFlushInFlight || Promise.resolve();
+        }
+        if (storageFlushInFlight) {
+            // Serialize flushes: with two set() calls in flight, an OLDER
+            // failed flush could merge-back and retry its stale values over
+            // a NEWER value the competing flush already persisted, leaving
+            // disk and cache divergent until the next write.
+            return storageFlushInFlight.then(() => flushPendingStorageWrites());
         }
 
         const writes = pendingStorageWrites;
         pendingStorageWrites = Object.create(null);
 
-        return chrome.storage.local.set(writes).then(() => {
+        storageFlushInFlight = chrome.storage.local.set(writes).then(() => {
             // Success — clear any backoff so the next flush runs on the
             // normal debounce schedule instead of the failure cadence.
             storageFlushBackoffMs = 0;
@@ -274,7 +282,10 @@
                 STORAGE_FLUSH_MIN_BACKOFF_MS * Math.pow(2, Math.min(storageFlushFailureCount - 1, 8))
             );
             schedulePendingStorageFlush();
+        }).finally(() => {
+            storageFlushInFlight = null;
         });
+        return storageFlushInFlight;
     }
 
     function storageWriteMany(entries, options = {}) {

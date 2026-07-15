@@ -124,7 +124,14 @@
             const settings = getSettings();
             if (!settings) return {};
             settings.aiSummaryArtifactsData = artifactService.sanitizeArtifactStore(next);
-            try { void saveSettings(settings); } catch (_) { /* reason: caller surfaces persistence failures */ }
+            try {
+                const write = saveSettings(settings);
+                // An async save rejection is otherwise unobserved while the
+                // UI already shows the artifact as saved.
+                if (write?.catch) write.catch(() => {
+                    showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
+                });
+            } catch (_) { /* reason: caller surfaces synchronous persistence failures */ }
             return settings.aiSummaryArtifactsData;
         }
 

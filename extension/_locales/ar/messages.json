@@ -3367,5 +3367,8 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
+  },
+  "aiSummarySaveFailed": {
+    "message": "Saving the summary failed — it may disappear after a reload."
   }
 }
