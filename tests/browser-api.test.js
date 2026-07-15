@@ -4,7 +4,8 @@
 // resolution must prefer the standards-track `browser` object, fall back
 // to `chrome`, and degrade to a null namespace when neither exists.
 // The wrapper loads FIRST on every surface so migrated call sites can
-// rely on it; sidepanel.js and popup.js are migrated bounded batches.
+// rely on it; sidepanel.js and popup.js use the shared page wrapper while the
+// background worker carries the equivalent inline resolver and call adapter.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -156,4 +157,17 @@ test('popup.js is fully migrated onto the cross-browser wrapper', () => {
         'popup.js must normalize callback and Promise API signatures through browserApi.call');
     assert.match(popupSource, /browserApi\.sendTabMessage\(/,
         'popup tab messaging must use the timeout-bounded wrapper');
+});
+
+test('background.js uses an inline cross-browser resolver and no vendor calls', () => {
+    const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
+    const chromeCalls = backgroundSource.match(/\bchrome\.[a-zA-Z]/g) || [];
+    assert.deepEqual(chromeCalls, [],
+        `background.js must not call the vendor namespace directly (found: ${chromeCalls.join(', ')})`);
+    assert.match(backgroundSource, /const ext = globalThis\.browser\?\.runtime/,
+        'background.js must prefer the standards-track browser namespace');
+    assert.match(backgroundSource, /globalThis\.chrome\?\.runtime \? globalThis\.chrome : null/,
+        'background.js must fall back to the Chromium namespace');
+    assert.match(backgroundSource, /function callExtensionApi\(target, method, \.\.\.args\)/,
+        'background.js must normalize callback and Promise API signatures');
 });

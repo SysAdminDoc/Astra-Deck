@@ -459,12 +459,12 @@ test('getSetting helper exists and is null-safe', () => {
     assert.match(body, /typeof\s+settings\s*!==\s*'object'/, 'Must guard against non-object settings');
 });
 
-// ── v3.14.0 L1: chrome.downloads.show via onChanged ──
+// ── v3.14.0 L1: downloads.show via onChanged ──
 
 test('background.js reveals downloads via onChanged, not setTimeout', () => {
     assert.match(
         backgroundSource,
-        /chrome\.downloads\.onChanged\.addListener/,
+        /ext\.downloads\.onChanged\.addListener/,
         'background.js must listen for downloads.onChanged'
     );
     assert.match(
@@ -483,11 +483,11 @@ test('background.js reveals downloads via onChanged, not setTimeout', () => {
         'Pending reveals must be tracked via a Set, not timeouts'
     );
 
-    // Confirm the legacy setTimeout(900, chrome.downloads.show) is gone.
+    // Confirm the legacy setTimeout(900, downloads.show) is gone.
     // Use multiline-aware regex since setTimeout callback spans newlines.
     assert.doesNotMatch(
         backgroundSource,
-        /setTimeout\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?chrome\.downloads\.show/,
+        /setTimeout\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?callExtensionApi\(ext\.downloads, 'show'/,
         'Legacy setTimeout + downloads.show pattern must be removed'
     );
 });
@@ -1082,10 +1082,10 @@ test('showDownloadProgress uses self-scheduling poll with consecutive-error budg
 
 // ── v3.20.0 Hardening Pass 7 ──
 
-test('_pendingReveals is mirrored to chrome.storage.session for SW-restart survival', () => {
+test('_pendingReveals is mirrored to storage.session for SW-restart survival', () => {
     // The roadmap audit-pass flagged the in-memory Set as fragile: a SW
     // terminated between download() and state.complete would lose the reveal.
-    // Pass 7 mirrors writes into chrome.storage.session (MV3-only, survives
+    // Pass 7 mirrors writes into storage.session (MV3-only, survives
     // SW restart, cleared on browser restart) and hydrates on SW cold-start.
     assert.match(
         backgroundSource,
@@ -1099,8 +1099,8 @@ test('_pendingReveals is mirrored to chrome.storage.session for SW-restart survi
     );
     assert.match(
         backgroundSource,
-        /chrome\.storage\.session\.get\s*\(\s*_PENDING_REVEALS_KEY/,
-        'Hydration must read from chrome.storage.session'
+        /callExtensionApi\(ext\.storage\.session, 'get', _PENDING_REVEALS_KEY\)/,
+        'Hydration must read from cross-browser storage.session'
     );
     assert.match(
         backgroundSource,
@@ -1109,13 +1109,13 @@ test('_pendingReveals is mirrored to chrome.storage.session for SW-restart survi
     );
     assert.match(
         backgroundSource,
-        /chrome\.storage\.session\.set\s*\(\s*payload/,
-        'Persist helper must write through chrome.storage.session.set'
+        /callExtensionApi\(ext\.storage\.session, 'set', payload\)/,
+        'Persist helper must write through cross-browser storage.session'
     );
     // The onChanged listener must await the hydration promise so a reveal
     // queued before SW cold-start is still honoured when the event arrives.
     const listenerStart = backgroundSource.indexOf(
-        'chrome.downloads.onChanged.addListener'
+        'ext.downloads.onChanged.addListener'
     );
     assert.ok(listenerStart > -1, 'onChanged listener must exist');
     // Bound the slice to the closing brace of the addListener() call so
@@ -1186,10 +1186,10 @@ test('_pendingReveals is pruned when a tracked download is erased from history',
     // session mirror.
     assert.match(
         backgroundSource,
-        /chrome\.downloads\?\.onErased\?\.addListener/,
+        /ext\.downloads\?\.onErased\?\.addListener/,
         'onErased listener must exist (guarded for older Firefox builds)'
     );
-    const erasedStart = backgroundSource.indexOf('chrome.downloads.onErased.addListener');
+    const erasedStart = backgroundSource.indexOf('ext.downloads.onErased.addListener');
     assert.ok(erasedStart > -1, 'onErased listener must be registered');
     // Bound the slice to the closing brace of this addListener() call so
     // growth elsewhere in the file can't satisfy these assertions.
@@ -1209,7 +1209,7 @@ test('_pendingReveals is pruned when a tracked download is erased from history',
     assert.match(
         erasedBody,
         /_persistPendingReveals\s*\(\s*\)/,
-        'onErased listener must mirror the delete into chrome.storage.session'
+        'onErased listener must mirror the delete into storage.session'
     );
     assert.match(
         erasedBody,
@@ -4847,16 +4847,16 @@ test('manifest host_permissions also drop localhost aliases', () => {
         'manifest.host_permissions must not grant localhost aliases; runtime only uses 127.0.0.1');
 });
 
-test('chrome.runtime.onMessage rejects senders outside our extension id', () => {
+test('runtime.onMessage rejects senders outside our extension id', () => {
     // Defense-in-depth — even though we don't declare externally_connectable
     // today, a future regression that adds it must not silently widen the
-    // trust boundary. Every message must come from sender.id === chrome.runtime.id.
-    const listenerStart = backgroundSource.indexOf('chrome.runtime.onMessage.addListener');
+    // trust boundary. Every message must come from sender.id === ext.runtime.id.
+    const listenerStart = backgroundSource.indexOf('ext.runtime.onMessage.addListener');
     assert.ok(listenerStart > -1, 'onMessage listener must exist');
     const listenerEnd = backgroundSource.indexOf('msg.type === \'OPEN_URL\'', listenerStart);
     const header = backgroundSource.slice(listenerStart, listenerEnd);
-    assert.match(header, /sender\?\.id === chrome\.runtime\.id/,
-        'onMessage must compare sender.id to chrome.runtime.id before any handler dispatch');
+    assert.match(header, /sender\?\.id === ext\.runtime\.id/,
+        'onMessage must compare sender.id to the resolved runtime id before any handler dispatch');
     assert.match(header, /Sender rejected\./,
         'onMessage must surface a clear rejection reason to the caller');
 });
@@ -10660,21 +10660,21 @@ test('active install docs never hardcode a "latest release vX.Y.Z" claim', () =>
     }
 });
 
-test('v4.47.0 R3 — chrome.downloads.show failures log to console + SW lifecycle ring instead of silent swallow', () => {
-    // R3: chrome.downloads.show is fire-and-forget; if the reveal
+test('v4.47.0 R3 — downloads.show failures log to console + SW lifecycle ring instead of silent swallow', () => {
+    // R3: downloads.show is fire-and-forget; if the reveal
     // fails (file moved, user revoked permission, volume detached)
     // the only signal a maintainer used to get was the user-facing
     // "nothing happened." The catch now (a) console.warn's with
     // context and (b) drops a reveal-failed:<msg> entry into the
     // SW lifecycle ring (NEW-7) so the bug-report bundle surfaces
     // it without any new telemetry.
-    const revealStart = backgroundSource.indexOf('chrome.downloads.show(delta.id)');
+    const revealStart = backgroundSource.indexOf("callExtensionApi(ext.downloads, 'show', delta.id)");
     assert.ok(revealStart > -1,
-        'background.js must call chrome.downloads.show(delta.id)');
+        'background.js must call downloads.show through the cross-browser adapter');
     const revealBlock = backgroundSource.slice(revealStart, revealStart + 1200);
-    assert.match(revealBlock, /catch \(err\)/,
+    assert.match(revealBlock, /\.catch\(\(err\) =>/,
         'reveal call must capture the error binding (not the previous silent `catch (_)` swallow)');
-    assert.match(revealBlock, /console\.warn\(['"]\[Astra Deck\] chrome\.downloads\.show failed/,
+    assert.match(revealBlock, /console\.warn\(['"]\[Astra Deck\] downloads\.show failed/,
         'reveal failure must console.warn with the [Astra Deck] prefix so support sees the context');
     assert.match(revealBlock, /_recordSwLifecycle\(['"]reveal-failed:/,
         'reveal failure must drop a reveal-failed:<msg> entry into the SW lifecycle ring');
@@ -10710,13 +10710,13 @@ test('v4.47.0 EXIST-8 — feature_request issue template asks for the risk profi
         'feature_request.md must surface a competitive parity / reference prompt');
 });
 
-test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.session and is readable via GET_SW_LIFECYCLE', () => {
+test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into storage.session and is readable via GET_SW_LIFECYCLE', () => {
     // NEW-7: MV3 service workers restart unpredictably (~30s idle
     // kill, suspension on memory pressure, post-install). Several
     // Astra Deck bugs surfaced only because the maintainer happened
     // to hit a SW restart in dev (the H25 cap-bypass-on-hydration
     // fix is the most recent example). This ring records SW boot
-    // events into chrome.storage.session so the bug-report bundle
+    // events into storage.session so the bug-report bundle
     // (NEW-1) can surface SW restart frequency without telemetry.
 
     // 1. background.js declares the ring + cap constants and the
@@ -10727,7 +10727,7 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'background.js must cap the SW lifecycle ring at 50 entries');
     // _recordSwLifecycle is the sync entry point — under the hood it
     // chains onto _swLifecycleChain so concurrent records can't lose
-    // entries via R-M-W race on chrome.storage.session (audit-pass
+    // entries via R-M-W race on storage.session (audit-pass
     // fix). The function itself may be either `async` or sync (the
     // chain owns the async work either way).
     assert.match(backgroundSource, /function _recordSwLifecycle\(event(?:,\s*operationId\s*=\s*['"]{2})?\)/,
@@ -10758,9 +10758,9 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
     assert.match(backgroundSource, /msg\.type === ['"]GET_SW_LIFECYCLE['"]/,
         'onMessage listener must handle the GET_SW_LIFECYCLE message type');
     const getStart = backgroundSource.indexOf("msg.type === 'GET_SW_LIFECYCLE'");
-    const getBlock = backgroundSource.slice(getStart, getStart + 800);
-    assert.match(getBlock, /chrome\.storage\.session\.get\(SW_LIFECYCLE_KEY\)/,
-        'GET_SW_LIFECYCLE must read the ring from chrome.storage.session');
+    const getBlock = backgroundSource.slice(getStart, getStart + 1000);
+    assert.match(getBlock, /callExtensionApi\(ext\.storage\.session, 'get', SW_LIFECYCLE_KEY\)/,
+        'GET_SW_LIFECYCLE must read the ring through the cross-browser adapter');
     assert.match(getBlock, /sendResponse\(\{\s*entries,\s*error:\s*null\s*\}\)/,
         'GET_SW_LIFECYCLE must respond with { entries, error: null } on success');
     assert.match(getBlock, /return true;/,

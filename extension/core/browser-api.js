@@ -9,9 +9,9 @@
     // host provides. New code should consume `globalThis.YTKitBrowser`
     // (or `YTKitCore.createBrowserApi()` with an explicit scope in tests)
     // instead of touching `chrome.*` directly; existing direct call sites
-    // migrate in bounded batches — sidepanel.js and popup.js are complete;
-    // background.js remains a follow-up because service workers cannot load
-    // this file as a classic page script.
+    // migrate in bounded batches — sidepanel.js and popup.js use this wrapper;
+    // background.js carries the equivalent inline resolver because service
+    // workers cannot load this file as a classic page script.
     //
     // Loaded before every other core module in the manifest content-script
     // lists AND directly by popup.html / sidepanel.html / sidebar.html, so
