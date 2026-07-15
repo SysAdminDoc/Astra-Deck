@@ -188,7 +188,7 @@ def write_cookies_netscape(cookies, target_path, *, logger=None):
             raw_expiry = entry.get("expirationDate")
             expiry = int(float(raw_expiry)) if raw_expiry not in (None, "") else 0
             expiry = max(0, expiry)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             expiry = 0
         lines.append(
             f"{'#HttpOnly_' if entry.get('httpOnly') else ''}{domain}\t"
@@ -530,6 +530,7 @@ _REQUIRED_MANAGER_DEPENDENCIES = frozenset({
     'clean_text',
     'cleanup_stale_cookie_jars',
     'coerce_bool',
+    'is_youtube_url',
     'load_json_file',
     'normalize_output_dir',
     'normalize_url',
@@ -606,23 +607,35 @@ class DownloadManagerCore:
                 'Download queue schema is incompatible; preserving the file without changes.'
             )
             return
+        persisted_pause = self._dependencies['coerce_bool'](
+            raw.get('intakePaused'), False
+        )
         records = raw.get('downloads', [])
         if not isinstance(records, list):
+            self.intake_paused = persisted_pause
             return
 
         restored = []
         seen_ids = set()
+        allowed_roots = self._dependencies['allowed_output_roots'](self.config)
         for index, item in enumerate(records[:MAX_QUEUED_TOTAL]):
             if not isinstance(item, dict):
                 continue
             url, err = self._dependencies['normalize_url'](item.get('url'))
-            if err:
+            if err or not self._dependencies['is_youtube_url'](url):
                 continue
             output_dir = self._dependencies['clean_path_text'](item.get('outputDir'))
             try:
                 if not output_dir or not Path(output_dir).expanduser().is_absolute():
                     continue
-            except (OSError, ValueError):
+                resolved_output = Path(output_dir).expanduser().resolve()
+                if not allowed_roots or not any(
+                    resolved_output == root or resolved_output.is_relative_to(root)
+                    for root in allowed_roots
+                ):
+                    continue
+                output_dir = str(resolved_output)
+            except (OSError, RuntimeError, ValueError):
                 continue
             audio_only = self._dependencies['coerce_bool'](item.get('audioOnly'), False)
             if audio_only:
@@ -666,6 +679,7 @@ class DownloadManagerCore:
             restored.append(dl)
 
         if not restored:
+            self.intake_paused = persisted_pause
             return
         with self._lock:
             for dl in restored:
@@ -1566,9 +1580,13 @@ class DownloadManagerCore:
             current = next((index for index, dl in enumerate(pending) if dl.id == dl_id), None)
             if current is None:
                 return False, 'Only pending downloads can be reordered.'
-            try:
-                target = int(position)
-            except (TypeError, ValueError):
+            if isinstance(position, bool):
+                return False, 'Queue position must be an integer.'
+            if isinstance(position, int):
+                target = position
+            elif isinstance(position, str) and re.fullmatch(r'-?\d+', position.strip()):
+                target = int(position.strip())
+            else:
                 return False, 'Queue position must be an integer.'
             target = max(0, min(target, len(pending) - 1))
             if target == current:
