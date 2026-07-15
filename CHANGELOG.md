@@ -6,6 +6,50 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.49.7] - 2026-07-15
+
+Roadmap drain: both remaining P2 engineering items and every actionable P3
+localization/theming item.
+
+### Changed
+
+- **AI summaries moved out of the settings object.** The artifact store (up
+  to 1.5 MB) now lives in its own `ytkit-ai-summaries` storage key, so
+  settings saves and cross-tab broadcasts stop shipping it to every YouTube
+  tab and the library search stops re-sanitizing it per keystroke. Existing
+  stores migrate automatically on load; old backups that embedded the store
+  inside settings import correctly, and new backups (popup and in-page)
+  export it as a first-class data domain.
+- **The settings panel's five stacked style layers are folded into one.**
+  3,129 lines of superseded `!important` restyle passes were deleted; the v3
+  visual system is now the single source of truth (it absorbed the two
+  load-bearing declarations the old layers still provided — the mobile nav
+  grid reset and the above-player z-index contract).
+
+### Added
+
+- **The side panel / Firefox sidebar is fully localized** (137 new keys in
+  all 11 locales) with RTL document handling, matching the popup.
+- **The popup's last hardcoded-English flows are localized** — AI credential
+  section, credential statuses, import preview, Reset success copy, and
+  schema-overview badges/tooltips (32 new keys, hand-translated).
+- **The Watch Later Workbench and reaction sender are localized** (~58 call
+  sites, 53 new keys); the live-chat module gained a proper i18n dependency.
+
+### Fixed
+
+- **Chat and workbench surfaces follow light YouTube.** The reaction sender
+  (both copies), the Watch Later Workbench, and the parent-page live-chat
+  shell now use YouTube theme variables instead of hardcoded dark colors,
+  and use logical CSS properties so they mirror correctly in RTL locales.
+  The premium live-chat iframe interior keeps its deliberate dark look.
+
+### Blocked
+
+- The live-chat popout/tooltip English-only structural fallbacks moved to
+  Roadmap_Blocked.md — replacing them safely needs live-DOM verification on
+  an actual live stream.
+
 ## [4.49.6] - 2026-07-15
 
 Deep-audit backlog drain plus a fresh audit sweep over the companion app,
