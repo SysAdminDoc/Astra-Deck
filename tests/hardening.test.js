@@ -602,7 +602,7 @@ test('popup.js requests declared optional hosts before enabling optional feature
         'popup must load data-flow and optional-host permissions before popup.js');
     assert.match(popupSource, /function getDeclaredOptionalHostsForSetting/,
         'popup.js must map settings to declared optional hosts');
-    assert.match(popupSource, /chrome\?\.runtime\?\.getManifest\?\.\(\)\.optional_host_permissions/,
+    assert.match(popupSource, /ext\?\.runtime\?\.getManifest\?\.\(\)\.optional_host_permissions/,
         'popup.js must only request hosts declared by the built manifest');
     assert.match(popupSource, /createOptionalHostPermissions/,
         'popup.js must use the shared optional host permission helper');
@@ -1319,8 +1319,8 @@ test('popup side-panel launcher avoids static unsupported Firefox API references
     const src = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8');
     assert.doesNotMatch(src, /chrome\.sidePanel/,
         'popup must not contain static chrome.sidePanel references because AMO flags unsupported APIs even behind guards');
-    assert.match(src, /chrome\?\.\['sidePanel'\]/,
-        'popup must feature-detect the Chrome-only sidePanel API dynamically');
+    assert.match(src, /ext\?\.\['sidePanel'\]/,
+        'popup must feature-detect the Chromium-only sidePanel API through the resolved namespace');
     assert.match(src, /sidePanelApi\['open'\]\.bind\(sidePanelApi\)/,
         'popup must bind the dynamic sidePanel.open method before invoking it');
 });
@@ -8987,8 +8987,8 @@ test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismiss
 
     assert.match(popupSource, /const MEDIADL_DISMISSED_KEY = 'ytkit_mediadl_prompt_dismissed'/,
         'popup.js must declare the canonical key matching ytkit.js storageWrite');
-    assert.match(popupSource, /chrome\.storage\.local\.remove\(MEDIADL_DISMISSED_KEY/,
-        'clear must use chrome.storage.local.remove on the canonical key');
+    assert.match(popupSource, /callExtensionApi\(ext\.storage\.local, 'remove', MEDIADL_DISMISSED_KEY\)/,
+        'clear must remove the canonical key through the cross-browser wrapper');
     assert.match(popupSource, /async function refreshReenableMediadlVisibility\(\)/,
         'popup.js must declare the visibility refresh that runs on boot');
     assert.match(popupSource, /reenableMediadlButton\.addEventListener\('click'/,
@@ -9068,7 +9068,7 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
         'popup.js must define updateCompanionNow');
     const popupHandlerStart = popupSource.indexOf('async function updateCompanionNow');
     const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
-    assert.match(popupSource, /chrome\.tabs\.query\(\{ url: YOUTUBE_TAB_URLS \}\)/,
+    assert.match(popupSource, /callExtensionApi\(ext\?\.tabs, 'query', \{ url: YOUTUBE_TAB_URLS \}\)/,
         'updateCompanionNow must query YouTube tabs for a loaded content script');
     assert.match(popupHandlerBlock, /sendPopupBridgeMessageToYouTubeTabs\('YTKIT_UPDATE_COMPANION'\)/,
         'updateCompanionNow must send YTKIT_UPDATE_COMPANION through the retry bridge');
@@ -9129,8 +9129,8 @@ test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores i
 
     assert.match(popupSource, /const RESET_SNAPSHOT_KEY = '_resetSnapshot'/,
         'popup.js must declare the canonical snapshot key constant');
-    assert.match(popupSource, /chrome\.storage\.session/,
-        'snapshot helpers must use chrome.storage.session (not local) so the snapshot dies with the browser session');
+    assert.match(popupSource, /callExtensionApi\(ext\.storage\.session, '(?:get|set|remove)'/,
+        'snapshot helpers must use session storage through the wrapper so the snapshot dies with the browser session');
     assert.match(popupSource, /async function resetAllData\(\)/,
         'resetAllData must remain async');
     assert.match(popupSource, /writeResetSnapshot\(snapshot\)/,
@@ -10030,8 +10030,8 @@ test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pa
         'popup.js must keep the shared local-storage snapshot helper');
     const snapshotHelperStart = popupJs.indexOf('async function readLocalStorageSnapshot');
     const snapshotHelperBody = popupJs.slice(snapshotHelperStart, snapshotHelperStart + 500);
-    assert.match(snapshotHelperBody, /chrome\.storage\.local\.get\(null/,
-        'readLocalStorageSnapshot must capture the full local storage payload');
+    assert.match(snapshotHelperBody, /callExtensionApi\(ext\?\.storage\?\.local, 'get', null\)/,
+        'readLocalStorageSnapshot must capture the full local storage payload through the wrapper');
 
     const clearFnStart = popupJs.indexOf('async function clearDiagnosticLog');
     assert.ok(clearFnStart > -1, 'clearDiagnosticLog must still exist');
@@ -10885,7 +10885,7 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
         'popup bridge must prefer active/current YouTube tabs');
     const popupHandlerStart = popupSource.indexOf('async function updateYtdlpNow');
     const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
-    assert.match(popupSource, /chrome\.tabs\.query\(\{ url: YOUTUBE_TAB_URLS \}\)/,
+    assert.match(popupSource, /callExtensionApi\(ext\?\.tabs, 'query', \{ url: YOUTUBE_TAB_URLS \}\)/,
         'updateYtdlpNow must query YouTube tabs to find a MediaDLManager-loaded content script');
     assert.match(popupHandlerBlock, /sendPopupBridgeMessageToYouTubeTabs\('YTKIT_UPDATE_YTDLP'\)/,
         'updateYtdlpNow must send the YTKIT_UPDATE_YTDLP message through the retry bridge');
