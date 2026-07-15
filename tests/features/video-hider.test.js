@@ -43,6 +43,8 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
         '_processVideoElement',
         '_setBlockedChannelCache',
         '_getBlockedChannelKeys',
+        '_evaluateDirectWatchBlock',
+        '_showDirectWatchInterstitial',
         '_getPredicateEvaluator',
         '_createHomeHideAllButton',
         '_createSubsHideAllButton',
@@ -82,6 +84,9 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
         'PredicateSandbox',
         'addNavigateRule',
         'removeNavigateRule',
+        'getVideoId',
+        'getPlayerResponseGlobal',
+        't',
         'runBudgetedElementBatch',
         'injectStyle'
     ]) {

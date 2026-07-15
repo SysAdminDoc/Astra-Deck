@@ -43,6 +43,23 @@
             PredicateSandbox = { compile() { return { ok: false, error: 'unavailable', position: 0 }; } },
             addNavigateRule = () => {},
             removeNavigateRule = () => {},
+            getVideoId = () => {
+                try {
+                    return new URL(globalThis.location?.href || '').searchParams.get('v');
+                } catch (_) {
+                    return null;
+                }
+            },
+            getCurrentPath = () => globalThis.location?.pathname || '',
+            getPlayerResponseGlobal = () => globalThis.ytInitialPlayerResponse || null,
+            documentRef = typeof document !== 'undefined' ? document : null,
+            setTimeoutFn = (callback, delay) => setTimeout(callback, delay),
+            clearTimeoutFn = timer => clearTimeout(timer),
+            navigateBack = () => {
+                if (globalThis.history?.length > 1) globalThis.history.back();
+                else globalThis.location?.assign?.('/');
+            },
+            t = (_key, fallback) => fallback,
             runBudgetedElementBatch = (items, callback) => {
                 const list = Array.from(items || []);
                 list.forEach(callback);
@@ -81,6 +98,14 @@
             _allowedList: null,
             _channelsCache: null,
             _channelKeyCache: null,
+            _directWatchRouteKey: null,
+            _directWatchAllowedRouteKey: null,
+            _directWatchTimer: null,
+            _directWatchEvaluationToken: 0,
+            _directWatchDialog: null,
+            _directWatchPreviousFocus: null,
+            _directWatchPlayHandler: null,
+            _directWatchResumeAfterDecision: false,
             _removedVideoNodes: [],
             _subsBannerCollapsed: false,
             _subsLoadState: {
@@ -510,6 +535,264 @@
                 if (record.channelId) return `https://www.youtube.com/channel/${record.channelId}`;
                 if (record.handle) return `https://www.youtube.com/${record.handle}`;
                 return '';
+            },
+
+            _getDirectWatchRouteKey() {
+                if (getCurrentPath() !== '/watch') return null;
+                const videoId = String(getVideoId() || '').trim();
+                return VIDEO_ID_PATTERN.test(videoId) ? videoId : null;
+            },
+
+            _normalizeDirectWatchChannel({ channelId = '', name = '', url = '', source = 'watch' } = {}) {
+                const record = normalizeBlockedChannelRecord({
+                    id: channelId || url,
+                    channelId,
+                    name,
+                    url,
+                    source
+                });
+                return record ? { ...record, name: name || record.name || channelId || url } : null;
+            },
+
+            _getDirectWatchChannelFromPlayer(routeKey) {
+                const response = getPlayerResponseGlobal();
+                const details = response?.videoDetails;
+                if (!details) return { channel: null, stale: false };
+                if (String(details.videoId || '') !== routeKey) return { channel: null, stale: true };
+                const microformat = response?.microformat?.playerMicroformatRenderer || {};
+                const channelId = String(details.channelId || '').trim();
+                const url = String(microformat.ownerProfileUrl || (channelId ? `/channel/${channelId}` : '')).trim();
+                return {
+                    channel: this._normalizeDirectWatchChannel({
+                        channelId,
+                        name: String(details.author || '').trim(),
+                        url,
+                        source: 'player-response'
+                    }),
+                    stale: false
+                };
+            },
+
+            _getDirectWatchChannelFromDom(routeKey, attempt = 0) {
+                if (!documentRef?.querySelector) return null;
+                const watchRoot = documentRef.querySelector('ytd-watch-flexy');
+                const rootVideoId = watchRoot?.getAttribute?.('video-id') || '';
+                if (rootVideoId && rootVideoId !== routeKey) return null;
+                // During SPA navigation YouTube briefly leaves the previous
+                // owner DOM mounted. Give the new route a short settle window
+                // when the watch root does not expose its current video ID.
+                if (!rootVideoId && attempt < 4) return null;
+                const root = watchRoot || documentRef;
+                const link = root.querySelector?.([
+                    'ytd-watch-metadata #owner a[href^="/@"]',
+                    'ytd-watch-metadata #owner a[href*="/channel/"]',
+                    'ytd-video-owner-renderer a[href^="/@"]',
+                    'ytd-video-owner-renderer a[href*="/channel/"]',
+                    '#owner-name a[href^="/@"]',
+                    '#owner-name a[href*="/channel/"]'
+                ].join(', '));
+                if (!link) return null;
+                const url = String(link.href || link.getAttribute?.('href') || '').trim();
+                const name = String(link.textContent || link.getAttribute?.('aria-label') || '').replace(/\s+/g, ' ').trim();
+                return this._normalizeDirectWatchChannel({ name, url, source: 'watch-dom' });
+            },
+
+            _resolveDirectWatchChannel(routeKey, attempt = 0) {
+                const playerResult = this._getDirectWatchChannelFromPlayer(routeKey);
+                if (playerResult.channel || playerResult.stale) return playerResult.channel;
+                return this._getDirectWatchChannelFromDom(routeKey, attempt);
+            },
+
+            _getDirectWatchVideo() {
+                return documentRef?.querySelector?.('video.html5-main-video, #movie_player video, video') || null;
+            },
+
+            _pauseDirectWatchPlayback() {
+                const video = this._getDirectWatchVideo();
+                if (video) {
+                    this._directWatchResumeAfterDecision = !video.paused && !video.ended;
+                    try { video.pause?.(); } catch (_) { /* reason: player teardown can race SPA navigation */ }
+                }
+                try { documentRef?.getElementById?.('movie_player')?.pauseVideo?.(); } catch (_) { /* reason: private player API is best-effort */ }
+            },
+
+            _resumeDirectWatchPlayback() {
+                if (!this._directWatchResumeAfterDecision) return;
+                this._directWatchResumeAfterDecision = false;
+                const player = documentRef?.getElementById?.('movie_player');
+                try {
+                    if (typeof player?.playVideo === 'function') player.playVideo();
+                    else {
+                        const playResult = this._getDirectWatchVideo()?.play?.();
+                        playResult?.catch?.(() => {});
+                    }
+                } catch (_) { /* reason: playback can be rejected without a fresh user gesture */ }
+            },
+
+            _installDirectWatchPlaybackGuard() {
+                if (!documentRef?.addEventListener || this._directWatchPlayHandler) return;
+                this._directWatchPlayHandler = event => {
+                    if (!this._directWatchDialog || event?.target?.tagName !== 'VIDEO') return;
+                    try { event.target.pause?.(); } catch (_) { /* reason: detached media element */ }
+                };
+                documentRef.addEventListener('play', this._directWatchPlayHandler, true);
+            },
+
+            _removeDirectWatchPlaybackGuard() {
+                if (this._directWatchPlayHandler) {
+                    documentRef?.removeEventListener?.('play', this._directWatchPlayHandler, true);
+                    this._directWatchPlayHandler = null;
+                }
+            },
+
+            _closeDirectWatchInterstitial({ restoreFocus = true } = {}) {
+                this._removeDirectWatchPlaybackGuard();
+                this._directWatchDialog?.remove?.();
+                this._directWatchDialog = null;
+                if (restoreFocus && this._directWatchPreviousFocus?.isConnected) {
+                    try { this._directWatchPreviousFocus.focus?.({ preventScroll: true }); } catch (_) { /* reason: focus restoration is best-effort */ }
+                }
+                this._directWatchPreviousFocus = null;
+            },
+
+            _handleDirectWatchDecision(action, channelInfo) {
+                if (action === 'allow-once') {
+                    this._directWatchAllowedRouteKey = this._directWatchRouteKey;
+                    this._closeDirectWatchInterstitial();
+                    this._resumeDirectWatchPlayback();
+                    return;
+                }
+                if (action === 'unblock') {
+                    this._removeBlockedChannel(channelInfo);
+                    this._closeDirectWatchInterstitial();
+                    this._resumeDirectWatchPlayback();
+                    return;
+                }
+                if (action === 'back') {
+                    this._directWatchDialog?.querySelectorAll?.('button').forEach(button => { button.disabled = true; });
+                    navigateBack();
+                }
+            },
+
+            _showDirectWatchInterstitial(channelInfo) {
+                if (!documentRef?.createElement || !documentRef.body || this._directWatchDialog) return;
+                this._pauseDirectWatchPlayback();
+                this._installDirectWatchPlaybackGuard();
+                this._directWatchPreviousFocus = documentRef.activeElement || null;
+
+                const overlay = documentRef.createElement('div');
+                overlay.className = 'ytkit-blocked-watch-overlay';
+                overlay.dataset.ytkitBlockedWatch = 'true';
+
+                const dialog = documentRef.createElement('section');
+                dialog.className = 'ytkit-blocked-watch-dialog';
+                dialog.setAttribute('role', 'alertdialog');
+                dialog.setAttribute('aria-modal', 'true');
+                dialog.setAttribute('aria-labelledby', 'ytkit-blocked-watch-title');
+                dialog.setAttribute('aria-describedby', 'ytkit-blocked-watch-description');
+
+                const eyebrow = documentRef.createElement('span');
+                eyebrow.className = 'ytkit-blocked-watch-eyebrow';
+                eyebrow.textContent = t('statBlocked', 'Blocked');
+
+                const title = documentRef.createElement('h2');
+                title.id = 'ytkit-blocked-watch-title';
+                title.textContent = t('blockedWatchTitle', 'Blocked channel');
+
+                const description = documentRef.createElement('p');
+                description.id = 'ytkit-blocked-watch-description';
+                description.textContent = t('blockedWatchDescription', 'This video is from a channel you blocked.');
+
+                const channel = documentRef.createElement('p');
+                channel.className = 'ytkit-blocked-watch-channel';
+                channel.textContent = channelInfo?.name || channelInfo?.handle || channelInfo?.channelId || t('blockedWatchUnknownChannel', 'Unknown channel');
+                channel.setAttribute('translate', 'no');
+
+                const actions = documentRef.createElement('div');
+                actions.className = 'ytkit-blocked-watch-actions';
+                const definitions = [
+                    ['back', t('blockedWatchBack', 'Back')],
+                    ['unblock', t('blockedWatchUnblock', 'Unblock')],
+                    ['allow-once', t('blockedWatchAllowOnce', 'Allow once')]
+                ];
+                for (const [action, label] of definitions) {
+                    const button = documentRef.createElement('button');
+                    button.type = 'button';
+                    button.dataset.action = action;
+                    button.className = `ytkit-blocked-watch-action ytkit-blocked-watch-action--${action}`;
+                    button.textContent = label;
+                    button.addEventListener('click', () => this._handleDirectWatchDecision(action, channelInfo));
+                    actions.appendChild(button);
+                }
+
+                dialog.appendChild(eyebrow);
+                dialog.appendChild(title);
+                dialog.appendChild(description);
+                dialog.appendChild(channel);
+                dialog.appendChild(actions);
+                overlay.appendChild(dialog);
+                overlay.addEventListener('keydown', event => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this._handleDirectWatchDecision('back', channelInfo);
+                        return;
+                    }
+                    if (event.key !== 'Tab') return;
+                    const buttons = [...dialog.querySelectorAll('button:not([disabled])')];
+                    if (!buttons.length) return;
+                    const first = buttons[0];
+                    const last = buttons[buttons.length - 1];
+                    if (event.shiftKey && documentRef.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && documentRef.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                });
+
+                documentRef.body.appendChild(overlay);
+                this._directWatchDialog = overlay;
+                dialog.querySelector?.('[data-action="back"]')?.focus?.({ preventScroll: true });
+            },
+
+            _clearDirectWatchEvaluation() {
+                this._directWatchEvaluationToken += 1;
+                if (this._directWatchTimer) {
+                    clearTimeoutFn(this._directWatchTimer);
+                    this._directWatchTimer = null;
+                }
+            },
+
+            _evaluateDirectWatchBlock() {
+                const routeKey = this._getDirectWatchRouteKey();
+                if (routeKey !== this._directWatchRouteKey) {
+                    this._clearDirectWatchEvaluation();
+                    this._closeDirectWatchInterstitial({ restoreFocus: false });
+                    this._directWatchAllowedRouteKey = null;
+                    this._directWatchRouteKey = routeKey;
+                    this._directWatchResumeAfterDecision = false;
+                } else {
+                    this._clearDirectWatchEvaluation();
+                }
+                if (!routeKey || routeKey === this._directWatchAllowedRouteKey) return;
+
+                const token = this._directWatchEvaluationToken;
+                const retry = (attempt = 0) => {
+                    if (token !== this._directWatchEvaluationToken || routeKey !== this._getDirectWatchRouteKey()) return;
+                    const channelInfo = this._resolveDirectWatchChannel(routeKey, attempt);
+                    if (channelInfo) {
+                        if (this._isChannelBlocked(channelInfo)) this._showDirectWatchInterstitial(channelInfo);
+                        else this._closeDirectWatchInterstitial();
+                        return;
+                    }
+                    if (attempt >= 31) return;
+                    this._directWatchTimer = setTimeoutFn(() => {
+                        this._directWatchTimer = null;
+                        retry(attempt + 1);
+                    }, 250);
+                };
+                retry();
             },
 
             _getCurrentScope(pathname = window.location.pathname) {
@@ -1452,8 +1735,90 @@
                     ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
                     ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity: 1; }
                     .ytkit-video-hidden { display: none !important; }
+                    .ytkit-blocked-watch-overlay {
+                        position: fixed;
+                        inset: 0;
+                        z-index: ${Z.BANNER};
+                        display: grid;
+                        place-items: center;
+                        padding: 24px;
+                        background: rgba(4, 7, 12, 0.82);
+                    }
+                    .ytkit-blocked-watch-dialog {
+                        width: min(520px, 100%);
+                        box-sizing: border-box;
+                        padding: 28px;
+                        border: 1px solid var(--ytkit-border-strong, rgba(255, 255, 255, 0.2));
+                        border-radius: 20px;
+                        color: var(--ytkit-text-primary, #f5f7fb);
+                        background: var(--ytkit-surface-elevated, #171b23);
+                        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+                    }
+                    .ytkit-blocked-watch-eyebrow {
+                        display: block;
+                        margin-bottom: 8px;
+                        color: var(--ytkit-danger, #ff6b6b);
+                        font: 700 12px/1.3 system-ui, sans-serif;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                    }
+                    .ytkit-blocked-watch-dialog h2 {
+                        margin: 0;
+                        font: 700 24px/1.25 system-ui, sans-serif;
+                    }
+                    .ytkit-blocked-watch-dialog > p {
+                        margin: 12px 0 0;
+                        color: var(--ytkit-text-secondary, #c1c7d0);
+                        font: 400 15px/1.55 system-ui, sans-serif;
+                    }
+                    .ytkit-blocked-watch-channel {
+                        overflow-wrap: anywhere;
+                        color: var(--ytkit-text-primary, #f5f7fb) !important;
+                        font-weight: 650 !important;
+                    }
+                    .ytkit-blocked-watch-actions {
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: flex-end;
+                        gap: 10px;
+                        margin-top: 24px;
+                    }
+                    .ytkit-blocked-watch-action {
+                        min-width: 96px;
+                        min-height: 44px;
+                        padding: 10px 16px;
+                        border: 1px solid var(--ytkit-border-strong, rgba(255, 255, 255, 0.2));
+                        border-radius: 10px;
+                        color: var(--ytkit-text-primary, #f5f7fb);
+                        background: var(--ytkit-surface-raised, #242a35);
+                        font: 650 14px/1.2 system-ui, sans-serif;
+                        cursor: pointer;
+                    }
+                    .ytkit-blocked-watch-action:hover { background: var(--ytkit-surface-hover, #303746); }
+                    .ytkit-blocked-watch-action:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
+                    .ytkit-blocked-watch-action--allow-once {
+                        border-color: transparent;
+                        color: var(--ytkit-accent-contrast, #111318);
+                        background: var(--ytkit-accent, #ffb454);
+                    }
+                    .ytkit-blocked-watch-action--allow-once:hover { background: var(--ytkit-accent-hover, #ffc678); }
+                    .ytkit-blocked-watch-action:disabled { cursor: wait; opacity: 0.65; }
+                    @media (max-width: 520px) {
+                        .ytkit-blocked-watch-overlay { padding: 16px; }
+                        .ytkit-blocked-watch-dialog { padding: 22px; }
+                        .ytkit-blocked-watch-actions { display: grid; }
+                    }
+                    @media (forced-colors: active) {
+                        .ytkit-blocked-watch-dialog,
+                        .ytkit-blocked-watch-action { border: 2px solid CanvasText; }
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                        .ytkit-blocked-watch-overlay,
+                        .ytkit-blocked-watch-dialog { animation: none !important; transition: none !important; }
+                    }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
+                this._evaluateDirectWatchBlock();
                 this._processAllVideos();
                 const selectors = this._VIDEO_SELECTORS;
 
@@ -1551,6 +1916,7 @@
                     try { this._predicateCache?.evaluator?.reset?.(); } catch (_) { /* reason: route-level predicate reset is best-effort */ }
                     this._processAllVideosDebounced(500);
                     checkPages();
+                    this._evaluateDirectWatchBlock();
                 });
                 checkPages();
 
@@ -1578,6 +1944,11 @@
                 this._observer?.disconnect();
                 this._clearBatchBuffer?.();
                 this._cancelBudgetedScans();
+                this._clearDirectWatchEvaluation();
+                this._closeDirectWatchInterstitial({ restoreFocus: false });
+                this._directWatchRouteKey = null;
+                this._directWatchAllowedRouteKey = null;
+                this._directWatchResumeAfterDecision = false;
                 this._restoreRemovedVideoNodes();
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                 if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
