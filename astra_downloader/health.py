@@ -1,4 +1,6 @@
-"""Import-safe health boundary during the owned-module migration."""
+"""Import-safe runtime health policy and compatibility boundary."""
+
+import re
 
 try:
     from ._compat import make_legacy_resolver
@@ -22,9 +24,120 @@ __all__ = (
     "validate_companion_update_binary", "probe_companion_update_binary",
     "read_last_installed_update_sha256", "record_last_installed_update_sha256",
     "schedule_companion_update_restart", "schedule_companion_process_exit",
+    "_compare_semver",
 )
 
-_resolve_legacy = make_legacy_resolver(__all__)
+PO_TOKEN_PROVIDER_PORT = 4416
+BGUTIL_POT_MIN_VERSION = "1.3.0"
+YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)
+DENO_MIN_VERSION = "2.3.0"
+NODE_MIN_VERSION = "22.0.0"
+
+_YOUTUBE_HOST_RE = re.compile(
+    r'^https?://(?:[^/]+\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)(?:/|$|\?)',
+    re.IGNORECASE,
+)
+
+
+def is_youtube_url(url):
+    """Return whether a URL points at a supported YouTube property."""
+    return bool(_YOUTUBE_HOST_RE.match(url or ''))
+
+
+def _compare_semver(a, b):
+    """Compare numeric release segments while conservatively ignoring suffixes."""
+    def parts(value):
+        if not isinstance(value, str):
+            return []
+        result = []
+        for chunk in value.strip().lstrip('vV').split('.'):
+            digits = ''
+            for character in chunk:
+                if not character.isdigit():
+                    break
+                digits += character
+            if not digits:
+                break
+            result.append(int(digits))
+            if digits != chunk:
+                break
+        return result
+
+    left, right = parts(a), parts(b)
+    length = max(len(left), len(right))
+    left += [0] * (length - len(left))
+    right += [0] * (length - len(right))
+    return -1 if left < right else 1 if left > right else 0
+
+
+def _parse_ytdlp_release_date(version_string):
+    """Parse a yt-dlp date release into a comparable date tuple."""
+    if not isinstance(version_string, str):
+        return None
+    match = re.match(r'(\d{4})\.(\d{1,2})\.(\d{1,2})', version_string.strip())
+    if not match:
+        return None
+    try:
+        year, month, day = (int(match.group(index)) for index in range(1, 4))
+    except (TypeError, ValueError):
+        return None
+    if not (1 <= month <= 12 and 1 <= day <= 31):
+        return None
+    return year, month, day
+
+
+def ytdlp_needs_external_runtime(version_string, cutoff=YTDLP_EXTERNAL_RUNTIME_CUTOFF):
+    """Return whether a yt-dlp release is new enough to require an external runtime."""
+    parsed = _parse_ytdlp_release_date(version_string)
+    return parsed is not None and parsed >= cutoff
+
+
+def build_javascript_runtime_args(readiness):
+    """Return explicit yt-dlp runtime selection for a verified capability probe."""
+    if not isinstance(readiness, dict):
+        return []
+    if readiness.get('supported') is not True or readiness.get('ejsReady') is not True:
+        return []
+    runtime = readiness.get('runtime')
+    path = readiness.get('path')
+    if runtime not in {'deno', 'node'} or not path:
+        return []
+    return ['--no-js-runtimes', '--js-runtimes', f'{runtime}:{path}']
+
+
+def build_youtube_extractor_args(url, po_token_provider=None,
+                                 default_provider_port=PO_TOKEN_PROVIDER_PORT):
+    """Build SABR and optional PO-token provider arguments for YouTube URLs."""
+    if not is_youtube_url(url):
+        return []
+    args = ['--extractor-args', 'youtube:formats=duplicate']
+    if po_token_provider and po_token_provider.get('ok'):
+        port = po_token_provider.get('port') or default_provider_port
+        args += [
+            '--extractor-args',
+            f'youtubepot-bgutilhttp:base_url=http://127.0.0.1:{port}',
+        ]
+    return args
+
+
+def parse_ffmpeg_major(version_string):
+    """Extract the numeric major from a canonical ffmpeg release string."""
+    if not version_string:
+        return None
+    match = re.match(r'(\d+)\.', str(version_string))
+    return int(match.group(1)) if match else None
+
+
+_OWNED_EXPORTS = {
+    "PO_TOKEN_PROVIDER_PORT", "BGUTIL_POT_MIN_VERSION",
+    "YTDLP_EXTERNAL_RUNTIME_CUTOFF", "DENO_MIN_VERSION", "NODE_MIN_VERSION",
+    "is_youtube_url", "_compare_semver", "_parse_ytdlp_release_date",
+    "ytdlp_needs_external_runtime", "build_javascript_runtime_args",
+    "build_youtube_extractor_args", "parse_ffmpeg_major",
+}
+_resolve_legacy = make_legacy_resolver(
+    name for name in __all__ if name not in _OWNED_EXPORTS
+)
 
 
 def __getattr__(name):

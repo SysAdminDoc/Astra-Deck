@@ -74,6 +74,13 @@ try:
         apply_download_failure_classification, build_video_format_args,
         classify_download_failure, download_error_payload, is_playlist_url,
     )
+    from .health import (
+        BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
+        PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
+        _compare_semver, _parse_ytdlp_release_date,
+        build_javascript_runtime_args, build_youtube_extractor_args,
+        is_youtube_url, parse_ffmpeg_major, ytdlp_needs_external_runtime,
+    )
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
     from config import (
@@ -93,6 +100,13 @@ except ImportError:  # Direct script / flat source-path compatibility.
         MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download,
         apply_download_failure_classification, build_video_format_args,
         classify_download_failure, download_error_payload, is_playlist_url,
+    )
+    from health import (
+        BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
+        PO_TOKEN_PROVIDER_PORT, YTDLP_EXTERNAL_RUNTIME_CUTOFF,
+        _compare_semver, _parse_ytdlp_release_date,
+        build_javascript_runtime_args, build_youtube_extractor_args,
+        is_youtube_url, parse_ffmpeg_major, ytdlp_needs_external_runtime,
     )
 
 # ══════════════════════════════════════════════════════════════
@@ -213,7 +227,6 @@ INTEGRATIONS_STAMP_VALUE = 'IntegrationsVersion'
 # Refs:
 #   https://github.com/Brainicism/bgutil-ytdlp-pot-provider
 #   https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
-PO_TOKEN_PROVIDER_PORT = 4416
 PO_TOKEN_PROVIDER_PROBE_TIMEOUT = 1.0
 _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
 # v1.5.0: minimum bgutil-ytdlp-pot-provider version that is
@@ -223,7 +236,6 @@ _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
 # work but the extension popup surfaces a notice asking the user to update.
 # Compare via the local _compare_semver helper — handles X.Y / X.Y.Z and
 # pre-release suffixes by truncating at the first non-numeric segment.
-BGUTIL_POT_MIN_VERSION = "1.3.0"
 
 # yt-dlp >= 2026.04 ships an `external n/sig solver` for YouTube
 # (upstream PR #14157). Without an installed JavaScript runtime — Deno is
@@ -237,9 +249,6 @@ BGUTIL_POT_MIN_VERSION = "1.3.0"
 # load-bearing — pinned conservatively at 2026.04.01 so newer-than-cutoff
 # yt-dlps are flagged; older ones (the in-field-stable pre-Deno line)
 # don't false-positive on a misconfigured PATH.
-YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)
-DENO_MIN_VERSION = "2.3.0"
-NODE_MIN_VERSION = "22.0.0"
 DENO_RUNTIME_PROBE_TIMEOUT = 1.5
 _DENO_RUNTIME_CACHE_TTL_SECONDS = 60
 JS_RUNTIME_CAPABILITY_MARKER = "ASTRA_EJS_RUNTIME_OK"
@@ -669,57 +678,6 @@ def get_ytdlp_version(force=False):
 _po_token_provider_cache = {'value': None, 'checked_at': 0.0}
 _PO_TOKEN_PROVIDER_CACHE_LOCK = threading.Lock()
 
-_YOUTUBE_HOST_RE = re.compile(
-    r'^https?://(?:[^/]+\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)(?:/|$|\?)',
-    re.IGNORECASE,
-)
-
-
-def is_youtube_url(url):
-    """True when ``url`` points at a YouTube property (watch / share / nocookie)."""
-    return bool(_YOUTUBE_HOST_RE.match(url or ''))
-
-
-def _compare_semver(a, b):
-    """Lightweight semver comparator for X.Y / X.Y.Z strings.
-
-    Returns -1, 0, 1. Pre-release / build suffixes drop the whole
-    suffixed chunk and stop the parse (so '1.3.1-rc.2' is treated as
-    '1.3.1' — pre-release sorts less-than the release proper, but in
-    practice we only compare *user-reported running version* to a
-    minimum-known-good, never to another pre-release, so treating
-    suffixed-1.3.1 == 1.3.1 is the conservative call).
-    Designed for the N14 stale-provider check; not a full semver impl.
-    """
-    def parts(s):
-        if not isinstance(s, str):
-            return []
-        out = []
-        for chunk in s.strip().lstrip('vV').split('.'):
-            digits = ''
-            for ch in chunk:
-                if ch.isdigit():
-                    digits += ch
-                else:
-                    break
-            if not digits:
-                break
-            out.append(int(digits))
-            # If the chunk had a non-digit tail (e.g. '1-rc' or '1+build'),
-            # stop the whole parse so suffix segments after the dot don't
-            # affect the comparison.
-            if digits != chunk:
-                break
-        return out
-    pa, pb = parts(a), parts(b)
-    n = max(len(pa), len(pb))
-    pa += [0] * (n - len(pa))
-    pb += [0] * (n - len(pb))
-    if pa < pb: return -1
-    if pa > pb: return 1
-    return 0
-
-
 def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT):
     """Best-effort detection of a running bgutil-ytdlp-pot-provider.
 
@@ -800,43 +758,6 @@ def reset_po_token_provider_cache():
 # evaluation for the bundled yt-dlp.exe.
 _deno_runtime_cache = {'value': None, 'checked_at': 0.0}
 _DENO_RUNTIME_CACHE_LOCK = threading.Lock()
-
-
-def _parse_ytdlp_release_date(version_string):
-    """Parse a yt-dlp version like ``2026.04.10`` into a ``(year, month, day)`` tuple.
-
-    Returns ``None`` for unparseable strings (post-format-change builds, git
-    SHAs, blank). The function is conservative — any failure produces None
-    and the call site treats None as "can't determine -> don't flag the
-    runtime as needed."
-    """
-    if not isinstance(version_string, str):
-        return None
-    # Strip any prefix (e.g. nightly tag) and any trailing build suffix.
-    m = re.match(r'(\d{4})\.(\d{1,2})\.(\d{1,2})', version_string.strip())
-    if not m:
-        return None
-    try:
-        year = int(m.group(1))
-        month = int(m.group(2))
-        day = int(m.group(3))
-        if not (1 <= month <= 12 and 1 <= day <= 31):
-            return None
-        return (year, month, day)
-    except (TypeError, ValueError):
-        return None
-
-
-def ytdlp_needs_external_runtime(version_string):
-    """True when the parsed version is at or past the
-    ``YTDLP_EXTERNAL_RUNTIME_CUTOFF``. Conservative on unparseable input:
-    returns False (don't false-positive a noisy banner on field installs
-    where get_ytdlp_version() returns an empty string because yt-dlp.exe
-    hasn't bootstrapped yet)."""
-    parsed = _parse_ytdlp_release_date(version_string)
-    if parsed is None:
-        return False
-    return parsed >= YTDLP_EXTERNAL_RUNTIME_CUTOFF
 
 
 class DenoProvisionError(RuntimeError):
@@ -1154,66 +1075,12 @@ def probe_deno_runtime(force=False, configured_runtime='auto'):
 probe_javascript_runtime = probe_deno_runtime
 
 
-def build_javascript_runtime_args(readiness):
-    """Return an explicit yt-dlp runtime selection for a verified probe."""
-    if not isinstance(readiness, dict):
-        return []
-    if readiness.get('supported') is not True or readiness.get('ejsReady') is not True:
-        return []
-    runtime = readiness.get('runtime')
-    path = readiness.get('path')
-    if runtime not in {'deno', 'node'} or not path:
-        return []
-    return ['--no-js-runtimes', '--js-runtimes', f'{runtime}:{path}']
-
-
 def reset_deno_runtime_cache():
     """Test hook + manual recheck path — clears the cached probe result."""
     with _DENO_RUNTIME_CACHE_LOCK:
         _deno_runtime_cache['value'] = None
         _deno_runtime_cache['checked_at'] = 0.0
         _deno_runtime_cache['preference'] = None
-
-
-def build_youtube_extractor_args(url, po_token_provider=None):
-    """Return yt-dlp ``--extractor-args`` pairs for YouTube URLs.
-
-    For non-YouTube URLs returns an empty list so the helper is safe to
-    splat unconditionally.
-
-    The args returned cover two distinct concerns:
-
-    1. SABR-aware format duplication (N2) — YouTube's ``web`` client no
-       longer ships playback URLs in ``adaptiveFormats`` for an increasing
-       share of videos; the SABR (UMP protobuf) handshake is the only path.
-       ``youtube:formats=duplicate`` asks yt-dlp to return both the HTTPS
-       and SABR format families when present. The format selector in
-       ``build_video_format_args`` then picks HTTPS by codec when offered
-       and falls through to SABR otherwise. Always emitted for YouTube
-       URLs regardless of provider state — it's a pure read on the
-       extractor and harmless when no SABR format exists.
-
-    2. PO Token plugin routing (N1) — when a bgutil-ytdlp-pot-provider HTTP
-       server is reachable, point the bgutil plugin at it via
-       ``youtubepot-bgutilhttp:base_url=...``. If the user has not installed
-       the yt-dlp plugin itself, the arg is harmlessly ignored.
-
-    NOTE: do NOT add ``player_client=...`` to the YouTube extractor args.
-    Specifying an explicit player client overrides yt-dlp's default client
-    selection, which handles ended live streams / VOD transitions correctly.
-    Forcing ``web`` or ``ios`` causes "This live event has ended" failures
-    that the default path avoids.
-    """
-    if not is_youtube_url(url):
-        return []
-    args = ['--extractor-args', 'youtube:formats=duplicate']
-    if po_token_provider and po_token_provider.get('ok'):
-        port = po_token_provider.get('port') or PO_TOKEN_PROVIDER_PORT
-        args += [
-            '--extractor-args',
-            f'youtubepot-bgutilhttp:base_url=http://127.0.0.1:{port}',
-        ]
-    return args
 
 
 def get_ffmpeg_version(force=False):
@@ -1246,29 +1113,6 @@ _FFMPEG_MIN_MAJOR = 7  # ffmpeg 8.x is current as of 2026; 7.x is the
 _ffmpeg_capabilities_cache = {'value': None, 'checked_at': 0.0}
 _FFMPEG_CAPABILITIES_LOCK = threading.Lock()
 _FFMPEG_CAPABILITIES_TTL_SECONDS = 3600
-
-
-def parse_ffmpeg_major(version_string):
-    """Extract the integer major version from an ffmpeg `-version` line.
-
-    Handles the common shapes:
-      ``ffmpeg version 8.1.1 …``  -> 8
-      ``ffmpeg version N-118574-gabc1234 …``  (git build) -> None
-      ``ffmpeg version 7.0-static …`` -> 7
-
-    Returns None when the version string can't be parsed cleanly, so
-    callers can degrade gracefully (no false alarms on git/snapshot
-    builds whose version is intentionally non-numeric).
-    """
-    if not version_string:
-        return None
-    m = re.match(r'(\d+)\.', str(version_string))
-    if not m:
-        return None
-    try:
-        return int(m.group(1))
-    except (TypeError, ValueError):
-        return None
 
 
 def check_ffmpeg_capabilities(force=False):
