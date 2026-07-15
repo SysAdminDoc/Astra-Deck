@@ -26,6 +26,7 @@ const earlyCss = read('extension', 'early.css');
 const ytkitSource = read('extension', 'ytkit.js');
 const downloadUiSource = read('extension', 'features', 'download-ui', 'index.js');
 const settingsPanelModuleSource = read('extension', 'features', 'settings-panel', 'index.js');
+const settingsVisualSystemSource = read('extension', 'core', 'settings-visual-system.js');
 const settingsOverlaySmokeSource = read('scripts', 'smoke-settings-overlay.js');
 const userscriptSource = read('YTKit.user.js');
 const defaultSettings = JSON.parse(read('extension', 'default-settings.json'));
@@ -208,13 +209,12 @@ test('settings close tooltip avoids shortcut copy in every locale', () => {
     }
 });
 
-test('settings modal premium refresh locks the desktop shell and row controls', () => {
-    assert.ok(ytkitSource.includes('Settings modal premium refresh'),
-        'settings modal must carry the later premium-refresh override layer');
-    assert.ok(ytkitSource.includes('Settings command-center concept parity'),
-        'settings modal must carry the command-center concept parity override layer');
-    assert.ok(ytkitSource.includes('Settings executive command-deck mockup parity'),
-        'settings modal must carry the imagegen command-deck mockup parity override layer');
+test('settings command-deck shell contracts live in the DOM builders and the v3 visual system', () => {
+    // The stacked "premium refresh" / "command-center parity" / "mockup
+    // parity" / "correction layer" !important sheets were deleted from
+    // ytkit.js; extension/core/settings-visual-system.js (v3) is the single
+    // cascade source of truth on top of the injectPanelStyles() base sheets.
+    // DOM contracts stay pinned on the builders; cascade contracts moved to v3.
     assert.ok(settingsPanelModuleSource.includes("searchContainer.classList.add('ytkit-command-search')"),
         'extension settings search must live in the top command bar like the mockup');
     assert.ok(settingsPanelModuleSource.includes("footerActions.className = 'ytkit-action-stack ytkit-footer-actions'"),
@@ -227,8 +227,10 @@ test('settings modal premium refresh locks the desktop shell and row controls', 
         'extension settings module must render the mockup-style status hero in the inspector rail');
     assert.ok(ytkitSource.includes("rail.className = 'ytkit-insights'"),
         'extension settings monolith fallback must render the premium right-side insights rail');
-    assert.ok(ytkitSource.includes('.ytkit-status-hero-icon'),
+    assert.ok(ytkitSource.includes("statusHeroIcon.className = 'ytkit-status-hero-icon'"),
         'settings inspector status hero must carry the green operational badge from the mockup');
+    assert.ok(settingsVisualSystemSource.includes('.ytkit-status-hero-icon'),
+        'v3 visual system must style the status hero operational badge');
     assert.ok(settingsPanelModuleSource.includes("stateSpan.className = 'ytkit-nav-state'"),
         'extension settings module must render nav completion indicators');
     assert.ok(ytkitSource.includes("stateSpan.className = 'ytkit-nav-state'"),
@@ -241,42 +243,17 @@ test('settings modal premium refresh locks the desktop shell and row controls', 
         'extension settings module must render the expanded recent activity rows');
     assert.ok(ytkitSource.includes("['Last import', 'ytkit-insight-last-import', 'Not yet']"),
         'extension settings monolith fallback must render the expanded recent activity rows');
-    assert.ok(ytkitSource.includes('top: 20px !important;'),
-        'command-center search adornments must stay anchored inside the search field');
-    assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-action-stack .ytkit-btn-primary'),
-        'light-theme sync/export actions must keep readable premium button styling');
-    assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-reset-group-btn'),
-        'light-theme pane reset controls must keep readable premium button styling');
-    assert.ok(ytkitSource.includes('grid-template-columns: 252px minmax(0, 1fr) 286px !important;'),
-        'desktop settings body must match the command-deck nav/content/inspector proportions');
-    assert.ok(ytkitSource.includes('border: 1px solid rgba(208,220,236,0.16) !important;'),
-        'command-deck shell must keep the quieter neutral premium frame from the v2 mockup');
-    assert.ok(ytkitSource.includes('.ytkit-footer-actions .ytkit-btn-primary'),
-        'bottom Close action must use the premium filled red button treatment');
-    assert.ok(ytkitSource.includes('grid-template-columns: 300px minmax(0, 1fr) 288px !important;'),
-        'wide settings body must stay a composed sidebar/content/insights grid');
-    assert.ok(ytkitSource.includes('grid-template-rows: auto auto auto !important;'),
-        'mobile settings body must scroll vertically through rail, content, and insights without hiding controls');
-    assert.ok(ytkitSource.includes('scroll-snap-type: x proximity !important;'),
-        'mobile settings navigation must stay a compact horizontal section rail');
-    assert.ok(ytkitSource.includes('z-index: 2147483646 !important;'),
-        'settings panel must sit above YouTube player chrome and ad overlays');
-    assert.ok(ytkitSource.includes('grid-template-columns: minmax(0, 1fr) minmax(280px, 36%) !important;'),
-        'select/range/color rows must keep controls aligned in a right column on desktop');
-    assert.ok(ytkitSource.includes('.ytkit-header-live'),
-        'premium header must expose live-apply status as a first-class control');
-    assert.ok(ytkitSource.includes('.ytkit-insights'),
-        'premium refresh CSS must style the right-side insights rail');
-    assert.match(ytkitSource, /\.ytkit-search-input \{[\s\S]*?padding:\s*0 68px 0 40px !important;/,
-        'search input must reserve exact space for icon and compact status chip');
-    assert.match(ytkitSource, /\.ytkit-select-shell::after \{[\s\S]*?border-right:\s*2px solid/,
-        'select shells must render a custom chevron instead of raw browser chrome');
+    // Cascade contracts inherited from the folded layers, now owned by v3.
+    assert.ok(settingsVisualSystemSource.includes('z-index: 2147483646 !important;'),
+        'v3 must keep the settings panel above YouTube player chrome and ad overlays');
+    assert.match(settingsVisualSystemSource, /#ytkit-overlay \{[\s\S]*?z-index:\s*2147483645 !important;/,
+        'v3 must raise the backdrop with the panel');
+    assert.ok(settingsVisualSystemSource.includes('.ytkit-header-live'),
+        'v3 must style the live-apply status as a first-class header control');
+    assert.ok(settingsVisualSystemSource.includes('.ytkit-insights'),
+        'v3 must style the right-side insights rail');
     assert.match(ytkitSource, /\.ytkit-select-shell-chrome \{[\s\S]*?display:\s*none !important;/,
-        'the decorative select chrome span must be hidden by the refresh layer');
-    assert.ok(ytkitSource.includes('html:not([dark]) .ytkit-pin-btn'),
-        'new settings controls must have a light-theme override path');
-    assert.ok(ytkitSource.includes('@media (max-width: 1320px) and (min-width: 901px)'),
-        'tablet-width desktop should retain the composed settings shell before mobile stacking');
+        'the decorative select chrome span must stay hidden by the base sheet');
 });
 
 test('every dark-only inline widget family has a light-theme override block', () => {
@@ -456,37 +433,22 @@ test('feature preview tooltips trigger on focus-within and mirror into aria-desc
         'data-preview must be mirrored into aria-description for assistive tech');
 });
 
-// ── 10. Premium command-deck parity corrections ──
+// ── 10. Mobile settings bounds (render smoke) ──
 
-test('settings command-deck correction targets the live grid and switch DOM', () => {
-    const start = ytkitSource.indexOf('/* Premium command-deck correction layer.');
-    assert.ok(start > -1, 'the final command-deck correction layer must exist');
-    const block = ytkitSource.slice(start, start + 15000);
-    assert.match(block, /\.ytkit-features-grid\s*\{/,
-        'the correction layer must target the live .ytkit-features-grid class');
-    assert.match(block, /\.ytkit-switch \.ytkit-switch-track\s*\{/,
-        'the correction layer must style the rendered switch track');
-    assert.match(block, /\.ytkit-switch \.ytkit-switch-thumb\s*\{/,
-        'the correction layer must style the rendered switch thumb');
-    assert.match(block, /\.ytkit-panel-status\[data-tone="warn"\]::before/,
-        'warning status must have a tone-specific icon treatment');
-    assert.match(block, /\.ytkit-panel-status\[data-tone="error"\]::after/,
-        'error status must not retain saved-state copy');
-});
-
-test('settings command-deck keeps mobile navigation and footer bounded', () => {
-    const start = ytkitSource.indexOf('/* Premium command-deck correction layer.');
-    const block = ytkitSource.slice(start, start + 15000);
-    assert.match(block, /height:\s*74px !important;[\s\S]*?min-height:\s*74px !important;/,
-        'mobile sidebar must replace the inherited 156px slab with a bounded rail');
-    assert.match(block, /\.ytkit-footer-actions\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,/,
-        'mobile footer actions must remain a compact two-column grid');
+test('render smoke keeps mobile navigation and footer bounded', () => {
+    // The "Premium command-deck correction layer" that once carried these
+    // mobile fixes in ytkit.js is gone; v3 owns the cascade and the render
+    // smoke is the behavioral gate.
     assert.match(settingsOverlaySmokeSource, /--fallback-only/,
         'render smoke must expose a fallback-only mode');
     assert.match(settingsOverlaySmokeSource, /mobile footer consumes/,
         'render smoke must fail oversized mobile footers');
     assert.match(settingsOverlaySmokeSource, /mobile navigation consumes/,
         'render smoke must fail oversized mobile navigation');
+    assert.match(settingsOverlaySmokeSource, /mobile navigation target is clipped/,
+        'render smoke must fail clipped mobile navigation targets');
+    assert.match(settingsVisualSystemSource, /grid-template-columns:\s*none !important;/,
+        'v3 mobile nav rail must neutralize the base sheet grid template so buttons keep their tap width');
 });
 
 test('settings command search mirrors icon and actions without RTL overlap', () => {
