@@ -36,9 +36,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 - [ ] P3 — Localize the Watch Later Workbench and reaction sender surfaces
   Why: both shipped fully hardcoded-English (panel labels, placeholders, sort options, toasts) and the literals were baselined into scripts/i18n-ui-copy-baseline.json; the live-chat module does not even receive t(). Route through locale keys and shrink the ratchet baseline.
   Where: extension/ytkit.js (watchLaterWorkbench ~32535-32830), extension/features/live-chat/index.js (reaction panel ~301-429)
-- [ ] P3 — Live-chat English-only structural fallbacks need browser-gated verification
-  Why: the popout-hide selector matches aria-label="Popout chat" and one tooltip test matches an English sentence; both degrade silently on non-English UI. Needs live-DOM verification of stable structural hooks before changing (browser-gated).
-  Where: extension/features/live-chat/index.js (~20, ~146)
 - [ ] P3 — New chat/workbench surfaces are hardcoded dark and use physical left/right properties
   Why: the parent-page chat shell, reaction panel, and workbench button clash with light YouTube (siblings use --yt-spec-* vars), and the live-chat message row (menu right-pinned, avatar left-pinned) is visibly broken in RTL (ar ships). Migrate to theme vars and logical properties (padding-inline, inset-inline-*). The settings-panel v3 layer's physical properties were converted 2026-07-15; the live-chat/workbench surfaces remain (edit premiumLiveChat in ytkit.js then run scripts/generate-live-chat-css.js).
   Where: extension/live-chat.css (generated), extension/ytkit.js (premiumLiveChat source, workbench CSS)
