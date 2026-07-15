@@ -145,10 +145,10 @@ test('_sanitizeFilename strips fs-unsafe chars and clamps length', () => {
     assert.ok(svc._sanitizeFilename('x'.repeat(200)).length <= 120);
 });
 
-test('manifest.json loads core/transcript-service.js BEFORE ytkit.js in both content_script blocks', () => {
+test('manifest.json loads core/transcript-service.js BEFORE every ytkit.js entry', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const isoBlocks = manifest.content_scripts.filter(b => b.world === 'ISOLATED');
-    assert.ok(isoBlocks.length >= 2, 'expected at least two ISOLATED content_script entries');
+    const isoBlocks = manifest.content_scripts.filter(b => b.js?.includes('ytkit.js'));
+    assert.ok(isoBlocks.length >= 1, 'expected a ytkit.js content_script entry');
     for (const block of isoBlocks) {
         const idxTranscript = block.js.indexOf('core/transcript-service.js');
         const idxYtkit = block.js.indexOf('ytkit.js');

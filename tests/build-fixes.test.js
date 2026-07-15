@@ -8,7 +8,7 @@
 //   5. check-contrast rejects non-#rrggbb input.
 //   6. check-versions rejects an empty --tag value.
 //   7. Staging skip-lists exclude key material and logs.
-//   8. ISOLATED content_scripts blocks stay in js-array parity.
+//   8. The live-chat ISOLATED entry remains scope-minimal.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -27,7 +27,7 @@ function runNodeCommand(args) {
     });
 }
 
-test('ISOLATED content_scripts blocks declare deep-equal js bundles', () => {
+test('ISOLATED content_scripts blocks keep normal pages and live chat isolated', () => {
     const manifest = JSON.parse(fs.readFileSync(
         path.join(REPO_ROOT, 'extension', 'manifest.json'), 'utf8'
     ));
@@ -38,8 +38,13 @@ test('ISOLATED content_scripts blocks declare deep-equal js bundles', () => {
     );
     assert.equal(isolatedJsBlocks.length, 2,
         'expected exactly two ISOLATED content_scripts blocks with js bundles');
-    assert.deepEqual(isolatedJsBlocks[0].js, isolatedJsBlocks[1].js,
-        'live_chat ISOLATED bundle must match the main-pages bundle');
+    const normal = isolatedJsBlocks.find((block) => block.js.includes('ytkit.js'));
+    const chat = isolatedJsBlocks.find((block) => block.js.includes('live-chat.js'));
+    assert.ok(normal, 'normal pages must retain the full ytkit.js entry');
+    assert.ok(chat, 'live chat must use the dedicated entry');
+    assert.ok(!chat.js.includes('ytkit.js'), 'live chat must not load the normal-page monolith');
+    assert.ok(chat.js.length < normal.js.length / 4,
+        'live-chat script count must remain materially below the normal-page entry');
 });
 
 test('build-extension shouldStageEntry refuses key, token, and log files', () => {

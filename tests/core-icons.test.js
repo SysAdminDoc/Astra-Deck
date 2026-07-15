@@ -104,11 +104,10 @@ test('createSVG honors options.fill / options.stroke = false', () => {
     assert.equal(svg2._attrs.stroke, 'currentColor');
 });
 
-test('manifest.json loads core/icons.js BEFORE ytkit.js in every ISOLATED entry', () => {
+test('manifest.json loads core/icons.js BEFORE every ytkit.js entry', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const isoBlocks = manifest.content_scripts.filter(b => b.world === 'ISOLATED');
-    assert.ok(isoBlocks.length >= 2,
-        'expected at least two ISOLATED content_script entries');
+    const isoBlocks = manifest.content_scripts.filter(b => b.js?.includes('ytkit.js'));
+    assert.ok(isoBlocks.length >= 1, 'expected a ytkit.js content_script entry');
     for (const block of isoBlocks) {
         const idxIcons = block.js.indexOf('core/icons.js');
         const idxYtkit = block.js.indexOf('ytkit.js');

@@ -47,7 +47,7 @@ test('text-metrics loads before ytkit.js in the manifest content scripts', () =>
     const manifest = JSON.parse(
         fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8')
     );
-    for (const block of manifest.content_scripts.filter((b) => b.world === 'ISOLATED' || !b.world)) {
+    for (const block of manifest.content_scripts.filter((b) => b.js?.includes('ytkit.js'))) {
         const scripts = block.js || [];
         const idxYtkit = scripts.indexOf('ytkit.js');
         if (idxYtkit === -1) continue;
