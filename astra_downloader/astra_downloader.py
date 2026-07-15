@@ -56,8 +56,20 @@ except ImportError as exc:
 
 try:
     from .routes import RateLimiter, _ServerAdapter, _build_wsgi_server
+    from .config import (
+        DOWNLOAD_REQUEST_ALLOWED_FIELDS, DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
+        clamp_int, clean_path_text, clean_text, coerce_bool, normalize_proxy,
+        normalize_rate_limit, normalize_sublangs, normalize_url,
+        validate_download_request_body,
+    )
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import RateLimiter, _ServerAdapter, _build_wsgi_server
+    from config import (
+        DOWNLOAD_REQUEST_ALLOWED_FIELDS, DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
+        clamp_int, clean_path_text, clean_text, coerce_bool, normalize_proxy,
+        normalize_rate_limit, normalize_sublangs, normalize_url,
+        validate_download_request_body,
+    )
 
 # ══════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -291,29 +303,6 @@ LOG_MAX_BYTES = 1024 * 1024
 _LOG_LOCK = threading.Lock()
 _LOG_RING_MAX = 20
 _log_ring = __import__('collections').deque(maxlen=_LOG_RING_MAX)
-DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
-    'url',
-    'audioOnly',
-    'format',
-    'quality',
-    'outputDir',
-    'title',
-    'referer',
-    'cookies',
-})
-DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
-    'args',
-    'argv',
-    'flags',
-    'extraArgs',
-    'extractorArgs',
-    'postprocessorArgs',
-    'postprocessor_args',
-    'externalDownloaderArgs',
-    'ytDlpArgs',
-    'ytdlpArgs',
-    'yt_dlp_args',
-})
 YTDLP_FORBIDDEN_LINK_FLAGS = frozenset({
     '--write-link',
     '--write-url-link',
@@ -2380,19 +2369,6 @@ def load_json_file(path, fallback):
         return fallback
 
 
-def clean_text(value, default="", max_len=MAX_TEXT_FIELD):
-    if value is None:
-        return default
-    value = CONTROL_CHARS_RE.sub("", str(value)).strip()
-    if len(value) > max_len:
-        return value[:max_len].rstrip()
-    return value
-
-
-def clean_path_text(value):
-    return clean_text(value, "", MAX_PATH_FIELD)
-
-
 def normalize_long_text(value, default="", max_len=MAX_TEXT_FIELD):
     if value is None:
         return default, False
@@ -2404,82 +2380,6 @@ def normalize_long_text(value, default="", max_len=MAX_TEXT_FIELD):
 
 def ps_single_quote(value):
     return "'" + str(value).replace("'", "''") + "'"
-
-
-def coerce_bool(value, default=False):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered in ("1", "true", "yes", "on"):
-            return True
-        if lowered in ("0", "false", "no", "off"):
-            return False
-    return default
-
-
-def normalize_rate_limit(value):
-    value = clean_text(value, "", 32).upper()
-    return value if re.fullmatch(r'\d+[KMG]?', value) else ""
-
-
-def normalize_proxy(value):
-    value = clean_text(value, "", 512)
-    if not value:
-        return ""
-    parsed = urlparse(value)
-    if parsed.scheme.lower() in {"http", "https", "socks", "socks4", "socks4a", "socks5", "socks5h"} and parsed.netloc:
-        return value
-    return ""
-
-
-def normalize_sublangs(value):
-    value = clean_text(value, "en", 80)
-    value = re.sub(r'[^a-zA-Z0-9,\-]', '', value)
-    return value or "en"
-
-
-def normalize_url(value):
-    url, too_long = normalize_long_text(value, "", 4096)
-    if too_long:
-        return None, "URL is too long to download safely."
-    if not url or any(ch.isspace() for ch in url):
-        return None, "Enter a valid http or https URL."
-    parsed = urlparse(url)
-    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
-        return None, "Enter a valid http or https URL."
-    return url, None
-
-
-def validate_download_request_body(body):
-    """Validate the client-owned /download wire fields.
-
-    yt-dlp argv is intentionally built only from reviewed server-side config,
-    normalized URL/output fields, and fixed helper functions. If a future
-    extension feature tries to send arbitrary flags, reject at the Flask
-    boundary before Deno checks, cookie writes, queueing, or subprocess setup.
-    """
-    if not isinstance(body, dict) or not body.get('url'):
-        return None, "Missing download URL.", None
-
-    keys = {str(key) for key in body.keys()}
-    forbidden = sorted(keys & DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS)
-    if forbidden:
-        return (
-            None,
-            "Client-supplied yt-dlp flags are not allowed. The companion builds yt-dlp arguments server-side.",
-            "unsupported-ytdlp-flags",
-        )
-
-    unknown = sorted(keys - DOWNLOAD_REQUEST_ALLOWED_FIELDS)
-    if unknown:
-        return (
-            None,
-            "Unsupported /download field(s): {}.".format(", ".join(unknown)),
-            "unsupported-download-fields",
-        )
-
-    return body, None, None
 
 
 def normalize_output_dir(value, default_dir=None, allowed_roots=None):
@@ -6018,14 +5918,6 @@ def format_duration(seconds):
     if mins:
         return f"{mins}m {secs}s"
     return f"{secs}s"
-
-
-def clamp_int(value, default, minimum, maximum):
-    try:
-        parsed = int(value)
-    except (TypeError, ValueError):
-        parsed = default
-    return max(minimum, min(maximum, parsed))
 
 
 def make_empty_state(title, body, action_text=None, action=None):
