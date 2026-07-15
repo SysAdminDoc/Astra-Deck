@@ -266,12 +266,15 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         source = Path(ad.__file__).read_text(encoding="utf-8")
         gui_source = Path(ad.__file__).with_name("gui.py").read_text(encoding="utf-8")
         probe_source = inspect.getsource(ad.ReadinessProbe.run)
+        probe_wiring_source = inspect.getsource(ad.ReadinessProbe.__init__)
         download_card_source = inspect.getsource(ad.MainWindow._download_card)
         self.assertIn("#ff5f4b", ad.STYLESHEET)
         self.assertIn('QFrame[class="readiness"]', ad.STYLESHEET)
         self.assertIn('QLabel[class="errorCallout"]', ad.STYLESHEET)
-        self.assertIn("probe_javascript_runtime", probe_source)
-        self.assertIn("probe_po_token_provider", probe_source)
+        self.assertIn("self._runtime_probe", probe_source)
+        self.assertIn("self._provider_probe", probe_source)
+        self.assertIn("probe_javascript_runtime", probe_wiring_source)
+        self.assertIn("probe_po_token_provider", probe_wiring_source)
         self.assertIn("self.readiness_worker.moveToThread", source)
         self.assertIn("dl.error_advice", download_card_source)
         renderer_path = Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py"
@@ -1394,6 +1397,7 @@ for forbidden in (
         self.assertIs(gui.make_label, ad.make_label)
         self.assertIs(gui.make_empty_state, ad.make_empty_state)
         self.assertIs(gui.human_status, ad.human_status)
+        self.assertTrue(issubclass(ad.ReadinessProbe, gui.ReadinessProbe))
 
     def test_gui_boundary_imports_pyqt_without_creating_application(self):
         script = r'''

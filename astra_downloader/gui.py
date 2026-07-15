@@ -1,6 +1,6 @@
 """PyQt presentation helpers and lazy legacy GUI compatibility boundary."""
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QObject, Qt, pyqtSignal
 from PyQt6.QtWidgets import QLabel, QPushButton, QFrame, QVBoxLayout
 
 try:
@@ -17,6 +17,7 @@ __all__ = (
     "spawn_delayed_install_dir_removal", "check_single_instance", "main",
     "make_status_badge", "download_status_tone", "human_status",
     "format_duration",
+    "ReadinessProbe",
 )
 
 
@@ -139,10 +140,43 @@ def make_stat(label_text, value_text="0", hint_text=""):
     return frame, value
 
 
+class ReadinessProbe(QObject):
+    """Collect injected toolchain health away from the GUI thread."""
+
+    completed = pyqtSignal(dict)
+
+    def __init__(self, configured_runtime='auto', *, runtime_probe,
+                 provider_probe, ytdlp_version, ffmpeg_version, logger):
+        super().__init__()
+        self.configured_runtime = configured_runtime
+        self._runtime_probe = runtime_probe
+        self._provider_probe = provider_probe
+        self._ytdlp_version = ytdlp_version
+        self._ffmpeg_version = ffmpeg_version
+        self._logger = logger
+
+    def run(self):
+        try:
+            runtime = self._runtime_probe(configured_runtime=self.configured_runtime)
+            provider = self._provider_probe()
+            payload = {
+                "ytDlp": self._ytdlp_version() or "",
+                "ffmpeg": self._ffmpeg_version() or "",
+                "runtime": runtime or {},
+                "deno": runtime or {},
+                "provider": provider or {},
+            }
+        except Exception as error:
+            self._logger(f"Readiness probe failed: {error}")
+            payload = {"error": str(error)}
+        self.completed.emit(payload)
+
+
 _OWNED_EXPORTS = {
     "repolish", "make_label", "make_section_label", "make_divider",
     "make_card", "make_status_badge", "download_status_tone",
     "human_status", "format_duration", "make_empty_state", "make_stat",
+    "ReadinessProbe",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS
