@@ -68,13 +68,18 @@ try:
         validate_download_request_body,
     )
     from .download import (
-        DOWNLOAD_ACTIVE_STATES, DOWNLOAD_FAILURE_RECOVERY,
+        ALLOWED_COOKIE_DOMAINS, DOWNLOAD_ACTIVE_STATES, DOWNLOAD_FAILURE_RECOVERY,
         DOWNLOAD_PENDING_STATES, DOWNLOAD_RETRYABLE_ERROR_CODES,
         DOWNLOAD_RUNNING_STATES, DOWNLOAD_STALL_TIMEOUT_SECONDS,
         DOWNLOAD_TERMINAL_STATES, DOWNLOAD_WATCHDOG_POLL_SECONDS,
         MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download,
         apply_download_failure_classification, build_video_format_args,
-        classify_download_failure, download_error_payload, is_playlist_url,
+        build_subprocess_env as _owned_build_subprocess_env,
+        classify_download_failure,
+        cleanup_stale_cookie_jars as _owned_cleanup_stale_cookie_jars,
+        download_error_payload, is_playlist_url,
+        terminate_process_tree as _owned_terminate_process_tree,
+        write_cookies_netscape as _owned_write_cookies_netscape,
     )
     from .health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
@@ -97,13 +102,18 @@ except ImportError:  # Direct script / flat source-path compatibility.
         validate_download_request_body,
     )
     from download import (
-        DOWNLOAD_ACTIVE_STATES, DOWNLOAD_FAILURE_RECOVERY,
+        ALLOWED_COOKIE_DOMAINS, DOWNLOAD_ACTIVE_STATES, DOWNLOAD_FAILURE_RECOVERY,
         DOWNLOAD_PENDING_STATES, DOWNLOAD_RETRYABLE_ERROR_CODES,
         DOWNLOAD_RUNNING_STATES, DOWNLOAD_STALL_TIMEOUT_SECONDS,
         DOWNLOAD_TERMINAL_STATES, DOWNLOAD_WATCHDOG_POLL_SECONDS,
         MAX_CONCURRENT, MAX_QUEUED_TOTAL, Download,
         apply_download_failure_classification, build_video_format_args,
-        classify_download_failure, download_error_payload, is_playlist_url,
+        build_subprocess_env as _owned_build_subprocess_env,
+        classify_download_failure,
+        cleanup_stale_cookie_jars as _owned_cleanup_stale_cookie_jars,
+        download_error_payload, is_playlist_url,
+        terminate_process_tree as _owned_terminate_process_tree,
+        write_cookies_netscape as _owned_write_cookies_netscape,
     )
     from health import (
         BGUTIL_POT_MIN_VERSION, DENO_MIN_VERSION, NODE_MIN_VERSION,
@@ -583,24 +593,11 @@ def verify_file_sha256(path, expected_hex):
 
 
 def cleanup_stale_cookie_jars(older_than_seconds=300):
-    """Sweep orphan .cookies.{id}.txt files left behind by a crash.
-
-    Cookie jars normally clean up in the download's finally block. When the
-    server is killed mid-download (power loss, taskkill /F), session cookies
-    leak into INSTALL_DIR. This sweep runs on server start.
-    """
-    try:
-        now = time.time()
-        for entry in INSTALL_DIR.glob('.cookies.*.txt'):
-            try:
-                if now - entry.stat().st_mtime > older_than_seconds:
-                    entry.unlink()
-            except Exception:
-                # reason: filesystem churn; we'll try again next start.
-                pass
-    except Exception:
-        # reason: install dir unreadable — nothing actionable at this level.
-        pass
+    return _owned_cleanup_stale_cookie_jars(
+        INSTALL_DIR,
+        older_than_seconds=older_than_seconds,
+        clock=time.time,
+    )
 
 
 # ── v1.2.0: cached version strings for /health ──
@@ -2091,120 +2088,12 @@ def ps_single_quote(value):
     return "'" + str(value).replace("'", "''") + "'"
 
 
-def _netscape_bool(value):
-    return "TRUE" if value else "FALSE"
-
-
-def _sanitize_cookie_field(value, max_len=4096):
-    """Strip whitespace, tabs, and control chars — Netscape format is tab-separated."""
-    if value is None:
-        return ""
-    value = CONTROL_CHARS_RE.sub("", str(value))
-    # Netscape cookie format is tab-delimited; any internal tab or newline
-    # corrupts the file. Spaces and semicolons are fine in values.
-    value = value.replace("\t", " ").replace("\r", " ").replace("\n", " ").strip()
-    if len(value) > max_len:
-        value = value[:max_len]
-    return value
-
-
-ALLOWED_COOKIE_DOMAINS = frozenset({
-    ".youtube.com", "youtube.com",
-    ".www.youtube.com", "www.youtube.com",
-    ".m.youtube.com", "m.youtube.com",
-    ".music.youtube.com", "music.youtube.com",
-    ".youtube-nocookie.com", "youtube-nocookie.com",
-    ".www.youtube-nocookie.com", "www.youtube-nocookie.com",
-    ".youtu.be", "youtu.be",
-    ".google.com", "google.com",
-    ".accounts.google.com", "accounts.google.com",
-})
-
-
-def _is_allowed_cookie_domain(domain):
-    if not domain:
-        return False
-    d = domain.lower().strip()
-    return d in ALLOWED_COOKIE_DOMAINS or any(
-        d.endswith(allowed) for allowed in ALLOWED_COOKIE_DOMAINS if allowed.startswith(".")
-    )
-
-
 def write_cookies_netscape(cookies, target_path):
-    """
-    Persist browser-supplied cookies in the Netscape cookies.txt format
-    consumed by yt-dlp's --cookies flag. Returns the path on success, None if
-    the input list is empty or every entry is malformed. Intentionally
-    defensive: the extension's cookie bridge pushes raw objects and a single
-    malformed entry should not poison the whole file.
-    """
-    if not isinstance(cookies, list) or not cookies:
-        return None
-    target_path = Path(target_path)
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    lines = [
-        "# Netscape HTTP Cookie File",
-        "# Auto-generated by Astra Downloader — do not edit",
-        "",
-    ]
-    emitted = 0
-    for entry in cookies:
-        if not isinstance(entry, dict):
-            continue
-        name = _sanitize_cookie_field(entry.get("name"), 256)
-        if not name:
-            continue
-        domain = _sanitize_cookie_field(entry.get("domain"), 256)
-        if not domain or not _is_allowed_cookie_domain(domain):
-            continue
-        value = _sanitize_cookie_field(entry.get("value"), 4096)
-        path_field = _sanitize_cookie_field(entry.get("path"), 512) or "/"
-        secure = bool(entry.get("secure"))
-        http_only = bool(entry.get("httpOnly"))
-        # Session cookies arrive as 0 (missing expirationDate from Chrome).
-        # Treat 0 as "session" per Netscape format.
-        try:
-            raw_expiry = entry.get("expirationDate")
-            expiry = int(float(raw_expiry)) if raw_expiry not in (None, "") else 0
-            if expiry < 0:
-                expiry = 0
-        except (TypeError, ValueError):
-            expiry = 0
-        include_subdomains = domain.startswith(".")
-        prefix = "#HttpOnly_" if http_only else ""
-        lines.append(
-            f"{prefix}{domain}\t{_netscape_bool(include_subdomains)}\t{path_field}\t"
-            f"{_netscape_bool(secure)}\t{expiry}\t{name}\t{value}"
-        )
-        emitted += 1
-    if emitted == 0:
-        return None
-    tmp = target_path.with_name(f".{target_path.name}.{uuid.uuid4().hex}.tmp")
-    try:
-        with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write("\n".join(lines) + "\n")
-            fh.flush()
-            os.fsync(fh.fileno())
-        os.replace(tmp, target_path)
-        try:
-            # Best-effort permission tightening. On POSIX this makes the jar
-            # owner-read/write only; on Windows os.chmod() only toggles the
-            # read-only attribute and does NOT restrict who can read the file.
-            # The real same-user isolation boundary on Windows is the
-            # inherited NTFS ACL of %LOCALAPPDATA% (the jar lives under
-            # INSTALL_DIR), which already denies other non-admin users.
-            os.chmod(target_path, 0o600)
-        except OSError:
-            pass
-        return str(target_path)
-    except Exception as exc:
-        write_persistent_log(f"Cookie jar write failed: {exc}")
-        try:
-            if tmp.exists():
-                tmp.unlink()
-        except Exception:
-            pass
-        return None
+    return _owned_write_cookies_netscape(
+        cookies,
+        target_path,
+        logger=write_persistent_log,
+    )
 
 
 def is_frozen_app():
@@ -2819,73 +2708,20 @@ class History(HistoryStore):
         )
 
 
-_SUBPROCESS_ENV_ALLOWLIST = (
-    'PATH', 'PATHEXT', 'SYSTEMROOT', 'SYSTEMDRIVE', 'COMSPEC',
-    'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA',
-    'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'WINDIR',
-    'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'OS',
-    'LANG', 'LC_ALL', 'LC_CTYPE',
-)
-
-
 def _build_subprocess_env():
-    env = {}
-    for key in _SUBPROCESS_ENV_ALLOWLIST:
-        val = os.environ.get(key)
-        if val is not None:
-            env[key] = val
-    if DENO_PATH.exists():
-        env['PATH'] = str(DENO_DIR) + os.pathsep + env.get('PATH', '')
-    return env
+    return _owned_build_subprocess_env(DENO_PATH, DENO_DIR, environ=os.environ)
 
 
 def terminate_process_tree(proc, timeout=3):
-    if not proc or proc.poll() is not None:
-        return
-
-    if sys.platform == 'win32':
-        # Reap the entire process tree (yt-dlp + any ffmpeg child) unconditionally.
-        # proc.terminate() only kills the single yt-dlp handle, orphaning ffmpeg
-        # when yt-dlp exits promptly.
-        try:
-            subprocess.run(
-                ['taskkill', '/PID', str(proc.pid), '/T', '/F'],
-                capture_output=True,
-                creationflags=CREATE_NO_WINDOW,
-                timeout=5,
-            )
-            try:
-                proc.wait(timeout=timeout)
-            except Exception:
-                pass
-            return
-        except Exception as e:
-            write_persistent_log(f"Process tree termination warning: {e}")
-        try:
-            proc.terminate()
-            proc.wait(timeout=timeout)
-            return
-        except Exception:
-            pass
-        try:
-            proc.kill()
-        except Exception:
-            pass
-        return
-
-    # POSIX: graceful -> forceful
-    try:
-        proc.terminate()
-        proc.wait(timeout=timeout)
-        return
-    except subprocess.TimeoutExpired:
-        pass
-    except Exception:
-        pass
-    try:
-        proc.kill()
-    except Exception:
-        pass
+    return _owned_terminate_process_tree(
+        proc,
+        timeout=timeout,
+        platform=sys.platform,
+        runner=subprocess.run,
+        creationflags=CREATE_NO_WINDOW,
+        timeout_error=subprocess.TimeoutExpired,
+        logger=write_persistent_log,
+    )
 
 # ══════════════════════════════════════════════════════════════
 # DOWNLOAD MANAGER
