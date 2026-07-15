@@ -4335,7 +4335,8 @@ async function resetYoutubeState() {
 
         setUndoYoutubeStateVisible(true);
         showStatus(t('statusYoutubeStateReset',
-            `Cleared ${cleared.cleared.length} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open.`),
+            'Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open.')
+            .replace('{count}', String(cleared.cleared.length)),
         'success', 7200);
     } catch (error) {
         showStatus(t('statusYoutubeStateResetFail', 'YouTube state reset failed') + ': ' + error.message, 'error', 6200);
@@ -4366,7 +4367,8 @@ async function undoYoutubeStateReset() {
         await clearYoutubeStateResetSnapshot();
         setUndoYoutubeStateVisible(false);
         showStatus(t('statusYoutubeStateRestored',
-            `Restored ${restored.restored?.length || 0} YouTube page-state keys. Reload YouTube to apply them.`),
+            'Restored {count} YouTube page-state keys. Reload YouTube to apply them.')
+            .replace('{count}', String(restored.restored?.length || 0)),
         'success', 5200);
     } catch (error) {
         showStatus(t('statusYoutubeStateUndoFail', 'YouTube state Undo failed') + ': ' + error.message, 'error', 6200);

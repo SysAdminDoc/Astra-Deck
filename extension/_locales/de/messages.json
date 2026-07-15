@@ -3179,6 +3179,30 @@
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"
   },
+  "statusYoutubeStateChanged": {
+    "message": "YouTube changed its page state before reset, so nothing was cleared."
+  },
+  "statusYoutubeStateEmpty": {
+    "message": "No stale YouTube page-state keys were found."
+  },
+  "statusYoutubeStateNoTab": {
+    "message": "Open a YouTube tab before resetting its local page state."
+  },
+  "statusYoutubeStateReset": {
+    "message": "Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open."
+  },
+  "statusYoutubeStateResetFail": {
+    "message": "YouTube state reset failed"
+  },
+  "statusYoutubeStateRestored": {
+    "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
+  },
+  "statusYoutubeStateUndoExpired": {
+    "message": "YouTube state Undo is no longer available for the original tab."
+  },
+  "statusYoutubeStateUndoFail": {
+    "message": "YouTube state Undo failed"
+  },
   "storageBannerCorruptionTpl": {
     "message": "Speicherdaten beschädigt — Zurücksetzen zur Wiederherstellung."
   },
@@ -3337,5 +3361,11 @@
   },
   "workspaceTitle": {
     "message": "Steuerungen und Backups"
+  },
+  "youtubeStateResetToast": {
+    "message": "YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab."
+  },
+  "youtubeStateRestoreToast": {
+    "message": "YouTube state restored ({count}). Reload the page to apply it."
   }
 }

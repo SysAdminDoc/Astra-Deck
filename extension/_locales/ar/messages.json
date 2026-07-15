@@ -1,28 +1,76 @@
 {
-  "aiSummaryButtonTitle": { "message": "ملخص بالذكاء الاصطناعي (إدارة بيانات الاعتماد من نافذة شريط أدوات Astra Deck)" },
-  "aiSummaryCalling": { "message": "جارٍ الاتصال بموفر الذكاء الاصطناعي…" },
-  "aiSummaryCallingTruncated": { "message": "جارٍ الاتصال بموفر الذكاء الاصطناعي باستخدام أول 120,000 حرف من النص…" },
-  "aiSummaryCitationLabel": { "message": "استشهاد من النص" },
-  "aiSummaryClose": { "message": "إغلاق ملخص الذكاء الاصطناعي" },
-  "aiSummaryCopied": { "message": "تم نسخ الملخص مع الاستشهادات" },
-  "aiSummaryCopy": { "message": "نسخ مع الاستشهادات" },
-  "aiSummaryDelete": { "message": "حذف" },
-  "aiSummaryDeleted": { "message": "تم حذف الملخص المحفوظ" },
-  "aiSummaryDialogLabel": { "message": "ملخص الفيديو بالذكاء الاصطناعي" },
-  "aiSummaryExport": { "message": "تصدير الأرشيف" },
-  "aiSummaryExported": { "message": "تم تصدير الملخصات المحفوظة" },
-  "aiSummaryFailed": { "message": "فشل التلخيص" },
-  "aiSummaryFetchingTranscript": { "message": "جارٍ جلب النص…" },
-  "aiSummaryInvalid": { "message": "الملخص المحفوظ غير صالح ولا يمكن عرضه." },
-  "aiSummaryLibrary": { "message": "الملخصات المحفوظة" },
-  "aiSummaryNoExport": { "message": "لا توجد ملخصات محفوظة لتصديرها." },
-  "aiSummaryNoSaved": { "message": "لا توجد ملخصات محفوظة تطابق هذا البحث." },
-  "aiSummaryRestored": { "message": "تمت استعادة الملخص المحفوظ" },
-  "aiSummarySearchLabel": { "message": "البحث في الملخصات المحفوظة" },
-  "aiSummarySearchPlaceholder": { "message": "البحث في الملخصات المحفوظة…" },
-  "aiSummaryTitle": { "message": "ملخص بالذكاء الاصطناعي" },
-  "aiSummaryTldr": { "message": "الخلاصة" },
-  "aiSummaryUserscriptButtonTitle": { "message": "ملخص بالذكاء الاصطناعي (انقر بزر الماوس الأيمن لإدارة بيانات اعتماد الموفر)" },
+  "aiSummaryButtonTitle": {
+    "message": "ملخص بالذكاء الاصطناعي (إدارة بيانات الاعتماد من نافذة شريط أدوات Astra Deck)"
+  },
+  "aiSummaryCalling": {
+    "message": "جارٍ الاتصال بموفر الذكاء الاصطناعي…"
+  },
+  "aiSummaryCallingTruncated": {
+    "message": "جارٍ الاتصال بموفر الذكاء الاصطناعي باستخدام أول 120,000 حرف من النص…"
+  },
+  "aiSummaryCitationLabel": {
+    "message": "استشهاد من النص"
+  },
+  "aiSummaryClose": {
+    "message": "إغلاق ملخص الذكاء الاصطناعي"
+  },
+  "aiSummaryCopied": {
+    "message": "تم نسخ الملخص مع الاستشهادات"
+  },
+  "aiSummaryCopy": {
+    "message": "نسخ مع الاستشهادات"
+  },
+  "aiSummaryDelete": {
+    "message": "حذف"
+  },
+  "aiSummaryDeleted": {
+    "message": "تم حذف الملخص المحفوظ"
+  },
+  "aiSummaryDialogLabel": {
+    "message": "ملخص الفيديو بالذكاء الاصطناعي"
+  },
+  "aiSummaryExport": {
+    "message": "تصدير الأرشيف"
+  },
+  "aiSummaryExported": {
+    "message": "تم تصدير الملخصات المحفوظة"
+  },
+  "aiSummaryFailed": {
+    "message": "فشل التلخيص"
+  },
+  "aiSummaryFetchingTranscript": {
+    "message": "جارٍ جلب النص…"
+  },
+  "aiSummaryInvalid": {
+    "message": "الملخص المحفوظ غير صالح ولا يمكن عرضه."
+  },
+  "aiSummaryLibrary": {
+    "message": "الملخصات المحفوظة"
+  },
+  "aiSummaryNoExport": {
+    "message": "لا توجد ملخصات محفوظة لتصديرها."
+  },
+  "aiSummaryNoSaved": {
+    "message": "لا توجد ملخصات محفوظة تطابق هذا البحث."
+  },
+  "aiSummaryRestored": {
+    "message": "تمت استعادة الملخص المحفوظ"
+  },
+  "aiSummarySearchLabel": {
+    "message": "البحث في الملخصات المحفوظة"
+  },
+  "aiSummarySearchPlaceholder": {
+    "message": "البحث في الملخصات المحفوظة…"
+  },
+  "aiSummaryTitle": {
+    "message": "ملخص بالذكاء الاصطناعي"
+  },
+  "aiSummaryTldr": {
+    "message": "الخلاصة"
+  },
+  "aiSummaryUserscriptButtonTitle": {
+    "message": "ملخص بالذكاء الاصطناعي (انقر بزر الماوس الأيمن لإدارة بيانات اعتماد الموفر)"
+  },
   "brandName": {
     "message": "Astra Deck"
   },
@@ -2078,15 +2126,33 @@
   "searchWatchTitle": {
     "message": "البحث دون إيقاف التشغيل"
   },
-  "subscriptionLoadedOnlyHint": { "message": "يرتّب الأحدث أولًا الفيديوهات المحمّلة في هذه الصفحة فقط. مرّر لتحميل المزيد." },
-  "subscriptionOrderLabel": { "message": "الترتيب" },
-  "subscriptionOrderNative": { "message": "ترتيب YouTube" },
-  "subscriptionOrderNewestLoaded": { "message": "الأحدث أولًا (المحمّل فقط)" },
-  "subscriptionViewCompact": { "message": "مضغوط" },
-  "subscriptionViewGrid": { "message": "شبكة" },
-  "subscriptionViewLabel": { "message": "العرض" },
-  "subscriptionViewList": { "message": "قائمة" },
-  "subscriptionViewToolbarLabel": { "message": "عناصر تحكم عرض الاشتراكات" },
+  "subscriptionLoadedOnlyHint": {
+    "message": "يرتّب الأحدث أولًا الفيديوهات المحمّلة في هذه الصفحة فقط. مرّر لتحميل المزيد."
+  },
+  "subscriptionOrderLabel": {
+    "message": "الترتيب"
+  },
+  "subscriptionOrderNative": {
+    "message": "ترتيب YouTube"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "الأحدث أولًا (المحمّل فقط)"
+  },
+  "subscriptionViewCompact": {
+    "message": "مضغوط"
+  },
+  "subscriptionViewGrid": {
+    "message": "شبكة"
+  },
+  "subscriptionViewLabel": {
+    "message": "العرض"
+  },
+  "subscriptionViewList": {
+    "message": "قائمة"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "عناصر تحكم عرض الاشتراكات"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "إعجاب · تقدير Return YouTube Dislike"
   },
@@ -3271,5 +3337,35 @@
   },
   "workspaceTitle": {
     "message": "عناصر التحكم والنسخ الاحتياطية"
+  },
+  "statusYoutubeStateChanged": {
+    "message": "YouTube changed its page state before reset, so nothing was cleared."
+  },
+  "statusYoutubeStateEmpty": {
+    "message": "No stale YouTube page-state keys were found."
+  },
+  "statusYoutubeStateNoTab": {
+    "message": "Open a YouTube tab before resetting its local page state."
+  },
+  "statusYoutubeStateReset": {
+    "message": "Cleared {count} stale YouTube page-state keys. Reload YouTube to apply; Undo remains available while the original tab stays open."
+  },
+  "statusYoutubeStateResetFail": {
+    "message": "YouTube state reset failed"
+  },
+  "statusYoutubeStateRestored": {
+    "message": "Restored {count} YouTube page-state keys. Reload YouTube to apply them."
+  },
+  "statusYoutubeStateUndoExpired": {
+    "message": "YouTube state Undo is no longer available for the original tab."
+  },
+  "statusYoutubeStateUndoFail": {
+    "message": "YouTube state Undo failed"
+  },
+  "youtubeStateResetToast": {
+    "message": "YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab."
+  },
+  "youtubeStateRestoreToast": {
+    "message": "YouTube state restored ({count}). Reload the page to apply it."
   }
 }
