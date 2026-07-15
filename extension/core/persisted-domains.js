@@ -449,7 +449,16 @@
         return json.length * 2;
     }
 
-    const PAGE_DB = Object.freeze({ name: 'ytkit-transcript-index', version: 2, records: 'transcripts', snapshots: 'backupSnapshots', snapshotIndex: 'bySnapshot' });
+    const PAGE_DB = Object.freeze({
+        name: 'ytkit-transcript-index',
+        version: 3,
+        records: 'transcripts',
+        snapshots: 'backupSnapshots',
+        metadata: 'metadata',
+        snapshotIndex: 'bySnapshot',
+        termIndex: 'byTerm',
+        ageIndex: 'byIndexedAt'
+    });
     const SNAPSHOT_META_VIDEO_ID = '__astra_snapshot_meta__';
     const EXTENSION_SNAPSHOT_DB = Object.freeze({ name: 'ytkit-extension-snapshots', version: 1, store: 'entries', index: 'bySnapshot' });
     const EXTENSION_SNAPSHOT_META_KEY = '__astra_snapshot_meta__';
@@ -474,13 +483,23 @@
         const request = indexedDb.open(PAGE_DB.name, PAGE_DB.version);
         request.onupgradeneeded = () => {
             const db = request.result;
-            if (!db.objectStoreNames.contains(PAGE_DB.records)) db.createObjectStore(PAGE_DB.records, { keyPath: 'videoId' });
+            const records = db.objectStoreNames.contains(PAGE_DB.records)
+                ? request.transaction.objectStore(PAGE_DB.records)
+                : db.createObjectStore(PAGE_DB.records, { keyPath: 'videoId' });
+            if (!records.indexNames.contains(PAGE_DB.termIndex)) records.createIndex(PAGE_DB.termIndex, 'searchTerms', { unique: false, multiEntry: true });
+            if (!records.indexNames.contains(PAGE_DB.ageIndex)) records.createIndex(PAGE_DB.ageIndex, 'indexedAt', { unique: false });
             if (!db.objectStoreNames.contains(PAGE_DB.snapshots)) {
                 const store = db.createObjectStore(PAGE_DB.snapshots, { keyPath: ['snapshotId', 'videoId'] });
                 store.createIndex(PAGE_DB.snapshotIndex, 'snapshotId', { unique: false });
             }
+            if (!db.objectStoreNames.contains(PAGE_DB.metadata)) db.createObjectStore(PAGE_DB.metadata, { keyPath: 'key' });
         };
         return requestPromise(request);
+    }
+
+    function preparePageTranscriptRecord(record) {
+        const prepare = globalThis.YTKitCore?.transcriptIndex?.prepareTranscriptRecord;
+        return typeof prepare === 'function' ? prepare(record) : record;
     }
 
     async function readTranscriptChunk(options = {}) {
@@ -524,7 +543,7 @@
     }
 
     async function replaceTranscriptRecords(records, options = {}) {
-        const sanitized = sanitizeTranscriptRecords(records);
+        const sanitized = sanitizeTranscriptRecords(records).map(preparePageTranscriptRecord);
         const db = await openPageDb(options.indexedDB);
         try {
             const tx = db.transaction(PAGE_DB.records, 'readwrite');
@@ -607,7 +626,7 @@
             records.clear();
             for (const row of transcriptRows) {
                 const { snapshotId: _ignored, ...record } = row;
-                records.put(record);
+                records.put(preparePageTranscriptRecord(record));
             }
             if (options.keepSnapshot !== true) rows.forEach((row) => snapshots.delete([snapshotId, row.videoId]));
             await completion;

@@ -41,6 +41,7 @@ test('createTranscriptService exposes the legacy API surface used by ytkit.js ca
         extensionFetchText: async () => ({ text: '' })
     });
     assert.equal(typeof svc.downloadTranscript, 'function');
+    assert.equal(typeof svc.fetchTranscript, 'function');
     assert.equal(typeof svc._getCaptionTracks, 'function');
     assert.equal(typeof svc._selectBestTrack, 'function');
     assert.equal(typeof svc._fetchTranscriptContent, 'function');
@@ -48,6 +49,37 @@ test('createTranscriptService exposes the legacy API surface used by ytkit.js ca
     assert.equal(typeof svc._extractFromPlayerResponse, 'function');
     assert.equal(typeof svc.config, 'object');
     assert.deepEqual(svc.config.preferredLanguages, ['en', 'en-US', 'en-GB']);
+});
+
+test('fetchTranscript retrieves captions without depending on an opened DOM panel', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const svc = createTranscriptService({});
+    svc._getCaptionTracks = async () => ({
+        videoTitle: 'Shared service fixture',
+        tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk', languageCode: 'en', kind: 'manual' }]
+    });
+    svc._fetchTranscriptContent = async () => [{ startMs: 0, endMs: 1000, text: 'Hello' }];
+    const result = await svc.fetchTranscript('abcdefghijk');
+    assert.equal(result.status, 'ready');
+    assert.equal(result.title, 'Shared service fixture');
+    assert.equal(result.language, 'en');
+    assert.equal(result.segments.length, 1);
+});
+
+test('fetchTranscript reports captionless videos and honors cancellation', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const svc = createTranscriptService({});
+    svc._getCaptionTracks = async () => null;
+    assert.deepEqual(await svc.fetchTranscript('abcdefghijk'), {
+        status: 'captionless', videoId: 'abcdefghijk', title: '', segments: []
+    });
+
+    const controller = new AbortController();
+    controller.abort();
+    await assert.rejects(
+        () => svc.fetchTranscript('abcdefghijk', { signal: controller.signal }),
+        (error) => error?.name === 'AbortError'
+    );
 });
 
 test('downloadTranscript fails cleanly when no video id is in scope', async () => {

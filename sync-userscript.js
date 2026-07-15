@@ -56,6 +56,8 @@ const V5_BUNDLE_MODULES = [
     'extension/core/feature-lifecycle.js',
     'extension/core/policy-profile.js',
     'extension/core/settings-controller.js',
+    'extension/core/transcript-service.js',
+    'extension/core/transcript-index.js',
     'extension/core/credential-vault.js',
     'extension/core/userscript-ai-summary.js',
     'extension/core/external-api-health.js',
