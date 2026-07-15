@@ -34087,6 +34087,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         }),
         // ═══════════════════════════════════════════════════════════════════
+        //  THUMBNAIL LIKE-RATIO BARS — Visible cards, shared RYD cache
+        // ═══════════════════════════════════════════════════════════════════
+        (globalThis.YTKitFeatures?.createReturnDislikeCardsFeature?.({
+            ExternalApiHealth,
+            DiagnosticLog,
+            getProvider: () => features.find((feature) => feature?.id === 'returnDislike'),
+            addScopedMutationRule,
+            removeScopedMutationRule,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            extractVideoIdFromUrl: globalThis.YTKitCore?.extractVideoIdFromUrl,
+            documentRef: document,
+            IntersectionObserverCtor: globalThis.IntersectionObserver,
+            t
+        }) || {
+            id: 'returnDislikeOnCards',
+            name: 'Thumbnail Like-Ratio Bars',
+            description: 'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.',
+            group: 'Ratings',
+            icon: 'thumbs-up',
+            init() {},
+            destroy() {}
+        }),
+        // ═══════════════════════════════════════════════════════════════════
         //  ANTI-TRANSLATE AUDIO TRACK — Force original-language audio
         // ═══════════════════════════════════════════════════════════════════
         {

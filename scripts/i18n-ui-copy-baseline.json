@@ -38,8 +38,8 @@
       "digest": "fe0cb025508debbe143950bd789bd1393d3879017f6b485087b777cd9e0e71b2"
     },
     "extension/features/return-dislike/index.js": {
-      "count": 11,
-      "digest": "059dd9f5804ba7024c8559577dea040bf107e308d9c5887b8d6b53d8618c1125"
+      "count": 13,
+      "digest": "00803a3b3d041370b0d7894036c4f4fccca7e5dc57676ebb18f28b650e834659"
     },
     "extension/features/settings-panel/index.js": {
       "count": 178,
@@ -90,8 +90,8 @@
       "digest": "7cd34d4d191ed8555010d837e20d027b572020577722097cc92b1477e2952268"
     },
     "extension/ytkit.js": {
-      "count": 1410,
-      "digest": "f7c5f7dd9bc9b0e66dc6036b724b67805f2c65af8770696d42f3984eb601aee7"
+      "count": 1412,
+      "digest": "09cc77bf4abd2738d6a4537a222b2910816dd4117ac47b708dc415586da66d1b"
     }
   }
 }

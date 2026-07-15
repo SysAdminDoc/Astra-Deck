@@ -305,10 +305,465 @@
         };
     }
 
+    function calculateLikeRatio(data) {
+        const likes = Number(data?.likes);
+        const dislikes = Number(data?.dislikes);
+        if (!Number.isFinite(likes) || !Number.isFinite(dislikes) || likes < 0 || dislikes < 0) return null;
+        const total = likes + dislikes;
+        if (total <= 0) return null;
+        return Math.max(0, Math.min(100, Math.round((likes / total) * 100)));
+    }
+
+    function createReturnDislikeCardsFeature(deps = {}) {
+        const {
+            ExternalApiHealth = null,
+            DiagnosticLog = null,
+            getProvider = () => null,
+            addScopedMutationRule = () => {},
+            removeScopedMutationRule = () => {},
+            addNavigateRule = () => {},
+            removeNavigateRule = () => {},
+            injectStyle = () => null,
+            extractVideoIdFromUrl = () => null,
+            documentRef = globalThis.document,
+            IntersectionObserverCtor = globalThis.IntersectionObserver,
+            now = () => Date.now(),
+            setTimeoutFn = (fn, delay) => setTimeout(fn, delay),
+            clearTimeoutFn = (timer) => clearTimeout(timer),
+            t = (_key, fallback) => fallback
+        } = deps;
+
+        const CARD_SELECTOR = [
+            'ytd-rich-item-renderer',
+            'ytd-grid-video-renderer',
+            'ytd-video-renderer',
+            'ytd-compact-video-renderer',
+            'yt-lockup-view-model'
+        ].join(', ');
+        const THUMBNAIL_SELECTOR = [
+            '#thumbnail',
+            'ytd-thumbnail',
+            'yt-thumbnail-view-model',
+            'a.yt-lockup-view-model__content-image'
+        ].join(', ');
+        const _CARD_BUDGET_PER_MIN = 24;
+        const _MAX_CONCURRENT = 4;
+        const _MAX_QUEUE = 48;
+        const _MAX_TRACKED_CARDS = 300;
+        const _NEGATIVE_CACHE_MS = 60_000;
+
+        let _styleElement = null;
+        let _observer = null;
+        let _generation = 0;
+        let _destroyed = true;
+        let _budgetResetTimer = null;
+        let _budgetReportedAt = 0;
+        let _activeCount = 0;
+        const _budgetWindow = { start: 0, count: 0 };
+        const _cards = new Map();
+        const _visibleCards = new Set();
+        const _cardsByVideo = new Map();
+        const _results = new Map();
+        const _negativeUntil = new Map();
+        const _queue = [];
+        const _queuedVideos = new Set();
+        const _activeVideos = new Set();
+
+        function _budgetSnapshot() {
+            const current = now();
+            const age = current - _budgetWindow.start;
+            return {
+                used: _budgetWindow.count,
+                limit: _CARD_BUDGET_PER_MIN,
+                resetMs: _budgetWindow.start > 0 && age < 60_000 ? 60_000 - age : 0
+            };
+        }
+
+        function _resetBudgetIfElapsed() {
+            const current = now();
+            if (_budgetWindow.start === 0 || current - _budgetWindow.start >= 60_000) {
+                _budgetWindow.start = current;
+                _budgetWindow.count = 0;
+                _budgetReportedAt = 0;
+            }
+        }
+
+        function _allowFetch() {
+            _resetBudgetIfElapsed();
+            if (_budgetWindow.count >= _CARD_BUDGET_PER_MIN) return false;
+            _budgetWindow.count += 1;
+            return true;
+        }
+
+        function _scheduleBudgetReset() {
+            if (_budgetResetTimer || _destroyed) return;
+            const delay = Math.max(25, _budgetSnapshot().resetMs || 60_000);
+            _budgetResetTimer = setTimeoutFn(() => {
+                _budgetResetTimer = null;
+                _resetBudgetIfElapsed();
+                for (const card of _visibleCards) _requestCard(card);
+                _drainQueue();
+            }, delay);
+        }
+
+        function _reportBudgetLimit(reason = 'card-budget') {
+            const current = now();
+            if (_budgetReportedAt && current - _budgetReportedAt < 60_000) return;
+            _budgetReportedAt = current;
+            const error = new Error('Return YouTube Dislike thumbnail request budget exhausted');
+            ExternalApiHealth?.recordFailure?.('returnDislike', error, {
+                errorClass: 'rate-limited',
+                endpoint: 'votes-card',
+                reason,
+                requestBudget: _budgetSnapshot()
+            });
+            DiagnosticLog?.record?.('returnDislikeOnCards', `${reason}: ${_budgetWindow.count}/${_CARD_BUDGET_PER_MIN}/min`);
+        }
+
+        function _extractVideoId(card) {
+            const links = Array.from(card?.querySelectorAll?.('a[href]') || []);
+            for (const link of links) {
+                const rawHref = link?.href || link?.getAttribute?.('href') || '';
+                const videoId = extractVideoIdFromUrl(rawHref);
+                if (videoId) return videoId;
+            }
+            return null;
+        }
+
+        function _deleteDatasetValue(element, key) {
+            if (element?.dataset) delete element.dataset[key];
+        }
+
+        function _clearCard(card) {
+            const bars = Array.from(card?.querySelectorAll?.('.ytkit-ryd-card-bar') || []);
+            for (const bar of bars) {
+                const host = bar.parentElement;
+                bar.remove?.();
+                if (host?.hasAttribute?.('data-ytkit-ryd-card-host') && !host.querySelector?.('.ytkit-ryd-card-bar')) {
+                    host.removeAttribute('data-ytkit-ryd-card-host');
+                }
+            }
+            const ownedHosts = Array.from(card?.querySelectorAll?.('[data-ytkit-ryd-card-host]') || []);
+            for (const host of ownedHosts) host.removeAttribute?.('data-ytkit-ryd-card-host');
+            _deleteDatasetValue(card, 'ytkitRydCardVideo');
+            _deleteDatasetValue(card, 'ytkitRydCardState');
+        }
+
+        function _removeFromVideoSet(card, videoId) {
+            const set = _cardsByVideo.get(videoId);
+            if (!set) return;
+            set.delete(card);
+            if (set.size === 0) _cardsByVideo.delete(videoId);
+        }
+
+        function _forgetCard(card) {
+            const state = _cards.get(card);
+            if (state) _removeFromVideoSet(card, state.videoId);
+            _cards.delete(card);
+            _visibleCards.delete(card);
+            try { _observer?.unobserve?.(card); } catch { /* reason: recycled YouTube nodes can disappear between mutations */ }
+            _clearCard(card);
+        }
+
+        function _ratioLabel(ratio) {
+            const suffix = t('ui_rydCardRatioSuffix', 'liked · estimated by Return YouTube Dislike');
+            return `${ratio}% ${suffix}`;
+        }
+
+        function _renderCard(card, data) {
+            const state = _cards.get(card);
+            if (!state) return;
+            const ratio = calculateLikeRatio(data);
+            if (ratio == null) {
+                _clearCard(card);
+                if (card?.dataset) card.dataset.ytkitRydCardState = 'unavailable';
+                return;
+            }
+            const thumbnail = card.querySelector?.(THUMBNAIL_SELECTOR);
+            if (!thumbnail) return;
+            let bar = thumbnail.querySelector?.('.ytkit-ryd-card-bar');
+            if (!bar) {
+                bar = documentRef.createElement('span');
+                bar.className = 'ytkit-ryd-card-bar';
+                bar.setAttribute('role', 'img');
+                const fill = documentRef.createElement('span');
+                fill.className = 'ytkit-ryd-card-bar-fill';
+                bar.appendChild(fill);
+                thumbnail.setAttribute('data-ytkit-ryd-card-host', '');
+                thumbnail.appendChild(bar);
+            }
+            const label = _ratioLabel(ratio);
+            bar.title = label;
+            bar.setAttribute('aria-label', label);
+            const fill = bar.querySelector?.('.ytkit-ryd-card-bar-fill');
+            if (fill?.style) fill.style.width = `${ratio}%`;
+            if (card?.dataset) {
+                card.dataset.ytkitRydCardVideo = state.videoId;
+                card.dataset.ytkitRydCardState = data?.fromCache ? 'cached' : 'ready';
+            }
+        }
+
+        function _renderVideo(videoId, data) {
+            const set = _cardsByVideo.get(videoId);
+            if (!set) return;
+            for (const card of Array.from(set)) {
+                const state = _cards.get(card);
+                if (!state || state.videoId !== videoId || card?.isConnected === false) {
+                    _forgetCard(card);
+                    continue;
+                }
+                _renderCard(card, data);
+            }
+        }
+
+        function _enqueueVideo(videoId) {
+            if (!videoId || _queuedVideos.has(videoId) || _activeVideos.has(videoId)) return false;
+            if (_queue.length >= _MAX_QUEUE) {
+                _reportBudgetLimit('card-queue-full');
+                return false;
+            }
+            _queuedVideos.add(videoId);
+            _queue.push(videoId);
+            _drainQueue();
+            return true;
+        }
+
+        function _hasVisibleCard(videoId) {
+            const set = _cardsByVideo.get(videoId);
+            if (!set) return false;
+            for (const card of set) {
+                const state = _cards.get(card);
+                if (state?.videoId === videoId && card?.isConnected !== false && _visibleCards.has(card)) return true;
+            }
+            return false;
+        }
+
+        function _drainQueue() {
+            if (_destroyed) return;
+            const provider = getProvider?.();
+            if (!provider?._fetch) return;
+            while (_activeCount < _MAX_CONCURRENT && _queue.length > 0) {
+                const nextVideoId = _queue[0];
+                if (!_hasVisibleCard(nextVideoId)) {
+                    _queue.shift();
+                    _queuedVideos.delete(nextVideoId);
+                    continue;
+                }
+                if (!_allowFetch()) {
+                    _reportBudgetLimit();
+                    _scheduleBudgetReset();
+                    return;
+                }
+                const videoId = _queue.shift();
+                _queuedVideos.delete(videoId);
+                _activeVideos.add(videoId);
+                _activeCount += 1;
+                const requestGeneration = _generation;
+                Promise.resolve(provider._fetch(videoId))
+                    .then((data) => {
+                        if (_destroyed || requestGeneration !== _generation) return;
+                        if (data && calculateLikeRatio(data) != null) {
+                            _results.set(videoId, data);
+                            _negativeUntil.delete(videoId);
+                            _renderVideo(videoId, data);
+                        } else {
+                            _negativeUntil.set(videoId, now() + _NEGATIVE_CACHE_MS);
+                            _renderVideo(videoId, null);
+                        }
+                    })
+                    .catch((error) => {
+                        if (_destroyed || requestGeneration !== _generation) return;
+                        _negativeUntil.set(videoId, now() + _NEGATIVE_CACHE_MS);
+                        ExternalApiHealth?.recordFailure?.('returnDislike', error, {
+                            endpoint: 'votes-card',
+                            requestBudget: _budgetSnapshot()
+                        });
+                    })
+                    .finally(() => {
+                        _activeVideos.delete(videoId);
+                        _activeCount = Math.max(0, _activeCount - 1);
+                        if (!_destroyed && requestGeneration === _generation) _drainQueue();
+                    });
+            }
+        }
+
+        function _requestCard(card) {
+            const state = _cards.get(card);
+            if (!state || !_visibleCards.has(card)) return;
+            const provider = getProvider?.();
+            if (!provider?._fetch || !provider?._readCache) return;
+            const ready = _results.get(state.videoId);
+            if (ready) {
+                _renderCard(card, ready);
+                return;
+            }
+            const cached = provider._readCache(state.videoId);
+            if (cached) {
+                const data = { ...cached, fromCache: true };
+                _results.set(state.videoId, data);
+                _renderVideo(state.videoId, data);
+                return;
+            }
+            if ((_negativeUntil.get(state.videoId) || 0) > now()) return;
+            _enqueueVideo(state.videoId);
+        }
+
+        function _observeCard(card) {
+            if (!card || card.isConnected === false) return;
+            const videoId = _extractVideoId(card);
+            if (!videoId) return;
+            const previous = _cards.get(card);
+            if (previous?.videoId === videoId) {
+                if (_visibleCards.has(card)) _requestCard(card);
+                return;
+            }
+            if (previous) {
+                _removeFromVideoSet(card, previous.videoId);
+                _clearCard(card);
+            }
+            _cards.set(card, { videoId });
+            if (!_cardsByVideo.has(videoId)) _cardsByVideo.set(videoId, new Set());
+            _cardsByVideo.get(videoId).add(card);
+            _observer?.observe?.(card);
+        }
+
+        function _pruneCards() {
+            for (const card of Array.from(_cards.keys())) {
+                if (card?.isConnected === false) _forgetCard(card);
+            }
+            if (_cards.size <= _MAX_TRACKED_CARDS) return;
+            for (const card of Array.from(_cards.keys())) {
+                if (_cards.size <= _MAX_TRACKED_CARDS) break;
+                if (!_visibleCards.has(card)) _forgetCard(card);
+            }
+        }
+
+        function _scan(root = documentRef) {
+            if (!root) return;
+            const found = [];
+            if (root.matches?.(CARD_SELECTOR)) found.push(root);
+            for (const card of Array.from(root.querySelectorAll?.(CARD_SELECTOR) || [])) found.push(card);
+            for (const card of found) _observeCard(card);
+            _pruneCards();
+        }
+
+        function _handleIntersections(entries) {
+            for (const entry of entries || []) {
+                const card = entry?.target;
+                if (!_cards.has(card)) continue;
+                if (entry.isIntersecting) {
+                    _visibleCards.add(card);
+                    _requestCard(card);
+                } else {
+                    _visibleCards.delete(card);
+                }
+            }
+        }
+
+        function _ensureStyles() {
+            if (_styleElement) return;
+            _styleElement = injectStyle(`
+                [data-ytkit-ryd-card-host]{position:relative!important;}
+                .ytkit-ryd-card-bar{position:absolute;z-index:6;left:8px;right:8px;bottom:4px;height:4px;display:block;overflow:hidden;border-radius:999px;background:rgba(239,68,68,.82);box-shadow:0 1px 3px rgba(0,0,0,.48);pointer-events:none;}
+                .ytkit-ryd-card-bar-fill{display:block;width:0;height:100%;border-radius:inherit;background:#22c55e;transition:width 120ms ease-out;}
+                @media (prefers-reduced-motion:reduce){.ytkit-ryd-card-bar-fill{transition:none;}}
+                @media (forced-colors:active){.ytkit-ryd-card-bar{border:1px solid CanvasText;background:Canvas;}.ytkit-ryd-card-bar-fill{background:Highlight;}}
+            `, 'return-dislike-cards', true);
+        }
+
+        return {
+            id: 'returnDislikeOnCards',
+            name: 'Thumbnail Like-Ratio Bars',
+            description: 'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.',
+            group: 'Ratings',
+            icon: 'thumbs-up',
+
+            init() {
+                if (!_destroyed) return;
+                const provider = getProvider?.();
+                if (!documentRef || !provider?._fetch || !provider?._readCache || typeof IntersectionObserverCtor !== 'function') {
+                    const error = new Error('Thumbnail like-ratio prerequisites unavailable');
+                    ExternalApiHealth?.recordFailure?.('returnDislike', error, {
+                        errorClass: 'unavailable',
+                        endpoint: 'votes-card'
+                    });
+                    return;
+                }
+                _destroyed = false;
+                _generation += 1;
+                _ensureStyles();
+                _observer = new IntersectionObserverCtor(_handleIntersections, {
+                    root: null,
+                    rootMargin: '240px 0px',
+                    threshold: 0.01
+                });
+                _scan(documentRef);
+                addScopedMutationRule('returnDislikeOnCards', CARD_SELECTOR, (_target, addedElements) => {
+                    if (addedElements?.length) {
+                        for (const element of addedElements) _scan(element);
+                    } else {
+                        _scan(documentRef);
+                    }
+                });
+                addNavigateRule('returnDislikeOnCards', () => {
+                    _pruneCards();
+                    _scan(documentRef);
+                });
+            },
+
+            destroy() {
+                _destroyed = true;
+                _generation += 1;
+                removeScopedMutationRule('returnDislikeOnCards');
+                removeNavigateRule('returnDislikeOnCards');
+                if (_budgetResetTimer) clearTimeoutFn(_budgetResetTimer);
+                _budgetResetTimer = null;
+                _observer?.disconnect?.();
+                _observer = null;
+                for (const card of Array.from(_cards.keys())) _clearCard(card);
+                for (const bar of Array.from(documentRef?.querySelectorAll?.('.ytkit-ryd-card-bar') || [])) bar.remove?.();
+                for (const host of Array.from(documentRef?.querySelectorAll?.('[data-ytkit-ryd-card-host]') || [])) {
+                    host.removeAttribute?.('data-ytkit-ryd-card-host');
+                }
+                _cards.clear();
+                _visibleCards.clear();
+                _cardsByVideo.clear();
+                _results.clear();
+                _negativeUntil.clear();
+                _queue.length = 0;
+                _queuedVideos.clear();
+                _activeVideos.clear();
+                _activeCount = 0;
+                _budgetWindow.start = 0;
+                _budgetWindow.count = 0;
+                _budgetReportedAt = 0;
+                _styleElement?.remove?.();
+                _styleElement = null;
+            },
+
+            _scan,
+            _observeCard,
+            _handleIntersections,
+            _enqueueVideo,
+            _getQueueSnapshot: () => ({
+                queued: _queue.length,
+                active: _activeCount,
+                tracked: _cards.size,
+                visible: _visibleCards.size,
+                budget: _budgetSnapshot()
+            })
+        };
+    }
+
     const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     ns.createReturnDislikeFeature = createReturnDislikeFeature;
+    ns.createReturnDislikeCardsFeature = createReturnDislikeCardsFeature;
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { createReturnDislikeFeature };
+        module.exports = {
+            calculateLikeRatio,
+            createReturnDislikeFeature,
+            createReturnDislikeCardsFeature
+        };
     }
 })();

@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "使用同一个受限的 Return YouTube Dislike 缓存，在可见视频缩略图上显示预估点赞比例条。"
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "缩略图点赞比例"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "点赞 · Return YouTube Dislike 估算"
+  },
   "feature_reversePlaylist_desc": {
     "message": "在播放列表面板中添加「反转」按钮，从最旧的开始播放"
   },

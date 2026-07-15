@@ -42,6 +42,9 @@ const T = {};
 
 // ── German (de) ──
 T.de = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Zeigt auf sichtbaren Video-Vorschaubildern eine geschätzte Like-Verhältnisleiste an und verwendet denselben begrenzten Return YouTube Dislike-Cache.',
+  'Thumbnail Like-Ratio Bars': 'Like-Verhältnis auf Vorschaubildern',
+  'liked · estimated by Return YouTube Dislike': 'gefällt · geschätzt durch Return YouTube Dislike',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Zeigt Kategorie, genaues Upload-Datum, Kanal-ID und veröffentlichte Tags aus den YouTube-Seitenmetadaten an, mit einem begrenzten GitHub-full-Fallback.',
   'Video Insights': 'Videoinformationen', 'Video insights': 'Videoinformationen',
   'Category': 'Kategorie', 'Channel ID': 'Kanal-ID', 'Loading video details…': 'Videodetails werden geladen…',
@@ -208,6 +211,9 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Muestra una barra con la proporción estimada de Me gusta en las miniaturas visibles usando la misma caché limitada de Return YouTube Dislike.',
+  'Thumbnail Like-Ratio Bars': 'Proporción de Me gusta en miniaturas',
+  'liked · estimated by Return YouTube Dislike': 'Me gusta · estimado por Return YouTube Dislike',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Muestra la categoría, la fecha exacta de subida, el ID del canal y las etiquetas publicadas desde los metadatos de la página de YouTube, con un respaldo limitado de GitHub-full.',
   'Video Insights': 'Información del video', 'Video insights': 'Información del video',
   'Category': 'Categoría', 'Channel ID': 'ID del canal', 'Loading video details…': 'Cargando detalles del video…',
@@ -362,6 +368,9 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Показывать на видимых миниатюрах видео полосу с оценкой доли лайков, используя тот же ограниченный кеш Return YouTube Dislike.',
+  'Thumbnail Like-Ratio Bars': 'Соотношение лайков на миниатюрах',
+  'liked · estimated by Return YouTube Dislike': 'лайков · оценка Return YouTube Dislike',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Показывает категорию, точную дату загрузки, ID канала и опубликованные теги из метаданных страницы YouTube с ограниченным резервным запросом GitHub-full.',
   'Video Insights': 'Сведения о видео', 'Video insights': 'Сведения о видео',
   'Category': 'Категория', 'Channel ID': 'ID канала', 'Loading video details…': 'Загрузка сведений о видео…',
@@ -516,6 +525,9 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Affiche une barre de ratio estimé des mentions J’aime sur les miniatures visibles en utilisant le même cache limité de Return YouTube Dislike.',
+  'Thumbnail Like-Ratio Bars': 'Ratio de mentions J’aime sur les miniatures',
+  'liked · estimated by Return YouTube Dislike': 'J’aime · estimation Return YouTube Dislike',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Affiche la catégorie, la date exacte de mise en ligne, l’identifiant de chaîne et les tags publiés depuis les métadonnées de la page YouTube, avec un repli GitHub-full limité.',
   'Video Insights': 'Informations sur la vidéo', 'Video insights': 'Informations sur la vidéo',
   'Category': 'Catégorie', 'Channel ID': 'ID de la chaîne', 'Loading video details…': 'Chargement des détails de la vidéo…',
@@ -668,6 +680,9 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Mostra una barra con il rapporto Mi piace stimato sulle miniature visibili usando la stessa cache limitata di Return YouTube Dislike.',
+  'Thumbnail Like-Ratio Bars': 'Rapporto Mi piace nelle miniature',
+  'liked · estimated by Return YouTube Dislike': 'Mi piace · stima Return YouTube Dislike',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Mostra categoria, data esatta di caricamento, ID del canale e tag pubblicati dai metadati della pagina YouTube, con un recupero GitHub-full limitato.',
   'Video Insights': 'Informazioni sul video', 'Video insights': 'Informazioni sul video',
   'Category': 'Categoria', 'Channel ID': 'ID canale', 'Loading video details…': 'Caricamento dettagli video…',
@@ -813,6 +828,9 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Mostra uma barra com a proporção estimada de curtidas nas miniaturas visíveis usando o mesmo cache limitado do Return YouTube Dislike.',
+  'Thumbnail Like-Ratio Bars': 'Proporção de curtidas nas miniaturas',
+  'liked · estimated by Return YouTube Dislike': 'curtidas · estimativa do Return YouTube Dislike',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'Mostra a categoria, a data exata de envio, o ID do canal e as tags publicadas nos metadados da página do YouTube, com uma consulta alternativa limitada no GitHub-full.',
   'Video Insights': 'Informações do vídeo', 'Video insights': 'Informações do vídeo',
   'Category': 'Categoria', 'Channel ID': 'ID do canal', 'Loading video details…': 'Carregando detalhes do vídeo…',
@@ -958,6 +976,9 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': '同じ上限付き Return YouTube Dislike キャッシュを使用して、表示中の動画サムネイルに推定高評価比率バーを表示します。',
+  'Thumbnail Like-Ratio Bars': 'サムネイルの高評価比率',
+  'liked · estimated by Return YouTube Dislike': '高評価 · Return YouTube Dislike による推定',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'YouTube ページのメタデータから、カテゴリ、正確なアップロード日時、チャンネル ID、公開タグを表示します。不足時は GitHub-full で制限付きの補完を行います。',
   'Video Insights': '動画の詳細情報', 'Video insights': '動画の詳細情報',
   'Category': 'カテゴリ', 'Channel ID': 'チャンネル ID', 'Loading video details…': '動画の詳細を読み込んでいます…',
@@ -1106,6 +1127,9 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': '동일한 제한형 Return YouTube Dislike 캐시를 사용해 보이는 동영상 썸네일에 예상 좋아요 비율 막대를 표시합니다.',
+  'Thumbnail Like-Ratio Bars': '썸네일 좋아요 비율',
+  'liked · estimated by Return YouTube Dislike': '좋아요 · Return YouTube Dislike 추정',
   'Reveal category, exact upload date, channel ID, and published tags from YouTube page metadata, with a bounded GitHub-full fallback.': 'YouTube 페이지 메타데이터에서 카테고리, 정확한 업로드 날짜, 채널 ID 및 공개 태그를 표시하며, 부족한 경우 GitHub-full에서 제한적으로 보완합니다.',
   'Video Insights': '동영상 세부정보', 'Video insights': '동영상 세부정보',
   'Category': '카테고리', 'Channel ID': '채널 ID', 'Loading video details…': '동영상 세부정보 불러오는 중…',
