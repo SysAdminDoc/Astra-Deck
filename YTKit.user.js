@@ -274,6 +274,9 @@
                 --ytkit-v3-accent-fill: #cf352f;
                 --ytkit-v3-accent-fill-hover: #b92c27;
                 --ytkit-v3-success: #45d978;
+                /* Above YouTube player chrome and ad overlays (was the folded
+                   "premium refresh" layer's job before v3 became the SSOT). */
+                z-index: 2147483646 !important;
                 width: min(1440px, calc(100vw - 48px)) !important;
                 height: min(94vh, 920px) !important;
                 max-height: min(94vh, 920px) !important;
@@ -287,6 +290,10 @@
                 font-size: 15px !important;
                 line-height: 1.45 !important;
                 overflow: hidden !important;
+            }
+
+            #ytkit-overlay {
+                z-index: 2147483645 !important;
             }
 
             #ytkit-settings-panel .ytkit-header {
@@ -1313,6 +1320,7 @@
 
                 #ytkit-settings-panel .ytkit-nav-list {
                     display: grid !important;
+                    grid-template-columns: none !important;
                     grid-auto-flow: column !important;
                     grid-auto-columns: minmax(142px, 170px) !important;
                     width: 100% !important;
