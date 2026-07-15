@@ -3041,6 +3041,84 @@
   "quickTogglesEyebrow": {
     "message": "Schnellumschalter"
   },
+  "reactionSenderChooseOne": {
+    "message": "Wählen Sie mindestens eine verfügbare Reaktion aus."
+  },
+  "reactionSenderCollapseAria": {
+    "message": "Panel einklappen"
+  },
+  "reactionSenderEmpty": {
+    "message": "Keine Reaktionen gefunden. Öffnen Sie die Reaktionsschaltfläche und aktualisieren Sie dann."
+  },
+  "reactionSenderExpandAria": {
+    "message": "Panel ausklappen"
+  },
+  "reactionSenderHideAria": {
+    "message": "Reaktions-Spammer-Panel ausblenden"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "Reaktionsintervall in Millisekunden"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "Intervall"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "Reagieren"
+  },
+  "reactionSenderOpenAria": {
+    "message": "Reaktionssender öffnen"
+  },
+  "reactionSenderPickerHint": {
+    "message": "Öffnen Sie die Reaktionsauswahl von YouTube und aktualisieren Sie dann diese Liste."
+  },
+  "reactionSenderRateWarning": {
+    "message": "Schnelle Reaktionen können von YouTube gedrosselt werden. Das Mindestintervall beträgt 500 ms."
+  },
+  "reactionSenderRefresh": {
+    "message": "Reaktionen aktualisieren"
+  },
+  "reactionSenderRiskToast": {
+    "message": "Reaktions-Spammer: YouTube kann schnelle Reaktionen drosseln oder markieren. Nutzung auf eigene Gefahr."
+  },
+  "reactionSenderRunningTpl": {
+    "message": "Läuft mit {count} Reaktion(en)."
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "Läuft, wartet auf ausgewählte Reaktionen."
+  },
+  "reactionSenderSelectOne": {
+    "message": "Wählen Sie mindestens eine Reaktion aus."
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "{count} Reaktion(en) ausgewählt."
+  },
+  "reactionSenderSentTpl": {
+    "message": "{emoji} gesendet"
+  },
+  "reactionSenderStart": {
+    "message": "Starten"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "Dauersenden starten"
+  },
+  "reactionSenderStop": {
+    "message": "Stoppen"
+  },
+  "reactionSenderStopped": {
+    "message": "Gestoppt"
+  },
+  "reactionSenderTest": {
+    "message": "Testen"
+  },
+  "reactionSenderTestHint": {
+    "message": "Nutzen Sie „Testen“, um vor dem Start eine Reaktion zu senden."
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "{emoji} einmal senden"
+  },
+  "reactionSenderTitle": {
+    "message": "Reaktionssender"
+  },
   "reenableMediadlAria": {
     "message": "Astra Downloader Installationsaufforderungen erneut aktivieren"
   },
@@ -3865,6 +3943,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "Filter für Kanalnamen"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "Kanal enthält …"
+  },
+  "wlwbCloseAria": {
+    "message": "Werkbank schließen"
+  },
+  "wlwbExportCsv": {
+    "message": "CSV exportieren"
+  },
+  "wlwbExportJson": {
+    "message": "JSON exportieren"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "{count} geladene „Später ansehen“-Einträge exportiert"
+  },
+  "wlwbLogEmpty": {
+    "message": "Entfernungsprotokoll ist leer"
+  },
+  "wlwbNoMatches": {
+    "message": "Keine passenden Zeilen zum Entfernen"
+  },
+  "wlwbOpenAria": {
+    "message": "Die „Später ansehen“-Werkbank öffnen"
+  },
+  "wlwbOpenBtn": {
+    "message": "Werkbank"
+  },
+  "wlwbPanelAria": {
+    "message": "„Später ansehen“-Werkbank"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "Entfernungsprotokoll"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "Treffer entfernen (max. {limit}/Durchlauf)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— {count} passen noch, erneut ausführen"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "{count} Video(s) entfernt{remaining}. Die Wiederherstellungsliste steht im Entfernungsprotokoll."
+  },
+  "wlwbRemovingTpl": {
+    "message": "Entferne {current} / {total} …"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel} ({percent} % gesehen)"
+  },
+  "wlwbSortAria": {
+    "message": "Sortierung der Vorschau"
+  },
+  "wlwbSortLongest": {
+    "message": "Längste zuerst"
+  },
+  "wlwbSortPlaylist": {
+    "message": "Playlist-Reihenfolge"
+  },
+  "wlwbSortShortest": {
+    "message": "Kürzeste zuerst"
+  },
+  "wlwbSortTitle": {
+    "message": "Titel A–Z"
+  },
+  "wlwbStatusTpl": {
+    "message": "{matched} von {loaded} geladenen Videos passen. Scrollen Sie die Playlist, um vor dem Ausführen weitere Zeilen zu laden."
+  },
+  "wlwbTitleAria": {
+    "message": "Titelfilter"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "Titel enthält …"
+  },
+  "wlwbWatchedAria": {
+    "message": "Filter für minimalen Wiedergabefortschritt"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "Gesehen ≥ % (z. B. 90)"
   },
   "workspaceEyebrow": {
     "message": "Einstellungs-Arbeitsbereich"

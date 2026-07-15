@@ -29,10 +29,6 @@
       "count": 58,
       "digest": "b420a4e84395aa3f8f8f6e4831170a5a105a8a338230f3a073b7d5f0f5fbab0c"
     },
-    "extension/features/live-chat/index.js": {
-      "count": 15,
-      "digest": "d0aa8af6dc679effa986f8383caaee0fbca106d2d8875fb7f83723d07fa18019"
-    },
     "extension/features/player-dock/index.js": {
       "count": 3,
       "digest": "fe0cb025508debbe143950bd789bd1393d3879017f6b485087b777cd9e0e71b2"
@@ -86,8 +82,8 @@
       "digest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
-      "count": 1404,
-      "digest": "9ecf12c1aca6dd969483f436ffb90ef8e4cfa00191ff2f204c87edf106eb801d"
+      "count": 1377,
+      "digest": "55ee2f58614fb207c3be3d3adf3a3fcb4c87f09d8c2c298b87b82907b0af624f"
     }
   }
 }

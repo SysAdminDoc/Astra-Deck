@@ -337,6 +337,32 @@ test('live-chat runtime applies settings, profile gates reactions, and tears dow
     }
 });
 
+test('reaction sender copy routes through the injected t() helper in both twins', () => {
+    const moduleSource = fs.readFileSync(
+        path.join(EXTENSION_ROOT, 'features', 'live-chat', 'index.js'), 'utf8');
+    assert.match(moduleSource, /typeof options\.t === 'function'/,
+        'createLiveChatRuntime must accept an injected t dependency');
+    assert.match(moduleSource, /browser\?\.i18n\?\.getMessage/,
+        'default translator must fall back to browser.i18n before the literal');
+    assert.match(moduleSource, /title\.textContent = t\('reactionSenderTitle', 'Reaction sender'\)/,
+        'live-chat reaction panel title must route through t()');
+    assert.match(moduleSource, /t\('reactionSenderSentTpl', /,
+        'sent status must route through the {emoji} template key');
+
+    const monolith = fs.readFileSync(path.join(EXTENSION_ROOT, 'ytkit.js'), 'utf8');
+    assert.match(monolith, /title\.textContent = t\('feature_reactionSpammer_name', 'Reaction Spammer'\)/,
+        'ytkit.js reaction spammer twin must route its panel title through t()');
+    assert.match(monolith, /t\('reactionSenderRefresh', 'Refresh reactions'\)/,
+        'ytkit.js twin must share the reactionSender* keys');
+
+    const en = JSON.parse(fs.readFileSync(
+        path.join(EXTENSION_ROOT, '_locales', 'en', 'messages.json'), 'utf8'));
+    for (const key of ['reactionSenderTitle', 'reactionSenderStart', 'reactionSenderStop',
+        'reactionSenderStopped', 'reactionSenderRefresh', 'reactionSenderSentTpl']) {
+        assert.ok(en[key]?.message, `en messages must define ${key}`);
+    }
+});
+
 test('live-chat module declares the complete scoped feature set', () => {
     assert.deepEqual(liveChatModule.CHAT_FEATURE_IDS, [
         'hideLiveChatEngagement',

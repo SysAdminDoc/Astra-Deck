@@ -3041,6 +3041,84 @@
   "quickTogglesEyebrow": {
     "message": "Быстрые переключатели"
   },
+  "reactionSenderChooseOne": {
+    "message": "Выберите хотя бы одну доступную реакцию."
+  },
+  "reactionSenderCollapseAria": {
+    "message": "Свернуть панель"
+  },
+  "reactionSenderEmpty": {
+    "message": "Реакции не найдены. Откройте кнопку реакций, затем обновите."
+  },
+  "reactionSenderExpandAria": {
+    "message": "Развернуть панель"
+  },
+  "reactionSenderHideAria": {
+    "message": "Скрыть панель отправки реакций"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "Интервал реакций в миллисекундах"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "Интервал"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "Реакция"
+  },
+  "reactionSenderOpenAria": {
+    "message": "Открыть отправку реакций"
+  },
+  "reactionSenderPickerHint": {
+    "message": "Откройте выбор реакций YouTube, затем обновите этот список."
+  },
+  "reactionSenderRateWarning": {
+    "message": "YouTube может ограничивать частые реакции. Минимальный интервал — 500 мс."
+  },
+  "reactionSenderRefresh": {
+    "message": "Обновить реакции"
+  },
+  "reactionSenderRiskToast": {
+    "message": "Отправка реакций: YouTube может ограничивать или помечать частые реакции. Используйте на свой риск."
+  },
+  "reactionSenderRunningTpl": {
+    "message": "Работает с реакциями: {count}."
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "Работает, ожидание выбранных реакций."
+  },
+  "reactionSenderSelectOne": {
+    "message": "Выберите хотя бы одну реакцию."
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "Выбрано реакций: {count}."
+  },
+  "reactionSenderSentTpl": {
+    "message": "Отправлено {emoji}"
+  },
+  "reactionSenderStart": {
+    "message": "Запустить"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "Начать непрерывную отправку"
+  },
+  "reactionSenderStop": {
+    "message": "Остановить"
+  },
+  "reactionSenderStopped": {
+    "message": "Остановлено"
+  },
+  "reactionSenderTest": {
+    "message": "Проверить"
+  },
+  "reactionSenderTestHint": {
+    "message": "Нажмите «Проверить», чтобы отправить одну реакцию перед запуском."
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "Отправить {emoji} один раз"
+  },
+  "reactionSenderTitle": {
+    "message": "Отправка реакций"
+  },
   "reenableMediadlAria": {
     "message": "Повторно включить подсказки установки Astra Downloader"
   },
@@ -3865,6 +3943,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "Фильтр по названию канала"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "Канал содержит…"
+  },
+  "wlwbCloseAria": {
+    "message": "Закрыть мастерскую"
+  },
+  "wlwbExportCsv": {
+    "message": "Экспорт CSV"
+  },
+  "wlwbExportJson": {
+    "message": "Экспорт JSON"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "Экспортировано {count} загруженных записей «Смотреть позже»"
+  },
+  "wlwbLogEmpty": {
+    "message": "Журнал удалений пуст"
+  },
+  "wlwbNoMatches": {
+    "message": "Нет совпадающих строк для удаления"
+  },
+  "wlwbOpenAria": {
+    "message": "Открыть мастерскую «Смотреть позже»"
+  },
+  "wlwbOpenBtn": {
+    "message": "Мастерская"
+  },
+  "wlwbPanelAria": {
+    "message": "Мастерская «Смотреть позже»"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "Журнал удалений"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "Удалить совпадения (не более {limit} за запуск)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— ещё {count} совпадают, запустите снова"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "Удалено видео: {count}{remaining}. Список для восстановления — в журнале удалений."
+  },
+  "wlwbRemovingTpl": {
+    "message": "Удаление {current} / {total}…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel} (просмотрено {percent}%)"
+  },
+  "wlwbSortAria": {
+    "message": "Порядок сортировки предпросмотра"
+  },
+  "wlwbSortLongest": {
+    "message": "Сначала длинные"
+  },
+  "wlwbSortPlaylist": {
+    "message": "Порядок плейлиста"
+  },
+  "wlwbSortShortest": {
+    "message": "Сначала короткие"
+  },
+  "wlwbSortTitle": {
+    "message": "Название А–Я"
+  },
+  "wlwbStatusTpl": {
+    "message": "Совпадает {matched} из {loaded} загруженных видео. Прокрутите плейлист, чтобы загрузить больше строк перед запуском."
+  },
+  "wlwbTitleAria": {
+    "message": "Фильтр по названию"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "Название содержит…"
+  },
+  "wlwbWatchedAria": {
+    "message": "Фильтр минимального процента просмотра"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "Просмотрено ≥ % (напр., 90)"
   },
   "workspaceEyebrow": {
     "message": "Рабочая область настроек"

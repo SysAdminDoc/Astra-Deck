@@ -3041,6 +3041,84 @@
   "quickTogglesEyebrow": {
     "message": "빠른 토글"
   },
+  "reactionSenderChooseOne": {
+    "message": "사용 가능한 반응을 하나 이상 선택하세요."
+  },
+  "reactionSenderCollapseAria": {
+    "message": "패널 접기"
+  },
+  "reactionSenderEmpty": {
+    "message": "반응을 찾을 수 없습니다. 반응 버튼을 연 다음 새로고침하세요."
+  },
+  "reactionSenderExpandAria": {
+    "message": "패널 펼치기"
+  },
+  "reactionSenderHideAria": {
+    "message": "반응 전송 패널 숨기기"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "반응 간격(밀리초)"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "간격"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "반응"
+  },
+  "reactionSenderOpenAria": {
+    "message": "반응 전송 도구 열기"
+  },
+  "reactionSenderPickerHint": {
+    "message": "YouTube의 반응 선택기를 연 다음 이 목록을 새로고침하세요."
+  },
+  "reactionSenderRateWarning": {
+    "message": "빠른 반응은 YouTube에서 속도가 제한될 수 있습니다. 최소 간격은 500ms입니다."
+  },
+  "reactionSenderRefresh": {
+    "message": "반응 새로고침"
+  },
+  "reactionSenderRiskToast": {
+    "message": "반응 전송: 빠른 반응은 YouTube에서 제한되거나 신고될 수 있습니다. 위험을 감수하고 사용하세요."
+  },
+  "reactionSenderRunningTpl": {
+    "message": "반응 {count}개로 실행 중입니다."
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "실행 중, 선택한 반응을 기다리는 중입니다."
+  },
+  "reactionSenderSelectOne": {
+    "message": "반응을 하나 이상 선택하세요."
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "반응 {count}개를 선택했습니다."
+  },
+  "reactionSenderSentTpl": {
+    "message": "{emoji} 전송됨"
+  },
+  "reactionSenderStart": {
+    "message": "시작"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "연속 전송 시작"
+  },
+  "reactionSenderStop": {
+    "message": "중지"
+  },
+  "reactionSenderStopped": {
+    "message": "중지됨"
+  },
+  "reactionSenderTest": {
+    "message": "테스트"
+  },
+  "reactionSenderTestHint": {
+    "message": "시작하기 전에 테스트로 반응을 하나 보내 보세요."
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "{emoji} 한 번 보내기"
+  },
+  "reactionSenderTitle": {
+    "message": "반응 전송"
+  },
   "reenableMediadlAria": {
     "message": "Astra Downloader 설치 프롬프트 다시 활성화"
   },
@@ -3865,6 +3943,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "채널 이름 필터"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "채널에 포함…"
+  },
+  "wlwbCloseAria": {
+    "message": "워크벤치 닫기"
+  },
+  "wlwbExportCsv": {
+    "message": "CSV 내보내기"
+  },
+  "wlwbExportJson": {
+    "message": "JSON 내보내기"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "불러온 나중에 볼 동영상 {count}개를 내보냈습니다"
+  },
+  "wlwbLogEmpty": {
+    "message": "제거 기록이 비어 있습니다"
+  },
+  "wlwbNoMatches": {
+    "message": "제거할 일치 항목이 없습니다"
+  },
+  "wlwbOpenAria": {
+    "message": "나중에 볼 동영상 워크벤치 열기"
+  },
+  "wlwbOpenBtn": {
+    "message": "워크벤치"
+  },
+  "wlwbPanelAria": {
+    "message": "나중에 볼 동영상 워크벤치"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "제거 기록"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "일치 항목 제거(실행당 최대 {limit}개)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— {count}개가 아직 일치합니다. 다시 실행하세요"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "동영상 {count}개를 제거했습니다{remaining}. 복구 목록은 제거 기록에 있습니다."
+  },
+  "wlwbRemovingTpl": {
+    "message": "{current} / {total} 제거 중…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel}({percent}% 시청함)"
+  },
+  "wlwbSortAria": {
+    "message": "미리보기 정렬 순서"
+  },
+  "wlwbSortLongest": {
+    "message": "긴 순서"
+  },
+  "wlwbSortPlaylist": {
+    "message": "재생목록 순서"
+  },
+  "wlwbSortShortest": {
+    "message": "짧은 순서"
+  },
+  "wlwbSortTitle": {
+    "message": "제목 A–Z"
+  },
+  "wlwbStatusTpl": {
+    "message": "불러온 동영상 {loaded}개 중 {matched}개가 일치합니다. 실행 전에 재생목록을 스크롤하여 더 많은 행을 불러오세요."
+  },
+  "wlwbTitleAria": {
+    "message": "제목 필터"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "제목에 포함…"
+  },
+  "wlwbWatchedAria": {
+    "message": "최소 시청 비율 필터"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "시청 ≥ %(예: 90)"
   },
   "workspaceEyebrow": {
     "message": "설정 작업 공간"

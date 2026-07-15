@@ -3041,6 +3041,84 @@
   "quickTogglesEyebrow": {
     "message": "Commutateurs rapides"
   },
+  "reactionSenderChooseOne": {
+    "message": "Choisissez au moins une réaction disponible."
+  },
+  "reactionSenderCollapseAria": {
+    "message": "Réduire le panneau"
+  },
+  "reactionSenderEmpty": {
+    "message": "Aucune réaction trouvée. Ouvrez le bouton de réactions, puis actualisez."
+  },
+  "reactionSenderExpandAria": {
+    "message": "Développer le panneau"
+  },
+  "reactionSenderHideAria": {
+    "message": "Masquer le panneau d’envoi de réactions"
+  },
+  "reactionSenderIntervalAria": {
+    "message": "Intervalle entre réactions en millisecondes"
+  },
+  "reactionSenderIntervalLabel": {
+    "message": "Intervalle"
+  },
+  "reactionSenderLauncherBtn": {
+    "message": "Réagir"
+  },
+  "reactionSenderOpenAria": {
+    "message": "Ouvrir l’envoi de réactions"
+  },
+  "reactionSenderPickerHint": {
+    "message": "Ouvrez le sélecteur de réactions de YouTube, puis actualisez cette liste."
+  },
+  "reactionSenderRateWarning": {
+    "message": "YouTube peut limiter les réactions rapides. L’intervalle minimal est de 500 ms."
+  },
+  "reactionSenderRefresh": {
+    "message": "Actualiser les réactions"
+  },
+  "reactionSenderRiskToast": {
+    "message": "Envoi de réactions : YouTube peut limiter ou signaler les réactions rapides. À utiliser à vos risques."
+  },
+  "reactionSenderRunningTpl": {
+    "message": "En cours avec {count} réaction(s)."
+  },
+  "reactionSenderRunningWaiting": {
+    "message": "En cours, en attente des réactions sélectionnées."
+  },
+  "reactionSenderSelectOne": {
+    "message": "Sélectionnez au moins une réaction."
+  },
+  "reactionSenderSelectedTpl": {
+    "message": "{count} réaction(s) sélectionnée(s)."
+  },
+  "reactionSenderSentTpl": {
+    "message": "{emoji} envoyé"
+  },
+  "reactionSenderStart": {
+    "message": "Démarrer"
+  },
+  "reactionSenderStartSpamming": {
+    "message": "Démarrer l’envoi en continu"
+  },
+  "reactionSenderStop": {
+    "message": "Arrêter"
+  },
+  "reactionSenderStopped": {
+    "message": "Arrêté"
+  },
+  "reactionSenderTest": {
+    "message": "Tester"
+  },
+  "reactionSenderTestHint": {
+    "message": "Utilisez Tester pour envoyer une réaction avant de démarrer."
+  },
+  "reactionSenderTestTitleTpl": {
+    "message": "Envoyer {emoji} une fois"
+  },
+  "reactionSenderTitle": {
+    "message": "Envoi de réactions"
+  },
   "reenableMediadlAria": {
     "message": "Réactiver les invites d'installation d'Astra Downloader"
   },
@@ -3865,6 +3943,87 @@
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
+  },
+  "wlwbChannelAria": {
+    "message": "Filtre par nom de chaîne"
+  },
+  "wlwbChannelPlaceholder": {
+    "message": "La chaîne contient…"
+  },
+  "wlwbCloseAria": {
+    "message": "Fermer l’atelier"
+  },
+  "wlwbExportCsv": {
+    "message": "Exporter en CSV"
+  },
+  "wlwbExportJson": {
+    "message": "Exporter en JSON"
+  },
+  "wlwbExportedToastTpl": {
+    "message": "{count} entrées chargées de « À regarder plus tard » exportées"
+  },
+  "wlwbLogEmpty": {
+    "message": "Le journal des suppressions est vide"
+  },
+  "wlwbNoMatches": {
+    "message": "Aucune ligne correspondante à supprimer"
+  },
+  "wlwbOpenAria": {
+    "message": "Ouvrir l’atelier « À regarder plus tard »"
+  },
+  "wlwbOpenBtn": {
+    "message": "Atelier"
+  },
+  "wlwbPanelAria": {
+    "message": "Atelier « À regarder plus tard »"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "Journal des suppressions"
+  },
+  "wlwbRemoveMatchedTpl": {
+    "message": "Supprimer les correspondances (max. {limit}/exécution)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— {count} correspondent encore, relancez"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "{count} vidéo(s) supprimée(s){remaining}. La liste de récupération se trouve dans le journal des suppressions."
+  },
+  "wlwbRemovingTpl": {
+    "message": "Suppression de {current} / {total}…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel} ({percent} % visionné)"
+  },
+  "wlwbSortAria": {
+    "message": "Ordre de tri de l’aperçu"
+  },
+  "wlwbSortLongest": {
+    "message": "Les plus longues d’abord"
+  },
+  "wlwbSortPlaylist": {
+    "message": "Ordre de la playlist"
+  },
+  "wlwbSortShortest": {
+    "message": "Les plus courtes d’abord"
+  },
+  "wlwbSortTitle": {
+    "message": "Titre A–Z"
+  },
+  "wlwbStatusTpl": {
+    "message": "{matched} des {loaded} vidéos chargées correspondent. Faites défiler la playlist pour charger plus de lignes avant l’exécution."
+  },
+  "wlwbTitleAria": {
+    "message": "Filtre par titre"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "Le titre contient…"
+  },
+  "wlwbWatchedAria": {
+    "message": "Filtre de pourcentage minimal visionné"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "Visionné ≥ % (p. ex. 90)"
   },
   "workspaceEyebrow": {
     "message": "Espace de paramètres"
