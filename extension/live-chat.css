@@ -1,13 +1,17 @@
 /* Generated from premiumLiveChat in extension/ytkit.js. Run npm run generate:live-chat-css after editing that source. */
+/* Parent-page shell: theme-var driven (dark fallbacks) so
+   the frame around the chat follows light YouTube like its
+   native siblings; the iframe interior keeps the premium
+   dark aesthetic on purpose. */
 html:not(.ytkit-split-active) ytd-live-chat-frame#chat,
 html:not(.ytkit-split-active) ytd-live-chat-frame:not([collapsed]),
 html:not(.ytkit-split-active) #chat.ytd-live-chat-frame {
     position: relative;
     border-radius: 12px !important;
     overflow: hidden !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    background: radial-gradient(circle at top, rgba(245,158,11,0.12), transparent 42%), linear-gradient(180deg, rgba(18,24,33,0.98) 0%, rgba(9,12,18,0.98) 100%) !important;
-    box-shadow: 0 28px 80px rgba(2,6,12,0.42), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.08)) !important;
+    background: var(--yt-spec-menu-background, #0d1119) !important;
+    box-shadow: 0 28px 80px rgba(2,6,12,0.42) !important;
     isolation: isolate;
 }
 html:not(.ytkit-split-active) ytd-live-chat-frame#chat > iframe,
@@ -19,8 +23,8 @@ html:not(.ytkit-split-active) #chat.ytd-live-chat-frame > iframe {
 }
 html:not(.ytkit-split-active) ytd-live-chat-frame #show-hide-button,
 html:not(.ytkit-split-active) #chat #show-hide-button {
-    border-top: 1px solid rgba(255,255,255,0.08) !important;
-    background: linear-gradient(180deg, rgba(15,19,28,0.82), rgba(11,14,21,0.96)) !important;
+    border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.08)) !important;
+    background: var(--yt-spec-menu-background, #0d1119) !important;
     backdrop-filter: none;
 }
 
@@ -77,7 +81,7 @@ html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #title {
     letter-spacing: 0;
     color: var(--ytkit-livechat-text);
 }
-html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #view-selector { margin-left: auto; }
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #view-selector { margin-inline-start: auto; }
 html[data-ytkit-livechat-premium] yt-live-chat-header-renderer tp-yt-paper-button#label,
 html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #viewer-leaderboard-entry-point button,
 html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #action-buttons button,
@@ -135,14 +139,14 @@ html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[author-is-o
     background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(255,255,255,0.03)) !important;
 }
 html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"] {
-    padding-left: 60px !important;
+    padding-inline-start: 60px !important;
 }
 html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-fallback="1"]::before,
 html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"]::before {
     content: attr(data-ytkit-author-initial);
     position: absolute;
     top: 10px;
-    left: 12px;
+    inset-inline-start: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -246,7 +250,7 @@ html[data-ytkit-livechat-premium] #show-original.yt-live-chat-text-message-rende
 html[data-ytkit-livechat-premium] #menu.yt-live-chat-text-message-renderer,
 html[data-ytkit-livechat-premium] #menu.yt-live-chat-paid-message-renderer {
     top: 10px !important;
-    right: 10px !important;
+    inset-inline-end: 10px !important;
     bottom: auto !important;
     transform: none !important;
 }

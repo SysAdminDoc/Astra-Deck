@@ -14567,15 +14567,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 const css = `
+                    /* Parent-page shell: theme-var driven (dark fallbacks) so
+                       the frame around the chat follows light YouTube like its
+                       native siblings; the iframe interior keeps the premium
+                       dark aesthetic on purpose. */
                     html:not(.ytkit-split-active) ytd-live-chat-frame#chat,
                     html:not(.ytkit-split-active) ytd-live-chat-frame:not([collapsed]),
                     html:not(.ytkit-split-active) #chat.ytd-live-chat-frame {
                         position: relative;
                         border-radius: 12px !important;
                         overflow: hidden !important;
-                        border: 1px solid rgba(255,255,255,0.08) !important;
-                        background: radial-gradient(circle at top, rgba(245,158,11,0.12), transparent 42%), linear-gradient(180deg, rgba(18,24,33,0.98) 0%, rgba(9,12,18,0.98) 100%) !important;
-                        box-shadow: 0 28px 80px rgba(2,6,12,0.42), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+                        border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.08)) !important;
+                        background: var(--yt-spec-menu-background, #0d1119) !important;
+                        box-shadow: 0 28px 80px rgba(2,6,12,0.42) !important;
                         isolation: isolate;
                     }
                     html:not(.ytkit-split-active) ytd-live-chat-frame#chat > iframe,
@@ -14587,8 +14591,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     html:not(.ytkit-split-active) ytd-live-chat-frame #show-hide-button,
                     html:not(.ytkit-split-active) #chat #show-hide-button {
-                        border-top: 1px solid rgba(255,255,255,0.08) !important;
-                        background: linear-gradient(180deg, rgba(15,19,28,0.82), rgba(11,14,21,0.96)) !important;
+                        border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.08)) !important;
+                        background: var(--yt-spec-menu-background, #0d1119) !important;
                         backdrop-filter: none;
                     }
 
@@ -14645,7 +14649,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         letter-spacing: 0;
                         color: var(--ytkit-livechat-text);
                     }
-                    html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #view-selector { margin-left: auto; }
+                    html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #view-selector { margin-inline-start: auto; }
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer tp-yt-paper-button#label,
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #viewer-leaderboard-entry-point button,
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #action-buttons button,
@@ -14703,14 +14707,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(255,255,255,0.03)) !important;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"] {
-                        padding-left: 60px !important;
+                        padding-inline-start: 60px !important;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-fallback="1"]::before,
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"]::before {
                         content: attr(data-ytkit-author-initial);
                         position: absolute;
                         top: 10px;
-                        left: 12px;
+                        inset-inline-start: 12px;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
@@ -14814,7 +14818,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #menu.yt-live-chat-text-message-renderer,
                     html[data-ytkit-livechat-premium] #menu.yt-live-chat-paid-message-renderer {
                         top: 10px !important;
-                        right: 10px !important;
+                        inset-inline-end: 10px !important;
                         bottom: auto !important;
                         transform: none !important;
                     }
@@ -15863,7 +15867,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     #ytkit-reaction-spammer-launcher {
                         position: fixed;
-                        right: 12px;
+                        inset-inline-end: 12px;
                         bottom: 74px;
                         z-index: 2147483646;
                         display: inline-flex;
@@ -15892,11 +15896,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         z-index: 2147483647;
                         width: 276px;
                         max-width: calc(100vw - 16px);
-                        border: 1px solid rgba(255,255,255,0.14);
+                        border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.14));
                         border-radius: 12px;
-                        background: linear-gradient(180deg, rgba(18,24,35,0.98), rgba(9,12,18,0.98));
-                        color: rgba(248,250,252,0.96);
-                        box-shadow: 0 24px 60px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.06);
+                        background: var(--yt-spec-menu-background, #10141c);
+                        color: var(--yt-spec-text-primary, rgba(248,250,252,0.96));
+                        box-shadow: 0 24px 60px rgba(0,0,0,0.46);
                         font: 12px/1.4 "Roboto", "Arial", sans-serif;
                         overflow: hidden;
                     }
@@ -15912,8 +15916,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         padding: 9px 10px;
                         cursor: move;
                         user-select: none;
-                        background: rgba(255,255,255,0.045);
-                        border-bottom: 1px solid rgba(255,255,255,0.08);
+                        background: var(--yt-spec-badge-chip-background, rgba(255,255,255,0.045));
+                        border-bottom: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.08));
                     }
                     .ytkit-rs-title {
                         min-width: 0;
@@ -15937,19 +15941,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         gap: 4px;
                         max-height: 220px;
                         overflow: auto;
-                        padding-right: 2px;
+                        padding-inline-end: 2px;
                     }
                     .ytkit-rs-row {
                         display: flex;
                         align-items: center;
                         gap: 8px;
                         min-height: 34px;
-                        padding: 4px 4px 4px 8px;
+                        padding-block: 4px;
+                        padding-inline: 8px 4px;
                         border-radius: 8px;
-                        background: rgba(255,255,255,0.035);
+                        background: var(--yt-spec-badge-chip-background, rgba(255,255,255,0.035));
                     }
                     .ytkit-rs-row:hover {
-                        background: rgba(255,255,255,0.065);
+                        background: var(--yt-spec-10-percent-layer, rgba(255,255,255,0.065));
                     }
                     .ytkit-rs-choice {
                         display: flex;
@@ -15977,10 +15982,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         justify-content: center;
                         min-height: 32px;
                         width: 100%;
-                        border: 1px solid rgba(255,255,255,0.1);
+                        border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.1));
                         border-radius: 8px;
-                        background: rgba(255,255,255,0.055);
-                        color: rgba(248,250,252,0.92);
+                        background: var(--yt-spec-badge-chip-background, rgba(255,255,255,0.055));
+                        color: var(--yt-spec-text-primary, rgba(248,250,252,0.92));
                         cursor: pointer;
                     }
                     .ytkit-rs-button:hover {
@@ -16003,7 +16008,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         width: 28px;
                         min-height: 28px;
                         border-radius: 8px;
-                        background: rgba(255,255,255,0.035);
+                        background: var(--yt-spec-badge-chip-background, rgba(255,255,255,0.035));
                     }
                     .ytkit-rs-button-compact {
                         flex: 0 0 auto;
@@ -16018,27 +16023,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         align-items: center;
                         gap: 8px;
                         margin-top: 8px;
-                        color: rgba(203,213,225,0.9);
+                        color: var(--yt-spec-text-secondary, rgba(203,213,225,0.9));
                     }
                     .ytkit-rs-field input {
                         min-width: 0;
                         height: 30px;
                         box-sizing: border-box;
-                        border: 1px solid rgba(255,255,255,0.1);
+                        border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,0.1));
                         border-radius: 8px;
-                        background: rgba(2,6,12,0.42);
-                        color: rgba(248,250,252,0.96);
+                        background: var(--yt-spec-general-background-a, rgba(2,6,12,0.42));
+                        color: var(--yt-spec-text-primary, rgba(248,250,252,0.96));
                         padding: 0 8px;
                     }
                     .ytkit-rs-status {
                         min-height: 17px;
                         margin-top: 7px;
-                        color: rgba(203,213,225,0.88);
+                        color: var(--yt-spec-text-secondary, rgba(203,213,225,0.88));
                         font-size: 11px;
                     }
                     .ytkit-rs-hint,
                     .ytkit-rs-empty {
-                        color: rgba(148,163,184,0.78);
+                        color: var(--yt-spec-text-secondary, rgba(148,163,184,0.78));
                         font-size: 11px;
                     }
                     .ytkit-rs-empty {
@@ -33047,21 +33052,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                // Theme-var driven (dark fallbacks) so the workbench follows
+                // light YouTube like the native playlist controls beside it,
+                // with logical inline properties for RTL locales.
                 this._styleEl = injectStyle(`
-                    .ytkit-wlwb-open { margin-left: 8px; padding: 8px 14px; background: #1f2430; color: #dbeafe; border: 1px solid #334155; border-radius: 6px; font: 600 13px/1 system-ui; cursor: pointer; }
-                    .ytkit-wlwb-open:hover { background: #334155; color: #fff; }
-                    .ytkit-wlwb-panel { position: fixed; right: 18px; bottom: 18px; z-index: 9999; width: 400px; max-height: 70vh; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; background: rgba(18, 18, 22, 0.97); color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
-                    .ytkit-wlwb-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 600; }
-                    .ytkit-wlwb-header button { border: none; background: transparent; color: rgba(255, 255, 255, 0.7); cursor: pointer; font-size: 14px; }
+                    .ytkit-wlwb-open { margin-inline-start: 8px; padding: 8px 14px; background: var(--yt-spec-badge-chip-background, #1f2430); color: var(--yt-spec-text-primary, #dbeafe); border: 1px solid var(--yt-spec-10-percent-layer, #334155); border-radius: 6px; font: 600 13px/1 system-ui; cursor: pointer; }
+                    .ytkit-wlwb-open:hover { background: var(--yt-spec-10-percent-layer, #334155); color: var(--yt-spec-text-primary, #fff); }
+                    .ytkit-wlwb-panel { position: fixed; inset-inline-end: 18px; bottom: 18px; z-index: 9999; width: 400px; max-height: 70vh; display: flex; flex-direction: column; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 12px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.97)); color: var(--yt-spec-text-primary, #fff); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+                    .ytkit-wlwb-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.1)); font-size: 13px; font-weight: 600; }
+                    .ytkit-wlwb-header button { border: none; background: transparent; color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.7)); cursor: pointer; font-size: 14px; }
                     .ytkit-wlwb-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 12px; }
-                    .ytkit-wlwb-controls input, .ytkit-wlwb-controls select { padding: 6px 8px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 12px; }
-                    .ytkit-wlwb-status { padding: 0 12px 6px; font-size: 11.5px; color: rgba(255, 255, 255, 0.65); }
+                    .ytkit-wlwb-controls input, .ytkit-wlwb-controls select { padding: 6px 8px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.06)); color: var(--yt-spec-text-primary, #fff); font-size: 12px; }
+                    .ytkit-wlwb-status { padding: 0 12px 6px; font-size: 11.5px; color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.65)); }
                     .ytkit-wlwb-list { flex: 1; overflow-y: auto; padding: 4px 0; min-height: 60px; }
                     .ytkit-wlwb-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 12px; font-size: 12px; }
                     .ytkit-wlwb-row span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                    .ytkit-wlwb-meta { color: rgba(255, 255, 255, 0.55); }
-                    .ytkit-wlwb-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
-                    .ytkit-wlwb-actions button { border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: transparent; color: #fff; font-size: 11.5px; padding: 5px 9px; cursor: pointer; }
+                    .ytkit-wlwb-meta { color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.55)); }
+                    .ytkit-wlwb-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.1)); }
+                    .ytkit-wlwb-actions button { border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: transparent; color: var(--yt-spec-text-primary, #fff); font-size: 11.5px; padding: 5px 9px; cursor: pointer; }
                     .ytkit-wlwb-actions button:hover:not(:disabled) { border-color: rgba(255, 143, 64, 0.7); }
                     .ytkit-wlwb-actions button:disabled { opacity: 0.6; cursor: progress; }
                     .ytkit-wlwb-panel button:focus-visible, .ytkit-wlwb-panel input:focus-visible, .ytkit-wlwb-panel select:focus-visible, .ytkit-wlwb-open:focus-visible { outline: 2px solid #ff8f40; outline-offset: 2px; }

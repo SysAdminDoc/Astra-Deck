@@ -47,31 +47,34 @@
         githubFullProfile: false
     });
 
+    // Theme-var driven (dark fallbacks) so the panel follows light YouTube
+    // like its native siblings, with logical inline properties so the
+    // launcher/panel mirror correctly in RTL locales.
     const REACTION_CSS = `
         #ytkit-reaction-spammer-launcher {
-            position: fixed; right: 12px; bottom: 12px; z-index: 2147483645;
+            position: fixed; inset-inline-end: 12px; bottom: 12px; z-index: 2147483645;
             min-width: 44px; min-height: 44px; border: 1px solid rgba(245,158,11,.45);
-            border-radius: 12px; background: #171c26; color: #fbbf24; cursor: pointer;
+            border-radius: 12px; background: var(--yt-spec-badge-chip-background, #171c26); color: #f59e0b; cursor: pointer;
         }
         #ytkit-reaction-spammer-panel {
-            position: fixed; right: 12px; bottom: 64px; z-index: 2147483646;
+            position: fixed; inset-inline-end: 12px; bottom: 64px; z-index: 2147483646;
             width: min(280px, calc(100vw - 24px)); max-height: min(520px, calc(100vh - 80px));
-            box-sizing: border-box; overflow: auto; padding: 12px; border: 1px solid rgba(255,255,255,.14);
-            border-radius: 14px; background: #111720; color: #f8fafc; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+            box-sizing: border-box; overflow: auto; padding: 12px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,.14));
+            border-radius: 14px; background: var(--yt-spec-menu-background, #111720); color: var(--yt-spec-text-primary, #f8fafc); box-shadow: 0 20px 60px rgba(0,0,0,.5);
             font: 12px/1.4 system-ui, sans-serif;
         }
         #ytkit-reaction-spammer-panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         #ytkit-reaction-spammer-panel h2 { margin: 0; font-size: 14px; }
         #ytkit-reaction-spammer-panel button,
         #ytkit-reaction-spammer-panel input { min-height: 32px; box-sizing: border-box; }
-        #ytkit-reaction-spammer-panel button { border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: #202938; color: inherit; cursor: pointer; }
+        #ytkit-reaction-spammer-panel button { border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,.14)); border-radius: 8px; background: var(--yt-spec-badge-chip-background, #202938); color: inherit; cursor: pointer; }
         #ytkit-reaction-spammer-panel button:focus-visible,
         #ytkit-reaction-spammer-panel input:focus-visible { outline: 2px solid #f59e0b; outline-offset: 2px; }
         .ytkit-rs-options { display: grid; gap: 6px; margin: 10px 0; }
         .ytkit-rs-options label { display: flex; align-items: center; gap: 8px; }
         .ytkit-rs-controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-        .ytkit-rs-warning { margin: 8px 0; color: #fde68a; }
-        .ytkit-rs-status { min-height: 18px; margin-top: 8px; color: #cbd5e1; }
+        .ytkit-rs-warning { margin: 8px 0; color: var(--yt-spec-text-secondary, #fde68a); }
+        .ytkit-rs-status { min-height: 18px; margin-top: 8px; color: var(--yt-spec-text-secondary, #cbd5e1); }
         @media (forced-colors: active) {
             #ytkit-reaction-spammer-launcher,
             #ytkit-reaction-spammer-panel { border: 1px solid ButtonText; }
