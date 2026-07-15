@@ -77,6 +77,7 @@ const V5_BUNDLE_MODULES = [
     'extension/features/home-subs-css/index.js',
     'extension/features/chat-style-comments/index.js',
     'extension/features/sticky-video/index.js',
+    'extension/features/sticky-chat/index.js',
     'extension/features/video-hider/index.js',
     'extension/features/video-notes/index.js',
     'extension/features/subscription-groups/index.js',
