@@ -247,7 +247,10 @@ class PersistenceTests(unittest.TestCase):
 
 class CompanionGuiPolicyTests(unittest.TestCase):
     def test_companion_settings_flows_do_not_use_blocking_message_boxes(self):
-        src = Path(ad.__file__).read_text(encoding='utf-8')
+        src = (
+            Path(ad.__file__).read_text(encoding='utf-8')
+            + Path(ad.__file__).with_name('gui.py').read_text(encoding='utf-8')
+        )
         import inspect
         server_error_src = inspect.getsource(ad.MainWindow._show_server_error)
         self.assertNotIn(
@@ -264,8 +267,8 @@ class CompanionGuiPolicyTests(unittest.TestCase):
     def test_companion_uses_premium_command_center_and_async_readiness(self):
         import inspect
 
-        source = Path(ad.__file__).read_text(encoding="utf-8")
         gui_source = Path(ad.__file__).with_name("gui.py").read_text(encoding="utf-8")
+        source = Path(ad.__file__).read_text(encoding="utf-8") + gui_source
         probe_source = inspect.getsource(ad.ReadinessProbe.run)
         probe_wiring_source = inspect.getsource(ad.ReadinessProbe.__init__)
         download_card_source = inspect.getsource(ad.MainWindow._download_card)
@@ -366,6 +369,15 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window._sync_connection_ui = lambda: window.server_calls.append("sync")
         window._stop_server = lambda: window.server_calls.append("stop")
         window._start_server = lambda: window.server_calls.append("start")
+        window._dependencies = {
+            "clamp_int": ad.clamp_int,
+            "normalize_output_dir": ad.normalize_output_dir,
+            "normalize_proxy": ad.normalize_proxy,
+            "normalize_rate_limit": ad.normalize_rate_limit,
+            "normalize_sublangs": ad.normalize_sublangs,
+        }
+        values = {"DEFAULT_CONFIG": ad.DEFAULT_CONFIG, "SERVER_PORT": ad.SERVER_PORT}
+        window._value = values.__getitem__
 
         ad.MainWindow._save_settings(window)
 
@@ -1403,7 +1415,8 @@ for forbidden in (
         self.assertIs(health.build_javascript_runtime_args, ad.build_javascript_runtime_args)
         self.assertEqual(routes.create_api.__module__, routes.__name__)
         self.assertIsNot(routes.create_api, ad.create_api)
-        self.assertIs(gui.MainWindow, ad.MainWindow)
+        self.assertIs(gui.MainWindow, gui.MainWindowCore)
+        self.assertTrue(issubclass(ad.MainWindow, gui.MainWindowCore))
         self.assertIs(gui.make_label, ad.make_label)
         self.assertIs(gui.make_empty_state, ad.make_empty_state)
         self.assertIs(gui.human_status, ad.human_status)
