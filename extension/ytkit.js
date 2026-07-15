@@ -19454,6 +19454,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'hash',
             pages: [PageTypes.WATCH],
             _processTimer: null,
+            _dateEl: null,
+            _styleEl: null,
             _scheduleProcess(delay = 1500) {
                 if (this._processTimer) clearTimeout(this._processTimer);
                 this._processTimer = setTimeout(() => {
@@ -19464,29 +19466,101 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _process() {
                 const infoEl = document.querySelector('ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata .view-count, #info-text .view-count, ytd-video-primary-info-renderer .view-count');
-                if (!infoEl || infoEl.dataset.ytkitPrecise) return;
                 try {
                     const playerResponse = _rw.ytInitialPlayerResponse;
                     const viewCount = playerResponse?.videoDetails?.viewCount;
-                    if (viewCount) {
+                    if (infoEl && !infoEl.dataset.ytkitPrecise && viewCount) {
                         const formatted = Number(viewCount).toLocaleString();
                         const text = infoEl.textContent;
                         if (text.includes('view')) {
+                            infoEl.dataset.ytkitPreciseOriginal = text;
                             infoEl.textContent = `${formatted} views`;
                             infoEl.dataset.ytkitPrecise = '1';
                         }
                     }
                 } catch(e) { /* reason: precise view replacement can fall back to native text */ }
+
+                this._renderExactUploadDate();
+            },
+
+            _getUploadDateValue() {
+                const currentVideoId = getVideoId();
+                try {
+                    const playerResponse = _rw.ytInitialPlayerResponse;
+                    const responseVideoId = playerResponse?.videoDetails?.videoId;
+                    if (!responseVideoId || !currentVideoId || responseVideoId === currentVideoId) {
+                        const microformat = playerResponse?.microformat?.playerMicroformatRenderer;
+                        const raw = microformat?.liveBroadcastDetails?.startTimestamp
+                            || microformat?.publishDate
+                            || microformat?.uploadDate;
+                        if (globalThis.YTKitCore?.parseYouTubeDate?.(raw)) return raw;
+                    }
+                } catch { /* reason: player response metadata can be unavailable during navigation */ }
+
+                const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
+                const value = meta?.getAttribute('content');
+                return globalThis.YTKitCore?.parseYouTubeDate?.(value) ? value : null;
+            },
+
+            _getDateAnchor() {
+                const candidates = Array.from(document.querySelectorAll(
+                    '#info-strings yt-formatted-string, ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata #info-text yt-formatted-string'
+                ));
+                return candidates.find((el) => /(?:premiered|streamed|published|uploaded|\b\d{4}\b)/i.test(el.textContent || ''))
+                    || candidates[0]
+                    || null;
+            },
+
+            _renderExactUploadDate() {
+                this._dateEl?.remove();
+                this._dateEl = null;
+                const value = this._getUploadDateValue();
+                const dateText = globalThis.YTKitCore?.formatAbsoluteYouTubeDate?.(value);
+                const anchor = this._getDateAnchor();
+                if (!dateText || !anchor?.parentElement) return;
+
+                const exact = document.createElement('span');
+                exact.className = 'ytkit-exact-upload-date';
+                // i18n-static: locale-formatted date contains no translatable static copy
+                exact.textContent = `(${dateText})`;
+                exact.title = dateText;
+                exact.setAttribute('aria-label', dateText);
+                exact.setAttribute('translate', 'no');
+                anchor.insertAdjacentElement('afterend', exact);
+                this._dateEl = exact;
             },
 
             init() {
+                this._styleEl = injectStyle(`
+                    .ytkit-exact-upload-date {
+                        margin-inline-start: 6px;
+                        color: var(--yt-spec-text-secondary, #aaa);
+                        font: inherit;
+                        white-space: nowrap;
+                    }
+                `, this.id, true);
                 this._scheduleProcess(1500);
-                addNavigateRule('preciseViews', () => this._scheduleProcess(2000));
+                addNavigateRule('preciseViews', () => {
+                    this._dateEl?.remove();
+                    this._dateEl = null;
+                    this._scheduleProcess(2000);
+                });
             },
             destroy() {
                 if (this._processTimer) clearTimeout(this._processTimer);
                 this._processTimer = null;
                 removeNavigateRule('preciseViews');
+                this._dateEl?.remove();
+                this._dateEl = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
+                document.querySelectorAll('[data-ytkit-precise]').forEach((el) => {
+                    if (el.dataset.ytkitPreciseOriginal !== undefined) {
+                        el.textContent = el.dataset.ytkitPreciseOriginal;
+                    }
+                    delete el.dataset.ytkitPrecise;
+                    delete el.dataset.ytkitPreciseOriginal;
+                });
             }
         },
 
@@ -30684,6 +30758,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (/\b(\d+)\s+years?\s+ago/.test(t)) return 'ancient';
                 return null;
             },
+            _findRelativeDateElement(meta) {
+                if (!meta) return null;
+                const descendants = Array.from(meta.querySelectorAll('span, yt-formatted-string'))
+                    .filter((el) => el.childElementCount === 0);
+                const candidates = descendants.length ? descendants : [meta];
+                return candidates.find((el) => globalThis.YTKitCore?.parseRelativeYouTubeAge?.(el.textContent || '')) || null;
+            },
+            _decorateAbsoluteDate(meta) {
+                const dateEl = this._findRelativeDateElement(meta);
+                if (!dateEl || dateEl.dataset.ytkitAbsoluteDate) return;
+                const originalText = String(dateEl.textContent || '').trim();
+                const relativeAge = globalThis.YTKitCore?.parseRelativeYouTubeAge?.(originalText);
+                const absoluteText = globalThis.YTKitCore?.formatApproximateYouTubeDate?.(relativeAge);
+                if (!absoluteText) return;
+
+                dateEl.dataset.ytkitAbsoluteDate = `≈ ${absoluteText}`;
+                dateEl.dataset.ytkitOriginalDateText = originalText;
+                dateEl.dataset.ytkitOriginalDateTitle = dateEl.getAttribute('title') || '';
+                dateEl.dataset.ytkitHadDateTitle = dateEl.hasAttribute('title') ? '1' : '0';
+                dateEl.dataset.ytkitOriginalDateAria = dateEl.getAttribute('aria-label') || '';
+                dateEl.dataset.ytkitHadDateAria = dateEl.hasAttribute('aria-label') ? '1' : '0';
+                dateEl.textContent = dateEl.dataset.ytkitAbsoluteDate;
+                // i18n-static: native relative text and locale-formatted date only
+                dateEl.title = `${originalText} → ${dateEl.dataset.ytkitAbsoluteDate}`;
+                dateEl.setAttribute('aria-label', dateEl.dataset.ytkitAbsoluteDate);
+                dateEl.setAttribute('translate', 'no');
+            },
             _scrolledToNewest: false,
             _process() {
                 const items = document.querySelectorAll('ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer');
@@ -30694,6 +30795,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const txt = meta?.textContent || '';
                     const cls = this._ageClass(txt);
                     if (cls) {
+                        this._decorateAbsoluteDate(meta);
                         it.dataset.ytkitAge = cls;
                         it.classList.add('ytkit-age-' + cls);
                         if (cls === 'fresh' && !freshest) freshest = it;
@@ -30730,7 +30832,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._mutRule = () => this._process();
                 addScopedMutationRule(
                     'videoAgeColors',
-                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer',
+                    'ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer',
                     this._mutRule
                 );
                 addNavigateRule('videoAgeColors', () => { this._scrolledToNewest = false; this._mutRule(); });
@@ -30743,6 +30845,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('[data-ytkit-age]').forEach(el => {
                     delete el.dataset.ytkitAge;
                     el.classList.remove('ytkit-age-fresh', 'ytkit-age-week', 'ytkit-age-month', 'ytkit-age-year', 'ytkit-age-ancient', 'ytkit-age-newest');
+                });
+                document.querySelectorAll('[data-ytkit-absolute-date]').forEach((el) => {
+                    if (el.textContent === el.dataset.ytkitAbsoluteDate) {
+                        el.textContent = el.dataset.ytkitOriginalDateText || '';
+                    }
+                    if (el.dataset.ytkitHadDateTitle === '1') el.setAttribute('title', el.dataset.ytkitOriginalDateTitle || '');
+                    else el.removeAttribute('title');
+                    if (el.dataset.ytkitHadDateAria === '1') el.setAttribute('aria-label', el.dataset.ytkitOriginalDateAria || '');
+                    else el.removeAttribute('aria-label');
+                    el.removeAttribute('translate');
+                    delete el.dataset.ytkitAbsoluteDate;
+                    delete el.dataset.ytkitOriginalDateText;
+                    delete el.dataset.ytkitOriginalDateTitle;
+                    delete el.dataset.ytkitHadDateTitle;
+                    delete el.dataset.ytkitOriginalDateAria;
+                    delete el.dataset.ytkitHadDateAria;
                 });
             }
         },
