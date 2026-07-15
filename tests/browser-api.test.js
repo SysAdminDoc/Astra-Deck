@@ -4,7 +4,7 @@
 // resolution must prefer the standards-track `browser` object, fall back
 // to `chrome`, and degrade to a null namespace when neither exists.
 // The wrapper loads FIRST on every surface so migrated call sites can
-// rely on it; sidepanel.js is the first migrated batch.
+// rely on it; sidepanel.js and popup.js are migrated bounded batches.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -84,6 +84,37 @@ test('browser-api tab messaging resolves null on rejection instead of leaking an
     assert.equal(await ctx.YTKitBrowser.sendTabMessage(8, { type: 'PING' }), null);
 });
 
+test('browser-api call normalizes callback-style Chromium APIs', async () => {
+    const chrome = {
+        runtime: { id: 'chrome', lastError: null },
+        storage: {
+            local: {
+                get(keys, callback) { callback({ [keys[0]]: 'value' }); }
+            }
+        }
+    };
+    const ctx = loadWrapper({ chrome, setTimeout, clearTimeout, Promise, Error });
+    const result = await ctx.YTKitBrowser.call(chrome.storage.local, 'get', [['key']]);
+    assert.deepEqual({ ...result }, { key: 'value' });
+});
+
+test('browser-api call normalizes Promise-only Firefox APIs', async () => {
+    const browser = {
+        runtime: { id: 'firefox' },
+        storage: {
+            local: {
+                get(...args) {
+                    if (args.length !== 1) throw new TypeError('callback overload unsupported');
+                    return Promise.resolve({ key: 'value' });
+                }
+            }
+        }
+    };
+    const ctx = loadWrapper({ browser, setTimeout, clearTimeout, Promise, Error, TypeError });
+    const result = await ctx.YTKitBrowser.call(browser.storage.local, 'get', [['key']]);
+    assert.deepEqual({ ...result }, { key: 'value' });
+});
+
 test('browser-api loads first in every content-script group and every extension page', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
     for (const group of manifest.content_scripts) {
@@ -112,4 +143,17 @@ test('sidepanel.js is fully migrated off direct chrome.* API calls (first batch)
         `sidepanel.js must route every extension API call through the ext wrapper (found: ${chromeCalls.join(', ')})`);
     assert.match(sidepanelSource, /globalThis\.YTKitBrowser\?\.hasNamespace/,
         'sidepanel.js must resolve its namespace through YTKitBrowser');
+});
+
+test('popup.js is fully migrated onto the cross-browser wrapper', () => {
+    const popupSource = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
+    const chromeCalls = popupSource.match(/\bchrome\.[a-zA-Z]/g) || [];
+    assert.deepEqual(chromeCalls, [],
+        `popup.js must route every extension API call through the wrapper (found: ${chromeCalls.join(', ')})`);
+    assert.match(popupSource, /const browserApi = globalThis\.YTKitBrowser;/,
+        'popup.js must resolve the shared browser API wrapper');
+    assert.match(popupSource, /return browserApi\.call\(target, method, args\);/,
+        'popup.js must normalize callback and Promise API signatures through browserApi.call');
+    assert.match(popupSource, /browserApi\.sendTabMessage\(/,
+        'popup tab messaging must use the timeout-bounded wrapper');
 });

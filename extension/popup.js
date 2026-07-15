@@ -3,6 +3,16 @@
 // (export, import, reset, storage stats) previously hosted by the
 // standalone options page.
 
+const browserApi = globalThis.YTKitBrowser;
+const ext = browserApi?.hasNamespace ? browserApi.ns : null;
+
+function callExtensionApi(target, method, ...args) {
+    if (!browserApi?.call) {
+        return Promise.reject(new Error(`Extension API wrapper unavailable: ${method}`));
+    }
+    return browserApi.call(target, method, args);
+}
+
 const QUICK_TOGGLES = [
     { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts shelves and links' },
     { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'Clear the watch-page side rail' },
@@ -140,12 +150,12 @@ function getSchemaIndex() {
     return _schemaIndex;
 }
 
-// Resolves user-facing strings via chrome.i18n by default. A manual
-// override (popup language dropdown) writes to chrome.storage.local
+// Resolves user-facing strings via ext.i18n by default. A manual
+// override (popup language dropdown) writes to ext.storage.local
 // `_localeOverride`; when set, we fetch that locale's bundled
 // messages.json once and serve from it. English literals stay inline
 // at every call site as the fallback so the source remains
-// self-documenting and the userscript build (no chrome.i18n) keeps
+// self-documenting and the userscript build (no ext.i18n) keeps
 // working.
 const I18N = { override: null, map: null, ready: false };
 
@@ -157,7 +167,7 @@ const BUNDLED_LOCALES = Object.freeze([
 const BUNDLED_LOCALE_SET = new Set(BUNDLED_LOCALES);
 
 // Defense: reject locale strings that aren't on the allowlist or that contain
-// path-separator / parent-segment characters. `chrome.runtime.getURL` is
+// path-separator / parent-segment characters. `ext.runtime.getURL` is
 // bounded to the extension origin, so the worst a malformed locale could do
 // is fetch an unrelated extension file and fall into the JSON-parse catch —
 // but rejecting up front avoids any wasted fetch and keeps the i18n surface
@@ -172,16 +182,15 @@ function isValidLocaleTag(locale) {
 
 async function initI18n() {
     try {
-        const items = await new Promise((resolve) =>
-            chrome.storage.local.get(['_localeOverride'], (i) => resolve(i || {})));
+        const items = await callExtensionApi(ext?.storage?.local, 'get', ['_localeOverride']) || {};
         const locale = (items._localeOverride || '').trim();
         if (!locale || locale === 'auto') { I18N.ready = true; return; }
         if (!isValidLocaleTag(locale)) {
-            // Stale or hostile override — fall back to chrome.i18n auto-detect.
+            // Stale or hostile override — fall back to ext.i18n auto-detect.
             I18N.ready = true;
             return;
         }
-        const url = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
+        const url = ext.runtime.getURL(`_locales/${locale}/messages.json`);
         const resp = await fetch(url);
         if (!resp.ok) { I18N.ready = true; return; }
         const json = await resp.json();
@@ -197,7 +206,7 @@ async function initI18n() {
 
 // Keep <html lang> truthful for assistive tech. popup.html ships
 // lang="en"; once initI18n resolves the effective locale (manual
-// override or chrome.i18n auto-detect) the document language must
+// override or ext.i18n auto-detect) the document language must
 // follow, otherwise screen readers announce localized strings with
 // English pronunciation rules. Locale tags are stored with an
 // underscore (pt_BR) but the lang attribute wants BCP-47 (pt-BR).
@@ -206,7 +215,7 @@ const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur']);
 function applyDocumentLanguage() {
     try {
         const resolvedLocale = I18N.override
-            || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage())
+            || (ext?.i18n?.getUILanguage && ext.i18n.getUILanguage())
             || 'en';
         if (resolvedLocale) {
             const bcp47 = resolvedLocale.replace('_', '-');
@@ -223,8 +232,8 @@ function t(key, fallback) {
             const m = I18N.map[key];
             if (m) return m;
         }
-        if (chrome?.i18n?.getMessage) {
-            const m = chrome.i18n.getMessage(key);
+        if (ext?.i18n?.getMessage) {
+            const m = ext.i18n.getMessage(key);
             if (m) return m;
         }
     } catch (_) { /* reason: i18n is best-effort */ }
@@ -237,13 +246,13 @@ function initLanguageDropdown() {
     sel.value = I18N.override || 'auto';
 
     // Surface the auto-detected locale name on the "Auto" option label so
-    // users can see what chrome.i18n picked for them. If the detected
+    // users can see what ext.i18n picked for them. If the detected
     // locale matches one of our bundled options we show its native name;
     // otherwise we just show the BCP-47 tag.
     try {
         const autoOpt = sel.querySelector('option[value="auto"]');
-        if (autoOpt && chrome?.i18n?.getUILanguage) {
-            const ui = chrome.i18n.getUILanguage() || '';
+        if (autoOpt && ext?.i18n?.getUILanguage) {
+            const ui = ext.i18n.getUILanguage() || '';
             // Map BCP-47 → bundled native label so an Auto user with a
             // German browser sees "Auto — Deutsch" instead of "Auto (de)".
             const NATIVE = {
@@ -266,8 +275,7 @@ function initLanguageDropdown() {
         // (or future migrations) might overwrite.
         const locale = (rawLocale === 'auto' || isValidLocaleTag(rawLocale)) ? rawLocale : 'auto';
         try {
-            await new Promise((resolve) =>
-                chrome.storage.local.set({ _localeOverride: locale }, resolve));
+            await callExtensionApi(ext?.storage?.local, 'set', { _localeOverride: locale });
         } catch (_) { /* reason: storage best-effort */ }
         // Reload the popup so every cached string reflects the new locale.
         // Cheaper than re-rendering every dynamic surface manually, and
@@ -543,13 +551,13 @@ const schemaOverviewList = $('#schema-overview-list');
 // without a settings round-trip.
 //
 // v4.29.0: also persisted across popup opens. The expanded set is
-// mirrored into chrome.storage.local under SCHEMA_OVERVIEW_EXPANDED_KEY
+// mirrored into ext.storage.local under SCHEMA_OVERVIEW_EXPANDED_KEY
 // so the popup remembers which categories the user had open.
 const SCHEMA_OVERVIEW_EXPANDED_KEY = 'ytkit_popup_schema_overview_expanded';
 const schemaOverviewState = { expanded: new Set() };
 
 // v4.29.0: persist popup overview expansion across opens. Stored as a
-// plain string array rather than a Set for chrome.storage compatibility.
+// plain string array rather than a Set for ext.storage compatibility.
 async function persistSchemaOverviewExpanded() {
     try {
         await storageSet({ [SCHEMA_OVERVIEW_EXPANDED_KEY]: [...schemaOverviewState.expanded] });
@@ -575,7 +583,7 @@ async function restoreSchemaOverviewExpanded() {
 
 // Storage warning thresholds.
 // Astra Deck declares the `unlimitedStorage` permission so the
-// default 10 MB chrome.storage.local quota is removed — but a
+// default 10 MB ext.storage.local quota is removed — but a
 // runaway-growth signal is still useful UX even without a hard
 // ceiling. Tier 1 (>20 MB) starts the soft nudge; tier 2 (>50 MB)
 // upgrades the wording. Both stay polite — the popup never auto-
@@ -585,7 +593,7 @@ const STORAGE_WARN_SOFT_BYTES = 20 * 1024 * 1024;
 const STORAGE_WARN_HARD_BYTES = 50 * 1024 * 1024;
 
 function getVersion() {
-    try { return (chrome.runtime.getManifest().version || '—'); } catch { return '—'; }
+    try { return (ext.runtime.getManifest().version || '—'); } catch { return '—'; }
 }
 
 const versionEl = $('#version');
@@ -605,16 +613,16 @@ if (versionEl) {
 // ── Storage wrappers ──
 
 function hasChromeStorageLocal(method) {
-    return typeof chrome !== 'undefined'
-        && !!chrome.storage
-        && !!chrome.storage.local
-        && (!method || typeof chrome.storage.local[method] === 'function');
+    return typeof ext !== 'undefined'
+        && !!ext.storage
+        && !!ext.storage.local
+        && (!method || typeof ext.storage.local[method] === 'function');
 }
 
 function isExtensionStorageUnavailable(error) {
     if (!hasChromeStorageLocal('get')) return true;
     const message = String(error?.message || error || '');
-    return /Extension storage is unavailable|Cannot read properties of undefined \(reading 'local'\)|chrome\.storage\.local/i.test(message);
+    return /Extension storage is unavailable|Cannot read properties of undefined \(reading 'local'\)|ext\.storage\.local/i.test(message);
 }
 
 function getStorageUnavailableMessage() {
@@ -622,59 +630,31 @@ function getStorageUnavailableMessage() {
 }
 
 function storageGet(keys) {
-    return new Promise((resolve, reject) => {
-        if (!hasChromeStorageLocal('get')) {
-            reject(new Error('Extension storage is unavailable in this context'));
-            return;
-        }
-        chrome.storage.local.get(keys, (items) => {
-            const error = chrome.runtime.lastError;
-            if (error) { reject(new Error(error.message)); return; }
-            resolve(items || {});
-        });
-    });
+    if (!hasChromeStorageLocal('get')) {
+        return Promise.reject(new Error('Extension storage is unavailable in this context'));
+    }
+    return callExtensionApi(ext.storage.local, 'get', keys).then((items) => items || {});
 }
 
 function storageSet(entries) {
-    return new Promise((resolve, reject) => {
-        if (!hasChromeStorageLocal('set')) {
-            reject(new Error('Extension storage is unavailable in this context'));
-            return;
-        }
-        chrome.storage.local.set(entries, () => {
-            const error = chrome.runtime.lastError;
-            if (error) { reject(new Error(error.message)); return; }
-            resolve();
-        });
-    });
+    if (!hasChromeStorageLocal('set')) {
+        return Promise.reject(new Error('Extension storage is unavailable in this context'));
+    }
+    return callExtensionApi(ext.storage.local, 'set', entries).then(() => undefined);
 }
 
 function storageRemove(keys) {
-    return new Promise((resolve, reject) => {
-        if (!hasChromeStorageLocal('remove')) {
-            reject(new Error('Extension storage is unavailable in this context'));
-            return;
-        }
-        chrome.storage.local.remove(keys, () => {
-            const error = chrome.runtime.lastError;
-            if (error) { reject(new Error(error.message)); return; }
-            resolve();
-        });
-    });
+    if (!hasChromeStorageLocal('remove')) {
+        return Promise.reject(new Error('Extension storage is unavailable in this context'));
+    }
+    return callExtensionApi(ext.storage.local, 'remove', keys).then(() => undefined);
 }
 
 function storageClear() {
-    return new Promise((resolve, reject) => {
-        if (!hasChromeStorageLocal('clear')) {
-            reject(new Error('Extension storage is unavailable in this context'));
-            return;
-        }
-        chrome.storage.local.clear(() => {
-            const error = chrome.runtime.lastError;
-            if (error) { reject(new Error(error.message)); return; }
-            resolve();
-        });
-    });
+    if (!hasChromeStorageLocal('clear')) {
+        return Promise.reject(new Error('Extension storage is unavailable in this context'));
+    }
+    return callExtensionApi(ext.storage.local, 'clear').then(() => undefined);
 }
 
 // ── Shared helpers ──
@@ -758,7 +738,7 @@ function migrateImportedSettings(settings, currentVersion, source = 'popup-impor
 
 async function readExtensionJson(filename, fallback) {
     try {
-        const url = chrome.runtime?.getURL ? chrome.runtime.getURL(filename) : filename;
+        const url = ext.runtime?.getURL ? ext.runtime.getURL(filename) : filename;
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const json = await response.json();
@@ -911,7 +891,7 @@ function getSettingsMutationController() {
 }
 function getManifestOptionalHostPermissions() {
     try {
-        const declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
+        const declared = ext?.runtime?.getManifest?.().optional_host_permissions || [];
         return Array.isArray(declared) ? declared : [];
     } catch (_) {
         return [];
@@ -1433,43 +1413,26 @@ function renderEmpty(filter) {
     list.appendChild(empty);
 }
 
-function sendTabMessage(tabId, message) {
-    return new Promise((resolve) => {
-        if (!tabId) { resolve(false); return; }
-        try {
-            chrome.tabs.sendMessage(tabId, message, (response) => {
-                resolve(!chrome.runtime.lastError && response?.ok !== false);
-            });
-        } catch { resolve(false); }
-    });
+async function sendTabMessage(tabId, message) {
+    if (!tabId) return false;
+    const response = await browserApi.sendTabMessage(tabId, message, { timeoutMs: 2000 });
+    return response !== null && response?.ok !== false;
 }
 
-function sendTabMessageResponse(tabId, message) {
-    return new Promise((resolve, reject) => {
-        if (!tabId) { reject(new Error('No YouTube tab is available')); return; }
-        try {
-            chrome.tabs.sendMessage(tabId, message, (response) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else if (!response?.ok) {
-                    reject(new Error(response?.error || 'YouTube data operation failed'));
-                } else {
-                    resolve(response);
-                }
-            });
-        } catch (error) { reject(error); }
-    });
+async function sendTabMessageResponse(tabId, message) {
+    if (!tabId) throw new Error('No YouTube tab is available');
+    const response = await callExtensionApi(ext?.tabs, 'sendMessage', tabId, message);
+    if (!response?.ok) throw new Error(response?.error || 'YouTube data operation failed');
+    return response;
 }
 
-function queryYoutubeTabs() {
-    return new Promise((resolve) => {
-        try {
-            chrome.tabs.query({ url: YOUTUBE_TAB_URLS }, (tabs) => {
-                if (chrome.runtime.lastError) resolve([]);
-                else resolve(Array.isArray(tabs) ? tabs : []);
-            });
-        } catch (_) { resolve([]); }
-    });
+async function queryYoutubeTabs() {
+    try {
+        const tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS });
+        return Array.isArray(tabs) ? tabs : [];
+    } catch (_) {
+        return [];
+    }
 }
 
 function getTabOrigin(tab) {
@@ -1498,19 +1461,7 @@ async function sendPersistedDataMessage(message, requiredOrigin = '') {
 }
 
 function sendRuntimeMessage(message) {
-    return new Promise((resolve, reject) => {
-        try {
-            chrome.runtime.sendMessage(message, (response) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve(response);
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
+    return callExtensionApi(ext?.runtime, 'sendMessage', message);
 }
 
 function setAiCredentialBusy(busy) {
@@ -1605,18 +1556,16 @@ async function deleteAiCredential() {
 // — the receiver only needs the final aggregate state, so a single
 // `YTKIT_SETTINGS_REPLACED` message per tab is both cheaper and more
 // consistent (no flicker between partial reload states). Receivers that don't
-// understand the bulk message still re-read storage on `chrome.storage.onChanged`.
+// understand the bulk message still re-read storage on `ext.storage.onChanged`.
 async function broadcastSettingsReplaced(settings) {
     try {
-        const tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS });
-        for (const tab of tabs) {
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTINGS_REPLACED', settings }, () => {
-                    void chrome.runtime.lastError;
-                });
-            } catch { /* reason: tab closing or no receiver — fine to skip */ }
-        }
-    } catch { /* reason: extension suspended — chrome.tabs.query rejected */ }
+        const tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS });
+        await Promise.all(tabs.map((tab) => browserApi.sendTabMessage(
+                tab.id,
+                { type: 'YTKIT_SETTINGS_REPLACED', settings },
+                { timeoutMs: 2000 }
+            )));
+    } catch { /* reason: extension suspended — ext.tabs.query rejected */ }
 }
 
 // v4.16.0: schema-driven risk-band badge for the popup toggle list.
@@ -1843,7 +1792,7 @@ function summarizeStorage(allStorage) {
     };
 }
 
-// storage corruption detector. chrome.storage.local is robust
+// storage corruption detector. ext.storage.local is robust
 // in practice but the underlying browser profile is not — disk full
 // during a write, browser crash mid-flush, profile sync conflicts, or a
 // user manually editing the profile JSON can leave keys in shapes that
@@ -1908,7 +1857,7 @@ function summarizeDiagnostics(settings) {
 
 async function renderStorageInfo() {
     try {
-        const allStorage = await chrome.storage.local.get(null);
+        const allStorage = await callExtensionApi(ext?.storage?.local, 'get', null);
         const summary = summarizeStorage(allStorage);
         statKeys.textContent = formatCount(summary.keys);
         statSize.textContent = summary.sizeText;
@@ -1939,7 +1888,7 @@ async function renderStorageInfo() {
             showStatus(getStorageUnavailableMessage(), 'info', 0);
             return;
         }
-        // a thrown error from chrome.storage.local.get(null) is
+        // a thrown error from ext.storage.local.get(null) is
         // itself a corruption signal (profile-level read failure). Surface
         // it through the same banner so the user has a single recovery
         // surface regardless of the failure mode.
@@ -1952,7 +1901,7 @@ async function renderStorageInfo() {
 }
 
 // storage-size warning banner. Surfaces a polite nudge when
-// total chrome.storage.local payload crosses the soft threshold, and a
+// total ext.storage.local payload crosses the soft threshold, and a
 // firmer wording at the hard threshold. The Reset button shares the
 // existing destructive-confirm dialog so accidental clicks are still
 // guarded.
@@ -2015,27 +1964,16 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
 async function renderSelectorHealthDashboard() {
     if (!selectorHealthSection || !selectorHealthList) return;
     try {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
         if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
             selectorHealthSection.hidden = true;
             return;
         }
-        const response = await new Promise((resolve) => {
-            const timer = setTimeout(() => resolve(null), 1500);
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_SELECTOR_HEALTH' }, (msg) => {
-                    clearTimeout(timer);
-                    if (chrome.runtime.lastError) {
-                        resolve(null);
-                        return;
-                    }
-                    resolve(msg);
-                });
-            } catch {
-                clearTimeout(timer);
-                resolve(null);
-            }
-        });
+        const response = await browserApi.sendTabMessage(
+            tab.id,
+            { type: 'YTKIT_GET_SELECTOR_HEALTH' },
+            { timeoutMs: 1500 }
+        );
         if (!response || response.ok === false || !Array.isArray(response.surfaces)) {
             selectorHealthSection.hidden = true;
             return;
@@ -2118,7 +2056,7 @@ async function copySelectorHealthReport() {
     selectorHealthCopyBtn.disabled = true;
     setStatus(t('selectorHealthCopyPending', 'Building report…'));
     try {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
         if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
             setStatus(t('selectorHealthCopyNeedYt', 'Open a YouTube tab to build the report.'));
             return;
@@ -2127,19 +2065,11 @@ async function copySelectorHealthReport() {
         // content-script handler returns `surfaces` (already sorted by
         // trouble-score, top 12) + `totalSurfaces` + `ctxCounts`. The
         // formatter only needs the surfaces array.
-        const response = await new Promise((resolve) => {
-            const timer = setTimeout(() => resolve(null), 1500);
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_SELECTOR_HEALTH' }, (msg) => {
-                    clearTimeout(timer);
-                    if (chrome.runtime.lastError) { resolve(null); return; }
-                    resolve(msg);
-                });
-            } catch (_) {
-                clearTimeout(timer);
-                resolve(null);
-            }
-        });
+        const response = await browserApi.sendTabMessage(
+            tab.id,
+            { type: 'YTKIT_GET_SELECTOR_HEALTH' },
+            { timeoutMs: 1500 }
+        );
         if (!response || response.ok === false || !Array.isArray(response.surfaces)) {
             setStatus(t('selectorHealthCopyNoSnap', 'No snapshot available — the page may still be loading.'));
             return;
@@ -2275,21 +2205,13 @@ function formatExternalHealthDetail(service) {
 }
 
 async function requestExternalApiHealthSnapshot(timeoutMs = 1500) {
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
     if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) return null;
-    const response = await new Promise((resolve) => {
-        const timer = setTimeout(() => resolve(null), timeoutMs);
-        try {
-            chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_EXTERNAL_API_HEALTH' }, (msg) => {
-                clearTimeout(timer);
-                if (chrome.runtime.lastError) { resolve(null); return; }
-                resolve(msg);
-            });
-        } catch (_) {
-            clearTimeout(timer);
-            resolve(null);
-        }
-    });
+    const response = await browserApi.sendTabMessage(
+        tab.id,
+        { type: 'YTKIT_GET_EXTERNAL_API_HEALTH' },
+        { timeoutMs }
+    );
     if (!response || response.ok === false || !Array.isArray(response.services)) return null;
     return { tab, services: response.services, totalServices: response.totalServices || response.services.length };
 }
@@ -2427,21 +2349,16 @@ const featurePerfTotal = $('#feature-perf-total');
 async function renderFeaturePerfDashboard() {
     if (!featurePerfSection || !featurePerfList) return;
     try {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
         if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
             featurePerfSection.hidden = true;
             return;
         }
-        const response = await new Promise((resolve) => {
-            const timer = setTimeout(() => resolve(null), 1500);
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_FEATURE_PERF' }, (msg) => {
-                    clearTimeout(timer);
-                    if (chrome.runtime.lastError) { resolve(null); return; }
-                    resolve(msg);
-                });
-            } catch { clearTimeout(timer); resolve(null); }
-        });
+        const response = await browserApi.sendTabMessage(
+            tab.id,
+            { type: 'YTKIT_GET_FEATURE_PERF' },
+            { timeoutMs: 1500 }
+        );
         if (!response || response.ok === false || !Array.isArray(response.features)) {
             featurePerfSection.hidden = true;
             return;
@@ -2505,7 +2422,7 @@ function renderDataFlowPanel() {
         return;
     }
     let manifest = null;
-    try { manifest = chrome.runtime.getManifest(); } catch (_) { /* reason: unavailable in some contexts */ }
+    try { manifest = ext.runtime.getManifest(); } catch (_) { /* reason: unavailable in some contexts */ }
     const df = factory({ manifest });
     const origins = df.getOrigins(settings);
     const summary = df.summarise(settings);
@@ -2708,7 +2625,7 @@ function renderSchemaOverview() {
 }
 
 // v4.24.0: per-key row inside an expanded category. Booleans become a
-// real switch button (read + write through chrome.storage.local).
+// real switch button (read + write through ext.storage.local).
 // Non-booleans show their current value as a read-only badge — the
 // editing surface for non-boolean types lives in the in-page workspace.
 function buildSchemaOverviewKeyRow(entry, settings) {
@@ -2798,13 +2715,13 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     // "local only" chip on the row makes the trust boundary visible
     // at the pasting moment, not buried in an opt-in panel. Tooltip
     // expands: bug-report bundles redact the value via NEW-1's
-    // BUG_REPORT_REDACTED_KEYS list, and chrome.storage.local is
+    // BUG_REPORT_REDACTED_KEYS list, and ext.storage.local is
     // origin-scoped (never synced to a Google account).
     if (TRUST_SIGNAL_LOCAL_ONLY_KEYS.has(entry.key)) {
         const trustChip = document.createElement('span');
         trustChip.className = 'so-key-profile-badge so-key-trust-local';
         trustChip.textContent = 'local only';
-        trustChip.title = 'This value is stored in chrome.storage.local on this device. '
+        trustChip.title = 'This value is stored in extension storage on this device. '
             + 'It is never synced to a Google account, never sent to Astra Deck servers, '
             + 'and is redacted from the bug-report bundle (Diagnostics → Save).';
         row.appendChild(trustChip);
@@ -3327,7 +3244,7 @@ function redactBugReportSettings(settings) {
 // v3.23.0 (L9): Save the full DiagnosticLog ring buffer as a JSON file.
 // The Copy button drops a compact summary on the clipboard; Save lets
 // the user attach the raw structured payload to a bug report. Uses
-// chrome.downloads.download when available so the file lands in the
+// ext.downloads.download when available so the file lands in the
 // user's Downloads folder even after the popup closes; falls back to
 // an a[download] click for Firefox builds without downloads permission.
 //
@@ -3356,16 +3273,11 @@ if (healthSaveBtn) {
             // build), we still ship the bundle without the ring.
             let swLifecycle = null;
             try {
-                const resp = await new Promise((resolve) => {
-                    try {
-                        chrome.runtime.sendMessage({ type: 'GET_SW_LIFECYCLE' }, (r) => {
-                            // Swallow chrome.runtime.lastError so a missing
-                            // listener (very old SW) doesn't reject the bundle.
-                            void chrome.runtime.lastError;
-                            resolve(r || null);
-                        });
-                    } catch (_) { resolve(null); /* reason: extension context invalid mid-call */ }
-                });
+                const resp = await callExtensionApi(
+                    ext?.runtime,
+                    'sendMessage',
+                    { type: 'GET_SW_LIFECYCLE' }
+                ).catch(() => null);
                 if (resp && Array.isArray(resp.entries)) swLifecycle = resp.entries;
             } catch (_) {
                 // reason: SW lifecycle ring is supplemental; bundle ships without it on failure
@@ -3393,19 +3305,13 @@ if (healthSaveBtn) {
             const stamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `astra-deck-diagnostics-${stamp}.json`;
             const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
-            if (typeof chrome !== 'undefined' && chrome.downloads?.download) {
-                await new Promise((resolve, reject) => {
-                    chrome.downloads.download(
-                        { url: dataUrl, filename, saveAs: true },
-                        (id) => {
-                            if (chrome.runtime.lastError || !id) {
-                                reject(new Error(chrome.runtime.lastError?.message || 'download failed'));
-                            } else {
-                                resolve(id);
-                            }
-                        },
-                    );
-                });
+            if (typeof ext !== 'undefined' && ext.downloads?.download) {
+                const id = await callExtensionApi(
+                    ext.downloads,
+                    'download',
+                    { url: dataUrl, filename, saveAs: true }
+                );
+                if (!id) throw new Error('download failed');
                 showStatus(t('statusDiagSaved', 'Diagnostic log saved.'), 'ok', 2400);
             } else {
                 const a = document.createElement('a');
@@ -3426,7 +3332,7 @@ if (healthSaveBtn) {
 // v4.47.0 NF21: first-run welcome card + What's New banner.
 //
 // Detection signal for "first run" is the absence of FIRST_RUN_SEEN_KEY
-// in chrome.storage.local — NOT the absence of SETTINGS_STORAGE_KEY,
+// in ext.storage.local — NOT the absence of SETTINGS_STORAGE_KEY,
 // because settings can be cleared via Reset and we don't want Reset
 // to re-trigger the welcome card.
 //
@@ -3649,7 +3555,7 @@ if (whatsNewDismissBtn) {
     whatsNewDismissBtn.addEventListener('click', () => { void dismissWhatsNew(); });
 }
 if (whatsNewOpenBtn) {
-    whatsNewOpenBtn.addEventListener('click', () => {
+    whatsNewOpenBtn.addEventListener('click', async () => {
         // Anchor pattern matches GitHub's auto-generated heading slugs
         // for CHANGELOG.md '## [Unreleased]' or '## [x.y.z]'. We link
         // to the top of the file because anchor stability across
@@ -3657,8 +3563,8 @@ if (whatsNewOpenBtn) {
         // the changelog and scrolls to the top entry.
         const url = CHANGELOG_BASE_URL;
         try {
-            if (chrome.tabs?.create) {
-                chrome.tabs.create({ url, active: true });
+            if (ext.tabs?.create) {
+                await callExtensionApi(ext.tabs, 'create', { url, active: true });
             } else {
                 window.open(url, '_blank', 'noopener,noreferrer');
             }
@@ -3913,7 +3819,7 @@ async function exportSettings() {
     exportButton.disabled = true;
     try {
         const [allStorage, transcript] = await Promise.all([
-            chrome.storage.local.get(null),
+            callExtensionApi(ext?.storage?.local, 'get', null),
             readAllTranscriptRecords()
         ]);
         const exportData = buildExportData(allStorage, transcript.records);
@@ -3924,14 +3830,8 @@ async function exportSettings() {
         // user's downloads folder even though the popup will close. Falls back
         // to an anchor click if the permission is unavailable.
         const filename = 'astra_deck_settings_' + new Date().toISOString().slice(0, 10) + '.json';
-        if (chrome.downloads?.download) {
-            await new Promise((resolve, reject) => {
-                chrome.downloads.download({ url, filename, saveAs: false }, (downloadId) => {
-                    const err = chrome.runtime.lastError;
-                    if (err) reject(new Error(err.message));
-                    else resolve(downloadId);
-                });
-            });
+        if (ext.downloads?.download) {
+            await callExtensionApi(ext.downloads, 'download', { url, filename, saveAs: false });
         } else {
             // Firefox historically requires the anchor to be in the document
             // before .click() will trigger the download dialog. Chrome accepts
@@ -4032,7 +3932,11 @@ async function importSettings(file) {
             return;
         }
         if (writes[STORAGE_KEYS.settings]) {
-            await chrome.storage.local.remove(STORAGE_KEYS.legacySidebarOrder).catch(() => { /* reason: legacy key may not exist */ });
+            await callExtensionApi(
+                ext?.storage?.local,
+                'remove',
+                STORAGE_KEYS.legacySidebarOrder
+            ).catch(() => { /* reason: legacy key may not exist */ });
         }
         await renderStorageInfo();
         await loadSettings();
@@ -4091,7 +3995,7 @@ async function undoImportSettings() {
 
 // v4.47.0 NF6 (partial): Astra Downloader "Skip for now" recovery.
 // ytkit.js's MediaDLManager.showInstallPrompt sets
-// `ytkit_mediadl_prompt_dismissed = true` in chrome.storage.local
+// `ytkit_mediadl_prompt_dismissed = true` in ext.storage.local
 // when the user clicks "Skip for now". That dismiss is permanent —
 // the prompt never reappears on its own. Surface a small recovery
 // action in the popup so users who change their mind can re-enable
@@ -4122,32 +4026,25 @@ function refreshCompanionUpdateVisibility() {
 }
 
 async function readMediadlDismissed() {
-    if (!chrome?.storage?.local) return false;
-    return new Promise((resolve) => {
-        try {
-            chrome.storage.local.get(MEDIADL_DISMISSED_KEY, (items) => {
-                if (chrome.runtime.lastError) { resolve(false); return; }
-                resolve(items && items[MEDIADL_DISMISSED_KEY] === true);
-            });
-        } catch (_) {
-            // reason: chrome.storage.local unavailable; treat as not dismissed
-            resolve(false);
-        }
-    });
+    if (!ext?.storage?.local) return false;
+    try {
+        const items = await callExtensionApi(ext.storage.local, 'get', MEDIADL_DISMISSED_KEY);
+        return items && items[MEDIADL_DISMISSED_KEY] === true;
+    } catch (_) {
+        // reason: extension storage unavailable; treat as not dismissed
+        return false;
+    }
 }
 
 async function clearMediadlDismissed() {
-    if (!chrome?.storage?.local) return false;
-    return new Promise((resolve) => {
-        try {
-            chrome.storage.local.remove(MEDIADL_DISMISSED_KEY, () => {
-                resolve(!chrome.runtime.lastError);
-            });
-        } catch (_) {
-            // reason: chrome.storage.local.remove unavailable; report failure
-            resolve(false);
-        }
-    });
+    if (!ext?.storage?.local) return false;
+    try {
+        await callExtensionApi(ext.storage.local, 'remove', MEDIADL_DISMISSED_KEY);
+        return true;
+    } catch (_) {
+        // reason: extension storage remove unavailable; report failure
+        return false;
+    }
 }
 
 async function refreshReenableMediadlVisibility() {
@@ -4169,7 +4066,7 @@ async function reenableMediadlPrompts() {
                 'success', 4200);
         } else {
             showStatus(t('statusMediadlReenableFail',
-                'Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload.'),
+                "Could not re-enable Astra Downloader prompts. Open your browser's extensions page and reload."),
                 'error', 4200);
         }
     } finally {
@@ -4204,7 +4101,7 @@ function sortPopupBridgeTabs(tabs) {
 
 async function sendPopupBridgeMessageToYouTubeTabs(messageType) {
     let tabs = [];
-    try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
+    try { tabs = await callExtensionApi(ext?.tabs, 'query', { url: YOUTUBE_TAB_URLS }); }
     catch (_) { /* reason: extension suspended or tabs API unavailable */ }
     tabs = sortPopupBridgeTabs(tabs).filter((tab) =>
         tab && typeof tab.id !== 'undefined' && Number.isFinite(Number(tab.id)));
@@ -4214,18 +4111,16 @@ async function sendPopupBridgeMessageToYouTubeTabs(messageType) {
 
     let lastNoResponse = null;
     for (const tab of tabs) {
-        const result = await new Promise((resolve) => {
-            try {
-                chrome.tabs.sendMessage(tab.id, { type: messageType }, (r) => {
-                    const lastError = chrome.runtime.lastError;
-                    if (lastError) {
-                        resolve({ ok: false, status: 0, error: lastError.message || 'No response from the YouTube tab.' });
-                        return;
-                    }
-                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
-                });
-            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
-        });
+        const result = await callExtensionApi(
+            ext?.tabs,
+            'sendMessage',
+            tab.id,
+            { type: messageType }
+        ).catch((error) => ({
+            ok: false,
+            status: 0,
+            error: error?.message || 'Could not message the YouTube tab.'
+        })) || { ok: false, status: 0, error: 'No response from the YouTube tab.' };
         if (result?.ok || (result && result.status !== 0)) return result;
         lastNoResponse = result;
     }
@@ -4306,7 +4201,7 @@ async function updateCompanionNow() {
 }
 
 // v4.47.0 EI2: undo grace period for Reset. The snapshot lives in
-// chrome.storage.session — survives popup close/reopen but is wiped
+// ext.storage.session — survives popup close/reopen but is wiped
 // when the browser quits. That's the right shape for "you misclicked
 // 30 seconds ago" while keeping the recovery window bounded; the
 // previous behaviour wiped everything with no path back. The undo
@@ -4317,7 +4212,7 @@ const RESET_SNAPSHOT_KEY = '_resetSnapshot';
 const undoResetButton = $('#undo-reset-btn');
 
 function sessionStorageAvailable() {
-    return !!(chrome && chrome.storage && chrome.storage.session);
+    return !!(ext && ext.storage && ext.storage.session);
 }
 
 function createSnapshotId(kind) {
@@ -4390,73 +4285,47 @@ async function discardCoordinatedSnapshot(snapshot) {
 }
 
 async function readLocalStorageSnapshot() {
-    return new Promise((resolve, reject) => {
-        try {
-            chrome.storage.local.get(null, (items) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                    resolve(items || {});
-                }
-            });
-        } catch (err) { reject(err); }
-    });
+    const items = await callExtensionApi(ext?.storage?.local, 'get', null);
+    return items || {};
 }
 
 async function restoreLocalStorageSnapshot(snapshot) {
     await storageClear();
     if (snapshot && Object.keys(snapshot).length > 0) {
-        await new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.set(snapshot, () => {
-                    if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-                    else resolve();
-                });
-            } catch (err) { reject(err); }
-        });
+        await callExtensionApi(ext?.storage?.local, 'set', snapshot);
     }
 }
 
 async function readSessionSnapshot(key) {
     if (!sessionStorageAvailable()) return null;
-    return new Promise((resolve) => {
-        try {
-            chrome.storage.session.get(key, (items) => {
-                if (chrome.runtime.lastError) { resolve(null); return; }
-                const snap = items && items[key];
-                resolve(snap && typeof snap === 'object' ? snap : null);
-            });
-        } catch (_) {
-            // reason: session API may be unavailable in some Firefox versions
-            resolve(null);
-        }
-    });
+    try {
+        const items = await callExtensionApi(ext.storage.session, 'get', key);
+        const snap = items && items[key];
+        return snap && typeof snap === 'object' ? snap : null;
+    } catch (_) {
+        // reason: session API may be unavailable in some Firefox versions
+        return null;
+    }
 }
 
 async function writeSessionSnapshot(key, snapshot) {
     if (!sessionStorageAvailable()) return false;
-    return new Promise((resolve) => {
-        try {
-            chrome.storage.session.set({ [key]: snapshot }, () => {
-                resolve(!chrome.runtime.lastError);
-            });
-        } catch (_) {
-            // reason: session API write failed; treat as no-snapshot, undo unavailable
-            resolve(false);
-        }
-    });
+    try {
+        await callExtensionApi(ext.storage.session, 'set', { [key]: snapshot });
+        return true;
+    } catch (_) {
+        // reason: session API write failed; treat as no-snapshot, undo unavailable
+        return false;
+    }
 }
 
 async function clearSessionSnapshot(key) {
     if (!sessionStorageAvailable()) return;
-    return new Promise((resolve) => {
-        try {
-            chrome.storage.session.remove(key, () => resolve());
-        } catch (_) {
-            // reason: session.remove failure is benign; snapshot evicts on browser close
-            resolve();
-        }
-    });
+    try {
+        await callExtensionApi(ext.storage.session, 'remove', key);
+    } catch (_) {
+        // reason: session.remove failure is benign; snapshot evicts on browser close
+    }
 }
 
 async function readImportSnapshot() {
@@ -4516,7 +4385,7 @@ async function refreshUndoResetVisibility() {
 async function resetAllData() {
     // v4.47.0 NF14: applies immediately. EI2's Undo Reset button
     // already provides the recovery surface — clicking Reset stages a
-    // session-scoped snapshot in chrome.storage.session, surfaces the
+    // session-scoped snapshot in ext.storage.session, surfaces the
     // Undo button, and dies with the browser session. Project policy
     // bans confirmation dialogs in favor of this pattern.
     resetButton.setAttribute('aria-busy', 'true');
@@ -4653,7 +4522,7 @@ function installWheelScrolling() {
     renderLoading();
 
     try {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
         updateContext(tab || null);
     } catch {
         updateContext(null);
@@ -4788,27 +4657,27 @@ function installWheelScrolling() {
         });
         void renderStorageInfo();
     };
-    if (chrome.storage?.onChanged) {
-        chrome.storage.onChanged.addListener(onStorageChanged);
+    if (ext.storage?.onChanged) {
+        ext.storage.onChanged.addListener(onStorageChanged);
         // The popup can be torn down mid-flight (it closes on blur). Remove the
         // listener and cancel the status timer on pagehide so a late storage
         // change can't run render paths against a dying DOM / invalidated
         // extension context.
         window.addEventListener('pagehide', () => {
-            try { chrome.storage.onChanged.removeListener(onStorageChanged); } catch (_) { /* reason: extension context may already be invalidated during teardown */ }
+            try { ext.storage.onChanged.removeListener(onStorageChanged); } catch (_) { /* reason: extension context may already be invalidated during teardown */ }
             if (popupState.statusTimer) { clearTimeout(popupState.statusTimer); popupState.statusTimer = null; }
         }, { once: true });
     }
 
     openPanelButton.addEventListener('click', async () => {
         try {
-            const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+            const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
             const nextContext = getTabContext(tab || null);
             if (nextContext.mode === 'inline-panel' && tab?.id) {
                 const opened = await sendTabMessage(tab.id, { type: PANEL_OPEN_MESSAGE });
                 if (opened) { window.close(); return; }
             }
-            await chrome.tabs.create({ url: 'https://www.youtube.com/' });
+            await callExtensionApi(ext?.tabs, 'create', { url: 'https://www.youtube.com/' });
             window.close();
         } catch (error) {
             console.warn('[Astra Deck popup] Failed to open the full workspace:', error);
@@ -4818,14 +4687,14 @@ function installWheelScrolling() {
 
     const openSidePanelBtn = $('#openSidePanel');
     if (openSidePanelBtn) {
-        const sidePanelApi = chrome?.['sidePanel'];
+        const sidePanelApi = ext?.['sidePanel'];
         const openSidePanel = sidePanelApi && typeof sidePanelApi['open'] === 'function'
             ? sidePanelApi['open'].bind(sidePanelApi)
             : null;
         if (openSidePanel) {
             openSidePanelBtn.addEventListener('click', async () => {
                 try {
-                    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                    const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
                     await openSidePanel({ tabId: tab?.id });
                     window.close();
                 } catch (err) {
@@ -4859,7 +4728,7 @@ function installWheelScrolling() {
     if (reenableMediadlButton) {
         reenableMediadlButton.addEventListener('click', () => { void reenableMediadlPrompts(); });
         // Boot visibility: only show the button if the dismissed flag is
-        // currently set in chrome.storage.local. Hidden otherwise — most
+        // currently set in ext.storage.local. Hidden otherwise — most
         // users will never see this.
         void refreshReenableMediadlVisibility();
     }
