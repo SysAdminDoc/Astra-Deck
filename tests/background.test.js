@@ -19,7 +19,8 @@ function loadBackground({
     downloadsDownloadImpl,
     optionalHostPermissions = [],
     permissionsContainsImpl,
-    initialSettings = {}
+    initialSettings = {},
+    apiNamespace = 'chrome'
 } = {}) {
     let messageListener = null;
     let settingsState = { ...initialSettings };
@@ -39,7 +40,12 @@ function loadBackground({
         tabs: {
             query: async () => [],
             sendMessage() {},
-            create: async () => ({ id: 1 })
+            create(...args) {
+                if (apiNamespace === 'browser' && args.length !== 1) {
+                    throw new TypeError('Firefox tabs.create does not accept a callback');
+                }
+                return Promise.resolve({ id: 1 });
+            }
         },
         runtime: {
             id: 'astra-test-extension',
@@ -90,7 +96,6 @@ function loadBackground({
         TextEncoder,
         URL,
         URLSearchParams,
-        chrome,
         clearTimeout,
         console,
         fetch: fetchImpl || (async () => new Response('', {
@@ -105,6 +110,7 @@ function loadBackground({
         },
         setTimeout
     };
+    context[apiNamespace] = chrome;
     context.globalThis = context;
 
     vm.createContext(context);
@@ -183,6 +189,19 @@ test('background serializes schema-aware setting mutations behind one message co
     assert.equal(rejectedSender.error, 'Sender rejected.');
     assert.equal(getSettings().notASetting, undefined);
     assert.equal(getSettings().removeAllShorts, true);
+});
+
+test('background resolves a Promise-only Firefox namespace without a chrome global', async () => {
+    const { context, messageListener } = loadBackground({ apiNamespace: 'browser' });
+    assert.equal(context.chrome, undefined);
+    assert.equal(context.browser.runtime.id, 'astra-test-extension');
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'OPEN_URL',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        active: false
+    });
+    assert.equal(response.tabId, 1);
 });
 
 test('background EXT_FETCH preserves empty-string request bodies', async () => {

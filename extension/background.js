@@ -1,7 +1,64 @@
 // Astra Deck - Background Service Worker
 // Handles extension fetch proxying, cookie access, and downloads.
 // The toolbar popup owns control-center activation directly via
-// chrome.tabs.sendMessage(YTKIT_OPEN_PANEL) — no background mediation needed.
+// tabs.sendMessage(YTKIT_OPEN_PANEL) — no background mediation needed.
+
+// This service worker cannot load the page-oriented browser-api.js bootstrap,
+// so resolve the standards-track namespace inline. Keep all asynchronous API
+// calls behind callExtensionApi: Chromium may require callbacks and reports
+// failures through runtime.lastError, while Firefox returns Promises and can
+// reject callback-shaped overloads synchronously.
+const ext = globalThis.browser?.runtime
+    ? globalThis.browser
+    : (globalThis.chrome?.runtime ? globalThis.chrome : null);
+
+if (!ext) throw new Error('Astra Deck background requires a WebExtension runtime.');
+
+function callExtensionApi(target, method, ...args) {
+    return new Promise((resolve, reject) => {
+        if (!target || typeof target[method] !== 'function') {
+            reject(new Error(`Extension API unavailable: ${method}`));
+            return;
+        }
+        let settled = false;
+        const finish = (handler, value) => {
+            if (settled) return;
+            settled = true;
+            handler(value);
+        };
+        const callback = (value) => {
+            const lastError = ext.runtime?.lastError;
+            if (lastError) {
+                finish(reject, new Error(lastError.message || String(lastError)));
+                return;
+            }
+            finish(resolve, value);
+        };
+        try {
+            const result = target[method](...args, callback);
+            if (result && typeof result.then === 'function') {
+                result.then(
+                    (value) => finish(resolve, value),
+                    (error) => finish(reject, error)
+                );
+            }
+        } catch (callbackError) {
+            try {
+                const result = target[method](...args);
+                if (result && typeof result.then === 'function') {
+                    result.then(
+                        (value) => finish(resolve, value),
+                        (error) => finish(reject, error)
+                    );
+                } else {
+                    finish(reject, callbackError);
+                }
+            } catch (promiseError) {
+                finish(reject, promiseError);
+            }
+        }
+    });
+}
 
 // Settings writes from the popup, side panel/sidebar, and in-page workspace
 // converge here so their read/validate/write cycles cannot race each other.
@@ -16,22 +73,22 @@ const _settingsMutationController = globalThis.YTKitCore?.createSettingsMutation
     local: true,
     source: 'background',
     storageKey: SETTINGS_STORAGE_KEY,
-    storage: chrome.storage?.local
+    storage: ext.storage?.local
 }) || null;
 const _credentialVault = globalThis.YTKitCore?.createCredentialVault?.({
-    sessionStorage: chrome.storage?.session
+    sessionStorage: ext.storage?.session
 }) || null;
 
 async function migrateLegacyAiCredential() {
-    if (!_credentialVault || !chrome.storage?.local?.get || !chrome.storage?.local?.set) return false;
-    const stored = await chrome.storage.local.get(SETTINGS_STORAGE_KEY);
+    if (!_credentialVault || !ext.storage?.local?.get || !ext.storage?.local?.set) return false;
+    const stored = await callExtensionApi(ext.storage.local, 'get', SETTINGS_STORAGE_KEY);
     const settings = stored?.[SETTINGS_STORAGE_KEY];
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)
         || !Object.prototype.hasOwnProperty.call(settings, 'aiSummaryApiKey')) return false;
     // migrateLegacy persists the credential first. Only after that succeeds do
     // we remove the ordinary content-script-visible setting.
     const result = await _credentialVault.migrateLegacy(settings);
-    await chrome.storage.local.set({ [SETTINGS_STORAGE_KEY]: result.settings });
+    await callExtensionApi(ext.storage.local, 'set', { [SETTINGS_STORAGE_KEY]: result.settings });
     return result.migrated;
 }
 
@@ -45,17 +102,17 @@ const _credentialMigrationReady = migrateLegacyAiCredential().catch((error) => {
 
 async function broadcastSettingsMutation(result, source = '') {
     // The initiating in-page surface already holds an optimistic snapshot and
-    // every tab receives the authoritative chrome.storage.onChanged event.
+    // every tab receives the authoritative storage.onChanged event.
     // Skipping its redundant tab message prevents an older queued write from
     // flashing over a newer optimistic change in the same tab.
-    if (!result?.ok || source === 'in-page' || !chrome.tabs?.query) return;
+    if (!result?.ok || source === 'in-page' || !ext.tabs?.query) return;
     try {
-        const tabs = await chrome.tabs.query({ url: ['*://*.youtube.com/*'] });
+        const tabs = await callExtensionApi(ext.tabs, 'query', { url: ['*://*.youtube.com/*'] });
         const message = result.key
             ? { type: 'YTKIT_SETTING_CHANGED', key: result.key, value: result.value, settings: result.settings }
             : { type: 'YTKIT_SETTINGS_REPLACED', settings: result.settings };
         await Promise.allSettled((tabs || []).filter((tab) => tab?.id).map((tab) =>
-            Promise.resolve(chrome.tabs.sendMessage(tab.id, message))
+            callExtensionApi(ext.tabs, 'sendMessage', tab.id, message)
         ));
     } catch (_) {
         // reason: persistence is authoritative; closing/suspended tabs refresh
@@ -165,8 +222,8 @@ function normalizeCookieExpiry(value) {
 // fires exactly when the file transitions to `state.complete`. Using a
 // setTimeout meant the service worker could be killed mid-wait on slow
 // networks.
-// v3.20.0: Mirror into `chrome.storage.session` so a SW restart between
-// `chrome.downloads.download()` and the `state.complete` transition
+// v3.20.0: Mirror into session storage so a SW restart between
+// downloads.download() and the `state.complete` transition
 // doesn't silently drop the reveal. The in-memory Set stays the fast
 // path; the session mirror is authoritative when the SW cold-starts.
 const _pendingReveals = new Set();
@@ -188,7 +245,7 @@ function _addPendingReveal(downloadId) {
 }
 
 const _pendingRevealsReady = (async () => {
-    if (!chrome.storage?.session) return;
+    if (!ext.storage?.session) return;
     try {
         // Bound the hydration read. Every caller that awaits this promise
         // (reveal handlers, the serialized SW-lifecycle chain) would stall
@@ -196,7 +253,7 @@ const _pendingRevealsReady = (async () => {
         // pressure; a timeout lets them proceed with the in-memory Set, which
         // is the fast path anyway.
         const stored = await Promise.race([
-            chrome.storage.session.get(_PENDING_REVEALS_KEY),
+            callExtensionApi(ext.storage.session, 'get', _PENDING_REVEALS_KEY),
             new Promise((resolve) => setTimeout(() => resolve(null), 2000)),
         ]);
         const ids = stored?.[_PENDING_REVEALS_KEY];
@@ -213,21 +270,18 @@ const _pendingRevealsReady = (async () => {
             }
         }
     } catch (_) {
-        // reason: chrome.storage.session is MV3+ (Chrome 102, Firefox 115);
+        // reason: storage.session is MV3+ (Chrome 102, Firefox 115);
         // absence is benign — we still fire reveals while the SW stays alive.
     }
 })();
 
 function _persistPendingReveals() {
-    if (!chrome.storage?.session) return;
+    if (!ext.storage?.session) return;
     try {
         const payload = { [_PENDING_REVEALS_KEY]: [..._pendingReveals] };
-        const maybePromise = chrome.storage.session.set(payload);
-        if (maybePromise && typeof maybePromise.catch === 'function') {
-            maybePromise.catch(() => {
-                // reason: best-effort mirror; Set remains authoritative in memory.
-            });
-        }
+        void callExtensionApi(ext.storage.session, 'set', payload).catch(() => {
+            // reason: best-effort mirror; Set remains authoritative in memory.
+        });
     } catch (_) {
         // reason: storage.session unavailable or quota-exceeded; ignore
     }
@@ -238,12 +292,12 @@ function _persistPendingReveals() {
 // pressure, post-install). Several Astra Deck bugs surfaced only
 // because the maintainer happened to hit a SW restart in development;
 // the H25 cap-bypass-on-hydration fix is the most recent example.
-// This ring records SW boot events into `chrome.storage.session` so
+// This ring records SW boot events into session storage so
 // the bug-report bundle (NEW-1) can surface "how often did the SW
 // die in this browsing session?" without depending on telemetry.
 //
 // Cap matches the documented-fix shape: 50 entries, oldest dropped on
-// overflow. Storage is `chrome.storage.session` (transient — wiped on
+// overflow. Storage is `storage.session` (transient — wiped on
 // browser restart) so the ring naturally bounds itself to the current
 // session. Schema:
 //   { ts: number, event: 'sw-start', inFlightReveals: number }
@@ -254,7 +308,7 @@ const SW_LIFECYCLE_CAP = 50;
 // _recordSwLifecycle calls (e.g. sw-start firing alongside an
 // immediate reveal-failed for a download that was in-flight when
 // the SW restarted) cannot lose entries via a read-modify-write
-// race on chrome.storage.session. The SW is single-threaded JS,
+// race on storage.session. The SW is single-threaded JS,
 // but async/await yields between `get` and `set` create the
 // interleaving window. Chaining each call onto the previous one
 // guarantees the get→push→set sequence is observed atomically per
@@ -263,7 +317,7 @@ const SW_LIFECYCLE_CAP = 50;
 let _swLifecycleChain = Promise.resolve();
 
 function _recordSwLifecycle(event, operationId = '') {
-    if (!chrome.storage?.session) return Promise.resolve();
+    if (!ext.storage?.session) return Promise.resolve();
     _swLifecycleChain = _swLifecycleChain
         .catch(() => undefined)
         .then(async () => {
@@ -272,7 +326,7 @@ function _recordSwLifecycle(event, operationId = '') {
                 // we record reflects the persisted state, not just whatever the
                 // freshly-restarted SW happens to have in memory.
                 try { await _pendingRevealsReady; } catch (_) { /* reason: ring records even if hydration failed */ }
-                const stored = await chrome.storage.session.get(SW_LIFECYCLE_KEY);
+                const stored = await callExtensionApi(ext.storage.session, 'get', SW_LIFECYCLE_KEY);
                 const arr = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
                     ? stored[SW_LIFECYCLE_KEY]
                     : [];
@@ -286,7 +340,7 @@ function _recordSwLifecycle(event, operationId = '') {
                 arr.push(entry);
                 // Trim from the head so the most recent events survive.
                 while (arr.length > SW_LIFECYCLE_CAP) arr.shift();
-                await chrome.storage.session.set({ [SW_LIFECYCLE_KEY]: arr });
+                await callExtensionApi(ext.storage.session, 'set', { [SW_LIFECYCLE_KEY]: arr });
             } catch (_) {
                 // reason: storage.session may be unavailable on older Firefox or under quota pressure;
                 // the SW itself is not affected by ring-record failure.
@@ -308,7 +362,7 @@ function _newUpdateRecoveryId(version) {
 }
 
 async function _stageUpdateRecovery(details = {}) {
-    if (!chrome.storage?.local) return null;
+    if (!ext.storage?.local) return null;
     await _pendingRevealsReady.catch(() => {});
     const checkpoint = {
         id: _newUpdateRecoveryId(details.version),
@@ -317,34 +371,34 @@ async function _stageUpdateRecovery(details = {}) {
         stagedAt: Date.now(),
         pendingRevealIds: [..._pendingReveals].slice(-PENDING_REVEALS_CAP)
     };
-    await chrome.storage.local.set({ [UPDATE_RECOVERY_KEY]: checkpoint });
+    await callExtensionApi(ext.storage.local, 'set', { [UPDATE_RECOVERY_KEY]: checkpoint });
     await _recordSwLifecycle('update-recovery-staged', checkpoint.id);
     return checkpoint;
 }
 
 const _updateRecoveryReady = (async () => {
-    if (!chrome.storage?.local) return null;
-    const stored = await chrome.storage.local.get(UPDATE_RECOVERY_KEY);
+    if (!ext.storage?.local) return null;
+    const stored = await callExtensionApi(ext.storage.local, 'get', UPDATE_RECOVERY_KEY);
     const checkpoint = stored?.[UPDATE_RECOVERY_KEY];
     if (!checkpoint || typeof checkpoint !== 'object' || !checkpoint.id
         || !['pending', 'resuming'].includes(checkpoint.state)) return checkpoint || null;
-    const runningVersion = String(chrome.runtime?.getManifest?.().version || '');
+    const runningVersion = String(ext.runtime?.getManifest?.().version || '');
     // A normal worker restart can happen after onUpdateAvailable but before
     // Chrome activates the downloaded version. Leave the checkpoint pending
     // until the running manifest matches its target version; otherwise the old
     // worker could consume the only copy before storage.session is cleared.
     if (checkpoint.version && checkpoint.version !== runningVersion) return checkpoint;
     const resuming = { ...checkpoint, state: 'resuming', resumedAt: Date.now() };
-    await chrome.storage.local.set({ [UPDATE_RECOVERY_KEY]: resuming });
+    await callExtensionApi(ext.storage.local, 'set', { [UPDATE_RECOVERY_KEY]: resuming });
     for (const downloadId of Array.isArray(checkpoint.pendingRevealIds) ? checkpoint.pendingRevealIds : []) {
         _addPendingReveal(downloadId);
     }
-    if (chrome.storage?.session) {
-        await chrome.storage.session.set({ [_PENDING_REVEALS_KEY]: [..._pendingReveals] });
+    if (ext.storage?.session) {
+        await callExtensionApi(ext.storage.session, 'set', { [_PENDING_REVEALS_KEY]: [..._pendingReveals] });
     }
     await _recordSwLifecycle('update-recovery-resumed', checkpoint.id);
     const resumed = { ...resuming, state: 'resumed', completedAt: Date.now() };
-    await chrome.storage.local.set({ [UPDATE_RECOVERY_KEY]: resumed });
+    await callExtensionApi(ext.storage.local, 'set', { [UPDATE_RECOVERY_KEY]: resumed });
     return resumed;
 })().catch((error) => {
     void error;
@@ -352,8 +406,8 @@ const _updateRecoveryReady = (async () => {
     return null;
 });
 
-if (chrome.runtime?.onUpdateAvailable?.addListener) {
-    chrome.runtime.onUpdateAvailable.addListener((details) => {
+if (ext.runtime?.onUpdateAvailable?.addListener) {
+    ext.runtime.onUpdateAvailable.addListener((details) => {
         void _stageUpdateRecovery(details).catch(() => {
             void _recordSwLifecycle('update-recovery-stage-failed');
         });
@@ -484,7 +538,7 @@ function isUrlAllowed(url) {
 
 function getRuntimeOptionalHostPermissions() {
     try {
-        const origins = chrome.runtime?.getManifest?.().optional_host_permissions;
+        const origins = ext.runtime?.getManifest?.().optional_host_permissions;
         if (!Array.isArray(origins)) return [];
         return origins.filter((origin) => typeof origin === 'string' && origin.trim());
     } catch (_) {
@@ -525,31 +579,11 @@ function getRuntimeOptionalHostPermissionsForUrl(url) {
 
 function permissionsContainsOrigins(origins) {
     if (!Array.isArray(origins) || origins.length === 0) return Promise.resolve(true);
-    const permissionsApi = chrome.permissions;
+    const permissionsApi = ext.permissions;
     if (!permissionsApi || typeof permissionsApi.contains !== 'function') {
         return Promise.reject(new Error('Runtime host permission API is unavailable.'));
     }
-    return new Promise((resolve, reject) => {
-        let settled = false;
-        const done = (value) => {
-            if (settled) return;
-            settled = true;
-            const lastError = chrome.runtime?.lastError;
-            if (lastError?.message) {
-                reject(new Error(lastError.message));
-                return;
-            }
-            resolve(Boolean(value));
-        };
-        try {
-            const result = permissionsApi.contains({ origins }, done);
-            if (result && typeof result.then === 'function') {
-                result.then(done, reject);
-            }
-        } catch (err) {
-            reject(err);
-        }
-    });
+    return callExtensionApi(permissionsApi, 'contains', { origins }).then(Boolean);
 }
 
 async function requireRuntimeOptionalHostGrant(url) {
@@ -699,12 +733,12 @@ function sanitizeDownloadFilename(filename) {
     return sanitized || undefined;
 }
 
-// chrome.action.onClicked does not fire when default_popup is set in the
+// action.onClicked does not fire when default_popup is set in the
 // manifest, so the toolbar click is handled entirely by popup.html/popup.js.
 // v4.5.3: the `commands` keyboard shortcut was retired per the project's
 // "no keyboard shortcuts" rule — the toolbar action button is the sole
 // visible activator. The orphaned togglePanelForTab/sendTabMessage helpers
-// (only callers were the removed chrome.commands listener) were also
+// (only callers were the removed commands listener) were also
 // removed; popup.js carries its own sendTabMessage for the OPEN dispatch.
 // Removing the manifest entry also removes the Firefox Ctrl+Shift+Y
 // collision with "Show Downloads" without a per-vendor patch.
@@ -712,8 +746,8 @@ function sanitizeDownloadFilename(filename) {
 // v3.14.0: Fire "show in folder" reveal when the download reaches the
 // complete state, not from a setTimeout. The previous implementation lost
 // reveals whenever the MV3 service worker was killed during the wait.
-if (chrome.downloads?.onChanged?.addListener) {
-    chrome.downloads.onChanged.addListener((delta) => {
+if (ext.downloads?.onChanged?.addListener) {
+    ext.downloads.onChanged.addListener((delta) => {
         if (!delta) return;
         const state = delta.state?.current;
         if (state !== 'complete' && state !== 'interrupted') return;
@@ -728,9 +762,7 @@ if (chrome.downloads?.onChanged?.addListener) {
             _persistPendingReveals();
             void _recordSwLifecycle(`reveal-${state}`, `download:${delta.id}:${state}`);
             if (state === 'complete') {
-                try {
-                    chrome.downloads.show(delta.id);
-                } catch (err) {
+                void callExtensionApi(ext.downloads, 'show', delta.id).catch((err) => {
                     // v4.47.0 R3: surface the reveal failure into the SW
                     // lifecycle ring (NEW-7) + console so the bug-report
                     // bundle picks it up. Common causes: file was moved
@@ -739,10 +771,10 @@ if (chrome.downloads?.onChanged?.addListener) {
                     // the path traversed a removable volume that was
                     // detached. Previously a silent swallow that hid
                     // the failure from support diagnostics.
-                    try { console.warn('[Astra Deck] chrome.downloads.show failed for id', delta.id, err); }
+                    try { console.warn('[Astra Deck] downloads.show failed for id', delta.id, err); }
                     catch (_) { /* reason: console may be unavailable in some SW contexts */ }
                     void _recordSwLifecycle('reveal-failed:' + (err?.message || 'unknown'));
-                }
+                });
             }
         })();
     });
@@ -753,8 +785,8 @@ if (chrome.downloads?.onChanged?.addListener) {
 // wipe). Without this the id would persist in the Set across the SW restart
 // and leak a slot in the session mirror. Delete is idempotent so a normal
 // complete→erase sequence is a safe no-op on the second fire.
-if (chrome.downloads?.onErased?.addListener) {
-    chrome.downloads.onErased.addListener((downloadId) => {
+if (ext.downloads?.onErased?.addListener) {
+    ext.downloads.onErased.addListener((downloadId) => {
         if (typeof downloadId !== 'number') return;
         void (async () => {
             try { await _pendingRevealsReady; } catch (_) {
@@ -767,7 +799,7 @@ if (chrome.downloads?.onErased?.addListener) {
     });
 }
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // Guard: reject malformed messages up front so a missing/non-object `msg`
     // cannot throw before any handler runs.
     if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') {
@@ -783,11 +815,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // still reject anything whose sender.id doesn't match our own runtime
     // id so a future externally_connectable misconfiguration can't widen
     // the trust boundary by accident. Content-script senders without an
-    // `id` field are rejected too: chrome.runtime.sendMessage from a
+    // `id` field are rejected too: runtime.sendMessage from a
     // legitimate context always sets it. (`tab` sender means a YouTube
     // tab; `id` matching us means our own contexts.)
     try {
-        const isOurExtension = sender?.id === chrome.runtime.id;
+        const isOurExtension = sender?.id === ext.runtime.id;
         if (!isOurExtension) {
             try { sendResponse({ error: 'Sender rejected.' }); } catch (_) {
                 // reason: sender may already be disconnected
@@ -795,7 +827,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
     } catch (_) {
-        // reason: chrome.runtime.id should always exist in a SW context,
+        // reason: runtime.id should always exist in a SW context,
         // but if reading it throws we conservatively reject the message.
         try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* reason: sender may already be disconnected; we've already returned false */ }
         return false;
@@ -913,7 +945,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (typeof sender.tab?.windowId === 'number') createProperties.windowId = sender.tab.windowId;
         if (typeof sender.tab?.index === 'number') createProperties.index = sender.tab.index + 1;
 
-        chrome.tabs.create(createProperties).then((tab) => {
+        callExtensionApi(ext.tabs, 'create', createProperties).then((tab) => {
             sendResponse({ tabId: tab.id || null });
         }).catch((error) => {
             sendResponse({ error: error.message });
@@ -1176,24 +1208,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         const opts = { url: downloadUrl, saveAs: false };
         if (filename) opts.filename = filename;
-        chrome.downloads.download(opts, (downloadId) => {
-            if (chrome.runtime.lastError) {
-                sendResponse({ error: chrome.runtime.lastError.message });
-            } else {
+        callExtensionApi(ext.downloads, 'download', opts).then((downloadId) => {
                 if (msg.showInFolder) {
-                    // v3.14.0: switch from setTimeout(900) to chrome.downloads.onChanged.
+                    // v3.14.0: switch from setTimeout(900) to downloads.onChanged.
                     // The service worker can be terminated during the 900 ms window on
                     // slow networks, silently dropping the reveal. Listening for the
                     // `state.complete` transition fires reveal when the file actually
                     // exists, and the SW is kept alive while a download is in flight.
-                    // v3.20.0: mirror to chrome.storage.session so a SW cold-start
+                    // v3.20.0: mirror to storage.session so a SW cold-start
                     // between add and `state.complete` still honours the reveal.
                     // Audit pass: route through _addPendingReveal so the cap is enforced.
                     _addPendingReveal(downloadId);
                     _persistPendingReveals();
                 }
                 sendResponse({ downloadId });
-            }
+        }).catch((error) => {
+            sendResponse({ error: error?.message || 'Download failed.' });
         });
         return true;
     }
@@ -1205,7 +1235,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             sendResponse({ cookies: null, error: `Cookie domain not allowed: ${requestedDomain}` });
             return false;
         }
-        chrome.cookies.getAll({ domain }).then(cookies => {
+        callExtensionApi(ext.cookies, 'getAll', { domain }).then(cookies => {
             sendResponse({
                 cookies: cookies.map(c => ({
                     domain: c.domain,
@@ -1233,11 +1263,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             try {
                 await _updateRecoveryReady;
                 await _swLifecycleChain.catch(() => undefined);
-                if (!chrome.storage?.session) {
+                if (!ext.storage?.session) {
                     sendResponse({ entries: [], error: null });
                     return;
                 }
-                const stored = await chrome.storage.session.get(SW_LIFECYCLE_KEY);
+                const stored = await callExtensionApi(ext.storage.session, 'get', SW_LIFECYCLE_KEY);
                 const entries = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
                     ? stored[SW_LIFECYCLE_KEY]
                     : [];
@@ -1260,11 +1290,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 }
             };
             try {
-                if (!chrome.runtime?.connectNative) {
+                if (!ext.runtime?.connectNative) {
                     respond({ token: null, error: 'Native messaging unavailable' });
                     return;
                 }
-                const port = chrome.runtime.connectNative('com.astra.deck.downloader');
+                const port = ext.runtime.connectNative('com.astra.deck.downloader');
                 const timeout = setTimeout(() => {
                     try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
                     respond({ token: null, error: 'Native messaging timeout' });
@@ -1280,7 +1310,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 });
                 port.onDisconnect.addListener(() => {
                     clearTimeout(timeout);
-                    const lastError = chrome.runtime.lastError?.message || '';
+                    const lastError = ext.runtime.lastError?.message || '';
                     respond({ token: null, error: lastError || 'Native host disconnected' });
                 });
                 port.postMessage({ type: 'get-token' });

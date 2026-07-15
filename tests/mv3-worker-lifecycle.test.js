@@ -63,13 +63,13 @@ test('update recovery survives extension updates and restores session-only revea
     const resumeStart = background.indexOf('const _updateRecoveryReady');
     const updateBlock = background.slice(stageStart, background.indexOf("void _recordSwLifecycle('sw-start')") + 50);
     assert.ok(stageStart > -1 && resumeStart > stageStart);
-    assert.match(updateBlock, /chrome\.storage\.local\.set\(\{ \[UPDATE_RECOVERY_KEY\]: checkpoint \}\)/,
+    assert.match(updateBlock, /callExtensionApi\(ext\.storage\.local, 'set', \{ \[UPDATE_RECOVERY_KEY\]: checkpoint \}\)/,
         'storage.session is cleared on extension update, so checkpoints must use storage.local');
-    assert.match(updateBlock, /chrome\.storage\.local\.get\(UPDATE_RECOVERY_KEY\)/);
+    assert.match(updateBlock, /callExtensionApi\(ext\.storage\.local, 'get', UPDATE_RECOVERY_KEY\)/);
     assert.match(updateBlock, /checkpoint\.version !== runningVersion/);
     assert.match(updateBlock, /_addPendingReveal\(downloadId\)/);
-    assert.match(updateBlock, /chrome\.storage\.session\.set\(\{ \[_PENDING_REVEALS_KEY\]: \[\.\.\._pendingReveals\] \}\)/);
-    assert.match(updateBlock, /chrome\.runtime\.onUpdateAvailable\.addListener/);
+    assert.match(updateBlock, /callExtensionApi\(ext\.storage\.session, 'set', \{ \[_PENDING_REVEALS_KEY\]: \[\.\.\._pendingReveals\] \}\)/);
+    assert.match(updateBlock, /ext\.runtime\.onUpdateAvailable\.addListener/);
 });
 
 test('lifecycle diagnostics deduplicate operation ids and wait for recovery before responding', () => {
