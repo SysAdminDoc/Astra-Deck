@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "YouTube 싫어요 복원"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "동일한 제한형 Return YouTube Dislike 캐시를 사용해 보이는 동영상 썸네일에 예상 좋아요 비율 막대를 표시합니다."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "썸네일 좋아요 비율"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "좋아요 · Return YouTube Dislike 추정"
+  },
   "feature_reversePlaylist_desc": {
     "message": "오래된 순으로 재생하기 위해 재생목록 패널에 \"역순\" 버튼 추가"
   },

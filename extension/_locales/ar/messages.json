@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "استعادة عدم الإعجاب في YouTube"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "عرض شريط تقديري لنسبة الإعجاب على الصور المصغّرة المرئية باستخدام ذاكرة التخزين المؤقت المحدودة نفسها من Return YouTube Dislike."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "نسبة الإعجاب على الصور المصغّرة"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "إعجاب · تقدير Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "يضيف زر \"عكس\" إلى لوحات قوائم التشغيل لتشغيل الأقدم أولاً"
   },

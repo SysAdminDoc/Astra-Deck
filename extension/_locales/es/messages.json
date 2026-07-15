@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "Muestra una barra con la proporción estimada de Me gusta en las miniaturas visibles usando la misma caché limitada de Return YouTube Dislike."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "Proporción de Me gusta en miniaturas"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "Me gusta · estimado por Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "Agrega un botón \"Invertir\" en los paneles de Playlist para reproducir los más antiguos primero"
   },

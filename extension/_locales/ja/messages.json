@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "同じ上限付き Return YouTube Dislike キャッシュを使用して、表示中の動画サムネイルに推定高評価比率バーを表示します。"
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "サムネイルの高評価比率"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "高評価 · Return YouTube Dislike による推定"
+  },
   "feature_reversePlaylist_desc": {
     "message": "プレイリストパネルに「逆順」ボタンを追加し、古い順から再生"
   },

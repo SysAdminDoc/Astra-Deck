@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Вернуть дизлайки YouTube"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "Показывать на видимых миниатюрах видео полосу с оценкой доли лайков, используя тот же ограниченный кеш Return YouTube Dislike."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "Соотношение лайков на миниатюрах"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "лайков · оценка Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "Добавляет кнопку «Реверс» в панели плейлистов для воспроизведения сначала самых старых"
   },

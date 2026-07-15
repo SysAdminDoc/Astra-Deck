@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "Mostra uma barra com a proporção estimada de curtidas nas miniaturas visíveis usando o mesmo cache limitado do Return YouTube Dislike."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "Proporção de curtidas nas miniaturas"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "curtidas · estimativa do Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "Adiciona um botão \"Inverter\" aos painéis de playlist para reproduzir do mais antigo ao mais recente"
   },

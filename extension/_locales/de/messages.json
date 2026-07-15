@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "Zeigt auf sichtbaren Video-Vorschaubildern eine geschätzte Like-Verhältnisleiste an und verwendet denselben begrenzten Return YouTube Dislike-Cache."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "Like-Verhältnis auf Vorschaubildern"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "gefällt · geschätzt durch Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "Fügt eine \"Umkehren\"-Schaltfläche zu Playlist-Panels hinzu, um älteste zuerst abzuspielen"
   },

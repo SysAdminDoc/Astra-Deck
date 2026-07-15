@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "Thumbnail Like-Ratio Bars"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "liked · estimated by Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
   },

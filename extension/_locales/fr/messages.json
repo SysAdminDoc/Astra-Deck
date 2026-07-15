@@ -1985,6 +1985,15 @@
   "feature_returnDislike_name": {
     "message": "Return YouTube Dislike"
   },
+  "feature_returnDislikeOnCards_desc": {
+    "message": "Affiche une barre de ratio estimé des mentions J’aime sur les miniatures visibles en utilisant le même cache limité de Return YouTube Dislike."
+  },
+  "feature_returnDislikeOnCards_name": {
+    "message": "Ratio de mentions J’aime sur les miniatures"
+  },
+  "ui_rydCardRatioSuffix": {
+    "message": "J’aime · estimation Return YouTube Dislike"
+  },
   "feature_reversePlaylist_desc": {
     "message": "Ajoute un bouton \"Inverser\" aux panneaux Playlist pour lire les plus anciennes d'abord"
   },
