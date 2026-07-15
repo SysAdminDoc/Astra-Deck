@@ -1,61 +1,125 @@
-# Research - Astra Deck
-Date: 2026-07-09 - replaces all prior research. Scope: competitive sweep of the YouTube USERSCRIPT ecosystem (plus userscript-adjacent extensions) to harvest features the extension does not have yet. The prior 2026-07-09 research (release-gate/trust pass) was fully drained into v4.47.0; see git history for its content.
+# Research — Astra Deck
+Date: 2026-07-14 — replaces all prior research.
 
 ## Executive Summary
-[Verified] Astra Deck's ~386 setting keys already cover the large majority of what the YouTube userscript ecosystem ships — the Wave 1-10 imports plus v4.x additions match or exceed the leading YouTube userscripts (Nova YouTube, Iridium) and the Greasy Fork long tail on most axes. The genuine gaps cluster in six areas where sustained demand exists and competition is weak: (1) Watch Later / queue / watch-history management (no official API since 2016; loudest unmet demand on HN and in paid CWS tools), (2) in-Shorts player controls (Astra only redirects or hides Shorts; the "Better Youtube Shorts" family adds seekbar/volume/speed/anti-loop inside the Shorts player), (3) fullscreen ergonomics (scrollable comments under fullscreen, auto-exit at video end, "More videos" end-grid removal, clock/title overlay), (4) live-stream tooling (force-DVR, live-edge speed reset, replay chat-density highlight chart, floating chat in fullscreen), (5) the leading competitor's recent-version delta (muted-auto-subtitles, subtitles-on-rewind, speed/SponsorBlock-adjusted remaining time, per-page CSS toggling), and (6) comment/subtitle intelligence (language filter, duplicate collapse, per-user block, dual-language captions). A seventh, strategic opportunity is trust positioning: after Return YouTube Dislike's 2025-10 ad-injection scandal and a malicious Shorts-blocker incident, "open source, no remote code, no monetization hooks" is itself a marketable feature Astra Deck already satisfies.
 
-Top opportunities in priority order: playback-error auto-recovery, Watch Later workbench, persistent local queue, in-Shorts player controls, fullscreen comments/auto-exit, speed+SB-aware remaining time, live DVR/speed tools, comment language/duplicate/user filters, dual-language subtitles, allowlist (whitelist) hiding mode.
+[Verified] Astra Deck is a mature, local-first YouTube enhancement suite spanning Chromium and Firefox MV3 extensions, a userscript, and a Windows PyQt/yt-dlp companion. Its strongest current shape is breadth with explicit local-data, policy-profile, permission, recovery, and external-service boundaries: 408 schema-backed settings, 19 extracted feature modules, 11 locales, dual store-safe/GitHub-full packaging, and focused hardening around downloads and updates. The highest-value direction is to make those boundaries enforceable rather than merely configurable: keep automation off the user's desktop, gate companion releases on a complete license inventory, encode an immutable artifact capability ceiling and verified permission matrix, protect BYO AI credentials, make backup/reset cover every durable domain, repair transcript indexing, and prove behavior across MV3 worker termination. After those trust fixes, the best product investments are a durable pending-download queue, smaller page-specific bundles, and continued extraction of the 55,172-line feature monolith.
+
+Top opportunities, in priority order:
+
+1. [Verified] Remove the Chromium smoke test's automatic headed-browser fallback.
+2. [Needs legal validation] Inventory and gate the PyQt6/FFmpeg companion distribution posture.
+3. [Verified] Stamp an immutable capability ceiling into each build and verify its documented permission matrix.
+4. [Verified] Move AI credentials out of content-script settings and URLs into background-owned custody.
+5. [Verified] Define one versioned, lossless archive/reset contract for every durable local-data domain.
+6. [Verified] Rebuild transcript indexing around `TranscriptService`, cancellable ingestion, and truthful errors.
+7. [Verified] Remove import-time `pip install --break-system-packages` and update the affected yt-dlp pin.
+8. [Verified] Test critical workflows through real MV3 service-worker termination and restart.
+9. [Verified] Add a persistent pending-download queue instead of rejecting work at three active jobs.
+10. [Verified] Split live-chat delivery and complete module ownership so extracted features are not shadowed by monolithic fallbacks.
 
 ## Product Map
-- [Verified] Core workflows: in-page enhancement via `extension/ytkit.js` + peeled `extension/features/*` modules; popup/side-panel management; in-page settings command center; local download handoff via the Astra Downloader companion; profile-split store-safe/GitHub-full artifacts via `build-extension.js`.
-- [Verified] Personas: power viewers, privacy-sensitive local-first users, subscription-heavy users, researchers (transcripts/notes/analytics).
-- [Verified] Distribution: Chrome ZIP+CRX, Firefox ZIP+XPI, Tampermonkey userscript, Windows companion EXE. This pass targets the EXTENSION first (per operator direction); userscript parity items are intentionally not proposed (the 19-item `not-yet-ported` backlog is capped and tracked by `scripts/check-userscript-drift.js`).
-- [Verified] External data flows: SponsorBlock, DeArrow, RYD, Reddit, optional AI/Cobalt/loopback (GitHub-full only). New features below must respect `core/data-flow.js` profile gating.
 
-## Competitive Landscape (userscript ecosystem)
-- **A leading competitor userscript (v11.4 2026-07-04, AGPL-3.0)** — the feature-breadth ceiling: 200+ toggles, weekly cadence, DOM/CSS-only (no InnerTube, no external requests). Learn: the v10.16-v11.4 delta — live catch-up 1x speed reset, auto-subtitles-when-muted, subtitles-for-10s-on-rewind, transcript retry + modern-panel fallback, SB-segment/speed-aware remaining time, per-page CSS injection toggling for perf. Avoid: its keyboard-shortcut-heavy UX (Astra policy forbids shortcuts).
-- **Nova YouTube (raingart, 258 stars)** — cleanest plugin-file architecture with auto-generated options UI; closest architectural cousin to Astra's peeled modules. Learn: no-sleep plugin, playback-error handling, plugin registry pattern. Avoid: its download/region-unblock plugins in store-safe profile (policy risk).
-- **Tabview Youtube Totara (cyfung1031)** — watch-page tabs + live-chat lag reduction + background-tab keep-alive. Astra already has `watchPageTabs` and CPU tamer; learn its chat-render throttling and `content-visibility` CSS perf tricks.
-- **Tube Insights (exyezed, consolidated 2025-11)** — the only suite built on InnerTube (`youtubei/v1`): monetization, category, country flag, exact dates, real-time sub counts, channel bookmarker. Astra has `monetizationIndicator`; the rest is an optional "insights" cluster (GitHub-full profile, degraded-mode aware). Avoid: its backend-routed downloads (Astra has the local companion).
-- **Iridium (ParticleCore, archived 2026-01)** — pioneer of MAIN-world player-response interception; now dead, its ~10k users need a migration target (migration guide already tracked in `Roadmap_Blocked.md`). Its feature set (HFR block, per-section Shorts hiding, logo-to-subs) is already covered.
-- **Simple YouTube Age Restriction Bypass (zerodytrash, 2.4k stars)** — broken upstream since YouTube's 2026 player changes; Astra's own `ageRestrictionBypass` should be validated against the same breakage class (alternate-client player requests).
-- **Better Youtube Shorts / BYTS family (Meriel Varen, WaGi-Coding)** — in-Shorts seekbar, volume, speed, spacebar pause, anti-loop, auto-advance. Astra has nothing inside the Shorts player; biggest single UX gap for users who don't redirect Shorts away.
-- **Control Panel for YouTube (insin, 91 toggles, desktop+mobile)** — the best "restore old UI / hide per-content-type" taxonomy. Astra covers most; still lacks: hide AI-summary/"Ask" surfaces, notification limit/hide-read, disable-Home-entirely. Avoid: mobile-web support (Astra is desktop-only by architecture).
-- **Long-tail Greasy Fork (~180 scripts swept)** — anti-interruption cluster (auto-dismiss pause dialogs — covered; playback-error auto-refresh — NOT covered), volume science (logarithmic volume curve, normalization defeat — partially covered), playlist math (sort-by-duration, per-playlist resume memory, auto-skip watched — partially covered), dual-language subtitles (~30k installs across the family — not covered), Filmot deleted-video title restore (4.5k installs — not covered).
+- **Core workflows:** customize YouTube playback, layout, feeds, comments, live chat, privacy, accessibility, and focus behavior through schema-driven controls; retain local notes, bookmarks, watch state, queues, transcript search, filters, and subscription groups; enrich pages through optional SponsorBlock, DeArrow, Return YouTube Dislike, Reddit, and BYO/local AI integrations; download media through an authenticated loopback companion.
+- **User personas:** YouTube power viewers, privacy-conscious users, students/researchers, accessibility and distraction-reduction users, and Windows users who archive media locally.
+- **Platforms and distribution:** Chrome-family and Firefox MV3 packages in store-safe and GitHub-full profiles, a generated userscript, and a Windows 10+ companion built with Python/PyQt6/PyInstaller; Node.js 22+ is the project tooling floor.
+- **Key integrations and data flows:** content scripts exchange structured messages with the MV3 worker; optional hosts are granted per capability; settings and user artifacts live in extension storage/local storage/IndexedDB; the companion accepts loopback requests and delegates extraction to yt-dlp/FFmpeg; external metadata and AI calls transit the background fetch boundary.
+- **Hard constraints:** MIT repository license, Chrome/Firefox MV3 lifecycles, YouTube's changing SPA/DOM contracts, browser-store policy profiles, local-first/no-account philosophy, and a Windows-only native companion.
+
+## Competitive Landscape
+
+- **ImprovedTube:** [Verified] Broad, categorized viewer customization and a long-lived extension architecture. Learn from its discoverable capability catalog and narrow preference controls. Avoid importing breadth without ownership boundaries; Astra already has more settings than its monolith can safely absorb.
+- **YouTube Enhancer:** [Verified] Frequent releases responding to YouTube UI drift. Learn from short feedback loops and selector-facing release discipline. Avoid making reactive DOM patches the only compatibility layer; Astra should keep fixtures, capability probes, and teardown contracts.
+- **BlockTube:** [Verified] Focused channel/video filtering with understandable user rules. Learn from simple identity-based controls and predictable failure behavior. Avoid duplicating its filtering surface where Astra's existing hider and direct-watch roadmap item already cover the need.
+- **SponsorBlock and DeArrow:** [Verified] Mature optional community-data integrations with active compatibility release discipline. Learn to keep remote data optional, cached, and degradable. Avoid any remote executable selector or CSS channel that bypasses reviewed releases.
+- **FreeTube:** [Verified] A privacy-first alternative client with explicit local data and instance choices. Learn clear privacy boundaries and resilient alternative data paths. Avoid becoming a replacement YouTube client; that conflicts with Astra's in-page enhancement model and multiplies platform maintenance.
+- **MeTube and YTDLnis:** [Verified] Persistent queues, reordering, retries, and deliberate download state. Learn a pending-versus-active job model and restart-safe operator controls. Avoid accepting arbitrary yt-dlp command text through Astra's loopback trust boundary.
+- **PocketTube and YTidy:** [Verified] Subscription productivity is valuable enough to sustain paid tiers, especially extension-owned grouping and list views that survive site redesigns. Learn durable, locally managed subscription workflows. Avoid cloud accounts and paid synchronization until the existing local subscription/list roadmap is proven.
+- **TubeBuddy and vidIQ:** [Verified] Creator analytics, SEO, and optimization are the main commercial paywalls. Learn that high-value workflows explain state and outcomes clearly. Avoid creator-suite scope: Astra's code, copy, and users are viewer-oriented, and creator analytics would require unrelated data collection and maintenance.
 
 ## Security, Privacy, and Reliability
-- [Verified] Trust positioning: RYD injected full-page ads in 2025-10 (HN 45696329); a popular Shorts blocker turned malicious (HN 42119203). Astra's no-remote-code, local-first posture is a differentiator worth stating in store listing copy (blocked store-submission items already exist).
-- [Likely] `ageRestrictionBypass` risk: the upstream reference implementation is broken since 2026 player changes; Astra's implementation needs a fixture canary against `playabilityStatus: AGE_VERIFICATION_REQUIRED` before the feature keeps being recommended.
-- [Verified] Any Watch Later / history / queue feature rides undocumented `youtubei/v1` endpoints or DOM automation — the same fragility class as `bulkCardActions`. Reuse its bounded-session + pacing + local-log + Undo pattern and `extension/core/external-api-health.js` degradation surfaces for every new mutation feature.
-- [Verified] Ad-control features (allow-ads-per-channel, ad speedup/mute) remain excluded from store-safe; do not import despite their prevalence in the long tail.
+
+- [Verified] `scripts/smoke-chromium-optional-hosts.js:691` automatically retries with `headed: true` when headless Chromium omits `chrome.action.openPopup`; this can surface a browser and disturb the active desktop. The smoke must fail/skip explicitly or use a proven isolated headless path.
+- [Needs legal validation] `LICENSE` declares MIT while `astra_downloader/requirements.txt` uses PyQt6 and the build downloads a GPL FFmpeg archive. Riverbank documents free PyQt under GPLv3 unless a commercial license applies; FFmpeg's enabled build options determine LGPL/GPL obligations. No documented companion compliance assessment, commercial-entitlement record, or artifact-linked license inventory was found in the repository. This is a release-gate question, not a conclusion of infringement.
+- [Verified] `build-extension.js:491` changes hosts, CSP, and web-accessible resources but does not stamp the staged artifact's profile. `extension/core/policy-profile.js` derives the effective profile from mutable settings, so a store-safe package can expose GitHub-full UI behavior after installation. Store-safe intentionally supports the local companion and justifies `cookies`/`nativeMessaging`; the gap is an immutable ceiling for every schema/profile capability plus a machine-checked permission rationale, not blanket permission removal.
+- [Verified] `aiSummaryApiKey` is an ordinary schema setting available to the content script, and `extension/ytkit.js:32429` places the Gemini key in a query string. Chrome recommends `storage.session` for sensitive in-memory data; Google recommends header-based keys and warns against client-side exposure. Extension credential injection belongs in the worker with an explicit opt-in persistence choice; the userscript needs a separate manager-isolated credential path.
+- [Verified] `astra_downloader/astra_downloader.py:36` mutates the active Python environment during import and eventually invokes `pip install --break-system-packages`; PyPA reserves that override for explicit external-environment modification. Setup must be a deliberate command or isolated environment, never module import behavior.
+- [Verified] `astra_downloader/requirements.txt` pins `yt-dlp==2026.6.9`, within the affected range for CVE-2026-55404; 2026.7.4 contains the fix. Astra's allowlisted argument construction limits practical exposure, but the vulnerable dependency should still be replaced and the dangerous link-writing flags regression-tested out of every argv path.
+- [Verified] `extension/popup.js:3618` exports only settings, hidden/allowed videos, blocked channels, and bookmarks, while watch progress/time, the local queue, and `ytkit-transcript-index` are durable too. Export is intentionally uncapped, yet import rejects serialized writes above 4.5 MB; reset clears `storage.local` but not the YouTube-origin local/IndexedDB domains. A successful backup/reset message therefore does not currently mean complete recoverability.
+- [Verified] `researchTranscriptIndex._ingestCurrent()` marks a video ingested before it sees transcript nodes, then reads only already-rendered transcript DOM. An unopened panel is permanently skipped for that visit; its delayed navigation timer is not cancellable, `_search()` lowercases/scans up to 1,000 large records per query without stale-result control, and `_clear()` reports success after transaction errors.
+- [Verified] Chrome may terminate an idle extension service worker after 30 seconds. Current tests inspect lifecycle source but do not terminate and wake the real worker while exercising settings, permissions, pending download reveal, diagnostics, and updates.
+- [Verified] `DownloadManager.start_download()` rejects the fourth active request rather than storing pending intent. MeTube and YTDLnis demonstrate the expected queue/reorder/retry model; Astra's repaired terminal-record reclamation is a foundation, not a pending queue. Persisted queue metadata must exclude cookie values and require fresh authentication after restart.
+- [Verified] `npm audit --json` reported zero known npm vulnerabilities on 2026-07-14. Continue the existing dependency-audit and last-known-good update roadmap rather than adding a duplicate item.
 
 ## Architecture Assessment
-- [Verified] The leading competitor's per-page CSS injection toggling (inject only the CSS a page type needs) is a real perf lever; Astra injects most feature CSS globally via `extension/core/styles.js` lifecycle specs — a page-scoped spec variant would cut style-recalc cost on home/subs pages.
-- [Verified] Transcript resilience: a leading competitor (v11.3-11.4) supports both `engagement-panel-searchable-transcript` and the new `data-target-id` modern transcript panel with fallback. Astra's TranscriptService / `transcriptViewer` should pin both variants in the selector packs (`tests/fixtures/selector-surface-matches.json`).
-- [Verified] Hardening tests slice fixed byte windows from `ytkit.js` feature blocks — every feature added below may require widening those windows (known repo gotcha).
-- [Verified] New external integrations (Filmot, InnerTube insights) must flow through `core/data-flow.js` profile derivation so store-safe artifacts strip them automatically.
+
+- [Verified] `extension/ytkit.js` is 55,172 lines and still owns many implementations whose extracted modules load before it. Complete one feature at a time behind the existing behavioral-boundary-test roadmap item, delete the fallback copy, and keep userscript generation consuming the same canonical module graph.
+- [Verified] The normal YouTube and `live_chat` manifest groups each load the same roughly 4.27 MB isolated-world list. Generate a chat-specific entry from declared feature scope so live chat receives only shared foundations and chat features.
+- [Verified] `astra_downloader/config.py`, `download.py`, `gui.py`, `health.py`, and `routes.py` are compatibility re-exports over the 6,807-line `astra_downloader.py`. Move ownership behind explicit dependency objects while preserving import and PyInstaller contracts.
+- [Verified] `web_accessible_resources` exposes static `icons/*` and `assets/*`. First remove resources without a page consumer; Chromium's `use_dynamic_url` can reduce the remaining stable extension-resource fingerprint, while Firefox should retain its native randomized extension origin without a Chromium-only key.
+- [Verified] **Testing and accessibility:** existing checks cover static semantics and minimum target sizes, but not WCAG 2.2 Focus Not Obscured, 200% zoom/reflow, sticky-surface overlap, or end-to-end keyboard order. Add isolated headless coverage; do not rely on foreground desktop automation.
+- [Verified] **Observability:** selector health, external-service health, diagnostic logs, and a redacted companion support bundle already exist. No new observability item is warranted until those diagnostics/recovery surfaces are exercised through worker restart.
+- [Verified] **i18n, documentation, migration, and upgrades:** the existing roadmap already covers pseudolocale/translation ratchets, generated documentation truth, settings-mutation migration, dependency/SBOM reproducibility, last-known-good upgrades, optional sync, and behavioral boundary tests. Those areas were not duplicated in the additions.
+- [Verified] **Offline/resilience:** complete local backup/reset and a restart-safe companion queue are the bounded fits; a browser media cache or always-on archive server is intentionally rejected below.
+- [Likely] The strongest maintainable sequencing is: artifact/credential/data contracts first; worker and accessibility tests second; queue and bundle boundaries third; monolith extraction last. Reversing that order would make large refactors harder to prove and roll back.
 
 ## Rejected Ideas
-- Ad-blocking/ad-speedup/ad-mute ports (youtube-adb 304k installs, worldtracin) — store policy risk; MAIN-world adblock stays userscript-only. Source: Greasy Fork by-site sweep.
-- Background-play via Page Visibility spoofing (Video Background Play Fix, 14k) — Google patches it quarterly; arms race with policy exposure. Source: androidauthority.com 2026 coverage.
-- m.youtube.com / mobile-web support (Control Panel for YouTube ships it) — extension surface is desktop-only; a second selector matrix is not worth it.
-- Layout-era recreations (CustomTube/StarTube 2008-2024 layouts) — philosophy misfit; `classicLayoutProfile` already covers the tasteful subset.
-- Pre-boot `yt.config_`/EXPERIMENT_FLAGS flipping (YouTube Web Tweaks) — the pattern that killed that script; breakage class too high. Source: GF 447802 discontinuation notice.
-- Local signature-decipher downloads (maple3142 pattern) — permanent maintenance treadmill; Astra has companion + Cobalt paths.
-- Watch-together sync (SyncWatch/WatchParty) — requires signaling infrastructure; contradicts the no-backend posture.
-- Danmaku chat overlay + TTS chat reader (CY Fung/knoa family) — niche audience, heavy perf cost on live pages.
-- Genius lyrics / Spotify cross-links (cuzi, l1am9111) — external API bloat outside the enhancement mission.
-- Crowdsourced "annoyances database" (HN 42995669) — requires running a voting backend.
-- Account-proxy age-bypass fallback (zerodytrash strategy 2) — routes user traffic through a third-party account pool; unacceptable privacy posture.
-- Subtitle hover-dictionary language learning (Qwyuaa) — large effort, tiny audience; dedicated tools (Language Reactor) own the niche.
-- Era browser / "time machine" feed (bygone-yt) — novelty without retention.
+
+- **Full alternative YouTube client** — FreeTube/NewPipe: conflicts with Astra's injected enhancement philosophy and creates a separate playback/API compatibility product.
+- **Hosted multi-user backend** — TubeArchivist: accounts, server operations, authorization, and shared storage contradict the local-first single-user boundary.
+- **Creator SEO/A/B analytics suite** — TubeBuddy/vidIQ: commercially validated but misaligned with Astra's viewer personas and privacy posture.
+- **Remote plugin, selector, CSS, or custom-JavaScript marketplace** — adjacent extension ecosystems: an unsigned executable update channel would erase Astra's reviewed-release and CSP trust boundary.
+- **Browser-side offline media cache/server** — TubeArchivist/NewPipe: browsers are the wrong durability and storage boundary; downloads belong in the companion.
+- **Android, Firefox Android, and Safari ports now** — NewPipe/YTDLnis: no mobile or Safari shell/build/test infrastructure exists, and YouTube desktop DOM features do not transfer cheaply.
+- **Always-on scheduled channel archiving** — TubeArchivist: requires a daemon/service lifecycle and storage policy the opt-in desktop companion does not have.
+- **Arbitrary yt-dlp argument text** — yt-dlp GUI projects: unsafe across the authenticated loopback boundary; keep typed, allowlisted options.
+- **Cloud-managed AI credits or proxy** — commercial summarizers: creates credential, billing, telemetry, abuse, and multi-user obligations; retain BYO/local explicit invocation.
+- **Full light-theme redesign** — Dark Reader and theme tools: Astra already preserves a dark/OLED identity and supports YouTube theme variants; repair semantic tokens and nested surfaces incrementally rather than replacing the identity.
 
 ## Sources
-GitHub: github.com/ParticleCore/Iridium · github.com/cyfung1031/Tabview-Youtube · github.com/exyezed/tube-insights · github.com/raingart/Nova-YouTube-extension · github.com/zerodytrash/Simple-YouTube-Age-Restriction-Bypass · github.com/exwm/yt_clipper · github.com/omnidevZero/YouTubeRedux · github.com/lightbeam24/CustomTube · github.com/zpix1/yt-anti-translate · github.com/insin/control-panel-for-youtube · github.com/amitbl/blocktube/issues · github.com/ajayyy/SponsorBlock/issues · github.com/ajayyy/DeArrow/releases · github.com/Anarios/return-youtube-dislike/issues · github.com/code-charity/youtube/issues · github.com/sniklaus/youtube-watchmarker · github.com/adamlui/youtube-classic
-Greasy Fork: greasyfork.org/en/scripts/501249 (Totara) · greasyfork.org/en/scripts/by-site/youtube.com?sort=total_installs · greasyfork.org/en/users/371179 (CY Fung catalog) · greasyfork.org/en/scripts/485622 (StarTube) · greasyfork.org/en/scripts/460680 (YT Tools AIO)
-Community/other: news.ycombinator.com/item?id=45687227 (FocusTube) · news.ycombinator.com/item?id=39627895 (Control Panel) · news.ycombinator.com/item?id=45696329 (RYD ads) · news.ycombinator.com/item?id=46391925 (Streamline queue) · soitis.dev/control-panel-for-youtube · inzk.dev/tweaks-for-youtube/features · tidywl.com/blog/youtube-watch-later-5000-limit · wiki.sponsor.ajay.app/w/Advanced_skip_options · pockettube.io · unhook.app
+
+### Open-source competitors and adjacent projects
+
+- https://github.com/code-charity/youtube
+- https://github.com/YouTube-Enhancer/extension/releases
+- https://github.com/amitbl/blocktube
+- https://github.com/ajayyy/SponsorBlock/releases
+- https://github.com/ajayyy/DeArrow/releases
+- https://github.com/FreeTubeApp/FreeTube
+- https://github.com/alexta69/metube
+- https://github.com/deniscerri/ytdlnis
+- https://github.com/tubearchivist/tubearchivist
+
+### Commercial products
+
+- https://pockettube.io/pricing.html
+- https://ytidy.com/
+- https://www.tubebuddy.com/homepage-new/
+- https://support.vidiq.com/en/articles/13928456-features-credits-by-plan
+
+### Lists and community signal
+
+- https://github.com/pluja/awesome-privacy
+- https://github.com/awesome-selfhosted/awesome-selfhosted
+- https://www.reddit.com/r/youtube/comments/1qudzz8/youtube_removed_the_list_layout_in_subscription/
+
+### Standards, platform guidance, security, and research
+
+- https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions
+- https://developer.chrome.com/docs/extensions/reference/api/storage
+- https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle
+- https://developer.chrome.com/docs/extensions/how-to/test/test-serviceworker-termination-with-puppeteer
+- https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/web_accessible_resources
+- https://www.w3.org/TR/WCAG22/
+- https://packaging.python.org/en/latest/specifications/externally-managed-environments/
+- https://riverbankcomputing.com/software/pyqt
+- https://www.ffmpeg.org/legal.html
+- https://ai.google.dev/gemini-api/docs/api-key
+- https://docs.cloud.google.com/docs/authentication/api-keys-best-practices
+- https://nvd.nist.gov/vuln/detail/CVE-2026-55404
+- https://github.com/yt-dlp/yt-dlp/releases/tag/2026.07.04
+- https://www.usenix.org/conference/usenixsecurity25/presentation/agarwal-shubham
 
 ## Open Questions
-- Does `playlistSearch` (extension-only feature) already cover the Save-to-playlist dialog, or only the playlist panel? Determines scope of the save-dialog upgrade item.
-- Is `ageRestrictionBypass` currently functional against 2026 player responses? Needs a live check before its canary item is prioritized above P2.
-- Which mechanism does `watchLaterCleanup` use today (DOM automation vs `youtubei` browse)? The Watch Later workbench should extend the same mechanism rather than introduce a second one.
+
+- [Needs legal validation] Does the maintainer hold a commercial PyQt license, or should the companion adopt a GPL-compatible distribution posture or migrate to PySide6 before any binary release after 2026-07-14?
