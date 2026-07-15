@@ -5231,7 +5231,14 @@ return response;
         setFirstRunStatus(hasRun) {
             StorageManager.set('ytSuiteHasRun', hasRun);
         },
-        _lastSettingsImportUndo: null,
+        _settingsImportTransaction: null,
+        _getSettingsImportTransaction() {
+            if (this._settingsImportTransaction) return this._settingsImportTransaction;
+            const factory = globalThis.YTKitCore?.createSettingsImportTransaction;
+            if (typeof factory !== 'function') return null;
+            this._settingsImportTransaction = factory();
+            return this._settingsImportTransaction;
+        },
         _countChangedSettings(before, after) {
             const keys = new Set([...Object.keys(this.defaults), ...Object.keys(before || {}), ...Object.keys(after || {})]);
             let changed = 0;
@@ -5377,62 +5384,70 @@ return response;
                     bookmarks: StorageManager.get(STORAGE_KEYS.bookmarks, {}),
                 };
 
-                try {
-                    const newSettings = this._prepareImportedSettings(settings, {
-                        backupSchemaVersion: importedData.settingsSchemaVersion
-                    });
-                    const bytesEstimate = estimateSerializedBytes({
-                        [STORAGE_KEYS.settings]: newSettings,
-                        ...(hiddenVideos !== null ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
-                        ...(allowedVideos !== null ? { [STORAGE_KEYS.allowedVideos]: allowedVideos } : {}),
-                        ...(blockedChannels !== null ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
-                        ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {})
-                    });
-                    if (!Number.isFinite(bytesEstimate) || bytesEstimate > IMPORT_LIMITS.totalBytes) {
-                        throw new Error('Import data exceeds extension storage budget');
+                const newSettings = this._prepareImportedSettings(settings, {
+                    backupSchemaVersion: importedData.settingsSchemaVersion
+                });
+                const bytesEstimate = estimateSerializedBytes({
+                    [STORAGE_KEYS.settings]: newSettings,
+                    ...(hiddenVideos !== null ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
+                    ...(allowedVideos !== null ? { [STORAGE_KEYS.allowedVideos]: allowedVideos } : {}),
+                    ...(blockedChannels !== null ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
+                    ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {})
+                });
+                if (!Number.isFinite(bytesEstimate) || bytesEstimate > IMPORT_LIMITS.totalBytes) {
+                    throw new Error('Import data exceeds extension storage budget');
+                }
+                const hiddenSummary = this._summarizeVideoIdImport(rawHiddenVideos, hiddenVideos, IMPORT_LIMITS.hiddenVideos);
+                const allowedSummary = this._summarizeVideoIdImport(rawAllowedVideos, allowedVideos, IMPORT_LIMITS.allowedVideos);
+                const blockedSummary = Array.isArray(rawBlockedChannels)
+                    ? {
+                        imported: blockedChannels?.length || 0,
+                        skipped: Math.max(0, rawBlockedChannels.length - (blockedChannels?.length || 0)),
+                        duplicates: 0
                     }
-                    StorageManager.setSync(STORAGE_KEYS.settings, newSettings);
-                    StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, null);
-                    if (hiddenVideos !== null) StorageManager.setSync(STORAGE_KEYS.hiddenVideos, hiddenVideos);
-                    if (allowedVideos !== null) StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos);
-                    if (blockedChannels !== null) StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels);
-                    if (bookmarks !== null) StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks);
-                    const hiddenSummary = this._summarizeVideoIdImport(rawHiddenVideos, hiddenVideos, IMPORT_LIMITS.hiddenVideos);
-                    const allowedSummary = this._summarizeVideoIdImport(rawAllowedVideos, allowedVideos, IMPORT_LIMITS.allowedVideos);
-                    const blockedSummary = Array.isArray(rawBlockedChannels)
-                        ? {
-                            imported: blockedChannels?.length || 0,
-                            skipped: Math.max(0, rawBlockedChannels.length - (blockedChannels?.length || 0)),
-                            duplicates: 0
-                        }
-                        : { imported: blockedChannels?.length || 0, skipped: 0, duplicates: 0 };
-                    const bookmarkSummary = this._summarizeObjectMapImport(rawBookmarks, bookmarks);
-                    const summary = {
-                        settingsUpdated: this._countChangedSettings(backup.settings, newSettings),
-                        hiddenVideos: hiddenSummary.imported,
-                        allowedVideos: allowedSummary.imported,
-                        blockedChannels: blockedSummary.imported,
-                        bookmarkVideos: bookmarkSummary.imported,
-                        skipped: hiddenSummary.skipped + allowedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped,
-                        duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates
-                    };
-                    this._lastSettingsImportUndo = { backup, summary, createdAt: Date.now() };
-                    return {
-                        ok: true,
-                        summary,
-                        message: this._formatSettingsImportSummary(summary)
-                    };
-                } catch (applyErr) {
-                    // Rollback on failure
-                    console.error('[YTKit] Import apply failed, rolling back:', applyErr);
-                    StorageManager.setSync(STORAGE_KEYS.settings, backup.settings);
-                    StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, backup.legacySidebarOrder);
-                    StorageManager.setSync(STORAGE_KEYS.hiddenVideos, backup.hiddenVideos);
-                    StorageManager.setSync(STORAGE_KEYS.allowedVideos, backup.allowedVideos);
-                    StorageManager.setSync(STORAGE_KEYS.blockedChannels, backup.blockedChannels);
-                    StorageManager.setSync(STORAGE_KEYS.bookmarks, backup.bookmarks);
+                    : { imported: blockedChannels?.length || 0, skipped: 0, duplicates: 0 };
+                const bookmarkSummary = this._summarizeObjectMapImport(rawBookmarks, bookmarks);
+                const summary = {
+                    settingsUpdated: this._countChangedSettings(backup.settings, newSettings),
+                    hiddenVideos: hiddenSummary.imported,
+                    allowedVideos: allowedSummary.imported,
+                    blockedChannels: blockedSummary.imported,
+                    bookmarkVideos: bookmarkSummary.imported,
+                    skipped: hiddenSummary.skipped + allowedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped,
+                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates
+                };
+                const restore = (snapshot) => {
+                    StorageManager.setSync(STORAGE_KEYS.settings, snapshot.settings);
+                    StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, snapshot.legacySidebarOrder);
+                    StorageManager.setSync(STORAGE_KEYS.hiddenVideos, snapshot.hiddenVideos);
+                    StorageManager.setSync(STORAGE_KEYS.allowedVideos, snapshot.allowedVideos);
+                    StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels);
+                    StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks);
+                };
+                const transaction = this._getSettingsImportTransaction();
+                if (!transaction) throw new Error('Settings import transaction service unavailable');
+                const outcome = transaction.run({
+                    snapshot: () => backup,
+                    summary,
+                    restore,
+                    apply: () => {
+                        StorageManager.setSync(STORAGE_KEYS.settings, newSettings);
+                        StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, null);
+                        if (hiddenVideos !== null) StorageManager.setSync(STORAGE_KEYS.hiddenVideos, hiddenVideos);
+                        if (allowedVideos !== null) StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos);
+                        if (blockedChannels !== null) StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels);
+                        if (bookmarks !== null) StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks);
+                    }
+                });
+                if (!outcome.ok) {
+                    console.error('[YTKit] Import apply failed, rolling back:', outcome.error || outcome.rollbackError);
                     return { ok: false, message: t('statusSettingsImportFailed', 'Import failed while applying data; previous state was restored.') };
                 }
+                return {
+                    ok: true,
+                    summary,
+                    message: this._formatSettingsImportSummary(summary)
+                };
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
                 return { ok: false, message: e?.message || 'Invalid file format.' };
@@ -5442,20 +5457,12 @@ return response;
             return this.importAllSettingsDetailed(jsonString).ok;
         },
         undoLastSettingsImport() {
-            const snapshot = this._lastSettingsImportUndo;
-            if (!snapshot?.backup) return { ok: false, message: 'No import undo is available.' };
-            this._lastSettingsImportUndo = null;
-            const { backup } = snapshot;
-            StorageManager.setSync(STORAGE_KEYS.settings, backup.settings);
-            StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, backup.legacySidebarOrder);
-            StorageManager.setSync(STORAGE_KEYS.hiddenVideos, backup.hiddenVideos);
-            StorageManager.setSync(STORAGE_KEYS.allowedVideos, backup.allowedVideos);
-            StorageManager.setSync(STORAGE_KEYS.blockedChannels, backup.blockedChannels);
-            StorageManager.setSync(STORAGE_KEYS.bookmarks, backup.bookmarks);
+            const outcome = this._getSettingsImportTransaction()?.undo();
+            if (!outcome?.ok) return { ok: false, message: outcome?.message || 'Import undo failed.' };
             return {
                 ok: true,
                 message: t('statusSettingsImportUndone', 'Import undone. Previous settings and local data restored.'),
-                restored: backup
+                restored: outcome.restored
             };
         },
         importYouTubeTakeoutWatchHistory(jsonString) {

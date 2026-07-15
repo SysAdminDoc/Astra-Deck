@@ -52,6 +52,25 @@ test('legacy backup fixtures v1-v4 migrate deterministically', () => {
     assert.equal(persisted.migrateBackup(fixture(4)).settingsSchemaVersion, 7);
 });
 
+test('legacy filtered-video alias and allowed-video exceptions migrate through the public boundary', () => {
+    const migratedAlias = persisted.migrateBackup({
+        exportVersion: 2,
+        settings: { hideHomeFeed: true },
+        filteredVideoPosts: ['abcdefghijk']
+    });
+    assert.deepEqual(migratedAlias.domains.hiddenVideos, ['abcdefghijk']);
+
+    const hiddenVideosTakePrecedence = persisted.migrateBackup({
+        exportVersion: 3,
+        settings: {},
+        hiddenVideos: ['lmnopqrstuv'],
+        filteredVideoPosts: ['abcdefghijk'],
+        allowedVideos: ['zyxwvutsrqp']
+    });
+    assert.deepEqual(hiddenVideosTakePrecedence.domains.hiddenVideos, ['lmnopqrstuv']);
+    assert.deepEqual(hiddenVideosTakePrecedence.domains.allowedVideos, ['zyxwvutsrqp']);
+});
+
 test('future backup version is rejected before a caller can stage mutations', () => {
     let stagedMutation = false;
     const importBoundary = (raw) => {

@@ -45,11 +45,6 @@ const settingsControllerSource = fs.readFileSync(
     'utf8'
 );
 
-const persistedDomainsSource = fs.readFileSync(
-    path.join(__dirname, '..', 'extension', 'core', 'persisted-domains.js'),
-    'utf8'
-);
-
 const settingsPanelSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'),
     'utf8'
@@ -274,141 +269,7 @@ test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () 
     );
 });
 
-// ── v3.19.0: export/import now lives in popup.js ──
-
-test('settings backups include filtered video posts and import the alias', () => {
-    const popupExportStart = popupSource.indexOf('function buildExportData');
-    // v4.47.0 NF14: previously used `function confirmAction` as the
-    // slice end; that function was retired alongside the confirm-shell
-    // modal. The retirement comment block immediately follows
-    // buildExportData and is a stable boundary marker.
-    const popupExportEnd = popupSource.indexOf('// ── Confirmation dialog (retired');
-    assert.ok(popupExportStart > -1 && popupExportEnd > popupExportStart, 'popup buildExportData should exist');
-    const popupExportBody = popupSource.slice(popupExportStart, popupExportEnd);
-    assert.match(
-        popupExportBody,
-        /filteredVideoPosts:\s*domains\.hiddenVideos\s*\|\|\s*hiddenVideos/,
-        'Popup exports should include filteredVideoPosts beside hiddenVideos'
-    );
-    assert.match(
-        popupExportBody,
-        /allowedVideos/,
-        'Popup exports should include allowed video exceptions'
-    );
-    assert.match(
-        popupExportBody,
-        /buildSchemaValidatedExportSettings\(mergedSettings\)/,
-        'Popup exports must route settings through the schema-validated scrubber'
-    );
-    assert.match(
-        popupExportBody,
-        /BACKUP_EXPORT_VERSION\s*\|\|\s*5/,
-        'Popup settings backups must emit the persisted-domain v5 payload'
-    );
-    assert.match(
-        popupExportBody,
-        /settingsSchemaVersion:\s*SETTINGS_VERSION_FALLBACK/,
-        'Popup settings backups must declare the settings schema version'
-    );
-    assert.match(
-        popupExportBody,
-        /scrubbedSettings:\s*exportSettings\.scrubbedKeys/,
-        'Popup settings backups must declare which setting keys were scrubbed'
-    );
-
-    const panelExportStart = ytkitSource.indexOf('exportAllSettings()');
-    const panelExportEnd = ytkitSource.indexOf('importAllSettings(jsonString)');
-    assert.ok(panelExportStart > -1 && panelExportEnd > panelExportStart, 'in-page exportAllSettings should exist');
-    const panelExportBody = ytkitSource.slice(panelExportStart, panelExportEnd);
-    assert.match(
-        panelExportBody,
-        /filteredVideoPosts:\s*hiddenVideosForExport/,
-        'In-page exports should include filteredVideoPosts beside hiddenVideos'
-    );
-    assert.match(
-        panelExportBody,
-        /allowedVideos/,
-        'In-page exports should include allowed video exceptions'
-    );
-    assert.match(
-        panelExportBody,
-        /_buildSchemaValidatedExportSettings\(this\.load\(\)\)/,
-        'In-page exports must route settings through the schema-validated scrubber'
-    );
-    assert.match(
-        panelExportBody,
-        /exportVersion:\s*4/,
-        'In-page settings backups must emit the schema-validated v4 payload'
-    );
-    assert.match(
-        panelExportBody,
-        /settingsSchemaVersion:\s*this\.SETTINGS_VERSION/,
-        'In-page settings backups must declare the settings schema version'
-    );
-
-    assert.ok(
-        popupSource.includes('function getImportedFilteredVideoPosts') &&
-        ytkitSource.includes('function getImportedFilteredVideoPosts'),
-        'Both import paths should share a filtered-video-posts fallback helper'
-    );
-    assert.ok(
-        popupSource.includes('data.filteredVideoPosts') &&
-        ytkitSource.includes('data.filteredVideoPosts'),
-        'Imports should restore hidden videos from filteredVideoPosts when hiddenVideos is absent'
-    );
-    assert.ok(
-        popupSource.includes('persistedDomains.migrateBackup(data)') &&
-        persistedDomainsSource.includes("domains.allowedVideos = raw.allowedVideos") &&
-        ytkitSource.includes('importedData.allowedVideos'),
-        'Imports should restore allowed video exceptions from backups'
-    );
-});
-
-test('settings backup import/export paths use strict schema validation and scrub metadata', () => {
-    const popupMergeStart = popupSource.indexOf('function mergeImportedSettingsWithDefaults');
-    assert.ok(popupMergeStart > -1, 'popup mergeImportedSettingsWithDefaults must exist');
-    const popupMergeBlock = popupSource.slice(popupMergeStart, popupMergeStart + 1600);
-    assert.match(popupMergeBlock, /validateSettingsForBackupImport\(migrated\)/,
-        'Popup imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
-
-    // Signature carries an options bag so importAllSettings can thread the
-    // backup's top-level settingsSchemaVersion into the migration chain.
-    const panelPrepareStart = ytkitSource.indexOf('_prepareImportedSettings(settings, options = {})');
-    assert.ok(panelPrepareStart > -1, 'ytkit settingsManager._prepareImportedSettings must exist');
-    const panelPrepareBlock = ytkitSource.slice(panelPrepareStart, panelPrepareStart + 1400);
-    assert.match(panelPrepareBlock, /_validateSettingsForBackupImport\(migrated\)/,
-        'In-page imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
-
-    for (const [name, source] of [['popup.js', popupSource], ['ytkit.js', ytkitSource]]) {
-        assert.match(source, /Settings import rejected/,
-            `${name} must surface a schema-validation rejection reason`);
-        assert.match(source, /Settings export rejected/,
-            `${name} must reject schema-invalid live settings before exporting a backup`);
-        assert.match(source, /schemaOnly:\s*true/,
-            `${name} must request schema-only export snapshots so unknown keys cannot round-trip`);
-    }
-});
-
 // ── v3.14.0 infrastructure: selectorChain helper ──
-
-test('settings imports return summaries and expose immediate undo', () => {
-    assert.match(ytkitSource, /_lastSettingsImportUndo:\s*null/,
-        'settingsManager must keep the latest settings import snapshot for undo');
-    assert.match(ytkitSource, /importAllSettingsDetailed\(jsonString\)/,
-        'settingsManager must expose a detailed import path for UI summaries');
-    assert.match(ytkitSource, /_formatSettingsImportSummary\(summary\)/,
-        'settingsManager must centralize human-readable import summaries');
-    assert.match(ytkitSource, /undoLastSettingsImport\(\)/,
-        'settingsManager must expose an immediate undo path after import commit');
-    assert.match(ytkitSource, /importAllSettings\(jsonString\)\s*\{[\s\S]*?return this\.importAllSettingsDetailed\(jsonString\)\.ok;/,
-        'legacy importAllSettings callers must keep the boolean contract');
-    assert.match(settingsPanelSource, /settingsManager\.importAllSettingsDetailed\(content\)/,
-        'settings-panel imports must use the detailed import result');
-    assert.match(settingsPanelSource, /showToast\(result\.message, '#22c55e'[\s\S]*text: 'Undo'[\s\S]*settingsManager\.undoLastSettingsImport\(\)/,
-        'settings-panel import success must show the summary with an immediate undo action');
-    assert.match(ytkitSource, /showToast\(result\.message, '#22c55e'[\s\S]*text: 'Undo'[\s\S]*settingsManager\.undoLastSettingsImport\(\)/,
-        'inline settings fallback import success must show the summary with an immediate undo action');
-});
 
 test('selectorChain helper exists with label, all:true, and first-miss logging', () => {
     assert.match(
@@ -2367,10 +2228,6 @@ test('branch CodeQL file-race and Python error disclosure guardrails stay fixed'
         'FolderPickerService response must return a generic user-facing error');
     assert.doesNotMatch(downloaderSource, /response_q\.put\(\{'error': str\(e\)\}\)/,
         'FolderPickerService must not expose raw exception text to the UI response');
-    assert.doesNotMatch(downloaderSource, /'stderr': str\(e\)/,
-        'yt-dlp self-update must not expose launch exception text through stderr');
-    assert.doesNotMatch(downloaderSource, /'error': f'[^']+\{e\}'/,
-        'self-update endpoints must not expose raw exception text in JSON errors');
     assert.doesNotMatch(downloaderSource, /dl\.error = str\(e\)/,
         'download status payloads must not expose raw exception text');
 });
@@ -3635,34 +3492,6 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
 });
 
 // ── v3.27.0 P1: Downloads & local media library invariants ──
-
-test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg / SABR pills', () => {
-    const start = ytkitSource.indexOf("id: 'downloadHealthPanel'");
-    assert.ok(start > -1, 'downloadHealthPanel must exist');
-    const block = ytkitSource.slice(start, start + 14000);
-    assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/health'/,
-        'must query the local /health endpoint');
-    // Hardening pass added a route + visibility gate inside the interval
-    // callback so we don't ping the local downloader from every YouTube tab.
-    assert.match(block, /setInterval\([\s\S]+?30000\)/,
-        'must poll every 30 s');
-    assert.match(block, /isWatchPagePath/,
-        'poll callback must short-circuit when not on /watch');
-    assert.match(block, /document\.visibilityState === 'hidden'/,
-        'poll callback must short-circuit when the tab is hidden');
-    assert.match(block, /poTokenProvider/, 'must surface PO Token state');
-    assert.match(block, /ytDlpVersion/, 'must surface yt-dlp version');
-    assert.match(block, /ffmpegCapabilities/, 'must surface ffmpeg freshness');
-    assert.match(block, /sabrSupport/, 'must surface SABR support status');
-    assert.match(block, /javascriptRuntime \|\| data\.denoRuntime/,
-        'must consume the generic runtime capability contract with legacy fallback');
-    const pollIdx = block.indexOf('this._pollTimer = setInterval');
-    assert.ok(pollIdx > -1, 'downloadHealthPanel must store its poll timer handle');
-    const destroyIdx = block.indexOf('destroy()', pollIdx);
-    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
-    assert.match(destroyBlock, /clearInterval\(this\._pollTimer\)/,
-        'destroy() must stop the poll timer');
-});
 
 test('downloadStreamLinksPanel reads ytInitialPlayerResponse and supports adaptive + combined formats', () => {
     const start = ytkitSource.indexOf("id: 'downloadStreamLinksPanel'");

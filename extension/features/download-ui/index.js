@@ -9,6 +9,61 @@
     // ytkit.js keeps inline objects as compatibility fallbacks and
     // delegates to the factory when present.
 
+    const DOWNLOAD_HEALTH_SCHEMA_VERSION = 2;
+
+    function normalizeDownloadHealthSnapshot(raw, authenticatedStatus = {}) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+        const port = Number(raw.port);
+        const legacyIdentity = raw.token_required === true && Number.isInteger(port);
+        if (raw.service !== 'astra-downloader' && !legacyIdentity) return null;
+        const api = raw.api == null ? 1 : Number(raw.api);
+        if (!Number.isInteger(api) || api < 1 || api > DOWNLOAD_HEALTH_SCHEMA_VERSION) return null;
+        const isObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
+        const boundedText = (value, maxLength = 64) => typeof value === 'string'
+            ? value.slice(0, maxLength)
+            : null;
+        const ffmpeg = isObject(raw.ffmpegCapabilities) ? {
+            version: boundedText(raw.ffmpegCapabilities.version),
+            current: raw.ffmpegCapabilities.current !== false,
+        } : null;
+        const poTokenProvider = raw.poTokenProvider == null
+            ? null
+            : (isObject(raw.poTokenProvider) ? { ok: raw.poTokenProvider.ok === true } : null);
+        const normalizeRuntime = (runtime) => isObject(runtime) ? {
+            runtime: boundedText(runtime.runtime, 32),
+            installed: runtime.installed === true,
+            version: boundedText(runtime.version),
+            supported: runtime.supported === true,
+            ejsReady: runtime.ejsReady === true,
+            ytdlpNeedsRuntime: runtime.ytdlpNeedsRuntime === true,
+            source: boundedText(runtime.source, 32),
+            advice: boundedText(runtime.advice, 240),
+            canProvisionDeno: runtime.canProvisionDeno === true,
+        } : null;
+        const token = typeof authenticatedStatus.token === 'string' && authenticatedStatus.token
+            ? authenticatedStatus.token
+            : null;
+        return {
+            schemaVersion: api,
+            service: 'astra-downloader',
+            api,
+            port: Number.isInteger(port) && port >= 1 && port <= 65535 ? port : null,
+            version: boundedText(raw.version),
+            ytDlpVersion: boundedText(raw.ytDlpVersion),
+            ffmpegCapabilities: ffmpeg,
+            poTokenProvider,
+            sabrSupport: raw.sabrSupport === 'native' || raw.sabrSupport === 'limited'
+                ? raw.sabrSupport
+                : null,
+            javascriptRuntime: normalizeRuntime(raw.javascriptRuntime),
+            denoRuntime: normalizeRuntime(raw.denoRuntime),
+            token,
+            tokenSource: token
+                ? (authenticatedStatus.tokenSource === 'native' ? 'native' : 'legacy-health')
+                : null
+        };
+    }
+
     function createDownloadUIFeature(deps = {}) {
         const {
             appState = { settings: {} },
@@ -39,6 +94,10 @@
             BRAND = {},
             t = (_key, fallback) => fallback,
             getPlayerResponseGlobal = () => null,
+            setTimeoutFn = setTimeout,
+            clearTimeoutFn = clearTimeout,
+            setIntervalFn = setInterval,
+            clearIntervalFn = clearInterval,
         } = deps;
 
         const ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe';
@@ -1433,7 +1492,7 @@
                         url: MediaDLManager.baseUrl() + '/health',
                         headers: MediaDLManager._headers({ 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') })
                     });
-                    return data ? { ...data, token: status.token, tokenSource: status.tokenSource } : null;
+                    return normalizeDownloadHealthSnapshot(data, status);
                 } catch (e) {
                     DebugManager.log('DownloadHealth', `Fetch failed: ${e.message}`);
                     return null;
@@ -1557,8 +1616,8 @@
                 this._destroyed = false;
                 this._ensureStyles();
                 addNavigateRule(this.id, () => {
-                    if (this._navTimer) clearTimeout(this._navTimer);
-                    this._navTimer = setTimeout(() => {
+                    if (this._navTimer) clearTimeoutFn(this._navTimer);
+                    this._navTimer = setTimeoutFn(() => {
                         this._navTimer = null;
                         if (this._destroyed) return;
                         this._attach();
@@ -1567,7 +1626,7 @@
                 });
                 this._attach();
                 this._render();
-                this._pollTimer = setInterval(() => {
+                this._pollTimer = setIntervalFn(() => {
                     if (this._destroyed) return;
                     if (typeof isWatchPagePath === 'function' && !isWatchPagePath()) return;
                     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
@@ -1578,9 +1637,9 @@
             destroy() {
                 this._destroyed = true;
                 removeNavigateRule(this.id);
-                if (this._navTimer) clearTimeout(this._navTimer);
+                if (this._navTimer) clearTimeoutFn(this._navTimer);
                 this._navTimer = null;
-                if (this._pollTimer) clearInterval(this._pollTimer);
+                if (this._pollTimer) clearIntervalFn(this._pollTimer);
                 this._pollTimer = null;
                 this._container?.remove();
                 this._container = null;
@@ -2030,8 +2089,13 @@
 
     const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     ns.createDownloadUIFeature = createDownloadUIFeature;
+    ns.normalizeDownloadHealthSnapshot = normalizeDownloadHealthSnapshot;
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { createDownloadUIFeature };
+        module.exports = {
+            createDownloadUIFeature,
+            normalizeDownloadHealthSnapshot,
+            DOWNLOAD_HEALTH_SCHEMA_VERSION
+        };
     }
 })();

@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { createDeferred } = require('./helpers/async');
 
 const { createSettingsMutationController } = require('../extension/core/settings-controller');
 
@@ -74,30 +75,24 @@ test('settings controller enforces profile gates and canonical profile flags', a
 });
 
 test('settings controller serializes concurrent mutations without losing either write', async () => {
-    let releaseFirst;
-    const firstWriteStarted = new Promise((resolve) => {
-        releaseFirst = resolve;
-    });
-    let allowFirstToFinish;
-    const firstWriteMayFinish = new Promise((resolve) => {
-        allowFirstToFinish = resolve;
-    });
+    const firstWriteStarted = createDeferred();
+    const firstWriteMayFinish = createDeferred();
     const harness = createHarness({}, {
         writeSettings: async (_next, writeIndex) => {
             if (writeIndex === 0) {
-                releaseFirst();
-                await firstWriteMayFinish;
+                firstWriteStarted.resolve();
+                await firstWriteMayFinish.promise;
             }
         }
     });
 
     const first = harness.controller.mutate('ordinaryToggle', true);
-    await firstWriteStarted;
+    await firstWriteStarted.promise;
     const second = harness.controller.mutate('boundedNumber', 8);
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(harness.writes.length, 0, 'the second write must wait for the first transaction');
 
-    allowFirstToFinish();
+    firstWriteMayFinish.resolve();
     const [firstResult, secondResult] = await Promise.all([first, second]);
     assert.equal(firstResult.ok, true);
     assert.equal(secondResult.ok, true);
