@@ -6,10 +6,15 @@
     // Monolith peel for Download UI. The module owns the primary
     // MediaDLManager singleton, download entry point, download popup,
     // progress panel, and the four download feature objects;
-    // ytkit.js keeps inline objects as compatibility fallbacks and
-    // delegates to the factory when present.
+    // ytkit.js requires this factory and supplies the shared runtime
+    // dependencies; this file is the extension's canonical implementation.
 
     const DOWNLOAD_HEALTH_SCHEMA_VERSION = 2;
+
+    function normalizeCookieExpiry(value) {
+        const normalized = Number(value);
+        return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
+    }
 
     function normalizeDownloadHealthSnapshot(raw, authenticatedStatus = {}) {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -88,7 +93,6 @@
             requestNativeDownloaderToken = async () => ({ token: null, error: 'Native messaging unavailable' }),
             browserCookies = {},
             getProfileExportMode = () => 'safe-store',
-            normalizeCookieExpiry = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; },
             PageTypes = { WATCH: 'watch' },
             ICONS = {},
             BRAND = {},

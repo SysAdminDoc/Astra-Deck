@@ -15,6 +15,11 @@ const ytkitSource = fs.readFileSync(
     'utf8'
 );
 
+const downloadUiSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+    'utf8'
+);
+
 // v3.19.0: options.html / options.js removed. The toolbar popup
 // now hosts all data management (export/import/reset/stats) plus
 // the quick-toggle list. Tests that touched the options page
@@ -207,6 +212,34 @@ function extractYtkitFeatureDefinitions() {
     walk(ast);
     assert.equal(featuresArray?.type, 'ArrayExpression',
         'ytkit.js must expose the canonical features array');
+    const downloadFeatureIds = new Set([
+        'downloadHealthPanel',
+        'downloadStreamLinksPanel',
+        'downloadCobaltFallback',
+        'downloadHistoryPanel',
+    ]);
+    const downloadDefinitions = new Map();
+    const downloadAst = espree.parse(downloadUiSource, {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+    });
+    const collectDownloadDefinitions = (node) => {
+        if (!node) return;
+        if (Array.isArray(node)) {
+            node.forEach(collectDownloadDefinitions);
+            return;
+        }
+        if (node.type === 'VariableDeclarator' &&
+            downloadFeatureIds.has(node.id?.name) &&
+            node.init?.type === 'ObjectExpression') {
+            const row = extractObjectFeatureDefinition(node.init);
+            if (row) downloadDefinitions.set(node.id.name, row);
+        }
+        for (const value of Object.values(node)) {
+            if (value && typeof value === 'object') collectDownloadDefinitions(value);
+        }
+    };
+    collectDownloadDefinitions(downloadAst);
     const definitions = [];
     for (const element of featuresArray.elements || []) {
         if (!element) continue;
@@ -228,6 +261,13 @@ function extractYtkitFeatureDefinitions() {
         }
         if (element.type === 'LogicalExpression') {
             const row = extractObjectFeatureDefinition(element.right);
+            if (row) definitions.push(row);
+            continue;
+        }
+        if (element.type === 'MemberExpression' &&
+            element.object?.name === '_downloadUI' &&
+            element.property?.type === 'Identifier') {
+            const row = downloadDefinitions.get(element.property.name);
             if (row) definitions.push(row);
         }
     }
@@ -1006,12 +1046,12 @@ test('core/storage.js applies exponential backoff on persistent write failures',
 // ── Audit pass: download progress poll is resilient and non-overlapping ──
 
 test('showDownloadProgress uses self-scheduling poll with consecutive-error budget', () => {
-    const progressStart = ytkitSource.indexOf('function showDownloadProgress(');
+    const progressStart = downloadUiSource.indexOf('function showDownloadProgress(');
     assert.ok(progressStart > -1, 'showDownloadProgress must exist');
     // Grab from the function start up to the matching `}` — the function is
     // ~14 KB with all the DOM scaffolding so this generous capture covers
     // the whole poll loop without overshooting into neighbours.
-    const progressBody = ytkitSource.slice(progressStart, progressStart + 16000);
+    const progressBody = downloadUiSource.slice(progressStart, progressStart + 16000);
 
     // setInterval would allow a slow poll to overlap itself, doubling load
     // on the downloader when yt-dlp is busy merging or extracting audio.
@@ -1622,7 +1662,7 @@ test('normalizeCookieExpiry is defined identically in all three sites', () => {
         'utf8'
     );
 
-    const fnYtkit = extractNormalizeFn(ytkitSource, 'extension/ytkit.js');
+    const fnYtkit = extractNormalizeFn(downloadUiSource, 'extension/features/download-ui/index.js');
     const fnBg = extractNormalizeFn(backgroundSource, 'extension/background.js');
     const fnUser = extractNormalizeFn(userscriptSource, 'YTKit.user.js');
 
@@ -1666,7 +1706,7 @@ test('normalizeCookieExpiry replaces every prior c.expirationDate || 0 site', ()
     // we ship. Catches the case where a future PR adds back a fourth
     // inlined site.
     for (const [label, src] of [
-        ['extension/ytkit.js', ytkitSource],
+        ['extension/features/download-ui/index.js', downloadUiSource],
         ['extension/background.js', backgroundSource],
         ['YTKit.user.js', userscriptSource],
     ]) {
@@ -2209,10 +2249,15 @@ test('branch CodeQL file-race and Python error disclosure guardrails stay fixed'
         path.join(__dirname, '..', 'build-extension.js'),
         'utf8'
     );
-    const downloaderSource = fs.readFileSync(
-        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'),
+    const downloaderSource = [
+        'astra_downloader.py',
+        'gui.py',
+        'download.py',
+        'routes.py',
+    ].map((file) => fs.readFileSync(
+        path.join(__dirname, '..', 'astra_downloader', file),
         'utf8'
-    );
+    )).join('\n');
 
     assert.match(buildSource, /function\s+readUtf8IfPresent\(filePath\)/,
         'version bump reads must use one read helper instead of existsSync/read races');
@@ -2222,8 +2267,8 @@ test('branch CodeQL file-race and Python error disclosure guardrails stay fixed'
         'package.json version bump must read through readUtf8IfPresent');
     assert.match(buildSource, /const pkgLockRaw = readUtf8IfPresent\(pkgLockPath\)/,
         'package-lock version bump must read through readUtf8IfPresent');
-    assert.match(downloaderSource, /write_persistent_log\("FolderPickerService failed"\)/,
-        'FolderPickerService must log a local generic failure marker');
+    assert.match(downloaderSource, /self\._logger\("FolderPickerService failed"\)/,
+        'FolderPickerService must log a local generic failure marker through its injected logger');
     assert.match(downloaderSource, /'error': 'Folder picker failed\. Check Astra Downloader logs for details\.'/,
         'FolderPickerService response must return a generic user-facing error');
     assert.doesNotMatch(downloaderSource, /response_q\.put\(\{'error': str\(e\)\}\)/,
@@ -2346,7 +2391,7 @@ test('normalizeCookieExpiry produces wire-compatible output with the Python down
     // - JS sends 0 → Python gets 0 → wire emits "0" (session marker)
     // - JS sends positive double → Python truncates to int, same int
     // - JS sends 0 for any non-positive-finite-number → Python sees 0
-    const fn = extractNormalizeFn(ytkitSource, 'extension/ytkit.js');
+    const fn = extractNormalizeFn(downloadUiSource, 'extension/features/download-ui/index.js');
     // Mimic Python's `int(float(x))` truncation:
     const pythonRoundTrip = (jsOutput) => Math.trunc(Number(jsOutput));
 
@@ -3494,9 +3539,9 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
 // ── v3.27.0 P1: Downloads & local media library invariants ──
 
 test('downloadStreamLinksPanel reads ytInitialPlayerResponse and supports adaptive + combined formats', () => {
-    const start = ytkitSource.indexOf("id: 'downloadStreamLinksPanel'");
+    const start = downloadUiSource.indexOf("id: 'downloadStreamLinksPanel'");
     assert.ok(start > -1, 'downloadStreamLinksPanel must exist');
-    const block = ytkitSource.slice(start, start + 12000);
+    const block = downloadUiSource.slice(start, start + 12000);
     assert.match(block, /ytInitialPlayerResponse/,
         'must parse ytInitialPlayerResponse from script tags');
     assert.match(block, /streamingData\?\.adaptiveFormats/,
@@ -3514,9 +3559,9 @@ test('downloadStreamLinksPanel reads ytInitialPlayerResponse and supports adapti
 });
 
 test('downloadCobaltFallback gates on github-full profile and only fires when downloader is offline', () => {
-    const start = ytkitSource.indexOf("id: 'downloadCobaltFallback'");
+    const start = downloadUiSource.indexOf("id: 'downloadCobaltFallback'");
     assert.ok(start > -1, 'downloadCobaltFallback must exist');
-    const block = ytkitSource.slice(start, start + 8000);
+    const block = downloadUiSource.slice(start, start + 8000);
     assert.match(block, /mode === 'github-full'/,
         'must gate on github-full profile mode');
     assert.match(block, /if \(mdl\?\.ok\)/,
@@ -3528,9 +3573,9 @@ test('downloadCobaltFallback gates on github-full profile and only fires when do
 });
 
 test('downloadCobaltFallback records an actionable diagnostic when Cobalt is unreachable', () => {
-    const start = ytkitSource.indexOf("id: 'downloadCobaltFallback'");
+    const start = downloadUiSource.indexOf("id: 'downloadCobaltFallback'");
     assert.ok(start > -1, 'downloadCobaltFallback must exist');
-    const block = ytkitSource.slice(start, start + 9000);
+    const block = downloadUiSource.slice(start, start + 9000);
     assert.match(block, /_diagnosticInstanceLabel\s*\(\s*instance\s*\)/,
         'must format the configured Cobalt endpoint for diagnostics');
     assert.match(block, /new URL\s*\(\s*instance\s*\)/,
@@ -3548,9 +3593,9 @@ test('downloadCobaltFallback records an actionable diagnostic when Cobalt is unr
 });
 
 test('downloadHistoryPanel reads /history with auth + limit=50 and shows offline state', () => {
-    const start = ytkitSource.indexOf("id: 'downloadHistoryPanel'");
+    const start = downloadUiSource.indexOf("id: 'downloadHistoryPanel'");
     assert.ok(start > -1, 'downloadHistoryPanel must exist');
-    const block = ytkitSource.slice(start, start + 10000);
+    const block = downloadUiSource.slice(start, start + 10000);
     assert.match(block, /\/history\?limit=50/,
         'must request a bounded history slice');
     assert.match(block, /'X-MDL-Client': 'MediaDL'/,
@@ -8952,8 +8997,8 @@ test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismiss
     // Pin the storage-key match against the ytkit.js write site so a
     // future rename in either file is caught here. The grep below
     // intentionally hard-codes the string both ends must agree on.
-    assert.match(ytkitSource, /storageWrite\(['"]ytkit_mediadl_prompt_dismissed['"]/,
-        'ytkit.js must continue to write the same storage key the popup reads/clears');
+    assert.match(downloadUiSource, /storageWrite\(['"]ytkit_mediadl_prompt_dismissed['"]/,
+        'the canonical download module must continue to write the same storage key the popup reads/clears');
 
     // EN locale parity for the 4 new keys.
     const enMessages = JSON.parse(fs.readFileSync(
@@ -8985,10 +9030,10 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
     assert.match(updateBtnMatch[0], /aria-label="Update Astra Downloader companion"/,
         'update-companion button must carry an aria-label');
 
-    const updateMethodStart = ytkitSource.indexOf('async updateCompanion()');
+    const updateMethodStart = downloadUiSource.indexOf('async updateCompanion()');
     assert.ok(updateMethodStart > -1,
         'MediaDLManager must define an async updateCompanion() method');
-    const updateBlock = ytkitSource.slice(updateMethodStart, updateMethodStart + 1600);
+    const updateBlock = downloadUiSource.slice(updateMethodStart, updateMethodStart + 1600);
     assert.match(updateBlock, /await this\.check\(true\)/,
         'updateCompanion must force-probe health before POSTing');
     assert.match(updateBlock, /\/update/,
@@ -8997,7 +9042,7 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
         'updateCompanion must forward the per-install token');
     assert.match(updateBlock, /timeout:\s*180000/,
         'updateCompanion must allow enough time for exe download and scheduling');
-    assert.match(ytkitSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe'/,
+    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe'/,
         'installer and companion update paths must point at the GitHub Release exe, not a raw-root file');
 
     const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_COMPANION'");
@@ -9034,9 +9079,10 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
     assert.match(popupHandlerBlock, /updateCompanionButton\.disabled\s*=\s*true/,
         'updateCompanionNow must disable the button while in flight');
 
-    const downloaderSource = fs.readFileSync(
-        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'), 'utf8'
-    );
+    const downloaderSource = ['astra_downloader.py', 'routes.py']
+        .map((file) => fs.readFileSync(
+            path.join(__dirname, '..', 'astra_downloader', file), 'utf8'
+        )).join('\n');
     assert.match(downloaderSource, /@api\.route\(['"]\/update['"],\s*methods=\['POST'\]\)/,
         'astra_downloader.py must declare /update as a POST route');
     assert.match(downloaderSource, /def fetch_latest_companion_version/,
@@ -10788,10 +10834,10 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
     // 1. ytkit.js: MediaDLManager.updateYtdlp() exists and calls
     // /update-ytdlp with the token from a freshly-probed health
     // response.
-    const updateMethodStart = ytkitSource.indexOf('async updateYtdlp()');
+    const updateMethodStart = downloadUiSource.indexOf('async updateYtdlp()');
     assert.ok(updateMethodStart > -1,
         'MediaDLManager must define an async updateYtdlp() method');
-    const updateBlock = ytkitSource.slice(updateMethodStart, updateMethodStart + 1800);
+    const updateBlock = downloadUiSource.slice(updateMethodStart, updateMethodStart + 1800);
     assert.match(updateBlock, /await this\.check\(true\)/,
         'updateYtdlp must force-probe health (true) before the POST so the cached token is fresh');
     assert.match(updateBlock, /\/update-ytdlp/,
@@ -10858,9 +10904,10 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
 
     // 5. Python: /update-ytdlp endpoint exists in astra_downloader.py
     // and gates on active_count > 0 with a 409 + actionable error.
-    const downloaderSource = fs.readFileSync(
-        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'), 'utf8'
-    );
+    const downloaderSource = ['astra_downloader.py', 'routes.py']
+        .map((file) => fs.readFileSync(
+            path.join(__dirname, '..', 'astra_downloader', file), 'utf8'
+        )).join('\n');
     assert.match(downloaderSource, /@api\.route\(['"]\/update-ytdlp['"],\s*methods=\['POST'\]\)/,
         'astra_downloader.py must declare /update-ytdlp as a POST route');
     assert.match(downloaderSource, /def _run_ytdlp_self_update\(config,\s*source_tag\)/,

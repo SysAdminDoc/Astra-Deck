@@ -289,20 +289,20 @@ function audit(sources = readSources(), { quiet = false } = {}) {
 
     // Local downloader install prompt.
     add('Install prompt is labelled and described',
-        ytkit.includes("prompt.setAttribute('role', 'region')") &&
-        ytkit.includes("prompt.setAttribute('aria-labelledby', 'ytkit-install-prompt-title')") &&
-        ytkit.includes("prompt.setAttribute('aria-describedby', 'ytkit-install-prompt-desc')"),
+        downloadUi.includes("prompt.setAttribute('role', 'region')") &&
+        downloadUi.includes("prompt.setAttribute('aria-labelledby', 'ytkit-install-prompt-title')") &&
+        downloadUi.includes("prompt.setAttribute('aria-describedby', 'ytkit-install-prompt-desc')"),
         'Install prompt must be a labelled/described region');
     add('Install prompt close button has aria-label',
-        ytkit.includes("closeBtn.setAttribute('aria-label', 'Close local downloader prompt')"),
+        downloadUi.includes("closeBtn.setAttribute('aria-label', 'Close local downloader prompt')"),
         'Install prompt close button must have aria-label Close local downloader prompt');
     add('Install prompt note is a polite status',
-        ytkit.includes("note.setAttribute('role', 'status')") &&
-        ytkit.includes("note.setAttribute('aria-live', 'polite')"),
+        downloadUi.includes("note.setAttribute('role', 'status')") &&
+        downloadUi.includes("note.setAttribute('aria-live', 'polite')"),
         'Install prompt note must be role=status aria-live=polite');
     add('Install prompt buttons keep dynamic aria-labels',
-        ytkit.includes("b.setAttribute('aria-label', detail ? `${text}. ${detail}` : text)") &&
-        ytkit.includes("button.setAttribute('aria-label', detail ? `${label}. ${detail}` : label)"),
+        downloadUi.includes("b.setAttribute('aria-label', detail ? `${text}. ${detail}` : text)") &&
+        downloadUi.includes("button.setAttribute('aria-label', detail ? `${label}. ${detail}` : label)"),
         'Install prompt buttons must set and update aria-label text');
     add('Install prompt controls have focus-visible and target size',
         ytkit.includes('.ytkit-install-prompt__close:focus-visible') &&
@@ -313,25 +313,25 @@ function audit(sources = readSources(), { quiet = false } = {}) {
 
     // Download options dialog.
     add('Download options dialog has role, label, and Escape close',
-        ytkit.includes("popup.setAttribute('role', 'dialog')") &&
-        ytkit.includes("popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'))") &&
-        ytkit.includes("if (e.key === 'Escape') _closeDlPopup();"),
+        downloadUi.includes("popup.setAttribute('role', 'dialog')") &&
+        downloadUi.includes("popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'))") &&
+        downloadUi.includes("if (e.key === 'Escape') _closeDlPopup();"),
         'Download options dialog must be labelled and close on Escape');
     add('Download options close button has aria-label',
-        ytkit.includes("closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'))"),
+        downloadUi.includes("closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'))"),
         'Download options close button must have an aria-label');
     add('Download options tabs and chips expose state',
-        ytkit.includes("tabs.setAttribute('role', 'tablist')") &&
-        ytkit.includes("vidTab.setAttribute('role', 'tab')") &&
-        ytkit.includes("audTab.setAttribute('role', 'tab')") &&
-        ytkit.includes("vidTab.setAttribute('aria-selected', String(selectedMode === 'video'))") &&
-        ytkit.includes("chips.setAttribute('role', 'group')") &&
-        ytkit.includes("chip.setAttribute('aria-pressed', String(item.value === selected))"),
+        downloadUi.includes("tabs.setAttribute('role', 'tablist')") &&
+        downloadUi.includes("vidTab.setAttribute('role', 'tab')") &&
+        downloadUi.includes("audTab.setAttribute('role', 'tab')") &&
+        downloadUi.includes("vidTab.setAttribute('aria-selected', String(selectedMode === 'video'))") &&
+        downloadUi.includes("chips.setAttribute('role', 'group')") &&
+        downloadUi.includes("chip.setAttribute('aria-pressed', String(item.value === selected))"),
         'Download options tabs and chips must expose tab/pressed state');
     add('Download options path and CTA controls have accessible names',
-        ytkit.includes("dirWrap.setAttribute('role', 'group')") &&
-        ytkit.includes("dirToggle.setAttribute('aria-label', t('dlPopupChangeAria', 'Choose a download folder'))") &&
-        ytkit.includes("dlBtn.setAttribute("),
+        downloadUi.includes("dirWrap.setAttribute('role', 'group')") &&
+        downloadUi.includes("dirToggle.setAttribute('aria-label', t('dlPopupChangeAria', 'Choose a download folder'))") &&
+        downloadUi.includes("dlBtn.setAttribute("),
         'Download options folder and CTA controls must have accessible names');
     add('Download options controls have focus-visible styles and target size',
         ['.ytkit-dl-popup__close:focus-visible', '.ytkit-dl-popup__tab:focus-visible',
@@ -345,10 +345,8 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Download options controls must declare focus-visible and at least 24px target size');
     add('Download options popup mirrors aria-expanded on trigger open and close',
         downloadUi.includes("anchorEl?.setAttribute?.('aria-expanded', 'true')") &&
-        downloadUi.includes("anchorEl?.setAttribute?.('aria-expanded', 'false')") &&
-        ytkit.includes("anchorEl?.setAttribute?.('aria-expanded', 'true')") &&
-        ytkit.includes("anchorEl?.setAttribute?.('aria-expanded', 'false')"),
-        'Download options popup must mirror aria-expanded on open and close in the module and fallback');
+        downloadUi.includes("anchorEl?.setAttribute?.('aria-expanded', 'false')"),
+        'Download options popup must mirror aria-expanded on open and close in the canonical module');
 
     // Transcript viewer and transcript search.
     add('Transcript viewer is a labelled region',
@@ -408,23 +406,23 @@ function audit(sources = readSources(), { quiet = false } = {}) {
 
     // Download health and history.
     add('Downloader health is a polite named status',
-        ytkit.includes("this._container.setAttribute('role', 'status')") &&
-        ytkit.includes("this._container.setAttribute('aria-live', 'polite')") &&
-        ytkit.includes("this._container.setAttribute('aria-label', 'Downloader health')") &&
-        ytkit.includes("pill.setAttribute('aria-label', `${label} ${value}`)"),
+        downloadUi.includes("this._container.setAttribute('role', 'status')") &&
+        downloadUi.includes("this._container.setAttribute('aria-live', 'polite')") &&
+        downloadUi.includes("this._container.setAttribute('aria-label', 'Downloader health')") &&
+        downloadUi.includes("pill.setAttribute('aria-label', `${label} ${value}`)"),
         'Downloader health pills must expose a polite named status');
     add('Downloader health pills meet target-size floor',
-        hasMinTarget(ytkit, '.ytkit-download-health__pill'),
+        hasMinTarget(downloadUi, '.ytkit-download-health__pill'),
         'Downloader health pills must declare at least 24px height');
     add('Download history dialog is labelled and controls are named',
-        ytkit.includes("panel.setAttribute('aria-label', 'Recent downloads')") &&
-        ytkit.includes("close.setAttribute('aria-label', 'Close recent downloads')") &&
-        ytkit.includes("this._btn.setAttribute('aria-label', 'View recent downloads')"),
+        downloadUi.includes("panel.setAttribute('aria-label', 'Recent downloads')") &&
+        downloadUi.includes("close.setAttribute('aria-label', 'Close recent downloads')") &&
+        downloadUi.includes("this._btn.setAttribute('aria-label', 'View recent downloads')"),
         'Download history panel and controls must have accessible names');
     add('Download history controls have focus-visible and target size',
-        ytkit.includes('.ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible') &&
-        hasMinTarget(ytkit, '.ytkit-dl-history-btn') &&
-        hasMinTarget(ytkit, '.ytkit-dl-history-panel__close'),
+        downloadUi.includes('.ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible') &&
+        hasMinTarget(downloadUi, '.ytkit-dl-history-btn') &&
+        hasMinTarget(downloadUi, '.ytkit-dl-history-panel__close'),
         'Download history controls must declare focus-visible and at least 24px target size');
 
     // Subscription groups toolbar, digest, and modal.
@@ -526,6 +524,7 @@ function runSelfTest(baseSources) {
     const cases = [
         {
             name: 'unlabeled close button',
+            target: 'downloadUi',
             expected: 'Install prompt close button must have aria-label Close local downloader prompt',
             mutate: (source) => source.replace("closeBtn.setAttribute('aria-label', 'Close local downloader prompt');", '')
         },
@@ -548,7 +547,7 @@ function runSelfTest(baseSources) {
         {
             name: 'missing aria-expanded close',
             target: 'downloadUi',
-            expected: 'Download options popup must mirror aria-expanded on open and close in the module and fallback',
+            expected: 'Download options popup must mirror aria-expanded on open and close in the canonical module',
             mutate: (source) => source.replaceAll("anchorEl?.setAttribute?.('aria-expanded', 'false');", '')
         },
         {

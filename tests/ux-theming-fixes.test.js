@@ -24,6 +24,7 @@ const read = (...p) => fs.readFileSync(path.join(repoRoot, ...p), 'utf8');
 
 const earlyCss = read('extension', 'early.css');
 const ytkitSource = read('extension', 'ytkit.js');
+const downloadUiSource = read('extension', 'features', 'download-ui', 'index.js');
 const settingsPanelModuleSource = read('extension', 'features', 'settings-panel', 'index.js');
 const settingsOverlaySmokeSource = read('scripts', 'smoke-settings-overlay.js');
 const userscriptSource = read('YTKit.user.js');
@@ -395,22 +396,22 @@ test('playback stats overlay drops hacker-green text and exposes toggle state', 
 // ── 8. Microcopy ──
 
 test('companion toasts standardize on "Astra Downloader" (no MediaDL prefix)', () => {
-    assert.ok(!ytkitSource.includes("'MediaDL: '"),
+    assert.ok(!downloadUiSource.includes("'MediaDL: '"),
         'the user-facing MediaDL: toast prefix must be gone');
-    assert.ok(ytkitSource.includes('showDownloaderFailure(resp || {})'),
+    assert.ok(downloadUiSource.includes('showDownloaderFailure(resp || {})'),
         'download error handling must route through classified recovery copy');
-    assert.ok(ytkitSource.includes('showToast(`Astra Downloader: ${failure.message} ${failure.advice}`'),
+    assert.ok(downloadUiSource.includes('showToast(`Astra Downloader: ${failure.message} ${failure.advice}`'),
         'classified download failure toasts must use the Astra Downloader prefix');
-    assert.ok(ytkitSource.includes("t('toastDlReady', 'Astra Downloader is ready.')"),
+    assert.ok(downloadUiSource.includes("t('toastDlReady', 'Astra Downloader is ready.')"),
         'ready toast must say Astra Downloader is ready.');
-    assert.ok(ytkitSource.includes("t('toastDlStopped', 'Astra Downloader stopped. Starting it again…')"),
+    assert.ok(downloadUiSource.includes("t('toastDlStopped', 'Astra Downloader stopped. Starting it again…')"),
         'stopped toast must use the standardized name');
-    assert.ok(ytkitSource.includes("t('toastDlRequestFailed', 'Astra Downloader request failed.')"),
+    assert.ok(downloadUiSource.includes("t('toastDlRequestFailed', 'Astra Downloader request failed.')"),
         'request-failed toast must use the standardized name');
     assert.ok(ytkitSource.includes("label: 'Install Astra Downloader'"),
         'context-menu installer entry must use the standardized name');
     // Renaming the failure default must not break the repair-button heuristic.
-    assert.ok(ytkitSource.includes('/cookie|yt-dlp|unauthorized|local downloader|astra downloader/i'),
+    assert.ok(downloadUiSource.includes('/cookie|yt-dlp|unauthorized|local downloader|astra downloader/i'),
         'needsRepair regex must match both old server-supplied and new client failure text');
     // The en locale serves before the inline fallback — it must agree.
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
