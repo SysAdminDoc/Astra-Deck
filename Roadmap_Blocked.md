@@ -2,6 +2,15 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+## P3 — Browser-Gated Verification (2026-07-15 audit)
+
+- [ ] P3 — Live-chat English-only structural fallbacks need browser-gated verification
+  Why: the popout-hide selector matches aria-label="Popout chat" and one tooltip test matches an English sentence; both degrade silently on non-English UI.
+  Where: `extension/features/live-chat/index.js` (~20, ~146)
+  Acceptance: replacement selectors are structural (attribute/renderer-based, no English text), verified against the live YouTube live-chat DOM in at least one non-English UI locale.
+  Complexity: S
+  Blocker: needs live-DOM verification of stable structural hooks on an actual YouTube live stream (the live-chat iframe cannot be reproduced from fixtures); changing the selectors blind risks silently breaking popout hiding for all locales.
+
 ## P2 — Documentation Publication Constraint (2026-07-14)
 
 - [ ] P2 — Force DVR on live streams
