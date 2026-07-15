@@ -60,9 +60,11 @@ try:
         DEFAULT_CONFIG, ConfigStore, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
         HistoryStore,
-        allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
+        allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
+        clean_path_text, clean_text, coerce_bool, load_json_file,
         normalize_output_dir, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
+        sanitize_history_entries,
         validate_download_request_body,
     )
     from .download import (
@@ -87,9 +89,11 @@ except ImportError:  # Direct script / flat source-path compatibility.
         DEFAULT_CONFIG, ConfigStore, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
         HistoryStore,
-        allowed_output_roots, clamp_int, clean_path_text, clean_text, coerce_bool,
+        allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
+        clean_path_text, clean_text, coerce_bool, load_json_file,
         normalize_output_dir, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
+        sanitize_history_entries,
         validate_download_request_body,
     )
     from download import (
@@ -397,30 +401,6 @@ def log_crash(context="Unhandled exception"):
         write_persistent_log(f"{context}\n{traceback.format_exc()}", CRASH_LOG_PATH)
     except Exception:
         pass
-
-
-def _timestamp_suffix():
-    return datetime.now().strftime("%Y%m%d%H%M%S")
-
-
-def atomic_write_json(path, data):
-    """Write JSON atomically so crashes do not leave truncated config/history files."""
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    try:
-        with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2)
-            f.write("\n")
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)
-    finally:
-        try:
-            if tmp.exists():
-                tmp.unlink()
-        except Exception:
-            pass
 
 
 def atomic_copy_verified(source, destination):
@@ -2098,29 +2078,6 @@ def _set_integrations_stamp():
         write_persistent_log(f"Could not persist integrations stamp: {e}")
 
 
-def backup_corrupt_file(path):
-    path = Path(path)
-    if not path.exists():
-        return
-    backup = path.with_name(f"{path.name}.corrupt-{_timestamp_suffix()}")
-    try:
-        path.replace(backup)
-    except Exception:
-        pass
-
-
-def load_json_file(path, fallback):
-    path = Path(path)
-    if not path.exists():
-        return fallback
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        backup_corrupt_file(path)
-        return fallback
-
-
 def normalize_long_text(value, default="", max_len=MAX_TEXT_FIELD):
     if value is None:
         return default, False
@@ -2248,27 +2205,6 @@ def write_cookies_netscape(cookies, target_path):
         except Exception:
             pass
         return None
-
-
-def sanitize_history_entries(raw):
-    if not isinstance(raw, list):
-        return []
-    entries = []
-    for item in raw[-500:]:
-        if not isinstance(item, dict):
-            continue
-        entries.append({
-            "id": clean_text(item.get("id"), "", 120),
-            "url": clean_text(item.get("url"), "", 4096),
-            "title": clean_text(item.get("title"), "(untitled)", 500) or "(untitled)",
-            "filename": clean_path_text(item.get("filename")),
-            "format": clean_text(item.get("format"), "", 16),
-            "quality": clean_text(item.get("quality"), "", 16),
-            "audioOnly": coerce_bool(item.get("audioOnly"), False),
-            "date": clean_text(item.get("date"), "", 40),
-            "duration": max(0, clamp_int(item.get("duration"), 0, 0, 60 * 60 * 24 * 30)),
-        })
-    return entries
 
 
 def is_frozen_app():

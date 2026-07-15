@@ -6,6 +6,7 @@ frameworks, which lets config tooling and tests run without PyQt or Flask.
 """
 
 import os
+import json
 import re
 import threading
 import uuid
@@ -30,6 +31,7 @@ __all__ = (
     "clamp_int", "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "write_persistent_log", "get_recent_log_entries", "log_crash",
     "atomic_write_json", "download_file_atomic", "load_json_file",
+    "backup_corrupt_file", "sanitize_history_entries",
     "verify_file_sha256", "fetch_expected_sha256", "cleanup_stale_cookie_jars",
     "write_cookies_netscape", "RateLimiter", "Config", "History",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
@@ -42,7 +44,8 @@ _OWNED_EXPORTS = {
     "normalize_url", "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
     "DEFAULT_CONFIG", "sanitize_config",
-    "ConfigStore", "HistoryStore",
+    "ConfigStore", "HistoryStore", "atomic_write_json", "load_json_file",
+    "backup_corrupt_file", "sanitize_history_entries",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
 }
 _resolve_legacy = make_legacy_resolver(
@@ -306,6 +309,77 @@ def sanitize_config(raw):
         if isinstance(item, str) and (cleaned := clean_path_text(item))
     ]
     return data
+
+
+def atomic_write_json(path, data):
+    """Durably replace a JSON document without exposing partial contents."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with open(temporary, 'w', encoding='utf-8') as handle:
+            json.dump(data, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        try:
+            if temporary.exists():
+                temporary.unlink()
+        except OSError:
+            pass
+
+
+def backup_corrupt_file(path, timestamp=None):
+    """Move malformed state aside for support and recovery."""
+    path = Path(path)
+    if not path.exists():
+        return None
+    if timestamp is None:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    backup = path.with_name(f"{path.name}.corrupt-{timestamp}")
+    try:
+        path.replace(backup)
+        return backup
+    except OSError:
+        return None
+
+
+def load_json_file(path, fallback, *, backup=backup_corrupt_file):
+    """Read JSON state, quarantining malformed files before falling back."""
+    path = Path(path)
+    if not path.exists():
+        return fallback
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            return json.load(handle)
+    except (OSError, ValueError, TypeError):
+        backup(path)
+        return fallback
+
+
+def sanitize_history_entries(raw, limit=500):
+    """Normalize bounded download history from local or imported state."""
+    if not isinstance(raw, list):
+        return []
+    entries = []
+    for item in raw[-max(1, int(limit)):]:
+        if not isinstance(item, dict):
+            continue
+        entries.append({
+            "id": clean_text(item.get("id"), "", 120),
+            "url": clean_text(item.get("url"), "", 4096),
+            "title": clean_text(item.get("title"), "(untitled)", 500) or "(untitled)",
+            "filename": clean_path_text(item.get("filename")),
+            "format": clean_text(item.get("format"), "", 16),
+            "quality": clean_text(item.get("quality"), "", 16),
+            "audioOnly": coerce_bool(item.get("audioOnly"), False),
+            "date": clean_text(item.get("date"), "", 40),
+            "duration": max(0, clamp_int(item.get("duration"), 0, 0, 60 * 60 * 24 * 30)),
+        })
+    return entries
 
 
 class ConfigStore:
