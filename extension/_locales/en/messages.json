@@ -3047,6 +3047,417 @@
   "settingsImportHistoryLabel": {
     "message": "Import History"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - Firefox Sidebar"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - Dashboard"
+  },
+  "spAgeNever": {
+    "message": "never"
+  },
+  "spCategory_comments": {
+    "message": "Comments"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "Dev Diagnostics"
+  },
+  "spCategory_enrichment": {
+    "message": "Enrichment"
+  },
+  "spCategory_feed": {
+    "message": "Feed"
+  },
+  "spCategory_general": {
+    "message": "General"
+  },
+  "spCategory_nav": {
+    "message": "Nav"
+  },
+  "spCategory_playback_audio": {
+    "message": "Playback Audio"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "Privacy Profiles"
+  },
+  "spCategory_research_ai": {
+    "message": "Research AI"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "Watch Player"
+  },
+  "spContextChecking": {
+    "message": "Checking tab"
+  },
+  "spContextYouTubeTab": {
+    "message": "YouTube tab"
+  },
+  "spEmptyNoTab": {
+    "message": "No YouTube tab active."
+  },
+  "spEmptyTitleError": {
+    "message": "Needs a refresh"
+  },
+  "spEmptyTitleIdle": {
+    "message": "Waiting for signal"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "All clear"
+  },
+  "spExternalBudgetTpl": {
+    "message": "budget {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "cache {state}"
+  },
+  "spExternalCopy": {
+    "message": "Tracks SponsorBlock, DeArrow, and RYD request health."
+  },
+  "spExternalEmptyNoData": {
+    "message": "No external services have been used in this session. Play or navigate once to collect request health."
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "No requests observed yet"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "Content script is not responding. Reload YouTube, then refresh external API health."
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "Reconnect integration health"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "Open YouTube to see SponsorBlock, DeArrow, and RYD request health."
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "Open YouTube to check integrations"
+  },
+  "spExternalFallbackTpl": {
+    "message": "fallback {state}"
+  },
+  "spExternalKicker": {
+    "message": "Integrations"
+  },
+  "spExternalListAria": {
+    "message": "External API health list"
+  },
+  "spExternalNoRequests": {
+    "message": "No requests observed yet."
+  },
+  "spExternalOkAgoTpl": {
+    "message": "ok {age} ago"
+  },
+  "spExternalTitle": {
+    "message": "External API health"
+  },
+  "spLocalOnly": {
+    "message": "Local only"
+  },
+  "spMeta_api": {
+    "message": "Api"
+  },
+  "spMeta_comments": {
+    "message": "Comments"
+  },
+  "spMeta_feed": {
+    "message": "Feed"
+  },
+  "spMeta_global": {
+    "message": "Global"
+  },
+  "spMeta_player": {
+    "message": "Player"
+  },
+  "spMeta_safe": {
+    "message": "Safe"
+  },
+  "spMeta_watch": {
+    "message": "Watch"
+  },
+  "spOverviewContextLabel": {
+    "message": "Context"
+  },
+  "spOverviewCopy": {
+    "message": "Open a YouTube tab to stream diagnostics, then use quick settings for live recovery."
+  },
+  "spOverviewKicker": {
+    "message": "Live workspace"
+  },
+  "spOverviewSummaryAria": {
+    "message": "Dashboard summary"
+  },
+  "spOverviewTitle": {
+    "message": "Workspace health at a glance"
+  },
+  "spPerfCopy": {
+    "message": "Highlights slow-starting features on the active YouTube tab."
+  },
+  "spPerfEmptyNoData": {
+    "message": "Start playback or navigate once, then refresh to capture feature timing."
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "No startup timings yet"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "Content script is not responding. Reload the YouTube tab, then refresh diagnostics."
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "Reconnect the active tab"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "Open YouTube in the active tab, then refresh to measure startup timing."
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "Open YouTube to measure startup"
+  },
+  "spPerfKicker": {
+    "message": "Runtime"
+  },
+  "spPerfListAria": {
+    "message": "Feature init timing list"
+  },
+  "spPerfTitle": {
+    "message": "Feature init timing"
+  },
+  "spPerfTotalTpl": {
+    "message": "{count} measured"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "Open videos in theater view."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "Warm the player for late viewing."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "Remove tracking parameters from copied links."
+  },
+  "spq_commentSearch_desc": {
+    "message": "Filter watch-page comments inline."
+  },
+  "spq_deArrow_desc": {
+    "message": "Replace clickbait titles and thumbnails."
+  },
+  "spq_debugMode_desc": {
+    "message": "Record detailed local diagnostics for troubleshooting."
+  },
+  "spq_debugMode_name": {
+    "message": "Diagnostic Logging"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "Track breaks and daily viewing time."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "Stop the next video from starting automatically."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "Disable Autoplay"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "Stop feeds from loading forever."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "Cap Infinite Scroll"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "Clear the watch-page side rail."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "Keep essential controls visible while scrolling."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "Keep playback speed consistent between videos."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Review every service Astra Deck can contact."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "Data-Flow Panel"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Remove Shorts shelves and navigation links."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "Skip crowd-marked sponsor segments."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "Read, jump through, and export captions."
+  },
+  "spRefreshAria": {
+    "message": "Refresh all dashboard sections"
+  },
+  "spRefreshBtn": {
+    "message": "Refresh"
+  },
+  "spReloadPanel": {
+    "message": "Reload panel"
+  },
+  "spReloadPanelAria": {
+    "message": "Reload the Astra Deck panel"
+  },
+  "spRiskTpl": {
+    "message": "{risk} risk"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}. Save failed. Try refreshing the dashboard."
+  },
+  "spScopeTpl": {
+    "message": "{scope} scope"
+  },
+  "spSelectorCopy": {
+    "message": "Surfaces DOM drift before it becomes a broken control."
+  },
+  "spSelectorDriftTpl": {
+    "message": "{count} drift"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "Navigate YouTube once, then refresh to sample the surfaces this dashboard tracks."
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "No surfaces sampled yet"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "Content script is not responding. Reload YouTube, then refresh diagnostics."
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "Reconnect selector health"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "Open YouTube in the active tab to check whether page selectors still fit."
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "Open YouTube to check page fit"
+  },
+  "spSelectorErrTpl": {
+    "message": "{count} err"
+  },
+  "spSelectorHighChurn": {
+    "message": "high churn"
+  },
+  "spSelectorHitsTpl": {
+    "message": "{count} hits"
+  },
+  "spSelectorKicker": {
+    "message": "Page fit"
+  },
+  "spSelectorListAria": {
+    "message": "Selector health list"
+  },
+  "spSelectorMissTpl": {
+    "message": "{count} miss"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "needs capture"
+  },
+  "spSelectorTitle": {
+    "message": "Selector health"
+  },
+  "spSelectorTotalTpl": {
+    "message": "{count} surfaces"
+  },
+  "spSettingsClearAria": {
+    "message": "Clear settings filter"
+  },
+  "spSettingsClearFilter": {
+    "message": "Clear filter"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "Clear quick settings filter"
+  },
+  "spSettingsCopy": {
+    "message": "Grouped toggles save immediately and sync to open YouTube tabs."
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} on"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "No settings match."
+  },
+  "spSettingsEmptyMsg": {
+    "message": "Quick settings could not load. Reload the panel, or use the toolbar popup on a YouTube tab to manage every Astra Deck control."
+  },
+  "spSettingsEmptyTitle": {
+    "message": "No quick settings available"
+  },
+  "spSettingsErrorMsg": {
+    "message": "Quick settings could not load because browser storage is unavailable. Reload the panel, or use the toolbar popup after the extension context is ready."
+  },
+  "spSettingsErrorTitle": {
+    "message": "Quick settings unavailable"
+  },
+  "spSettingsKicker": {
+    "message": "Live apply"
+  },
+  "spSettingsListAria": {
+    "message": "Settings toggles"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "No matching quick settings"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "No settings match \"{query}\". Clear the filter to return to all controls."
+  },
+  "spSettingsSearchAria": {
+    "message": "Filter settings by name, risk, scope, or category"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "Filter settings, risk, scope, or category"
+  },
+  "spSettingsTitle": {
+    "message": "Quick settings"
+  },
+  "spSkipToSettings": {
+    "message": "Skip to settings"
+  },
+  "spStateUnknown": {
+    "message": "unknown"
+  },
+  "spStatSize": {
+    "message": "Size"
+  },
+  "spStatUnavailable": {
+    "message": "Unavailable"
+  },
+  "spStatusDisabledTpl": {
+    "message": "{name} disabled"
+  },
+  "spStatusEnabledTpl": {
+    "message": "{name} enabled"
+  },
+  "spStatusOpenYouTube": {
+    "message": "Open YouTube for live diagnostics"
+  },
+  "spStatusRefreshFailed": {
+    "message": "Refresh failed — try again"
+  },
+  "spStatusRefreshing": {
+    "message": "Refreshing..."
+  },
+  "spStatusSaveFailed": {
+    "message": "Could not save setting"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "Diagnostics updated; quick settings could not load"
+  },
+  "spStatusUpdated": {
+    "message": "Live diagnostics updated"
+  },
+  "spStorageCopy": {
+    "message": "Counts local settings, hidden videos, blocked channels, and saved notes."
+  },
+  "spStorageStatsAria": {
+    "message": "Storage statistics"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "Reload the extension context to read local data."
+  },
+  "spSubtitle": {
+    "message": "Live diagnostics"
+  },
+  "spVersionAria": {
+    "message": "Extension version"
+  },
   "speedBtnAriaTpl": {
     "message": "Default playback speed …. Click to change."
   },

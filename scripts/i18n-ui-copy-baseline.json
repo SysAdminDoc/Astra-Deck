@@ -81,17 +81,9 @@
       "count": 44,
       "digest": "48a2b7cf658a6b528dc2a7c58d17cbd89e4a96fba024c484b3eb4f02b0b70eec"
     },
-    "extension/sidebar.html": {
-      "count": 44,
-      "digest": "f2f5259c98ae97ebfeccb4131829b92a895d0324313a7a6b9d9043c8188f1b2b"
-    },
-    "extension/sidepanel.html": {
-      "count": 44,
-      "digest": "326c7ff642d94e6341a41736c29cfdbf10de6fe485682a52c9c507a9cd1382f7"
-    },
     "extension/sidepanel.js": {
-      "count": 24,
-      "digest": "7cd34d4d191ed8555010d837e20d027b572020577722097cc92b1477e2952268"
+      "count": 3,
+      "digest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
       "count": 1404,

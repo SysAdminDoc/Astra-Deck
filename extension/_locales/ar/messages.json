@@ -3044,6 +3044,417 @@
   "settingsImportHistoryLabel": {
     "message": "استيراد السجل"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - شريط Firefox الجانبي"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - لوحة المعلومات"
+  },
+  "spAgeNever": {
+    "message": "أبدًا"
+  },
+  "spCategory_comments": {
+    "message": "التعليقات"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "تشخيصات المطوّر"
+  },
+  "spCategory_enrichment": {
+    "message": "الإثراء"
+  },
+  "spCategory_feed": {
+    "message": "الموجز"
+  },
+  "spCategory_general": {
+    "message": "عام"
+  },
+  "spCategory_nav": {
+    "message": "التنقل"
+  },
+  "spCategory_playback_audio": {
+    "message": "التشغيل والصوت"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "ملفات الخصوصية"
+  },
+  "spCategory_research_ai": {
+    "message": "الذكاء الاصطناعي البحثي"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "مشغّل الفيديو"
+  },
+  "spContextChecking": {
+    "message": "جارٍ فحص علامة التبويب"
+  },
+  "spContextYouTubeTab": {
+    "message": "علامة تبويب YouTube"
+  },
+  "spEmptyNoTab": {
+    "message": "لا توجد علامة تبويب YouTube نشطة."
+  },
+  "spEmptyTitleError": {
+    "message": "يلزم التحديث"
+  },
+  "spEmptyTitleIdle": {
+    "message": "في انتظار الإشارة"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "كل شيء على ما يرام"
+  },
+  "spExternalBudgetTpl": {
+    "message": "الميزانية {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "ذاكرة التخزين {state}"
+  },
+  "spExternalCopy": {
+    "message": "يتتبع حالة طلبات SponsorBlock وDeArrow وRYD."
+  },
+  "spExternalEmptyNoData": {
+    "message": "لم تُستخدم أي خدمات خارجية في هذه الجلسة. شغّل فيديو أو تنقّل مرة واحدة لجمع حالة الطلبات."
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "لم تُرصد أي طلبات بعد"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "البرنامج النصي للمحتوى لا يستجيب. أعد تحميل YouTube ثم حدّث حالة واجهات API الخارجية."
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "أعد الاتصال بحالة عمليات الدمج"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "افتح YouTube لعرض حالة طلبات SponsorBlock وDeArrow وRYD."
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "افتح YouTube للتحقق من عمليات الدمج"
+  },
+  "spExternalFallbackTpl": {
+    "message": "الاحتياطي {state}"
+  },
+  "spExternalKicker": {
+    "message": "عمليات الدمج"
+  },
+  "spExternalListAria": {
+    "message": "قائمة حالة واجهات API الخارجية"
+  },
+  "spExternalNoRequests": {
+    "message": "لم تُرصد أي طلبات بعد."
+  },
+  "spExternalOkAgoTpl": {
+    "message": "ناجح منذ {age}"
+  },
+  "spExternalTitle": {
+    "message": "حالة واجهات API الخارجية"
+  },
+  "spLocalOnly": {
+    "message": "محلي فقط"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "التعليقات"
+  },
+  "spMeta_feed": {
+    "message": "الموجز"
+  },
+  "spMeta_global": {
+    "message": "عام"
+  },
+  "spMeta_player": {
+    "message": "المشغّل"
+  },
+  "spMeta_safe": {
+    "message": "آمن"
+  },
+  "spMeta_watch": {
+    "message": "صفحة المشاهدة"
+  },
+  "spOverviewContextLabel": {
+    "message": "السياق"
+  },
+  "spOverviewCopy": {
+    "message": "افتح علامة تبويب YouTube لبث التشخيصات، ثم استخدم الإعدادات السريعة للاسترداد الفوري."
+  },
+  "spOverviewKicker": {
+    "message": "مساحة عمل مباشرة"
+  },
+  "spOverviewSummaryAria": {
+    "message": "ملخص لوحة المعلومات"
+  },
+  "spOverviewTitle": {
+    "message": "صحة مساحة العمل في لمحة"
+  },
+  "spPerfCopy": {
+    "message": "يبرز الميزات بطيئة البدء في علامة تبويب YouTube النشطة."
+  },
+  "spPerfEmptyNoData": {
+    "message": "ابدأ التشغيل أو تنقّل مرة واحدة، ثم حدّث لالتقاط توقيتات الميزات."
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "لا توجد توقيتات بدء بعد"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "البرنامج النصي للمحتوى لا يستجيب. أعد تحميل علامة تبويب YouTube ثم حدّث التشخيصات."
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "أعد الاتصال بعلامة التبويب النشطة"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "افتح YouTube في علامة التبويب النشطة، ثم حدّث لقياس توقيت البدء."
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "افتح YouTube لقياس البدء"
+  },
+  "spPerfKicker": {
+    "message": "وقت التشغيل"
+  },
+  "spPerfListAria": {
+    "message": "قائمة توقيتات تهيئة الميزات"
+  },
+  "spPerfTitle": {
+    "message": "توقيت تهيئة الميزات"
+  },
+  "spPerfTotalTpl": {
+    "message": "تم قياس {count}"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "يفتح مقاطع الفيديو في وضع المسرح."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "يدفّئ ألوان المشغّل للمشاهدة الليلية."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "يزيل معلمات التتبع من الروابط المنسوخة."
+  },
+  "spq_commentSearch_desc": {
+    "message": "يصفّي تعليقات صفحة المشاهدة مباشرة."
+  },
+  "spq_deArrow_desc": {
+    "message": "يستبدل العناوين والصور المصغرة الخادعة."
+  },
+  "spq_debugMode_desc": {
+    "message": "يسجّل تشخيصات محلية مفصّلة لاستكشاف الأخطاء."
+  },
+  "spq_debugMode_name": {
+    "message": "تسجيل التشخيص"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "يتتبع فترات الراحة ووقت المشاهدة اليومي."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "يمنع بدء الفيديو التالي تلقائيًا."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "تعطيل التشغيل التلقائي"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "يمنع الموجزات من التحميل إلى ما لا نهاية."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "تقييد التمرير اللانهائي"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "يفرغ الشريط الجانبي لصفحة المشاهدة."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "يبقي عناصر التحكم الأساسية ظاهرة أثناء التمرير."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "يحافظ على سرعة تشغيل ثابتة بين مقاطع الفيديو."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "راجع كل خدمة يمكن لـ Astra Deck الاتصال بها."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "لوحة تدفق البيانات"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "يزيل أرفف Shorts وروابط التنقل."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "يتخطى مقاطع الرعاية التي حددها المجتمع."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "اقرأ التعليقات التوضيحية وتنقّل بينها وصدّرها."
+  },
+  "spRefreshAria": {
+    "message": "تحديث جميع أقسام لوحة المعلومات"
+  },
+  "spRefreshBtn": {
+    "message": "تحديث"
+  },
+  "spReloadPanel": {
+    "message": "إعادة تحميل اللوحة"
+  },
+  "spReloadPanelAria": {
+    "message": "إعادة تحميل لوحة Astra Deck"
+  },
+  "spRiskTpl": {
+    "message": "الخطورة: {risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}. فشل الحفظ. جرّب تحديث لوحة المعلومات."
+  },
+  "spScopeTpl": {
+    "message": "النطاق: {scope}"
+  },
+  "spSelectorCopy": {
+    "message": "يكشف انحراف DOM قبل أن يعطّل عنصر تحكم."
+  },
+  "spSelectorDriftTpl": {
+    "message": "{count} انحراف"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "تنقّل في YouTube مرة واحدة، ثم حدّث لأخذ عينات من الأسطح التي تتتبعها هذه اللوحة."
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "لم تُؤخذ عينات من أي أسطح بعد"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "البرنامج النصي للمحتوى لا يستجيب. أعد تحميل YouTube ثم حدّث التشخيصات."
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "أعد الاتصال بحالة المحدّدات"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "افتح YouTube في علامة التبويب النشطة للتحقق مما إذا كانت محدّدات الصفحة لا تزال مطابقة."
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "افتح YouTube للتحقق من مطابقة الصفحة"
+  },
+  "spSelectorErrTpl": {
+    "message": "{count} خطأ"
+  },
+  "spSelectorHighChurn": {
+    "message": "تغيّر مرتفع"
+  },
+  "spSelectorHitsTpl": {
+    "message": "{count} إصابة"
+  },
+  "spSelectorKicker": {
+    "message": "مطابقة الصفحة"
+  },
+  "spSelectorListAria": {
+    "message": "قائمة حالة المحدّدات"
+  },
+  "spSelectorMissTpl": {
+    "message": "{count} إخفاق"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "يتطلب التقاطًا"
+  },
+  "spSelectorTitle": {
+    "message": "حالة المحدّدات"
+  },
+  "spSelectorTotalTpl": {
+    "message": "{count} سطح"
+  },
+  "spSettingsClearAria": {
+    "message": "مسح عامل تصفية الإعدادات"
+  },
+  "spSettingsClearFilter": {
+    "message": "مسح عامل التصفية"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "مسح عامل تصفية الإعدادات السريعة"
+  },
+  "spSettingsCopy": {
+    "message": "تُحفظ المفاتيح المجمّعة فورًا وتتزامن مع علامات تبويب YouTube المفتوحة."
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} مفعّل"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "لا توجد إعدادات مطابقة."
+  },
+  "spSettingsEmptyMsg": {
+    "message": "تعذّر تحميل الإعدادات السريعة. أعد تحميل اللوحة أو استخدم النافذة المنبثقة لشريط الأدوات في علامة تبويب YouTube لإدارة جميع عناصر تحكم Astra Deck."
+  },
+  "spSettingsEmptyTitle": {
+    "message": "لا توجد إعدادات سريعة متاحة"
+  },
+  "spSettingsErrorMsg": {
+    "message": "تعذّر تحميل الإعدادات السريعة لأن مساحة تخزين المتصفح غير متاحة. أعد تحميل اللوحة أو استخدم النافذة المنبثقة لشريط الأدوات بعد جاهزية سياق الملحق."
+  },
+  "spSettingsErrorTitle": {
+    "message": "الإعدادات السريعة غير متاحة"
+  },
+  "spSettingsKicker": {
+    "message": "تطبيق فوري"
+  },
+  "spSettingsListAria": {
+    "message": "مفاتيح الإعدادات"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "لا توجد إعدادات سريعة مطابقة"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "لا توجد إعدادات تطابق \"{query}\". امسح عامل التصفية للعودة إلى جميع عناصر التحكم."
+  },
+  "spSettingsSearchAria": {
+    "message": "تصفية الإعدادات حسب الاسم أو الخطورة أو النطاق أو الفئة"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "صفِّ الإعدادات أو الخطورة أو النطاق أو الفئة"
+  },
+  "spSettingsTitle": {
+    "message": "الإعدادات السريعة"
+  },
+  "spSkipToSettings": {
+    "message": "الانتقال إلى الإعدادات"
+  },
+  "spStateUnknown": {
+    "message": "غير معروف"
+  },
+  "spStatSize": {
+    "message": "الحجم"
+  },
+  "spStatUnavailable": {
+    "message": "غير متاح"
+  },
+  "spStatusDisabledTpl": {
+    "message": "تم تعطيل {name}"
+  },
+  "spStatusEnabledTpl": {
+    "message": "تم تفعيل {name}"
+  },
+  "spStatusOpenYouTube": {
+    "message": "افتح YouTube للتشخيصات المباشرة"
+  },
+  "spStatusRefreshFailed": {
+    "message": "فشل التحديث — حاول مرة أخرى"
+  },
+  "spStatusRefreshing": {
+    "message": "جارٍ التحديث..."
+  },
+  "spStatusSaveFailed": {
+    "message": "تعذّر حفظ الإعداد"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "تم تحديث التشخيصات؛ تعذّر تحميل الإعدادات السريعة"
+  },
+  "spStatusUpdated": {
+    "message": "تم تحديث التشخيصات المباشرة"
+  },
+  "spStorageCopy": {
+    "message": "يحصي الإعدادات المحلية والفيديوهات المخفية والقنوات المحظورة والملاحظات المحفوظة."
+  },
+  "spStorageStatsAria": {
+    "message": "إحصاءات التخزين"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "أعد تحميل سياق الملحق لقراءة البيانات المحلية."
+  },
+  "spSubtitle": {
+    "message": "تشخيصات مباشرة"
+  },
+  "spVersionAria": {
+    "message": "إصدار الملحق"
+  },
   "speedBtnAriaTpl": {
     "message": "سرعة التشغيل الافتراضية …. انقر للتغيير."
   },

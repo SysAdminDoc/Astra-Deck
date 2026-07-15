@@ -3044,6 +3044,417 @@
   "settingsImportHistoryLabel": {
     "message": "导入历史记录"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - Firefox 侧边栏"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - 仪表盘"
+  },
+  "spAgeNever": {
+    "message": "从未"
+  },
+  "spCategory_comments": {
+    "message": "评论"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "开发诊断"
+  },
+  "spCategory_enrichment": {
+    "message": "增强"
+  },
+  "spCategory_feed": {
+    "message": "信息流"
+  },
+  "spCategory_general": {
+    "message": "常规"
+  },
+  "spCategory_nav": {
+    "message": "导航"
+  },
+  "spCategory_playback_audio": {
+    "message": "播放与音频"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "隐私配置"
+  },
+  "spCategory_research_ai": {
+    "message": "研究 AI"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "视频播放器"
+  },
+  "spContextChecking": {
+    "message": "正在检查标签页"
+  },
+  "spContextYouTubeTab": {
+    "message": "YouTube 标签页"
+  },
+  "spEmptyNoTab": {
+    "message": "没有活动的 YouTube 标签页。"
+  },
+  "spEmptyTitleError": {
+    "message": "需要刷新"
+  },
+  "spEmptyTitleIdle": {
+    "message": "等待信号"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "一切正常"
+  },
+  "spExternalBudgetTpl": {
+    "message": "预算 {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "缓存 {state}"
+  },
+  "spExternalCopy": {
+    "message": "跟踪 SponsorBlock、DeArrow 和 RYD 请求的健康状况。"
+  },
+  "spExternalEmptyNoData": {
+    "message": "本次会话尚未使用任何外部服务。播放或浏览一次即可收集请求健康状况。"
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "尚未观测到请求"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "内容脚本无响应。请重新加载 YouTube，然后刷新外部 API 健康状况。"
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "重新连接集成健康状况"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "打开 YouTube 即可查看 SponsorBlock、DeArrow 和 RYD 请求健康状况。"
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "打开 YouTube 检查集成"
+  },
+  "spExternalFallbackTpl": {
+    "message": "回退 {state}"
+  },
+  "spExternalKicker": {
+    "message": "集成"
+  },
+  "spExternalListAria": {
+    "message": "外部 API 健康状况列表"
+  },
+  "spExternalNoRequests": {
+    "message": "尚未观测到请求。"
+  },
+  "spExternalOkAgoTpl": {
+    "message": "{age}前正常"
+  },
+  "spExternalTitle": {
+    "message": "外部 API 健康状况"
+  },
+  "spLocalOnly": {
+    "message": "仅本地"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "评论"
+  },
+  "spMeta_feed": {
+    "message": "信息流"
+  },
+  "spMeta_global": {
+    "message": "全局"
+  },
+  "spMeta_player": {
+    "message": "播放器"
+  },
+  "spMeta_safe": {
+    "message": "安全"
+  },
+  "spMeta_watch": {
+    "message": "观看页"
+  },
+  "spOverviewContextLabel": {
+    "message": "上下文"
+  },
+  "spOverviewCopy": {
+    "message": "打开 YouTube 标签页以实时获取诊断信息，然后使用快速设置进行即时恢复。"
+  },
+  "spOverviewKicker": {
+    "message": "实时工作区"
+  },
+  "spOverviewSummaryAria": {
+    "message": "仪表盘摘要"
+  },
+  "spOverviewTitle": {
+    "message": "工作区健康状况一览"
+  },
+  "spPerfCopy": {
+    "message": "突出显示活动 YouTube 标签页中启动缓慢的功能。"
+  },
+  "spPerfEmptyNoData": {
+    "message": "开始播放或浏览一次，然后刷新以采集功能耗时。"
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "尚无启动耗时"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "内容脚本无响应。请重新加载 YouTube 标签页，然后刷新诊断。"
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "重新连接活动标签页"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "在活动标签页中打开 YouTube，然后刷新以测量启动耗时。"
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "打开 YouTube 测量启动"
+  },
+  "spPerfKicker": {
+    "message": "运行时"
+  },
+  "spPerfListAria": {
+    "message": "功能初始化耗时列表"
+  },
+  "spPerfTitle": {
+    "message": "功能初始化耗时"
+  },
+  "spPerfTotalTpl": {
+    "message": "已测量 {count} 项"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "以剧场模式打开视频。"
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "为深夜观看调暖播放器色调。"
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "从复制的链接中移除跟踪参数。"
+  },
+  "spq_commentSearch_desc": {
+    "message": "在观看页内直接筛选评论。"
+  },
+  "spq_deArrow_desc": {
+    "message": "替换标题党标题和缩略图。"
+  },
+  "spq_debugMode_desc": {
+    "message": "记录详细的本地诊断信息以便排查问题。"
+  },
+  "spq_debugMode_name": {
+    "message": "诊断日志"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "跟踪休息和每日观看时长。"
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "阻止下一个视频自动开始播放。"
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "禁用自动播放"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "阻止信息流无限加载。"
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "限制无限滚动"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "清空观看页侧边栏。"
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "滚动时保持核心控件可见。"
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "在视频之间保持播放速度一致。"
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "查看 Astra Deck 可能联系的每个服务。"
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "数据流面板"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "移除 Shorts 栏目和导航链接。"
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "跳过社区标记的赞助片段。"
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "阅读、跳转和导出字幕。"
+  },
+  "spRefreshAria": {
+    "message": "刷新所有仪表盘区块"
+  },
+  "spRefreshBtn": {
+    "message": "刷新"
+  },
+  "spReloadPanel": {
+    "message": "重新加载面板"
+  },
+  "spReloadPanelAria": {
+    "message": "重新加载 Astra Deck 面板"
+  },
+  "spRiskTpl": {
+    "message": "风险：{risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}。保存失败。请尝试刷新仪表盘。"
+  },
+  "spScopeTpl": {
+    "message": "范围：{scope}"
+  },
+  "spSelectorCopy": {
+    "message": "在控件损坏之前暴露 DOM 漂移。"
+  },
+  "spSelectorDriftTpl": {
+    "message": "{count} 漂移"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "在 YouTube 上浏览一次，然后刷新以采样此仪表盘跟踪的界面。"
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "尚未采样任何界面"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "内容脚本无响应。请重新加载 YouTube，然后刷新诊断。"
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "重新连接选择器健康状况"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "在活动标签页中打开 YouTube，检查页面选择器是否仍然匹配。"
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "打开 YouTube 检查页面匹配"
+  },
+  "spSelectorErrTpl": {
+    "message": "{count} 错误"
+  },
+  "spSelectorHighChurn": {
+    "message": "高频变动"
+  },
+  "spSelectorHitsTpl": {
+    "message": "{count} 次命中"
+  },
+  "spSelectorKicker": {
+    "message": "页面匹配"
+  },
+  "spSelectorListAria": {
+    "message": "选择器健康状况列表"
+  },
+  "spSelectorMissTpl": {
+    "message": "{count} 次未命中"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "需要采集"
+  },
+  "spSelectorTitle": {
+    "message": "选择器健康状况"
+  },
+  "spSelectorTotalTpl": {
+    "message": "{count} 个界面"
+  },
+  "spSettingsClearAria": {
+    "message": "清除设置筛选"
+  },
+  "spSettingsClearFilter": {
+    "message": "清除筛选"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "清除快速设置筛选"
+  },
+  "spSettingsCopy": {
+    "message": "分组开关即时保存，并同步到已打开的 YouTube 标签页。"
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} 已开启"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "没有匹配的设置。"
+  },
+  "spSettingsEmptyMsg": {
+    "message": "无法加载快速设置。请重新加载面板，或在 YouTube 标签页中使用工具栏弹窗管理所有 Astra Deck 控件。"
+  },
+  "spSettingsEmptyTitle": {
+    "message": "没有可用的快速设置"
+  },
+  "spSettingsErrorMsg": {
+    "message": "由于浏览器存储不可用，无法加载快速设置。请重新加载面板，或在扩展上下文就绪后使用工具栏弹窗。"
+  },
+  "spSettingsErrorTitle": {
+    "message": "快速设置不可用"
+  },
+  "spSettingsKicker": {
+    "message": "即时生效"
+  },
+  "spSettingsListAria": {
+    "message": "设置开关"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "没有匹配的快速设置"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "没有与“{query}”匹配的设置。清除筛选即可返回所有控件。"
+  },
+  "spSettingsSearchAria": {
+    "message": "按名称、风险、范围或类别筛选设置"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "筛选设置、风险、范围或类别"
+  },
+  "spSettingsTitle": {
+    "message": "快速设置"
+  },
+  "spSkipToSettings": {
+    "message": "跳转到设置"
+  },
+  "spStateUnknown": {
+    "message": "未知"
+  },
+  "spStatSize": {
+    "message": "大小"
+  },
+  "spStatUnavailable": {
+    "message": "不可用"
+  },
+  "spStatusDisabledTpl": {
+    "message": "已禁用 {name}"
+  },
+  "spStatusEnabledTpl": {
+    "message": "已启用 {name}"
+  },
+  "spStatusOpenYouTube": {
+    "message": "打开 YouTube 获取实时诊断"
+  },
+  "spStatusRefreshFailed": {
+    "message": "刷新失败 — 请重试"
+  },
+  "spStatusRefreshing": {
+    "message": "正在刷新..."
+  },
+  "spStatusSaveFailed": {
+    "message": "无法保存设置"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "诊断已更新；快速设置无法加载"
+  },
+  "spStatusUpdated": {
+    "message": "实时诊断已更新"
+  },
+  "spStorageCopy": {
+    "message": "统计本地设置、已隐藏视频、已屏蔽频道和已保存笔记。"
+  },
+  "spStorageStatsAria": {
+    "message": "存储统计"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "重新加载扩展上下文以读取本地数据。"
+  },
+  "spSubtitle": {
+    "message": "实时诊断"
+  },
+  "spVersionAria": {
+    "message": "扩展版本"
+  },
   "speedBtnAriaTpl": {
     "message": "默认播放速度 {speed}。点击更改。"
   },

@@ -3047,6 +3047,417 @@
   "settingsImportHistoryLabel": {
     "message": "Import History"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - Firefox 사이드바"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - 대시보드"
+  },
+  "spAgeNever": {
+    "message": "없음"
+  },
+  "spCategory_comments": {
+    "message": "댓글"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "개발 진단"
+  },
+  "spCategory_enrichment": {
+    "message": "기능 확장"
+  },
+  "spCategory_feed": {
+    "message": "피드"
+  },
+  "spCategory_general": {
+    "message": "일반"
+  },
+  "spCategory_nav": {
+    "message": "탐색"
+  },
+  "spCategory_playback_audio": {
+    "message": "재생 및 오디오"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "개인정보 프로필"
+  },
+  "spCategory_research_ai": {
+    "message": "리서치 AI"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "동영상 플레이어"
+  },
+  "spContextChecking": {
+    "message": "탭 확인 중"
+  },
+  "spContextYouTubeTab": {
+    "message": "YouTube 탭"
+  },
+  "spEmptyNoTab": {
+    "message": "활성 YouTube 탭이 없습니다."
+  },
+  "spEmptyTitleError": {
+    "message": "새로고침 필요"
+  },
+  "spEmptyTitleIdle": {
+    "message": "신호 대기 중"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "모두 정상"
+  },
+  "spExternalBudgetTpl": {
+    "message": "예산 {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "캐시 {state}"
+  },
+  "spExternalCopy": {
+    "message": "SponsorBlock, DeArrow, RYD 요청 상태를 추적합니다."
+  },
+  "spExternalEmptyNoData": {
+    "message": "이 세션에서 사용된 외부 서비스가 없습니다. 한 번 재생하거나 이동하면 요청 상태를 수집합니다."
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "아직 관찰된 요청 없음"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "콘텐츠 스크립트가 응답하지 않습니다. YouTube를 새로고침한 다음 외부 API 상태를 갱신하세요."
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "통합 상태 다시 연결"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "YouTube를 열면 SponsorBlock, DeArrow, RYD 요청 상태를 볼 수 있습니다."
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "YouTube를 열어 통합 확인"
+  },
+  "spExternalFallbackTpl": {
+    "message": "대체 {state}"
+  },
+  "spExternalKicker": {
+    "message": "통합"
+  },
+  "spExternalListAria": {
+    "message": "외부 API 상태 목록"
+  },
+  "spExternalNoRequests": {
+    "message": "아직 관찰된 요청이 없습니다."
+  },
+  "spExternalOkAgoTpl": {
+    "message": "{age} 전 정상"
+  },
+  "spExternalTitle": {
+    "message": "외부 API 상태"
+  },
+  "spLocalOnly": {
+    "message": "로컬 전용"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "댓글"
+  },
+  "spMeta_feed": {
+    "message": "피드"
+  },
+  "spMeta_global": {
+    "message": "전역"
+  },
+  "spMeta_player": {
+    "message": "플레이어"
+  },
+  "spMeta_safe": {
+    "message": "안전"
+  },
+  "spMeta_watch": {
+    "message": "시청 페이지"
+  },
+  "spOverviewContextLabel": {
+    "message": "컨텍스트"
+  },
+  "spOverviewCopy": {
+    "message": "YouTube 탭을 열어 진단을 스트리밍한 다음 빠른 설정으로 즉시 복구하세요."
+  },
+  "spOverviewKicker": {
+    "message": "라이브 작업 공간"
+  },
+  "spOverviewSummaryAria": {
+    "message": "대시보드 요약"
+  },
+  "spOverviewTitle": {
+    "message": "작업 공간 상태를 한눈에"
+  },
+  "spPerfCopy": {
+    "message": "활성 YouTube 탭에서 느리게 시작되는 기능을 강조합니다."
+  },
+  "spPerfEmptyNoData": {
+    "message": "재생을 시작하거나 한 번 이동한 후 새로고침하면 기능 타이밍을 수집합니다."
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "아직 시작 타이밍 없음"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "콘텐츠 스크립트가 응답하지 않습니다. YouTube 탭을 새로고침한 다음 진단을 갱신하세요."
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "활성 탭 다시 연결"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "활성 탭에서 YouTube를 연 다음 새로고침하면 시작 타이밍을 측정합니다."
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "YouTube를 열어 시작 측정"
+  },
+  "spPerfKicker": {
+    "message": "런타임"
+  },
+  "spPerfListAria": {
+    "message": "기능 초기화 타이밍 목록"
+  },
+  "spPerfTitle": {
+    "message": "기능 초기화 타이밍"
+  },
+  "spPerfTotalTpl": {
+    "message": "{count}개 측정됨"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "동영상을 극장 모드로 엽니다."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "늦은 시청을 위해 플레이어 색을 따뜻하게 합니다."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "복사한 링크에서 추적 매개변수를 제거합니다."
+  },
+  "spq_commentSearch_desc": {
+    "message": "시청 페이지 댓글을 바로 필터링합니다."
+  },
+  "spq_deArrow_desc": {
+    "message": "낚시성 제목과 썸네일을 교체합니다."
+  },
+  "spq_debugMode_desc": {
+    "message": "문제 해결을 위해 상세한 로컬 진단을 기록합니다."
+  },
+  "spq_debugMode_name": {
+    "message": "진단 로깅"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "휴식과 일일 시청 시간을 추적합니다."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "다음 동영상이 자동으로 시작되지 않게 합니다."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "자동 재생 끄기"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "피드가 끝없이 로드되지 않게 합니다."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "무한 스크롤 제한"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "시청 페이지 측면 목록을 비웁니다."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "스크롤하는 동안 필수 컨트롤을 계속 표시합니다."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "동영상 간 재생 속도를 일정하게 유지합니다."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Astra Deck가 연결할 수 있는 모든 서비스를 검토합니다."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "데이터 흐름 패널"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Shorts 선반과 탐색 링크를 제거합니다."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "커뮤니티가 표시한 스폰서 구간을 건너뜁니다."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "자막을 읽고, 이동하고, 내보냅니다."
+  },
+  "spRefreshAria": {
+    "message": "대시보드 전체 섹션 새로고침"
+  },
+  "spRefreshBtn": {
+    "message": "새로고침"
+  },
+  "spReloadPanel": {
+    "message": "패널 새로고침"
+  },
+  "spReloadPanelAria": {
+    "message": "Astra Deck 패널 새로고침"
+  },
+  "spRiskTpl": {
+    "message": "위험도: {risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}. 저장에 실패했습니다. 대시보드를 새로고침해 보세요."
+  },
+  "spScopeTpl": {
+    "message": "적용 범위: {scope}"
+  },
+  "spSelectorCopy": {
+    "message": "컨트롤이 깨지기 전에 DOM 변동을 드러냅니다."
+  },
+  "spSelectorDriftTpl": {
+    "message": "변동 {count}"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "YouTube를 한 번 탐색한 후 새로고침하면 이 대시보드가 추적하는 표면을 샘플링합니다."
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "아직 샘플링된 표면 없음"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "콘텐츠 스크립트가 응답하지 않습니다. YouTube를 새로고침한 다음 진단을 갱신하세요."
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "선택자 상태 다시 연결"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "활성 탭에서 YouTube를 열어 페이지 선택자가 여전히 맞는지 확인하세요."
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "YouTube를 열어 페이지 적합성 확인"
+  },
+  "spSelectorErrTpl": {
+    "message": "오류 {count}"
+  },
+  "spSelectorHighChurn": {
+    "message": "변동 잦음"
+  },
+  "spSelectorHitsTpl": {
+    "message": "적중 {count}"
+  },
+  "spSelectorKicker": {
+    "message": "페이지 적합성"
+  },
+  "spSelectorListAria": {
+    "message": "선택자 상태 목록"
+  },
+  "spSelectorMissTpl": {
+    "message": "미탐 {count}"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "캡처 필요"
+  },
+  "spSelectorTitle": {
+    "message": "셀렉터 상태"
+  },
+  "spSelectorTotalTpl": {
+    "message": "표면 {count}개"
+  },
+  "spSettingsClearAria": {
+    "message": "설정 필터 지우기"
+  },
+  "spSettingsClearFilter": {
+    "message": "필터 지우기"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "빠른 설정 필터 지우기"
+  },
+  "spSettingsCopy": {
+    "message": "그룹화된 토글은 즉시 저장되며 열린 YouTube 탭에 동기화됩니다."
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} 켜짐"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "일치하는 설정이 없습니다."
+  },
+  "spSettingsEmptyMsg": {
+    "message": "빠른 설정을 불러올 수 없습니다. 패널을 새로고침하거나 YouTube 탭에서 도구 모음 팝업으로 모든 Astra Deck 컨트롤을 관리하세요."
+  },
+  "spSettingsEmptyTitle": {
+    "message": "사용 가능한 빠른 설정 없음"
+  },
+  "spSettingsErrorMsg": {
+    "message": "브라우저 저장소를 사용할 수 없어 빠른 설정을 불러오지 못했습니다. 패널을 새로고침하거나 확장 프로그램 컨텍스트가 준비된 후 도구 모음 팝업을 사용하세요."
+  },
+  "spSettingsErrorTitle": {
+    "message": "빠른 설정 사용 불가"
+  },
+  "spSettingsKicker": {
+    "message": "실시간 적용"
+  },
+  "spSettingsListAria": {
+    "message": "설정 토글"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "일치하는 빠른 설정 없음"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "\"{query}\"과(와) 일치하는 설정이 없습니다. 필터를 지우면 모든 컨트롤로 돌아갑니다."
+  },
+  "spSettingsSearchAria": {
+    "message": "이름, 위험도, 적용 범위 또는 카테고리로 설정 필터링"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "설정, 위험도, 범위 또는 카테고리 필터"
+  },
+  "spSettingsTitle": {
+    "message": "빠른 설정"
+  },
+  "spSkipToSettings": {
+    "message": "설정으로 건너뛰기"
+  },
+  "spStateUnknown": {
+    "message": "알 수 없음"
+  },
+  "spStatSize": {
+    "message": "크기"
+  },
+  "spStatUnavailable": {
+    "message": "사용 불가"
+  },
+  "spStatusDisabledTpl": {
+    "message": "{name} 비활성화됨"
+  },
+  "spStatusEnabledTpl": {
+    "message": "{name} 활성화됨"
+  },
+  "spStatusOpenYouTube": {
+    "message": "실시간 진단을 보려면 YouTube를 여세요"
+  },
+  "spStatusRefreshFailed": {
+    "message": "새로고침 실패 — 다시 시도하세요"
+  },
+  "spStatusRefreshing": {
+    "message": "새로고침 중..."
+  },
+  "spStatusSaveFailed": {
+    "message": "설정을 저장할 수 없습니다"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "진단이 갱신되었습니다. 빠른 설정을 불러올 수 없습니다"
+  },
+  "spStatusUpdated": {
+    "message": "실시간 진단이 갱신되었습니다"
+  },
+  "spStorageCopy": {
+    "message": "로컬 설정, 숨긴 동영상, 차단한 채널, 저장한 메모를 집계합니다."
+  },
+  "spStorageStatsAria": {
+    "message": "스토리지 통계"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "로컬 데이터를 읽으려면 확장 프로그램 컨텍스트를 새로고침하세요."
+  },
+  "spSubtitle": {
+    "message": "실시간 진단"
+  },
+  "spVersionAria": {
+    "message": "확장 프로그램 버전"
+  },
   "speedBtnAriaTpl": {
     "message": "기본 재생 속도 …. 클릭하여 변경."
   },

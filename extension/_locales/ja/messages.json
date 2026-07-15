@@ -3047,6 +3047,417 @@
   "settingsImportHistoryLabel": {
     "message": "Import History"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck - Firefox サイドバー"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck - ダッシュボード"
+  },
+  "spAgeNever": {
+    "message": "未実行"
+  },
+  "spCategory_comments": {
+    "message": "コメント"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "開発者向け診断"
+  },
+  "spCategory_enrichment": {
+    "message": "機能強化"
+  },
+  "spCategory_feed": {
+    "message": "フィード"
+  },
+  "spCategory_general": {
+    "message": "全般"
+  },
+  "spCategory_nav": {
+    "message": "ナビゲーション"
+  },
+  "spCategory_playback_audio": {
+    "message": "再生・音声"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "プライバシープロファイル"
+  },
+  "spCategory_research_ai": {
+    "message": "リサーチAI"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "動画プレーヤー"
+  },
+  "spContextChecking": {
+    "message": "タブを確認中"
+  },
+  "spContextYouTubeTab": {
+    "message": "YouTube タブ"
+  },
+  "spEmptyNoTab": {
+    "message": "アクティブな YouTube タブがありません。"
+  },
+  "spEmptyTitleError": {
+    "message": "更新が必要です"
+  },
+  "spEmptyTitleIdle": {
+    "message": "シグナルを待機中"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "問題ありません"
+  },
+  "spExternalBudgetTpl": {
+    "message": "バジェット {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "キャッシュ {state}"
+  },
+  "spExternalCopy": {
+    "message": "SponsorBlock、DeArrow、RYD のリクエスト状態を追跡します。"
+  },
+  "spExternalEmptyNoData": {
+    "message": "このセッションでは外部サービスは使用されていません。一度再生または移動すると、リクエスト状態を収集します。"
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "リクエストはまだありません"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "コンテンツスクリプトが応答していません。YouTube を再読み込みしてから、外部 API の状態を更新してください。"
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "連携ステータスを再接続"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "YouTube を開くと、SponsorBlock、DeArrow、RYD のリクエスト状態を確認できます。"
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "YouTube を開いて連携を確認"
+  },
+  "spExternalFallbackTpl": {
+    "message": "フォールバック {state}"
+  },
+  "spExternalKicker": {
+    "message": "連携"
+  },
+  "spExternalListAria": {
+    "message": "外部 API 状態リスト"
+  },
+  "spExternalNoRequests": {
+    "message": "リクエストはまだありません。"
+  },
+  "spExternalOkAgoTpl": {
+    "message": "{age}前に成功"
+  },
+  "spExternalTitle": {
+    "message": "外部 API の状態"
+  },
+  "spLocalOnly": {
+    "message": "ローカルのみ"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "コメント"
+  },
+  "spMeta_feed": {
+    "message": "フィード"
+  },
+  "spMeta_global": {
+    "message": "グローバル"
+  },
+  "spMeta_player": {
+    "message": "プレーヤー"
+  },
+  "spMeta_safe": {
+    "message": "安全"
+  },
+  "spMeta_watch": {
+    "message": "視聴ページ"
+  },
+  "spOverviewContextLabel": {
+    "message": "コンテキスト"
+  },
+  "spOverviewCopy": {
+    "message": "YouTube タブを開いて診断をストリーミングし、クイック設定でその場で復旧できます。"
+  },
+  "spOverviewKicker": {
+    "message": "ライブワークスペース"
+  },
+  "spOverviewSummaryAria": {
+    "message": "ダッシュボードの概要"
+  },
+  "spOverviewTitle": {
+    "message": "ワークスペースの状態を一目で確認"
+  },
+  "spPerfCopy": {
+    "message": "アクティブな YouTube タブで起動が遅い機能を強調表示します。"
+  },
+  "spPerfEmptyNoData": {
+    "message": "再生を開始するか一度移動してから更新すると、機能のタイミングを取得します。"
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "起動タイミングはまだありません"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "コンテンツスクリプトが応答していません。YouTube タブを再読み込みしてから診断を更新してください。"
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "アクティブなタブを再接続"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "アクティブなタブで YouTube を開いてから更新すると、起動タイミングを測定できます。"
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "YouTube を開いて起動を測定"
+  },
+  "spPerfKicker": {
+    "message": "ランタイム"
+  },
+  "spPerfListAria": {
+    "message": "機能初期化タイミングリスト"
+  },
+  "spPerfTitle": {
+    "message": "機能の初期化タイミング"
+  },
+  "spPerfTotalTpl": {
+    "message": "{count} 件計測"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "動画をシアタービューで開きます。"
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "夜間の視聴に合わせてプレーヤーの色を暖色にします。"
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "コピーしたリンクからトラッキングパラメータを削除します。"
+  },
+  "spq_commentSearch_desc": {
+    "message": "視聴ページのコメントをその場でフィルタリングします。"
+  },
+  "spq_deArrow_desc": {
+    "message": "クリックベイトのタイトルとサムネイルを置き換えます。"
+  },
+  "spq_debugMode_desc": {
+    "message": "トラブルシューティング用に詳細なローカル診断を記録します。"
+  },
+  "spq_debugMode_name": {
+    "message": "診断ログ"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "休憩と1日の視聴時間を記録します。"
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "次の動画が自動的に始まるのを止めます。"
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "自動再生をオフ"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "フィードが際限なく読み込まれるのを止めます。"
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "無限スクロールを制限"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "視聴ページのサイドレールを非表示にします。"
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "スクロール中も主要な操作を表示し続けます。"
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "動画間で再生速度を維持します。"
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Astra Deck が接続できるすべてのサービスを確認します。"
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "データフローパネル"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Shorts のシェルフとナビゲーションリンクを削除します。"
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "コミュニティがマークしたスポンサー区間をスキップします。"
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "字幕を読み、ジャンプし、エクスポートできます。"
+  },
+  "spRefreshAria": {
+    "message": "ダッシュボードの全セクションを更新"
+  },
+  "spRefreshBtn": {
+    "message": "更新"
+  },
+  "spReloadPanel": {
+    "message": "パネルを再読み込み"
+  },
+  "spReloadPanelAria": {
+    "message": "Astra Deck パネルを再読み込み"
+  },
+  "spRiskTpl": {
+    "message": "リスク: {risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}。保存に失敗しました。ダッシュボードを更新してください。"
+  },
+  "spScopeTpl": {
+    "message": "適用範囲: {scope}"
+  },
+  "spSelectorCopy": {
+    "message": "コントロールが壊れる前に DOM のずれを表面化します。"
+  },
+  "spSelectorDriftTpl": {
+    "message": "ドリフト {count}"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "YouTube を一度操作してから更新すると、このダッシュボードが追跡するサーフェスを取得します。"
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "サンプリングされたサーフェスはまだありません"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "コンテンツスクリプトが応答していません。YouTube を再読み込みしてから診断を更新してください。"
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "セレクター状態を再接続"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "アクティブなタブで YouTube を開くと、ページセレクターがまだ適合しているか確認できます。"
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "YouTube を開いてページ適合を確認"
+  },
+  "spSelectorErrTpl": {
+    "message": "エラー {count}"
+  },
+  "spSelectorHighChurn": {
+    "message": "変動大"
+  },
+  "spSelectorHitsTpl": {
+    "message": "ヒット {count}"
+  },
+  "spSelectorKicker": {
+    "message": "ページ適合"
+  },
+  "spSelectorListAria": {
+    "message": "セレクター状態リスト"
+  },
+  "spSelectorMissTpl": {
+    "message": "ミス {count}"
+  },
+  "spSelectorNeedsCapture": {
+    "message": "キャプチャが必要"
+  },
+  "spSelectorTitle": {
+    "message": "セレクター状態"
+  },
+  "spSelectorTotalTpl": {
+    "message": "サーフェス {count}"
+  },
+  "spSettingsClearAria": {
+    "message": "設定フィルターをクリア"
+  },
+  "spSettingsClearFilter": {
+    "message": "フィルターをクリア"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "クイック設定フィルターをクリア"
+  },
+  "spSettingsCopy": {
+    "message": "グループ化されたトグルは即時保存され、開いている YouTube タブに同期されます。"
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} 有効"
+  },
+  "spSettingsEmptyDefault": {
+    "message": "一致する設定がありません。"
+  },
+  "spSettingsEmptyMsg": {
+    "message": "クイック設定を読み込めませんでした。パネルを再読み込みするか、YouTube タブでツールバーのポップアップを使って Astra Deck の全コントロールを管理してください。"
+  },
+  "spSettingsEmptyTitle": {
+    "message": "利用できるクイック設定がありません"
+  },
+  "spSettingsErrorMsg": {
+    "message": "ブラウザストレージが利用できないため、クイック設定を読み込めませんでした。パネルを再読み込みするか、拡張機能のコンテキストが準備できてからツールバーのポップアップを使用してください。"
+  },
+  "spSettingsErrorTitle": {
+    "message": "クイック設定を利用できません"
+  },
+  "spSettingsKicker": {
+    "message": "ライブ適用"
+  },
+  "spSettingsListAria": {
+    "message": "設定トグル"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "一致するクイック設定がありません"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "「{query}」に一致する設定がありません。フィルターをクリアするとすべてのコントロールに戻ります。"
+  },
+  "spSettingsSearchAria": {
+    "message": "名前、リスク、適用範囲、カテゴリで設定をフィルタリング"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "設定・リスク・適用範囲・カテゴリを絞り込み"
+  },
+  "spSettingsTitle": {
+    "message": "クイック設定"
+  },
+  "spSkipToSettings": {
+    "message": "設定へスキップ"
+  },
+  "spStateUnknown": {
+    "message": "不明"
+  },
+  "spStatSize": {
+    "message": "サイズ"
+  },
+  "spStatUnavailable": {
+    "message": "利用不可"
+  },
+  "spStatusDisabledTpl": {
+    "message": "{name} を無効にしました"
+  },
+  "spStatusEnabledTpl": {
+    "message": "{name} を有効にしました"
+  },
+  "spStatusOpenYouTube": {
+    "message": "ライブ診断には YouTube を開いてください"
+  },
+  "spStatusRefreshFailed": {
+    "message": "更新に失敗しました。もう一度お試しください"
+  },
+  "spStatusRefreshing": {
+    "message": "更新中..."
+  },
+  "spStatusSaveFailed": {
+    "message": "設定を保存できませんでした"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "診断を更新しました。クイック設定は読み込めませんでした"
+  },
+  "spStatusUpdated": {
+    "message": "ライブ診断を更新しました"
+  },
+  "spStorageCopy": {
+    "message": "ローカル設定、非表示の動画、ブロック済みチャンネル、保存済みメモを集計します。"
+  },
+  "spStorageStatsAria": {
+    "message": "ストレージ統計"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "ローカルデータを読み取るには拡張機能のコンテキストを再読み込みしてください。"
+  },
+  "spSubtitle": {
+    "message": "ライブ診断"
+  },
+  "spVersionAria": {
+    "message": "拡張機能のバージョン"
+  },
   "speedBtnAriaTpl": {
     "message": "デフォルト再生速度 …。クリックで変更。"
   },

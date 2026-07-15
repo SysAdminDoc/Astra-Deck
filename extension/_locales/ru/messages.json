@@ -3047,6 +3047,417 @@
   "settingsImportHistoryLabel": {
     "message": "Import History"
   },
+  "sidebarDocTitle": {
+    "message": "Astra Deck — боковая панель Firefox"
+  },
+  "sidepanelDocTitle": {
+    "message": "Astra Deck — панель мониторинга"
+  },
+  "spAgeNever": {
+    "message": "никогда"
+  },
+  "spCategory_comments": {
+    "message": "Комментарии"
+  },
+  "spCategory_dev_diagnostics": {
+    "message": "Диагностика разработчика"
+  },
+  "spCategory_enrichment": {
+    "message": "Дополнения"
+  },
+  "spCategory_feed": {
+    "message": "Лента"
+  },
+  "spCategory_general": {
+    "message": "Общие"
+  },
+  "spCategory_nav": {
+    "message": "Навигация"
+  },
+  "spCategory_playback_audio": {
+    "message": "Воспроизведение и звук"
+  },
+  "spCategory_privacy_profiles": {
+    "message": "Профили конфиденциальности"
+  },
+  "spCategory_research_ai": {
+    "message": "Исследовательский ИИ"
+  },
+  "spCategory_shorts": {
+    "message": "Shorts"
+  },
+  "spCategory_watch_player": {
+    "message": "Видеоплеер"
+  },
+  "spContextChecking": {
+    "message": "Проверка вкладки"
+  },
+  "spContextYouTubeTab": {
+    "message": "Вкладка YouTube"
+  },
+  "spEmptyNoTab": {
+    "message": "Нет активной вкладки YouTube."
+  },
+  "spEmptyTitleError": {
+    "message": "Требуется обновление"
+  },
+  "spEmptyTitleIdle": {
+    "message": "Ожидание сигнала"
+  },
+  "spEmptyTitleSuccess": {
+    "message": "Всё в порядке"
+  },
+  "spExternalBudgetTpl": {
+    "message": "бюджет {used}/{limit}"
+  },
+  "spExternalCacheTpl": {
+    "message": "кэш {state}"
+  },
+  "spExternalCopy": {
+    "message": "Отслеживает состояние запросов SponsorBlock, DeArrow и RYD."
+  },
+  "spExternalEmptyNoData": {
+    "message": "В этой сессии внешние сервисы не использовались. Запустите воспроизведение или перейдите на другую страницу, чтобы собрать данные о запросах."
+  },
+  "spExternalEmptyNoDataTitle": {
+    "message": "Запросы пока не зафиксированы"
+  },
+  "spExternalEmptyNoResponse": {
+    "message": "Контентный скрипт не отвечает. Перезагрузите YouTube, затем обновите состояние внешних API."
+  },
+  "spExternalEmptyNoResponseTitle": {
+    "message": "Переподключите статус интеграций"
+  },
+  "spExternalEmptyNoTab": {
+    "message": "Откройте YouTube, чтобы увидеть состояние запросов SponsorBlock, DeArrow и RYD."
+  },
+  "spExternalEmptyNoTabTitle": {
+    "message": "Откройте YouTube для проверки интеграций"
+  },
+  "spExternalFallbackTpl": {
+    "message": "резерв {state}"
+  },
+  "spExternalKicker": {
+    "message": "Интеграции"
+  },
+  "spExternalListAria": {
+    "message": "Список состояния внешних API"
+  },
+  "spExternalNoRequests": {
+    "message": "Запросы пока не зафиксированы."
+  },
+  "spExternalOkAgoTpl": {
+    "message": "ок {age} назад"
+  },
+  "spExternalTitle": {
+    "message": "Состояние внешних API"
+  },
+  "spLocalOnly": {
+    "message": "Только локально"
+  },
+  "spMeta_api": {
+    "message": "API"
+  },
+  "spMeta_comments": {
+    "message": "Комментарии"
+  },
+  "spMeta_feed": {
+    "message": "Лента"
+  },
+  "spMeta_global": {
+    "message": "Глобально"
+  },
+  "spMeta_player": {
+    "message": "Плеер"
+  },
+  "spMeta_safe": {
+    "message": "Безопасно"
+  },
+  "spMeta_watch": {
+    "message": "Страница просмотра"
+  },
+  "spOverviewContextLabel": {
+    "message": "Контекст"
+  },
+  "spOverviewCopy": {
+    "message": "Откройте вкладку YouTube для потоковой диагностики, затем используйте быстрые настройки для мгновенного восстановления."
+  },
+  "spOverviewKicker": {
+    "message": "Рабочая область в реальном времени"
+  },
+  "spOverviewSummaryAria": {
+    "message": "Сводка панели"
+  },
+  "spOverviewTitle": {
+    "message": "Состояние рабочей области с первого взгляда"
+  },
+  "spPerfCopy": {
+    "message": "Выделяет медленно запускающиеся функции в активной вкладке YouTube."
+  },
+  "spPerfEmptyNoData": {
+    "message": "Запустите воспроизведение или перейдите на другую страницу, затем обновите, чтобы записать тайминги функций."
+  },
+  "spPerfEmptyNoDataTitle": {
+    "message": "Тайминги запуска пока отсутствуют"
+  },
+  "spPerfEmptyNoResponse": {
+    "message": "Контентный скрипт не отвечает. Перезагрузите вкладку YouTube, затем обновите диагностику."
+  },
+  "spPerfEmptyNoResponseTitle": {
+    "message": "Переподключите активную вкладку"
+  },
+  "spPerfEmptyNoTab": {
+    "message": "Откройте YouTube в активной вкладке, затем обновите, чтобы измерить время запуска."
+  },
+  "spPerfEmptyNoTabTitle": {
+    "message": "Откройте YouTube для измерения запуска"
+  },
+  "spPerfKicker": {
+    "message": "Время выполнения"
+  },
+  "spPerfListAria": {
+    "message": "Список таймингов инициализации функций"
+  },
+  "spPerfTitle": {
+    "message": "Тайминги инициализации функций"
+  },
+  "spPerfTotalTpl": {
+    "message": "Измерено: {count}"
+  },
+  "spq_autoTheaterMode_desc": {
+    "message": "Открывает видео в режиме кинотеатра."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "Делает цвета плеера теплее для позднего просмотра."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "Удаляет параметры отслеживания из скопированных ссылок."
+  },
+  "spq_commentSearch_desc": {
+    "message": "Фильтрует комментарии на странице просмотра на месте."
+  },
+  "spq_deArrow_desc": {
+    "message": "Заменяет кликбейтные заголовки и превью."
+  },
+  "spq_debugMode_desc": {
+    "message": "Записывает подробную локальную диагностику для устранения неполадок."
+  },
+  "spq_debugMode_name": {
+    "message": "Диагностическое логирование"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "Отслеживает перерывы и ежедневное время просмотра."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "Останавливает автоматический запуск следующего видео."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "Отключить автовоспроизведение"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "Останавливает бесконечную загрузку лент."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "Ограничить бесконечную прокрутку"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "Очищает боковую панель страницы просмотра."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "Сохраняет основные элементы управления видимыми при прокрутке."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "Сохраняет скорость воспроизведения между видео."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Просмотрите все сервисы, к которым может обращаться Astra Deck."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "Панель потоков данных"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Удаляет полки Shorts и навигационные ссылки."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "Пропускает спонсорские сегменты, отмеченные сообществом."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "Читайте, перемещайтесь и экспортируйте субтитры."
+  },
+  "spRefreshAria": {
+    "message": "Обновить все разделы панели"
+  },
+  "spRefreshBtn": {
+    "message": "Обновить"
+  },
+  "spReloadPanel": {
+    "message": "Перезагрузить панель"
+  },
+  "spReloadPanelAria": {
+    "message": "Перезагрузить панель Astra Deck"
+  },
+  "spRiskTpl": {
+    "message": "Риск: {risk}"
+  },
+  "spRowSaveFailedTpl": {
+    "message": "{name}. Не удалось сохранить. Попробуйте обновить панель."
+  },
+  "spScopeTpl": {
+    "message": "Область: {scope}"
+  },
+  "spSelectorCopy": {
+    "message": "Показывает дрейф DOM до того, как он сломает элемент управления."
+  },
+  "spSelectorDriftTpl": {
+    "message": "{count} дрейф"
+  },
+  "spSelectorEmptyNoData": {
+    "message": "Перейдите по YouTube один раз, затем обновите, чтобы собрать данные по отслеживаемым поверхностям."
+  },
+  "spSelectorEmptyNoDataTitle": {
+    "message": "Поверхности пока не отобраны"
+  },
+  "spSelectorEmptyNoResponse": {
+    "message": "Контентный скрипт не отвечает. Перезагрузите YouTube, затем обновите диагностику."
+  },
+  "spSelectorEmptyNoResponseTitle": {
+    "message": "Переподключите статус селекторов"
+  },
+  "spSelectorEmptyNoTab": {
+    "message": "Откройте YouTube в активной вкладке, чтобы проверить, подходят ли ещё селекторы страницы."
+  },
+  "spSelectorEmptyNoTabTitle": {
+    "message": "Откройте YouTube для проверки соответствия страницы"
+  },
+  "spSelectorErrTpl": {
+    "message": "{count} ошиб."
+  },
+  "spSelectorHighChurn": {
+    "message": "высокая изменчивость"
+  },
+  "spSelectorHitsTpl": {
+    "message": "{count} совпад."
+  },
+  "spSelectorKicker": {
+    "message": "Соответствие страницы"
+  },
+  "spSelectorListAria": {
+    "message": "Список состояния селекторов"
+  },
+  "spSelectorMissTpl": {
+    "message": "{count} промах."
+  },
+  "spSelectorNeedsCapture": {
+    "message": "нужен захват"
+  },
+  "spSelectorTitle": {
+    "message": "Состояние селекторов"
+  },
+  "spSelectorTotalTpl": {
+    "message": "Поверхностей: {count}"
+  },
+  "spSettingsClearAria": {
+    "message": "Очистить фильтр настроек"
+  },
+  "spSettingsClearFilter": {
+    "message": "Очистить фильтр"
+  },
+  "spSettingsClearFilterAria": {
+    "message": "Очистить фильтр быстрых настроек"
+  },
+  "spSettingsCopy": {
+    "message": "Сгруппированные переключатели сохраняются сразу и синхронизируются с открытыми вкладками YouTube."
+  },
+  "spSettingsCountOnTpl": {
+    "message": "{enabled}/{total} вкл."
+  },
+  "spSettingsEmptyDefault": {
+    "message": "Нет подходящих настроек."
+  },
+  "spSettingsEmptyMsg": {
+    "message": "Не удалось загрузить быстрые настройки. Перезагрузите панель или используйте всплывающее окно на вкладке YouTube для управления всеми настройками Astra Deck."
+  },
+  "spSettingsEmptyTitle": {
+    "message": "Нет доступных быстрых настроек"
+  },
+  "spSettingsErrorMsg": {
+    "message": "Не удалось загрузить быстрые настройки: хранилище браузера недоступно. Перезагрузите панель или используйте всплывающее окно после готовности контекста расширения."
+  },
+  "spSettingsErrorTitle": {
+    "message": "Быстрые настройки недоступны"
+  },
+  "spSettingsKicker": {
+    "message": "Применять сразу"
+  },
+  "spSettingsListAria": {
+    "message": "Переключатели настроек"
+  },
+  "spSettingsNoMatchTitle": {
+    "message": "Нет подходящих быстрых настроек"
+  },
+  "spSettingsNoMatchTpl": {
+    "message": "Нет настроек по запросу \"{query}\". Очистите фильтр, чтобы вернуться ко всем элементам."
+  },
+  "spSettingsSearchAria": {
+    "message": "Фильтровать настройки по имени, риску, области или категории"
+  },
+  "spSettingsSearchPlaceholder": {
+    "message": "Фильтр: настройки, риск, область или категория"
+  },
+  "spSettingsTitle": {
+    "message": "Быстрые настройки"
+  },
+  "spSkipToSettings": {
+    "message": "Перейти к настройкам"
+  },
+  "spStateUnknown": {
+    "message": "неизвестно"
+  },
+  "spStatSize": {
+    "message": "Размер"
+  },
+  "spStatUnavailable": {
+    "message": "Недоступно"
+  },
+  "spStatusDisabledTpl": {
+    "message": "{name}: отключено"
+  },
+  "spStatusEnabledTpl": {
+    "message": "{name}: включено"
+  },
+  "spStatusOpenYouTube": {
+    "message": "Откройте YouTube для живой диагностики"
+  },
+  "spStatusRefreshFailed": {
+    "message": "Не удалось обновить — попробуйте ещё раз"
+  },
+  "spStatusRefreshing": {
+    "message": "Обновление..."
+  },
+  "spStatusSaveFailed": {
+    "message": "Не удалось сохранить настройку"
+  },
+  "spStatusSettingsLoadFailed": {
+    "message": "Диагностика обновлена; быстрые настройки не загрузились"
+  },
+  "spStatusUpdated": {
+    "message": "Живая диагностика обновлена"
+  },
+  "spStorageCopy": {
+    "message": "Подсчитывает локальные настройки, скрытые видео, заблокированные каналы и сохранённые заметки."
+  },
+  "spStorageStatsAria": {
+    "message": "Статистика хранилища"
+  },
+  "spStorageUnavailableDetail": {
+    "message": "Перезагрузите контекст расширения для чтения локальных данных."
+  },
+  "spSubtitle": {
+    "message": "Живая диагностика"
+  },
+  "spVersionAria": {
+    "message": "Версия расширения"
+  },
   "speedBtnAriaTpl": {
     "message": "Скорость воспроизведения по умолчанию …. Нажмите, чтобы изменить."
   },
