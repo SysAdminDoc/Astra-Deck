@@ -1,0 +1,20 @@
+{
+  "playabilityStatus": {
+    "status": "AGE_VERIFICATION_REQUIRED",
+    "reason": "Sign in to confirm your age",
+    "errorScreen": {
+      "playerErrorMessageRenderer": {
+        "reason": {
+          "simpleText": "Sign in to confirm your age"
+        },
+        "subreason": {
+          "simpleText": "This video may be inappropriate for some users."
+        }
+      }
+    }
+  },
+  "videoDetails": {
+    "videoId": "a1B2c3D4e5F",
+    "title": "Sanitized restricted-player canary"
+  }
+}
