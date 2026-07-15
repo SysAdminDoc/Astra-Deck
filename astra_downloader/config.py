@@ -55,6 +55,7 @@ _resolve_legacy = make_legacy_resolver(
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f]")
 _MAX_TEXT_FIELD = 500
 _MAX_PATH_FIELD = 2048
+MAX_LOCAL_JSON_BYTES = 16 * 1024 * 1024
 DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
     "url", "audioOnly", "format", "quality", "outputDir", "title",
     "referer", "cookies",
@@ -347,12 +348,16 @@ def backup_corrupt_file(path, timestamp=None):
         return None
 
 
-def load_json_file(path, fallback, *, backup=backup_corrupt_file):
-    """Read JSON state, quarantining malformed files before falling back."""
+def load_json_file(path, fallback, *, backup=backup_corrupt_file,
+                   max_bytes=MAX_LOCAL_JSON_BYTES):
+    """Read bounded JSON state, quarantining malformed files before fallback."""
     path = Path(path)
     if not path.exists():
         return fallback
     try:
+        if path.stat().st_size > max_bytes:
+            backup(path)
+            return fallback
         with open(path, 'r', encoding='utf-8') as handle:
             return json.load(handle)
     except (OSError, ValueError, TypeError):

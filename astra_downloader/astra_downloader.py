@@ -227,6 +227,7 @@ COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/l
 COMPANION_UPDATE_SHA256_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256"
 COMPANION_UPDATE_TIMEOUT_SECONDS = 120
 COMPANION_UPDATE_MIN_BYTES = 1024
+COMPANION_VERSION_SOURCE_MAX_BYTES = 256 * 1024
 YTDLP_ROLLBACK_FILENAME = '.yt-dlp.last-known-good.exe'
 COMPANION_ROLLBACK_FILENAME = '.AstraDownloader.last-known-good.exe'
 # Hard ceiling for any single helper download (companion exe, yt-dlp, ffmpeg
@@ -234,6 +235,10 @@ COMPANION_ROLLBACK_FILENAME = '.AstraDownloader.last-known-good.exe'
 # 200 MB; a misbehaving CDN, truncating proxy, or endless redirect body must
 # not be able to fill the disk before the SHA-256 check ever runs.
 HELPER_DOWNLOAD_MAX_BYTES = 500 * 1024 * 1024  # 500 MB
+# Checksum sidecars should contain only a small text manifest.  Bound these
+# separately from binary downloads so a compromised mirror cannot make the
+# process allocate an arbitrarily large response before verification begins.
+CHECKSUM_SIDECAR_MAX_BYTES = 64 * 1024  # 64 KiB
 
 
 # v1.2.0: rate-limit for /download. Token-bucket sliding window — tuned so a
@@ -558,6 +563,77 @@ def download_file_atomic(url, path, timeout=60, chunk_size=65536, progress_cb=No
             pass
 
 
+def copy_stream_limited(source, destination, max_bytes, chunk_size=1024 * 1024):
+    """Copy a binary stream while enforcing a hard byte ceiling."""
+    if not isinstance(max_bytes, int) or isinstance(max_bytes, bool) or max_bytes <= 0:
+        raise ValueError("max_bytes must be a positive integer")
+    copied = 0
+    while True:
+        # Read at most one byte beyond the remaining allowance so an
+        # over-limit stream is detected without buffering an oversized chunk.
+        chunk = source.read(min(chunk_size, max_bytes - copied + 1))
+        if not chunk:
+            return copied
+        copied += len(chunk)
+        if copied > max_bytes:
+            raise RuntimeError(f"Extracted file exceeded the {max_bytes} byte limit")
+        destination.write(chunk)
+
+
+def extract_archive_executable_atomic(archive_path, destination, executable_name,
+                                      max_bytes=HELPER_DOWNLOAD_MAX_BYTES):
+    """Extract one exact executable basename through an atomic temporary.
+
+    Release archives are verified by their callers before this function runs,
+    but their expanded size and member layout remain untrusted.  Requiring one
+    exact basename prevents suffix lookalikes and ambiguity; checking both the
+    declared and streamed sizes prevents compressed archive expansion from
+    filling the disk.
+    """
+    import zipfile
+
+    archive_path = Path(archive_path)
+    destination = Path(destination)
+    expected_name = str(executable_name).casefold()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    tmp = destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.extract")
+    try:
+        with zipfile.ZipFile(archive_path) as zf:
+            candidates = []
+            for info in zf.infolist():
+                normalized = info.filename.replace('\\', '/').rstrip('/')
+                basename = normalized.rsplit('/', 1)[-1].casefold()
+                if not info.is_dir() and basename == expected_name:
+                    candidates.append(info)
+            if not candidates:
+                raise RuntimeError(f"{executable_name} was not found in the downloaded archive")
+            if len(candidates) != 1:
+                raise RuntimeError(
+                    f"Downloaded archive contains multiple {executable_name} entries"
+                )
+            member = candidates[0]
+            if member.file_size <= 0:
+                raise RuntimeError(f"{executable_name} in archive was empty")
+            if member.file_size > max_bytes:
+                raise RuntimeError(
+                    f"{executable_name} expands to {member.file_size} bytes "
+                    f"(limit {max_bytes})"
+                )
+            with zf.open(member) as src, open(tmp, 'wb') as dst:
+                copied = copy_stream_limited(src, dst, max_bytes=max_bytes)
+                dst.flush()
+                os.fsync(dst.fileno())
+            if copied <= 0:
+                raise RuntimeError(f"{executable_name} in archive was empty")
+        os.replace(tmp, destination)
+        return destination
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 # ── v1.2.0 helpers: SHA-256 verification, path confinement, rate limiting ──
 def _compute_sha256(path, chunk_size=65536):
     """Return lowercase hex SHA-256 of a file's contents, or None on error."""
@@ -608,10 +684,25 @@ def fetch_expected_sha256(sidecar_url, target_asset=None, timeout=15):
     """Best-effort checksum fetch. Returns None when the sidecar is missing,
     malformed, or the request fails — caller decides whether to hard-fail."""
     try:
-        with http_requests.get(sidecar_url, timeout=timeout) as r:
+        with http_requests.get(sidecar_url, stream=True, timeout=timeout) as r:
             if r.status_code != 200:
                 return None
-            return _parse_sha256_sums(r.text, target_asset=target_asset)
+            try:
+                advertised = int(r.headers.get('content-length', '') or 0)
+            except (TypeError, ValueError):
+                advertised = 0
+            if advertised > CHECKSUM_SIDECAR_MAX_BYTES:
+                return None
+            body = bytearray()
+            for chunk in r.iter_content(4096):
+                if not chunk:
+                    continue
+                body.extend(chunk)
+                if len(body) > CHECKSUM_SIDECAR_MAX_BYTES:
+                    return None
+            return _parse_sha256_sums(
+                body.decode('utf-8', errors='replace'), target_asset=target_asset,
+            )
     except Exception:
         return None
 
@@ -791,7 +882,6 @@ def provision_deno():
             f"Bundled Deno {version or 'unknown'} is below required {DENO_MIN_VERSION}; refreshing"
         )
     DENO_DIR.mkdir(parents=True, exist_ok=True)
-    import zipfile
     tmp_zip = DENO_DIR / f'.deno.{uuid.uuid4().hex}.zip'
     try:
         expected_hash = fetch_expected_sha256(DENO_SHA256_URL, target_asset=DENO_SHA256_ASSET)
@@ -822,22 +912,9 @@ def provision_deno():
             except OSError:
                 pass
             raise DenoProvisionError('deno-sha256-verification-failed', str(e))
-        tmp_exe = DENO_PATH.with_name(f'.deno.{uuid.uuid4().hex}.exe')
-        with zipfile.ZipFile(tmp_zip) as zf:
-            found = False
-            for entry in zf.namelist():
-                if entry.replace('\\', '/').endswith('deno.exe') or entry == 'deno.exe':
-                    with zf.open(entry) as src, open(tmp_exe, 'wb') as dst:
-                        shutil.copyfileobj(src, dst)
-                        dst.flush()
-                        os.fsync(dst.fileno())
-                    if tmp_exe.stat().st_size <= 0:
-                        raise RuntimeError('deno.exe in archive was empty')
-                    os.replace(tmp_exe, DENO_PATH)
-                    found = True
-                    break
-            if not found:
-                raise RuntimeError('deno.exe not found in archive')
+        extract_archive_executable_atomic(
+            tmp_zip, DENO_PATH, 'deno.exe', max_bytes=HELPER_DOWNLOAD_MAX_BYTES,
+        )
         installed_version = _probe_deno_binary_version(DENO_PATH)
         if not _is_deno_version_supported(installed_version):
             try:
@@ -865,13 +942,6 @@ def provision_deno():
         try:
             tmp_zip.unlink(missing_ok=True)
         except OSError:
-            pass
-        # Clean up partial extraction if tmp_exe was created but not moved
-        try:
-            if tmp_exe.exists():
-                tmp_exe.unlink(missing_ok=True)
-        except (OSError, NameError):
-            # reason: NameError if tmp_exe was never assigned (zip download failed)
             pass
 
 
@@ -1017,10 +1087,7 @@ def _companion_update_state_path():
 
 
 def _read_update_state(path):
-    try:
-        data = json.loads(Path(path).read_text(encoding='utf-8'))
-    except Exception:
-        return {}
+    data = load_json_file(path, {})
     return data if isinstance(data, dict) else {}
 
 
@@ -1358,11 +1425,13 @@ def maybe_auto_update_ytdlp(config, active_count_fn=None):
         try:
             in_flight = int(active_count_fn() or 0)
         except Exception as e:  # noqa: BLE001
-            # reason: active_count_fn is caller-supplied; if it raises we
-            # must NOT block the update, since the caller's failure mode
-            # is at least as bad as racing a self-replace.
-            write_persistent_log(f"yt-dlp auto-update active-count probe failed: {e}")
-            in_flight = 0
+            # The update replaces an executable used by active workers.  An
+            # unknown activity state is therefore unsafe; defer and retry on
+            # the next scheduled check instead of failing open into a race.
+            write_persistent_log(
+                f"yt-dlp auto-update deferred — active-count probe failed: {e}"
+            )
+            return
         if in_flight > 0:
             write_persistent_log(
                 f"yt-dlp auto-update deferred — {in_flight} active download(s); "
@@ -1387,9 +1456,24 @@ def parse_companion_version_source(source_text):
 
 def fetch_latest_companion_version(timeout=15):
     """Read the latest companion APP_VERSION from the canonical repo source."""
-    response = http_requests.get(COMPANION_UPDATE_VERSION_URL, timeout=timeout)
-    response.raise_for_status()
-    version = parse_companion_version_source((response.text or '')[:200000])
+    with http_requests.get(
+        COMPANION_UPDATE_VERSION_URL, stream=True, timeout=timeout,
+    ) as response:
+        response.raise_for_status()
+        try:
+            advertised = int(response.headers.get('content-length', '') or 0)
+        except (TypeError, ValueError):
+            advertised = 0
+        if advertised > COMPANION_VERSION_SOURCE_MAX_BYTES:
+            raise RuntimeError('Companion version source exceeded its size limit.')
+        source = bytearray()
+        for chunk in response.iter_content(8192):
+            if not chunk:
+                continue
+            source.extend(chunk)
+            if len(source) > COMPANION_VERSION_SOURCE_MAX_BYTES:
+                raise RuntimeError('Companion version source exceeded its size limit.')
+    version = parse_companion_version_source(source.decode('utf-8', errors='replace'))
     if not version:
         raise RuntimeError('Could not read APP_VERSION from the update manifest.')
     return version
@@ -1440,10 +1524,7 @@ def probe_companion_update_binary(path, expected_version, timeout=30):
 # still installs normally.
 def read_last_installed_update_sha256():
     """Lowercase hex digest of the last scheduled update, or None."""
-    try:
-        data = json.loads(_companion_update_state_path().read_text(encoding='utf-8'))
-    except Exception:
-        return None
+    data = load_json_file(_companion_update_state_path(), {})
     value = data.get('sha256') if isinstance(data, dict) else None
     if isinstance(value, str):
         value = value.strip().lower()
@@ -2703,14 +2784,14 @@ def create_api(config, dl_manager, history):
 
 class SetupWorker(SetupWorkerCore):
     def __init__(self, parent=None, force_ffmpeg=False, auto_update_ytdlp=True,
-                 configured_runtime='auto'):
+                 configured_runtime='auto', config=None):
         super().__init__(
             parent=parent,
             force_ffmpeg=force_ffmpeg,
             auto_update_ytdlp=auto_update_ytdlp,
             configured_runtime=configured_runtime,
+            config=config,
             dependencies={
-                'CREATE_NO_WINDOW': lambda: CREATE_NO_WINDOW,
                 'DEFAULT_CONFIG': lambda: DEFAULT_CONFIG,
                 'FFMPEG_PATH': lambda: FFMPEG_PATH,
                 'FFMPEG_SHA256_URL': lambda: FFMPEG_SHA256_URL,
@@ -2725,6 +2806,7 @@ class SetupWorker(SetupWorkerCore):
                 'YTDLP_URL': lambda: YTDLP_URL,
                 '_set_integrations_stamp': lambda *args, **kwargs: _set_integrations_stamp(*args, **kwargs),
                 'download_file_atomic': lambda *args, **kwargs: download_file_atomic(*args, **kwargs),
+                'extract_archive_executable_atomic': lambda *args, **kwargs: extract_archive_executable_atomic(*args, **kwargs),
                 'fetch_expected_sha256': lambda *args, **kwargs: fetch_expected_sha256(*args, **kwargs),
                 'get_ytdlp_version': lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
                 'http_get': lambda *args, **kwargs: http_requests.get(*args, **kwargs),
@@ -2736,7 +2818,7 @@ class SetupWorker(SetupWorkerCore):
                 'register_protocol_handlers': lambda *args, **kwargs: register_protocol_handlers(*args, **kwargs),
                 'register_startup_task': lambda *args, **kwargs: register_startup_task(*args, **kwargs),
                 'register_uninstall_entry': lambda *args, **kwargs: register_uninstall_entry(*args, **kwargs),
-                'spawn_ytdlp': lambda *args, **kwargs: spawn_ytdlp(*args, **kwargs),
+                'run_ytdlp_self_update': lambda *args, **kwargs: _run_ytdlp_self_update(*args, **kwargs),
                 'verify_file_sha256': lambda *args, **kwargs: verify_file_sha256(*args, **kwargs),
                 'write_persistent_log': lambda *args, **kwargs: write_persistent_log(*args, **kwargs),
                 'ytdlp_needs_external_runtime': lambda *args, **kwargs: ytdlp_needs_external_runtime(*args, **kwargs),
