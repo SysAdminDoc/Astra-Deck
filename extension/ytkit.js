@@ -22,6 +22,7 @@
         getPlayerProgressBar,
         schedulePlayerTask,
         cancelPlayerTask,
+        classifyAgeRestriction,
         getRegisteredFeature,
         getFeatureHealthSnapshot,
         getSelectorHealthSnapshot,
@@ -91,6 +92,7 @@
         !getPlayerProgressBar ||
         !schedulePlayerTask ||
         !cancelPlayerTask ||
+        !classifyAgeRestriction ||
         !getRegisteredFeature ||
         !getFeatureHealthSnapshot ||
         !getSelectorHealthSnapshot ||
@@ -23612,40 +23614,111 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'shield-off',
             pages: [PageTypes.WATCH],
             _bypassTimer: null,
+            _iframe: null,
+            _player: null,
+            _originalContent: null,
+            _ageGate: null,
+            _ageGateDisplay: '',
+            _lastDegradationKey: '',
+
+            _reportDegraded(message, videoId = getVideoId() || 'unknown') {
+                const detail = String(message || 'The age-gate response could not be handled.');
+                const key = `${videoId}:${detail}`;
+                setFeatureHealth(this.id, {
+                    status: 'degraded',
+                    source: 'age-restriction-bypass',
+                    initialized: true,
+                    lastError: detail
+                });
+                DiagnosticLog.record('age-restriction-bypass', `${videoId}: ${detail}`);
+                if (this._lastDegradationKey !== key) {
+                    this._lastDegradationKey = key;
+                    showToast(`Age bypass needs attention: ${detail}`, '#f59e0b', { duration: 8 });
+                }
+            },
+
+            _clearDegraded() {
+                this._lastDegradationKey = '';
+                setFeatureHealth(this.id, {
+                    status: 'initialized',
+                    source: 'age-restriction-bypass',
+                    initialized: true,
+                    lastError: null
+                });
+            },
+
+            _restorePlayer() {
+                this._iframe?.remove();
+                if (this._player?.isConnected && this._originalContent) {
+                    this._player.replaceChildren(this._originalContent);
+                }
+                if (this._ageGate?.isConnected) this._ageGate.style.display = this._ageGateDisplay;
+                this._iframe = null;
+                this._player = null;
+                this._originalContent = null;
+                this._ageGate = null;
+                this._ageGateDisplay = '';
+            },
 
             async _bypass() {
-                // Check if the page shows an age gate
                 const ageGate = document.querySelector('ytd-player-error-message-renderer, .ytd-enforcement-type-age-gate, ytd-playability-error-with-button-renderer, [class*="age-gate"]');
-                if (!ageGate) return;
                 const loginPrompt = document.querySelector('#reason, .yt-playability-error-supported-renderers');
-                if (!loginPrompt?.textContent?.toLowerCase()?.includes('sign in') && !loginPrompt?.textContent?.toLowerCase()?.includes('age')) return;
-
                 const videoId = getVideoId();
                 if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return;
+                const playerResponse = _rw.ytInitialPlayerResponse;
+                const playability = classifyAgeRestriction(playerResponse, videoId);
+                const promptText = loginPrompt?.textContent?.toLowerCase() || '';
+                const domSignalsAgeGate = Boolean(ageGate)
+                    && (promptText.includes('sign in') || promptText.includes('age'));
+                if (!playability.blocked && !domSignalsAgeGate) return;
+                if (playability.drifted && domSignalsAgeGate) {
+                    this._reportDegraded(
+                        `YouTube returned an unrecognized playability status (${playability.status}); trying the DOM fallback.`,
+                        videoId
+                    );
+                }
+                if (this._iframe?.isConnected && this._iframe.dataset.ytkitVideoId === videoId) return;
                 DebugManager.log('AgeBypass', `Attempting bypass for ${videoId}`);
 
                 try {
                     const { text: html } = await extensionFetchText({
                         url: `https://www.youtube.com/embed/${videoId}`
                     });
-                    const configMatch = html.match(/ytcfg\.set\((\{[^}]+\})\)/);
-                    if (!configMatch) { DebugManager.log('AgeBypass', 'No config found in embed'); return; }
+                    if (!/\b(?:ytcfg|ytInitialPlayerResponse|playerResponse)\b/.test(html)) {
+                        this._reportDegraded('The embed response no longer exposes a recognizable player configuration.', videoId);
+                        return;
+                    }
 
                     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
                     const player = document.querySelector('#player-container, #player');
-                    if (player) {
-                        const iframe = document.createElement('iframe');
-                        iframe.src = embedUrl;
-                        iframe.style.cssText = 'width:100%;height:100%;border:none;';
-                        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
-                        iframe.setAttribute('allowfullscreen', '');
-                        iframe.setAttribute('allow', 'autoplay; encrypted-media');
-                        player.textContent = '';
-                        player.appendChild(iframe);
-                        if (ageGate) ageGate.style.display = 'none';
-                        showToast('Age restriction bypassed', '#22c55e');
+                    if (!player) {
+                        this._reportDegraded('The player container was not available after the embed response loaded.', videoId);
+                        return;
                     }
-                } catch(e) { DebugManager.log('AgeBypass', 'Failed: ' + e.message); }
+                    this._restorePlayer();
+                    const iframe = document.createElement('iframe');
+                    iframe.src = embedUrl;
+                    iframe.dataset.ytkitVideoId = videoId;
+                    iframe.title = 'Age-restricted YouTube video';
+                    iframe.style.cssText = 'width:100%;height:100%;border:none;';
+                    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+                    iframe.setAttribute('allowfullscreen', '');
+                    iframe.setAttribute('allow', 'autoplay; encrypted-media');
+                    const originalContent = document.createDocumentFragment();
+                    while (player.firstChild) originalContent.appendChild(player.firstChild);
+                    this._player = player;
+                    this._originalContent = originalContent;
+                    this._iframe = iframe;
+                    this._ageGate = ageGate;
+                    this._ageGateDisplay = ageGate?.style?.display || '';
+                    player.appendChild(iframe);
+                    if (ageGate) ageGate.style.display = 'none';
+                    this._clearDegraded();
+                    showToast('Age restriction bypassed', '#22c55e');
+                } catch(e) {
+                    DebugManager.log('AgeBypass', 'Failed: ' + e.message);
+                    this._reportDegraded(`Embed fallback failed: ${e.message}`, videoId);
+                }
             },
 
             _scheduleBypass() {
@@ -23664,6 +23737,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('ageBypass');
                 clearTimeout(this._bypassTimer);
                 this._bypassTimer = null;
+                this._restorePlayer();
             }
         },
         {
@@ -43943,6 +44017,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             meta.appendChild(pageBadge);
             hasMeta = true;
         }
+        const featureHealth = getFeatureHealthSnapshot().find((entry) => entry.id === f.id);
+        if (featureHealth && (featureHealth.status === 'degraded' || featureHealth.status?.endsWith('-error'))) {
+            card.classList.add('ytkit-feature-card--degraded');
+            const healthBadge = document.createElement('span');
+            healthBadge.className = 'ytkit-feature-badge';
+            healthBadge.dataset.tone = 'warning';
+            healthBadge.textContent = 'Needs attention';
+            healthBadge.title = featureHealth.lastError || `${featureName} is degraded`;
+            healthBadge.setAttribute('aria-label', healthBadge.title);
+            meta.appendChild(healthBadge);
+            hasMeta = true;
+        }
 
         const name = document.createElement('h3');
         name.className = 'ytkit-feature-name';
@@ -45685,6 +45771,38 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-feature-badge-muted {
     color: var(--ytkit-text-muted);
+}
+
+.ytkit-feature-card--degraded .ytkit-feature-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 4px;
+}
+
+.ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="warning"] {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    border-radius: 6px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="warning"] {
+    color: #78350f;
+}
+
+@media (forced-colors: active) {
+    .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="warning"] {
+        border-color: Highlight;
+        color: CanvasText;
+        forced-color-adjust: auto;
+    }
 }
 
 .ytkit-feature-name {

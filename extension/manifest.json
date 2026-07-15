@@ -147,6 +147,7 @@
         "core/external-api-health.js",
         "core/predicate-sandbox.js",
         "core/video-type.js",
+        "core/playability.js",
         "core/transcript-service.js",
         "core/transcript-index.js",
         "core/persisted-domains.js",

@@ -51,7 +51,8 @@ const coreSources = [
     'diagnostic-log.js',
     'external-api-health.js',
     'predicate-sandbox.js',
-    'video-type.js'
+    'video-type.js',
+    'playability.js'
 ].map((fileName) => ({
     fileName,
     source: fs.readFileSync(path.join(repoRoot, 'extension', 'core', fileName), 'utf8')
@@ -904,6 +905,43 @@ test('createVideoTypeDetector classifies from player response and caches by vide
         videoDetails: { videoId: 'stale-id-mismatch', isLive: true }
     };
     assert.equal(detector.refresh(), 'standard');
+});
+
+test('classifyAgeRestriction pins the AGE_VERIFICATION_REQUIRED player-response boundary', () => {
+    const core = loadFoundation();
+    const fixture = JSON.parse(fs.readFileSync(
+        path.join(repoRoot, 'tests', 'fixtures', 'player-response-age-verification-required.json'),
+        'utf8'
+    ));
+    const classification = core.classifyAgeRestriction(fixture, 'a1B2c3D4e5F');
+    assert.equal(classification.blocked, true);
+    assert.equal(classification.drifted, false);
+    assert.equal(classification.status, 'AGE_VERIFICATION_REQUIRED');
+    assert.equal(classification.code, 'age-restricted');
+    assert.match(classification.reason, /confirm your age/i);
+});
+
+test('classifyAgeRestriction rejects stale responses and flags unknown blocked shapes', () => {
+    const core = loadFoundation();
+    const stale = core.classifyAgeRestriction({
+        videoDetails: { videoId: 'stale000001' },
+        playabilityStatus: { status: 'AGE_VERIFICATION_REQUIRED', reason: 'Confirm your age' }
+    }, 'current00001');
+    assert.equal(stale.blocked, false);
+    assert.equal(stale.code, 'stale-response');
+
+    const drift = core.classifyAgeRestriction({
+        videoDetails: { videoId: 'current00001' },
+        playabilityStatus: { status: 'AGE_GATE_V2', reason: 'This content is unavailable' }
+    }, 'current00001');
+    assert.equal(drift.blocked, false);
+    assert.equal(drift.drifted, true);
+    assert.equal(drift.code, 'unknown-blocked-status');
+
+    const loginGate = core.classifyAgeRestriction({
+        playabilityStatus: { status: 'LOGIN_REQUIRED', reason: 'Sign in to verify your age' }
+    });
+    assert.equal(loginGate.blocked, true);
 });
 
 test('createPredicateSandbox opens the circuit after consecutive evaluator errors', () => {
