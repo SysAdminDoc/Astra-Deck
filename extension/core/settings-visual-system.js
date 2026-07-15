@@ -784,7 +784,7 @@
             border: 0 !important;
         }
 
-        #ytkit-settings-panel .ytkit-insight-section:nth-child(3) {
+        #ytkit-settings-panel .ytkit-insight-section[data-ytkit-insight-section="recent-activity"] {
             display: none !important;
         }
 
@@ -833,9 +833,9 @@
             display: none !important;
         }
 
-        #ytkit-settings-panel .ytkit-status-card .ytkit-status-row:nth-child(2),
-        #ytkit-settings-panel .ytkit-status-card .ytkit-status-row:nth-child(4),
-        #ytkit-settings-panel .ytkit-status-card .ytkit-status-row:nth-child(6) {
+        #ytkit-settings-panel .ytkit-status-card .ytkit-status-row[data-ytkit-insight="extension"],
+        #ytkit-settings-panel .ytkit-status-card .ytkit-status-row[data-ytkit-insight="enabled"],
+        #ytkit-settings-panel .ytkit-status-card .ytkit-status-row[data-ytkit-insight="profile"] {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) auto !important;
             gap: 10px !important;

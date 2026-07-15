@@ -1083,7 +1083,7 @@
     "message": "Video Format"
   },
   "feature_enableCPU_Tamer_desc": {
-    "message": "Reduce CPU usage by throttling background timers via requestAnimationFrame gating"
+    "message": "Reduce CPU usage by throttling background timers; in hidden tabs it also force-releases YouTube web locks and closes idle database connections"
   },
   "feature_enableCPU_Tamer_name": {
     "message": "CPU Tamer"
