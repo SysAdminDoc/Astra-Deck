@@ -61,6 +61,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Extension fetch requests now fail before allocating network work.** The
+  service worker rejects unsupported HTTP methods instead of silently issuing
+  a GET, caps serialized request bodies at 2 MiB, and reports serialization
+  errors before creating a timeout or abort controller.
 - **Downloader recovery and malformed-input paths now fail safely.** Durable
   queue restores re-check YouTube URLs and configured output roots, retain an
   explicitly paused empty queue across restarts, and reject fractional reorder
