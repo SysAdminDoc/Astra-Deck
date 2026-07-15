@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "نسبة الإعجاب على الصور المصغّرة"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "عرض نتائج بحث YouTube في لوحة خفيفة على صفحة المشاهدة دون إيقاف التشغيل."
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "البحث أثناء المشاهدة"
+  },
+  "searchWatchClose": {
+    "message": "إغلاق نتائج البحث"
+  },
+  "searchWatchEmpty": {
+    "message": "لم يتم العثور على نتائج مدعومة."
+  },
+  "searchWatchError": {
+    "message": "تعذّر تحميل نتائج البحث."
+  },
+  "searchWatchInputLabel": {
+    "message": "البحث في YouTube"
+  },
+  "searchWatchLoading": {
+    "message": "جارٍ البحث في YouTube…"
+  },
+  "searchWatchOpenError": {
+    "message": "تعذّر فتح النتيجة."
+  },
+  "searchWatchOpenHintNew": {
+    "message": "تُفتح النتائج في علامة تبويب جديدة."
+  },
+  "searchWatchOpenHintSame": {
+    "message": "تحل النتائج محل الفيديو الحالي."
+  },
+  "searchWatchPlaceholder": {
+    "message": "ابحث أثناء المشاهدة…"
+  },
+  "searchWatchResultsFor": {
+    "message": "نتائج البحث عن"
+  },
+  "searchWatchRetry": {
+    "message": "إعادة المحاولة"
+  },
+  "searchWatchSubmit": {
+    "message": "بحث"
+  },
+  "searchWatchTitle": {
+    "message": "البحث دون إيقاف التشغيل"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "إعجاب · تقدير Return YouTube Dislike"
   },

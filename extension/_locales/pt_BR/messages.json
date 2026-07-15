@@ -1991,6 +1991,51 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Proporção de curtidas nas miniaturas"
   },
+  "feature_searchWhileWatching_desc": {
+    "message": "Mostra resultados de busca do YouTube em um painel leve na página de exibição sem interromper a reprodução."
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "Pesquisar enquanto assiste"
+  },
+  "searchWatchClose": {
+    "message": "Fechar resultados da pesquisa"
+  },
+  "searchWatchEmpty": {
+    "message": "Nenhum resultado compatível encontrado."
+  },
+  "searchWatchError": {
+    "message": "Não foi possível carregar os resultados."
+  },
+  "searchWatchInputLabel": {
+    "message": "Pesquisar no YouTube"
+  },
+  "searchWatchLoading": {
+    "message": "Pesquisando no YouTube…"
+  },
+  "searchWatchOpenError": {
+    "message": "Não foi possível abrir o resultado."
+  },
+  "searchWatchOpenHintNew": {
+    "message": "Os resultados abrem em uma nova guia."
+  },
+  "searchWatchOpenHintSame": {
+    "message": "Os resultados substituem o vídeo atual."
+  },
+  "searchWatchPlaceholder": {
+    "message": "Pesquisar enquanto assiste…"
+  },
+  "searchWatchResultsFor": {
+    "message": "Resultados para"
+  },
+  "searchWatchRetry": {
+    "message": "Tentar novamente"
+  },
+  "searchWatchSubmit": {
+    "message": "Pesquisar"
+  },
+  "searchWatchTitle": {
+    "message": "Pesquisar sem interromper a reprodução"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "curtidas · estimativa do Return YouTube Dislike"
   },
@@ -2673,7 +2718,7 @@
     "message": "Search settings, pages, controls..."
   },
   "panelSearchStateBadge": {
-    "message": "Search"
+    "message": "Pesquisar"
   },
   "panelSearchStateClear": {
     "message": "Limpar pesquisa"

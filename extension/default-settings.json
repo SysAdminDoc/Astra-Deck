@@ -246,6 +246,7 @@
   "channelSubCount": false,
   "customSpeedButtons": false,
   "openInNewTab": false,
+  "searchWhileWatching": false,
   "preventAutoplay": false,
   "hideNotificationButton": false,
   "noFrostedGlass": false,

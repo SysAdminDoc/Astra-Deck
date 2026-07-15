@@ -41,6 +41,10 @@
       "count": 13,
       "digest": "00803a3b3d041370b0d7894036c4f4fccca7e5dc57676ebb18f28b650e834659"
     },
+    "extension/features/search-while-watching/index.js": {
+      "count": 2,
+      "digest": "d0319ba4029625649258bf038b45490dc385c8ec44cf4f7fde2387dc41385ea2"
+    },
     "extension/features/settings-panel/index.js": {
       "count": 178,
       "digest": "7539090db0026d47c009f8b745ff4d9267e39b06367e2927988c804fd8be7cb2"
@@ -90,8 +94,8 @@
       "digest": "7cd34d4d191ed8555010d837e20d027b572020577722097cc92b1477e2952268"
     },
     "extension/ytkit.js": {
-      "count": 1412,
-      "digest": "09cc77bf4abd2738d6a4537a222b2910816dd4117ac47b708dc415586da66d1b"
+      "count": 1414,
+      "digest": "8471ef66e24c5ed8a9ed3c0e88860a63cfa6e67d769550a1c4cef12c5522f03f"
     }
   }
 }

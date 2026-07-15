@@ -42,6 +42,14 @@ const T = {};
 
 // ── German (de) ──
 T.de = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Zeigt YouTube-Suchergebnisse in einem kompakten Wiedergabeseiten-Panel an, ohne die Wiedergabe zu unterbrechen.',
+  'Search While Watching': 'Suchen während der Wiedergabe',
+  'Close search results': 'Suchergebnisse schließen', 'No supported results found.': 'Keine unterstützten Ergebnisse gefunden.',
+  'Search results could not be loaded.': 'Suchergebnisse konnten nicht geladen werden.', 'Search YouTube': 'YouTube durchsuchen',
+  'Searching YouTube…': 'YouTube wird durchsucht…', 'The result could not be opened.': 'Das Ergebnis konnte nicht geöffnet werden.',
+  'Results open in a new tab.': 'Ergebnisse werden in einem neuen Tab geöffnet.', 'Results replace the current video.': 'Ergebnisse ersetzen das aktuelle Video.',
+  'Search while watching…': 'Während der Wiedergabe suchen…', 'Results for': 'Ergebnisse für', 'Try again': 'Erneut versuchen',
+  'Search': 'Suchen', 'Search without stopping playback': 'Suchen, ohne die Wiedergabe anzuhalten',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Zeigt auf sichtbaren Video-Vorschaubildern eine geschätzte Like-Verhältnisleiste an und verwendet denselben begrenzten Return YouTube Dislike-Cache.',
   'Thumbnail Like-Ratio Bars': 'Like-Verhältnis auf Vorschaubildern',
   'liked · estimated by Return YouTube Dislike': 'gefällt · geschätzt durch Return YouTube Dislike',
@@ -211,6 +219,14 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Muestra resultados de búsqueda de YouTube en un panel ligero de la página de reproducción sin interrumpirla.',
+  'Search While Watching': 'Buscar mientras miras',
+  'Close search results': 'Cerrar resultados de búsqueda', 'No supported results found.': 'No se encontraron resultados compatibles.',
+  'Search results could not be loaded.': 'No se pudieron cargar los resultados.', 'Search YouTube': 'Buscar en YouTube',
+  'Searching YouTube…': 'Buscando en YouTube…', 'The result could not be opened.': 'No se pudo abrir el resultado.',
+  'Results open in a new tab.': 'Los resultados se abren en una pestaña nueva.', 'Results replace the current video.': 'Los resultados reemplazan el video actual.',
+  'Search while watching…': 'Buscar mientras miras…', 'Results for': 'Resultados para', 'Try again': 'Reintentar',
+  'Search': 'Buscar', 'Search without stopping playback': 'Buscar sin detener la reproducción',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Muestra una barra con la proporción estimada de Me gusta en las miniaturas visibles usando la misma caché limitada de Return YouTube Dislike.',
   'Thumbnail Like-Ratio Bars': 'Proporción de Me gusta en miniaturas',
   'liked · estimated by Return YouTube Dislike': 'Me gusta · estimado por Return YouTube Dislike',
@@ -368,6 +384,14 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Показывать результаты поиска YouTube в компактной панели страницы просмотра, не прерывая воспроизведение.',
+  'Search While Watching': 'Поиск во время просмотра',
+  'Close search results': 'Закрыть результаты поиска', 'No supported results found.': 'Поддерживаемые результаты не найдены.',
+  'Search results could not be loaded.': 'Не удалось загрузить результаты поиска.', 'Search YouTube': 'Поиск в YouTube',
+  'Searching YouTube…': 'Поиск в YouTube…', 'The result could not be opened.': 'Не удалось открыть результат.',
+  'Results open in a new tab.': 'Результаты открываются в новой вкладке.', 'Results replace the current video.': 'Результаты заменяют текущее видео.',
+  'Search while watching…': 'Искать во время просмотра…', 'Results for': 'Результаты для', 'Try again': 'Повторить',
+  'Search': 'Найти', 'Search without stopping playback': 'Поиск без остановки воспроизведения',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Показывать на видимых миниатюрах видео полосу с оценкой доли лайков, используя тот же ограниченный кеш Return YouTube Dislike.',
   'Thumbnail Like-Ratio Bars': 'Соотношение лайков на миниатюрах',
   'liked · estimated by Return YouTube Dislike': 'лайков · оценка Return YouTube Dislike',
@@ -525,6 +549,14 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Affiche les résultats de recherche YouTube dans un panneau léger de la page de lecture sans interrompre celle-ci.',
+  'Search While Watching': 'Rechercher pendant le visionnage',
+  'Close search results': 'Fermer les résultats de recherche', 'No supported results found.': 'Aucun résultat pris en charge trouvé.',
+  'Search results could not be loaded.': 'Impossible de charger les résultats.', 'Search YouTube': 'Rechercher sur YouTube',
+  'Searching YouTube…': 'Recherche sur YouTube…', 'The result could not be opened.': 'Impossible d’ouvrir le résultat.',
+  'Results open in a new tab.': 'Les résultats s’ouvrent dans un nouvel onglet.', 'Results replace the current video.': 'Les résultats remplacent la vidéo actuelle.',
+  'Search while watching…': 'Rechercher pendant le visionnage…', 'Results for': 'Résultats pour', 'Try again': 'Réessayer',
+  'Search': 'Rechercher', 'Search without stopping playback': 'Rechercher sans arrêter la lecture',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Affiche une barre de ratio estimé des mentions J’aime sur les miniatures visibles en utilisant le même cache limité de Return YouTube Dislike.',
   'Thumbnail Like-Ratio Bars': 'Ratio de mentions J’aime sur les miniatures',
   'liked · estimated by Return YouTube Dislike': 'J’aime · estimation Return YouTube Dislike',
@@ -680,6 +712,14 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Mostra i risultati di ricerca di YouTube in un pannello leggero della pagina di riproduzione senza interromperla.',
+  'Search While Watching': 'Cerca durante la visione',
+  'Close search results': 'Chiudi i risultati di ricerca', 'No supported results found.': 'Nessun risultato supportato trovato.',
+  'Search results could not be loaded.': 'Impossibile caricare i risultati.', 'Search YouTube': 'Cerca su YouTube',
+  'Searching YouTube…': 'Ricerca su YouTube…', 'The result could not be opened.': 'Impossibile aprire il risultato.',
+  'Results open in a new tab.': 'I risultati si aprono in una nuova scheda.', 'Results replace the current video.': 'I risultati sostituiscono il video corrente.',
+  'Search while watching…': 'Cerca durante la visione…', 'Results for': 'Risultati per', 'Try again': 'Riprova',
+  'Search': 'Cerca', 'Search without stopping playback': 'Cerca senza interrompere la riproduzione',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Mostra una barra con il rapporto Mi piace stimato sulle miniature visibili usando la stessa cache limitata di Return YouTube Dislike.',
   'Thumbnail Like-Ratio Bars': 'Rapporto Mi piace nelle miniature',
   'liked · estimated by Return YouTube Dislike': 'Mi piace · stima Return YouTube Dislike',
@@ -828,6 +868,14 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': 'Mostra resultados de busca do YouTube em um painel leve na página de exibição sem interromper a reprodução.',
+  'Search While Watching': 'Pesquisar enquanto assiste',
+  'Close search results': 'Fechar resultados da pesquisa', 'No supported results found.': 'Nenhum resultado compatível encontrado.',
+  'Search results could not be loaded.': 'Não foi possível carregar os resultados.', 'Search YouTube': 'Pesquisar no YouTube',
+  'Searching YouTube…': 'Pesquisando no YouTube…', 'The result could not be opened.': 'Não foi possível abrir o resultado.',
+  'Results open in a new tab.': 'Os resultados abrem em uma nova guia.', 'Results replace the current video.': 'Os resultados substituem o vídeo atual.',
+  'Search while watching…': 'Pesquisar enquanto assiste…', 'Results for': 'Resultados para', 'Try again': 'Tentar novamente',
+  'Search': 'Pesquisar', 'Search without stopping playback': 'Pesquisar sem interromper a reprodução',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': 'Mostra uma barra com a proporção estimada de curtidas nas miniaturas visíveis usando o mesmo cache limitado do Return YouTube Dislike.',
   'Thumbnail Like-Ratio Bars': 'Proporção de curtidas nas miniaturas',
   'liked · estimated by Return YouTube Dislike': 'curtidas · estimativa do Return YouTube Dislike',
@@ -976,6 +1024,14 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': '再生を中断せずに、軽量な視聴ページパネルへ YouTube の検索結果を表示します。',
+  'Search While Watching': '視聴しながら検索',
+  'Close search results': '検索結果を閉じる', 'No supported results found.': '対応する結果が見つかりませんでした。',
+  'Search results could not be loaded.': '検索結果を読み込めませんでした。', 'Search YouTube': 'YouTube を検索',
+  'Searching YouTube…': 'YouTube を検索中…', 'The result could not be opened.': '結果を開けませんでした。',
+  'Results open in a new tab.': '結果は新しいタブで開きます。', 'Results replace the current video.': '結果は現在の動画と置き換わります。',
+  'Search while watching…': '視聴しながら検索…', 'Results for': '検索結果', 'Try again': '再試行',
+  'Search': '検索', 'Search without stopping playback': '再生を止めずに検索',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': '同じ上限付き Return YouTube Dislike キャッシュを使用して、表示中の動画サムネイルに推定高評価比率バーを表示します。',
   'Thumbnail Like-Ratio Bars': 'サムネイルの高評価比率',
   'liked · estimated by Return YouTube Dislike': '高評価 · Return YouTube Dislike による推定',
@@ -1127,6 +1183,14 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Show YouTube search results in a lightweight watch-page panel without interrupting playback.': '재생을 중단하지 않고 가벼운 시청 페이지 패널에 YouTube 검색 결과를 표시합니다.',
+  'Search While Watching': '시청하며 검색',
+  'Close search results': '검색 결과 닫기', 'No supported results found.': '지원되는 결과를 찾지 못했습니다.',
+  'Search results could not be loaded.': '검색 결과를 불러오지 못했습니다.', 'Search YouTube': 'YouTube 검색',
+  'Searching YouTube…': 'YouTube 검색 중…', 'The result could not be opened.': '결과를 열지 못했습니다.',
+  'Results open in a new tab.': '결과가 새 탭에서 열립니다.', 'Results replace the current video.': '결과가 현재 동영상을 대체합니다.',
+  'Search while watching…': '시청하며 검색…', 'Results for': '검색 결과', 'Try again': '다시 시도',
+  'Search': '검색', 'Search without stopping playback': '재생을 멈추지 않고 검색',
   'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.': '동일한 제한형 Return YouTube Dislike 캐시를 사용해 보이는 동영상 썸네일에 예상 좋아요 비율 막대를 표시합니다.',
   'Thumbnail Like-Ratio Bars': '썸네일 좋아요 비율',
   'liked · estimated by Return YouTube Dislike': '좋아요 · Return YouTube Dislike 추정',

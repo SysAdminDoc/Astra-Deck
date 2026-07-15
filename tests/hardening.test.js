@@ -5123,10 +5123,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // aiSummaryApiKey then moved out of ordinary settings into credential
     // vaults, so the canonical schema intentionally returned to 407.
     // GitHub-full video insights adds one bounded opt-in (407 → 408).
+    // Search-while-watching adds one extension-only opt-in (408 → 409).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 408,
-        'SETTINGS_SCHEMA must cover all 408 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 409,
+        'SETTINGS_SCHEMA must cover all 409 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
