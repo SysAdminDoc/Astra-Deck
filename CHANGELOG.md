@@ -25,6 +25,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Helper installation now bounds every trust boundary.** Checksum and
+  companion-version manifests stream under explicit size ceilings; verified
+  Deno and FFmpeg archives must contain exactly one executable with the
+  expected basename, and extraction is atomic with a hard expanded-size cap.
+  First-run yt-dlp updates now use the staged health-check and rollback path
+  instead of mutating the live binary directly.
 - **Sensitive companion tokens now expire from the clipboard.** Copying the
   private local API token schedules a 60-second clear that only runs when the
   clipboard still contains that token, so newer clipboard content is never
@@ -71,6 +77,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Maintenance fails closed when local state is uncertain.** Automatic yt-dlp
+  replacement defers when the active-download probe fails, while oversized
+  local JSON state is quarantined before parsing so corrupted history or update
+  metadata cannot exhaust startup memory.
 - **Companion maintenance and validation states now recover cleanly.** Manual
   yt-dlp updates defer while downloads are active, marshal completion back to
   Qt's UI thread, restore the busy button on every outcome, and explain

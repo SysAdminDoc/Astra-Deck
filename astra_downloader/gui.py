@@ -3,12 +3,10 @@
 import os
 import json
 import queue
-import shutil
 import socket
 import threading
 import time
 import uuid
-import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -253,7 +251,6 @@ class FolderPickerService(QObject):
 
 
 _REQUIRED_SETUP_DEPENDENCIES = frozenset({
-    'CREATE_NO_WINDOW',
     'DEFAULT_CONFIG',
     'FFMPEG_PATH',
     'FFMPEG_SHA256_URL',
@@ -268,6 +265,7 @@ _REQUIRED_SETUP_DEPENDENCIES = frozenset({
     'YTDLP_URL',
     '_set_integrations_stamp',
     'download_file_atomic',
+    'extract_archive_executable_atomic',
     'fetch_expected_sha256',
     'get_ytdlp_version',
     'http_get',
@@ -279,7 +277,7 @@ _REQUIRED_SETUP_DEPENDENCIES = frozenset({
     'register_protocol_handlers',
     'register_startup_task',
     'register_uninstall_entry',
-    'spawn_ytdlp',
+    'run_ytdlp_self_update',
     'verify_file_sha256',
     'write_persistent_log',
     'ytdlp_needs_external_runtime',
@@ -293,7 +291,7 @@ class SetupWorkerCore(QThread):
     finished_err = pyqtSignal(str)
 
     def __init__(self, parent=None, force_ffmpeg=False, auto_update_ytdlp=True,
-                 configured_runtime='auto', *, dependencies):
+                 configured_runtime='auto', config=None, *, dependencies):
         missing = sorted(set(_REQUIRED_SETUP_DEPENDENCIES) - set(dependencies))
         if missing:
             raise ValueError("Missing setup worker dependencies: " + ", ".join(missing))
@@ -302,6 +300,7 @@ class SetupWorkerCore(QThread):
         self.force_ffmpeg = bool(force_ffmpeg)
         self.auto_update_ytdlp = bool(auto_update_ytdlp)
         self.configured_runtime = configured_runtime
+        self.config = config if config is not None else {}
 
     def _value(self, name):
         value = self._dependencies[name]
@@ -379,7 +378,6 @@ class SetupWorkerCore(QThread):
             if self.force_ffmpeg or not self._value('FFMPEG_PATH').exists():
                 self.log.emit("Downloading ffmpeg (this may take a moment)...")
                 self.progress.emit(35)
-                import zipfile
                 tmp_zip = self._value('INSTALL_DIR') / f".ffmpeg.{uuid.uuid4().hex}.zip"
                 zip_progress_cb = self._ranged_progress_cb(35, 55)
                 try:
@@ -428,30 +426,12 @@ class SetupWorkerCore(QThread):
                         # Verification failed — cleanup handled by finally + raise
                         raise
                     self.progress.emit(56)
-                    found = False
-                    tmp_ffmpeg = self._value('FFMPEG_PATH').with_name(f".{self._value('FFMPEG_PATH').name}.{uuid.uuid4().hex}.download")
-                    try:
-                        with zipfile.ZipFile(tmp_zip) as zf:
-                            for entry in zf.namelist():
-                                normalized = entry.replace('\\', '/')
-                                if normalized.endswith('/ffmpeg.exe') or normalized == 'ffmpeg.exe':
-                                    with zf.open(entry) as src, open(tmp_ffmpeg, 'wb') as dst:
-                                        shutil.copyfileobj(src, dst)
-                                        dst.flush()
-                                        os.fsync(dst.fileno())
-                                    if tmp_ffmpeg.stat().st_size <= 0:
-                                        raise RuntimeError("ffmpeg.exe in archive was empty")
-                                    os.replace(tmp_ffmpeg, self._value('FFMPEG_PATH'))
-                                    found = True
-                                    break
-                    finally:
-                        try:
-                            if tmp_ffmpeg.exists():
-                                tmp_ffmpeg.unlink()
-                        except Exception:
-                            pass
-                    if not found:
-                        raise RuntimeError("ffmpeg.exe was not found in the downloaded archive")
+                    self._dependencies['extract_archive_executable_atomic'](
+                        tmp_zip,
+                        self._value('FFMPEG_PATH'),
+                        'ffmpeg.exe',
+                        max_bytes=self._value('HELPER_DOWNLOAD_MAX_BYTES'),
+                    )
                     self.log.emit("  Done")
                 finally:
                     try:
@@ -518,14 +498,30 @@ class SetupWorkerCore(QThread):
             # shortcut/protocol/task re-registration pass (v1.2.0 idempotency).
             self._dependencies['_set_integrations_stamp']()
 
-            # Auto-update yt-dlp (throttled: only if we don't have a recent stamp)
+            # Verify/update yt-dlp through the staged health-check + rollback
+            # path. Setup remains successful if this optional maintenance step
+            # cannot run; the downloaded helper has already passed its release
+            # checksum above.
             if self.auto_update_ytdlp:
                 self.log.emit("Updating yt-dlp...")
                 try:
-                    self._dependencies['spawn_ytdlp']([str(self._value('YTDLP_PATH')), '-U'],
-                                     creationflags=self._value('CREATE_NO_WINDOW'))
-                except Exception as e:
-                    self._dependencies['write_persistent_log'](f"yt-dlp -U launch failed during setup: {e}")
+                    update = self._dependencies['run_ytdlp_self_update'](
+                        self.config, source_tag='setup',
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    self._dependencies['write_persistent_log'](
+                        f"Safe yt-dlp update failed during setup: {exc}"
+                    )
+                    update = {
+                        'ok': False,
+                        'error': 'The update check failed; the verified installed copy was retained.',
+                    }
+                if update.get('ok'):
+                    version = update.get('version_after') or 'current'
+                    self.log.emit(f"  yt-dlp ready: {version}")
+                else:
+                    message = update.get('error') or 'The active yt-dlp copy was retained.'
+                    self.log.emit(f"  Update skipped safely: {message}")
 
             self.progress.emit(100)
             self.log.emit("\nSetup complete!")
@@ -2294,6 +2290,7 @@ class MainWindowCore(QMainWindow):
             force_ffmpeg=force_ffmpeg,
             auto_update_ytdlp=self.config.get("AutoUpdateYtDlp", True),
             configured_runtime=self.config.get("JavaScriptRuntime", "auto"),
+            config=self.config,
         )
         self.setup_worker.log.connect(self._append_log)
         self.setup_worker.progress.connect(self._setup_progress)

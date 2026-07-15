@@ -185,6 +185,18 @@ class PersistenceTests(unittest.TestCase):
             finally:
                 ad.HISTORY_PATH = original
 
+    def test_json_loader_quarantines_oversized_state_before_parsing(self):
+        import importlib
+
+        config_module = importlib.import_module('config')
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'history.json'
+            path.write_bytes(b'[' + (b' ' * 32) + b']')
+            result = config_module.load_json_file(path, ['fallback'], max_bytes=8)
+            self.assertEqual(result, ['fallback'])
+            self.assertFalse(path.exists())
+            self.assertEqual(len(list(Path(tmp).glob('history.json.corrupt-*'))), 1)
+
     def test_history_replace_restores_cleared_snapshot(self):
         with tempfile.TemporaryDirectory() as tmp:
             original = ad.HISTORY_PATH
@@ -2171,6 +2183,45 @@ class Sha256VerifyTests(unittest.TestCase):
         digest = "d" * 64
         self.assertEqual(ad._parse_sha256_sums(f"{digest}\n"), digest)
 
+    class _SidecarResponse:
+        def __init__(self, chunks, *, status_code=200, headers=None):
+            self._chunks = list(chunks)
+            self.status_code = status_code
+            self.headers = headers or {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def iter_content(self, _chunk_size):
+            return iter(self._chunks)
+
+    def test_checksum_sidecar_fetch_is_streamed_and_bounded(self):
+        digest = b"e" * 64
+        valid = self._SidecarResponse([digest[:20], digest[20:] + b"  yt-dlp.exe\n"])
+        with mock.patch.object(ad.http_requests, 'get', return_value=valid) as get:
+            result = ad.fetch_expected_sha256(
+                "https://example.invalid/SHA2-256SUMS", target_asset="yt-dlp.exe",
+            )
+        self.assertEqual(result, "e" * 64)
+        self.assertTrue(get.call_args.kwargs['stream'])
+
+        oversized = self._SidecarResponse(
+            [b"x" * (ad.CHECKSUM_SIDECAR_MAX_BYTES + 1)],
+        )
+        with mock.patch.object(ad.http_requests, 'get', return_value=oversized):
+            self.assertIsNone(ad.fetch_expected_sha256("https://example.invalid/sums"))
+
+    def test_checksum_sidecar_rejects_oversized_content_length_before_reading(self):
+        response = self._SidecarResponse(
+            [b"f" * 64],
+            headers={'content-length': str(ad.CHECKSUM_SIDECAR_MAX_BYTES + 1)},
+        )
+        with mock.patch.object(ad.http_requests, 'get', return_value=response):
+            self.assertIsNone(ad.fetch_expected_sha256("https://example.invalid/sums"))
+
 
 class SetupChecksumTests(unittest.TestCase):
     def test_setup_worker_preserves_auto_update_preference(self):
@@ -2244,6 +2295,36 @@ class SetupChecksumTests(unittest.TestCase):
                         label="ffmpeg",
                     )
             self.assertFalse(path.exists())
+
+    def test_setup_worker_routes_updates_through_staged_rollback_updater(self):
+        config = FakeConfig({'AutoUpdateYtDlp': True})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ytdlp = root / 'yt-dlp.exe'
+            ffmpeg = root / 'ffmpeg.exe'
+            icon = root / 'icon.ico'
+            for path in (ytdlp, ffmpeg, icon):
+                path.write_bytes(b'existing')
+            download_path = root / 'downloads'
+            with mock.patch.object(ad, 'INSTALL_DIR', root), \
+                    mock.patch.object(ad, 'YTDLP_PATH', ytdlp), \
+                    mock.patch.object(ad, 'FFMPEG_PATH', ffmpeg), \
+                    mock.patch.object(ad, 'ICON_PATH', icon), \
+                    mock.patch.dict(ad.DEFAULT_CONFIG, {'DownloadPath': str(download_path)}), \
+                    mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.07.04'), \
+                    mock.patch.object(ad, 'ytdlp_needs_external_runtime', return_value=False), \
+                    mock.patch.object(ad, '_run_ytdlp_self_update', return_value={
+                        'ok': True, 'version_after': '2026.07.05',
+                    }) as update, \
+                    mock.patch.object(ad, '_set_integrations_stamp'), \
+                    mock.patch.object(ad, 'register_desktop_shortcut'), \
+                    mock.patch.object(ad, 'register_startup_task'), \
+                    mock.patch.object(ad, 'register_protocol_handlers'), \
+                    mock.patch.object(ad, 'register_uninstall_entry'):
+                worker = ad.SetupWorker(config=config)
+                worker.run()
+
+        update.assert_called_once_with(config, source_tag='setup')
 
 
 class CookieJarSweepTests(unittest.TestCase):
@@ -2526,10 +2607,9 @@ class AutoUpdateActiveDownloadGuardTests(unittest.TestCase):
         self.assertTrue(any("3 active download" in line for line in log_lines),
                         f"Defer log must include the count; got {log_lines!r}")
 
-    def test_update_proceeds_when_active_count_fn_raises(self):
-        # Caller-supplied probe failure must not block the update.
-        # Failure mode of an under-construction probe is at least as bad
-        # as racing a self-replace, so we prefer "proceed with warning".
+    def test_update_defers_when_active_count_fn_raises(self):
+        # Replacing the binary while activity is unknown is unsafe. A broken
+        # caller-supplied probe must fail closed and defer the update.
         spawned = {"count": 0}
         log_lines = []
         orig_thread = ad.threading.Thread
@@ -2550,9 +2630,9 @@ class AutoUpdateActiveDownloadGuardTests(unittest.TestCase):
         finally:
             ad.threading.Thread = orig_thread
             ad.write_persistent_log = orig_log
-        self.assertEqual(spawned["count"], 1,
-                         "Update thread must still spawn when probe raises")
-        self.assertTrue(any("probe failed" in line for line in log_lines),
+        self.assertEqual(spawned["count"], 0,
+                         "Update thread must not spawn when activity is unknown")
+        self.assertTrue(any("deferred" in line and "probe failed" in line for line in log_lines),
                         f"Probe-failure log line must surface; got {log_lines!r}")
 
     def test_update_without_active_count_fn_proceeds(self):
@@ -4072,6 +4152,67 @@ class DownloadSizeCeilingTests(unittest.TestCase):
                 )
             self.assertEqual(target.read_bytes(), b"helloworld")
 
+    def test_stream_copy_stops_at_limit_without_buffering_remainder(self):
+        source = io.BytesIO(b"0123456789")
+        destination = io.BytesIO()
+        with self.assertRaises(RuntimeError):
+            ad.copy_stream_limited(source, destination, max_bytes=5, chunk_size=1024)
+        self.assertLessEqual(len(destination.getvalue()), 5)
+
+
+class ArchiveExtractionBoundaryTests(unittest.TestCase):
+    def _archive(self, root, entries):
+        path = Path(root) / 'helper.zip'
+        with zipfile.ZipFile(path, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+            for name, payload in entries:
+                archive.writestr(name, payload)
+        return path
+
+    def test_exact_nested_executable_extracts_atomically(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = self._archive(tmp, [('bundle/bin/deno.exe', b'MZ valid')])
+            destination = Path(tmp) / 'deno.exe'
+            result = ad.extract_archive_executable_atomic(
+                archive, destination, 'deno.exe', max_bytes=32,
+            )
+            self.assertEqual(result, destination)
+            self.assertEqual(destination.read_bytes(), b'MZ valid')
+
+    def test_suffix_lookalike_is_rejected_and_existing_binary_is_preserved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = self._archive(tmp, [('bundle/evildeno.exe', b'MZ evil')])
+            destination = Path(tmp) / 'deno.exe'
+            destination.write_bytes(b'known-good')
+            with self.assertRaisesRegex(RuntimeError, 'was not found'):
+                ad.extract_archive_executable_atomic(
+                    archive, destination, 'deno.exe', max_bytes=32,
+                )
+            self.assertEqual(destination.read_bytes(), b'known-good')
+
+    def test_duplicate_exact_executables_are_rejected_as_ambiguous(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = self._archive(tmp, [
+                ('one/ffmpeg.exe', b'first'),
+                ('two/ffmpeg.exe', b'second'),
+            ])
+            destination = Path(tmp) / 'ffmpeg.exe'
+            with self.assertRaisesRegex(RuntimeError, 'multiple ffmpeg.exe'):
+                ad.extract_archive_executable_atomic(
+                    archive, destination, 'ffmpeg.exe', max_bytes=32,
+                )
+            self.assertFalse(destination.exists())
+
+    def test_expanded_executable_over_limit_is_rejected_and_temp_removed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = self._archive(tmp, [('ffmpeg.exe', b'x' * 33)])
+            destination = Path(tmp) / 'ffmpeg.exe'
+            with self.assertRaisesRegex(RuntimeError, 'expands to 33 bytes'):
+                ad.extract_archive_executable_atomic(
+                    archive, destination, 'ffmpeg.exe', max_bytes=32,
+                )
+            self.assertFalse(destination.exists())
+            self.assertEqual(list(Path(tmp).glob('.ffmpeg.exe.*.extract')), [])
+
 
 class ResponseSizeCapTests(unittest.TestCase):
     """v1.5.1 / RESEARCH_FEATURE_PLAN EI12: bounded HTTP surface.
@@ -4585,6 +4726,49 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
             "1.2.3",
         )
         self.assertEqual(ad.parse_companion_version_source("no version"), "")
+
+    class _VersionSourceResponse:
+        def __init__(self, chunks, headers=None):
+            self._chunks = list(chunks)
+            self.headers = headers or {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, _chunk_size):
+            return iter(self._chunks)
+
+    def test_version_source_fetch_is_streamed_and_size_limited(self):
+        response = self._VersionSourceResponse([
+            b'header\nAPP_VER', b'SION = "9.9.9"\n',
+        ])
+        with mock.patch.object(ad.http_requests, 'get', return_value=response) as get:
+            self.assertEqual(ad.fetch_latest_companion_version(), '9.9.9')
+        self.assertTrue(get.call_args.kwargs['stream'])
+
+        oversized = self._VersionSourceResponse([
+            b'x' * (ad.COMPANION_VERSION_SOURCE_MAX_BYTES + 1),
+        ])
+        with mock.patch.object(ad.http_requests, 'get', return_value=oversized):
+            with self.assertRaisesRegex(RuntimeError, 'size limit'):
+                ad.fetch_latest_companion_version()
+
+    def test_version_source_rejects_oversized_content_length_without_reading(self):
+        response = self._VersionSourceResponse(
+            [b'APP_VERSION = "9.9.9"\n'],
+            headers={
+                'content-length': str(ad.COMPANION_VERSION_SOURCE_MAX_BYTES + 1),
+            },
+        )
+        with mock.patch.object(ad.http_requests, 'get', return_value=response):
+            with self.assertRaisesRegex(RuntimeError, 'size limit'):
+                ad.fetch_latest_companion_version()
 
     def test_unauthenticated_request_is_rejected(self):
         client = self._client()
