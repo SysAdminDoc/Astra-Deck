@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Like-Verhältnis auf Vorschaubildern"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "Blendet Blöcke mit verwandten Suchanfragen aus, ohne Filter, Korrekturen oder direkte Ergebnisse zu entfernen."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "Blöcke mit verwandten Suchanfragen ausblenden"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "Behält direkte Video-, Kanal- und Playlist-Ergebnisse bei und blendet sachfremde Suchseitenbereiche aus."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "Sachfremde Suchbereiche ausblenden"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "Blendet Ergebnisse mit Wiedergabefortschritt und eingeschobene Empfehlungen aus der YouTube-Suche aus."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "Angesehene und empfohlene Ergebnisse ausblenden"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "Zeigt YouTube-Suchergebnisse in einem kompakten Wiedergabeseiten-Panel an, ohne die Wiedergabe zu unterbrechen."
   },

@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "Соотношение лайков на миниатюрах"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "Скрывает блоки связанных запросов, не удаляя фильтры, исправления и прямые результаты."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "Скрывать связанные запросы"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "Сохраняет прямые результаты видео, каналов и плейлистов, скрывая посторонние разделы поиска."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "Скрывать посторонние разделы поиска"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "Скрывает просмотренные результаты и вставленные рекомендации в поиске YouTube."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "Скрывать просмотренные и рекомендованные результаты"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "Показывать результаты поиска YouTube в компактной панели страницы просмотра, не прерывая воспроизведение."
   },

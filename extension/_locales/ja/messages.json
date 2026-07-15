@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "サムネイルの高評価比率"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "フィルター、修正候補、直接の検索結果を残したまま、関連検索ブロックを非表示にします。"
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "関連検索ブロックを非表示"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "動画、チャンネル、再生リストの直接結果を残し、無関係な検索セクションを非表示にします。"
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "無関係な検索セクションを非表示"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "YouTube 検索から視聴済みの結果と挿入されたおすすめを非表示にします。"
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "視聴済みとおすすめの結果を非表示"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "再生を中断せずに、軽量な視聴ページパネルへ YouTube の検索結果を表示します。"
   },

@@ -1991,6 +1991,24 @@
   "feature_returnDislikeOnCards_name": {
     "message": "نسبة الإعجاب على الصور المصغّرة"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "يخفي مجموعات عمليات البحث ذات الصلة من دون إزالة عوامل التصفية أو التصحيحات أو النتائج المباشرة."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "إخفاء عمليات البحث ذات الصلة"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "يبقي نتائج الفيديوهات والقنوات وقوائم التشغيل المباشرة ويخفي أقسام البحث غير ذات الصلة."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "إخفاء أقسام البحث غير ذات الصلة"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "يخفي النتائج التي شوهدت والتوصيات المتداخلة من بحث YouTube."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "إخفاء النتائج المشاهدة والموصى بها"
+  },
   "feature_searchWhileWatching_desc": {
     "message": "عرض نتائج بحث YouTube في لوحة خفيفة على صفحة المشاهدة دون إيقاف التشغيل."
   },

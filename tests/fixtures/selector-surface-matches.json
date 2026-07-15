@@ -782,6 +782,48 @@
         "yt-searchbox"
       ]
     },
+    "searchResults.root": {
+      "surface": "searchResults",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-search[page-subtype=\"search\"]",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-two-column-search-results-renderer[is-search]",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-section-list-renderer[page-subtype=\"search\"]",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-search",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-two-column-search-results-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-search[page-subtype=\"search\"]",
+        "ytd-two-column-search-results-renderer[is-search]",
+        "ytd-section-list-renderer[page-subtype=\"search\"]",
+        "ytd-search",
+        "ytd-two-column-search-results-renderer"
+      ]
+    },
     "searchResults.feedCard": {
       "surface": "feedCard",
       "source": "mhtml/SearchResults.mhtml",

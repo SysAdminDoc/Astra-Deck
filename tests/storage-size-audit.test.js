@@ -71,7 +71,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // aiSummaryApiKey field from ordinary settings.
     // GitHub-full videoInsights adds a 22-byte false-by-default preference.
     // Search-while-watching adds a 28-byte false-by-default preference.
-    assert.equal(assessment.totalBytes, 179218);
+    assert.equal(assessment.totalBytes, 179324);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
