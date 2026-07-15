@@ -262,8 +262,8 @@ const SW_LIFECYCLE_CAP = 50;
 // a write rejects (storage quota, browser shutdown mid-write).
 let _swLifecycleChain = Promise.resolve();
 
-function _recordSwLifecycle(event) {
-    if (!chrome.storage?.session) return;
+function _recordSwLifecycle(event, operationId = '') {
+    if (!chrome.storage?.session) return Promise.resolve();
     _swLifecycleChain = _swLifecycleChain
         .catch(() => undefined)
         .then(async () => {
@@ -276,11 +276,14 @@ function _recordSwLifecycle(event) {
                 const arr = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
                     ? stored[SW_LIFECYCLE_KEY]
                     : [];
-                arr.push({
+                if (operationId && arr.some((entry) => entry?.event === event && entry?.operationId === operationId)) return;
+                const entry = {
                     ts: Date.now(),
                     event,
                     inFlightReveals: _pendingReveals.size,
-                });
+                };
+                if (operationId) entry.operationId = operationId;
+                arr.push(entry);
                 // Trim from the head so the most recent events survive.
                 while (arr.length > SW_LIFECYCLE_CAP) arr.shift();
                 await chrome.storage.session.set({ [SW_LIFECYCLE_KEY]: arr });
@@ -289,6 +292,72 @@ function _recordSwLifecycle(event) {
                 // the SW itself is not affected by ring-record failure.
             }
         });
+    return _swLifecycleChain;
+}
+
+// Persist a minimal update checkpoint before Chrome swaps worker versions.
+// On the first boot after the swap, the new worker resumes the checkpoint and
+// records it with an idempotency key. If it is terminated between the
+// "resuming" write and completion, the next boot safely finishes the same
+// operation without duplicating the diagnostic event.
+const UPDATE_RECOVERY_KEY = '_updateRecovery';
+
+function _newUpdateRecoveryId(version) {
+    const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    return `update:${String(version || 'unknown').slice(0, 40)}:${random}`;
+}
+
+async function _stageUpdateRecovery(details = {}) {
+    if (!chrome.storage?.local) return null;
+    await _pendingRevealsReady.catch(() => {});
+    const checkpoint = {
+        id: _newUpdateRecoveryId(details.version),
+        version: String(details.version || '').slice(0, 40),
+        state: 'pending',
+        stagedAt: Date.now(),
+        pendingRevealIds: [..._pendingReveals].slice(-PENDING_REVEALS_CAP)
+    };
+    await chrome.storage.local.set({ [UPDATE_RECOVERY_KEY]: checkpoint });
+    await _recordSwLifecycle('update-recovery-staged', checkpoint.id);
+    return checkpoint;
+}
+
+const _updateRecoveryReady = (async () => {
+    if (!chrome.storage?.local) return null;
+    const stored = await chrome.storage.local.get(UPDATE_RECOVERY_KEY);
+    const checkpoint = stored?.[UPDATE_RECOVERY_KEY];
+    if (!checkpoint || typeof checkpoint !== 'object' || !checkpoint.id
+        || !['pending', 'resuming'].includes(checkpoint.state)) return checkpoint || null;
+    const runningVersion = String(chrome.runtime?.getManifest?.().version || '');
+    // A normal worker restart can happen after onUpdateAvailable but before
+    // Chrome activates the downloaded version. Leave the checkpoint pending
+    // until the running manifest matches its target version; otherwise the old
+    // worker could consume the only copy before storage.session is cleared.
+    if (checkpoint.version && checkpoint.version !== runningVersion) return checkpoint;
+    const resuming = { ...checkpoint, state: 'resuming', resumedAt: Date.now() };
+    await chrome.storage.local.set({ [UPDATE_RECOVERY_KEY]: resuming });
+    for (const downloadId of Array.isArray(checkpoint.pendingRevealIds) ? checkpoint.pendingRevealIds : []) {
+        _addPendingReveal(downloadId);
+    }
+    if (chrome.storage?.session) {
+        await chrome.storage.session.set({ [_PENDING_REVEALS_KEY]: [..._pendingReveals] });
+    }
+    await _recordSwLifecycle('update-recovery-resumed', checkpoint.id);
+    const resumed = { ...resuming, state: 'resumed', completedAt: Date.now() };
+    await chrome.storage.local.set({ [UPDATE_RECOVERY_KEY]: resumed });
+    return resumed;
+})().catch((error) => {
+    void error;
+    void _recordSwLifecycle('update-recovery-failed');
+    return null;
+});
+
+if (chrome.runtime?.onUpdateAvailable?.addListener) {
+    chrome.runtime.onUpdateAvailable.addListener((details) => {
+        void _stageUpdateRecovery(details).catch(() => {
+            void _recordSwLifecycle('update-recovery-stage-failed');
+        });
+    });
 }
 
 // Fire once at module load — this IS the SW boot. Every fresh SW
@@ -657,6 +726,7 @@ if (chrome.downloads?.onChanged?.addListener) {
             if (!_pendingReveals.has(delta.id)) return;
             _pendingReveals.delete(delta.id);
             _persistPendingReveals();
+            void _recordSwLifecycle(`reveal-${state}`, `download:${delta.id}:${state}`);
             if (state === 'complete') {
                 try {
                     chrome.downloads.show(delta.id);
@@ -1161,6 +1231,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'GET_SW_LIFECYCLE') {
         (async () => {
             try {
+                await _updateRecoveryReady;
+                await _swLifecycleChain.catch(() => undefined);
                 if (!chrome.storage?.session) {
                     sendResponse({ entries: [], error: null });
                     return;

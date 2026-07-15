@@ -75,8 +75,9 @@
         { id: 'popupReleaseState', location: 'extension-local', key: 'ytkit_last_seen_version', backup: 'exclude', reason: 'Installation lifecycle flag.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'popupDisclosureState', location: 'extension-local', key: 'ytkit_popup_schema_overview_expanded', backup: 'exclude', reason: 'Ephemeral popup presentation state.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'companionPromptState', location: 'extension-local', key: 'ytkit_mediadl_prompt_dismissed', backup: 'exclude', reason: 'Installation-specific companion availability state.', credentialScrub: 'not-applicable', migration: 'none' },
-        { id: 'pendingDownloadReveals', location: 'extension-local', key: '_pendingReveals', backup: 'exclude', reason: 'Service-worker recovery state, not user data.', credentialScrub: 'sensitive-keys', migration: 'none' },
-        { id: 'serviceWorkerLifecycle', location: 'extension-local', key: '_swLifecycle', backup: 'exclude', reason: 'Service-worker diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'pendingDownloadReveals', location: 'extension-session', key: '_pendingReveals', backup: 'exclude', reason: 'Service-worker recovery state, not user data.', credentialScrub: 'sensitive-keys', migration: 'none' },
+        { id: 'serviceWorkerLifecycle', location: 'extension-session', key: '_swLifecycle', backup: 'exclude', reason: 'Service-worker diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'updateRecovery', location: 'extension-local', key: '_updateRecovery', backup: 'exclude', reason: 'Service-worker update checkpoint; importing stale operations could replay completed recovery.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'playbackRecovery', location: 'youtube-session-storage', key: 'ytkit-playback-recovery', backup: 'exclude', reason: 'Short-lived tab recovery state expires after one minute.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'pageCrashGuard', location: 'youtube-local-storage', key: '_ytkit_crash_guard', backup: 'exclude', reason: 'Installation-specific crash-loop guard.', credentialScrub: 'not-applicable', migration: 'none' }
     ].map(Object.freeze));
