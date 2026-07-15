@@ -41,6 +41,7 @@
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "smoke:settings-overlay": "node scripts/smoke-settings-overlay.js",
+    "smoke:transcript-index": "node scripts/smoke-transcript-index.js",
     "smoke:settings-overlay:fallback": "node scripts/smoke-settings-overlay.js --fallback-only",
     "smoke:companion-gui": "py -3.12 scripts/render-companion-gui.py",
     "audit:a11y": "node scripts/audit-popup-a11y.js",

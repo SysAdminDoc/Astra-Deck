@@ -1532,6 +1532,7 @@ return response;
             return {
                 config: {},
                 async downloadTranscript() { return { success: false, error: 'TranscriptService factory missing' }; },
+                async fetchTranscript() { throw new Error('TranscriptService factory missing'); },
                 _getCaptionTracks: async () => null,
                 _selectBestTrack: (t) => (t && t[0]) || null,
                 _fetchTranscriptContent: async () => [],
@@ -29990,6 +29991,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _panel: null,
             _navRule: null,
+            _attachTimer: null,
+            _inputTimer: null,
+            _focusTimer: null,
+            _confirmTimer: null,
+            _queryController: null,
+            _queryGeneration: 0,
 
             _CATEGORY_LABELS: {
                 sponsor: 'Sponsors',
@@ -39390,20 +39397,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'researchTranscriptIndex',
             name: 'Transcript Search Index',
-            description: 'Indexes the transcript of every video you open into a local IndexedDB. Adds a global "Search Transcripts" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry.',
+            description: 'Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube\'s transcript panel. Search stays local in IndexedDB; no telemetry.',
             group: 'Research',
             icon: 'search',
             pages: [PageTypes.WATCH],
             _DB_NAME: 'ytkit-transcript-index',
             _DB_STORE: 'transcripts',
-            _DB_VERSION: 2,
+            _DB_META_STORE: 'metadata',
+            _DB_VERSION: 3,
             _navRule: null,
-            _ingested: null,
-            // Each record holds up to ~200 KB of transcript text, one per
-            // distinct video ever opened. Without a cap the store grows without
-            // bound and eventually trips the origin quota (silently disabling
-            // indexing). Bound it with LRU eviction keyed on `indexedAt`.
+            _ingestTimer: null,
+            _ingestController: null,
+            _migrationController: null,
+            _migrationPromise: null,
+            _generation: 0,
+            _completedVideoId: null,
+            _status: null,
             _MAX_RECORDS: 1000,
+            _MAX_CHUNK_BYTES: 2 * 1024 * 1024,
+
+            _helpers() {
+                const helpers = globalThis.YTKitCore?.transcriptIndex;
+                if (!helpers) throw new Error('Transcript index helpers are unavailable');
+                return helpers;
+            },
 
             _openDb() {
                 const persisted = globalThis.YTKitCore?.persistedDomains;
@@ -39412,13 +39429,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const req = indexedDB.open(this._DB_NAME, this._DB_VERSION);
                     req.onupgradeneeded = () => {
                         const db = req.result;
-                        if (!db.objectStoreNames.contains(this._DB_STORE)) {
-                            db.createObjectStore(this._DB_STORE, { keyPath: 'videoId' });
-                        }
+                        const records = db.objectStoreNames.contains(this._DB_STORE)
+                            ? req.transaction.objectStore(this._DB_STORE)
+                            : db.createObjectStore(this._DB_STORE, { keyPath: 'videoId' });
+                        if (!records.indexNames.contains('byTerm')) records.createIndex('byTerm', 'searchTerms', { unique: false, multiEntry: true });
+                        if (!records.indexNames.contains('byIndexedAt')) records.createIndex('byIndexedAt', 'indexedAt', { unique: false });
                         if (!db.objectStoreNames.contains('backupSnapshots')) {
                             const snapshots = db.createObjectStore('backupSnapshots', { keyPath: ['snapshotId', 'videoId'] });
                             snapshots.createIndex('bySnapshot', 'snapshotId', { unique: false });
                         }
+                        if (!db.objectStoreNames.contains(this._DB_META_STORE)) db.createObjectStore(this._DB_META_STORE, { keyPath: 'key' });
                     };
                     req.onsuccess = () => resolve(req.result);
                     req.onerror = () => reject(req.error);
@@ -39426,113 +39446,252 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _evictOldest(store, count) {
-                // Collect (key, indexedAt) for every record, then delete the
-                // `count` oldest. Runs inside the caller's readwrite transaction.
-                const entries = [];
-                const cursorReq = store.openCursor();
-                cursorReq.onsuccess = (e) => {
-                    const cursor = e.target.result;
-                    if (cursor) {
-                        entries.push({ key: cursor.primaryKey, ts: Number(cursor.value?.indexedAt) || 0 });
-                        cursor.continue();
-                        return;
-                    }
-                    entries.sort((a, b) => a.ts - b.ts);
-                    for (let i = 0; i < count && i < entries.length; i++) {
-                        try { store.delete(entries[i].key); } catch (_) {
-                            // reason: best-effort eviction; a failed delete must not abort the put
-                        }
-                    }
+                if (count <= 0) return;
+                let deleted = 0;
+                const cursorReq = store.index('byIndexedAt').openKeyCursor();
+                cursorReq.onsuccess = () => {
+                    const cursor = cursorReq.result;
+                    if (!cursor || deleted >= count) return;
+                    store.delete(cursor.primaryKey);
+                    deleted += 1;
+                    cursor.continue();
                 };
             },
 
-            async _put(record) {
+            async _put(record, options = {}) {
+                const prepared = Array.isArray(record?.searchTerms) ? record : this._helpers().prepareTranscriptRecord(record);
+                this._helpers().throwIfAborted(options.signal);
                 const db = await this._openDb();
                 return new Promise((resolve, reject) => {
                     const tx = db.transaction(this._DB_STORE, 'readwrite');
                     const store = tx.objectStore(this._DB_STORE);
-                    store.put(record);
-                    // Proactively bound the store so it can't grow past the cap.
+                    const abort = () => { try { tx.abort(); } catch (_) { /* reason: transaction already settled */ } };
+                    options.signal?.addEventListener('abort', abort, { once: true });
+                    store.put(prepared);
                     const countReq = store.count();
                     countReq.onsuccess = () => {
                         const overflow = countReq.result - this._MAX_RECORDS;
                         if (overflow > 0) this._evictOldest(store, overflow);
                     };
-                    tx.oncomplete = () => { db.close(); resolve(); };
-                    tx.onerror = () => { db.close(); reject(tx.error); };
-                    tx.onabort = () => { db.close(); reject(tx.error || new Error('transcript index write aborted (quota?)')); };
+                    const finish = () => { options.signal?.removeEventListener('abort', abort); db.close(); };
+                    tx.oncomplete = () => { finish(); resolve(prepared); };
+                    tx.onerror = () => { finish(); reject(tx.error || new Error('Transcript index write failed')); };
+                    tx.onabort = () => { finish(); reject(options.signal?.aborted ? this._helpers().createAbortError() : (tx.error || new Error('Transcript index write aborted (quota?)'))); };
                 });
             },
 
-            async _search(query) {
+            async _search(query, options = {}) {
                 if (!query || query.length < 3) return [];
+                await this._ensureIndexReady();
+                const helpers = this._helpers();
+                helpers.throwIfAborted(options.signal);
+                const normalizedQuery = helpers.normalizeSearchQuery(query);
+                const lookupTerm = helpers.selectLookupTerm(normalizedQuery);
+                if (!lookupTerm) return [];
                 const db = await this._openDb();
-                const q = String(query).toLowerCase();
-                return new Promise((resolve) => {
+                return new Promise((resolve, reject) => {
                     const tx = db.transaction(this._DB_STORE, 'readonly');
                     const store = tx.objectStore(this._DB_STORE);
-                    const req = store.openCursor();
+                    const range = IDBKeyRange.bound(lookupTerm, `${lookupTerm}\uffff`);
+                    const req = store.index('byTerm').openCursor(range);
                     const hits = [];
-                    req.onsuccess = (e) => {
-                        const cursor = e.target.result;
-                        if (!cursor) { db.close(); resolve(hits); return; }
-                        const { videoId, title, text } = cursor.value || {};
-                        if (text && text.toLowerCase().includes(q)) hits.push({ videoId, title, text });
-                        if (hits.length >= 200) { db.close(); resolve(hits); return; }
+                    const seen = new Set();
+                    const abort = () => { try { tx.abort(); } catch (_) { /* reason: transaction already settled */ } };
+                    options.signal?.addEventListener('abort', abort, { once: true });
+                    req.onsuccess = () => {
+                        const cursor = req.result;
+                        if (!cursor || hits.length >= 200) return;
+                        const record = cursor.value || {};
+                        if (!seen.has(record.videoId)) {
+                            seen.add(record.videoId);
+                            if (helpers.matchesSearch(record, normalizedQuery)) hits.push({ videoId: record.videoId, title: record.title, text: record.text });
+                        }
                         cursor.continue();
                     };
-                    req.onerror = () => { db.close(); resolve(hits); };
+                    const finish = () => { options.signal?.removeEventListener('abort', abort); db.close(); };
+                    tx.oncomplete = () => { finish(); resolve(hits); };
+                    tx.onerror = () => { finish(); reject(tx.error || new Error('Transcript search failed')); };
+                    tx.onabort = () => { finish(); reject(options.signal?.aborted ? helpers.createAbortError() : (tx.error || new Error('Transcript search aborted'))); };
                 });
             },
 
             async _clear() {
                 try {
                     const db = await this._openDb();
-                    await new Promise((resolve) => {
+                    await new Promise((resolve, reject) => {
                         const tx = db.transaction(this._DB_STORE, 'readwrite');
                         tx.objectStore(this._DB_STORE).clear();
                         tx.oncomplete = () => { db.close(); resolve(); };
-                        tx.onerror = () => { db.close(); resolve(); };
+                        tx.onerror = () => { db.close(); reject(tx.error || new Error('Transcript clear failed')); };
+                        tx.onabort = () => { db.close(); reject(tx.error || new Error('Transcript clear aborted')); };
                     });
+                    this._completedVideoId = getVideoId?.() || null;
+                    this._status = { state: 'empty', message: 'The local transcript index is empty.' };
                     if (typeof showToast === 'function') showToast('Transcript index cleared.', '#22c55e');
+                    return true;
                 } catch (e) {
                     DebugManager.log('TranscriptIndex', `Clear failed: ${e.message}`);
+                    this._status = { state: 'error', message: 'Could not clear the local transcript index. Try again.', retryable: true };
+                    if (typeof showToast === 'function') showToast('Could not clear transcript index. Try again.', '#ef4444');
+                    throw e;
                 }
             },
 
-            async _ingestCurrent() {
-                if (!isWatchPagePath()) return;
+            _abortIngest() {
+                if (this._ingestTimer) clearTimeout(this._ingestTimer);
+                this._ingestTimer = null;
+                this._ingestController?.abort();
+                this._ingestController = null;
+            },
+
+            _scheduleIngest() {
+                this._abortIngest();
+                const generation = ++this._generation;
+                const controller = new AbortController();
+                this._ingestController = controller;
+                this._ingestTimer = setTimeout(() => {
+                    this._ingestTimer = null;
+                    void this._ingestCurrent(generation, controller.signal);
+                }, 1200);
+            },
+
+            async _ingestCurrent(generation = this._generation, signal = this._ingestController?.signal) {
+                if (!isWatchPagePath()) return false;
                 const videoId = getVideoId?.();
-                if (!videoId || this._ingested === videoId) return;
-                this._ingested = videoId;
+                if (!videoId || this._completedVideoId === videoId) return false;
+                const helpers = this._helpers();
                 try {
-                    const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
-                    if (!segs.length) return;
-                    const text = Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ').slice(0, 200_000);
-                    if (text.length < 100) return;
-                    const title = document.querySelector('ytd-watch-metadata #title, ytd-watch-metadata h1')?.textContent?.trim()?.slice(0, 200) || '';
-                    await this._put({ videoId, title, text, indexedAt: Date.now() });
+                    this._status = { state: 'indexing', videoId, message: 'Indexing this video\'s captions…' };
+                    const transcript = await TranscriptService.fetchTranscript(videoId, { signal });
+                    helpers.throwIfAborted(signal);
+                    if (generation !== this._generation || getVideoId?.() !== videoId) throw helpers.createAbortError();
+                    if (transcript.status === 'captionless') {
+                        this._completedVideoId = videoId;
+                        this._status = { state: 'captionless', videoId, message: 'This video has no indexable captions.' };
+                        return false;
+                    }
+                    const record = helpers.prepareTranscriptRecord({
+                        videoId,
+                        title: transcript.title,
+                        segments: transcript.segments,
+                        indexedAt: Date.now()
+                    });
+                    await this._put(record, { signal });
+                    helpers.throwIfAborted(signal);
+                    if (generation !== this._generation || getVideoId?.() !== videoId) throw helpers.createAbortError();
+                    this._completedVideoId = videoId;
+                    this._status = { state: 'ready', videoId, message: 'This video is available in local transcript search.' };
+                    return true;
                 } catch (e) {
+                    if (helpers.isAbortError(e)) return false;
                     DebugManager.log('TranscriptIndex', `Ingest failed: ${e.message}`);
+                    this._status = { state: 'error', videoId, message: 'Transcript indexing paused. Revisit this video or retry.', retryable: true };
+                    if (typeof showToast === 'function') showToast('Transcript indexing paused. It will retry when you revisit this video.', '#f59e0b');
+                    return false;
                 }
+            },
+
+            async _readSchemaMarker(db) {
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(this._DB_META_STORE, 'readonly');
+                    const req = tx.objectStore(this._DB_META_STORE).get('searchSchema');
+                    req.onsuccess = () => resolve(Number(req.result?.value) || 0);
+                    req.onerror = () => reject(req.error || new Error('Transcript schema read failed'));
+                });
+            },
+
+            async _backfillSearchTerms(signal) {
+                const helpers = this._helpers();
+                const db = await this._openDb();
+                try {
+                    if (await this._readSchemaMarker(db) >= helpers.SCHEMA_VERSION) return;
+                    let afterKey = '';
+                    let done = false;
+                    while (!done) {
+                        helpers.throwIfAborted(signal);
+                        const result = await new Promise((resolve, reject) => {
+                            const tx = db.transaction(this._DB_STORE, 'readwrite');
+                            const store = tx.objectStore(this._DB_STORE);
+                            const range = afterKey ? IDBKeyRange.lowerBound(afterKey, true) : undefined;
+                            const req = store.openCursor(range);
+                            let bytes = 0;
+                            let lastKey = afterKey;
+                            let reachedEnd = false;
+                            const abort = () => { try { tx.abort(); } catch (_) { /* reason: transaction already settled */ } };
+                            signal?.addEventListener('abort', abort, { once: true });
+                            req.onsuccess = () => {
+                                const cursor = req.result;
+                                if (!cursor) { reachedEnd = true; return; }
+                                const recordBytes = Math.min(this._MAX_CHUNK_BYTES, helpers.estimateRecordBytes(cursor.value));
+                                if (bytes && bytes + recordBytes > this._MAX_CHUNK_BYTES) return;
+                                bytes += recordBytes;
+                                lastKey = String(cursor.primaryKey);
+                                if (!Array.isArray(cursor.value?.searchTerms)) cursor.update(helpers.prepareTranscriptRecord(cursor.value));
+                                cursor.continue();
+                            };
+                            const finish = () => signal?.removeEventListener('abort', abort);
+                            tx.oncomplete = () => { finish(); resolve({ afterKey: lastKey, done: reachedEnd }); };
+                            tx.onerror = () => { finish(); reject(tx.error || new Error('Transcript schema migration failed')); };
+                            tx.onabort = () => { finish(); reject(signal?.aborted ? helpers.createAbortError() : (tx.error || new Error('Transcript schema migration aborted'))); };
+                        });
+                        afterKey = result.afterKey;
+                        done = result.done;
+                        if (!done) await new Promise((resolve) => setTimeout(resolve, 0));
+                    }
+                    helpers.throwIfAborted(signal);
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction(this._DB_META_STORE, 'readwrite');
+                        tx.objectStore(this._DB_META_STORE).put({ key: 'searchSchema', value: helpers.SCHEMA_VERSION, updatedAt: Date.now() });
+                        tx.oncomplete = resolve;
+                        tx.onerror = () => reject(tx.error || new Error('Transcript schema marker write failed'));
+                        tx.onabort = () => reject(tx.error || new Error('Transcript schema marker write aborted'));
+                    });
+                } finally {
+                    db.close();
+                }
+            },
+
+            _ensureIndexReady() {
+                if (!this._migrationPromise) {
+                    this._migrationController = new AbortController();
+                    const migration = this._backfillSearchTerms(this._migrationController.signal);
+                    this._migrationPromise = migration.catch((error) => {
+                        if (!this._helpers().isAbortError(error)) this._migrationPromise = null;
+                        throw error;
+                    });
+                }
+                return this._migrationPromise;
             },
 
             init() {
-                this._ingested = null;
-                this._navRule = () => { setTimeout(() => this._ingestCurrent(), 4000); };
+                this._completedVideoId = null;
+                this._status = { state: 'idle', message: 'Transcript indexing is ready.' };
+                this._migrationPromise = null;
+                void this._ensureIndexReady().catch((error) => {
+                    if (!this._helpers().isAbortError(error)) DebugManager.log('TranscriptIndex', `Schema migration failed: ${error.message}`);
+                });
+                this._navRule = () => this._scheduleIngest();
                 addNavigateRule(this.id, this._navRule);
-                // Expose a global search helper so popup / debug surfaces can call it.
-                window.__ytkitSearchTranscripts = (q) => this._search(q);
+                window.__ytkitSearchTranscripts = (q, options) => this._search(q, options);
                 window.__ytkitClearTranscriptIndex = () => this._clear();
+                window.__ytkitTranscriptIndexStatus = () => ({ ...(this._status || {}) });
+                window.__ytkitRetryTranscriptIndex = () => { this._completedVideoId = null; this._scheduleIngest(); };
                 this._navRule();
             },
 
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
-                this._ingested = null;
+                this._generation += 1;
+                this._abortIngest();
+                this._migrationController?.abort();
+                this._migrationController = null;
+                this._migrationPromise = null;
+                this._completedVideoId = null;
                 if (window.__ytkitSearchTranscripts) delete window.__ytkitSearchTranscripts;
                 if (window.__ytkitClearTranscriptIndex) delete window.__ytkitClearTranscriptIndex;
+                if (window.__ytkitTranscriptIndexStatus) delete window.__ytkitTranscriptIndexStatus;
+                if (window.__ytkitRetryTranscriptIndex) delete window.__ytkitRetryTranscriptIndex;
             }
         },
         // ═══════════════════════════════════════════════════════════════════
@@ -39567,6 +39726,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-transcript-search-panel li a{color:#a78bfa;text-decoration:none;font-weight:600;}
                     .ytkit-transcript-search-panel li a:hover{text-decoration:underline;}
                     .ytkit-transcript-search-panel .meta{display:block;margin-top:3px;font-size:11px;color:rgba(255,255,255,0.55);}
+                    .ytkit-transcript-search-panel .state{color:rgba(255,255,255,0.72);}
+                    .ytkit-transcript-search-panel .state[data-tone="error"]{color:#fecaca;}
+                    .ytkit-transcript-search-panel .state button{display:block;margin-top:8px;min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(124,58,237,.45);background:rgba(124,58,237,.16);color:#ddd6fe;font:600 12px system-ui;cursor:pointer;}
                     .ytkit-transcript-search-panel__footer{margin-top:12px;display:flex;justify-content:space-between;gap:8px;}
                     .ytkit-transcript-search-panel__footer button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-transcript-search-panel__footer button:hover{background:rgba(255,255,255,0.1);}
@@ -39584,33 +39746,69 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
             },
 
+            _setResultsState(ul, message, options = {}) {
+                ul.replaceChildren();
+                const li = document.createElement('li');
+                li.className = 'state';
+                if (options.tone) li.dataset.tone = options.tone;
+                const text = document.createElement('span');
+                text.textContent = message;
+                li.appendChild(text);
+                if (options.actionLabel && typeof options.onAction === 'function') {
+                    const action = document.createElement('button');
+                    action.type = 'button';
+                    action.textContent = options.actionLabel;
+                    action.addEventListener('click', options.onAction, { once: true });
+                    li.appendChild(action);
+                }
+                ul.appendChild(li);
+            },
+
+            _cancelQuery() {
+                this._queryGeneration += 1;
+                this._queryController?.abort();
+                this._queryController = null;
+            },
+
             async _renderResults(query) {
                 if (!this._panel) return;
                 const ul = this._panel.querySelector('ul');
                 if (!ul) return;
-                ul.replaceChildren();
+                this._cancelQuery();
+                const generation = this._queryGeneration;
                 if (!query || query.length < 3) {
-                    const li = document.createElement('li');
-                    li.textContent = 'Type at least 3 characters to search.';
-                    li.style.color = 'rgba(255,255,255,0.6)';
-                    ul.appendChild(li);
+                    this._setResultsState(ul, 'Type at least 3 characters to search.');
                     return;
                 }
                 if (typeof window.__ytkitSearchTranscripts !== 'function') {
-                    const li = document.createElement('li');
-                    li.textContent = 'Transcript Search Index is off — enable it first.';
-                    li.style.color = '#f59e0b';
-                    ul.appendChild(li);
+                    this._setResultsState(ul, 'Transcript Search Index is off — enable it first.', { tone: 'error' });
                     return;
                 }
-                const hits = await window.__ytkitSearchTranscripts(query);
+                const controller = new AbortController();
+                this._queryController = controller;
+                this._setResultsState(ul, 'Searching your local transcript index…');
+                let hits;
+                try {
+                    hits = await window.__ytkitSearchTranscripts(query, { signal: controller.signal });
+                } catch (error) {
+                    if (error?.name === 'AbortError' || generation !== this._queryGeneration || !this._panel) return;
+                    this._setResultsState(ul, 'Search could not read the local index. Your data is unchanged.', {
+                        tone: 'error',
+                        actionLabel: 'Try search again',
+                        onAction: () => this._renderResults(query)
+                    });
+                    return;
+                } finally {
+                    if (this._queryController === controller) this._queryController = null;
+                }
+                if (generation !== this._queryGeneration || !this._panel) return;
                 if (!hits?.length) {
-                    const li = document.createElement('li');
-                    li.textContent = `No transcripts matched "${query}".`;
-                    li.style.color = 'rgba(255,255,255,0.6)';
-                    ul.appendChild(li);
+                    const status = window.__ytkitTranscriptIndexStatus?.();
+                    const suffix = status?.state === 'indexing' ? ' The current video is still being indexed.' : '';
+                    this._setResultsState(ul, `No transcripts matched "${query}".${suffix}`);
                     return;
                 }
+                ul.replaceChildren();
                 for (const hit of hits.slice(0, 50)) {
                     const li = document.createElement('li');
                     const link = document.createElement('a');
@@ -39627,8 +39825,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
+            _closePanel({ restoreFocus = true } = {}) {
+                this._cancelQuery();
+                if (this._inputTimer) clearTimeout(this._inputTimer);
+                if (this._focusTimer) clearTimeout(this._focusTimer);
+                if (this._confirmTimer) clearTimeout(this._confirmTimer);
+                this._inputTimer = null;
+                this._focusTimer = null;
+                this._confirmTimer = null;
+                this._panel?.remove();
+                this._panel = null;
+                if (restoreFocus) this._btn?.focus?.({ preventScroll: true });
+            },
+
             _renderPanel() {
-                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                if (this._panel) { this._closePanel(); return; }
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-transcript-search-panel';
                 panel.setAttribute('role', 'dialog');
@@ -39640,10 +39851,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 input.type = 'search';
                 input.placeholder = 'Find phrases across every video you\u2019ve visited\u2026';
                 input.setAttribute('aria-label', 'Search transcript index');
-                let timer = null;
                 input.addEventListener('input', () => {
-                    if (timer) clearTimeout(timer);
-                    timer = setTimeout(() => this._renderResults(input.value.trim()), 300);
+                    if (this._inputTimer) clearTimeout(this._inputTimer);
+                    this._inputTimer = setTimeout(() => {
+                        this._inputTimer = null;
+                        this._renderResults(input.value.trim());
+                    }, 300);
                 });
                 panel.appendChild(input);
                 const ul = document.createElement('ul');
@@ -39654,18 +39867,53 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 closeBtn.type = 'button';
                 closeBtn.textContent = 'Close';
                 closeBtn.setAttribute('aria-label', 'Close transcript search');
-                closeBtn.addEventListener('click', () => { panel.remove(); this._panel = null; });
+                closeBtn.addEventListener('click', () => this._closePanel());
                 const clearBtn = document.createElement('button');
                 clearBtn.type = 'button';
                 clearBtn.dataset.danger = '1';
                 clearBtn.textContent = 'Clear local index';
                 clearBtn.setAttribute('aria-label', 'Clear local transcript index');
                 clearBtn.addEventListener('click', async () => {
-                    if (typeof window.__ytkitClearTranscriptIndex === 'function') {
-                        await window.__ytkitClearTranscriptIndex();
-                        this._renderResults(input.value.trim());
-                    } else {
+                    if (clearBtn.dataset.confirm !== '1') {
+                        clearBtn.dataset.confirm = '1';
+                        clearBtn.textContent = 'Clear again to confirm';
+                        clearBtn.setAttribute('aria-label', 'Confirm clearing the local transcript index');
+                        if (this._confirmTimer) clearTimeout(this._confirmTimer);
+                        this._confirmTimer = setTimeout(() => {
+                            this._confirmTimer = null;
+                            delete clearBtn.dataset.confirm;
+                            clearBtn.textContent = 'Clear local index';
+                            clearBtn.setAttribute('aria-label', 'Clear local transcript index');
+                        }, 5000);
+                        return;
+                    }
+                    if (this._confirmTimer) clearTimeout(this._confirmTimer);
+                    this._confirmTimer = null;
+                    delete clearBtn.dataset.confirm;
+                    clearBtn.disabled = true;
+                    clearBtn.setAttribute('aria-busy', 'true');
+                    clearBtn.textContent = 'Clearing…';
+                    if (typeof window.__ytkitClearTranscriptIndex !== 'function') {
                         if (typeof showToast === 'function') showToast('Transcript Search Index is off — enable it first.', '#f59e0b');
+                        clearBtn.disabled = false;
+                        clearBtn.removeAttribute('aria-busy');
+                        clearBtn.textContent = 'Clear local index';
+                        return;
+                    }
+                    try {
+                        await window.__ytkitClearTranscriptIndex();
+                        this._setResultsState(ul, 'The local transcript index is empty. New eligible videos will be indexed as you visit them.');
+                    } catch (_) {
+                        this._setResultsState(ul, 'Could not clear the local transcript index. Your existing data is still available.', {
+                            tone: 'error',
+                            actionLabel: 'Try clearing again',
+                            onAction: () => clearBtn.click()
+                        });
+                    } finally {
+                        clearBtn.disabled = false;
+                        clearBtn.removeAttribute('aria-busy');
+                        clearBtn.textContent = 'Clear local index';
+                        clearBtn.setAttribute('aria-label', 'Clear local transcript index');
                     }
                 });
                 footer.append(closeBtn, clearBtn);
@@ -39673,13 +39921,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.addEventListener('keydown', (event) => {
                     if (event.key === 'Escape') {
                         event.preventDefault();
-                        panel.remove();
-                        this._panel = null;
+                        this._closePanel();
                     }
                 });
                 document.body.appendChild(panel);
                 this._panel = panel;
-                setTimeout(() => input.focus(), 50);
+                this._focusTimer = setTimeout(() => {
+                    this._focusTimer = null;
+                    if (this._panel === panel) input.focus({ preventScroll: true });
+                }, 50);
                 this._renderResults('');
             },
 
@@ -39698,7 +39948,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._ensureStyles();
-                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                this._navRule = () => {
+                    if (this._attachTimer) clearTimeout(this._attachTimer);
+                    this._attachTimer = setTimeout(() => {
+                        this._attachTimer = null;
+                        this._attach();
+                    }, 1500);
+                };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
@@ -39706,10 +39962,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
+                if (this._attachTimer) clearTimeout(this._attachTimer);
+                this._attachTimer = null;
+                this._closePanel({ restoreFocus: false });
                 this._btn?.remove();
                 this._btn = null;
-                this._panel?.remove();
-                this._panel = null;
                 document.querySelectorAll('.ytkit-transcript-search-btn').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;

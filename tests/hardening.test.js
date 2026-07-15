@@ -4225,7 +4225,8 @@ test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
 test('researchTranscriptIndex stores transcripts in IndexedDB keyed by videoId', () => {
     const start = ytkitSource.indexOf("id: 'researchTranscriptIndex'");
     assert.ok(start > -1, 'researchTranscriptIndex must exist');
-    const block = ytkitSource.slice(start, start + 8000);
+    const end = ytkitSource.indexOf("id: 'researchTranscriptSearchPanel'", start);
+    const block = ytkitSource.slice(start, end);
     assert.match(block, /_DB_NAME:\s*'ytkit-transcript-index'/,
         'must use the documented IndexedDB name');
     assert.match(block, /keyPath:\s*'videoId'/,
@@ -4901,12 +4902,13 @@ test('researchTranscriptSearchPanel reuses __ytkitSearchTranscripts + __ytkitCle
 
 test('researchTranscriptSearchPanel destroy() removes the button, panel, and style tag', () => {
     const start = ytkitSource.indexOf("id: 'researchTranscriptSearchPanel'");
-    const block = ytkitSource.slice(start, start + 14000);
+    const end = ytkitSource.indexOf("id: 'reducedMotion'", start);
+    const block = ytkitSource.slice(start, end);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
     assert.match(destroyBlock, /\.ytkit-transcript-search-btn/,
         'destroy() must remove every transcript-search button');
-    assert.match(destroyBlock, /_panel\?\.remove\(\)/,
+    assert.match(destroyBlock, /_closePanel\(\{ restoreFocus: false \}\)/,
         'destroy() must close the panel');
     assert.match(destroyBlock, /_styleElement\?\.remove\(\)/,
         'destroy() must remove the injected style tag');
@@ -7035,6 +7037,8 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'features/player-dock/index.js':        'function createFloatingLogoOnWatchFeature',
         'features/youtube-music-compat/index.js': 'function createYoutubeMusicCompatFeature',
         'core/external-api-health.js':          'function createExternalApiHealth(options',
+        'core/transcript-service.js':           'function createTranscriptService(options',
+        'core/transcript-index.js':             'function prepareTranscriptRecord(raw)',
         'features/return-dislike/index.js':     'function createReturnDislikeFeature',
         'features/sponsorblock/index.js':       'function createSponsorBlockFeature',
         'features/dearrow/index.js':            'function createDeArrowFeature',
@@ -7066,6 +7070,8 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
         'extension/core/settings-controller.js',
+        'extension/core/transcript-service.js',
+        'extension/core/transcript-index.js',
         'extension/core/credential-vault.js',
         'extension/core/userscript-ai-summary.js',
         'extension/core/external-api-health.js',

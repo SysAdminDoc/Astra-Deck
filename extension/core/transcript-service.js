@@ -30,6 +30,15 @@
 
     const INNERTUBE_CLIENT_VERSION_FALLBACK = '2.20260401.00.00';
 
+    function createAbortError() {
+        return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
+    }
+
+    function throwIfAborted(signal) {
+        if (!signal?.aborted) return;
+        throw signal.reason?.name === 'AbortError' ? signal.reason : createAbortError();
+    }
+
     function createTranscriptService(options = {}) {
         const getVideoId = typeof options.getVideoId === 'function'
             ? options.getVideoId
@@ -62,30 +71,20 @@
                 this._log('Starting transcript fetch for:', videoId);
 
                 try {
-                    const trackData = await this._getCaptionTracks(videoId);
+                    const transcript = await this.fetchTranscript(videoId);
 
-                    if (!trackData || !trackData.tracks || trackData.tracks.length === 0) {
+                    if (transcript.status === 'captionless') {
                         showToast('No transcript available for this video', '#ef4444');
                         return { success: false, error: 'No captions available' };
                     }
 
-                    const selectedTrack = this._selectBestTrack(trackData.tracks);
-                    this._log('Selected track:', selectedTrack.languageCode, selectedTrack.kind);
-
-                    const segments = await this._fetchTranscriptContent(selectedTrack.baseUrl);
-
-                    if (!segments || segments.length === 0) {
-                        showToast('Failed to parse transcript content', '#ef4444');
-                        return { success: false, error: 'Parse failed' };
-                    }
-
-                    const videoTitle = this._sanitizeFilename(trackData.videoTitle || videoId);
-                    const content = this._formatTranscript(segments);
+                    const videoTitle = this._sanitizeFilename(transcript.title || videoId);
+                    const content = this._formatTranscript(transcript.segments);
 
                     this._downloadFile(content, `${videoTitle}_transcript.txt`);
 
-                    showToast(`Transcript downloaded! (${segments.length} segments)`, '#22c55e');
-                    return { success: true, segments: segments.length, language: selectedTrack.languageCode };
+                    showToast(`Transcript downloaded! (${transcript.segments.length} segments)`, '#22c55e');
+                    return { success: true, segments: transcript.segments.length, language: transcript.language };
 
                 } catch (error) {
                     if (typeof console !== 'undefined') {
@@ -96,25 +95,58 @@
                 }
             },
 
+            // Shared, side-effect-free retrieval path for indexing, study
+            // exports, and downloads. Consumers get structured captionless
+            // output and can cancel stale navigation work without opening
+            // YouTube's transcript panel.
+            async fetchTranscript(videoId, options = {}) {
+                if (!/^[A-Za-z0-9_-]{11}$/.test(String(videoId || ''))) throw new Error('Invalid video ID');
+                const signal = options.signal;
+                throwIfAborted(signal);
+                const trackData = await this._getCaptionTracks(videoId, { signal });
+                throwIfAborted(signal);
+                if (!trackData?.tracks?.length) {
+                    return { status: 'captionless', videoId, title: trackData?.videoTitle || '', segments: [] };
+                }
+                const selectedTrack = this._selectBestTrack(trackData.tracks);
+                this._log('Selected track:', selectedTrack.languageCode, selectedTrack.kind);
+                const segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, { signal });
+                throwIfAborted(signal);
+                if (!segments?.length) {
+                    return { status: 'captionless', videoId, title: trackData.videoTitle || '', segments: [] };
+                }
+                return {
+                    status: 'ready',
+                    videoId,
+                    title: trackData.videoTitle || videoId,
+                    language: selectedTrack.languageCode || '',
+                    segments
+                };
+            },
+
             // Multi-method caption track retrieval with automatic failover
-            async _getCaptionTracks(videoId) {
+            async _getCaptionTracks(videoId, options = {}) {
+                const signal = options.signal;
                 const methods = [
                     { name: 'ytInitialPlayerResponse', fn: () => this._method1_WindowVariable(videoId) },
-                    { name: 'Innertube API', fn: () => this._method2_InnertubeAPI(videoId) },
-                    { name: 'HTML Page Fetch', fn: () => this._method3_HTMLPageFetch(videoId) },
-                    { name: 'captionTracks Regex', fn: () => this._method4_CaptionTracksRegex(videoId) },
-                    { name: 'DOM Panel Scrape', fn: () => this._method5_DOMPanelScrape(videoId) }
+                    { name: 'Innertube API', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
+                    { name: 'HTML Page Fetch', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
+                    { name: 'captionTracks Regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
+                    { name: 'DOM Panel Scrape', fn: () => this._method5_DOMPanelScrape(videoId, { signal }) }
                 ];
 
                 for (const method of methods) {
+                    throwIfAborted(signal);
                     try {
                         this._log(`Trying method: ${method.name}`);
                         const result = await method.fn();
+                        throwIfAborted(signal);
                         if (result && result.tracks && result.tracks.length > 0) {
                             this._log(`Success with method: ${method.name}`, result.tracks.length, 'tracks found');
                             return result;
                         }
                     } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
                         this._log(`Method ${method.name} failed:`, error.message);
                     }
                 }
@@ -138,7 +170,7 @@
             },
 
             // Method 2: Innertube API (most reliable for SPA navigation)
-            async _method2_InnertubeAPI(videoId) {
+            async _method2_InnertubeAPI(videoId, options = {}) {
                 const apiKey = this._getInnertubeApiKey();
                 if (!apiKey) {
                     throw new Error('Innertube API key unavailable');
@@ -162,8 +194,10 @@
                             }
                         },
                         videoId: videoId
-                    })
+                    }),
+                    signal: options.signal
                 });
+                throwIfAborted(options.signal);
 
                 if (!response || response.status < 200 || response.status >= 300) {
                     throw new Error(`Innertube API returned ${response?.status}`);
@@ -172,10 +206,12 @@
             },
 
             // Method 3: Fetch HTML and extract ytInitialPlayerResponse
-            async _method3_HTMLPageFetch(videoId) {
+            async _method3_HTMLPageFetch(videoId, options = {}) {
                 const { text: html } = await extensionFetchText({
-                    url: `https://www.youtube.com/watch?v=${videoId}`
+                    url: `https://www.youtube.com/watch?v=${videoId}`,
+                    signal: options.signal
                 });
+                throwIfAborted(options.signal);
 
                 const patterns = [
                     /ytInitialPlayerResponse\s*=\s*({.+?});\s*(?:var\s|const\s|let\s|<\/script>)/s,
@@ -199,10 +235,12 @@
             },
 
             // Method 4: Direct captionTracks regex extraction
-            async _method4_CaptionTracksRegex(videoId) {
+            async _method4_CaptionTracksRegex(videoId, options = {}) {
                 const { text: html } = await extensionFetchText({
-                    url: `https://www.youtube.com/watch?v=${videoId}`
+                    url: `https://www.youtube.com/watch?v=${videoId}`,
+                    signal: options.signal
                 });
+                throwIfAborted(options.signal);
 
                 const keyIdx = html.indexOf('"captionTracks":');
                 if (keyIdx === -1) throw new Error('captionTracks not found in page');
@@ -241,7 +279,8 @@
             },
 
             // Method 5: DOM panel scraping (final fallback)
-            async _method5_DOMPanelScrape(videoId) {
+            async _method5_DOMPanelScrape(videoId, options = {}) {
+                throwIfAborted(options.signal);
                 if (typeof document === 'undefined') {
                     throw new Error('document not available');
                 }
@@ -333,7 +372,7 @@
                 return scored.length > 0 ? scored[0].track : tracks[0];
             },
 
-            async _fetchTranscriptContent(baseUrl) {
+            async _fetchTranscriptContent(baseUrl, options = {}) {
                 if (!baseUrl) throw new Error('No baseUrl provided for transcript');
 
                 const formats = ['json3', 'xml'];
@@ -345,9 +384,11 @@
                 // format has had its chance.
                 let emptyResult = null;
                 for (const fmt of formats) {
+                    throwIfAborted(options.signal);
                     try {
                         const url = fmt === 'xml' ? baseUrl : `${baseUrl}&fmt=${fmt}`;
-                        const { text: content } = await extensionFetchText({ url });
+                        const { text: content } = await extensionFetchText({ url, signal: options.signal });
+                        throwIfAborted(options.signal);
 
                         const segments = fmt === 'json3'
                             ? this._parseJSON3(content)
@@ -358,6 +399,7 @@
                         emptyResult = segments || [];
                         this._log(`Format ${fmt} parsed but produced no segments, trying next format`);
                     } catch (e) {
+                        if (e?.name === 'AbortError') throw e;
                         this._log(`Format ${fmt} failed:`, e.message);
                     }
                 }
