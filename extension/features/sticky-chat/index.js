@@ -94,8 +94,20 @@
             _beginDrag(event) {
                 if (!this._frame || event?.button > 0) return;
                 event?.preventDefault?.();
+                // A second pointerdown while a drag is live must not overwrite
+                // this._drag — that would permanently leak the previous
+                // capture-phase move listener.
+                this._removeDragListeners();
                 this._clampLayout();
                 const pointerId = event?.pointerId;
+                // Capture the pointer so move/up events keep flowing when the
+                // cursor outruns the frame into the cross-origin chat iframe
+                // (or leaves the window); otherwise the drag strands with
+                // listeners attached and the layout is never persisted.
+                if (pointerId != null) {
+                    try { event.currentTarget?.setPointerCapture?.(pointerId); }
+                    catch { /* reason: capture is best-effort; drag still works inside the frame */ }
+                }
                 const startX = Number(event?.clientX) || 0;
                 const startY = Number(event?.clientY) || 0;
                 const originX = this._layout.x;
