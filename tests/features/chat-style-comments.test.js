@@ -60,6 +60,23 @@ test('chatStyleComments style builders preserve the monolith fallback CSS', () =
     assert.equal(mod.buildSelectorSupportFallbackCss(), extractTemplate(block, 'selectorSupportFallbackCss'));
 });
 
+test('chatStyleComments preserves the YouTube split-thread line', () => {
+    const { mod } = loadModule();
+    const css = mod.buildCommentRestyleCss();
+    const [block] = extractFeatureBlock(sources.ytkit, 'chatStyleComments');
+
+    assert.doesNotMatch(css, /\.ytSubThreadThreadline/);
+    assert.match(
+        css,
+        /\.ytSubThreadConnection,\.ytSubThreadContinuation,\.ytSubThreadShadow\{display:none !important\}/,
+        'the other decorative sub-thread elements should remain hidden'
+    );
+    assert.doesNotMatch(block, /\.ytSubThreadThreadline/,
+        'the monolith fallback must preserve the thread line too');
+    assert.doesNotMatch(sources.userscript, /\.ytSubThreadThreadline/,
+        'the userscript comments payload must preserve the thread line too');
+});
+
 test('chatStyleComments hides the current YouTube paper-input underline', () => {
     const { mod } = loadModule();
     assert.match(
