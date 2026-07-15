@@ -167,7 +167,12 @@ test('hidePinnedComments defaults on and targets modern pinned comment markup', 
     assert.ok(block.includes('ytd-pinned-comment-badge-renderer'), 'hidePinnedComments should target the pinned badge renderer');
     assert.ok(block.includes('data-ytkit-pinned-comment-hidden'), 'hidePinnedComments should add a durable hidden-thread marker');
     assert.ok(block.includes("thread.style.display = 'none'"), 'hidePinnedComments should hide matched threads directly');
-    assert.ok(block.includes('addMutationRule(this.id'), 'hidePinnedComments should handle newly loaded comments');
+    assert.ok(block.includes('addScopedMutationRule('),
+        'hidePinnedComments should process only newly inserted comment subtrees');
+    assert.ok(block.includes('addedElements) => this._hidePinnedThreads(addedElements)'),
+        'hidePinnedComments should pass the observer batch into its bounded subtree scan');
+    assert.ok(!block.includes('addMutationRule(this.id, () => this._scheduleScan())'),
+        'hidePinnedComments must not rescan every loaded thread after unrelated mutations');
     assert.ok(!coreStyles.includes("'hidePinnedComments'"), 'retired comment cleanup should not remove the active pinned comment style');
     assert.ok(coreStyles.includes("thread.dataset.ytkitPinnedCommentHidden !== '1'"),
         'retired comment cleanup should not unhide pinned comments marked by the active feature');
@@ -376,12 +381,15 @@ test('autoExpandComments defaults on and expands existing comment truncation imm
         'autoExpandComments should still click Read more when present');
     assert.ok(block.includes('tp-yt-paper-button#less'),
         'autoExpandComments should explicitly target Show less button variants');
-    assert.ok(block.includes("control.style.setProperty('display', 'none', 'important');"),
-        'autoExpandComments should directly hide expand controls after expansion');
+    assert.ok(!block.includes('control.hidden = true') && !block.includes("control.setAttribute('hidden', '')"),
+        'autoExpandComments must not rewrite watched hidden attributes and self-trigger the shared observer');
     assert.ok(block.includes('expandComments();'),
         'autoExpandComments should expand already-rendered comments immediately on init');
-    assert.ok(block.includes("addMutationRule(this.id, expandComments);"),
-        'autoExpandComments should continue expanding newly loaded comments');
+    assert.ok(block.includes('addScopedMutationRule(')
+        && block.includes('(_target, addedElements) => expandComments(addedElements)'),
+        'autoExpandComments should expand only newly loaded comment subtrees');
+    assert.ok(block.includes('const expanders = new Set();'),
+        'autoExpandComments should deduplicate nested insertion roots before processing');
 });
 
 test('video hider exposes split hide-all and restore-page controls', () => {
@@ -892,39 +900,39 @@ test('split title and owner cards align while quick links stay above the video',
 
     const extensionTopRow = blockBetween(
         source,
-        '#below[style*="position"] ytd-watch-metadata #top-row',
-        '#below[style*="position"] ytd-watch-metadata #title',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #top-row',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title',
         'extension split top-row rule'
     );
     const extensionOwner = blockBetween(
         source,
-        '#below[style*="position"] #owner,',
-        '#below[style*="position"] #owner ytd-video-owner-renderer',
+        '#below.ytkit-split-scroll-surface #owner,',
+        '#below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer',
         'extension split owner rule'
     );
     const standaloneTopRow = blockBetween(
         theaterSplit,
-        '#below[style*="position"] ytd-watch-metadata #top-row',
-        '#below[style*="position"] ytd-watch-metadata #title',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #top-row',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title',
         'standalone split top-row rule',
         { fromStart: true }
     );
     const standaloneOwner = blockBetween(
         theaterSplit,
-        '#below[style*="position"] #owner,',
-        '#below[style*="position"] #owner ytd-video-owner-renderer',
+        '#below.ytkit-split-scroll-surface #owner,',
+        '#below.ytkit-split-scroll-surface #owner ytd-video-owner-renderer',
         'standalone split owner rule'
     );
     const extensionTitleCard = blockBetween(
         source,
-        '#below[style*="position"] ytd-watch-metadata #title {',
-        '#below[style*="position"] ytd-watch-metadata #title:has',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title {',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title:has',
         'extension split title card rule'
     );
     const standaloneTitleCard = blockBetween(
         theaterSplit,
-        '#below[style*="position"] ytd-watch-metadata #title {',
-        '#below[style*="position"] ytd-watch-metadata #title:has',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title {',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata #title:has',
         'standalone split title card rule',
         { fromStart: true }
     );
@@ -1044,15 +1052,15 @@ test('split title and owner cards align while quick links stay above the video',
 
     const standaloneNotification = blockBetween(
         theaterSplit,
-        '#below[style*="position"] #owner #subscribe-button,',
-        '#below[style*="position"] #owner #subscribe-button .yt-spec-button-shape-next',
+        '#below.ytkit-split-scroll-surface #owner #subscribe-button,',
+        '#below.ytkit-split-scroll-surface #owner #subscribe-button .yt-spec-button-shape-next',
         'standalone owner notification controls',
         { fromStart: true }
     );
 
     assert.match(
         source,
-        /#below\[style\*="position"\] #owner #subscribe-button,[\s\S]*?overflow: visible !important;[\s\S]*?pointer-events: auto !important;[\s\S]*?#notification-preference-button \*[\s\S]*?z-index: 40 !important;/,
+        /#below\.ytkit-split-scroll-surface #owner #subscribe-button,[\s\S]*?overflow: visible !important;[\s\S]*?pointer-events: auto !important;[\s\S]*?#notification-preference-button \*[\s\S]*?z-index: 40 !important;/,
         'extension notification controls should not clip or deactivate the bell dropdown'
     );
 
@@ -1080,13 +1088,13 @@ test('split title and owner cards align while quick links stay above the video',
     const extensionNativePopup = blockBetween(
         source,
         'html:is(.ytkit-split-active, .ytkit-split-open) ytd-popup-container',
-        '#below[style*="position"] ytd-watch-metadata',
+        '#below.ytkit-split-scroll-surface ytd-watch-metadata',
         'extension native split popup stack rule'
     );
     const standaloneNativePopup = blockBetween(
         theaterSplit,
         'body.ts-split ytd-popup-container',
-        'body.ts-split #below[style*="position"] ytd-watch-metadata',
+        'body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata',
         'standalone native split popup stack rule',
         { fromStart: true }
     );

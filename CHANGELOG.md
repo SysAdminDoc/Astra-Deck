@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **Split Theater comment scrolling no longer degrades video playback over long sessions.** Auto-expand and pinned-comment handling now process only newly inserted comment subtrees instead of repeatedly rescanning the growing comments DOM; unchanged `hidden` writes can no longer feed back into the shared mutation observer. The split pane leaves in-panel wheel and touch gestures on the native scroller, contains overscroll, skips rendering offscreen comment threads, and uses a stable lifecycle class instead of hundreds of inline-style substring selectors. The standalone Theater Split userscript carries the same rendering and selector safeguards.
+
 ## [4.49.2] - 2026-07-15
 
 Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
