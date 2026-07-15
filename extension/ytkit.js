@@ -40396,8 +40396,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const brandCopy = document.createElement('div');
         brandCopy.className = 'ytkit-brand-copy';
-        brandCopy.appendChild(eyebrow);
-        brandCopy.appendChild(title);
+        const brandLockup = document.createElement('div');
+        brandLockup.className = 'ytkit-brand-lockup';
+        brandLockup.appendChild(eyebrow);
+        brandLockup.appendChild(title);
+        brandCopy.appendChild(brandLockup);
         brandCopy.appendChild(brandIntro);
         brandCopy.appendChild(brandBadges);
 

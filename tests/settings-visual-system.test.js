@@ -15,6 +15,7 @@ const settingsPanel = fs.readFileSync(
     'utf8'
 );
 const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
 
 test('settings visual system replaces boxed cards and badges with a readable settings document', () => {
     assert.match(visualSystemSource, /settings visual system v3 — imagegen mockup parity/);
@@ -53,6 +54,19 @@ test('settings visual system covers light, mobile, forced-color, and reduced-mot
     assert.match(visualSystemSource, /@media \(max-width:\s*560px\)/);
     assert.match(visualSystemSource, /@media \(forced-colors:\s*active\)/);
     assert.match(visualSystemSource, /@media \(prefers-reduced-motion:\s*reduce\)/);
+});
+
+test('settings brand lockup cannot collapse into stacked oversized labels', () => {
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-brand-lockup\s*\{[\s\S]*?display:\s*inline-flex[\s\S]*?flex-direction:\s*row[\s\S]*?white-space:\s*nowrap/
+    );
+    assert.match(
+        settingsPanel,
+        /brandLockup\.appendChild\(eyebrow\);\s*brandLockup\.appendChild\(title\);\s*brandCopy\.appendChild\(brandLockup\);/
+    );
+    assert.match(shell, /brandCopy\.appendChild\(brandLockup\);/);
+    assert.match(overlaySmoke, /name:\s*'tablet-dark',\s*width:\s*760/);
 });
 
 test('extension and userscript load the shared settings visual system before the panel', () => {
