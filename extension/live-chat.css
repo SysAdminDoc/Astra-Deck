@@ -1,0 +1,353 @@
+/* Generated from premiumLiveChat in extension/ytkit.js. Run npm run generate:live-chat-css after editing that source. */
+html:not(.ytkit-split-active) ytd-live-chat-frame#chat,
+html:not(.ytkit-split-active) ytd-live-chat-frame:not([collapsed]),
+html:not(.ytkit-split-active) #chat.ytd-live-chat-frame {
+    position: relative;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: radial-gradient(circle at top, rgba(245,158,11,0.12), transparent 42%), linear-gradient(180deg, rgba(18,24,33,0.98) 0%, rgba(9,12,18,0.98) 100%) !important;
+    box-shadow: 0 28px 80px rgba(2,6,12,0.42), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    isolation: isolate;
+}
+html:not(.ytkit-split-active) ytd-live-chat-frame#chat > iframe,
+html:not(.ytkit-split-active) ytd-live-chat-frame > iframe,
+html:not(.ytkit-split-active) #chat.ytd-live-chat-frame > iframe {
+    border: none !important;
+    border-radius: inherit !important;
+    background: transparent !important;
+}
+html:not(.ytkit-split-active) ytd-live-chat-frame #show-hide-button,
+html:not(.ytkit-split-active) #chat #show-hide-button {
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+    background: linear-gradient(180deg, rgba(15,19,28,0.82), rgba(11,14,21,0.96)) !important;
+    backdrop-filter: none;
+}
+
+html[data-ytkit-livechat-premium],
+html[data-ytkit-livechat-premium] body {
+    color-scheme: dark;
+    background: radial-gradient(circle at top, rgba(245,158,11,0.08), transparent 32%), linear-gradient(180deg, #0a0d14 0%, #0d1119 44%, #090c13 100%) !important;
+    --ytkit-livechat-panel: rgba(15,20,30,0.86);
+    --ytkit-livechat-panel-strong: rgba(18,24,35,0.94);
+    --ytkit-livechat-surface: rgba(255,255,255,0.04);
+    --ytkit-livechat-surface-hover: rgba(255,255,255,0.065);
+    --ytkit-livechat-border: rgba(255,255,255,0.09);
+    --ytkit-livechat-border-strong: rgba(255,255,255,0.14);
+    --ytkit-livechat-text: rgba(248,250,252,0.96);
+    --ytkit-livechat-muted: rgba(148,163,184,0.86);
+    --ytkit-livechat-soft: rgba(148,163,184,0.58);
+    --ytkit-livechat-accent: #f59e0b;
+    --yt-live-chat-background-color: transparent;
+    --yt-live-chat-secondary-background-color: transparent;
+    --yt-live-chat-primary-text-color: var(--ytkit-livechat-text);
+    --yt-live-chat-secondary-text-color: var(--ytkit-livechat-muted);
+    --yt-live-chat-tertiary-text-color: var(--ytkit-livechat-soft);
+}
+html[data-ytkit-livechat-premium] #chat-messages,
+html[data-ytkit-livechat-premium] yt-live-chat-renderer,
+html[data-ytkit-livechat-premium] #content-pages,
+html[data-ytkit-livechat-premium] yt-live-chat-item-list-renderer #items {
+    background: transparent !important;
+}
+html[data-ytkit-livechat-premium] #chat-messages { padding: 12px 12px 0; }
+html[data-ytkit-livechat-premium] yt-live-chat-item-list-renderer #items { padding: 2px 2px 28px !important; }
+
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 0 12px;
+    padding: 14px 16px !important;
+    border: 1px solid var(--ytkit-livechat-border);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(24,30,41,0.94), rgba(14,18,27,0.92)) !important;
+    box-shadow: 0 22px 64px rgba(2,6,12,0.46);
+    backdrop-filter: none;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #primary-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--ytkit-livechat-text);
+}
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #view-selector { margin-left: auto; }
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer tp-yt-paper-button#label,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #viewer-leaderboard-entry-point button,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #action-buttons button,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #live-chat-header-context-menu button,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #close-button button {
+    min-height: 36px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: rgba(255,255,255,0.045) !important;
+    color: var(--ytkit-livechat-text) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    backdrop-filter: none;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer tp-yt-paper-button#label:hover,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #viewer-leaderboard-entry-point button:hover,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #action-buttons button:hover,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #live-chat-header-context-menu button:hover,
+html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #close-button button:hover {
+    border-color: rgba(245,158,11,0.24) !important;
+    background: rgba(255,255,255,0.08) !important;
+}
+
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-membership-item-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-viewer-engagement-message-renderer {
+    animation: ytkit-livechat-fade-in 0.24s cubic-bezier(0.2,0.8,0.2,1) both;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer {
+    position: relative !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    min-height: 0 !important;
+    margin: 0 0 10px !important;
+    padding: 10px 48px 10px 12px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--ytkit-livechat-border) !important;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.022)),
+        rgba(12,16,24,0.82) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.035), 0 14px 30px rgba(2,6,12,0.22);
+    backdrop-filter: none;
+    overflow: visible !important;
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer:hover,
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer:focus-within {
+    border-color: rgba(245,158,11,0.2) !important;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028)),
+        rgba(14,19,29,0.9) !important;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[author-is-owner] {
+    border-color: rgba(245,158,11,0.24) !important;
+    background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(255,255,255,0.03)) !important;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"] {
+    padding-left: 60px !important;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-fallback="1"]::before,
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"]::before {
+    content: attr(data-ytkit-author-initial);
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: linear-gradient(135deg, rgba(245,158,11,0.72), rgba(56,189,248,0.55));
+    color: rgba(8,11,16,0.92);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.28);
+}
+html[data-ytkit-livechat-premium] #author-photo.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-img-shadow#author-photo.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] img#author-photo.yt-live-chat-text-message-renderer {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.1);
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025)),
+        rgba(10,14,21,0.86) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.28);
+    object-fit: cover !important;
+    overflow: hidden !important;
+}
+html[data-ytkit-livechat-premium] #author-photo.yt-live-chat-text-message-renderer img,
+html[data-ytkit-livechat-premium] yt-img-shadow#author-photo.yt-live-chat-text-message-renderer img,
+html[data-ytkit-livechat-premium] img#author-photo.yt-live-chat-text-message-renderer {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    border-radius: inherit !important;
+    object-fit: cover !important;
+    filter: none !important;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-fallback="1"] #author-photo.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-fallback="1"] yt-img-shadow#author-photo.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-fallback="1"] img#author-photo.yt-live-chat-text-message-renderer {
+    opacity: 0.18 !important;
+}
+html[data-ytkit-livechat-premium] #timestamp.yt-live-chat-text-message-renderer {
+    flex: 0 0 auto !important;
+    margin: 0 10px 0 0 !important;
+    color: var(--ytkit-livechat-soft) !important;
+    font-size: 10px !important;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-author-chip.yt-live-chat-text-message-renderer {
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    max-width: 42% !important;
+    margin: 1px 8px 0 0 !important;
+}
+html[data-ytkit-livechat-premium] #author-name.yt-live-chat-author-chip {
+    color: var(--ytkit-livechat-text) !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+html[data-ytkit-livechat-premium] #author-name.member.yt-live-chat-author-chip { color: #86efac !important; }
+html[data-ytkit-livechat-premium] #author-name.moderator.yt-live-chat-author-chip { color: #7dd3fc !important; }
+html[data-ytkit-livechat-premium] #author-name.owner.yt-live-chat-author-chip,
+html[data-ytkit-livechat-premium] yt-live-chat-author-chip[is-highlighted] #author-name.owner.yt-live-chat-author-chip {
+    padding: 4px 10px !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+    color: #16181d !important;
+}
+html[data-ytkit-livechat-premium] #chip-badges.yt-live-chat-author-chip:empty,
+html[data-ytkit-livechat-premium] #chat-badges.yt-live-chat-author-chip:empty { display: none !important; }
+html[data-ytkit-livechat-premium] #message.yt-live-chat-text-message-renderer {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin-top: 1px !important;
+    color: rgba(241,245,249,0.96) !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+    overflow-wrap: anywhere !important;
+}
+html[data-ytkit-livechat-premium] #message.yt-live-chat-text-message-renderer a,
+html[data-ytkit-livechat-premium] #show-original.yt-live-chat-text-message-renderer { color: var(--ytkit-livechat-accent) !important; }
+html[data-ytkit-livechat-premium] #menu.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] #menu.yt-live-chat-paid-message-renderer {
+    top: 10px !important;
+    right: 10px !important;
+    bottom: auto !important;
+    transform: none !important;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[use-opacity-for-context-menu-visibility] #menu.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-paid-message-renderer[use-opacity-for-context-menu-visibility] #menu.yt-live-chat-paid-message-renderer {
+    opacity: 0;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer:hover #menu.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer:focus-within #menu.yt-live-chat-text-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-paid-message-renderer:hover #menu.yt-live-chat-paid-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-paid-message-renderer:focus-within #menu.yt-live-chat-paid-message-renderer {
+    opacity: 1 !important;
+}
+html[data-ytkit-livechat-premium] #menu-button button,
+html[data-ytkit-livechat-premium] #menu.yt-live-chat-text-message-renderer button,
+html[data-ytkit-livechat-premium] #menu.yt-live-chat-paid-message-renderer button {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(7,10,16,0.72);
+    color: var(--ytkit-livechat-muted);
+}
+
+html[data-ytkit-livechat-premium] #card.yt-live-chat-paid-message-renderer,
+html[data-ytkit-livechat-premium] #card.yt-live-chat-paid-sticker-renderer,
+html[data-ytkit-livechat-premium] #card.yt-live-chat-membership-item-renderer {
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 52px rgba(2,6,12,0.38);
+    overflow: hidden;
+}
+html[data-ytkit-livechat-premium] yt-live-chat-viewer-engagement-message-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-banner-renderer,
+html[data-ytkit-livechat-premium] yt-live-chat-item-bumper-view-model {
+    margin: 10px 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--ytkit-livechat-border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03)) !important;
+    color: var(--ytkit-livechat-muted) !important;
+}
+
+html[data-ytkit-livechat-premium] yt-live-chat-message-input-renderer {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin-top: 4px;
+    padding: 16px 14px 18px !important;
+    border-top: 1px solid var(--ytkit-livechat-border);
+    background: linear-gradient(180deg, rgba(7,10,16,0), rgba(7,10,16,0.92) 18%, rgba(9,12,18,0.98) 100%) !important;
+    backdrop-filter: none;
+}
+html[data-ytkit-livechat-premium] #input-container.yt-live-chat-message-input-renderer {
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(15,20,28,0.84) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 16px 36px rgba(2,6,12,0.24);
+}
+html[data-ytkit-livechat-premium] yt-live-chat-message-input-renderer:focus-within #input-container.yt-live-chat-message-input-renderer {
+    border-color: rgba(245,158,11,0.28);
+    background: rgba(18,24,33,0.96) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 4px rgba(245,158,11,0.08), 0 18px 40px rgba(2,6,12,0.3);
+}
+html[data-ytkit-livechat-premium] #emoji-picker-button.yt-live-chat-message-input-renderer button,
+html[data-ytkit-livechat-premium] #picker-buttons.yt-live-chat-message-input-renderer yt-icon-button button {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    color: var(--ytkit-livechat-muted);
+}
+html[data-ytkit-livechat-premium] #send-button.yt-live-chat-message-input-renderer > .yt-live-chat-message-input-renderer {
+    min-width: 38px;
+    height: 38px;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+    color: #14181f !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.26), 0 14px 26px rgba(245,158,11,0.22);
+}
+html[data-ytkit-livechat-premium] #send-button.yt-live-chat-message-input-renderer > .yt-live-chat-message-input-renderer[disabled] {
+    background: rgba(255,255,255,0.05) !important;
+    color: var(--ytkit-livechat-soft) !important;
+    box-shadow: none;
+}
+
+html[data-ytkit-livechat-premium] ::-webkit-scrollbar { width: 10px; }
+html[data-ytkit-livechat-premium] ::-webkit-scrollbar-track { background: transparent; }
+html[data-ytkit-livechat-premium] ::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: rgba(148,163,184,0.28);
+    background-clip: padding-box;
+}
+html[data-ytkit-livechat-premium] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(245,158,11,0.34);
+    background-clip: padding-box;
+}
+
+@keyframes ytkit-livechat-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}

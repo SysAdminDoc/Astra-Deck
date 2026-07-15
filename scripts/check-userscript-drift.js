@@ -80,6 +80,9 @@ const MAX_NOT_YET_PORTED_FEATURES = 19;
 
 const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     'features/download-ui/index.js': 'native-companion',
+    // The extension loads this minimal frame runtime instead of the normal-page
+    // monolith. The userscript keeps its existing live-chat implementation.
+    'features/live-chat/index.js': 'intentional-extension-only',
 });
 
 const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({

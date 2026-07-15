@@ -146,9 +146,10 @@ test('syncFromExternal with undefined deletes the cache entry', () => {
     assert.equal('a' in cache._cache, false);
 });
 
-test('manifest.json loads core/storage-manager.js BEFORE ytkit.js in every ISOLATED entry', () => {
+test('manifest.json loads core/storage-manager.js BEFORE every ytkit.js entry', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const isoBlocks = manifest.content_scripts.filter(b => b.world === 'ISOLATED');
+    const isoBlocks = manifest.content_scripts.filter(b => b.js?.includes('ytkit.js'));
+    assert.ok(isoBlocks.length >= 1, 'expected a ytkit.js content_script entry');
     for (const block of isoBlocks) {
         const idxCache = block.js.indexOf('core/storage-manager.js');
         const idxYtkit = block.js.indexOf('ytkit.js');
