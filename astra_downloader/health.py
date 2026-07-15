@@ -1,6 +1,10 @@
 """Import-safe runtime health policy and compatibility boundary."""
 
 import re
+import subprocess
+import threading
+import time
+from pathlib import Path
 
 try:
     from ._compat import make_legacy_resolver
@@ -25,6 +29,8 @@ __all__ = (
     "read_last_installed_update_sha256", "record_last_installed_update_sha256",
     "schedule_companion_update_restart", "schedule_companion_process_exit",
     "_compare_semver",
+    "ExecutableVersionProbe", "parse_ytdlp_version_output",
+    "parse_ffmpeg_version_output",
 )
 
 PO_TOKEN_PROVIDER_PORT = 4416
@@ -128,12 +134,87 @@ def parse_ffmpeg_major(version_string):
     return int(match.group(1)) if match else None
 
 
+def _run_captured(args, timeout=5, *, runner=None, creationflags=0):
+    """Capture a diagnostic subprocess without raising into health endpoints."""
+    runner = subprocess.run if runner is None else runner
+    try:
+        result = runner(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            creationflags=creationflags,
+        )
+        return (result.stdout or '') + (result.stderr or '')
+    except Exception:
+        return ''
+
+
+def parse_ytdlp_version_output(output):
+    first = output.strip().splitlines()[0] if output and output.strip() else ''
+    return first[:32] or None
+
+
+def parse_ffmpeg_version_output(output):
+    first = output.splitlines()[0] if output else ''
+    match = re.search(r'ffmpeg version (\S+)', first)
+    return (match.group(1) if match else '')[:64] or None
+
+
+class ExecutableVersionProbe:
+    """Thread-safe TTL cache for an injected executable version command."""
+
+    def __init__(self, *, path, args, parser, runner, clock=time.time, ttl_seconds=3600):
+        self._path = path
+        self._args = tuple(args)
+        self._parser = parser
+        self._runner = runner
+        self._clock = clock
+        self._ttl_seconds = max(0, float(ttl_seconds))
+        self._value = None
+        self._checked_at = 0.0
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _resolve(value):
+        return value() if callable(value) else value
+
+    def get(self, force=False):
+        path = Path(self._resolve(self._path))
+        if not path.exists():
+            return None
+        with self._lock:
+            now = self._clock()
+            if (
+                not force
+                and self._value is not None
+                and (now - self._checked_at) < self._ttl_seconds
+            ):
+                return self._value
+            self._value = self._parser(self._runner([str(path), *self._args]))
+            self._checked_at = now
+            return self._value
+
+    def reset(self):
+        with self._lock:
+            self._value = None
+            self._checked_at = 0.0
+
+    def prime(self, value, checked_at=None):
+        """Publish a version already verified by an update transaction."""
+        with self._lock:
+            self._value = value
+            self._checked_at = self._clock() if checked_at is None else float(checked_at)
+
+
 _OWNED_EXPORTS = {
     "PO_TOKEN_PROVIDER_PORT", "BGUTIL_POT_MIN_VERSION",
     "YTDLP_EXTERNAL_RUNTIME_CUTOFF", "DENO_MIN_VERSION", "NODE_MIN_VERSION",
     "is_youtube_url", "_compare_semver", "_parse_ytdlp_release_date",
     "ytdlp_needs_external_runtime", "build_javascript_runtime_args",
     "build_youtube_extractor_args", "parse_ffmpeg_major",
+    "_run_captured", "ExecutableVersionProbe", "parse_ytdlp_version_output",
+    "parse_ffmpeg_version_output",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS
