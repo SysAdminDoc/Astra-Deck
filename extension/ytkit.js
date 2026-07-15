@@ -24414,23 +24414,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl?.remove(); this._styleEl = null;
             }
         },
-        {
+        (globalThis.YTKitFeatures?.stickyChat?.createStickyChatFeature?.({
+            storageReadJSON,
+            storageWriteJSON,
+            injectStyle,
+            addNavigateRule,
+            removeNavigateRule,
+            t
+        }) || {
             id: 'stickyChat',
             name: 'Sticky Live Chat',
             description: 'Keeps the live chat panel pinned at the top of the sidebar when scrolling',
             group: 'Live Chat',
             icon: 'message-circle',
-            _styleEl: null,
-
-            init() {
-                const css = `
-                    ytd-live-chat-frame { position: sticky !important; top: 8px !important; z-index: 100 !important; }
-                    #chat-container { position: sticky !important; top: 8px !important; z-index: 100 !important; }
-                `;
-                this._styleEl = injectStyle(css, this.id, true);
-            },
-            destroy() { this._styleEl?.remove(); this._styleEl = null; }
-        },
+            init() { DebugManager.log('StickyChat', 'Feature module unavailable'); },
+            destroy() {}
+        }),
         {
             id: 'autoExpandDescription',
             name: 'Auto-Expand Description',

@@ -18,7 +18,8 @@ test('durable-domain registry explicitly classifies every known storage boundary
         'persistentQueue', 'reactionSpammerState', 'watchLaterRemovalLog',
         'recommendationScrubSessions', 'localeOverride', 'debugPreference',
         'playerControlDismissals', 'theaterSplitRatio', 'transcriptIndex', 'credentialVault',
-        'deArrowCache', 'sponsorBlockCache', 'returnDislikeCache', 'pageCrashGuard', 'updateRecovery'
+        'deArrowCache', 'sponsorBlockCache', 'returnDislikeCache', 'pageCrashGuard', 'updateRecovery',
+        'stickyChatLayout'
     ]) assert.ok(ids.has(required), `registry must classify ${required}`);
     assert.equal(ids.size, persisted.DURABLE_DOMAIN_REGISTRY.length, 'domain ids must be unique');
     for (const domain of persisted.DURABLE_DOMAIN_REGISTRY) {

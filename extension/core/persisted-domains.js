@@ -74,6 +74,7 @@
         { id: 'popupOnboardingState', location: 'extension-local', key: 'ytkit_first_run_seen', backup: 'exclude', reason: 'Installation lifecycle flag.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'popupReleaseState', location: 'extension-local', key: 'ytkit_last_seen_version', backup: 'exclude', reason: 'Installation lifecycle flag.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'popupDisclosureState', location: 'extension-local', key: 'ytkit_popup_schema_overview_expanded', backup: 'exclude', reason: 'Ephemeral popup presentation state.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'stickyChatLayout', location: 'extension-local', key: 'ytkit-sticky-chat-layout', backup: 'exclude', reason: 'Device-specific floating-panel position and opacity.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'companionPromptState', location: 'extension-local', key: 'ytkit_mediadl_prompt_dismissed', backup: 'exclude', reason: 'Installation-specific companion availability state.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'pendingDownloadReveals', location: 'extension-session', key: '_pendingReveals', backup: 'exclude', reason: 'Service-worker recovery state, not user data.', credentialScrub: 'sensitive-keys', migration: 'none' },
         { id: 'serviceWorkerLifecycle', location: 'extension-session', key: '_swLifecycle', backup: 'exclude', reason: 'Service-worker diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
