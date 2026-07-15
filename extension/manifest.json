@@ -134,6 +134,7 @@
         "core/selector-packs/comments.js",
         "core/selector-packs/commentComposer.js",
         "core/selector-packs/engagementPanels.js",
+        "core/selector-packs/transcriptPanel.js",
         "core/selector-packs/settingsOverlay.js",
         "core/selector-packs/profile.js",
         "core/selector-packs/notifications.js",

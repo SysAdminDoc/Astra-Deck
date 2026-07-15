@@ -5759,7 +5759,9 @@ return response;
     // API access. When the json3 fetch returns empty or errors, this
     // fallback reads the rendered engagement-panel transcript DOM instead.
     function _scrapeEngagementPanelTranscript() {
-        const segs = document.querySelectorAll(
+        const panel = globalThis.YTKitCore?.getTranscriptPanelElement?.(document);
+        if (!panel) return null;
+        const segs = panel.querySelectorAll(
             'ytd-transcript-segment-renderer .segment-text, ' +
             'ytd-transcript-segment-renderer yt-formatted-string'
         );
@@ -28322,7 +28324,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._openTimer = null;
                     if (!window.location.pathname.startsWith('/watch')) return;
                     const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
-                    if (moreBtn && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]')) {
+                    if (moreBtn && !globalThis.YTKitCore?.getTranscriptPanelElement?.(document)) {
                         moreBtn.click();
                     }
                 }, delay);
@@ -32116,7 +32118,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const desc = below.querySelector('ytd-watch-metadata, #description-inline-expander, ytd-text-inline-expander');
                 const comments = document.querySelector('ytd-comments#comments');
                 const chapters = document.querySelector('ytd-macro-markers-list-renderer, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]');
-                const transcript = document.querySelector('ytd-transcript-renderer, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
+                const transcript = globalThis.YTKitCore?.getTranscriptPanelElement?.(document) || null;
                 const setVis = (el, vis) => { if (!el) return; el.style.display = vis ? '' : 'none'; };
                 setVis(desc, which === 'desc');
                 setVis(comments, which === 'comments');

@@ -29,6 +29,28 @@
     };
 
     const INNERTUBE_CLIENT_VERSION_FALLBACK = '2.20260401.00.00';
+    const TRANSCRIPT_PANEL_SELECTORS = Object.freeze([
+        'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
+        '[data-target-id="PAmodern_transcript_view"]',
+        'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
+        'ytd-transcript-renderer'
+    ]);
+
+    function getTranscriptPanelElement(root = typeof document !== 'undefined' ? document : null, options = {}) {
+        if (!root?.querySelector) return null;
+        if (typeof core.findSurfaceElement === 'function') {
+            return core.findSurfaceElement('transcriptPanel', {
+                root,
+                required: options.required === true
+            });
+        }
+        for (const selector of TRANSCRIPT_PANEL_SELECTORS) {
+            const match = root.querySelector(selector);
+            if (match) return match;
+        }
+        if (options.required) throw new Error('Required selector surface "transcriptPanel" was not found.');
+        return null;
+    }
 
     function createAbortError() {
         return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
@@ -284,7 +306,14 @@
                 if (typeof document === 'undefined') {
                     throw new Error('document not available');
                 }
-                const transcriptRenderer = document.querySelector('ytd-transcript-renderer');
+                const panel = getTranscriptPanelElement(document);
+                const nestedRenderer = panel?.querySelector?.('ytd-transcript-renderer');
+                const transcriptRenderer = nestedRenderer || (
+                    panel?.data?.content?.transcriptSearchPanelRenderer ||
+                    panel?.__data?.data?.content?.transcriptSearchPanelRenderer
+                        ? panel
+                        : null
+                );
                 if (!transcriptRenderer) throw new Error('Transcript panel not found in DOM');
 
                 const data = transcriptRenderer.__data?.data || transcriptRenderer.data;
@@ -602,6 +631,8 @@
     }
 
     Object.assign(core, {
-        createTranscriptService
+        createTranscriptService,
+        getTranscriptPanelElement,
+        TRANSCRIPT_PANEL_SELECTORS
     });
 })();

@@ -415,7 +415,7 @@ test('selector surface match fixture stays synced to capture-backed packs', () =
         const liveSurface = core.SurfaceSelectorMap[target.surface];
         assert.ok(liveSurface, `${target.surface} must exist in SurfaceSelectorMap`);
         assert.equal(snapshot.surface, target.surface);
-        assert.equal(snapshot.source, `mhtml/${target.mhtml}`);
+        assert.equal(snapshot.source, target.source || `mhtml/${target.mhtml}`);
         assert.equal(snapshot.fixture, target.fixture);
         const minElements = target.minElements || 100;
         assert.ok(snapshot.elementCount >= minElements,
@@ -541,6 +541,12 @@ test('selector surface match fixture proves expanded capture-backed selectors re
         'embed.mainVideo': [
             'video.html5-main-video',
             '#movie_player video',
+        ],
+        'transcriptPanel.classic': [
+            'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
+        ],
+        'transcriptPanel.modern': [
+            '[data-target-id="PAmodern_transcript_view"]',
         ],
     };
 
