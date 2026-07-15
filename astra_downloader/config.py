@@ -7,6 +7,7 @@ frameworks, which lets config tooling and tests run without PyQt or Flask.
 
 import os
 import re
+import threading
 import uuid
 from pathlib import Path
 from urllib.parse import urlparse
@@ -32,6 +33,7 @@ __all__ = (
     "verify_file_sha256", "fetch_expected_sha256", "cleanup_stale_cookie_jars",
     "write_cookies_netscape", "RateLimiter", "Config", "History",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
+    "ConfigStore", "HistoryStore",
 )
 
 _OWNED_EXPORTS = {
@@ -40,6 +42,7 @@ _OWNED_EXPORTS = {
     "normalize_url", "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
     "DEFAULT_CONFIG", "sanitize_config",
+    "ConfigStore", "HistoryStore",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
 }
 _resolve_legacy = make_legacy_resolver(
@@ -303,6 +306,110 @@ def sanitize_config(raw):
         if isinstance(item, str) and (cleaned := clean_path_text(item))
     ]
     return data
+
+
+class ConfigStore:
+    """Transactional config persistence with explicit filesystem dependencies."""
+
+    def __init__(self, *, install_dir, path, sanitizer, loader, writer, logger):
+        self._install_dir = install_dir
+        self._path = path
+        self._sanitizer = sanitizer
+        self._loader = loader
+        self._writer = writer
+        self._logger = logger
+        self._lock = threading.RLock()
+        self._resolve(self._install_dir).mkdir(parents=True, exist_ok=True)
+        self._data = self._sanitizer(self._loader(self._resolve(self._path), {}))
+        self._persisted_data = dict(self._data)
+        self.save()
+
+    @staticmethod
+    def _resolve(value):
+        return value() if callable(value) else value
+
+    def get(self, key, default=None):
+        with self._lock:
+            return self._data.get(key, default)
+
+    def set(self, key, value):
+        with self._lock:
+            self._data[key] = value
+
+    def update(self, mapping):
+        with self._lock:
+            candidate = dict(self._data)
+            candidate.update(mapping)
+            return self._save_candidate_unlocked(candidate)
+
+    def save(self):
+        with self._lock:
+            return self._save_candidate_unlocked(self._data)
+
+    def _save_candidate_unlocked(self, candidate):
+        candidate = self._sanitizer(candidate)
+        try:
+            self._writer(self._resolve(self._path), candidate)
+        except Exception as error:
+            self._data = dict(self._persisted_data)
+            self._logger(f"Config save failed: {error}")
+            return False
+        self._data = candidate
+        self._persisted_data = dict(candidate)
+        return True
+
+    @property
+    def data(self):
+        with self._lock:
+            return dict(self._data)
+
+
+class HistoryStore:
+    """Bounded history persistence with explicit serialization dependencies."""
+
+    def __init__(self, *, path, sanitizer, loader, writer, logger, limit=500):
+        self._path = path
+        self._sanitizer = sanitizer
+        self._loader = loader
+        self._writer = writer
+        self._logger = logger
+        self._limit = max(1, int(limit))
+        self._lock = threading.Lock()
+        if not self._resolve_path().exists():
+            self._write([])
+
+    def _resolve_path(self):
+        return self._path() if callable(self._path) else self._path
+
+    def load(self):
+        with self._lock:
+            return self._sanitizer(self._loader(self._resolve_path(), []))
+
+    def add(self, entry):
+        with self._lock:
+            data = self._sanitizer(self._loader(self._resolve_path(), []))
+            data.append(entry)
+            return self._write_unlocked(data[-self._limit:])
+
+    def clear(self):
+        with self._lock:
+            return self._write_unlocked([])
+
+    def replace(self, entries):
+        with self._lock:
+            return self._write_unlocked(entries)
+
+    def _write(self, data):
+        with self._lock:
+            return self._write_unlocked(data)
+
+    def _write_unlocked(self, data):
+        try:
+            self._writer(self._resolve_path(), self._sanitizer(data))
+            return True
+        except Exception as error:
+            self._logger(f"History save failed: {error}")
+            return False
 
 
 def __getattr__(name):

@@ -109,6 +109,68 @@ class NormalizationTests(unittest.TestCase):
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_owned_config_store_uses_injected_persistence_and_rolls_back(self):
+        import importlib
+
+        config_module = importlib.import_module("config")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "owned-config.json"
+            durable = {"value": 1}
+            errors = []
+
+            def loader(_path, _default):
+                return dict(durable)
+
+            def writer(_path, data):
+                if data.get("value") == 3:
+                    raise OSError("disk full")
+                durable.clear()
+                durable.update(data)
+
+            store = config_module.ConfigStore(
+                install_dir=Path(tmp),
+                path=path,
+                sanitizer=lambda data: dict(data),
+                loader=loader,
+                writer=writer,
+                logger=errors.append,
+            )
+            self.assertTrue(store.update({"value": 2}))
+            self.assertEqual(store.get("value"), 2)
+            self.assertFalse(store.update({"value": 3}))
+            self.assertEqual(store.get("value"), 2)
+            self.assertEqual(durable, {"value": 2})
+            self.assertEqual(errors, ["Config save failed: disk full"])
+            self.assertEqual(Path(config_module.__file__).name, "config.py")
+
+    def test_owned_history_store_enforces_injected_retention_limit(self):
+        import importlib
+
+        config_module = importlib.import_module("config")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "owned-history.json"
+            durable = []
+
+            def loader(_path, _default):
+                return list(durable)
+
+            def writer(actual_path, data):
+                durable[:] = data
+                actual_path.touch(exist_ok=True)
+
+            store = config_module.HistoryStore(
+                path=path,
+                sanitizer=lambda entries: list(entries),
+                loader=loader,
+                writer=writer,
+                logger=self.fail,
+                limit=2,
+            )
+            for value in (1, 2, 3):
+                self.assertTrue(store.add({"value": value}))
+            self.assertEqual(store.load(), [{"value": 2}, {"value": 3}])
+            self.assertEqual(Path(config_module.__file__).name, "config.py")
+
     def test_history_load_backs_up_corrupt_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             original = ad.HISTORY_PATH
