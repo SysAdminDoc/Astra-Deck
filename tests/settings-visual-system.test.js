@@ -18,15 +18,15 @@ const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
 
-test('settings visual system replaces boxed cards and badges with a readable settings document', () => {
-    assert.match(visualSystemSource, /settings visual system v3 — imagegen mockup parity/);
+test('settings visual system replaces boxed dashboard chrome with a compact settings document', () => {
+    assert.match(visualSystemSource, /settings visual system v4 — calm, compact document UI/);
     assert.match(
         visualSystemSource,
-        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*80px[\s\S]*?border:\s*0[\s\S]*?border-bottom:\s*1px solid var\(--ytkit-v3-border\)[\s\S]*?background:\s*transparent/
+        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*70px[\s\S]*?border:\s*0[\s\S]*?border-bottom:\s*1px solid var\(--ytkit-v3-border\)[\s\S]*?background:\s*transparent/
     );
-    assert.match(visualSystemSource, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*28px/);
+    assert.match(visualSystemSource, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*29px/);
     assert.match(visualSystemSource, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
-    assert.match(visualSystemSource, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*13\.5px/);
+    assert.match(visualSystemSource, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*14px[\s\S]*?white-space:\s*nowrap/);
     assert.match(
         visualSystemSource,
         /\.ytkit-feature-glyph,[\s\S]*?\.ytkit-feature-meta,[\s\S]*?\.ytkit-feature-badge\s*\{\s*display:\s*none/
@@ -47,6 +47,24 @@ test('settings visual system replaces boxed cards and badges with a readable set
         /\.ytkit-switch\.active \.ytkit-switch-thumb\s*\{[\s\S]*?inset-inline-start:\s*23px[\s\S]*?transform:\s*none/
     );
     assert.match(visualSystemSource, /#ytkit-reset-active-section\s*\{\s*display:\s*none/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-body\s*\{[\s\S]*?grid-template-columns:\s*240px minmax\(0, 1fr\)/
+    );
+    assert.match(visualSystemSource, /\.ytkit-insights\s*\{\s*display:\s*none/);
+    assert.match(visualSystemSource, /\.ytkit-header\s*\{[\s\S]*?min-height:\s*64px/);
+    assert.match(visualSystemSource, /\.ytkit-footer\s*\{[\s\S]*?min-height:\s*58px/);
+    assert.match(visualSystemSource, /\.ytkit-select\s*\{[\s\S]*?border:\s*0[\s\S]*?background:\s*var\(--ytkit-v3-surface\)/);
+    assert.match(visualSystemSource, /\.ytkit-select-shell-chrome\s*\{\s*display:\s*none/);
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-panel-status\s*\{[\s\S]*?border:\s*0[\s\S]*?background:\s*transparent[\s\S]*?text-align:\s*start/
+    );
+    for (const source of [settingsPanel, shell]) {
+        assert.match(source, /footerStatus\.textContent = 'Saved'/);
+        assert.match(source, /id: 'ytkit-close-footer',[\s\S]*?label: 'Done'/);
+        assert.match(source, /paneDescription\.title = paneDescription\.textContent/);
+    }
 });
 
 test('insight-rail curation keys on stable data attributes, not nth-child position', () => {
@@ -70,7 +88,7 @@ test('insight-rail curation keys on stable data attributes, not nth-child positi
 test('sticky settings section header stays opaque above scrolling controls', () => {
     assert.match(
         visualSystemSource,
-        /#ytkit-settings-panel \.ytkit-pane-header\s*\{[\s\S]*?position:\s*sticky !important;[\s\S]*?top:\s*0 !important;[\s\S]*?z-index:\s*4 !important;[\s\S]*?background:\s*var\(--ytkit-v3-bg\) !important;[\s\S]*?box-shadow:\s*0 -28px 0 var\(--ytkit-v3-bg\) !important;/
+        /#ytkit-settings-panel \.ytkit-pane-header\s*\{[\s\S]*?position:\s*sticky !important;[\s\S]*?top:\s*0 !important;[\s\S]*?z-index:\s*4 !important;[\s\S]*?background:\s*var\(--ytkit-v3-bg\) !important;[\s\S]*?box-shadow:\s*0 -20px 0 var\(--ytkit-v3-bg\) !important;/
     );
     assert.match(overlaySmoke, /sticky section header background is not opaque after scrolling/);
     assert.match(overlaySmoke, /for \(const categoryId of categoryIds\)/);
@@ -150,7 +168,7 @@ test('settings visual-system injection is safe and idempotent', () => {
     const visualSystem = require(modulePath);
 
     try {
-        const existing = { id: 'yt-suite-style-ytkit-settings-visual-v3' };
+        const existing = { id: 'yt-suite-style-ytkit-settings-visual-v4' };
         const existingDocument = { getElementById: () => existing };
         assert.equal(visualSystem.ensureSettingsVisualSystem(existingDocument), existing);
         assert.equal(injections.length, 0);

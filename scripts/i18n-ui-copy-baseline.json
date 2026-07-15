@@ -43,7 +43,7 @@
     },
     "extension/features/settings-panel/index.js": {
       "count": 176,
-      "digest": "fb340516ea34f8b9e1f7fa00c8e3469bd342546be2d6fa3599571b11187b22b6"
+      "digest": "c2b8bf6b74e76d718f50253c23365f0bcafc060d7f70ca4c2b04eabc0b73ef3c"
     },
     "extension/features/sponsorblock/index.js": {
       "count": 2,
@@ -83,7 +83,7 @@
     },
     "extension/ytkit.js": {
       "count": 1377,
-      "digest": "55ee2f58614fb207c3be3d3adf3a3fcb4c87f09d8c2c298b87b82907b0af624f"
+      "digest": "f68b85b4c7b968bad648b5d0d7ca5c7365bc1ac52e446545d730080564efe4f1"
     }
   }
 }

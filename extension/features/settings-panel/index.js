@@ -1759,6 +1759,7 @@ function buildSettingsPanel() {
             const paneDescription = document.createElement('p');
             paneDescription.className = 'ytkit-pane-description';
             paneDescription.textContent = CATEGORY_META[cat]?.description || 'Adjust how this part of YouTube behaves.';
+            paneDescription.title = paneDescription.textContent;
             const paneMeta = document.createElement('div');
             paneMeta.className = 'ytkit-pane-meta';
             const paneEnabledChip = document.createElement('span');
@@ -2245,7 +2246,7 @@ function buildSettingsPanel() {
         footerStatus.setAttribute('role', 'status');
         footerStatus.setAttribute('aria-live', 'polite');
         footerStatus.dataset.tone = 'idle';
-        footerStatus.textContent = 'Ready. Changes save automatically.';
+        footerStatus.textContent = 'Saved';
 
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
@@ -2274,7 +2275,7 @@ function buildSettingsPanel() {
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-close-footer',
-            label: 'Close',
+            label: 'Done',
             icon: 'close',
             variant: 'primary',
             ariaLabel: t('panelCloseAria', 'Close settings')
