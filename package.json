@@ -61,5 +61,9 @@
     "eslint": "^10.6.0",
     "web-ext": "10.4.0",
     "ws": "8.21.0"
+  },
+  "overrides": {
+    "adm-zip": "^0.6.0",
+    "shell-quote": "^1.10.0"
   }
 }
