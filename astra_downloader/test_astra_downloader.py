@@ -284,7 +284,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         probe_source = inspect.getsource(ad.ReadinessProbe.run)
         probe_wiring_source = inspect.getsource(ad.ReadinessProbe.__init__)
         download_card_source = inspect.getsource(ad.MainWindow._download_card)
-        self.assertIn("#ff5f4b", ad.STYLESHEET)
+        self.assertIn("#ff6552", ad.STYLESHEET)
         self.assertIn('QFrame[class="readiness"]', ad.STYLESHEET)
         self.assertIn('QLabel[class="errorCallout"]', ad.STYLESHEET)
         self.assertIn("self._runtime_probe", probe_source)
@@ -292,19 +292,30 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn("probe_javascript_runtime", probe_wiring_source)
         self.assertIn("probe_po_token_provider", probe_wiring_source)
         self.assertIn("self.readiness_worker.moveToThread", source)
+        self.assertIn("if is_frozen_app() and not visual_smoke", source)
+        self.assertIn("if visual_smoke:", source)
         self.assertIn("dl.error_advice", download_card_source)
         renderer_path = Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py"
         self.assertTrue(renderer_path.exists())
         renderer_source = renderer_path.read_text(encoding="utf-8")
         self.assertIn("btn.setCheckable(True)", source)
         self.assertIn("btn.setAutoExclusive(True)", source)
-        self.assertIn("Unsaved changes. Save when ready.", source)
-        self.assertIn('make_section_label("Ready when you are")', gui_source)
-        self.assertIn("window.render(pixmap)", renderer_source)
+        self.assertIn('self._show_settings_status("Unsaved changes", "warning")', source)
+        self.assertIn('make_line_icon("Downloads" if "Queue" in title else "History")', gui_source)
+        self.assertIn('QFrame[class="settingsGroup"]', ad.STYLESHEET)
+        self.assertIn('QLabel[class="stateLabel"]', ad.STYLESHEET)
+        self.assertIn("window.tabs.render(tab_image)", renderer_source)
+        self.assertIn("QImage.Format.Format_ARGB32", renderer_source)
+        self.assertIn("for nav_button in window.nav_buttons", renderer_source)
         self.assertIn("Companion navigation rail is incomplete", renderer_source)
+        # The renderer composes the rail from app_module.make_line_icon, so the
+        # top module must re-export it. A missing re-export aborts the offscreen
+        # smoke via an unhandled slot exception (0xC0000409) with no traceback.
+        self.assertIn("app_module.make_line_icon(", renderer_source)
+        self.assertTrue(callable(ad.make_line_icon))
         self.assertIn("self.btn_clear_history.setEnabled(bool(data))", source)
-        self.assertIn('"Open Dashboard"', source)
-        self.assertIn('"View Download Queue"', source)
+        self.assertIn('"Open dashboard"', source)
+        self.assertIn('"View download queue"', source)
 
     def test_failed_settings_write_keeps_server_running_and_form_dirty(self):
         class TextField:
@@ -345,7 +356,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
 
         class Button:
             def __init__(self):
-                self.text_value = "Save Changes"
+                self.text_value = "Save changes"
 
             def setText(self, value):
                 self.text_value = value
@@ -402,7 +413,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         ad.MainWindow._save_settings(window)
 
         self.assertEqual(window.server_calls, [])
-        self.assertEqual(window.btn_save.text_value, "Save Changes")
+        self.assertEqual(window.btn_save.text_value, "Save changes")
         self.assertEqual(window.statuses[-1][1], "danger")
         self.assertIn("Nothing changed", window.statuses[-1][0])
         self.assertIn("server state were preserved", window.logs[-1])
@@ -2242,6 +2253,19 @@ class Sha256VerifyTests(unittest.TestCase):
         digest = "d" * 64
         self.assertEqual(ad._parse_sha256_sums(f"{digest}\n"), digest)
 
+    def test_ffmpeg_checksum_manifest_selects_the_named_archive(self):
+        digest = "f" * 64
+        manifest = (
+            f"{'e' * 64}  ffmpeg-master-latest-win64-gpl-shared.zip\n"
+            f"{digest}  ffmpeg-master-latest-win64-gpl.zip\n"
+        )
+        self.assertEqual(
+            ad._parse_sha256_sums(manifest, target_asset=ad.FFMPEG_SHA256_ASSET),
+            digest,
+        )
+        self.assertEqual(ad.FFMPEG_SHA256_ASSET, "ffmpeg-master-latest-win64-gpl.zip")
+        self.assertTrue(ad.FFMPEG_SHA256_URL.endswith("/checksums.sha256"))
+
     class _SidecarResponse:
         def __init__(self, chunks, *, status_code=200, headers=None):
             self._chunks = list(chunks)
@@ -2354,6 +2378,10 @@ class SetupChecksumTests(unittest.TestCase):
                         label="ffmpeg",
                     )
             self.assertFalse(path.exists())
+
+    def test_setup_worker_passes_ffmpeg_asset_name_to_checksum_manifest(self):
+        source = Path(ad.__file__).with_name('gui.py').read_text(encoding='utf-8')
+        self.assertIn("asset_name=self._value('FFMPEG_SHA256_ASSET')", source)
 
     def test_setup_worker_routes_updates_through_staged_rollback_updater(self):
         config = FakeConfig({'AutoUpdateYtDlp': True})

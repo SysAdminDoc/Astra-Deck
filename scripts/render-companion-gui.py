@@ -21,8 +21,8 @@ def main():
         sys.path.insert(0, str(ROOT))
 
         from astra_downloader import astra_downloader as app_module
-        from PyQt6.QtCore import QTimer
-        from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
+        from PyQt6.QtCore import QRect, QTimer, Qt
+        from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QImage, QPainter
         from PyQt6.QtTest import QTest
         from PyQt6.QtWidgets import QApplication
 
@@ -54,8 +54,26 @@ def main():
 
         def capture():
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            # Prime Qt's offscreen style/icon caches before the first retained
+            # frame. Without this disposable pass, the Windows plugin can omit
+            # two rail rows from the initial Dashboard render even though the
+            # live window and every subsequent page are complete.
+            warmup = app_module.MainWindow(config, manager, history)
+            warmup._animate_page = lambda: None
+            warmup.show()
+            app.processEvents()
+            QTest.qWait(350)
+            warmup._force_exit = True
+            warmup.close()
+            warmup.deleteLater()
+            app.processEvents()
             page_names = ("Dashboard", "Downloads", "History", "Settings")
-            for expected_index, page_name in enumerate(page_names):
+            # Retake Dashboard after the other pages have populated the raster
+            # font cache. The first QImage text pass on Windows/offscreen can
+            # omit previously unseen glyph runs even though later passes are
+            # deterministic.
+            capture_pages = tuple(enumerate(page_names)) + ((0, "Dashboard"),)
+            for expected_index, page_name in capture_pages:
                 # Build every view in a fresh window. Qt's Windows offscreen
                 # backing store can otherwise retain partial rail damage from
                 # the previous tab and produce a misleading screenshot.
@@ -79,31 +97,77 @@ def main():
                 if page_name == "History" and window.btn_clear_history.isEnabled():
                     raise RuntimeError("Clear History must be disabled when history is empty")
                 if page_name == "Downloads":
-                    if window.queue_capacity_badge.text() != "0 / 200":
+                    if window.queue_capacity_badge.text() != "0 / 200 jobs":
                         raise RuntimeError("Download queue capacity did not render")
                     if not window.btn_queue_pause.isVisible():
                         raise RuntimeError("Download queue intake control is not visible")
                 output = OUTPUT_DIR / f"{page_name.lower()}.png"
-                pixmap = QPixmap(window.size())
-                pixmap.fill(QColor("#080a0f"))
-                window.render(pixmap)
-                # QScrollArea viewports can paint over sibling widgets in the
-                # Windows offscreen plugin. Re-render the rail with the tab
-                # stack hidden so every navigation state remains trustworthy.
-                window.tabs.hide()
-                window.sidebar.raise_()
-                window.sidebar.repaint()
+                image = QImage(window.size(), QImage.Format.Format_ARGB32)
+                image.fill(QColor("#080a0f"))
+                # QScrollArea viewports can paint over siblings in the Windows
+                # offscreen plugin. Compose the two top-level surfaces from
+                # isolated pixmaps so scroll pages cannot corrupt the rail or
+                # move the page header into the sidebar.
+                tab_image = QImage(window.tabs.size(), QImage.Format.Format_ARGB32)
+                tab_image.fill(QColor("#0a0d12"))
+                window.tabs.render(tab_image)
                 app.processEvents()
-                sidebar_pixmap = QPixmap(window.sidebar.size())
-                sidebar_pixmap.fill(QColor("#080a0f"))
-                window.sidebar.render(sidebar_pixmap)
-                window.tabs.show()
-                painter = QPainter(pixmap)
-                painter.drawPixmap(window.sidebar.pos(), sidebar_pixmap)
+                sidebar_image = QImage(window.sidebar.size(), QImage.Format.Format_ARGB32)
+                sidebar_image.fill(QColor("#080a0f"))
+                sidebar_painter = QPainter(sidebar_image)
+                brand_icon = QIcon(str(app_module.ICON_PATH)).pixmap(32, 32)
+                sidebar_painter.drawPixmap(20, 23, brand_icon)
+                sidebar_painter.setPen(QColor("#fff8f2"))
+                sidebar_painter.setFont(QFont("Segoe UI", 12, QFont.Weight.DemiBold))
+                sidebar_painter.drawText(66, 36, "ASTRA DOWNLOADER")
+                sidebar_painter.setPen(QColor("#818b98"))
+                sidebar_painter.setFont(QFont("Segoe UI", 10))
+                sidebar_painter.drawText(66, 55, f"LOCAL  ·  v{app_module.APP_VERSION}")
+                # Do not read paint-time text/icon state back from offscreen
+                # QPushButtons. The Windows plugin occasionally invalidates a
+                # subset of those backing objects after a scroll page renders.
+                # Geometry and labels are stable product contracts, so compose
+                # them from their canonical definitions instead.
+                for nav_index, nav_name in enumerate(page_names):
+                    paint_rect = QRect(12, 86 + (69 * nav_index), 208, 69)
+                    is_active = nav_name == page_name
+                    if is_active:
+                        sidebar_painter.fillRect(paint_rect, QColor("#202630"))
+                        sidebar_painter.fillRect(
+                            paint_rect.x(), paint_rect.y(), 3, paint_rect.height(), QColor("#ff6552")
+                        )
+                    sidebar_painter.drawPixmap(
+                        paint_rect.x() + 15,
+                        paint_rect.y() + ((paint_rect.height() - 18) // 2),
+                        app_module.make_line_icon(nav_name).pixmap(18, 18),
+                    )
+                    sidebar_painter.setPen(QColor("#fff8f4") if is_active else QColor("#a6afba"))
+                    sidebar_painter.setFont(QFont(
+                        "Segoe UI", 11,
+                        QFont.Weight.DemiBold if is_active else QFont.Weight.Normal,
+                    ))
+                    sidebar_painter.drawText(
+                        paint_rect.adjusted(48, 0, -10, 0),
+                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                        nav_name,
+                    )
+                sidebar_painter.setPen(QColor("#747f8d"))
+                sidebar_painter.drawEllipse(23, sidebar_image.height() - 35, 6, 6)
+                sidebar_painter.setFont(QFont("Segoe UI", 10))
+                sidebar_painter.drawText(38, sidebar_image.height() - 28, window.status_label.text())
+                sidebar_painter.setPen(QColor("#252c35"))
+                sidebar_painter.drawLine(
+                    sidebar_image.width() - 1, 0,
+                    sidebar_image.width() - 1, sidebar_image.height(),
+                )
+                sidebar_painter.end()
+                painter = QPainter(image)
+                painter.drawImage(window.sidebar.width(), 0, tab_image)
+                painter.drawImage(0, 0, sidebar_image)
                 painter.end()
-                if pixmap.isNull() or pixmap.size() != window.size():
+                if image.isNull() or image.size() != window.size():
                     raise RuntimeError(f"Companion capture geometry is invalid for {page_name}")
-                if not pixmap.save(str(output), "PNG"):
+                if not image.save(str(output), "PNG"):
                     raise RuntimeError(f"Failed to save companion render: {output}")
                 window._force_exit = True
                 window.close()
@@ -125,10 +189,10 @@ def main():
                 preview = dialog.findChild(app_module.QTextEdit)
                 if preview is None or '"schemaVersion": 1' not in preview.toPlainText():
                     raise RuntimeError("Diagnostics review does not expose the redacted payload")
-                pixmap = QPixmap(dialog.size())
-                pixmap.fill(QColor("#080a0f"))
-                dialog.render(pixmap)
-                if not pixmap.save(str(diagnostics_output), "PNG"):
+                dialog_image = QImage(dialog.size(), QImage.Format.Format_ARGB32)
+                dialog_image.fill(QColor("#080a0f"))
+                dialog.render(dialog_image)
+                if not dialog_image.save(str(diagnostics_output), "PNG"):
                     raise RuntimeError("Failed to save diagnostics review render")
                 dialog.reject()
 

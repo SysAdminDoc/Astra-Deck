@@ -107,8 +107,8 @@ try:
         ReadinessProbe as _OwnedReadinessProbe,
         SetupWorkerCore,
         download_status_tone, format_duration, human_status, make_card,
-        make_divider, make_empty_state, make_label, make_section_label,
-        make_stat, make_status_badge, repolish,
+        make_divider, make_empty_state, make_label, make_line_icon,
+        make_section_label, make_stat, make_status_badge, repolish,
     )
 except ImportError:  # Direct script / flat source-path compatibility.
     from routes import (
@@ -164,8 +164,8 @@ except ImportError:  # Direct script / flat source-path compatibility.
         ReadinessProbe as _OwnedReadinessProbe,
         SetupWorkerCore,
         download_status_tone, format_duration, human_status, make_card,
-        make_divider, make_empty_state, make_label, make_section_label,
-        make_stat, make_status_badge, repolish,
+        make_divider, make_empty_state, make_label, make_line_icon,
+        make_section_label, make_stat, make_status_badge, repolish,
     )
 
 # ══════════════════════════════════════════════════════════════
@@ -274,7 +274,8 @@ MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 # an unverified yt-dlp/ffmpeg binary is worse than a blocked first-run setup.
 YTDLP_SHA256_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS"
 YTDLP_SHA256_ASSET = "yt-dlp.exe"
-FFMPEG_SHA256_URL = FFMPEG_URL + ".sha256"
+FFMPEG_SHA256_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/checksums.sha256"
+FFMPEG_SHA256_ASSET = Path(urlparse(FFMPEG_URL).path).name
 # v1.2.0: stamp we write under HKCU so shortcut/protocol/task/uninstall
 # registration is skipped on subsequent launches at the same version.
 INTEGRATIONS_STAMP_KEY = r'Software\Classes\AstraDownloader'
@@ -2679,6 +2680,201 @@ QMenu { background-color: #11161e; border-color: #303a47; }
 QMenu::item:selected { background-color: #2b1919; }
 """
 
+# Quiet desktop system: one type scale, one spacing rhythm, and separators in
+# place of nested cards. Reset here so the companion ships one visual system,
+# independent of the retained historical source rules above.
+STYLESHEET = """
+QMainWindow, QWidget {
+    background-color: #0a0d12;
+    color: #f2f0ed;
+    font-size: 13px;
+}
+QLabel { color: #f2f0ed; background: transparent; }
+QLabel[class="title"] { font-size: 28px; font-weight: 700; color: #fbf8f5; }
+QLabel[class="subtitle"] { color: #9da6b2; font-size: 13px; }
+QLabel[class="muted"] { color: #8d97a4; }
+QLabel[class="secondary"] { color: #c5cbd3; font-size: 13px; }
+QLabel[class="section"], QLabel[class="panelTitle"] {
+    color: #f1eeea;
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: 0;
+}
+QLabel[class="settingsSection"] {
+    color: #b8c0ca;
+    font-size: 15px;
+    font-weight: 650;
+}
+QLabel[class="fieldLabel"] { color: #f1eeea; font-size: 13px; font-weight: 600; }
+QLabel[class="fieldHint"] { color: #8d97a4; font-size: 12px; }
+QLabel[class="toolbarMeta"], QLabel[class="columnLabel"], QLabel[class="tableValue"] {
+    color: #aab2bd;
+    font-size: 13px;
+}
+QLabel[class="metricLabel"] { color: #aab2bd; font-size: 13px; }
+QLabel[class="metricValue"] { color: #f8f5f1; font-size: 26px; font-weight: 700; }
+QLabel[class="metricValue"][tone="accent"] { color: #ff6a57; }
+QLabel[class="heroTitle"] { color: #faf7f3; font-size: 18px; font-weight: 650; }
+QLabel[class="emptyGlyph"] { color: #788391; font-size: 42px; font-weight: 300; }
+QLabel[class="emptyTitle"] { color: #f4f1ee; font-size: 19px; font-weight: 650; }
+QLabel[class="emptyBody"] { color: #98a1ad; font-size: 13px; }
+QLabel[class="stateDot"] { font-size: 13px; }
+QLabel[class="stateDot"][tone="success"] { color: #55d69f; }
+QLabel[class="stateDot"][tone="warning"] { color: #f1b45e; }
+QLabel[class="stateDot"][tone="danger"] { color: #ff7568; }
+QLabel[class="stateDot"][tone="neutral"] { color: #747f8d; }
+QLabel[class="stateLabel"] { font-size: 12px; font-weight: 600; }
+QLabel[class="stateLabel"][tone="success"] { color: #75dcb1; }
+QLabel[class="stateLabel"][tone="warning"] { color: #edbd76; }
+QLabel[class="stateLabel"][tone="danger"] { color: #ff8d82; }
+QLabel[class="stateLabel"][tone="info"] { color: #85bee8; }
+QLabel[class="stateLabel"][tone="neutral"] { color: #9ca5b0; }
+QLabel[class="readinessValue"] { color: #d9dde2; font-size: 12px; font-weight: 600; }
+QLabel[class="readinessDot"] { font-size: 12px; }
+QLabel[class="readinessDot"][tone="success"] { color: #55d69f; }
+QLabel[class="readinessDot"][tone="warning"] { color: #f1b45e; }
+QLabel[class="readinessDot"][tone="danger"] { color: #ff7568; }
+QLabel[class="readinessDot"][tone="neutral"] { color: #747f8d; }
+QLabel[class="badge"] { background: transparent; border: none; padding: 0; font-size: 12px; font-weight: 600; }
+QLabel[class="badge"][tone="success"] { color: #75dcb1; }
+QLabel[class="badge"][tone="warning"] { color: #edbd76; }
+QLabel[class="badge"][tone="danger"] { color: #ff8d82; }
+QLabel[class="badge"][tone="info"] { color: #85bee8; }
+QLabel[class="badge"][tone="neutral"] { color: #9ca5b0; }
+QLabel[class="errorCallout"] {
+    color: #ffb7b0;
+    background: #1c1315;
+    border-left: 2px solid #b65a53;
+    padding: 9px 11px;
+    font-size: 12px;
+}
+
+QPushButton {
+    background-color: transparent;
+    color: #d8dde3;
+    border: 1px solid #343d49;
+    border-radius: 7px;
+    padding: 7px 13px;
+    min-height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+}
+QPushButton:hover { background-color: #171d25; border-color: #4a5563; color: #fffaf6; }
+QPushButton:pressed { background-color: #11161d; }
+QPushButton:focus { border-color: #ff7664; }
+QPushButton:disabled { color: #606a77; background: transparent; border-color: #232a33; }
+QPushButton[class="primary"] {
+    background-color: #ff6552;
+    color: #170806;
+    border-color: #ff6552;
+    font-weight: 700;
+}
+QPushButton[class="primary"]:hover { background-color: #ff7867; border-color: #ff7867; }
+QPushButton[class="secondary"] { background: transparent; color: #d8dde3; border-color: #3a4451; }
+QPushButton[class="danger"] { background: transparent; color: #ef9b93; border-color: #65403e; }
+QPushButton[class="ghost"] { background: transparent; border-color: transparent; color: #aeb6c1; padding-left: 9px; padding-right: 9px; }
+QPushButton[class="ghost"]:hover { background-color: #171d25; border-color: transparent; color: #f2f0ed; }
+QPushButton[class="nav"] {
+    color: #a6afba;
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 5px;
+    text-align: left;
+    padding: 11px 14px;
+    margin: 0 12px 5px 12px;
+    min-height: 42px;
+    font-size: 14px;
+    font-weight: 550;
+}
+QPushButton[class="nav"]:hover { background-color: #151a21; color: #f2f0ed; }
+QPushButton[class="nav"][active="true"] {
+    color: #fff8f4;
+    background-color: #202630;
+    border-left-color: #ff6552;
+    font-weight: 650;
+}
+QPushButton[class="nav"]:focus { background-color: #171d25; border-left-color: #697482; }
+QPushButton[class="nav"][active="true"]:focus { background-color: #242b35; border-left-color: #ff6552; }
+
+QLineEdit, QSpinBox, QComboBox {
+    background-color: #11161d;
+    color: #f0eeeb;
+    border: 1px solid #343e4a;
+    border-radius: 7px;
+    padding: 7px 10px;
+    min-height: 36px;
+    font-size: 13px;
+}
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus { border-color: #ff7664; background: #151b23; }
+QLineEdit[state="error"], QSpinBox[state="error"] { border-color: #c9675f; background: #1a1214; }
+QLineEdit:disabled, QSpinBox:disabled, QComboBox:disabled { color: #687381; background: #0e1319; border-color: #252d37; }
+QComboBox::drop-down { border: none; width: 24px; }
+QSpinBox::up-button, QSpinBox::down-button { width: 18px; border: none; background: transparent; }
+QCheckBox { color: #d7dce2; font-size: 13px; spacing: 10px; min-height: 26px; }
+QCheckBox::indicator { width: 17px; height: 17px; border-radius: 4px; border: 1px solid #485362; background: transparent; }
+QCheckBox::indicator:hover { border-color: #718092; }
+QCheckBox::indicator:checked { background: #ff6552; border-color: #ff6552; }
+QCheckBox:disabled { color: #687381; }
+
+QFrame[class="sidebar"] { background-color: #080b0f; border-right: 1px solid #252c35; }
+QFrame[class="card"] { background: transparent; border: none; }
+QFrame[class="serverControl"], QFrame[class="readiness"] {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+QFrame[class="readinessRow"] { background: transparent; border: none; }
+QFrame[class="stat"] {
+    background: transparent;
+    border: none;
+    border-right: 1px solid #2b333d;
+    border-radius: 0;
+}
+QFrame[class="stat"][last="true"] { border-right: none; }
+QFrame[class="empty"] { background: transparent; border: none; border-radius: 0; }
+QFrame[class="settingsGroup"] {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #252d37;
+    border-radius: 0;
+}
+QFrame[class="listHeader"] { background: transparent; border: none; border-bottom: 1px solid #2a323c; }
+QFrame[class="historyRow"], QFrame[class="download"] {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #252d37;
+    border-radius: 0;
+}
+QFrame[class="download"][state="failed"] { background: #151113; border-left: 2px solid #b65a53; }
+QFrame[class="download"][state="complete"] { background: transparent; border-left: 2px solid #3f8b70; }
+QFrame[class="divider"] { background: #29313b; border: none; min-height: 1px; max-height: 1px; }
+QFrame[class="verticalDivider"] { background: #2b333d; border: none; min-width: 1px; max-width: 1px; }
+
+QTextEdit {
+    background-color: #0d1218;
+    color: #b4bcc6;
+    border: 1px solid #303945;
+    border-radius: 7px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 12px;
+    padding: 12px;
+}
+QScrollArea { border: none; background: transparent; }
+QScrollArea > QWidget > QWidget { background: transparent; }
+QScrollBar:vertical { background: transparent; width: 8px; border: none; margin: 2px; }
+QScrollBar::handle:vertical { background: #394350; border-radius: 4px; min-height: 28px; }
+QProgressBar { background: #151b22; border: none; border-radius: 3px; height: 6px; }
+QProgressBar::chunk { background: #ff6552; border-radius: 3px; }
+QTabWidget::pane { border: none; }
+QTabBar { background: transparent; }
+QTabBar::tab { height: 0; width: 0; }
+QMenu { background: #11161d; color: #f0eeeb; border: 1px solid #343e4a; padding: 5px; }
+QMenu::item { padding: 7px 22px 7px 10px; border-radius: 5px; }
+QMenu::item:selected { background: #242b35; }
+QToolTip { background: #11161d; color: #f0eeeb; border: 1px solid #343e4a; padding: 6px 8px; }
+"""
+
 # ══════════════════════════════════════════════════════════════
 # CONFIG
 # ══════════════════════════════════════════════════════════════
@@ -2852,6 +3048,7 @@ class SetupWorker(SetupWorkerCore):
             dependencies={
                 'DEFAULT_CONFIG': lambda: DEFAULT_CONFIG,
                 'FFMPEG_PATH': lambda: FFMPEG_PATH,
+                'FFMPEG_SHA256_ASSET': lambda: FFMPEG_SHA256_ASSET,
                 'FFMPEG_SHA256_URL': lambda: FFMPEG_SHA256_URL,
                 'FFMPEG_URL': lambda: FFMPEG_URL,
                 'HELPER_DOWNLOAD_MAX_BYTES': lambda: HELPER_DOWNLOAD_MAX_BYTES,
@@ -3252,11 +3449,12 @@ def main():
         run_uninstall()
         return
 
+    visual_smoke = '--visual-smoke' in sys.argv
     startup_command = startup_command_from_argv()
     start_minimized = '-Background' in sys.argv or '--background' in sys.argv or startup_command == 'start'
     log_update_recovery_status()
 
-    if is_frozen_app():
+    if is_frozen_app() and not visual_smoke:
         ensure_system_integrations(prefer_installed=True)
 
     # A second launch delegates to the healthy process and exits. Never kill a
@@ -3299,9 +3497,12 @@ def main():
     start_min = start_minimized or config.get("StartMinimized", False)
     window = MainWindow(config, dl_manager, history, start_minimized=start_min)
 
-    # First-run check
+    # The visual-smoke path exercises the frozen UI without installing system
+    # integrations, starting the local server, or bootstrapping helper tools.
     needs_setup = not YTDLP_PATH.exists() or not FFMPEG_PATH.exists()
-    if needs_setup:
+    if visual_smoke:
+        window.show()
+    elif needs_setup:
         window.show()
         window._run_setup()
     else:
