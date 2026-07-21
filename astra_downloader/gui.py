@@ -186,7 +186,7 @@ def download_status_tone(status):
         return "success"
     if status in ("failed", "cancelled"):
         return "danger"
-    if status in ("merging", "extracting", "queued", "paused", "needs-auth"):
+    if status in ("merging", "extracting", "queued", "pending", "paused", "needs-auth"):
         return "warning"
     if status == "downloading":
         return "info"
