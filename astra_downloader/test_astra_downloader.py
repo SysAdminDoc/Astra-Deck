@@ -1805,6 +1805,19 @@ for forbidden in (
         self.assertIs(gui.SetupWorker, gui.SetupWorkerCore)
         self.assertTrue(issubclass(ad.SetupWorker, gui.SetupWorkerCore))
 
+    def test_pending_queue_states_share_the_warning_tone(self):
+        # Every not-yet-running queue state must read as the same amber tone in
+        # the Downloads list; 'pending' previously fell through to neutral and
+        # showed a grey dot beside its amber 'paused'/'needs-auth' siblings.
+        for status in sorted(ad.DOWNLOAD_PENDING_STATES):
+            self.assertEqual(
+                ad.download_status_tone(status), "warning",
+                f"pending-set status {status!r} must use the warning tone",
+            )
+        self.assertEqual(ad.download_status_tone("queued"), "warning")
+        self.assertEqual(ad.download_status_tone("complete"), "success")
+        self.assertEqual(ad.download_status_tone("failed"), "danger")
+
     def test_gui_boundary_imports_pyqt_without_creating_application(self):
         script = r'''
 import importlib

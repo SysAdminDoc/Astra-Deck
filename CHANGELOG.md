@@ -39,6 +39,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Pending downloads now read with the same amber state tone as their queue siblings.** A freshly queued `pending` job fell through to the neutral grey dot while its `paused` and `needs-sign-in` siblings (same pending set) and `queued` all showed amber, so the Downloads "Pending" section mixed grey and amber dots for equivalent waiting states. `pending` now maps to the warning tone.
 - First-run ffmpeg setup now verifies the downloaded Windows archive against the upstream `checksums.sha256` manifest and its exact asset name; the retired per-archive `.zip.sha256` URL no longer blocks installation.
 
 - **Companion visual smoke captures are reliable on scroll-backed pages.** The
