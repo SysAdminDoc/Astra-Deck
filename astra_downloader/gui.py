@@ -14,7 +14,7 @@ from PyQt6.QtCore import (
     QEasingCurve, QObject, QPropertyAnimation, QSize, QThread, QTimer, Qt,
     pyqtSignal,
 )
-from PyQt6.QtGui import QIcon, QTextCursor
+from PyQt6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap, QTextCursor
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog,
     QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel, QLineEdit, QMainWindow,
@@ -66,6 +66,12 @@ def make_divider():
     return divider
 
 
+def make_vertical_divider():
+    divider = QFrame()
+    divider.setProperty("class", "verticalDivider")
+    return divider
+
+
 def make_card(class_name="card"):
     frame = QFrame()
     frame.setProperty("class", class_name)
@@ -79,6 +85,92 @@ def make_status_badge(text, tone="neutral"):
     badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
     badge.setMinimumHeight(22)
     return badge
+
+
+def make_state_label(text, tone="neutral"):
+    label = QLabel(f"\u25cf  {text}")
+    label.setProperty("class", "stateLabel")
+    label.setProperty("tone", tone)
+    return label
+
+
+def make_line_icon(name):
+    """Draw the rail icons from one quiet monochrome system."""
+    key = str(name).lower()
+    pixmap = QPixmap(18, 18)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    painter.setPen(QPen(QColor("#aab2bd"), 1.5, Qt.PenStyle.SolidLine,
+                        Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+    if key == "dashboard":
+        for x, y in ((2, 2), (10, 2), (2, 10), (10, 10)):
+            painter.drawRoundedRect(x, y, 6, 6, 1, 1)
+    elif key == "downloads" or "download" in key:
+        painter.drawLine(9, 2, 9, 12)
+        painter.drawLine(5, 9, 9, 13)
+        painter.drawLine(13, 9, 9, 13)
+        painter.drawLine(3, 16, 15, 16)
+    elif key == "history":
+        painter.drawEllipse(2, 2, 14, 14)
+        painter.drawLine(9, 5, 9, 9)
+        painter.drawLine(9, 9, 12, 11)
+    elif "start" in key or "resume" in key:
+        painter.drawLine(5, 3, 15, 9)
+        painter.drawLine(15, 9, 5, 15)
+        painter.drawLine(5, 15, 5, 3)
+    elif "stop" in key:
+        painter.drawRoundedRect(4, 4, 10, 10, 1, 1)
+    elif "pause" in key:
+        painter.drawLine(6, 3, 6, 15)
+        painter.drawLine(12, 3, 12, 15)
+    elif "copy" in key:
+        painter.drawRoundedRect(5, 3, 9, 11, 1, 1)
+        painter.drawRoundedRect(2, 6, 9, 10, 1, 1)
+    elif "folder" in key or "browse" in key or key == "show":
+        painter.drawLine(2, 6, 7, 6)
+        painter.drawLine(7, 6, 9, 8)
+        painter.drawLine(9, 8, 16, 8)
+        painter.drawRoundedRect(2, 5, 14, 11, 1, 1)
+    elif "clear" in key or "cancel" in key:
+        painter.drawLine(5, 6, 6, 16)
+        painter.drawLine(13, 6, 12, 16)
+        painter.drawLine(6, 16, 12, 16)
+        painter.drawLine(4, 5, 14, 5)
+        painter.drawLine(7, 2, 11, 2)
+    elif "save" in key:
+        painter.drawRoundedRect(3, 2, 12, 14, 1, 1)
+        painter.drawLine(6, 2, 6, 7)
+        painter.drawLine(6, 7, 12, 7)
+        painter.drawEllipse(6, 10, 6, 4)
+    elif any(word in key for word in ("regenerate", "reinstall", "update", "retry")):
+        painter.drawArc(3, 3, 12, 12, 35 * 16, 275 * 16)
+        painter.drawLine(12, 2, 15, 4)
+        painter.drawLine(15, 4, 14, 8)
+    elif "reveal" in key:
+        painter.drawEllipse(2, 5, 14, 8)
+        painter.drawEllipse(7, 7, 4, 4)
+    elif "diagnostic" in key:
+        painter.drawRoundedRect(3, 2, 12, 14, 1, 1)
+        painter.drawLine(6, 6, 12, 6)
+        painter.drawLine(6, 9, 12, 9)
+        painter.drawLine(6, 12, 10, 12)
+    elif key in ("up", "down"):
+        direction = -1 if key == "up" else 1
+        y_tip = 4 if direction == -1 else 14
+        y_tail = 14 if direction == -1 else 4
+        painter.drawLine(9, y_tail, 9, y_tip)
+        painter.drawLine(9, y_tip, 5, y_tip - (4 * direction))
+        painter.drawLine(9, y_tip, 13, y_tip - (4 * direction))
+    else:
+        painter.drawLine(2, 5, 16, 5)
+        painter.drawLine(2, 9, 16, 9)
+        painter.drawLine(2, 13, 16, 13)
+        painter.drawEllipse(5, 3, 4, 4)
+        painter.drawEllipse(10, 7, 4, 4)
+        painter.drawEllipse(4, 11, 4, 4)
+    painter.end()
+    return QIcon(pixmap)
 
 
 def download_status_tone(status):
@@ -126,20 +218,31 @@ def format_duration(seconds):
 
 def make_empty_state(title, body, action_text=None, action=None):
     frame = make_card("empty")
+    frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     layout = QVBoxLayout(frame)
-    layout.setContentsMargins(18, 18, 18, 18)
-    layout.setSpacing(6)
-    layout.addWidget(make_section_label("Ready when you are"))
-    layout.addWidget(make_label(title, "emptyTitle"))
-    layout.addWidget(make_label(body, "emptyBody", word_wrap=True))
+    layout.setContentsMargins(36, 28, 36, 28)
+    layout.setSpacing(9)
+    layout.addStretch(2)
+    glyph = QLabel()
+    glyph.setProperty("class", "emptyGlyph")
+    glyph.setPixmap(make_line_icon("Downloads" if "Queue" in title else "History").pixmap(36, 36))
+    glyph.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(glyph)
+    empty_title = make_label(title, "emptyTitle")
+    empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(empty_title)
+    empty_body = make_label(body, "emptyBody", word_wrap=True)
+    empty_body.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(empty_body)
     if action_text and callable(action):
         button = QPushButton(action_text)
         button.setProperty("class", "secondary")
         button.setAccessibleName(action_text)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.clicked.connect(action)
-        layout.addSpacing(6)
-        layout.addWidget(button, 0, Qt.AlignmentFlag.AlignLeft)
+        layout.addSpacing(8)
+        layout.addWidget(button, 0, Qt.AlignmentFlag.AlignCenter)
+    layout.addStretch(3)
     return frame
 
 
@@ -147,12 +250,12 @@ def make_stat(label_text, value_text="0", hint_text=""):
     frame = QFrame()
     frame.setProperty("class", "stat")
     layout = QVBoxLayout(frame)
-    layout.setContentsMargins(16, 14, 16, 14)
+    layout.setContentsMargins(14, 10, 20, 10)
     layout.setSpacing(4)
-    label = make_label(label_text, "section")
+    label = make_label(label_text, "metricLabel")
     value = QLabel(value_text)
     value.setAlignment(Qt.AlignmentFlag.AlignLeft)
-    value.setStyleSheet("font-size: 25px; font-weight: 750; color: #f8fafc;")
+    value.setProperty("class", "metricValue")
     value.setObjectName(f"stat_{label_text.lower()}")
     layout.addWidget(label)
     layout.addWidget(value)
@@ -265,6 +368,7 @@ class FolderPickerService(QObject):
 _REQUIRED_SETUP_DEPENDENCIES = frozenset({
     'DEFAULT_CONFIG',
     'FFMPEG_PATH',
+    'FFMPEG_SHA256_ASSET',
     'FFMPEG_SHA256_URL',
     'FFMPEG_URL',
     'HELPER_DOWNLOAD_MAX_BYTES',
@@ -432,7 +536,8 @@ class SetupWorkerCore(QThread):
                     # Verify the zip before we crack it open.
                     try:
                         self._verify_required_checksum(
-                            tmp_zip, self._value('FFMPEG_SHA256_URL'), label="ffmpeg",
+                            tmp_zip, self._value('FFMPEG_SHA256_URL'),
+                            asset_name=self._value('FFMPEG_SHA256_ASSET'), label="ffmpeg",
                         )
                     except RuntimeError:
                         # Verification failed — cleanup handled by finally + raise
@@ -646,7 +751,7 @@ class MainWindowCore(QMainWindow):
         # Sidebar
         sidebar = QFrame()
         sidebar.setProperty("class", "sidebar")
-        sidebar.setFixedWidth(244)
+        sidebar.setFixedWidth(232)
         self.sidebar = sidebar
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
@@ -656,8 +761,8 @@ class MainWindowCore(QMainWindow):
         brand = QWidget()
         self.brand_widget = brand
         brand_layout = QHBoxLayout(brand)
-        brand_layout.setContentsMargins(18, 22, 16, 24)
-        brand_layout.setSpacing(11)
+        brand_layout.setContentsMargins(20, 22, 16, 28)
+        brand_layout.setSpacing(10)
         brand_icon = QLabel()
         brand_icon.setFixedSize(36, 36)
         brand_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -674,9 +779,9 @@ class MainWindowCore(QMainWindow):
         brand_copy = QVBoxLayout()
         brand_copy.setSpacing(2)
         title_lbl = make_label("ASTRA DOWNLOADER")
-        title_lbl.setStyleSheet("font-size: 13px; font-weight: 800; color: #fff8f2; letter-spacing: .7px;")
-        ver_lbl = make_label(f"LOCAL COMPANION  ·  v{self._value('APP_VERSION')}", "muted")
-        ver_lbl.setStyleSheet("font-size: 9px; color: #737d8b;")
+        title_lbl.setStyleSheet("font-size: 12px; font-weight: 750; color: #fff8f2; letter-spacing: .35px;")
+        ver_lbl = make_label(f"LOCAL  ·  v{self._value('APP_VERSION')}", "muted")
+        ver_lbl.setStyleSheet("font-size: 11px; color: #818b98;")
         brand_copy.addWidget(title_lbl)
         brand_copy.addWidget(ver_lbl)
         brand_layout.addWidget(brand_icon)
@@ -685,20 +790,14 @@ class MainWindowCore(QMainWindow):
 
         # Nav buttons
         self.nav_buttons = []
-        nav_icons = {
-            "Dashboard": QStyle.StandardPixmap.SP_ComputerIcon,
-            "Downloads": QStyle.StandardPixmap.SP_ArrowDown,
-            "History": QStyle.StandardPixmap.SP_FileDialogDetailedView,
-            "Settings": QStyle.StandardPixmap.SP_FileDialogInfoView,
-        }
         for name in ["Dashboard", "Downloads", "History", "Settings"]:
             btn = QPushButton(name)
             btn.setProperty("class", "nav")
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
             btn.setAccessibleName(f"{name} page")
-            btn.setIcon(self.style().standardIcon(nav_icons[name]))
-            btn.setIconSize(QSize(15, 15))
+            btn.setIcon(make_line_icon(name))
+            btn.setIconSize(QSize(18, 18))
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setToolTip(f"Open {name.lower()}")
             btn.clicked.connect(lambda checked, n=name: self._nav_click(n))
@@ -709,12 +808,12 @@ class MainWindowCore(QMainWindow):
 
         # Status dot
         status_row = QHBoxLayout()
-        status_row.setContentsMargins(22, 0, 18, 20)
+        status_row.setContentsMargins(22, 0, 18, 22)
         status_row.setSpacing(8)
         self.status_dot = QLabel("\u2022")
         self.status_dot.setStyleSheet("color: #697381; font-size: 20px;")
         self.status_label = make_label("Stopped", "muted")
-        self.status_label.setStyleSheet("font-size: 11px; color: #7f8997; font-weight: 650;")
+        self.status_label.setStyleSheet("font-size: 12px; color: #8e98a5; font-weight: 600;")
         status_row.addWidget(self.status_dot)
         status_row.addWidget(self.status_label)
         status_row.addStretch()
@@ -786,15 +885,31 @@ class MainWindowCore(QMainWindow):
 
     def _make_page_header(self, title, subtitle):
         header = QVBoxLayout()
-        header.setSpacing(5)
+        header.setSpacing(4)
         header.addWidget(make_label(title, "title"))
-        header.addWidget(make_label(subtitle, "subtitle", word_wrap=True))
+        if subtitle:
+            header.addWidget(make_label(subtitle, "subtitle", word_wrap=True))
         return header
+
+    def _make_settings_group(self, title):
+        group = QFrame()
+        group.setProperty("class", "settingsGroup")
+        outer = QHBoxLayout(group)
+        outer.setContentsMargins(0, 13, 0, 13)
+        outer.setSpacing(24)
+        heading = make_label(title, "settingsSection")
+        heading.setFixedWidth(142)
+        heading.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        outer.addWidget(heading)
+        content = QVBoxLayout()
+        content.setSpacing(9)
+        outer.addLayout(content, 1)
+        return group, content
 
     def _make_tool_button(self, text, icon, class_name="secondary"):
         btn = QPushButton(text)
         btn.setProperty("class", class_name)
-        btn.setIcon(self.style().standardIcon(icon))
+        btn.setIcon(make_line_icon(text))
         btn.setIconSize(QSize(15, 15))
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setAccessibleName(text)
@@ -885,46 +1000,50 @@ class MainWindowCore(QMainWindow):
     def _build_dashboard(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(18)
+        layout.setContentsMargins(38, 26, 38, 24)
+        layout.setSpacing(16)
 
         layout.addLayout(self._make_page_header(
-            "Control Center",
-            "Run the local Astra Deck download service, monitor activity, and keep the companion ready in the tray."
+            "Dashboard",
+            ""
         ))
 
         # Server control
-        ctrl = make_card()
+        ctrl = make_card("serverControl")
         ctrl_layout = QVBoxLayout(ctrl)
-        ctrl_layout.setContentsMargins(20, 18, 20, 18)
-        ctrl_layout.setSpacing(14)
+        ctrl_layout.setContentsMargins(0, 10, 20, 14)
+        ctrl_layout.setSpacing(13)
 
-        top = QHBoxLayout()
-        top.setSpacing(16)
-        left = QVBoxLayout()
-        left.setSpacing(5)
-        self.dash_status = make_label("Server stopped")
-        self.dash_status.setStyleSheet("font-size: 17px; font-weight: 750; color: #f8fafc;")
+        state_row = QHBoxLayout()
+        state_row.setSpacing(10)
+        self.server_badge = make_label("\u25cf", "stateDot")
+        self.server_badge.setProperty("tone", "neutral")
+        self.dash_status = make_label("Server offline", "heroTitle")
+        state_row.addWidget(self.server_badge)
+        state_row.addWidget(self.dash_status)
+        state_row.addStretch()
+        ctrl_layout.addLayout(state_row)
+
+        endpoint_row = QHBoxLayout()
+        endpoint_row.setSpacing(14)
         self.dash_endpoint = make_label(f"http://127.0.0.1:{self.config.get('ServerPort', self._value('SERVER_PORT'))}", "secondary")
         self.dash_endpoint.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.dash_hint = make_label("Local-only API. Requests require your private Astra token.", "fieldHint", word_wrap=True)
-        left.addWidget(self.dash_status)
-        left.addWidget(self.dash_endpoint)
-        left.addWidget(self.dash_hint)
-        top.addLayout(left, 1)
-        self.server_badge = make_status_badge("Stopped", "neutral")
-        top.addWidget(self.server_badge, 0, Qt.AlignmentFlag.AlignTop)
-        ctrl_layout.addLayout(top)
+        self.dash_hint = make_label("Local only \u00b7 token required", "fieldHint")
+        endpoint_row.addWidget(self.dash_endpoint)
+        endpoint_row.addWidget(make_vertical_divider())
+        endpoint_row.addWidget(self.dash_hint)
+        endpoint_row.addStretch()
+        ctrl_layout.addLayout(endpoint_row)
 
         actions = QHBoxLayout()
-        actions.setSpacing(10)
+        actions.setSpacing(8)
         self.btn_startstop = self._make_tool_button("Start Server", QStyle.StandardPixmap.SP_MediaPlay, "primary")
         self.btn_startstop.clicked.connect(self._toggle_server)
         actions.addWidget(self.btn_startstop)
-        btn_copy = self._make_tool_button("Copy URL", QStyle.StandardPixmap.SP_FileDialogContentsView)
+        btn_copy = self._make_tool_button("Copy endpoint", QStyle.StandardPixmap.SP_FileDialogContentsView)
         btn_copy.clicked.connect(self._copy_endpoint)
         actions.addWidget(btn_copy)
-        btn_folder = self._make_tool_button("Open Folder", QStyle.StandardPixmap.SP_DirOpenIcon)
+        btn_folder = self._make_tool_button("Open folder", QStyle.StandardPixmap.SP_DirOpenIcon)
         btn_folder.clicked.connect(self._open_folder)
         actions.addWidget(btn_folder)
         actions.addStretch()
@@ -942,12 +1061,11 @@ class MainWindowCore(QMainWindow):
         self.readiness_values = {}
         readiness = make_card("readiness")
         readiness_layout = QVBoxLayout(readiness)
-        readiness_layout.setContentsMargins(17, 15, 17, 15)
+        readiness_layout.setContentsMargins(22, 10, 0, 8)
         readiness_layout.setSpacing(1)
         readiness_header = QHBoxLayout()
-        readiness_header.addWidget(make_section_label("System pulse"))
+        readiness_header.addWidget(make_label("System readiness", "panelTitle"))
         readiness_header.addStretch()
-        readiness_header.addWidget(make_status_badge("Local", "neutral"))
         readiness_layout.addLayout(readiness_header)
         readiness_layout.addWidget(self._make_readiness_row("server", "Local API", "Stopped"))
         readiness_layout.addWidget(self._make_readiness_row("ytDlp", "yt-dlp"))
@@ -958,35 +1076,39 @@ class MainWindowCore(QMainWindow):
         self._set_readiness("sabr", "Limited", "warning")
 
         hero = QHBoxLayout()
-        hero.setSpacing(12)
+        hero.setSpacing(0)
         hero.addWidget(ctrl, 3)
+        hero.addWidget(make_vertical_divider())
         hero.addWidget(readiness, 2)
         layout.addLayout(hero)
 
-        # Stats — keep refs to frames (else Python GC deletes the underlying Qt objects)
+        layout.addWidget(make_divider())
+
+        # Metrics — one strip, with rhythm supplied by separators rather than cards.
         stats_layout = QHBoxLayout()
-        stats_layout.setSpacing(10)
+        stats_layout.setSpacing(0)
         self._stat_frame_active, self.stat_active = make_stat("Active", "0", "In progress")
-        self.stat_active.setStyleSheet("font-size: 25px; font-weight: 750; color: #ff7c68;")
+        self.stat_active.setProperty("tone", "accent")
         self._stat_frame_completed, self.stat_completed = make_stat("Completed", "0", "This session")
         self._stat_frame_uptime, self.stat_uptime = make_stat("Uptime", "--", "Since launch")
         self._stat_frame_port, self.stat_port = make_stat("Port", str(self.config.get("ServerPort", self._value('SERVER_PORT'))), "Local API")
         for frame in (self._stat_frame_active, self._stat_frame_completed,
                       self._stat_frame_uptime, self._stat_frame_port):
             stats_layout.addWidget(frame)
+        self._stat_frame_port.setProperty("last", "true")
         layout.addLayout(stats_layout)
+        layout.addWidget(make_divider())
 
         log_header = QHBoxLayout()
-        log_header.addWidget(make_section_label("Server log"))
+        log_header.addWidget(make_label("Server log", "panelTitle"))
         log_header.addStretch()
-        btn_clear_log = self._make_tool_button("Clear Log", QStyle.StandardPixmap.SP_DialogResetButton, "ghost")
+        btn_clear_log = self._make_tool_button("Clear", QStyle.StandardPixmap.SP_DialogResetButton, "ghost")
         btn_clear_log.clicked.connect(self._clear_log)
         log_header.addWidget(btn_clear_log)
-        btn_diag = self._make_tool_button("Review Diagnostics", QStyle.StandardPixmap.SP_FileDialogContentsView, "ghost")
+        btn_diag = self._make_tool_button("Review diagnostics", QStyle.StandardPixmap.SP_FileDialogContentsView, "ghost")
         btn_diag.setToolTip("Review the redacted support payload before copying it.")
         btn_diag.clicked.connect(self._copy_diagnostics)
         log_header.addWidget(btn_diag)
-        log_header.addWidget(make_status_badge("Local only", "neutral"))
         layout.addLayout(log_header)
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
@@ -1000,25 +1122,25 @@ class MainWindowCore(QMainWindow):
     def _build_downloads(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(16)
-        header = QHBoxLayout()
-        header.addLayout(self._make_page_header(
-            "Downloads",
-            "A restart-safe queue with three concurrent jobs, controlled recovery, and clear failure guidance."
-        ), 1)
-        self.queue_capacity_badge = make_status_badge("0 / 200", "neutral")
+        layout.setContentsMargins(38, 26, 38, 24)
+        layout.setSpacing(12)
+        layout.addLayout(self._make_page_header("Downloads", ""))
+
+        toolbar = QHBoxLayout()
+        self.queue_capacity_badge = make_label("0 / 200 jobs", "toolbarMeta")
         self.queue_capacity_badge.setToolTip("Running and pending downloads stored in the durable queue.")
-        header.addWidget(self.queue_capacity_badge, 0, Qt.AlignmentFlag.AlignTop)
+        toolbar.addWidget(self.queue_capacity_badge)
+        toolbar.addStretch()
         self.btn_queue_pause = self._make_tool_button(
-            "Pause Intake", QStyle.StandardPixmap.SP_MediaPause, "ghost"
+            "Pause intake", QStyle.StandardPixmap.SP_MediaPause, "ghost"
         )
         self.btn_queue_pause.setToolTip(
             "Pause starting pending downloads. Downloads already running will continue."
         )
         self.btn_queue_pause.clicked.connect(self._toggle_queue_intake)
-        header.addWidget(self.btn_queue_pause, 0, Qt.AlignmentFlag.AlignTop)
-        layout.addLayout(header)
+        toolbar.addWidget(self.btn_queue_pause)
+        layout.addLayout(toolbar)
+        layout.addWidget(make_divider())
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -1033,23 +1155,33 @@ class MainWindowCore(QMainWindow):
     def _build_history(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(38, 26, 38, 24)
+        layout.setSpacing(12)
         header = QHBoxLayout()
-        header.addLayout(self._make_page_header(
-            "History",
-            "The latest completed downloads are kept here for quick confirmation."
-        ), 1)
-        self.btn_clear_history = self._make_tool_button("Clear History", QStyle.StandardPixmap.SP_TrashIcon, "danger")
+        header.addLayout(self._make_page_header("History", ""), 1)
+        self.btn_clear_history = self._make_tool_button("Clear history", QStyle.StandardPixmap.SP_TrashIcon, "ghost")
         self.btn_clear_history.setToolTip("Remove saved history entries. Downloaded files are not deleted.")
         self.btn_clear_history.clicked.connect(self._clear_history)
         header.addWidget(self.btn_clear_history, 0, Qt.AlignmentFlag.AlignTop)
-        self.btn_undo_clear_history = self._make_tool_button("Undo Clear", QStyle.StandardPixmap.SP_ArrowBack, "ghost")
+        self.btn_undo_clear_history = self._make_tool_button("Undo clear", QStyle.StandardPixmap.SP_ArrowBack, "ghost")
         self.btn_undo_clear_history.setToolTip("Restore the history entries cleared in this session.")
         self.btn_undo_clear_history.clicked.connect(self._undo_clear_history)
         self.btn_undo_clear_history.hide()
         header.addWidget(self.btn_undo_clear_history, 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(header)
+
+        columns = QFrame()
+        columns.setProperty("class", "listHeader")
+        columns_layout = QHBoxLayout(columns)
+        columns_layout.setContentsMargins(0, 8, 0, 10)
+        columns_layout.setSpacing(12)
+        columns_layout.addWidget(make_label("File", "columnLabel"), 4)
+        for text in ("Format", "Quality", "Duration", "Saved"):
+            label = make_label(text, "columnLabel")
+            label.setFixedWidth(92)
+            columns_layout.addWidget(label)
+        columns_layout.addSpacing(54)
+        layout.addWidget(columns)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -1067,25 +1199,20 @@ class MainWindowCore(QMainWindow):
         scroll.setWidgetResizable(True)
         scroll.setWidget(page)
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(14)
+        layout.setContentsMargins(38, 26, 30, 24)
+        layout.setSpacing(0)
 
-        layout.addLayout(self._make_page_header(
-            "Settings",
-            "Tune storage, post-processing, performance, and tray behavior for the companion service."
-        ))
+        layout.addLayout(self._make_page_header("Settings", ""))
+        layout.addSpacing(14)
+        layout.addWidget(make_divider())
 
         # Connection
-        layout.addWidget(make_section_label("Connection"))
-        conn_card = make_card()
-        conn_l = QVBoxLayout(conn_card)
-        conn_l.setContentsMargins(18, 16, 18, 16)
-        conn_l.setSpacing(12)
+        conn_card, conn_l = self._make_settings_group("Connection")
         port_row = QHBoxLayout()
         port_copy = QVBoxLayout()
         port_copy.setSpacing(2)
         port_copy.addWidget(make_label("Local API port", "fieldLabel"))
-        port_copy.addWidget(make_label("Astra Deck uses 9751 by default. Change this only for custom clients or troubleshooting.", "fieldHint", word_wrap=True))
+        port_copy.addWidget(make_label("Default 9751. Change only for custom clients.", "fieldHint", word_wrap=True))
         port_row.addLayout(port_copy, 1)
         self.cfg_port = QSpinBox()
         self.cfg_port.setAccessibleName("Local API port")
@@ -1098,7 +1225,7 @@ class MainWindowCore(QMainWindow):
         token_copy = QVBoxLayout()
         token_copy.setSpacing(2)
         token_copy.addWidget(make_label("Private token", "fieldLabel"))
-        token_copy.addWidget(make_label("Required for extension requests. Regenerate only if you want to revoke the current token.", "fieldHint", word_wrap=True))
+        token_copy.addWidget(make_label("Authorizes extension requests on this computer.", "fieldHint", word_wrap=True))
         conn_l.addLayout(token_copy)
         token_row = QHBoxLayout()
         token_row.setSpacing(8)
@@ -1121,13 +1248,9 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(conn_card)
 
         # Storage
-        layout.addWidget(make_section_label("Storage"))
-        paths_card = make_card()
-        paths_l = QVBoxLayout(paths_card)
-        paths_l.setContentsMargins(18, 16, 18, 16)
-        paths_l.setSpacing(10)
+        paths_card, paths_l = self._make_settings_group("Storage")
         paths_l.addWidget(make_label("Video download folder", "fieldLabel"))
-        paths_l.addWidget(make_label("Used for video downloads unless a request specifies a custom destination.", "fieldHint", word_wrap=True))
+        paths_l.addWidget(make_label("Default destination for video downloads.", "fieldHint", word_wrap=True))
         row = QHBoxLayout()
         row.setSpacing(8)
         self.cfg_dl_path = QLineEdit(self.config.get("DownloadPath", ""))
@@ -1140,7 +1263,7 @@ class MainWindowCore(QMainWindow):
         paths_l.addLayout(row)
         paths_l.addWidget(make_divider())
         paths_l.addWidget(make_label("Audio download folder", "fieldLabel"))
-        paths_l.addWidget(make_label("Leave blank to save audio beside video downloads.", "fieldHint", word_wrap=True))
+        paths_l.addWidget(make_label("Leave blank to use the video folder.", "fieldHint", word_wrap=True))
         row2 = QHBoxLayout()
         row2.setSpacing(8)
         self.cfg_audio_path = QLineEdit(self.config.get("AudioDownloadPath", ""))
@@ -1154,18 +1277,14 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(paths_card)
 
         # Post-processing
-        layout.addWidget(make_section_label("Post-processing"))
-        pp_card = make_card()
-        pp_l = QVBoxLayout(pp_card)
-        pp_l.setContentsMargins(18, 16, 18, 16)
-        pp_l.setSpacing(8)
-        self.cfg_metadata = QCheckBox("Embed metadata: title, artist, upload date")
+        pp_card, pp_l = self._make_settings_group("Post-processing")
+        self.cfg_metadata = QCheckBox("Embed metadata")
         self.cfg_metadata.setChecked(self.config.get("EmbedMetadata", True))
-        self.cfg_thumbnail = QCheckBox("Embed thumbnail as cover art")
+        self.cfg_thumbnail = QCheckBox("Embed thumbnail")
         self.cfg_thumbnail.setChecked(self.config.get("EmbedThumbnail", True))
-        self.cfg_chapters = QCheckBox("Embed chapter markers")
+        self.cfg_chapters = QCheckBox("Embed chapters")
         self.cfg_chapters.setChecked(self.config.get("EmbedChapters", True))
-        self.cfg_subs = QCheckBox("Embed subtitles when available")
+        self.cfg_subs = QCheckBox("Embed subtitles")
         self.cfg_subs.setChecked(self.config.get("EmbedSubs", False))
         for w in [self.cfg_metadata, self.cfg_thumbnail, self.cfg_chapters, self.cfg_subs]:
             pp_l.addWidget(w)
@@ -1202,16 +1321,12 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(pp_card)
 
         # Performance
-        layout.addWidget(make_section_label("Performance"))
-        perf_card = make_card()
-        perf_l = QVBoxLayout(perf_card)
-        perf_l.setContentsMargins(18, 16, 18, 16)
-        perf_l.setSpacing(12)
+        perf_card, perf_l = self._make_settings_group("Performance")
         frag_row = QHBoxLayout()
         frag_copy = QVBoxLayout()
         frag_copy.setSpacing(2)
         frag_copy.addWidget(make_label("Concurrent fragments", "fieldLabel"))
-        frag_copy.addWidget(make_label("Higher values may improve speed on fast connections.", "fieldHint", word_wrap=True))
+        frag_copy.addWidget(make_label("More can improve fast connections.", "fieldHint", word_wrap=True))
         frag_row.addLayout(frag_copy, 1)
         self.cfg_fragments = QSpinBox()
         self.cfg_fragments.setAccessibleName("Concurrent fragments")
@@ -1225,7 +1340,7 @@ class MainWindowCore(QMainWindow):
         rate_copy = QVBoxLayout()
         rate_copy.setSpacing(2)
         rate_copy.addWidget(make_label("Rate limit", "fieldLabel"))
-        rate_copy.addWidget(make_label("Optional yt-dlp limit such as 500K or 2M.", "fieldHint", word_wrap=True))
+        rate_copy.addWidget(make_label("Optional, such as 500K or 2M.", "fieldHint", word_wrap=True))
         rate_row.addLayout(rate_copy, 1)
         self.cfg_ratelimit = QLineEdit(self.config.get("RateLimit", ""))
         self.cfg_ratelimit.setAccessibleName("Rate limit")
@@ -1237,7 +1352,7 @@ class MainWindowCore(QMainWindow):
         proxy_copy = QVBoxLayout()
         proxy_copy.setSpacing(2)
         proxy_copy.addWidget(make_label("Proxy", "fieldLabel"))
-        proxy_copy.addWidget(make_label("Optional http, https, or socks proxy URL.", "fieldHint", word_wrap=True))
+        proxy_copy.addWidget(make_label("Optional HTTP(S) or SOCKS proxy.", "fieldHint", word_wrap=True))
         proxy_row.addLayout(proxy_copy, 1)
         self.cfg_proxy = QLineEdit(self.config.get("Proxy", ""))
         self.cfg_proxy.setAccessibleName("Proxy")
@@ -1251,7 +1366,7 @@ class MainWindowCore(QMainWindow):
         runtime_copy.setSpacing(2)
         runtime_copy.addWidget(make_label("JavaScript runtime", "fieldLabel"))
         runtime_copy.addWidget(make_label(
-            "Auto prefers Deno and falls back to Node 22+ for yt-dlp challenge solving.",
+            "Auto prefers Deno, then Node 22+.",
             "fieldHint", word_wrap=True,
         ))
         runtime_row.addLayout(runtime_copy, 1)
@@ -1267,14 +1382,10 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(perf_card)
 
         # Behavior
-        layout.addWidget(make_section_label("Behavior"))
-        beh_card = make_card()
-        beh_l = QVBoxLayout(beh_card)
-        beh_l.setContentsMargins(18, 16, 18, 16)
-        beh_l.setSpacing(8)
-        self.cfg_autoupdate = QCheckBox("Update yt-dlp automatically when the server starts")
+        beh_card, beh_l = self._make_settings_group("Tray behavior")
+        self.cfg_autoupdate = QCheckBox("Update yt-dlp on server start")
         self.cfg_autoupdate.setChecked(self.config.get("AutoUpdateYtDlp", True))
-        self.cfg_closetotray = QCheckBox("Close to the system tray instead of quitting")
+        self.cfg_closetotray = QCheckBox("Close to the system tray")
         self.cfg_closetotray.setChecked(self.config.get("CloseToTray", True))
         self.cfg_startmin = QCheckBox("Start minimized to the tray")
         self.cfg_startmin.setChecked(self.config.get("StartMinimized", False))
@@ -1283,11 +1394,7 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(beh_card)
 
         # Tools — v1.2.0 downloader-maintenance actions
-        layout.addWidget(make_section_label("Tools"))
-        tools_card = make_card()
-        tools_l = QVBoxLayout(tools_card)
-        tools_l.setContentsMargins(18, 16, 18, 16)
-        tools_l.setSpacing(10)
+        tools_card, tools_l = self._make_settings_group("Maintenance")
         tools_l.addWidget(make_label("Installed tools", "fieldLabel"))
         self.tools_status = make_label(self._tools_status_text(), "fieldHint", word_wrap=True)
         tools_l.addWidget(self.tools_status)
@@ -1310,9 +1417,10 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(tools_card)
 
         save_row = QHBoxLayout()
+        save_row.setContentsMargins(166, 14, 0, 0)
         self.settings_status = make_label("", "fieldHint")
         save_row.addWidget(self.settings_status, 1)
-        btn_save = self._make_tool_button("Save Changes", QStyle.StandardPixmap.SP_DialogSaveButton, "primary")
+        btn_save = self._make_tool_button("Save changes", QStyle.StandardPixmap.SP_DialogSaveButton, "primary")
         btn_save.clicked.connect(self._save_settings)
         self.btn_save = btn_save
         save_row.addWidget(btn_save)
@@ -1494,13 +1602,12 @@ class MainWindowCore(QMainWindow):
         if self.server_running:
             self.status_dot.setStyleSheet("color: #4cd6a2; font-size: 20px;")
             self.status_label.setText("Running")
-            self.status_label.setStyleSheet("color: #aef2d5; font-size: 11px; font-weight: 650;")
-            self.dash_status.setText("Server running")
-            self.dash_hint.setText("Ready for Astra Deck requests. The service only listens on this computer.")
-            self.server_badge.setText("Running")
+            self.status_label.setStyleSheet("color: #aef2d5; font-size: 12px; font-weight: 650;")
+            self.dash_status.setText("Server online")
+            self.dash_hint.setText("Local only \u00b7 ready for Astra Deck")
             self.server_badge.setProperty("tone", "success")
             self.btn_startstop.setText("Stop Server")
-            self.btn_startstop.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaStop))
+            self.btn_startstop.setIcon(make_line_icon("Stop Server"))
             self.btn_startstop.setProperty("class", "secondary")
             self.tray_startstop.setText("Stop Server")
             self.tray.setToolTip(f"{self._value('APP_NAME')} - Running")
@@ -1508,13 +1615,12 @@ class MainWindowCore(QMainWindow):
         else:
             self.status_dot.setStyleSheet("color: #697381; font-size: 20px;")
             self.status_label.setText("Stopped")
-            self.status_label.setStyleSheet("color: #7f8997; font-size: 11px; font-weight: 650;")
-            self.dash_status.setText("Server stopped")
-            self.dash_hint.setText("Start the service before using download actions in Astra Deck.")
-            self.server_badge.setText("Stopped")
+            self.status_label.setStyleSheet("color: #8e98a5; font-size: 12px; font-weight: 650;")
+            self.dash_status.setText("Server offline")
+            self.dash_hint.setText("Local only \u00b7 start before downloading")
             self.server_badge.setProperty("tone", "neutral")
             self.btn_startstop.setText("Start Server")
-            self.btn_startstop.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+            self.btn_startstop.setIcon(make_line_icon("Start Server"))
             self.btn_startstop.setProperty("class", "primary")
             self.tray_startstop.setText("Start Server")
             self.tray.setToolTip(f"{self._value('APP_NAME')} - Stopped")
@@ -1542,7 +1648,7 @@ class MainWindowCore(QMainWindow):
         top = QHBoxLayout()
         title = make_label(dl.title if dl.title and dl.title != "Unknown" else "Preparing download", "fieldLabel", word_wrap=True)
         top.addWidget(title, 1)
-        top.addWidget(make_status_badge(human_status(dl.status), download_status_tone(dl.status)))
+        top.addWidget(make_state_label(human_status(dl.status), download_status_tone(dl.status)))
         if not recent and dl.status in self._value('DOWNLOAD_PENDING_STATES'):
             if dl.status != 'needs-auth':
                 btn_up = self._make_tool_button("Up", QStyle.StandardPixmap.SP_ArrowUp, "ghost")
@@ -1643,14 +1749,13 @@ class MainWindowCore(QMainWindow):
         recent.sort(key=lambda d: d.start_time, reverse=True)
         capacity = self.dl_manager.capacity()
         self.queue_capacity_badge.setText(
-            f"{capacity['total']} / {capacity['totalLimit']}"
+            f"{capacity['total']} / {capacity['totalLimit']} jobs"
         )
         self.btn_queue_pause.setText(
-            "Resume Queue" if capacity['intakePaused'] else "Pause Intake"
+            "Resume queue" if capacity['intakePaused'] else "Pause intake"
         )
-        self.btn_queue_pause.setIcon(self.style().standardIcon(
-            QStyle.StandardPixmap.SP_MediaPlay
-            if capacity['intakePaused'] else QStyle.StandardPixmap.SP_MediaPause
+        self.btn_queue_pause.setIcon(make_line_icon(
+            "Resume queue" if capacity['intakePaused'] else "Pause intake"
         ))
         self.btn_queue_pause.setToolTip(
             "Resume pending downloads explicitly. Items needing sign-in remain paused."
@@ -1670,8 +1775,8 @@ class MainWindowCore(QMainWindow):
         if not active and not pending and not recent:
             self.downloads_list_layout.addWidget(make_empty_state(
                 "Queue is clear",
-                "Start the local server, then use Astra Deck's download action on YouTube. Active jobs will show progress, speed, and recovery guidance here.",
-                "Open Dashboard",
+                "Downloads sent from Astra Deck appear here.",
+                "Open dashboard",
                 lambda: self._nav_click("Dashboard"),
             ))
         if active:
@@ -1696,39 +1801,41 @@ class MainWindowCore(QMainWindow):
         if not data:
             self.history_container.addWidget(make_empty_state(
                 "No downloads yet",
-                "Completed jobs appear here with format, quality, duration, and a direct path back to the saved file.",
-                "View Download Queue",
+                "Completed downloads will appear here.",
+                "View download queue",
                 lambda: self._nav_click("Downloads"),
             ))
             self.history_container.addStretch()
             return
 
         for h in reversed(data[-50:]):
-            card = make_card("download")
-            card.setProperty("state", "complete")
-            card_l = QVBoxLayout(card)
-            card_l.setContentsMargins(16, 13, 16, 13)
-            card_l.setSpacing(7)
-            top = QHBoxLayout()
-            title = make_label(h.get("title", "(untitled)"), "fieldLabel", word_wrap=True)
-            top.addWidget(title, 1)
-            top.addWidget(make_status_badge("Complete", "success"))
-            if h.get("filename"):
-                btn_show = self._make_tool_button("Show", QStyle.StandardPixmap.SP_DirOpenIcon, "ghost")
-                btn_show.clicked.connect(lambda checked=False, path=h.get("filename"): self._show_download_location(path))
-                top.addWidget(btn_show)
-            card_l.addLayout(top)
-            parts = [p for p in [
-                h.get("date"),
-                str(h.get("format", "")).upper() if h.get("format") else "",
-                h.get("quality"),
-                format_duration(h.get("duration", 0)),
-            ] if p]
+            card = make_card("historyRow")
+            card_l = QHBoxLayout(card)
+            card_l.setContentsMargins(0, 12, 0, 12)
+            card_l.setSpacing(12)
+            file_copy = QVBoxLayout()
+            file_copy.setSpacing(3)
+            file_copy.addWidget(make_label(h.get("title", "(untitled)"), "fieldLabel", word_wrap=True))
             filename = h.get("filename")
             if filename:
-                parts.append(Path(filename).name)
-            meta = make_label("  /  ".join(parts), "fieldHint", word_wrap=True)
-            card_l.addWidget(meta)
+                file_copy.addWidget(make_label(Path(filename).name, "fieldHint", word_wrap=True))
+            card_l.addLayout(file_copy, 4)
+            values = (
+                str(h.get("format", "")).upper() if h.get("format") else "\u2014",
+                h.get("quality") or "\u2014",
+                format_duration(h.get("duration", 0)) or "\u2014",
+                h.get("date") or "\u2014",
+            )
+            for value in values:
+                label = make_label(str(value), "tableValue")
+                label.setFixedWidth(92)
+                card_l.addWidget(label)
+            if filename:
+                btn_show = self._make_tool_button("Show", QStyle.StandardPixmap.SP_DirOpenIcon, "ghost")
+                btn_show.clicked.connect(lambda checked=False, path=filename: self._show_download_location(path))
+                card_l.addWidget(btn_show)
+            else:
+                card_l.addSpacing(54)
             self.history_container.addWidget(card)
         self.history_container.addStretch()
 
@@ -1820,13 +1927,13 @@ class MainWindowCore(QMainWindow):
             "neutral": "#7b8794",
         }
         self.settings_status.setText(message)
-        self.settings_status.setStyleSheet(f"color: {colors.get(tone, colors['neutral'])}; font-size: 11px;")
+        self.settings_status.setStyleSheet(f"color: {colors.get(tone, colors['neutral'])}; font-size: 12px;")
 
     def _mark_settings_dirty(self, *_args):
         if not hasattr(self, "settings_status") or not hasattr(self, "btn_save"):
             return
-        self._show_settings_status("Unsaved changes. Save when ready.", "warning")
-        self.btn_save.setText("Save Changes")
+        self._show_settings_status("Unsaved changes", "warning")
+        self.btn_save.setText("Save changes")
 
     def _sync_connection_ui(self):
         port = self._dependencies['clamp_int'](self.config.get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
@@ -2014,7 +2121,7 @@ class MainWindowCore(QMainWindow):
             "StartMinimized": self.cfg_startmin.isChecked(),
         })
         if not saved:
-            self.btn_save.setText("Save Changes")
+            self.btn_save.setText("Save changes")
             self._show_settings_status(
                 "Could not save settings. Nothing changed; check disk permissions and retry.",
                 "danger",
@@ -2034,7 +2141,7 @@ class MainWindowCore(QMainWindow):
         else:
             self._show_settings_status("Settings saved.", "success")
         self.btn_save.setText("Saved")
-        QTimer.singleShot(1500, lambda: self.btn_save.setText("Save Changes"))
+        QTimer.singleShot(1500, lambda: self.btn_save.setText("Save changes"))
         QTimer.singleShot(3200, lambda: self._show_settings_status(""))
 
     def _browse(self, line_edit):
@@ -2144,7 +2251,7 @@ class MainWindowCore(QMainWindow):
         try:
             self._append_log(f"Server failed to start: {msg}")
             self.status_label.setText("Server error")
-            self.status_label.setStyleSheet("color: #ffb8b8; font-size: 11px;")
+            self.status_label.setStyleSheet("color: #ffb8b8; font-size: 12px;")
             self.dash_hint.setText("Server failed to start. Check the log for details.")
             if self.tray.isVisible():
                 self.tray.showMessage(

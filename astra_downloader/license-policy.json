@@ -88,7 +88,7 @@
       "licenseExpression": "GPL-3.0-or-later",
       "decision": "unresolved",
       "distributionUrl": "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
-      "checksumUrl": "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip.sha256",
+      "checksumUrl": "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/checksums.sha256",
       "sourceUrl": "https://github.com/yt-dlp/FFmpeg-Builds",
       "noticeUrl": "https://ffmpeg.org/legal.html",
       "obligations": [

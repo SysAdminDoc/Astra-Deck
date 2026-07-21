@@ -6,6 +6,35 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- **Astra Downloader now uses a quieter four-page desktop system.** Dashboard,
+  Downloads, History, and Settings follow the same imagegen-guided graphite
+  layout with readable 12–14 px supporting type, a compact rail and headers,
+  line icons, semantic state dots, and hairline grouping in place of stacked
+  outlined cards and status pills.
+- **Operational pages prioritize the next useful action.** Dashboard condenses
+  service health into one control band, an inline readiness list, and a metric
+  strip; Downloads and History use concise borderless empty states and History
+  now exposes its future row columns before data arrives.
+- **Companion Settings is a dense document form.** Section labels occupy a
+  stable left column, helper copy is reduced to one useful line, and controls
+  are grouped with separators instead of container boxes.
+
+### Fixed
+
+- First-run ffmpeg setup now verifies the downloaded Windows archive against the upstream `checksums.sha256` manifest and its exact asset name; the retired per-archive `.zip.sha256` URL no longer blocks installation.
+
+- **Companion visual smoke captures are reliable on scroll-backed pages.** The
+  renderer now composites the tab surface and rail independently, preventing
+  Qt's Windows offscreen viewport painting from obscuring page headers or rail
+  destinations in Downloads and Settings screenshots.
+- **Companion visual smoke no longer aborts on launch.** The rail-composition
+  pass referenced `make_line_icon` through the top module, which never
+  re-exported it; the offscreen renderer aborted with an unhandled slot
+  exception (0xC0000409) and produced no screenshots. The helper is now
+  re-exported and a contract test guards the renderer's `app_module` surface.
+
 ## [4.49.10] - 2026-07-15
 
 ### Fixed
