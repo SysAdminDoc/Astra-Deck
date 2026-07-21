@@ -94,13 +94,21 @@ def make_state_label(text, tone="neutral"):
     return label
 
 
-def make_line_icon(name):
-    """Draw the rail icons from one quiet monochrome system."""
+def make_line_icon(name, size=18):
+    """Draw the rail icons from one quiet monochrome system.
+
+    Geometry is authored on an 18 px grid. Pass a larger ``size`` (e.g. the
+    36 px empty-state glyph) to rasterize the same paths crisply instead of
+    upscaling an 18 px pixmap — the painter is scaled so both the coordinates
+    and the 1.5 px stroke grow proportionally.
+    """
     key = str(name).lower()
-    pixmap = QPixmap(18, 18)
+    pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    if size != 18:
+        painter.scale(size / 18, size / 18)
     painter.setPen(QPen(QColor("#aab2bd"), 1.5, Qt.PenStyle.SolidLine,
                         Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
     if key == "dashboard":
@@ -225,7 +233,7 @@ def make_empty_state(title, body, action_text=None, action=None):
     layout.addStretch(2)
     glyph = QLabel()
     glyph.setProperty("class", "emptyGlyph")
-    glyph.setPixmap(make_line_icon("Downloads" if "Queue" in title else "History").pixmap(36, 36))
+    glyph.setPixmap(make_line_icon("Downloads" if "Queue" in title else "History", size=36).pixmap(36, 36))
     glyph.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(glyph)
     empty_title = make_label(title, "emptyTitle")
