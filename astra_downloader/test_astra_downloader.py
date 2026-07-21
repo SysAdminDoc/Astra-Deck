@@ -303,7 +303,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn("btn.setCheckable(True)", source)
         self.assertIn("btn.setAutoExclusive(True)", source)
         self.assertIn('self._show_settings_status("Unsaved changes", "warning")', source)
-        self.assertIn('make_line_icon("Downloads" if "Queue" in title else "History")', gui_source)
+        self.assertIn('make_line_icon("Downloads" if "Queue" in title else "History", size=36)', gui_source)
         self.assertIn('QFrame[class="settingsGroup"]', ad.STYLESHEET)
         self.assertIn('QLabel[class="stateLabel"]', ad.STYLESHEET)
         self.assertIn("window.tabs.render(tab_image)", renderer_source)
@@ -4433,6 +4433,18 @@ class GuiSmokeTests(unittest.TestCase):
         from PyQt6.QtWidgets import QApplication
         self.assertIsNotNone(QApplication.instance(),
                              "QApplication.instance() must be available after setUp")
+
+    def test_make_line_icon_renders_glyph_at_native_requested_size(self):
+        from PyQt6.QtCore import QSize
+        # The default 18 px icon cannot satisfy a 36 px request without
+        # upscaling, so QIcon.actualSize caps at the stored 18 px pixmap.
+        small = ad.make_line_icon("history")
+        self.assertEqual(small.actualSize(QSize(36, 36)), QSize(18, 18))
+        # Requesting size=36 authors the glyph natively, so the empty-state
+        # rasterizes crisply instead of doubling an 18 px pixmap.
+        native = ad.make_line_icon("history", size=36)
+        self.assertEqual(native.actualSize(QSize(36, 36)), QSize(36, 36))
+        self.assertFalse(native.pixmap(36, 36).isNull())
 
     def test_folder_picker_service_constructs_and_starts_timer(self):
         svc = ad.FolderPickerService()

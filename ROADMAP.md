@@ -31,7 +31,3 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 ## Deep-audit backlog — 2026-07-15 (verified, unfixed)
 
 ## Deep-audit backlog — 2026-07-20 (companion pass, verified, unfixed)
-
-- [ ] P3 — Render the companion empty-state glyph at native size
-  Why: `make_empty_state` requests `make_line_icon(...).pixmap(36, 36)` from an icon drawn on a fixed 18×18 canvas, so the Downloads/History empty-state glyphs are upscaled 2× and read slightly soft. Give `make_line_icon` an optional target size (scale the draw coordinates) so the glyph rasterizes crisply at 36 px.
-  Where: astra_downloader/gui.py (make_line_icon, make_empty_state)

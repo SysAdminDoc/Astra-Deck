@@ -29,6 +29,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   service health into one control band, an inline readiness list, and a metric
   strip; Downloads and History use concise borderless empty states and History
   now exposes its future row columns before data arrives.
+- **Companion empty-state glyphs rasterize at native size.** The Downloads and
+  History "nothing here yet" icons were drawn on an 18 px grid and upscaled 2×,
+  reading slightly soft; `make_line_icon` now accepts a target size and scales
+  its geometry and stroke so the 36 px glyph renders crisply.
 - **Companion Settings is a dense document form.** Section labels occupy a
   stable left column, helper copy is reduced to one useful line, and controls
   are grouped with separators instead of container boxes.
