@@ -1937,6 +1937,38 @@ else:
         self.assertFalse(probe.check()["current"], "cached payload must be defensive")
         self.assertTrue(probe.check(force=True)["current"])
 
+    def test_ffmpeg_capability_probe_enforces_exact_semver_floor(self):
+        import health
+
+        def probe_for(version):
+            return health.FfmpegCapabilitiesProbe(
+                version_getter=lambda: version,
+                clock=lambda: 100.0,
+                minimum_major=8,
+                minimum_version="8.1.2",
+                ttl_seconds=60,
+            ).check()
+
+        # Below the exact floor (RV60 OOB / MagicYUV RCE range) is flagged even
+        # though the major (8) alone would pass a major-only check.
+        below = probe_for("8.0.1-full_build-www.gyan.dev")
+        self.assertFalse(below["current"])
+        self.assertIn("8.1.2", below["message"])
+        # An older major is likewise flagged.
+        self.assertFalse(probe_for("7.1.1")["current"])
+        # At or above the floor passes, build suffix ignored.
+        self.assertTrue(probe_for("8.1.2-full_build")["current"])
+        self.assertTrue(probe_for("9.0")["current"])
+        # Master/snapshot builds carry no numeric version and must not be
+        # flagged as below-floor — they are always newer than any tagged floor.
+        snapshot = probe_for("N-119847-g1a2b3c4d-win64-gpl")
+        self.assertIsNone(snapshot["current"])
+        self.assertIsNone(snapshot["majorVersion"])
+
+    def test_ffmpeg_probe_is_configured_with_the_security_floor(self):
+        self.assertEqual(ad._FFMPEG_MIN_VERSION, "8.1.2")
+        self.assertGreaterEqual(ad._FFMPEG_MIN_MAJOR, 8)
+
     def test_routes_module_owns_injected_wsgi_backend_selection_and_teardown(self):
         import routes
 
@@ -3347,7 +3379,8 @@ class FfmpegCapabilitiesTests(unittest.TestCase):
 
     def test_check_ffmpeg_capabilities_marks_current_when_at_or_above_floor(self):
         original = ad.get_ffmpeg_version
-        ad.get_ffmpeg_version = lambda *a, **k: '8.1.1'
+        # 8.1.2 is the exact security floor (CVE-2026-8461); at-floor passes.
+        ad.get_ffmpeg_version = lambda *a, **k: '8.1.2'
         try:
             result = ad.check_ffmpeg_capabilities(force=True)
         finally:
@@ -3355,6 +3388,19 @@ class FfmpegCapabilitiesTests(unittest.TestCase):
         self.assertEqual(result['majorVersion'], 8)
         self.assertTrue(result['current'])
         self.assertIn('meets', result['message'])
+
+    def test_check_ffmpeg_capabilities_flags_vulnerable_8_0_below_exact_floor(self):
+        # 8.0.1 clears the major-8 bar but is inside the RV60 OOB-read range and
+        # below the 8.1.2 MagicYUV-RCE fix, so the exact floor must flag it.
+        original = ad.get_ffmpeg_version
+        ad.get_ffmpeg_version = lambda *a, **k: '8.0.1'
+        try:
+            result = ad.check_ffmpeg_capabilities(force=True)
+        finally:
+            ad.get_ffmpeg_version = original
+        self.assertEqual(result['majorVersion'], 8)
+        self.assertFalse(result['current'])
+        self.assertIn('8.1.2', result['message'])
 
     def test_check_ffmpeg_capabilities_marks_stale_below_floor(self):
         original = ad.get_ffmpeg_version
