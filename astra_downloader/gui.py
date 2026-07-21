@@ -940,13 +940,15 @@ class MainWindowCore(QMainWindow):
         self.readiness_values[key] = (dot, value)
         return row
 
-    def _set_readiness(self, key, text, tone="neutral"):
+    def _set_readiness(self, key, text, tone="neutral", tooltip=""):
         widgets = self.readiness_values.get(key)
         if not widgets:
             return
         dot, value = widgets
         dot.setProperty("tone", tone)
         value.setText(text)
+        value.setToolTip(tooltip)
+        dot.setToolTip(tooltip)
         repolish(dot)
 
     def _start_readiness_probe(self):
@@ -994,11 +996,22 @@ class MainWindowCore(QMainWindow):
             self._set_readiness("deno", "Optional", "neutral")
 
         if provider.get("ok") and provider.get("stale"):
-            self._set_readiness("provider", "Update", "warning")
+            self._set_readiness(
+                "provider", "Update", "warning",
+                "Proof-of-origin provider is running but out of date. "
+                "Downloads use the web client with PO tokens.",
+            )
         elif provider.get("ok"):
-            self._set_readiness("provider", provider.get("version") or "Ready", "success")
+            self._set_readiness(
+                "provider", provider.get("version") or "Ready", "success",
+                "Downloads use the web client with proof-of-origin tokens.",
+            )
         else:
-            self._set_readiness("provider", "Optional", "neutral")
+            self._set_readiness(
+                "provider", "Fallback", "neutral",
+                "No proof-of-origin provider is running. Downloads fall back to "
+                "the token-exempt tv and android_vr clients.",
+            )
 
 
     def _value(self, name):

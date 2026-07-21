@@ -39,15 +39,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 ## Research-Driven Additions — 2026-07-20 (competitive + yt-dlp ecosystem sweep)
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-20). Most competitor breadth is already shipped; these are the verified remaining gaps. Extension features reuse the external-api-health/degradation-surface pattern with per-feature auto-disable-on-DOM-miss.
 
-### P1 — Extraction resilience (only category at risk of total failure)
-
-- [ ] P1 — Token-exempt client fallback chain when PO tokens are unavailable
-  Why: YouTube enforces PO tokens for the default `web`/`mweb` clients (SABR-only or HTTP 403 without them); the companion consumes a bgutil provider when present but has no fallback, so a missing/failed provider or a flagged residential IP means downloads fail entirely instead of degrading.
-  Evidence: yt-dlp PO-Token Guide (client exemption table — `tv`/`android_vr`/`web_embedded` currently token-exempt); `astra_downloader/health.py:118` `build_youtube_extractor_args` (no `player_client` arg); grep found no `android_vr`/`player_client` fallback.
-  Touches: `astra_downloader/health.py` (extractor-arg builder), `astra_downloader/download.py` (arg assembly ~1023-1078), companion health/readiness surfacing, `astra_downloader/test_astra_downloader.py`.
-  Acceptance: when the PO-token provider probe is not `ok`, the download argv adds `--extractor-args "youtube:player_client=tv,android_vr,web"` (or equivalent exempt-first chain); a unit test asserts the fallback clients are added only when the provider is unavailable and omitted when it is `ok`; the dashboard reflects which client path is active.
-  Complexity: M
-
 ### P2 — Provider provisioning
 
 - [ ] P2 — Auto-provision the bgutil PO-token provider the way Deno is provisioned
