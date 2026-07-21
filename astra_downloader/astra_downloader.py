@@ -1054,13 +1054,18 @@ def get_ffmpeg_version(force=False):
 # handles invocation — but we can audit ffmpeg's reported major version
 # at bootstrap and warn if it's stale. The check runs once per Astra
 # Downloader launch (cached) and the result lands on /health.
-_FFMPEG_MIN_MAJOR = 7  # ffmpeg 8.x is current as of 2026; 7.x is the
-                       # acceptable floor (covers most distros' bundles
-                       # without forcing immediate refresh).
+_FFMPEG_MIN_MAJOR = 8  # ffmpeg 8.x is current as of 2026.
+# Exact security floor. FFmpeg 8.1.2 fixes the MagicYUV decoder RCE
+# (CVE-2026-8461, CVSS 8.8); 8.0/8.0.1 carry the RV60 OOB-read cluster. A
+# stale ffmpeg on PATH that reports a tagged version below this is flagged on
+# /health. The bundled master build reports no numeric version and is never
+# flagged (it is always newer than the floor).
+_FFMPEG_MIN_VERSION = "8.1.2"
 _ffmpeg_capabilities_probe = FfmpegCapabilitiesProbe(
     version_getter=lambda: get_ffmpeg_version(),
     clock=lambda: time.time(),
     minimum_major=_FFMPEG_MIN_MAJOR,
+    minimum_version=_FFMPEG_MIN_VERSION,
     ttl_seconds=3600,
 )
 

@@ -41,13 +41,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-20). Most compet
 
 ### P3 — Hardening + small verified viewer gaps
 
-- [ ] P3 — Enforce a minimum FFmpeg version floor in the readiness probe
-  Why: FFmpeg is downloaded as "latest" and checksum-verified, but a stale FFmpeg selected from PATH is not rejected; CVE-2026-8461 (MagicYUV decoder RCE, CVSS 8.8) is fixed in FFmpeg ≥ 8.1.2 and the RV60 OOB-read cluster affects 8.0/8.0.1.
-  Evidence: https://www.ffmpeg.org/security.html; `astra_downloader/health.py` `FfmpegCapabilitiesProbe`/`parse_ffmpeg_major`.
-  Touches: `astra_downloader/health.py` (add a `FFMPEG_MIN_VERSION` floor to the capabilities probe), readiness surfacing, tests.
-  Acceptance: the FFmpeg readiness probe reports a warning/degraded state (with the detected version) when the resolved FFmpeg is below the floor; a unit test covers a below-floor and an at-floor build.
-  Complexity: S
-
 - [ ] P3 — Exact (non-rounded) view/like/comment counts
   Why: Astra surfaces exact dislike counts via its Return-YouTube-Dislike integration but leaves YouTube's rounded "1.2M" view/like/comment labels; exact counts are a recurring viewer-side ask and a paywalled creator-tool feature.
   Evidence: https://github.com/Shraymonks/YouTube-Exact-Like-Count; YouTube Redux (precise like/dislike values); grep found no `exactCount`/`preciseCount` setting.

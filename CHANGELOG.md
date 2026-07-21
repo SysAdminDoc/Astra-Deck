@@ -41,6 +41,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Downloads fall back to token-exempt YouTube clients when no proof-of-origin provider is running.** YouTube now requires PO tokens for the default `web`/`mweb` clients (SABR-only formats or HTTP 403 without them). When the bgutil PO-token provider probe is not reachable, the companion adds `youtube:player_client=tv,android_vr,web` so extraction degrades gracefully instead of failing outright; when the provider is live, the web client + PO tokens is used unchanged. The dashboard's "PO provider" readiness row now reads **Fallback** (with an explanatory tooltip) instead of "Optional" so the active client path is visible.
 
+### Security
+
+- **The companion flags a known-vulnerable ffmpeg against an exact version floor.** The ffmpeg capability probe compared only the major version (≥7), so a tagged 8.0.x on PATH — inside the RV60 out-of-bounds-read range and below the 8.1.2 MagicYUV-decoder RCE fix (CVE-2026-8461, CVSS 8.8) — passed silently. The probe now enforces an exact `8.1.2` semver floor for tagged builds while leaving the bundled master build (which reports no numeric version and is always newer) unflagged; `/health` surfaces the below-floor state.
+
 ### Fixed
 
 - **Pending downloads now read with the same amber state tone as their queue siblings.** A freshly queued `pending` job fell through to the neutral grey dot while its `paused` and `needs-sign-in` siblings (same pending set) and `queued` all showed amber, so the Downloads "Pending" section mixed grey and amber dots for equivalent waiting states. `pending` now maps to the warning tone.

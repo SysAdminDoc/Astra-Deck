@@ -365,10 +365,15 @@ class FfmpegCapabilitiesProbe:
     """Cached ffmpeg support-floor assessment over an injected version source."""
 
     def __init__(self, *, version_getter, clock=time.time, minimum_major=7,
-                 ttl_seconds=3600):
+                 minimum_version=None, ttl_seconds=3600):
         self._version_getter = version_getter
         self._clock = clock
         self._minimum_major = max(0, int(minimum_major))
+        # Optional exact semver floor (e.g. "8.1.2"). Only applied when the
+        # reported version parses to a numeric release; master/snapshot builds
+        # ("N-119847-g…") report no numeric major and are never flagged, since
+        # they are always newer than any tagged floor.
+        self._minimum_version = str(minimum_version).strip() if minimum_version else None
         self._ttl_seconds = max(0, float(ttl_seconds))
         self._value = None
         self._checked_at = 0.0
@@ -383,12 +388,30 @@ class FfmpegCapabilitiesProbe:
                 and (now - self._checked_at) < self._ttl_seconds
             ):
                 return dict(self._value)
-            major = parse_ffmpeg_major(self._version_getter())
+            raw = self._version_getter()
+            major = parse_ffmpeg_major(raw)
             if major is None:
                 result = {
                     'majorVersion': None,
                     'current': None,
                     'message': 'ffmpeg version not detected (first-run bootstrap or snapshot build)',
+                }
+            elif self._minimum_version:
+                # A numeric major means a tagged release, so compare the full
+                # reported version against the exact floor. _compare_semver
+                # ignores the build suffix (e.g. "-full_build-www.gyan.dev").
+                current = _compare_semver(str(raw), self._minimum_version) >= 0
+                if current:
+                    message = f'ffmpeg {raw} meets the {self._minimum_version}+ floor'
+                else:
+                    message = (
+                        f'ffmpeg {raw} is below the {self._minimum_version}+ floor '
+                        '(known-vulnerable); re-download via the bundled bootstrap'
+                    )
+                result = {
+                    'majorVersion': major,
+                    'current': current,
+                    'message': message,
                 }
             else:
                 current = major >= self._minimum_major
