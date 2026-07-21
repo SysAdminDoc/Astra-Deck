@@ -3458,15 +3458,18 @@ def main():
         ensure_system_integrations(prefer_installed=True)
 
     # A second launch delegates to the healthy process and exits. Never kill a
-    # live companion here: it may own active yt-dlp/ffmpeg jobs.
-    try:
-        lock = check_single_instance(startup_command)
-    except Exception as exc:
-        write_persistent_log(f"Could not establish the single-instance guard: {exc}")
-        return
-    if lock is INSTANCE_ALREADY_RUNNING:
-        write_persistent_log("Existing Astra Downloader instance accepted the launch request.")
-        return
+    # live companion here: it may own active yt-dlp/ffmpeg jobs. The visual-smoke
+    # capture is a throwaway render that must never delegate to — or disturb — a
+    # running companion, so it skips the guard entirely.
+    if not visual_smoke:
+        try:
+            lock = check_single_instance(startup_command)
+        except Exception as exc:
+            write_persistent_log(f"Could not establish the single-instance guard: {exc}")
+            return
+        if lock is INSTANCE_ALREADY_RUNNING:
+            write_persistent_log("Existing Astra Downloader instance accepted the launch request.")
+            return
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)

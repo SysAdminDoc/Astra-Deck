@@ -34,6 +34,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   re-exported it; the offscreen renderer aborted with an unhandled slot
   exception (0xC0000409) and produced no screenshots. The helper is now
   re-exported and a contract test guards the renderer's `app_module` surface.
+- **`AstraDownloader.exe --visual-smoke` no longer delegates to a live
+  companion.** The throwaway UI-capture launch ran the single-instance guard
+  first, so on a machine already running the companion it silently exited
+  without rendering and forwarded a launch request to the running instance.
+  The smoke path now skips the guard entirely, matching its side-effect-free
+  intent.
 
 ## [4.49.10] - 2026-07-15
 

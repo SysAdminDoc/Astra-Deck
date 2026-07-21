@@ -293,6 +293,8 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn("probe_po_token_provider", probe_wiring_source)
         self.assertIn("self.readiness_worker.moveToThread", source)
         self.assertIn("if is_frozen_app() and not visual_smoke", source)
+        # The throwaway smoke render must not delegate to a live companion.
+        self.assertIn("if not visual_smoke:\n        try:\n            lock = check_single_instance", source)
         self.assertIn("if visual_smoke:", source)
         self.assertIn("dl.error_advice", download_card_source)
         renderer_path = Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py"
