@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- **Cleared every dev-toolchain advisory without downgrading `web-ext`.** The
+  Firefox build/lint tree pulled vulnerable `adm-zip` (<0.6.0), `shell-quote`
+  (<=1.8.4), `brace-expansion`, and `js-yaml` transitively; the only
+  `npm audit fix --force` route downgraded `web-ext` to `0.0.1`. Since even the
+  newest `web-ext` (10.5.0) still ships the vulnerable `fx-runner`/
+  `firefox-profile` deps, the fix pins patched `adm-zip@^0.6.0` and
+  `shell-quote@^1.10.0` via `overrides` and bumps `brace-expansion`/`js-yaml`
+  in place. `npm audit` now reports 0 vulnerabilities (production and dev),
+  `web-ext` stays at 10.4.0, and `check:firefox` lints clean.
+
 ### Changed
 
 - **Astra Downloader now uses a quieter four-page desktop system.** Dashboard,
