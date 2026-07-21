@@ -2,6 +2,14 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+## P2 — External-binary integration + live verification (2026-07-21)
+
+- [ ] P2 — Auto-provision the bgutil PO-token provider (single-binary) the way Deno is provisioned
+  Why: Deno is already auto-provisioned but the PO-token provider is left to the user, so token-gated downloads and bot-check bypass are not available out of the box.
+  Evidence: https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs; `astra_downloader/astra_downloader.py` (Deno provisioning pattern), `astra_downloader/health.py` `PoTokenProviderProbe` (probes `/ping` on port 4416 for a `version` field).
+  Where: `astra_downloader/astra_downloader.py` (provisioning + SetupWorker), `astra_downloader/health.py`, config/GUI readiness, checksum verification.
+  Blocker: Requires the external project's exact Windows-x64 release-asset name and checksum-manifest contract (needs a live GitHub-releases fetch), plus a persistent sidecar-process lifecycle (launch on setup, stop on exit, port/health management) that cannot be verified end-to-end without downloading and running the real binary in this environment. Shipping a binary-downloader against guessed asset names/launch flags would be unverifiable. Lower urgency now that the 2026-07-21 token-exempt client fallback (`youtube:player_client=tv,android_vr,web`) already keeps downloads working when no provider is running — this item is an optimization (restore the web+PO-token path), not a fix for total failure.
+
 ## P3 — Browser-Gated Verification (2026-07-15 audit)
 
 - [ ] P3 — Live-chat English-only structural fallbacks need browser-gated verification
