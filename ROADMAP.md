@@ -32,6 +32,10 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 
 ## Deep-audit backlog — 2026-07-20 (companion pass, verified, unfixed)
 
+- [ ] P3 — Live-browser behavioral audit of the extension feature modules
+  Why: the 2026-07-20 audit pass deeply traced the companion (GUI state machine, HTTP/auth boundary, settings validation) and fixed a status-tone inconsistency, but the extension feature modules' *runtime* logic (e.g. `extension/features/download-ui/index.js`, video-hider, subscription-groups) was only spot-checked; the static a11y/contrast/i18n/lint gates and unit tests pass, but behavioral bugs on live YouTube DOM (empty/error/offline states, feature auto-disable-on-miss) are not covered by fixtures.
+  Where: `extension/features/**/index.js`, live YouTube watch/subscriptions/live-chat surfaces.
+
 ## Research-Driven Additions — 2026-07-20 (competitive + yt-dlp ecosystem sweep)
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-20). Most competitor breadth is already shipped; these are the verified remaining gaps. Extension features reuse the external-api-health/degradation-surface pattern with per-feature auto-disable-on-DOM-miss.
 
