@@ -39,15 +39,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-09). Extension-f
 ## Research-Driven Additions — 2026-07-20 (competitive + yt-dlp ecosystem sweep)
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-20). Most competitor breadth is already shipped; these are the verified remaining gaps. Extension features reuse the external-api-health/degradation-surface pattern with per-feature auto-disable-on-DOM-miss.
 
-### P2 — Provider provisioning
-
-- [ ] P2 — Auto-provision the bgutil PO-token provider the way Deno is provisioned
-  Why: Deno is already auto-provisioned (`DENO_ZIP_URL`, `DenoProvisionError`) but the PO-token provider is "Optional" and left to the user, so token-gated downloads and bot-check bypass silently degrade out of the box; the Rust single-binary provider (`bgutil-ytdlp-pot-provider-rs`) can be fetched and checksum-verified like Deno without a Node sidecar.
-  Evidence: RESEARCH.md 2026-07-20 §Security/Reliability; https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs; `astra_downloader/astra_downloader.py:217-221` (Deno provisioning), `astra_downloader/health.py:289` `PoTokenProviderProbe`.
-  Touches: `astra_downloader/astra_downloader.py` (provisioning + SetupWorker), `astra_downloader/health.py` (probe/launch), config/GUI readiness, checksum verification (reuse the existing `checksums.sha256`/exact-asset pattern), tests.
-  Acceptance: first-run setup optionally fetches and checksum-verifies the single-binary provider, launches it on the existing loopback provider port, and the readiness dashboard shows "PO provider: Ready"; failure is non-fatal and surfaced, and the download path uses the provider when live.
-  Complexity: L
-
 ### P3 — Hardening + small verified viewer gaps
 
 - [ ] P3 — Enforce a minimum FFmpeg version floor in the readiness probe
