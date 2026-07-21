@@ -18,7 +18,7 @@ from PyQt6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap, QTextCursor
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog,
     QFrame, QGraphicsOpacityEffect, QHBoxLayout, QLabel, QLineEdit, QMainWindow,
-    QMenu, QProgressBar, QPushButton, QScrollArea, QSizePolicy, QSpinBox, QStyle,
+    QMenu, QProgressBar, QPushButton, QScrollArea, QSizePolicy, QSpinBox,
     QSystemTrayIcon, QTabWidget, QTextEdit, QVBoxLayout, QWidget,
 )
 
@@ -906,7 +906,7 @@ class MainWindowCore(QMainWindow):
         outer.addLayout(content, 1)
         return group, content
 
-    def _make_tool_button(self, text, icon, class_name="secondary"):
+    def _make_tool_button(self, text, class_name="secondary"):
         btn = QPushButton(text)
         btn.setProperty("class", class_name)
         btn.setIcon(make_line_icon(text))
@@ -1037,13 +1037,13 @@ class MainWindowCore(QMainWindow):
 
         actions = QHBoxLayout()
         actions.setSpacing(8)
-        self.btn_startstop = self._make_tool_button("Start Server", QStyle.StandardPixmap.SP_MediaPlay, "primary")
+        self.btn_startstop = self._make_tool_button("Start Server", "primary")
         self.btn_startstop.clicked.connect(self._toggle_server)
         actions.addWidget(self.btn_startstop)
-        btn_copy = self._make_tool_button("Copy endpoint", QStyle.StandardPixmap.SP_FileDialogContentsView)
+        btn_copy = self._make_tool_button("Copy endpoint")
         btn_copy.clicked.connect(self._copy_endpoint)
         actions.addWidget(btn_copy)
-        btn_folder = self._make_tool_button("Open folder", QStyle.StandardPixmap.SP_DirOpenIcon)
+        btn_folder = self._make_tool_button("Open folder")
         btn_folder.clicked.connect(self._open_folder)
         actions.addWidget(btn_folder)
         actions.addStretch()
@@ -1102,10 +1102,10 @@ class MainWindowCore(QMainWindow):
         log_header = QHBoxLayout()
         log_header.addWidget(make_label("Server log", "panelTitle"))
         log_header.addStretch()
-        btn_clear_log = self._make_tool_button("Clear", QStyle.StandardPixmap.SP_DialogResetButton, "ghost")
+        btn_clear_log = self._make_tool_button("Clear", "ghost")
         btn_clear_log.clicked.connect(self._clear_log)
         log_header.addWidget(btn_clear_log)
-        btn_diag = self._make_tool_button("Review diagnostics", QStyle.StandardPixmap.SP_FileDialogContentsView, "ghost")
+        btn_diag = self._make_tool_button("Review diagnostics", "ghost")
         btn_diag.setToolTip("Review the redacted support payload before copying it.")
         btn_diag.clicked.connect(self._copy_diagnostics)
         log_header.addWidget(btn_diag)
@@ -1132,7 +1132,7 @@ class MainWindowCore(QMainWindow):
         toolbar.addWidget(self.queue_capacity_badge)
         toolbar.addStretch()
         self.btn_queue_pause = self._make_tool_button(
-            "Pause intake", QStyle.StandardPixmap.SP_MediaPause, "ghost"
+            "Pause intake", "ghost"
         )
         self.btn_queue_pause.setToolTip(
             "Pause starting pending downloads. Downloads already running will continue."
@@ -1159,11 +1159,11 @@ class MainWindowCore(QMainWindow):
         layout.setSpacing(12)
         header = QHBoxLayout()
         header.addLayout(self._make_page_header("History", ""), 1)
-        self.btn_clear_history = self._make_tool_button("Clear history", QStyle.StandardPixmap.SP_TrashIcon, "ghost")
+        self.btn_clear_history = self._make_tool_button("Clear history", "ghost")
         self.btn_clear_history.setToolTip("Remove saved history entries. Downloaded files are not deleted.")
         self.btn_clear_history.clicked.connect(self._clear_history)
         header.addWidget(self.btn_clear_history, 0, Qt.AlignmentFlag.AlignTop)
-        self.btn_undo_clear_history = self._make_tool_button("Undo clear", QStyle.StandardPixmap.SP_ArrowBack, "ghost")
+        self.btn_undo_clear_history = self._make_tool_button("Undo clear", "ghost")
         self.btn_undo_clear_history.setToolTip("Restore the history entries cleared in this session.")
         self.btn_undo_clear_history.clicked.connect(self._undo_clear_history)
         self.btn_undo_clear_history.hide()
@@ -1234,14 +1234,14 @@ class MainWindowCore(QMainWindow):
         self.cfg_token.setReadOnly(True)
         self.cfg_token.setEchoMode(QLineEdit.EchoMode.Password)
         token_row.addWidget(self.cfg_token, 1)
-        self.btn_token_reveal = self._make_tool_button("Reveal", QStyle.StandardPixmap.SP_FileDialogInfoView)
+        self.btn_token_reveal = self._make_tool_button("Reveal")
         self.btn_token_reveal.setAccessibleName("Reveal private token")
         self.btn_token_reveal.clicked.connect(self._toggle_token_visible)
         token_row.addWidget(self.btn_token_reveal)
-        btn_token_copy = self._make_tool_button("Copy", QStyle.StandardPixmap.SP_FileDialogContentsView)
+        btn_token_copy = self._make_tool_button("Copy")
         btn_token_copy.clicked.connect(self._copy_token)
         token_row.addWidget(btn_token_copy)
-        btn_token_reset = self._make_tool_button("Regenerate", QStyle.StandardPixmap.SP_BrowserReload, "danger")
+        btn_token_reset = self._make_tool_button("Regenerate", "danger")
         btn_token_reset.clicked.connect(self._regenerate_token)
         token_row.addWidget(btn_token_reset)
         conn_l.addLayout(token_row)
@@ -1257,7 +1257,7 @@ class MainWindowCore(QMainWindow):
         self.cfg_dl_path.setAccessibleName("Video download folder")
         self.cfg_dl_path.setPlaceholderText(str(Path.home() / "Videos" / "YouTube"))
         row.addWidget(self.cfg_dl_path, 1)
-        btn = self._make_tool_button("Browse", QStyle.StandardPixmap.SP_DirOpenIcon)
+        btn = self._make_tool_button("Browse")
         btn.clicked.connect(lambda: self._browse(self.cfg_dl_path))
         row.addWidget(btn)
         paths_l.addLayout(row)
@@ -1270,7 +1270,7 @@ class MainWindowCore(QMainWindow):
         self.cfg_audio_path.setAccessibleName("Audio download folder")
         self.cfg_audio_path.setPlaceholderText("Same as video folder")
         row2.addWidget(self.cfg_audio_path, 1)
-        btn2 = self._make_tool_button("Browse", QStyle.StandardPixmap.SP_DirOpenIcon)
+        btn2 = self._make_tool_button("Browse")
         btn2.clicked.connect(lambda: self._browse(self.cfg_audio_path))
         row2.addWidget(btn2)
         paths_l.addLayout(row2)
@@ -1401,13 +1401,13 @@ class MainWindowCore(QMainWindow):
         tools_row = QHBoxLayout()
         tools_row.setSpacing(8)
         self.btn_check_updates = self._make_tool_button(
-            "Check yt-dlp Update", QStyle.StandardPixmap.SP_BrowserReload,
+            "Check yt-dlp Update",
         )
         self.btn_check_updates.setToolTip("Check for a yt-dlp update. Active downloads must finish first.")
         self.btn_check_updates.clicked.connect(self._force_ytdlp_update)
         tools_row.addWidget(self.btn_check_updates)
         btn_reinstall_ffmpeg = self._make_tool_button(
-            "Reinstall ffmpeg", QStyle.StandardPixmap.SP_DialogResetButton, "danger",
+            "Reinstall ffmpeg", "danger",
         )
         btn_reinstall_ffmpeg.setToolTip("Delete the installed ffmpeg and re-download from source with checksum verification.")
         btn_reinstall_ffmpeg.clicked.connect(self._reinstall_ffmpeg)
@@ -1420,7 +1420,7 @@ class MainWindowCore(QMainWindow):
         save_row.setContentsMargins(166, 14, 0, 0)
         self.settings_status = make_label("", "fieldHint")
         save_row.addWidget(self.settings_status, 1)
-        btn_save = self._make_tool_button("Save changes", QStyle.StandardPixmap.SP_DialogSaveButton, "primary")
+        btn_save = self._make_tool_button("Save changes", "primary")
         btn_save.clicked.connect(self._save_settings)
         self.btn_save = btn_save
         save_row.addWidget(btn_save)
@@ -1651,36 +1651,36 @@ class MainWindowCore(QMainWindow):
         top.addWidget(make_state_label(human_status(dl.status), download_status_tone(dl.status)))
         if not recent and dl.status in self._value('DOWNLOAD_PENDING_STATES'):
             if dl.status != 'needs-auth':
-                btn_up = self._make_tool_button("Up", QStyle.StandardPixmap.SP_ArrowUp, "ghost")
+                btn_up = self._make_tool_button("Up", "ghost")
                 btn_up.setToolTip("Move this pending download earlier.")
                 btn_up.clicked.connect(
                     lambda checked=False, dl_id=dl.id: self._move_pending_download(dl_id, -1)
                 )
                 top.addWidget(btn_up)
-                btn_down = self._make_tool_button("Down", QStyle.StandardPixmap.SP_ArrowDown, "ghost")
+                btn_down = self._make_tool_button("Down", "ghost")
                 btn_down.setToolTip("Move this pending download later.")
                 btn_down.clicked.connect(
                     lambda checked=False, dl_id=dl.id: self._move_pending_download(dl_id, 1)
                 )
                 top.addWidget(btn_down)
             if dl.status == 'paused':
-                btn_resume = self._make_tool_button("Resume Queue", QStyle.StandardPixmap.SP_MediaPlay, "ghost")
+                btn_resume = self._make_tool_button("Resume Queue", "ghost")
                 btn_resume.setToolTip("Resume recovered, unauthenticated downloads explicitly.")
                 btn_resume.clicked.connect(self._resume_download_queue)
                 top.addWidget(btn_resume)
-            btn_cancel = self._make_tool_button("Cancel", QStyle.StandardPixmap.SP_DialogCancelButton, "ghost")
+            btn_cancel = self._make_tool_button("Cancel", "ghost")
             btn_cancel.clicked.connect(lambda checked=False, dl_id=dl.id: self.dl_manager.cancel(dl_id))
             top.addWidget(btn_cancel)
         elif not recent and dl.status in self._value('DOWNLOAD_RUNNING_STATES'):
-            btn_cancel = self._make_tool_button("Cancel", QStyle.StandardPixmap.SP_DialogCancelButton, "ghost")
+            btn_cancel = self._make_tool_button("Cancel", "ghost")
             btn_cancel.clicked.connect(lambda checked=False, dl_id=dl.id: self.dl_manager.cancel(dl_id))
             top.addWidget(btn_cancel)
         elif recent and dl.status == "failed" and dl.error_code in self._value('DOWNLOAD_RETRYABLE_ERROR_CODES'):
-            btn_retry = self._make_tool_button("Retry", QStyle.StandardPixmap.SP_BrowserReload, "ghost")
+            btn_retry = self._make_tool_button("Retry", "ghost")
             btn_retry.clicked.connect(lambda checked=False, item=dl: self._retry_download(item))
             top.addWidget(btn_retry)
         elif recent and dl.status == "complete" and dl.filename:
-            btn_show = self._make_tool_button("Show", QStyle.StandardPixmap.SP_DirOpenIcon, "ghost")
+            btn_show = self._make_tool_button("Show", "ghost")
             btn_show.clicked.connect(lambda checked=False, path=dl.filename: self._show_download_location(path))
             top.addWidget(btn_show)
         card_l.addLayout(top)
@@ -1831,7 +1831,7 @@ class MainWindowCore(QMainWindow):
                 label.setFixedWidth(92)
                 card_l.addWidget(label)
             if filename:
-                btn_show = self._make_tool_button("Show", QStyle.StandardPixmap.SP_DirOpenIcon, "ghost")
+                btn_show = self._make_tool_button("Show", "ghost")
                 btn_show.clicked.connect(lambda checked=False, path=filename: self._show_download_location(path))
                 card_l.addWidget(btn_show)
             else:
