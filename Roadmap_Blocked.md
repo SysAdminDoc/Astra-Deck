@@ -2,6 +2,13 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+## P3 — Live-browser verification (2026-07-21)
+
+- [ ] P3 — Live-browser behavioral audit of the extension feature modules
+  Why: the 2026-07-20 audit deeply traced the companion and fixed a status-tone inconsistency, but the extension feature modules' *runtime* logic (e.g. `extension/features/download-ui/index.js`, video-hider, subscription-groups) was only spot-checked; the static a11y/contrast/i18n/lint gates and unit tests pass, but behavioral bugs on live YouTube DOM (empty/error/offline states, feature auto-disable-on-miss) are not covered by fixtures.
+  Where: `extension/features/**/index.js`, live YouTube watch/subscriptions/live-chat surfaces.
+  Blocker: Requires driving a real browser against live YouTube — cannot be performed in the headless/no-live-DOM environment; belongs with the other browser-gated verification items.
+
 ## P2 — External-binary integration + live verification (2026-07-21)
 
 - [ ] P2 — Auto-provision the bgutil PO-token provider (single-binary) the way Deno is provisioned
