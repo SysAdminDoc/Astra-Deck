@@ -127,6 +127,14 @@ def build_youtube_extractor_args(url, po_token_provider=None,
             '--extractor-args',
             f'youtubepot-bgutilhttp:base_url=http://127.0.0.1:{port}',
         ]
+    else:
+        # No reachable PO-token provider: the default web/mweb clients now need
+        # GVS proof-of-origin tokens and otherwise return SABR-only formats or
+        # HTTP 403. Prefer the currently token-exempt clients (tv, android_vr)
+        # so extraction degrades gracefully instead of failing outright, with
+        # web kept last as a best-effort fallback. yt-dlp merges these youtube
+        # extractor args with the formats=duplicate entry above.
+        args += ['--extractor-args', 'youtube:player_client=tv,android_vr,web']
     return args
 
 

@@ -1086,9 +1086,10 @@ class DownloadManagerCore:
 
         # v1.4.0 (N1): YouTube extractor-args — PO Token routing when the
         # bgutil-ytdlp-pot-provider HTTP server is reachable. No-op on
-        # non-YouTube URLs and silently absent when the provider isn't
-        # running (the user-facing surface for that absence is the popup
-        # health banner driven by /health.poTokenProvider).
+        # non-YouTube URLs; when the provider isn't running the builder falls
+        # back to the token-exempt tv/android_vr clients so extraction degrades
+        # instead of failing (the user-facing surface for that state is the
+        # popup health banner and the dashboard "PO provider: Fallback" row).
         args += self._dependencies['build_youtube_extractor_args'](
             dl.url,
             po_token_provider=self._dependencies['probe_po_token_provider'](),

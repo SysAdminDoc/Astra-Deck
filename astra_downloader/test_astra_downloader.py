@@ -3178,6 +3178,31 @@ class PoTokenProviderTests(unittest.TestCase):
         # SABR arg still present alongside provider routing.
         self.assertIn('youtube:formats=duplicate', args)
 
+    def test_build_youtube_extractor_args_falls_back_to_token_exempt_clients(self):
+        # Without a reachable PO-token provider the default web/mweb clients
+        # need GVS tokens and fail; fall back to the token-exempt clients first
+        # so extraction degrades instead of failing outright.
+        fallback = 'youtube:player_client=tv,android_vr,web'
+        for absent in (None, {'ok': False}, {}):
+            with self.subTest(provider=absent):
+                args = ad.build_youtube_extractor_args(
+                    "https://www.youtube.com/watch?v=abc",
+                    po_token_provider=absent,
+                )
+                self.assertIn(fallback, args)
+                idx = args.index(fallback)
+                self.assertEqual(args[idx - 1], '--extractor-args')
+        # When the provider IS reachable the web client + PO token is preferred,
+        # so the exempt-client override must be omitted.
+        ok_args = ad.build_youtube_extractor_args(
+            "https://www.youtube.com/watch?v=abc",
+            po_token_provider={'ok': True, 'port': 4416},
+        )
+        self.assertNotIn(fallback, ok_args)
+        self.assertFalse(any(a.startswith('youtube:player_client=') for a in ok_args))
+        # Non-YouTube URLs get no extractor args at all, fallback included.
+        self.assertEqual(ad.build_youtube_extractor_args("https://example.com/x"), [])
+
     def test_probe_caches_negative_result(self):
         # The probe MUST cache None too — otherwise every download retries
         # the probe over the network, blocking startup behind 1 s timeouts.

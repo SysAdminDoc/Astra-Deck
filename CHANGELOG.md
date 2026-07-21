@@ -37,6 +37,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   stable left column, helper copy is reduced to one useful line, and controls
   are grouped with separators instead of container boxes.
 
+### Added
+
+- **Downloads fall back to token-exempt YouTube clients when no proof-of-origin provider is running.** YouTube now requires PO tokens for the default `web`/`mweb` clients (SABR-only formats or HTTP 403 without them). When the bgutil PO-token provider probe is not reachable, the companion adds `youtube:player_client=tv,android_vr,web` so extraction degrades gracefully instead of failing outright; when the provider is live, the web client + PO tokens is used unchanged. The dashboard's "PO provider" readiness row now reads **Fallback** (with an explanatory tooltip) instead of "Optional" so the active client path is visible.
+
 ### Fixed
 
 - **Pending downloads now read with the same amber state tone as their queue siblings.** A freshly queued `pending` job fell through to the neutral grey dot while its `paused` and `needs-sign-in` siblings (same pending set) and `queued` all showed amber, so the Downloads "Pending" section mixed grey and amber dots for equivalent waiting states. `pending` now maps to the warning tone.
