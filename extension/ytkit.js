@@ -7063,8 +7063,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         font-size: 10.5px !important;
                     }
 
-                    #comments ytd-comment-view-model[data-ytkitPinned="1"],
-                    #comments ytd-comment-renderer[data-ytkitPinned="1"] {
+                    #comments ytd-comment-view-model[data-ytkit-pinned="1"],
+                    #comments ytd-comment-renderer[data-ytkit-pinned="1"] {
                         border-color: rgba(var(--ytkit-accent-rgb), 0.26) !important;
                         background:
                             radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
@@ -7072,20 +7072,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             rgba(11, 15, 23, 0.92) !important;
                     }
 
-                    #comments ytd-comment-view-model[data-ytkitHeart="1"],
-                    #comments ytd-comment-renderer[data-ytkitHeart="1"] {
+                    #comments ytd-comment-view-model[data-ytkit-heart="1"],
+                    #comments ytd-comment-renderer[data-ytkit-heart="1"] {
                         box-shadow: 0 0 0 1px rgba(255, 112, 122, 0.16) !important;
                     }
 
-                    #comments ytd-comment-view-model[data-ytkitLinked="1"],
-                    #comments ytd-comment-renderer[data-ytkitLinked="1"] {
+                    #comments ytd-comment-view-model[data-ytkit-linked="1"],
+                    #comments ytd-comment-renderer[data-ytkit-linked="1"] {
                         border-color: rgba(125, 211, 252, 0.24) !important;
                     }
 
-                    #comments ytd-comment-view-model[data-ytkitPinned="1"] #pinned-comment-badge,
-                    #comments ytd-comment-renderer[data-ytkitPinned="1"] #pinned-comment-badge,
-                    #comments ytd-comment-view-model[data-ytkitLinked="1"] #linked-comment-badge,
-                    #comments ytd-comment-renderer[data-ytkitLinked="1"] #linked-comment-badge {
+                    #comments ytd-comment-view-model[data-ytkit-pinned="1"] #pinned-comment-badge,
+                    #comments ytd-comment-renderer[data-ytkit-pinned="1"] #pinned-comment-badge,
+                    #comments ytd-comment-view-model[data-ytkit-linked="1"] #linked-comment-badge,
+                    #comments ytd-comment-renderer[data-ytkit-linked="1"] #linked-comment-badge {
                         display: inline-flex !important;
                         align-items: center !important;
                         align-self: flex-start !important;
@@ -7103,22 +7103,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         text-transform: uppercase !important;
                     }
 
-                    #comments ytd-comment-view-model:not([data-ytkitPinned="1"]) #pinned-comment-badge,
-                    #comments ytd-comment-renderer:not([data-ytkitPinned="1"]) #pinned-comment-badge,
-                    #comments ytd-comment-view-model:not([data-ytkitLinked="1"]) #linked-comment-badge,
-                    #comments ytd-comment-renderer:not([data-ytkitLinked="1"]) #linked-comment-badge {
+                    #comments ytd-comment-view-model:not([data-ytkit-pinned="1"]) #pinned-comment-badge,
+                    #comments ytd-comment-renderer:not([data-ytkit-pinned="1"]) #pinned-comment-badge,
+                    #comments ytd-comment-view-model:not([data-ytkit-linked="1"]) #linked-comment-badge,
+                    #comments ytd-comment-renderer:not([data-ytkit-linked="1"]) #linked-comment-badge {
                         display: none !important;
                     }
 
-                    #comments ytd-comment-view-model[data-ytkitPinned="1"] #pinned-comment-badge,
-                    #comments ytd-comment-renderer[data-ytkitPinned="1"] #pinned-comment-badge {
+                    #comments ytd-comment-view-model[data-ytkit-pinned="1"] #pinned-comment-badge,
+                    #comments ytd-comment-renderer[data-ytkit-pinned="1"] #pinned-comment-badge {
                         border-color: rgba(var(--ytkit-accent-rgb), 0.2) !important;
                         background: rgba(var(--ytkit-accent-rgb), 0.12) !important;
                         color: rgba(255, 189, 170, 0.96) !important;
                     }
 
-                    #comments ytd-comment-view-model[data-ytkitLinked="1"] #linked-comment-badge,
-                    #comments ytd-comment-renderer[data-ytkitLinked="1"] #linked-comment-badge {
+                    #comments ytd-comment-view-model[data-ytkit-linked="1"] #linked-comment-badge,
+                    #comments ytd-comment-renderer[data-ytkit-linked="1"] #linked-comment-badge {
                         border-color: rgba(125, 211, 252, 0.22) !important;
                         background: rgba(125, 211, 252, 0.12) !important;
                         color: rgba(194, 236, 255, 0.96) !important;
@@ -7808,7 +7808,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const processComment = (comment) => {
                     comment.dataset.ytkitChat = '1';
                     setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
-                    setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted], #creator-heart-button:not([hidden])'));
+                    setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
                     setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
                     comment.querySelector('.ytkit-vote-badge')?.remove();
                     normalizeCommentLayoutSurface(comment);
@@ -9002,7 +9002,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const hasComments = this._hasSplitCommentsSurface(below);
                 const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
 
-                if (type === 'live') return 'live';
+                if (type === 'live') {
+                    // Chat disabled/members-only: no frame exists, so the
+                    // transparent live pane would be empty. Fall back to the
+                    // standard comments panel when we have one.
+                    if (hasChat && !chatCollapsed) return 'live';
+                    return below ? 'standard' : 'live';
+                }
                 if (type === 'vod') {
                     if (hasChat && !chatCollapsed) return 'vod';
                     return below ? 'standard' : 'vod';
@@ -10167,7 +10173,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._videoType === 'vod') {
                     chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
                     const below = this._getBelow();
-                    if (below && below.style.getPropertyValue('top') === '0') {
+                    if (below && parseFloat(below.style.getPropertyValue('top')) === 0) {
                         below.style.setProperty('top', '45vh', 'important');
                         below.style.setProperty('height', '55vh', 'important');
                     }
@@ -10770,10 +10776,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 // Elements stay in original DOM (no reparenting) so YT's IO works.
                 if (type === 'live') {
+                    if (chatEl) this._prepareSecondaryForChat();
                     const liveHeaderTop = this._ensureSplitLiveHeader(rightPct);
                     this._setupChat(chatEl, rightPct, `${liveHeaderTop}px`, `calc(100vh - ${liveHeaderTop}px)`);
                     this._scrollTarget = chatEl;
                 } else if (type === 'vod') {
+                    if (chatEl) this._prepareSecondaryForChat();
                     this._setupChat(chatEl, rightPct, '0', '45vh');
                     if (chatEl) chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
                     if (below) {
@@ -10937,7 +10945,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._unpositionAll();
                 const below = this._getBelow();
                 if (below) below.style.setProperty('pointer-events', 'none', 'important');
-                const chatEl = this._getChatEl();
+                // Clean the RAW frame: after SPA reuse YouTube may have flipped
+                // it to a hidden placeholder, and the candidate-filtered
+                // _getChatEl() would skip cleanup of styles set on it earlier.
+                const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
                     chatEl.style.removeProperty('border-bottom');
@@ -11044,7 +11055,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     below.style.removeProperty('pointer-events');
                     below.style.removeProperty('border-bottom');
                 }
-                const chatEl = this._getChatEl();
+                // Raw lookup on purpose: a hidden placeholder frame must still
+                // have our inline pointer-events/chat-fill styles removed or the
+                // next live stream reusing the frame gets an unclickable chat.
+                const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.removeProperty('pointer-events');
                     chatEl.style.removeProperty('border-bottom');
@@ -33268,8 +33282,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _NOTIFY_RE: /(notify me|set reminder|remind me|get reminded|notificarme|avisarme|recordatorio|benachrichtigen|erinnerung|me pr[ée]venir|rappel|notificami|promemoria|напомнить|уведомить|通知する|リマインダー|알림\s*받기|通知我|设置提醒|إعلامي|تذكير)/i,
             // Scheduled / upcoming metadata, matched in metadata rows + badges
             // only (never the title) to avoid hiding a normal VOD whose title
-            // merely contains a word like "premiere".
-            _SCHEDULED_RE: /(scheduled for|premieres?|waiting for|starts in|live in|upcoming|programad|pr[ée]vu|geplant|programmat|запланир|プレミア|予定|首播|定于|مجدول)/i,
+            // merely contains a word like "premiere". Every term must be
+            // FUTURE-anchored: bare "premieres?" substring-matches the
+            // post-premiere "Premiered N hours ago" row and would permanently
+            // hide finished premieres, and loose terms ("live in") can hit
+            // the channel-name byline, which shares the metadata rows on
+            // lockup cards. Ambiguous CJK premiere terms are deliberately
+            // absent — those locales are covered by the notify-button check,
+            // which is the primary signal.
+            _SCHEDULED_RE: /(scheduled for|\bpremieres\b|\bupcoming\b|waiting for|(?:starts|live) in \d|programad|pr[ée]vu pour|geplant für|programmat[oa] per|запланир|مجدول)/i,
             _isNotifyCard(card) {
                 try {
                     const btns = card.querySelectorAll(
@@ -43135,7 +43156,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             clearBtn.className = 'ytkit-color-clear';
             clearBtn.setAttribute('aria-label', `Clear ${featureName}`);
             clearBtn.textContent = 'Clear';
-            clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('change', { bubbles: true })); };
+            clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('input', { bubbles: true })); };
             wrapper.appendChild(colorInput);
             wrapper.appendChild(clearBtn);
             card.appendChild(wrapper);
@@ -43916,12 +43937,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Color setting'} updated.`, 'success');
                 if (feature) {
-                    try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
-                        DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
-                    }
-                    try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
-                        DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
-                    }
+                    // Native color dialogs fire `input` continuously while
+                    // dragging — debounce the full destroy/init cycle like the
+                    // range handler does.
+                    if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
+                    _rangeReinitTimer = setTimeout(() => {
+                        _rangeReinitTimer = null;
+                        try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
+                            DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
+                        }
+                        try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
+                            DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
+                        }
+                    }, 300);
                 }
             }
         });

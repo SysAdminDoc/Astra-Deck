@@ -2503,7 +2503,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             clearBtn.className = 'ytkit-color-clear';
             clearBtn.setAttribute('aria-label', `Clear ${featureName}`);
             clearBtn.textContent = 'Clear';
-            clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('change', { bubbles: true })); };
+            clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('input', { bubbles: true })); };
             wrapper.appendChild(colorInput);
             wrapper.appendChild(clearBtn);
             card.appendChild(wrapper);
@@ -3230,12 +3230,19 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Color setting'} updated.`, 'success');
                 if (feature) {
-                    try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
-                        DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
-                    }
-                    try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
-                        DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
-                    }
+                    // Native color dialogs fire `input` continuously while
+                    // dragging — debounce the full destroy/init cycle like the
+                    // range handler does.
+                    if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
+                    _rangeReinitTimer = setTimeout(() => {
+                        _rangeReinitTimer = null;
+                        try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
+                            DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
+                        }
+                        try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
+                            DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
+                        }
+                    }, 300);
                 }
             }
         });

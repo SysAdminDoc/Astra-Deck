@@ -9357,8 +9357,8 @@
                             font-size: 10.5px !important;
                         }
 
-                        #comments ytd-comment-view-model[data-ytkitPinned="1"],
-                        #comments ytd-comment-renderer[data-ytkitPinned="1"] {
+                        #comments ytd-comment-view-model[data-ytkit-pinned="1"],
+                        #comments ytd-comment-renderer[data-ytkit-pinned="1"] {
                             border-color: rgba(var(--ytkit-accent-rgb), 0.26) !important;
                             background:
                                 radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
@@ -9366,20 +9366,20 @@
                                 rgba(11, 15, 23, 0.92) !important;
                         }
 
-                        #comments ytd-comment-view-model[data-ytkitHeart="1"],
-                        #comments ytd-comment-renderer[data-ytkitHeart="1"] {
+                        #comments ytd-comment-view-model[data-ytkit-heart="1"],
+                        #comments ytd-comment-renderer[data-ytkit-heart="1"] {
                             box-shadow: 0 0 0 1px rgba(255, 112, 122, 0.16) !important;
                         }
 
-                        #comments ytd-comment-view-model[data-ytkitLinked="1"],
-                        #comments ytd-comment-renderer[data-ytkitLinked="1"] {
+                        #comments ytd-comment-view-model[data-ytkit-linked="1"],
+                        #comments ytd-comment-renderer[data-ytkit-linked="1"] {
                             border-color: rgba(125, 211, 252, 0.24) !important;
                         }
 
-                        #comments ytd-comment-view-model[data-ytkitPinned="1"] #pinned-comment-badge,
-                        #comments ytd-comment-renderer[data-ytkitPinned="1"] #pinned-comment-badge,
-                        #comments ytd-comment-view-model[data-ytkitLinked="1"] #linked-comment-badge,
-                        #comments ytd-comment-renderer[data-ytkitLinked="1"] #linked-comment-badge {
+                        #comments ytd-comment-view-model[data-ytkit-pinned="1"] #pinned-comment-badge,
+                        #comments ytd-comment-renderer[data-ytkit-pinned="1"] #pinned-comment-badge,
+                        #comments ytd-comment-view-model[data-ytkit-linked="1"] #linked-comment-badge,
+                        #comments ytd-comment-renderer[data-ytkit-linked="1"] #linked-comment-badge {
                             display: inline-flex !important;
                             align-items: center !important;
                             align-self: flex-start !important;
@@ -9397,22 +9397,22 @@
                             text-transform: uppercase !important;
                         }
 
-                        #comments ytd-comment-view-model:not([data-ytkitPinned="1"]) #pinned-comment-badge,
-                        #comments ytd-comment-renderer:not([data-ytkitPinned="1"]) #pinned-comment-badge,
-                        #comments ytd-comment-view-model:not([data-ytkitLinked="1"]) #linked-comment-badge,
-                        #comments ytd-comment-renderer:not([data-ytkitLinked="1"]) #linked-comment-badge {
+                        #comments ytd-comment-view-model:not([data-ytkit-pinned="1"]) #pinned-comment-badge,
+                        #comments ytd-comment-renderer:not([data-ytkit-pinned="1"]) #pinned-comment-badge,
+                        #comments ytd-comment-view-model:not([data-ytkit-linked="1"]) #linked-comment-badge,
+                        #comments ytd-comment-renderer:not([data-ytkit-linked="1"]) #linked-comment-badge {
                             display: none !important;
                         }
 
-                        #comments ytd-comment-view-model[data-ytkitPinned="1"] #pinned-comment-badge,
-                        #comments ytd-comment-renderer[data-ytkitPinned="1"] #pinned-comment-badge {
+                        #comments ytd-comment-view-model[data-ytkit-pinned="1"] #pinned-comment-badge,
+                        #comments ytd-comment-renderer[data-ytkit-pinned="1"] #pinned-comment-badge {
                             border-color: rgba(var(--ytkit-accent-rgb), 0.2) !important;
                             background: rgba(var(--ytkit-accent-rgb), 0.12) !important;
                             color: rgba(255, 189, 170, 0.96) !important;
                         }
 
-                        #comments ytd-comment-view-model[data-ytkitLinked="1"] #linked-comment-badge,
-                        #comments ytd-comment-renderer[data-ytkitLinked="1"] #linked-comment-badge {
+                        #comments ytd-comment-view-model[data-ytkit-linked="1"] #linked-comment-badge,
+                        #comments ytd-comment-renderer[data-ytkit-linked="1"] #linked-comment-badge {
                             border-color: rgba(125, 211, 252, 0.22) !important;
                             background: rgba(125, 211, 252, 0.12) !important;
                             color: rgba(194, 236, 255, 0.96) !important;
@@ -10116,7 +10116,7 @@
             if (!(comment instanceof Element)) return;
             comment.dataset.ytkitChat = '1';
             setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
-            setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted], #creator-heart-button:not([hidden])'));
+            setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
             setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
             comment.querySelector('.ytkit-vote-badge')?.remove();
             normalizeCommentLayoutSurface(comment);

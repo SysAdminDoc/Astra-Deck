@@ -2832,7 +2832,13 @@
                 const hasComments = this._hasSplitCommentsSurface(below);
                 const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
 
-                if (type === 'live') return 'live';
+                if (type === 'live') {
+                    // Chat disabled/members-only: no frame exists, so the
+                    // transparent live pane would be empty. Fall back to the
+                    // standard comments panel when we have one.
+                    if (hasChat && !chatCollapsed) return 'live';
+                    return below ? 'standard' : 'live';
+                }
                 if (type === 'vod') {
                     if (hasChat && !chatCollapsed) return 'vod';
                     return below ? 'standard' : 'vod';
@@ -3997,7 +4003,7 @@
                 if (this._videoType === 'vod') {
                     chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
                     const below = this._getBelow();
-                    if (below && below.style.getPropertyValue('top') === '0') {
+                    if (below && parseFloat(below.style.getPropertyValue('top')) === 0) {
                         below.style.setProperty('top', '45vh', 'important');
                         below.style.setProperty('height', '55vh', 'important');
                     }
@@ -4600,10 +4606,12 @@
 
                 // Elements stay in original DOM (no reparenting) so YT's IO works.
                 if (type === 'live') {
+                    if (chatEl) this._prepareSecondaryForChat();
                     const liveHeaderTop = this._ensureSplitLiveHeader(rightPct);
                     this._setupChat(chatEl, rightPct, `${liveHeaderTop}px`, `calc(100vh - ${liveHeaderTop}px)`);
                     this._scrollTarget = chatEl;
                 } else if (type === 'vod') {
+                    if (chatEl) this._prepareSecondaryForChat();
                     this._setupChat(chatEl, rightPct, '0', '45vh');
                     if (chatEl) chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
                     if (below) {
@@ -4767,7 +4775,10 @@
                 this._unpositionAll();
                 const below = this._getBelow();
                 if (below) below.style.setProperty('pointer-events', 'none', 'important');
-                const chatEl = this._getChatEl();
+                // Clean the RAW frame: after SPA reuse YouTube may have flipped
+                // it to a hidden placeholder, and the candidate-filtered
+                // _getChatEl() would skip cleanup of styles set on it earlier.
+                const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
                     chatEl.style.removeProperty('border-bottom');
@@ -4874,7 +4885,10 @@
                     below.style.removeProperty('pointer-events');
                     below.style.removeProperty('border-bottom');
                 }
-                const chatEl = this._getChatEl();
+                // Raw lookup on purpose: a hidden placeholder frame must still
+                // have our inline pointer-events/chat-fill styles removed or the
+                // next live stream reusing the frame gets an unclickable chat.
+                const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.removeProperty('pointer-events');
                     chatEl.style.removeProperty('border-bottom');

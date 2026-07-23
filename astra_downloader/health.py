@@ -121,7 +121,11 @@ def build_youtube_extractor_args(url, po_token_provider=None,
     if not is_youtube_url(url):
         return []
     args = ['--extractor-args', 'youtube:formats=duplicate']
-    if po_token_provider and po_token_provider.get('ok'):
+    # A stale provider (below BGUTIL_POT_MIN_VERSION) may mint tokens the
+    # current YouTube backend rejects; routing to it forfeits the token-exempt
+    # fallback below, so treat stale like absent.
+    if (po_token_provider and po_token_provider.get('ok')
+            and not po_token_provider.get('stale')):
         port = po_token_provider.get('port') or default_provider_port
         args += [
             '--extractor-args',
@@ -130,11 +134,13 @@ def build_youtube_extractor_args(url, po_token_provider=None,
     else:
         # No reachable PO-token provider: the default web/mweb clients now need
         # GVS proof-of-origin tokens and otherwise return SABR-only formats or
-        # HTTP 403. Prefer the currently token-exempt clients (tv, android_vr)
-        # so extraction degrades gracefully instead of failing outright, with
-        # web kept last as a best-effort fallback. yt-dlp merges these youtube
-        # extractor args with the formats=duplicate entry above.
-        args += ['--extractor-args', 'youtube:player_client=tv,android_vr,web']
+        # HTTP 403. Use only genuinely token-exempt clients: bare `web` is
+        # SABR-only without a GVS token (and yt-dlp has no SABR downloader),
+        # so it is dead weight, and android_vr is erratic in 2026
+        # (format-18-only drops, UNPLAYABLE on made-for-kids) so it rides
+        # last. yt-dlp merges these youtube extractor args with the
+        # formats=duplicate entry above.
+        args += ['--extractor-args', 'youtube:player_client=tv,web_embedded,android_vr']
     return args
 
 
