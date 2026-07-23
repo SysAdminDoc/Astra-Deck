@@ -60,7 +60,7 @@ def _compare_semver(a, b):
         if not isinstance(value, str):
             return []
         result = []
-        for chunk in value.strip().lstrip('vV').split('.'):
+        for chunk in value.strip().lstrip('nvV').split('.'):
             digits = ''
             for character in chunk:
                 if not character.isdigit():
@@ -145,10 +145,15 @@ def build_youtube_extractor_args(url, po_token_provider=None,
 
 
 def parse_ffmpeg_major(version_string):
-    """Extract the numeric major from a canonical ffmpeg release string."""
+    """Extract the numeric major from a canonical ffmpeg release string.
+
+    Accepts an optional lowercase ``n`` tag prefix (BtbN-style release builds
+    report ``n8.1.2-...``); capital ``N-<commit>`` master snapshots stay
+    unmatched on purpose — they have no comparable release number.
+    """
     if not version_string:
         return None
-    match = re.match(r'(\d+)\.', str(version_string))
+    match = re.match(r'n?(\d+)\.', str(version_string))
     return int(match.group(1)) if match else None
 
 
@@ -316,6 +321,10 @@ class PoTokenProviderProbe:
         self._lock = threading.Lock()
 
     def probe(self, force=False, timeout=1.0):
+        # Fast path under the lock; the network I/O below runs OUTSIDE it so a
+        # wedged listener on the provider port can't serialize /health
+        # handlers, the GUI readiness worker, and download workers behind one
+        # ~2s probe (they were all queueing on this lock).
         with self._lock:
             now = self._clock()
             if (
@@ -324,41 +333,42 @@ class PoTokenProviderProbe:
                 and (now - self._checked_at) < self._ttl_seconds
             ):
                 return self._value
-            result = None
-            for path in ('/ping', '/'):
-                try:
-                    response = self._http_get(
-                        f'http://127.0.0.1:{self._port}{path}',
-                        timeout=timeout,
-                    )
-                except Exception:
-                    continue
-                if not getattr(response, 'ok', False):
-                    continue
-                try:
-                    payload = response.json()
-                except (TypeError, ValueError):
-                    payload = None
-                version = None
-                if isinstance(payload, dict):
-                    raw = payload.get('version') or payload.get('plugin_version')
-                    if raw is not None:
-                        version = str(raw)[:32]
-                stale = bool(
-                    version and _compare_semver(version, self._min_version) < 0
+        result = None
+        for path in ('/ping', '/'):
+            try:
+                response = self._http_get(
+                    f'http://127.0.0.1:{self._port}{path}',
+                    timeout=timeout,
                 )
-                result = {
-                    'ok': True,
-                    'port': self._port,
-                    'version': version,
-                    'stale': stale,
-                    'minVersion': self._min_version,
-                }
-                break
+            except Exception:
+                continue
+            if not getattr(response, 'ok', False):
+                continue
+            try:
+                payload = response.json()
+            except (TypeError, ValueError):
+                payload = None
+            version = None
+            if isinstance(payload, dict):
+                raw = payload.get('version') or payload.get('plugin_version')
+                if raw is not None:
+                    version = str(raw)[:32]
+            stale = bool(
+                version and _compare_semver(version, self._min_version) < 0
+            )
+            result = {
+                'ok': True,
+                'port': self._port,
+                'version': version,
+                'stale': stale,
+                'minVersion': self._min_version,
+            }
+            break
+        with self._lock:
             self._value = result
             self._checked_at = now
             self._has_checked = True
-            return result
+            return self._value
 
     def reset(self):
         with self._lock:
