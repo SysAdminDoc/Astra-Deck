@@ -6,6 +6,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.0] - 2026-07-23
+
+### Added
+
+- **Hide planned livestreams on the Subscriptions page (on by default).** New
+  `hidePlannedLivestreams` feature that hides scheduled livestreams and
+  premieres — the entries that only show a "Notify me" (set reminder) button
+  and "Scheduled for …" metadata instead of a view count. Detection keys on the
+  card's "Notify me" action button (with a scheduled/upcoming metadata fallback
+  scoped to the metadata rows and thumbnail badge, never the title, to avoid
+  hiding a normal video whose title merely contains a word like "premiere").
+  The card is hidden **only while it is not live**: once the stream goes live
+  YouTube re-renders the card without the notify button, so a fresh feed scan
+  reveals it automatically. Scoped to `/feed/subscriptions`, injected via a
+  single `.ytkit-planned-livestream-hidden { display: none }` rule driven by a
+  scoped mutation rule plus a navigation rule. Extension-only. Verified against
+  a captured Subscriptions DOM: 5/5 planned-livestream cards hidden, 0 false
+  positives across 104 normal cards, and confirmed the card reappears when the
+  hide class is removed (live transition).
+
 ### Security
 
 - **Cleared every dev-toolchain advisory without downgrading `web-ext`.** The

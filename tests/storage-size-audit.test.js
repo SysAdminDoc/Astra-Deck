@@ -22,10 +22,10 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     const { safeStoreProfile } = buildAuditPayloads();
     const assessment = assessSyncEligibility(safeStoreProfile);
 
-    assert.equal(assessment.totalBytes, 5572);
+    assert.equal(assessment.totalBytes, 5652);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 5572);
+    assert.equal(assessment.largestItem.bytes, 5652);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -74,7 +74,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // Subscription list/compact view and loaded-only ordering add 3 preferences (96 bytes).
     // v4.49.7 moved the AI summary archive to the top-level
     // ytkit-ai-summaries key (-28 bytes from the settings bag).
-    assert.equal(assessment.totalBytes, 179420);
+    assert.equal(assessment.totalBytes, 179475);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -84,8 +84,8 @@ test('typical local payload is not storage.sync eligible', () => {
             STORAGE_KEYS.deArrowCache,
             STORAGE_KEYS.sponsorBlockCache,
             STORAGE_KEYS.watchProgress,
-            STORAGE_KEYS.resumePositions,
             STORAGE_KEYS.settings,
+            STORAGE_KEYS.resumePositions,
             STORAGE_KEYS.bookmarks
         ]
     );

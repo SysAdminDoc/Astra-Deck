@@ -1586,6 +1586,12 @@
   "feature_hidePinnedComments_name": {
     "message": "Masquer les commentaires épinglés"
   },
+  "feature_hidePlannedLivestreams_desc": {
+    "message": "On the Subscriptions page, hide scheduled livestreams and premieres that only show a \"Notify me\" button. They reappear automatically once they go live."
+  },
+  "feature_hidePlannedLivestreams_name": {
+    "message": "Hide Planned Livestreams"
+  },
   "feature_hidePlayables_desc": {
     "message": "Masquer le contenu de jeux YouTube Playables des flux"
   },

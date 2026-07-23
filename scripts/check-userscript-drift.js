@@ -115,6 +115,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     shortsSpeedControl: 'intentional-extension-only',
     watchLaterWorkbench: 'intentional-extension-only',
     bulkCardActions: 'intentional-extension-only',
+    hidePlannedLivestreams: 'intentional-extension-only',
     chapterJumpButtons: 'not-yet-ported',
     classicLayoutProfile: 'intentional-extension-only',
     classicPlayerChrome: 'intentional-extension-only',
