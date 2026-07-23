@@ -40,15 +40,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-20). Most compet
 ## Research-Driven Additions — 2026-07-21 (client-fallback validation delta)
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-21). Validates the token-exempt fallback shipped 2026-07-21.
 
-### P1 — Correct just-shipped extraction behavior
-
-- [ ] P1 — Fix the token-exempt fallback client chain
-  Why: the chain shipped 2026-07-21 (`tv,android_vr,web`) has two defects — bare `web` is NOT token-exempt (SABR-only without a GVS token, and yt-dlp cannot download SABR since the native SABR downloader PR #13515 is unmerged, so `web` is dead weight that yt-dlp skips/403s), and `android_vr` is erratic in 2026 (intermittent format-18-only 360p drops, `UNPLAYABLE` on "made for kids") so it should not be the second client in an unattended chain.
-  Evidence: yt-dlp PO-Token Guide (exempt set = `tv`/`android_vr`/`web_embedded`, `web` needs a GVS token); issues #12482 (`web` SABR-only), #16150 (android_vr format-18 regression), #15780 (android_vr UNPLAYABLE on kids), #15583 (tv LOGIN_REQUIRED on age-gated); PR #13515 (SABR downloader unmerged); `astra_downloader/health.py` `build_youtube_extractor_args`.
-  Touches: `astra_downloader/health.py` (the `youtube:player_client=…` string), `astra_downloader/test_astra_downloader.py` (update the fallback assertion).
-  Acceptance: `build_youtube_extractor_args` emits `youtube:player_client=tv,web_embedded,android_vr` when the PO-token provider is absent; the test asserts the new chain (no bare `web`, `android_vr` last) and that it is omitted when the provider is `ok`.
-  Complexity: S
-
 ### P3 — Degradation UX
 
 - [ ] P3 — Nudge to install a PO-token provider when an exempt-chain download degrades or fails

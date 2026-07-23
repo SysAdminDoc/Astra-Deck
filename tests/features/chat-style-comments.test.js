@@ -162,3 +162,25 @@ test('chatStyleComments runtime registers and tears down mutation + selection ha
         ['removeRule', 'chatStyleComments']
     ]);
 });
+
+test('premium interaction CSS targets the kebab-case attributes the dataset flags create', () => {
+    const { mod } = loadModule();
+    const css = mod.buildPremiumInteractionCss();
+    // dataset.ytkitPinned creates data-ytkit-pinned; camelCase attribute
+    // selectors case-fold and never match, which silently killed the
+    // pinned/hearted/linked styling and hid badges on ALL comments.
+    for (const attr of ['data-ytkit-pinned="1"', 'data-ytkit-heart="1"', 'data-ytkit-linked="1"']) {
+        assert.ok(css.includes(attr), `CSS must select [${attr}]`);
+    }
+    assert.ok(!/data-ytkit(?:Pinned|Heart|Linked)/.test(css),
+        'no camelCase data-attribute selectors may remain');
+});
+
+test('hearted flag requires is-hearted, not merely a visible heart button', () => {
+    const moduleSource = require('fs').readFileSync(
+        require.resolve(MODULE_PATH), 'utf8');
+    assert.ok(moduleSource.includes("#creator-heart-button[is-hearted]:not([hidden])"),
+        'ytkitHeart must gate on is-hearted');
+    assert.ok(!moduleSource.includes("#creator-heart-button[is-hearted], #creator-heart-button:not([hidden])"),
+        'over-broad visible-button alternative must be gone');
+});
