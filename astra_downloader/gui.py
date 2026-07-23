@@ -717,6 +717,7 @@ class MainWindowCore(QMainWindow):
     log_message = pyqtSignal(str)
     instance_command = pyqtSignal(str)
     tools_update_finished = pyqtSignal(dict)
+    tools_status_text_ready = pyqtSignal(str)
 
     def __init__(self, config, dl_manager, history, start_minimized=False, *, dependencies):
         missing = sorted(set(_REQUIRED_MAIN_WINDOW_DEPENDENCIES) - set(dependencies))
@@ -736,6 +737,7 @@ class MainWindowCore(QMainWindow):
         self.log_message.connect(self._append_log)
         self.instance_command.connect(self._handle_instance_command)
         self.tools_update_finished.connect(self._finish_ytdlp_update)
+        self.tools_status_text_ready.connect(self._set_tools_status_text)
 
         self.setWindowTitle(self._value('APP_NAME'))
         self.setMinimumSize(900, 620)
@@ -1967,11 +1969,26 @@ class MainWindowCore(QMainWindow):
         ffv = self._dependencies['get_ffmpeg_version']() or "not installed"
         return f"yt-dlp {ytv}    •    ffmpeg {ffv}"
 
-    def _refresh_tools_status(self):
+    def _set_tools_status_text(self, text):
         try:
-            self.tools_status.setText(self._tools_status_text())
+            self.tools_status.setText(text)
         except Exception:
+            # reason: label may be gone during teardown; best-effort UI update
             pass
+
+    def _refresh_tools_status(self):
+        # The version getters shell out (up to 5s each on a cold cache, e.g.
+        # right after _setup_done resets the ffmpeg probe) — never run them on
+        # the GUI thread. Compute off-thread and marshal back via the signal.
+        def run():
+            try:
+                text = self._tools_status_text()
+            except Exception:
+                # reason: version probes are best-effort; keep the old label
+                return
+            self.tools_status_text_ready.emit(text)
+
+        threading.Thread(target=run, name='tools-status-refresh', daemon=True).start()
 
     def _force_ytdlp_update(self):
         if not self._value('YTDLP_PATH').exists():

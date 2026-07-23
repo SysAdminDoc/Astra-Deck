@@ -348,10 +348,21 @@ def download_error_payload(error_code, error=None, advice=None):
 
 
 def classify_download_failure(message='', lines=None):
+    # Two-pass: classify the definitive final error message first, and only
+    # consult the output tail when the message alone is unrecognized. Without
+    # this, a benign "PO Token which was not provided" WARNING anywhere in
+    # the last 30 lines outranked the real cause (ffmpeg failure, connection
+    # reset, disk full) carried by the message itself.
+    primary = _classify_failure_text(str(message or '').lower())
+    if primary:
+        return primary
     text_parts = [str(message or '')]
     if lines:
         text_parts.extend(str(line or '') for line in lines)
-    text = ' '.join(text_parts).lower()
+    return _classify_failure_text(' '.join(text_parts).lower())
+
+
+def _classify_failure_text(text):
     if not text.strip():
         return None
     if (
@@ -1115,6 +1126,17 @@ class DownloadManagerCore:
                 env=env,
             )
             dl.process = proc
+            with self._lock:
+                cancelled_pre_spawn = dl.status == 'cancelled'
+            if cancelled_pre_spawn:
+                # cancel() landed in the pre-spawn arg-building window: it saw
+                # process None and armed no terminate thread, so kill the tree
+                # we just spawned ourselves.
+                try:
+                    self._dependencies['terminate_process_tree'](proc)
+                except Exception:
+                    # reason: best-effort kill; process may already be gone
+                    pass
             last_lines = []
             last_error = None
 
@@ -1132,6 +1154,13 @@ class DownloadManagerCore:
             def _stall_watchdog(ev=stop_watchdog, watched_proc=proc):
                 while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
                     if dl.status == 'cancelled':
+                        if watched_proc.poll() is None:
+                            watchdog_killed['value'] = 'cancelled'
+                            try:
+                                self._dependencies['terminate_process_tree'](watched_proc)
+                            except Exception:
+                                # reason: best-effort kill; process may already be gone
+                                pass
                         return
                     if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
                         watchdog_killed['value'] = 'stall'
@@ -1205,7 +1234,9 @@ class DownloadManagerCore:
                     continue
 
                 # Status changes
-                if '[Merger]' in line or 'Merging formats' in line:
+                if dl.status == 'cancelled':
+                    pass  # never resurrect a cancelled item from output lines
+                elif '[Merger]' in line or 'Merging formats' in line:
                     dl.status = "merging"
                     self.progress_updated.emit()
                 elif '[ExtractAudio]' in line or '[extract]' in line:
@@ -1295,6 +1326,13 @@ class DownloadManagerCore:
                         def _retry_watchdog(ev=stop_watchdog, watched_proc=proc):
                             while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
                                 if dl.status == 'cancelled':
+                                    if watched_proc.poll() is None:
+                                        watchdog_killed['value'] = 'cancelled'
+                                        try:
+                                            self._dependencies['terminate_process_tree'](watched_proc)
+                                        except Exception:
+                                            # reason: best-effort kill; process may already be gone
+                                            pass
                                     return
                                 if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
                                     watchdog_killed['value'] = 'stall'

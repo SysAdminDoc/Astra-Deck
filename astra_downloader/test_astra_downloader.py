@@ -1126,6 +1126,32 @@ class DownloadFailureClassifierTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 self.assertEqual(ad.classify_download_failure(message), expected)
 
+    def test_message_borne_cause_outranks_benign_warning_lines(self):
+        # yt-dlp routinely emits a benign "PO Token which was not provided"
+        # WARNING during extraction; it must never shadow the real failure
+        # cause carried by the final error message.
+        warn_tail = [
+            '[youtube] Extracting URL',
+            'WARNING: [youtube] xyz: some web formats require a PO Token '
+            'which was not provided',
+        ]
+        cases = [
+            ('ERROR: Connection reset by peer', 'network-unreachable'),
+            ('ERROR: ffmpeg exited with code 1', 'ffmpeg-missing-or-stale'),
+            ('ERROR: Sign in to confirm you are not a bot', 'sign-in-required'),
+        ]
+        for message, expected in cases:
+            with self.subTest(expected=expected):
+                self.assertEqual(
+                    ad.classify_download_failure(message, lines=warn_tail),
+                    expected,
+                )
+        # An unrecognized message still falls back to the output tail.
+        self.assertEqual(
+            ad.classify_download_failure('exit code 1', lines=warn_tail),
+            'po-token-required',
+        )
+
     def test_download_error_payload_keeps_legacy_code_and_action_fields(self):
         payload = ad.download_error_payload('po-token-required')
 
@@ -1959,6 +1985,11 @@ else:
         # At or above the floor passes, build suffix ignored.
         self.assertTrue(probe_for("8.1.2-full_build")["current"])
         self.assertTrue(probe_for("9.0")["current"])
+        # BtbN n-prefixed tagged builds compare like their bare version —
+        # n8.0.1 must be flagged, n8.1.2 must pass (previously the n prefix
+        # silently routed them to the never-flagged snapshot path).
+        self.assertFalse(probe_for("n8.0.1-9-g1234567")["current"])
+        self.assertTrue(probe_for("n8.1.2")["current"])
         # Master/snapshot builds carry no numeric version and must not be
         # flagged as below-floor — they are always newer than any tagged floor.
         snapshot = probe_for("N-119847-g1a2b3c4d-win64-gpl")
@@ -3367,6 +3398,9 @@ class FfmpegCapabilitiesTests(unittest.TestCase):
         self.assertEqual(ad.parse_ffmpeg_major('8.1.1'), 8)
         self.assertEqual(ad.parse_ffmpeg_major('7.0-static'), 7)
         self.assertEqual(ad.parse_ffmpeg_major('6.1.1-essentials_build'), 6)
+        # BtbN release builds carry a lowercase n tag prefix; they are tagged
+        # releases and must be comparable against the security floor.
+        self.assertEqual(ad.parse_ffmpeg_major('n8.0.1-9-g1234567'), 8)
 
     def test_parse_ffmpeg_major_returns_none_on_unparseable(self):
         # ffmpeg-master nightly / git builds report N-NNNNN-gXXXXXXX; not a
