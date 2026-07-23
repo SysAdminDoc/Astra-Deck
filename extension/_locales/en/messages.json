@@ -420,7 +420,7 @@
     "message": "Copy report"
   },
   "externalHealthCopyDone": {
-    "message": "Copied."
+    "message": "Copied \u2014 paste into a GitHub issue."
   },
   "externalHealthCopyFail": {
     "message": "Could not copy."

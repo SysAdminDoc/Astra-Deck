@@ -696,7 +696,7 @@
             height: 26px !important;
             min-height: 26px !important;
             border: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 12px !important;
             background: transparent !important;
             box-shadow: none !important;
         }
@@ -705,7 +705,7 @@
             position: absolute !important;
             inset: 0 !important;
             border: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 12px !important;
             background: var(--ytkit-v3-surface-raised) !important;
             box-shadow: none !important;
         }

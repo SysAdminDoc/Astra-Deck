@@ -1376,10 +1376,13 @@ return response;
         EMBED_WRAPPER: 9999,     // Embed player wrapper
         BANNER: 50000,           // Floating banners
         CONTEXT_MENU: 60000,     // Right-click context menu
-        TOAST: 70000,            // Toast notifications
+        TOAST: 2147483647,       // Toast notifications — MUST beat the
+                                 // settings panel (2147483646 !important in
+                                 // settings-visual-system.js) or panel-fired
+                                 // Undo toasts are invisible and unclickable
         SETTINGS_OVERLAY: 80000, // Settings backdrop
-        SETTINGS_PANEL: 80001,   // Settings panel
-        PANEL_TOAST: 90000,      // Settings panel toasts
+        SETTINGS_PANEL: 80001,   // Settings panel (see settings-visual-system.js for the real forced value)
+        PANEL_TOAST: 2147483647, // Settings panel toasts
     };
 
     // ── Settings Panel Cleanup Registry ──
@@ -25475,19 +25478,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-queue-btn { position: absolute; top: 4px; left: 4px; z-index: 12; width: 26px; height: 26px; border: none; border-radius: 6px; background: rgba(15, 15, 18, 0.86); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.15s ease; }
                     .ytkit-thumb-action-host:hover .ytkit-queue-btn { opacity: 1; }
                     .ytkit-queue-btn:hover { background: rgba(255, 143, 64, 0.92); }
-                    .ytkit-queue-pill { position: fixed; right: 18px; bottom: 76px; z-index: 9998; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px; background: rgba(18, 18, 22, 0.94); color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+                    .ytkit-queue-pill { position: fixed; right: 18px; bottom: 76px; z-index: 9998; padding: 8px 14px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 10px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.94)); color: var(--yt-spec-text-primary, #fff); font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
                     .ytkit-queue-pill:hover { border-color: rgba(255, 143, 64, 0.7); }
-                    .ytkit-queue-panel { position: fixed; right: 18px; bottom: 122px; z-index: 9999; width: 360px; max-height: 55vh; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; background: rgba(18, 18, 22, 0.97); color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
-                    .ytkit-queue-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 600; }
+                    .ytkit-queue-panel { position: fixed; right: 18px; bottom: 122px; z-index: 9999; width: 360px; max-height: 55vh; display: flex; flex-direction: column; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 12px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.97)); color: var(--yt-spec-text-primary, #fff); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+                    .ytkit-queue-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.1)); font-size: 13px; font-weight: 600; }
                     .ytkit-queue-actions { display: flex; gap: 6px; }
-                    .ytkit-queue-actions button { border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 6px; background: transparent; color: #fff; font-size: 11px; padding: 4px 8px; cursor: pointer; }
+                    .ytkit-queue-actions button { border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: transparent; color: var(--yt-spec-text-primary, #fff); font-size: 11px; padding: 4px 8px; cursor: pointer; }
                     .ytkit-queue-actions button:hover { border-color: rgba(255, 143, 64, 0.7); }
                     .ytkit-queue-list { overflow-y: auto; padding: 6px 0; }
                     .ytkit-queue-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; }
-                    .ytkit-queue-row:hover { background: rgba(255, 255, 255, 0.05); }
-                    .ytkit-queue-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; text-decoration: none; font-size: 12.5px; }
+                    .ytkit-queue-row:hover { background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.05)); }
+                    .ytkit-queue-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--yt-spec-text-primary, #fff); text-decoration: none; font-size: 12.5px; }
                     .ytkit-queue-row-actions { display: flex; gap: 4px; }
-                    .ytkit-queue-row-actions button { border: none; border-radius: 4px; background: transparent; color: rgba(255, 255, 255, 0.7); font-size: 12px; width: 22px; height: 22px; cursor: pointer; }
+                    .ytkit-queue-row-actions button { border: none; border-radius: 6px; background: transparent; color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.7)); font-size: 12px; width: 22px; height: 22px; cursor: pointer; }
+                    .ytkit-queue-pill:focus-visible, .ytkit-queue-panel button:focus-visible { outline: 2px solid var(--yt-spec-call-to-action, #3ea6ff); outline-offset: 2px; }
                     .ytkit-queue-row-actions button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); color: #fff; }
                     .ytkit-queue-row-actions button:disabled { opacity: 0.3; cursor: default; }
                 `, this.id, true);
@@ -32736,7 +32740,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
             },
             init() {
-                const css = `.ytkit-playlist-qr{position:absolute;top:6px;right:6px;z-index:20;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.9);color:#fff;border:0;cursor:pointer;font:700 13px/1 system-ui;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}ytd-playlist-video-renderer:hover .ytkit-playlist-qr{opacity:1}.ytkit-playlist-qr:hover{background:#dc2626}`;
+                const css = `.ytkit-playlist-qr{position:absolute;top:6px;right:6px;z-index:20;width:22px;height:22px;border-radius:6px;background:rgba(239,68,68,0.9);color:#fff;border:0;cursor:pointer;font:700 13px/1 system-ui;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}ytd-playlist-video-renderer:hover .ytkit-playlist-qr{opacity:1}.ytkit-playlist-qr:focus-visible{opacity:1;outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px}.ytkit-playlist-qr:hover{background:#dc2626}`;
                 this._styleEl = injectStyle(css, this.id, true);
                 this._navRule = () => setTimeout(() => this._attachOverlays(), 1500);
                 addNavigateRule('playlistQuickRemove', this._navRule);
@@ -32824,7 +32828,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 setTimeout(() => { btn.textContent = 'Remove Watched'; btn.disabled = false; }, 3000);
             },
             init() {
-                const css = `.ytkit-wl-cleanup{margin-left:8px;padding:8px 14px;background:#7f1d1d;color:#fecaca;border:1px solid #991b1b;border-radius:6px;font:600 13px/1 system-ui;cursor:pointer}.ytkit-wl-cleanup:hover{background:#991b1b;color:#fff}.ytkit-wl-cleanup:disabled{opacity:.7;cursor:progress}`;
+                const css = `.ytkit-wl-cleanup{margin-inline-start:8px;padding:8px 14px;background:#7f1d1d;color:#fecaca;border:1px solid #991b1b;border-radius:6px;font:600 13px/1 Roboto,Arial,sans-serif;cursor:pointer}.ytkit-wl-cleanup:hover{background:#991b1b;color:#fff}.ytkit-wl-cleanup:disabled{opacity:.7;cursor:progress}.ytkit-wl-cleanup:focus-visible{outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px}html:not([dark]) .ytkit-wl-cleanup{background:#fee2e2;color:#991b1b;border-color:rgba(153,27,27,0.4)}html:not([dark]) .ytkit-wl-cleanup:hover{background:#fecaca;color:#7f1d1d}`;
                 this._styleEl = injectStyle(css, this.id, true);
                 this._navRule = () => setTimeout(() => this._injectButton(), 1500);
                 addNavigateRule('watchLaterCleanup', this._navRule);
@@ -33162,7 +33166,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wlwb-actions button { border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: transparent; color: var(--yt-spec-text-primary, #fff); font-size: 11.5px; padding: 5px 9px; cursor: pointer; }
                     .ytkit-wlwb-actions button:hover:not(:disabled) { border-color: rgba(255, 143, 64, 0.7); }
                     .ytkit-wlwb-actions button:disabled { opacity: 0.6; cursor: progress; }
-                    .ytkit-wlwb-panel button:focus-visible, .ytkit-wlwb-panel input:focus-visible, .ytkit-wlwb-panel select:focus-visible, .ytkit-wlwb-open:focus-visible { outline: 2px solid #ff8f40; outline-offset: 2px; }
+                    .ytkit-wlwb-panel button:focus-visible, .ytkit-wlwb-panel input:focus-visible, .ytkit-wlwb-panel select:focus-visible, .ytkit-wlwb-open:focus-visible { outline: 2px solid var(--yt-spec-call-to-action, #ff8f40); outline-offset: 2px; }
                     @media (forced-colors: active) { .ytkit-wlwb-panel, .ytkit-wlwb-open { border: 1px solid ButtonText; } }
                 `, this.id, true);
                 this._navRule = () => {
@@ -33681,11 +33685,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _injectStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-bulk-toggle{position:fixed;right:16px;bottom:16px;z-index:9000;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:#1f1f24;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+                    .ytkit-bulk-toggle{position:fixed;right:16px;bottom:16px;z-index:10000;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:var(--yt-spec-menu-background,#1f1f24);color:var(--yt-spec-text-primary,#f4f4f5);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:600 12px/1 'YouTube Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);}
                     .ytkit-bulk-toggle[data-active="1"]{background:#7c3aed;border-color:#a78bfa;}
-                    .ytkit-bulk-bar{position:fixed;right:16px;bottom:64px;z-index:9000;display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:420px;padding:10px 12px;border-radius:10px;background:#0f0f10;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
-                    .ytkit-bulk-bar button{padding:8px 10px;border-radius:6px;border:1px solid #3f3f46;background:#1f1f24;color:#f4f4f5;cursor:pointer;font:inherit;}
-                    .ytkit-bulk-bar button:hover{background:#27272a;}
+                    .ytkit-bulk-bar{position:fixed;right:16px;bottom:64px;z-index:10000;display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:420px;padding:10px 12px;border-radius:10px;background:var(--yt-spec-menu-background,#0f0f10);color:var(--yt-spec-text-primary,#f4f4f5);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:600 12px/1 'YouTube Sans',system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+                    .ytkit-bulk-bar button{padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);background:var(--yt-spec-badge-chip-background,#1f1f24);color:var(--yt-spec-text-primary,#f4f4f5);cursor:pointer;font:inherit;}
+                    .ytkit-bulk-bar button:hover{background:var(--yt-spec-10-percent-layer,#27272a);}
+                    .ytkit-bulk-bar button:focus-visible,.ytkit-bulk-toggle:focus-visible{outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px;}
                     .ytkit-bulk-bar .ytkit-bulk-count{padding:0 6px;color:#a78bfa;}
                     body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer,
                     body[data-ytkit-bulk-select="1"] ytd-video-renderer,
@@ -33694,7 +33699,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer:hover,
                     body[data-ytkit-bulk-select="1"] ytd-video-renderer:hover{outline-color:#a78bfa;}
                     body[data-ytkit-bulk-select="1"] [data-ytkit-bulk-selected="1"]{outline-color:#7c3aed!important;background:rgba(124,58,237,.12);}
-                `, 'bulk-card-actions');
+                `, 'bulk-card-actions', true);
             },
 
             _extractVideoIdFromCard(card) {
@@ -33719,6 +33724,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const count = document.createElement('span');
                 count.className = 'ytkit-bulk-count';
                 count.dataset.role = 'count';
+                count.setAttribute('role', 'status');
+                count.setAttribute('aria-live', 'polite');
                 count.textContent = '0 selected';
                 const hideBtn = document.createElement('button');
                 hideBtn.type = 'button';
@@ -33951,7 +33958,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 if (typeof showToast === 'function') {
                     const capNote = skipped > 0 ? ` (${skipped} over the ${this._SCRUB_CAP}-per-run cap left selected)` : '';
-                    showToast(`Scrubbed ${picked.length}: ${appliedCount} native, ${picked.length} hidden locally${capNote}`, '#22c55e', {
+                    // Zero native applications is a partial failure, not a
+                    // success — say so and use the warning tone.
+                    showToast(appliedCount === 0
+                        ? `YouTube's menu item wasn't found — 0 native, ${picked.length} hidden locally only${capNote}`
+                        : `Scrubbed ${picked.length}: ${appliedCount} native, ${picked.length} hidden locally${capNote}`,
+                    appliedCount === 0 ? '#f59e0b' : '#22c55e', {
                         duration: 8,
                         action: {
                             text: 'Undo hides',
@@ -39125,7 +39137,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-download-btn');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                 if (!anchor || anchor.parentElement?.querySelector('.ytkit-transcript-search-btn')) return;
                 this._btn = document.createElement('button');
                 this._btn.type = 'button';
@@ -39862,7 +39874,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-download-btn, .ytp-right-controls .ytkit-player-btn');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn, .ytp-right-controls .ytkit-player-btn');
                 if (!anchor || anchor.parentElement?.querySelector('.ytkit-alt-frontend-btn')) return;
                 this._btn = document.createElement('a');
                 this._btn.className = 'ytkit-alt-frontend-btn ytkit-stream-links-btn';
@@ -39933,7 +39945,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _attach() {
                 if (!this._isAllowed()) return;
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-download-btn');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                 if (!anchor || anchor.parentElement?.querySelector('.ytkit-vlc-btn')) return;
                 this._vlcBtn = document.createElement('button');
                 this._vlcBtn.type = 'button';
