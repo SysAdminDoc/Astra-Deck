@@ -4296,7 +4296,10 @@ async function updateYtdlpNow() {
                 : '';
             showStatus(detail + rollback, 'success', 6200);
         } else {
-            const err = (result && (result.error || result.stderr)) || 'Update failed.';
+            const rawErr = (result && (result.error || result.stderr)) || 'Update failed.';
+            // stderr can be a multi-line traceback wall — the status strip is
+            // two lines tall; keep the first meaningful line.
+            const err = String(rawErr).split('\n').find((line) => line.trim()) || 'Update failed.';
             const recovery = result?.rolled_back
                 ? ` Active version restored to v${result.version_after || result.rollback_version || '?'}.`
                 : '';

@@ -1508,11 +1508,14 @@
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-download-health{display:inline-flex;gap:6px;align-items:center;margin-left:8px;font:600 11px/1 system-ui;}
-                    .ytkit-download-health__pill{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);border:1px solid rgba(255,255,255,0.08);font-variant-numeric:tabular-nums;}
+                    .ytkit-download-health{display:inline-flex;gap:6px;align-items:center;margin-inline-start:8px;font:600 11px/1 Roboto,Arial,sans-serif;}
+                    .ytkit-download-health__pill{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:4px 8px;border-radius:6px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.06));color:var(--yt-spec-text-primary,rgba(255,255,255,0.78));border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.08));font-variant-numeric:tabular-nums;}
                     .ytkit-download-health__pill[data-tone="ok"]{background:rgba(34,197,94,0.12);color:#bbf7d0;border-color:rgba(34,197,94,0.32);}
                     .ytkit-download-health__pill[data-tone="warn"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
                     .ytkit-download-health__pill[data-tone="err"]{background:rgba(239,68,68,0.14);color:#fecaca;border-color:rgba(239,68,68,0.36);}
+                    html:not([dark]) .ytkit-download-health__pill[data-tone="ok"]{color:#166534;border-color:rgba(21,128,61,0.4);}
+                    html:not([dark]) .ytkit-download-health__pill[data-tone="warn"]{color:#9a3412;border-color:rgba(154,52,18,0.4);}
+                    html:not([dark]) .ytkit-download-health__pill[data-tone="err"]{color:#991b1b;border-color:rgba(153,27,27,0.4);}
                 `, 'download-health', true);
             },
 
@@ -1629,7 +1632,7 @@
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-download-btn, .ytp-right-controls .ytkit-download-btn');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn, .ytp-right-controls .ytkit-local-dl-btn');
                 if (!anchor) return;
                 if (anchor.nextElementSibling?.classList?.contains('ytkit-download-health')) {
                     this._container = anchor.nextElementSibling;
@@ -1694,7 +1697,7 @@
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-stream-links-btn{display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-stream-links-btn{display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;margin-inline-start:8px;border-radius:8px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
                     .ytkit-stream-links-btn:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-stream-links-panel{position:fixed;right:24px;top:80px;z-index:9000;width:480px;max-height:60vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
                     .ytkit-stream-links-panel h4{margin:0 0 8px;font-size:13px;font-weight:700;color:#fafafa;}
@@ -1804,7 +1807,7 @@
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-download-btn');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                 if (!anchor) return;
                 if (anchor.parentElement?.querySelector('.ytkit-stream-links-btn')) {
                     this._btn = anchor.parentElement.querySelector('.ytkit-stream-links-btn');
@@ -1926,7 +1929,7 @@
                         this._navTimer = null;
                         if (!this._hooked) return;
                         if (!isWatchPagePath()) return;
-                        const anchor = document.querySelector('.ytkit-download-btn');
+                        const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                         if (!anchor || anchor.parentElement?.querySelector('.ytkit-cobalt-fallback-btn')) return;
                         const btn = document.createElement('button');
                         btn.type = 'button';
@@ -1969,7 +1972,7 @@
                     .ytkit-dl-history-panel .meta{color:rgba(255,255,255,0.55);font-size:11px;font-variant-numeric:tabular-nums;}
                     .ytkit-dl-history-panel__empty{color:rgba(255,255,255,0.6);font-style:italic;}
                     .ytkit-dl-history-panel__close{position:absolute;top:8px;right:8px;min-height:28px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
-                    .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;margin-inline-start:8px;border-radius:8px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-dl-history-btn:hover,.ytkit-dl-history-panel__close:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                 `, 'dl-history-panel', true);
@@ -2059,7 +2062,7 @@
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-download-btn');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                 if (!anchor || anchor.parentElement?.querySelector('.ytkit-dl-history-btn')) return;
                 this._btn = document.createElement('button');
                 this._btn.type = 'button';

@@ -702,7 +702,7 @@
             if (_styleElement) return;
             _styleElement = injectStyle(`
                 [data-ytkit-ryd-card-host]{position:relative!important;}
-                .ytkit-ryd-card-bar{position:absolute;z-index:6;left:8px;right:8px;bottom:4px;height:4px;display:block;overflow:hidden;border-radius:999px;background:rgba(239,68,68,.82);box-shadow:0 1px 3px rgba(0,0,0,.48);pointer-events:none;}
+                .ytkit-ryd-card-bar{position:absolute;z-index:6;left:8px;right:8px;bottom:4px;height:4px;display:block;overflow:hidden;border-radius:2px;background:rgba(239,68,68,.82);box-shadow:0 1px 3px rgba(0,0,0,.48);pointer-events:none;}
                 .ytkit-ryd-card-bar-fill{display:block;width:0;height:100%;border-radius:inherit;background:#22c55e;transition:width 120ms ease-out;}
                 @media (prefers-reduced-motion:reduce){.ytkit-ryd-card-bar-fill{transition:none;}}
                 @media (forced-colors:active){.ytkit-ryd-card-bar{border:1px solid CanvasText;background:Canvas;}.ytkit-ryd-card-bar-fill{background:Highlight;}}

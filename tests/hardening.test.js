@@ -4267,6 +4267,31 @@ test('no Astra-injected CSS uses pill (999px) backdrops in theater-split.user.js
         `theater-split.user.js has pill backdrops:\n${px999?.join('\n')}`);
 });
 
+test('no pill (999px) backdrops in core modules or feature modules either', () => {
+    // 2026-07-23 audit: the ytkit.js gate above let the settings switch
+    // track (core/settings-visual-system.js) and the RYD card bar
+    // (features/return-dislike) ship 999px radii. Scan every core and
+    // feature source the extension actually loads.
+    const roots = [
+        path.join(__dirname, '..', 'extension', 'core'),
+        path.join(__dirname, '..', 'extension', 'features')
+    ];
+    const offenders = [];
+    const walk = (dir) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) { walk(full); continue; }
+            if (!entry.name.endsWith('.js')) continue;
+            const src = fs.readFileSync(full, 'utf8');
+            const hits = src.match(/border-radius:\s*9{2,}px/g);
+            if (hits) offenders.push(`${full}: ${hits.join(', ')}`);
+        }
+    };
+    for (const root of roots) walk(root);
+    assert.deepEqual(offenders, [],
+        `pill backdrops found — replace with 0/4/6/8/10/12:\n${offenders.join('\n')}`);
+});
+
 test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', () => {
     // Direct innerHTML assignment of HTML/SVG strings bypasses TrustedHTML
     // and throws under YouTube's strict TrustedTypes CSP. Audit found one
@@ -6509,8 +6534,12 @@ test('v4.15.0 popup HTML quick-toggles section advertises the updated total', ()
     // After v4.15.0 the QUICK_TOGGLES list has 18 entries. Both the
     // visible "18 controls" string and any future i18n-keyed total
     // must stay in sync with QUICK_TOGGLES.length.
-    assert.match(html, /id="resultsState">18 controls</,
+    assert.match(html, /id="resultsState"[^>]*>18 controls</,
         'popup.html must advertise 18 quick controls after v4.15.0');
+    // 2026-07-23 audit: the filter-results count is announced to screen
+    // readers — typing previously filtered the list in silence.
+    assert.match(html, /id="resultsState" role="status" aria-live="polite"/,
+        'resultsState must be a polite live region');
 });
 
 test('v4.15.0 new popup quick-toggle keys all exist in the v4.6.0 settings schema', () => {

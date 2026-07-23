@@ -45,21 +45,23 @@
             _ensureStyles() {
                 if (this._styleEl) return;
                 this._styleEl = injectStyle(`
-                    .ytkit-video-notes-container{margin:0 0 14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e5e7eb;font:13px/1.45 system-ui;}
+                    .ytkit-video-notes-container{margin:0 0 14px;padding:12px;border-radius:8px;background:var(--yt-spec-raised-background,rgba(255,255,255,0.04));border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.08));color:var(--yt-spec-text-primary,#e5e7eb);font:13px/1.45 Roboto,Arial,sans-serif;}
                     .ytkit-video-notes-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
                     .ytkit-video-notes-title{display:flex;flex-direction:column;gap:3px;min-width:0;}
-                    .ytkit-video-notes-eyebrow{font:700 10px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);}
-                    .ytkit-video-notes-name{font:700 14px/1.2 system-ui;color:#fff;}
-                    .ytkit-video-notes-status{margin:0;color:rgba(255,255,255,0.58);font:12px/1.35 system-ui;}
+                    .ytkit-video-notes-eyebrow{font:700 10px/1 Roboto,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.5));}
+                    .ytkit-video-notes-name{font:700 14px/1.2 Roboto,Arial,sans-serif;color:var(--yt-spec-text-primary,#fff);}
+                    .ytkit-video-notes-status{margin:0;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.58));font:12px/1.35 Roboto,Arial,sans-serif;}
                     .ytkit-video-notes-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-                    .ytkit-video-notes-actions button{min-height:30px;padding:6px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:700 12px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
-                    .ytkit-video-notes-actions button:hover{background:rgba(255,255,255,0.1);}
-                    .ytkit-video-notes-actions button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(59,130,246,0.28);}
+                    .ytkit-video-notes-actions button{min-height:30px;padding:6px 9px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.06));color:var(--yt-spec-text-primary,#e5e7eb);font:700 12px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-video-notes-actions button:hover{background:var(--yt-spec-10-percent-layer,rgba(255,255,255,0.1));}
+                    .ytkit-video-notes-actions button:focus-visible{box-shadow:0 0 0 2px var(--yt-spec-base-background,rgba(8,11,16,0.92)),0 0 0 4px var(--yt-spec-call-to-action,rgba(59,130,246,0.28));}
                     .ytkit-video-notes-actions button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.34);color:#bbf7d0;}
                     .ytkit-video-notes-actions button[data-action="delete"]{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.32);color:#fecaca;}
-                    .ytkit-video-notes-input{display:block;width:100%;min-height:140px;resize:vertical;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.22);color:#f8fafc;font:13px/1.5 system-ui;outline:none;}
-                    .ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible{border-color:rgba(59,130,246,0.55);box-shadow:0 0 0 2px rgba(59,130,246,0.16);}
-                    .ytkit-video-notes-footer{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:rgba(255,255,255,0.48);font:11px/1.3 system-ui;}
+                    html:not([dark]) .ytkit-video-notes-actions button[data-action="export"]{background:rgba(34,197,94,0.1);border-color:rgba(21,128,61,0.4);color:#166534;}
+                    html:not([dark]) .ytkit-video-notes-actions button[data-action="delete"]{background:rgba(239,68,68,0.08);border-color:rgba(153,27,27,0.35);color:#991b1b;}
+                    .ytkit-video-notes-input{display:block;width:100%;min-height:140px;resize:vertical;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.22));color:var(--yt-spec-text-primary,#f8fafc);font:13px/1.5 Roboto,Arial,sans-serif;outline:none;}
+                    .ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible{border-color:var(--yt-spec-call-to-action,rgba(59,130,246,0.55));box-shadow:0 0 0 2px rgba(59,130,246,0.16);}
+                    .ytkit-video-notes-footer{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.48));font:11px/1.3 Roboto,Arial,sans-serif;}
                     .ytkit-video-notes-count{font-variant-numeric:tabular-nums;}
                 `, 'video-notes', true);
             },
@@ -94,8 +96,13 @@
             _writeNotes(next) {
                 const capped = this._enforceNotesCap(next);
                 appState.settings[this._DATA_KEY] = capped;
+                let saved = true;
                 try { settingsManager.save(appState.settings); }
-                catch (e) { DebugManager.log('VideoNotes', `Save failed: ${e.message}`); }
+                catch (e) {
+                    saved = false;
+                    DebugManager.log('VideoNotes', `Save failed: ${e.message}`);
+                }
+                this._lastWriteOk = saved;
                 return capped;
             },
 
@@ -145,7 +152,11 @@
                     updatedAt: now
                 };
                 this._writeNotes(notes);
-                this._updateStatus('Saved locally.');
+                // Notes are user-authored data — never claim success when the
+                // storage write failed.
+                this._updateStatus(this._lastWriteOk !== false
+                    ? 'Saved locally.'
+                    : 'Couldn\u2019t save \u2014 storage full or unavailable.');
                 this._updateCount(text);
             },
 
