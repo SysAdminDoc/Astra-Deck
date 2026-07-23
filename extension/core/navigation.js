@@ -376,6 +376,11 @@
         mutationObserver.disconnect();
         mutationObserver = null;
         pendingMutationRecords = [];
+        // Reset scheduling state or an orphaned rAF/fallback drain fires
+        // against rules registered later, and a stale-true flag suppresses
+        // fresh drains until the old fallback timer lapses.
+        mutationScheduled = false;
+        if (mutationFallbackTimer) { clearTimeout(mutationFallbackTimer); mutationFallbackTimer = null; }
     }
 
     function hasAnyMutationRule() {
@@ -496,6 +501,7 @@
                 }
                 index += 1;
                 processedInChunk += 1;
+                if (cancelled) break;
                 if ((nowMs() - chunkStartedAt) >= budgetMs) break;
             }
             chunks += 1;

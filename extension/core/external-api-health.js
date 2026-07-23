@@ -167,7 +167,7 @@
             return rec;
         }
 
-        function recordFailure(id, error, detail = {}) {
+        function recordFailure(id, error, detail = {}, options = {}) {
             const rec = ensure(id);
             const errorClass = classifyFailure(error, detail);
             const status = getStatus(error, detail);
@@ -187,16 +187,19 @@
             } catch (_) {
                 // reason: diagnostics must never break a feature fetch path
             }
-            notify(rec);
+            if (!options.skipNotify) notify(rec);
             return rec;
         }
 
         function recordCacheFallback(id, error, detail = {}) {
+            // Single notification with the FINAL degraded state — notifying
+            // from recordFailure first flashed 'error' at every subscriber
+            // (in-page pills, popup health center) on each stale-cache serve.
             const rec = recordFailure(id, error, {
                 ...detail,
                 cacheState: detail.cacheState || 'stale',
                 fallbackState: detail.fallbackState || 'stale-cache'
-            });
+            }, { skipNotify: true });
             rec.state = 'degraded';
             rec.cacheState = cleanText(detail.cacheState || 'stale');
             rec.fallbackState = cleanText(detail.fallbackState || 'stale-cache');

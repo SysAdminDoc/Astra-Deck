@@ -32,7 +32,7 @@
         return createTrustedHtmlPolicy().createHTML(value);
     }
 
-    const _URL_ATTRS = ['href', 'src', 'xlink:href', 'action', 'formaction'];
+    const _URL_ATTRS = ['href', 'src', 'xlink:href', 'action', 'formaction', 'data'];
     const _DANGEROUS_URL = /^\s*(?:javascript|data|vbscript):/i;
 
     // Defense-in-depth for the DOMParser fallback (used on engines lacking the
@@ -41,6 +41,13 @@
     // adoption, but it does NOT neutralize `onerror=`/`onclick=` handlers or
     // `javascript:` URLs. Today every caller passes static SVG literals, but
     // this guarantees any future untrusted input can't smuggle an XSS sink.
+    function _isDangerousUrl(value) {
+        // Browsers strip ASCII control characters (incl. \t\n\r) inside the
+        // scheme when navigating, so `jav\nascript:` bypasses a plain regex.
+        // Test against the control-char-stripped form.
+        return _DANGEROUS_URL.test(String(value || '').replace(/[\u0000-\u0020]+/g, ''));
+    }
+
     function _sanitizeParsedElement(el) {
         if (!el || el.nodeType !== 1) return;
         const tag = (el.tagName || '').toLowerCase();
@@ -49,7 +56,10 @@
         for (const attr of attrs) {
             const name = attr.name || '';
             if (/^on/i.test(name)) { el.removeAttribute(name); continue; }
-            if (_URL_ATTRS.includes(name.toLowerCase()) && _DANGEROUS_URL.test(attr.value || '')) {
+            // srcdoc is an inline document — script inside it executes when
+            // the iframe is adopted, regardless of URL filtering.
+            if (name.toLowerCase() === 'srcdoc') { el.removeAttribute(name); continue; }
+            if (_URL_ATTRS.includes(name.toLowerCase()) && _isDangerousUrl(attr.value)) {
                 el.removeAttribute(name);
             }
         }
@@ -58,7 +68,15 @@
     function _sanitizeParsedTree(root) {
         if (!root || typeof root.querySelectorAll !== 'function') return;
         const nodes = Array.from(root.querySelectorAll('*'));
-        for (const node of nodes) _sanitizeParsedElement(node);
+        for (const node of nodes) {
+            _sanitizeParsedElement(node);
+            // <template> content lives in a separate DocumentFragment that
+            // querySelectorAll('*') never visits — recurse or payloads
+            // survive sanitization and fire when the template is stamped.
+            if (node.content && typeof node.content.querySelectorAll === 'function') {
+                _sanitizeParsedTree(node.content);
+            }
+        }
     }
 
     function parseTrustedHTML(value) {
