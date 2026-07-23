@@ -6,6 +6,91 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.1] - 2026-07-23
+
+Deep engineering + product-quality audit: ~45 verified fixes across seven
+commits. Highlights below; the full detail is in the individual commit
+messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
+
+### Fixed — correctness
+
+- **hidePlannedLivestreams no longer hides finished premieres.** The
+  scheduled-metadata fallback regex substring-matched "Premiered N hours
+  ago" (and channel-name bylines via "live in"), permanently hiding
+  published videos for every user of the new on-by-default feature. The
+  regex is now future-anchored and pinned by regression tests.
+- **Six download-adjacent features were dead since v4.49.x** — their anchor
+  queries still targeted `.ytkit-download-btn`, a class the download-UI
+  canonicalization stopped creating. Download-health pills, Stream Links,
+  Cobalt fallback, History, transcript-search, and the VLC/MPV handoff
+  buttons attach again.
+- **Comment badge styling was inverted**: premium interaction CSS selected
+  camelCase data attributes that dataset flags never create, so
+  pinned/hearted/linked highlighting was dead and the `:not()` rules hid
+  pinned/linked badges on every comment (module, monolith, and userscript).
+- **Video Hider could hide the wrong video**: quick-hide buttons captured
+  the video id at creation while YouTube re-binds recycled cards on chip
+  clicks. Type filters (Mix/Movie/Playlist/Auto-dubbed) matched against
+  titles — "How to mix audio" was hidden by Hide Mixes.
+- **Theater Split**: hidden placeholder chat frames kept
+  `pointer-events:none` after teardown (next live stream's chat
+  unclickable); live/vod expand after a standard→live SPA nav left
+  `#secondary` hidden (empty chat pane); chat-disabled live streams now
+  fall back to comments; a CSSOM `'0'` vs `'0px'` comparison dead-ended
+  late-chat repositioning.
+- **Companion (Python)**: cancelling a download during the pre-spawn probe
+  window let it run to completion unstoppable; benign PO-token WARNINGs in
+  the output tail no longer shadow the real failure cause; BtbN
+  `n8.x`-tagged ffmpeg builds are now compared against the 8.1.2 CVE floor;
+  a stale bgutil provider routes to the token-exempt chain
+  (`tv,web_embedded,android_vr` — bare `web` removed) instead of minting
+  rejected tokens; the post-setup GUI freeze from on-thread version probes
+  is gone.
+- **Audio features**: disable→re-enable summed the dry passthrough with the
+  rebuilt processing chain (~+6 dB, broken mono/pan); a suspended
+  AudioContext could mute playback entirely with no resume path.
+- **Return YouTube Dislike**: disabling the feature during an in-flight
+  votes fetch overwrote the persisted 500-entry cache with a single entry.
+- **DeArrow**: branding fetches pending across a navigation were never
+  cached (every nav bumped the destroy generation), re-fetching the same
+  videos against the API budget; lazy thumbnails no longer store an empty
+  original-src that broke error/disable restores.
+- **SponsorBlock**: the player observer now disarms on zero-segment videos
+  (it churned on playback ticks all session) and re-renders segments after
+  a player chrome rebuild.
+- **Core**: three DOMParser-fallback sanitizer bypasses closed (template
+  content, control-character schemes, srcdoc); stale-cache health events
+  no longer double-notify with a transient error state; mutation-observer
+  scheduling state resets on stop; a failed storage flush's backoff is no
+  longer cancelled by queued flush callers; the settings color "Clear"
+  button actually persists (dispatched `change` where persistence listens
+  on `input`).
+- **Sidepanel quick-settings** request runtime-optional host grants inside
+  the click gesture — on store-safe builds SponsorBlock/DeArrow toggled
+  "enabled" while every fetch was rejected for a missing grant.
+
+### Fixed — UX / accessibility / theming
+
+- Toasts stack above the settings panel (panel-fired Undo affordances were
+  invisible behind the modal); scrub and Watch Later cleanup report
+  honest results (no more green success on zero native removals, and the
+  cleanup uses the locale-independent structural menu match); video-notes
+  no longer claims "Saved locally." on a failed write.
+- Light-theme ports for video-notes, download-health pills, Stream
+  Links/History buttons, persistent queue, and the bulk-actions bar (all
+  rendered white-on-white or as dark slabs on light YouTube); WL cleanup
+  button gains a light variant.
+- Keyboard: playlist quick-remove and queue controls gain focus-visible
+  reveals/rings; bulk selection count and popup filter results are polite
+  live regions.
+- Pill-radius house rule enforced in core and feature modules (settings
+  switch track, RYD card bar) with a widened hardening gate.
+
+### Changed
+
+- ROADMAP: token-exempt client chain P1 implemented and removed; 20
+  verified-but-unfixed audit findings filed as a prioritized backlog.
+
 ## [4.50.0] - 2026-07-23
 
 ### Added
