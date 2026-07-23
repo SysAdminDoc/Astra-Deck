@@ -311,6 +311,12 @@
   "dlProgressLostToast": {
     "message": "Se perdió el contacto con Astra Downloader."
   },
+  "dlProgressLostTrackCopy": {
+    "message": "Astra Downloader reported an unrecognized status. Check its window for the result."
+  },
+  "dlProgressLostTrackTitle": {
+    "message": "Lost track of this download"
+  },
   "dlProgressPreparing": {
     "message": "Preparando descarga…"
   },
@@ -358,6 +364,9 @@
   },
   "dlProgressStateSkipped": {
     "message": "Omitido"
+  },
+  "dlProgressStateUnknown": {
+    "message": "Status Unknown"
   },
   "dlProgressWaiting": {
     "message": "Esperando"

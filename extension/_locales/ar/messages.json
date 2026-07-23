@@ -308,6 +308,12 @@
   "dlProgressLostToast": {
     "message": "انقطع الاتصال بـ Astra Downloader."
   },
+  "dlProgressLostTrackCopy": {
+    "message": "أبلغ Astra Downloader عن حالة غير معروفة. تحقق من نافذته لمعرفة النتيجة."
+  },
+  "dlProgressLostTrackTitle": {
+    "message": "فقدنا تتبّع هذا التنزيل"
+  },
   "dlProgressPreparing": {
     "message": "جارٍ تحضير التنزيل…"
   },
@@ -355,6 +361,9 @@
   },
   "dlProgressStateSkipped": {
     "message": "تم التخطي"
+  },
+  "dlProgressStateUnknown": {
+    "message": "الحالة غير معروفة"
   },
   "dlProgressWaiting": {
     "message": "في الانتظار"

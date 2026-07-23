@@ -311,6 +311,12 @@
   "dlProgressLostToast": {
     "message": "Astra Downloader との接続が切れました。"
   },
+  "dlProgressLostTrackCopy": {
+    "message": "Astra Downloader reported an unrecognized status. Check its window for the result."
+  },
+  "dlProgressLostTrackTitle": {
+    "message": "Lost track of this download"
+  },
   "dlProgressPreparing": {
     "message": "ダウンロードの準備中…"
   },
@@ -358,6 +364,9 @@
   },
   "dlProgressStateSkipped": {
     "message": "スキップ"
+  },
+  "dlProgressStateUnknown": {
+    "message": "Status Unknown"
   },
   "dlProgressWaiting": {
     "message": "待機中"

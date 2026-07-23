@@ -16965,11 +16965,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _extractVideoMetadata(element) {
                 const title = this._extractTitle(element);
-                const metadataText = [
-                    title,
-                    ...Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
-                        .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
-                ].join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+                const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
+                    .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
+                    .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+                const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                 const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
                 const hasDuration = this._extractDuration(element) > 0;
                 return {
@@ -16981,11 +16980,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     isLive: !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, [aria-label*="LIVE"]')
                         || /\b(live|watching now)\b/.test(metadataText) && !hasDuration,
                     isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(metadataText),
-                    isMix: /\b(youtube\s+mix|mix)\b/.test(metadataText) || /(?:start_radio=1|list=rd)/i.test(hrefText),
+                    // Type detection reads ONLY badge/metadata rows — matching
+                    // against the title hid videos titled "How to mix audio",
+                    // "movie review", or "top 5 videos".
+                    isMix: /\b(youtube\s+mix|mix)\b/.test(rowsText) || /(?:start_radio=1|list=rd)/i.test(hrefText),
                     isPlaylist: !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer')
-                        || /\bplaylist\b|\b\d+\s+videos?\b/.test(metadataText),
-                    isMovie: /\b(movie|free with ads|buy or rent|rent or buy)\b/.test(metadataText),
-                    isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(metadataText)
+                        || /\bplaylist\b|\b\d+\s+videos?\b/.test(rowsText),
+                    isMovie: /\b(movie|free with ads|buy or rent|rent or buy)\b/.test(rowsText),
+                    isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(rowsText)
                 };
             },
 
@@ -17050,7 +17052,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const id = videoId || this._extractVideoId(element);
+                    // Read the CURRENT id: YouTube re-binds new video data into
+                    // recycled card elements (chip clicks), and the closure's
+                    // videoId from button-creation time would hide the wrong
+                    // video. dataset.ytkitVideoId is refreshed on every
+                    // reprocess.
+                    const id = element.dataset.ytkitVideoId || this._extractVideoId(element) || videoId;
                     if (id) this._hideVideo(id, element);
                 });
                 btn.addEventListener('contextmenu', e => {
@@ -17118,6 +17125,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (this._lastHidden.removedAllowed?.length) this._addAllowedVideos(this._lastHidden.removedAllowed, { force: true });
                     this._restoreRemovedVideoNodes(new Set([this._lastHidden.id]));
                     this._lastHidden.element?.classList.remove('ytkit-video-hidden');
+                    // The captured element may have been recycled between hide
+                    // and Undo — strip the class wherever the id landed and
+                    // reprocess, mirroring _unhideVideo.
+                    document.querySelectorAll(`[data-ytkit-video-id="${this._lastHidden.id}"]`)?.forEach(el => {
+                        el.classList.remove('ytkit-video-hidden');
+                    });
+                    this._processAllVideos();
                 } else if (this._lastHidden.type === 'channel') {
                     this._removeBlockedChannel(this._lastHidden.info);
                     this._processAllVideos();
