@@ -328,6 +328,11 @@
                 if (this._segments.length) {
                     DebugManager.log('SponsorBlock', `Loaded ${this._segments.length} segments for ${videoId}`);
                     this._renderBarSegments();
+                } else {
+                    // No segments for this video: nothing will ever paint, so
+                    // stop the churn-heavy player observer until the next
+                    // navigation re-arms it.
+                    this._disarmBarObserver();
                 }
             },
 
@@ -509,10 +514,14 @@
                 // windows); the navigate rule re-arms it for the next video.
                 this._barObserver = new MutationObserver(() => {
                     const video = getMainVideoElement();
-                    if (video?.duration && this._segments.length && !this._barSegments.length) {
+                    const barsLive = this._barSegments.length > 0
+                        && this._barSegments[0]?.isConnected !== false;
+                    if (video?.duration && this._segments.length && !barsLive) {
                         this._renderBarSegments();
                     }
-                    if (this._barSegments.length) this._disarmBarObserver();
+                    if (this._barSegments.length && this._barSegments[0]?.isConnected !== false) {
+                        this._disarmBarObserver();
+                    }
                 });
                 this._armBarObserver();
             },
