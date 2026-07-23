@@ -883,7 +883,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.50.0';
+    const YTKIT_VERSION = '4.50.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -32809,22 +32809,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     setTimeout(() => { btn.textContent = 'Remove Watched'; btn.disabled = false; }, 2500);
                     return;
                 }
+                let removed = 0;
                 for (let i = 0; i < targets.length; i++) {
                     btn.textContent = `Removing ${i + 1} / ${targets.length}…`;
                     const row = targets[i];
                     const menuBtn = row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
-                    menuBtn?.click();
+                    if (!menuBtn) continue;
+                    menuBtn.click();
                     await new Promise(r => setTimeout(r, 120));
-                    const removeItem = [...document.querySelectorAll(
-                        'ytd-menu-service-item-renderer, tp-yt-paper-item'
-                    )].find(n => /remove from/i.test(n.textContent || ''));
-                    removeItem?.click();
+                    // Structural playlistEditEndpoint match first — the
+                    // "remove from" text test is English-only and silently
+                    // removed nothing on the 10 non-EN locales while still
+                    // reporting success.
+                    const items = [...document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item')];
+                    const removeItem = items.find(n => {
+                        const host = n.matches?.('ytd-menu-service-item-renderer') ? n : n.closest?.('ytd-menu-service-item-renderer');
+                        const actions = host?.data?.serviceEndpoint?.playlistEditEndpoint?.actions;
+                        return Array.isArray(actions) && actions.some(a => String(a?.action || '').startsWith('ACTION_REMOVE'));
+                    }) || items.find(n => /remove from/i.test(n.textContent || ''));
+                    if (removeItem) {
+                        removeItem.click();
+                        removed++;
+                    } else {
+                        // Close the orphaned menu so the page isn't left with a
+                        // dangling dropdown.
+                        document.body.click();
+                    }
                     // Small gap so YouTube's Polymer can process each mutation
                     // before we dispatch the next click. Empirically 350ms
                     // avoids the "ghost row" flicker without being sluggish.
                     await new Promise(r => setTimeout(r, 350));
                 }
-                btn.textContent = `Removed ${targets.length} ✓`;
+                btn.textContent = removed === targets.length
+                    ? `Removed ${removed} ✓`
+                    : `Removed ${removed} of ${targets.length}`;
+                if (removed < targets.length && typeof showToast === 'function') {
+                    showToast(`Couldn't remove ${targets.length - removed} video(s) — YouTube's menu item wasn't found.`, '#f59e0b', { duration: 5 });
+                }
                 setTimeout(() => { btn.textContent = 'Remove Watched'; btn.disabled = false; }, 3000);
             },
             init() {
