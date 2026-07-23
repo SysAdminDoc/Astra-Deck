@@ -289,7 +289,18 @@
             // failed flush could merge-back and retry its stale values over
             // a NEWER value the competing flush already persisted, leaving
             // disk and cache divergent until the next write.
-            return storageFlushInFlight.then(() => flushPendingStorageWrites());
+            return storageFlushInFlight.then((result) => {
+                if (result && result.ok === false && storageFlushBackoffMs > 0) {
+                    // The in-flight flush failed and scheduled a backoff —
+                    // flushing immediately here would cancel that timer and
+                    // hammer a persistent quota error once per waiting
+                    // caller. Wait out the backoff, then flush.
+                    return new Promise((resolve) => {
+                        setTimeout(() => resolve(flushPendingStorageWrites()), storageFlushBackoffMs);
+                    });
+                }
+                return flushPendingStorageWrites();
+            });
         }
 
         const writes = pendingStorageWrites;

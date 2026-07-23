@@ -604,8 +604,8 @@ async function restoreSchemaOverviewExpanded() {
 // runaway-growth signal is still useful UX even without a hard
 // ceiling. Tier 1 (>20 MB) starts the soft nudge; tier 2 (>50 MB)
 // upgrades the wording. Both stay polite — the popup never auto-
-// resets; the Reset button hands the user to the existing
-// confirm-action dialog so the destructive step keeps its guard.
+// resets; the Reset button applies immediately with a session-scoped
+// undo snapshot (the confirm dialog was removed in v4.47.0 NF14).
 const STORAGE_WARN_SOFT_BYTES = 20 * 1024 * 1024;
 const STORAGE_WARN_HARD_BYTES = 50 * 1024 * 1024;
 
@@ -4953,6 +4953,18 @@ function installWheelScrolling() {
     // this point in the bootstrap IIFE.
     if (ext?.storage?.onChanged) {
         ext.storage.onChanged.addListener(onStorageChanged);
+        // Close the boot race: a mutation committed while the initial
+        // loadSettings() round-trip was awaited landed before this listener
+        // existed and was silently dropped — the popup then rendered the
+        // pre-mutation value until the next unrelated storage change. One
+        // cheap reconciliation read repairs it.
+        const preListenerSnapshot = JSON.stringify(popupState.settings || {});
+        void loadSettings().then((settings) => {
+            if (JSON.stringify(settings) !== preListenerSnapshot) {
+                render(settings, q.value);
+                renderSchemaOverview();
+            }
+        }).catch(() => {});
         // The popup can be torn down mid-flight (it closes on blur). Remove the
         // listener and cancel the status timer on pagehide so a late storage
         // change can't run render paths against a dying DOM / invalidated
@@ -5055,7 +5067,7 @@ function installWheelScrolling() {
         aiCredentialDelete.addEventListener('click', () => { void deleteAiCredential(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
-    // Route through the same PIN gate as the primary Reset to prevent
+    // Route through the same flow as the primary Reset (undo-backed, no confirm dialog) to prevent
     // bypassing the PIN when the banner is showing.
     if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
 })();

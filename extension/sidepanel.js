@@ -613,6 +613,29 @@ async function loadSettings() {
     }
 }
 
+async function requestOptionalHostsForToggle(key, value) {
+    // Mirror the popup's grant flow: enabling a feature whose origin is
+    // declared under optional_host_permissions (store-safe builds) must
+    // prompt inside the click gesture; everything else passes through.
+    if (value !== true) return true;
+    try {
+        const core = globalThis.YTKitCore || {};
+        if (typeof core.getOptionalHostPermissionsForFeature !== 'function') return true;
+        const declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
+        if (!Array.isArray(declared) || !declared.length) return true;
+        const declaredSet = new Set(declared);
+        const origins = (core.getOptionalHostPermissionsForFeature(key) || [])
+            .filter((origin) => declaredSet.has(origin));
+        if (!origins.length) return true;
+        const factory = core.createOptionalHostPermissions;
+        const helper = (typeof factory === 'function') ? factory() : null;
+        if (!helper || !helper.isSupported()) return false;
+        return await helper.request(origins);
+    } catch (_) {
+        return false;
+    }
+}
+
 async function writeSetting(key, value) {
     try {
         if (!_settingsMutationController) {
@@ -791,7 +814,8 @@ function renderSettings(filter) {
                 row.removeAttribute('data-error');
                 row.setAttribute('aria-checked', String(next));
                 row.setAttribute('aria-description', rowLabel(humanName, next, entry));
-                const saved = await writeSetting(entry.key, next);
+                const granted = await requestOptionalHostsForToggle(entry.key, next);
+                const saved = granted ? await writeSetting(entry.key, next) : false;
                 row.dataset.saving = 'false';
                 row.removeAttribute('aria-busy');
                 row.removeAttribute('aria-disabled');

@@ -589,6 +589,17 @@ test('trusted-html.js feature-detects Sanitizer API setHTML when available', () 
         'sanitizer must strip on*/dangerous-URL attributes');
     assert.match(src, /javascript\|data\|vbscript/,
         'sanitizer must reject javascript:/data:/vbscript: URLs');
+    // Bypass regression pins (2026-07-23 audit): template content lives in a
+    // separate fragment querySelectorAll never visits; control characters
+    // inside a scheme defeat a plain regex; srcdoc is an inline document.
+    assert.match(src, /_sanitizeParsedTree\(node\.content\)/,
+        'sanitizer must recurse into template.content fragments');
+    assert.match(src, /\\u0000-\\u0020/,
+        'dangerous-URL test must strip ASCII control characters first');
+    assert.match(src, /srcdoc/,
+        'sanitizer must strip srcdoc inline documents');
+    assert.match(src, /'formaction', 'data'/,
+        'object data attribute must be URL-filtered');
 });
 
 test('api limiter serializes same-bucket work and reports queue state', async () => {
