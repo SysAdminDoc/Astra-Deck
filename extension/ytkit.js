@@ -811,9 +811,9 @@ return response;
                             // avoids running three dot-all `/\{.+?\}/s` regexes —
                             // which can backtrack pathologically — over a script
                             // body that is frequently hundreds of KB.
-                            const idx = text.indexOf('ytInitialPlayerResponse');
-                            if (idx !== -1) {
-                                const eqIdx = text.indexOf('=', idx);
+                            const assignMatch = /(?:^|[;\s])(?:var\s+|window\.)?ytInitialPlayerResponse\s*=\s*\{/.exec(text);
+                            if (assignMatch) {
+                                const eqIdx = text.indexOf('=', assignMatch.index);
                                 if (eqIdx !== -1) {
                                     const jsonStart = text.indexOf('{', eqIdx);
                                     if (jsonStart !== -1) {
@@ -831,7 +831,13 @@ return response;
                                             else if (ch === '}') { depth--; if (depth === 0) { end++; break; } }
                                         }
                                         try {
-                                            this._prCache = JSON.parse(text.substring(jsonStart, end));
+                                            const candidate = JSON.parse(text.substring(jsonStart, end));
+                                            // Accept only a real player response —
+                                            // caching an accidental JSON object would
+                                            // also skip the regex fallback.
+                                            if (candidate && (candidate.videoDetails || candidate.playabilityStatus || candidate.streamingData)) {
+                                                this._prCache = candidate;
+                                            }
                                         } catch (_) {
                                             // reason: brace-counting candidate failed to parse; fall back to regex below
                                         }
@@ -21229,7 +21235,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     }
                                 }
                                 // Close menu if it's still open
-                                document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')?.setAttribute('aria-hidden', 'true');
+                                if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) { document.body.click(); }
                             });
                         }
                         // Visually dismiss immediately
@@ -28158,7 +28164,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _cycle() {
                 const index = this._SPEEDS.indexOf(this._speed);
-                this._speed = this._SPEEDS[(index + 1) % this._SPEEDS.length] ?? 1;
+                if (index === -1) {
+                    // Custom persistent-speed defaults (e.g. 1.75) are not in
+                    // the step list — advance to the next step ABOVE the
+                    // current speed instead of snapping down to 0.5x.
+                    const nextUp = this._SPEEDS.find((v) => v > this._speed);
+                    this._speed = nextUp ?? this._SPEEDS[0];
+                } else {
+                    this._speed = this._SPEEDS[(index + 1) % this._SPEEDS.length] ?? 1;
+                }
                 this._apply();
             },
             _renderChip() {
@@ -32989,19 +33003,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._running = true;
                 runBtn.disabled = true;
                 const removed = [];
-                for (let i = 0; i < batch.length; i++) {
-                    runBtn.textContent = t('wlwbRemovingTpl', `Removing ${i + 1} / ${batch.length}…`)
-                        .replace('{current}', String(i + 1))
-                        .replace('{total}', String(batch.length));
-                    if (!batch[i].row.isConnected) continue;
-                    const ok = await this._removeRow(batch[i]);
-                    if (ok) removed.push(batch[i]);
+                try {
+                    for (let i = 0; i < batch.length; i++) {
+                        runBtn.textContent = t('wlwbRemovingTpl', `Removing ${i + 1} / ${batch.length}…`)
+                            .replace('{current}', String(i + 1))
+                            .replace('{total}', String(batch.length));
+                        if (!batch[i].row.isConnected) continue;
+                        const ok = await this._removeRow(batch[i]);
+                        if (ok) removed.push(batch[i]);
+                    }
+                    this._appendLog(removed);
+                } finally {
+                    // A throw mid-run must not strand the button disabled for
+                    // the rest of the session.
+                    this._running = false;
+                    runBtn.disabled = false;
+                    runBtn.textContent = t('wlwbRemoveMatchedTpl', `Remove matched (max ${this._BATCH_LIMIT}/run)`)
+                        .replace('{limit}', String(this._BATCH_LIMIT));
                 }
-                this._appendLog(removed);
-                this._running = false;
-                runBtn.disabled = false;
-                runBtn.textContent = t('wlwbRemoveMatchedTpl', `Remove matched (max ${this._BATCH_LIMIT}/run)`)
-                    .replace('{limit}', String(this._BATCH_LIMIT));
                 const remaining = matched.length - batch.length;
                 const remainingNote = remaining > 0
                     ? ` ${t('wlwbRemovedRemainingTpl', `— ${remaining} still match, run again`).replace('{count}', String(remaining))}`
@@ -33146,11 +33165,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wlwb-panel button:focus-visible, .ytkit-wlwb-panel input:focus-visible, .ytkit-wlwb-panel select:focus-visible, .ytkit-wlwb-open:focus-visible { outline: 2px solid #ff8f40; outline-offset: 2px; }
                     @media (forced-colors: active) { .ytkit-wlwb-panel, .ytkit-wlwb-open { border: 1px solid ButtonText; } }
                 `, this.id, true);
-                this._navRule = () => setTimeout(() => this._injectButton(), 1500);
+                this._navRule = () => {
+                    clearTimeout(this._injectTimer);
+                    this._injectTimer = setTimeout(() => { this._injectTimer = null; this._injectButton(); }, 1500);
+                };
                 addNavigateRule('watchLaterWorkbench', this._navRule);
                 this._navRule();
             },
             destroy() {
+                clearTimeout(this._injectTimer); this._injectTimer = null;
                 removeNavigateRule('watchLaterWorkbench');
                 this._btn?.remove(); this._btn = null;
                 this._panel?.remove(); this._panel = null;
@@ -33817,12 +33840,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // whose label contains one of matchTexts. Same DOM path as the
             // notInterestedButton feature; menu items render async so the
             // lookup retries once after a short delay.
-            _applyNativeCardAction(card, matchTexts) {
+            _applyNativeCardAction(card, matchTexts, iconTypes = []) {
                 return new Promise((resolve) => {
                     const menuBtn = card.querySelector('ytd-menu-renderer yt-icon-button, ytd-menu-renderer button');
                     if (!menuBtn) { resolve(false); return; }
                     menuBtn.click();
                     const tryClick = (attempt) => {
+                        // Structural match first (locale-independent): the
+                        // menu item's Polymer data carries the feedback icon
+                        // type (NOT_INTERESTED / REMOVE). Text is the
+                        // fallback — it only works on English UIs.
+                        if (iconTypes.length) {
+                            const hosts = document.querySelectorAll('ytd-menu-service-item-renderer');
+                            for (const host of hosts) {
+                                const iconType = host?.data?.icon?.iconType || '';
+                                if (iconTypes.includes(iconType)) {
+                                    host.click();
+                                    resolve(true);
+                                    return;
+                                }
+                            }
+                        }
                         const items = document.querySelectorAll('ytd-menu-service-item-renderer yt-formatted-string, tp-yt-paper-listbox ytd-menu-service-item-renderer yt-formatted-string');
                         for (const item of items) {
                             const text = (item.textContent || '').toLowerCase();
@@ -33838,7 +33876,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                         // Close the orphaned menu so the page isn't left with a
                         // dangling dropdown when the item doesn't exist here.
-                        document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')?.setAttribute('aria-hidden', 'true');
+                        if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) { document.body.click(); }
                         resolve(false);
                     };
                     setTimeout(() => tryClick(0), 250);
@@ -33869,6 +33907,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const matchTexts = kind === 'dont-recommend'
                     ? ["don't recommend channel", 'don’t recommend channel']
                     : ['not interested'];
+                const iconTypes = kind === 'dont-recommend' ? ['REMOVE'] : ['NOT_INTERESTED'];
                 const picked = Array.from(this._selected.entries()).slice(0, this._SCRUB_CAP);
                 const skipped = this._selected.size - picked.length;
                 this._scrubRunning = true;
@@ -33879,7 +33918,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             results.push({ videoId, applied: false, reason: 'card-gone' });
                             continue;
                         }
-                        const applied = await this._applyNativeCardAction(card, matchTexts);
+                        const applied = await this._applyNativeCardAction(card, matchTexts, iconTypes);
                         results.push({ videoId, applied });
                         // Pace native feedback clicks so a session doesn't look
                         // like scripted burst traffic to YouTube's heuristics.

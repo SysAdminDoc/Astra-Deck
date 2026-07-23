@@ -34461,7 +34461,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     }
                                 }
                                 // Close menu if it's still open
-                                document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')?.setAttribute('aria-hidden', 'true');
+                                if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) { document.body.click(); }
                             });
                         }
                         // Visually dismiss immediately

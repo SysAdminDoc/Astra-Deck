@@ -39,6 +39,7 @@
             _observing: false,
             _navRuleId: 'deArrowNav',
             _generation: 0,
+            _routeToken: 0,
             _processTimer: null,
             _resetTimer: null,
             _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
@@ -79,7 +80,7 @@
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
-                    self._generation++;
+                    self._routeToken++;
                     clearTimeout(self._processTimer);
                     clearTimeout(self._resetTimer);
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
@@ -251,13 +252,14 @@
             },
             async _processPage() {
                 const gen = this._generation;
+                const route = this._routeToken;
                 const replaceTitles = appState.settings.daReplaceTitles;
                 const replaceThumbs = appState.settings.daReplaceThumbs;
                 const format = appState.settings.daTitleFormat || 'sentence';
                 const fallback = appState.settings.daFallbackFormat;
                 const renderers = document.querySelectorAll('ytd-rich-item-renderer:not([data-da-processed]), ytd-video-renderer:not([data-da-processed]), ytd-compact-video-renderer:not([data-da-processed]), ytd-grid-video-renderer:not([data-da-processed])');
                 for (const el of renderers) {
-                    if (gen !== this._generation) return;
+                    if (gen !== this._generation || route !== this._routeToken) return;
                     el.dataset.daProcessed = '1';
                     const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
                     if (!link) continue;
@@ -274,7 +276,7 @@
                         continue;
                     }
                     const branding = await this._fetchBranding(videoId);
-                    if (!branding || gen !== this._generation) continue;
+                    if (!branding || gen !== this._generation || route !== this._routeToken) continue;
                     if (replaceTitles) {
                         const titleEl = el.querySelector('#video-title, #video-title-link');
                         if (titleEl) {
@@ -323,7 +325,12 @@
                         const thumb = branding.thumbnails?.[0];
                         if (thumb?.timestamp !== undefined) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
-                            if (img && !img.classList.contains('da-replaced-thumb')) {
+                            if (img && !img.src) {
+                                // Lazy img not hydrated yet — let the next
+                                // pass replace it once the original src
+                                // exists so error/destroy restores work.
+                                delete el.dataset.daProcessed;
+                            } else if (img && !img.classList.contains('da-replaced-thumb')) {
                                 img.dataset.daOrigSrc = img.src;
                                 img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${videoId}&time=${thumb.timestamp}`;
                                 img.classList.add('da-replaced-thumb');

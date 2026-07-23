@@ -54,6 +54,8 @@
             return 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.';
         }
 
+        let _rydGeneration = 0;
+
         function _readCache(videoId) {
             if (!_cache) {
                 try { _cache = storageReadJSON('ytkit-ryd-cache', {}) || {}; }
@@ -67,7 +69,13 @@
         }
 
         function _writeCache(videoId, data) {
-            if (!_cache) _cache = {};
+            if (!_cache) {
+                // Load the persisted cache first — starting from {} here let a
+                // post-destroy fetch resolution overwrite the stored 500-entry
+                // cache with a single entry.
+                try { _cache = storageReadJSON('ytkit-ryd-cache', {}) || {}; }
+                catch { _cache = {}; }
+            }
             _cache[videoId] = { ts: Date.now(), ...data };
             const keys = Object.keys(_cache);
             if (keys.length > 500) {
@@ -179,6 +187,7 @@
             if (!isWatchPagePath()) return;
             const videoId = getVideoId?.();
             if (!videoId) return;
+            const generation = _rydGeneration;
             const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
             if (!dislikeButton) return;
             const data = await _fetch(videoId);
@@ -186,6 +195,7 @@
             // video changed (or we left the watch page) so we don't append the
             // previous video's dislike count onto the current video's button —
             // matches the route-token guards in dearrow/sponsorblock.
+            if (generation !== _rydGeneration) return;
             if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
             _pillEl?.remove();
             _estimateEl?.remove();
@@ -260,8 +270,17 @@
             icon: 'thumbs-down',
             pages: [PageTypes.WATCH],
 
+            _pagehideFlush: null,
             init() {
                 _ensureStyles();
+                this._pagehideFlush = () => {
+                    if (_persistTimer && _cache) {
+                        clearTimeout(_persistTimer);
+                        _persistTimer = null;
+                        try { storageWriteJSON('ytkit-ryd-cache', _cache); } catch { /* reason: best-effort unload flush */ }
+                    }
+                };
+                window.addEventListener('pagehide', this._pagehideFlush);
                 _navRule = () => {
                     // Track the pending timer so destroy() can cancel it —
                     // otherwise a navigation right before disable fires a
@@ -274,6 +293,11 @@
             },
 
             destroy() {
+                _rydGeneration += 1;
+                if (this._pagehideFlush) {
+                    window.removeEventListener('pagehide', this._pagehideFlush);
+                    this._pagehideFlush = null;
+                }
                 removeNavigateRule('returnDislike');
                 _navRule = null;
                 clearTimeout(_renderTimer);

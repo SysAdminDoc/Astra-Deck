@@ -432,8 +432,29 @@
         return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled || Math.abs(_panValue) > 0.001;
     }
 
+    var _resumeHooked = false;
+    function _resumeOnGesture(ctx) {
+        if (_resumeHooked) return;
+        _resumeHooked = true;
+        var kick = function () {
+            document.removeEventListener('pointerdown', kick, true);
+            document.removeEventListener('keydown', kick, true);
+            _resumeHooked = false;
+            try { ctx.resume()['catch'](function () {}); } catch (e) { /* reason: context may be closed */ }
+        };
+        document.addEventListener('pointerdown', kick, true);
+        document.addEventListener('keydown', kick, true);
+    }
+
     function ensureContext() {
         if (!_ctx || _ctx.state === 'closed') _ctx = new AC();
+        if (_ctx.state === 'suspended') {
+            // The attribute-observer path runs without a user gesture; a
+            // suspended context mutes the captured element entirely. Try an
+            // immediate resume, then fall back to the next real interaction.
+            try { _ctx.resume()['catch'](function () {}); } catch (e) { /* reason: resume may throw pre-gesture */ }
+            _resumeOnGesture(_ctx);
+        }
         return _ctx;
     }
 
@@ -456,6 +477,11 @@
         try {
             var ctx = ensureContext();
             _source = getOrCreateSource(video);
+            // Drop the dry source->destination passthrough that
+            // disconnectProcessing() left on this cached node: connect() is
+            // additive, so without this the destination sums the dry and
+            // processed paths after every disable->re-enable cycle.
+            try { _source.disconnect(); } catch (e) { /* reason: nothing connected yet */ }
             _monoMerge = ctx.createGain();
             _compressor = ctx.createDynamicsCompressor();
             _compressor.threshold.value = -24;
