@@ -5128,8 +5128,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // ytkit-ai-summaries storage key (416 → 415).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 415,
-        'SETTINGS_SCHEMA must cover all 415 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 416,
+        'SETTINGS_SCHEMA must cover all 416 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

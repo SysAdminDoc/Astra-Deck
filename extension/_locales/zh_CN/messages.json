@@ -1583,6 +1583,12 @@
   "feature_hidePinnedComments_name": {
     "message": "隐藏置顶评论"
   },
+  "feature_hidePlannedLivestreams_desc": {
+    "message": "在订阅页面上，隐藏仅显示“设置提醒”按钮的预定直播和首播。它们在开播后会自动重新显示。"
+  },
+  "feature_hidePlannedLivestreams_name": {
+    "message": "隐藏预定直播"
+  },
   "feature_hidePlayables_desc": {
     "message": "从信息流中隐藏 YouTube Playables 游戏内容"
   },

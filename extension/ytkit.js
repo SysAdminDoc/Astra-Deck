@@ -877,7 +877,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.49.10';
+    const YTKIT_VERSION = '4.50.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -3004,6 +3004,7 @@ return response;
             hideVideosLowViewThreshold: 1000,
             hideVideosHideLive: false,
             hideVideosHideUpcoming: false,
+            hidePlannedLivestreams: true,
             hideVideosHideMixes: false,
             hideVideosHidePlaylists: false,
             hideVideosHideMovies: false,
@@ -3230,7 +3231,7 @@ return response;
                 'hideVideosScopeHome', 'hideVideosScopeSubscriptions', 'hideVideosScopeSearch',
                 'hideVideosScopeWatch', 'hideVideosScopeChannels', 'hideVideosScopeOther',
                 'hideVideosLowViewFilter', 'hideVideosLowViewThreshold',
-                'hideVideosHideLive', 'hideVideosHideUpcoming', 'hideVideosHideMixes',
+                'hideVideosHideLive', 'hideVideosHideUpcoming', 'hidePlannedLivestreams', 'hideVideosHideMixes',
                 'hideVideosHidePlaylists', 'hideVideosHideMovies', 'hideVideosHideAutoDubbed',
                 'hideVideosWatchedRatio',
                 'hiddenActionButtonsManager', 'hiddenActionButtons', 'hiddenPlayerControlsManager',
@@ -33245,6 +33246,87 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove(); this._btn = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._navRule = null;
+            }
+        },
+        {
+            // v4.50.0: Hide planned livestreams / premieres on the
+            // Subscriptions feed. These cards show a "Notify me" (set
+            // reminder) button and "Scheduled for ..." metadata instead of a
+            // view count. They are hidden ONLY while not live — once the
+            // stream goes live YouTube re-renders the card without the notify
+            // button, so a fresh scan reveals it automatically. On by default.
+            id: 'hidePlannedLivestreams',
+            name: 'Hide planned livestreams',
+            description: 'On the Subscriptions page, hide scheduled livestreams and premieres that only show a "Notify me" button. They reappear automatically once they go live.',
+            group: 'Content',
+            icon: 'clock',
+            pages: [PageTypes.SUBSCRIPTIONS],
+            _rule: null,
+            _navRule: null,
+            _CARD_SELECTOR: 'ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
+            // "Notify me" / "Set reminder" button text across common locales.
+            _NOTIFY_RE: /(notify me|set reminder|remind me|get reminded|notificarme|avisarme|recordatorio|benachrichtigen|erinnerung|me pr[ée]venir|rappel|notificami|promemoria|напомнить|уведомить|通知する|リマインダー|알림\s*받기|通知我|设置提醒|إعلامي|تذكير)/i,
+            // Scheduled / upcoming metadata, matched in metadata rows + badges
+            // only (never the title) to avoid hiding a normal VOD whose title
+            // merely contains a word like "premiere".
+            _SCHEDULED_RE: /(scheduled for|premieres?|waiting for|starts in|live in|upcoming|programad|pr[ée]vu|geplant|programmat|запланир|プレミア|予定|首播|定于|مجدول)/i,
+            _isNotifyCard(card) {
+                try {
+                    const btns = card.querySelectorAll(
+                        'yt-flexible-actions-view-model button, .ytFlexibleActionsViewModelAction button, ytd-toggle-button-renderer, button[aria-label]'
+                    );
+                    for (const b of btns) {
+                        const label = (b.getAttribute && b.getAttribute('aria-label')) || '';
+                        const text = `${b.textContent || ''} ${label}`.trim();
+                        if (text && this._NOTIFY_RE.test(text)) return true;
+                    }
+                    const metaNodes = card.querySelectorAll(
+                        '.ytContentMetadataViewModelMetadataText, yt-content-metadata-view-model, #metadata-line, ytd-video-meta-block, ytd-thumbnail-overlay-time-status-renderer, .ytThumbnailBadgeViewModelHost, ytd-badge-supported-renderer'
+                    );
+                    for (const n of metaNodes) {
+                        const label = (n.getAttribute && n.getAttribute('aria-label')) || '';
+                        const text = `${n.textContent || ''} ${label}`;
+                        if (text && this._SCHEDULED_RE.test(text)) return true;
+                    }
+                } catch (e) { void e; }
+                return false;
+            },
+            _applyTo(card) {
+                if (!(card instanceof HTMLElement)) return;
+                card.classList.toggle('ytkit-planned-livestream-hidden', this._isNotifyCard(card));
+            },
+            _collectCards(root, out) {
+                if (!(root instanceof HTMLElement)) return;
+                const wrap = root.closest && root.closest(this._CARD_SELECTOR);
+                if (wrap) out.add(wrap);
+                if (typeof root.querySelectorAll === 'function') {
+                    for (const c of root.querySelectorAll(this._CARD_SELECTOR)) out.add(c);
+                }
+            },
+            _scan(roots) {
+                if (window.location.pathname !== '/feed/subscriptions') return;
+                const cards = new Set();
+                for (const root of roots) this._collectCards(root, cards);
+                for (const card of cards) this._applyTo(card);
+            },
+            init() {
+                injectStyle('.ytkit-planned-livestream-hidden { display: none !important; }', 'planned-livestream-hidden', true);
+                this._rule = (target, added) => {
+                    if (window.location.pathname !== '/feed/subscriptions') return;
+                    this._scan(Array.isArray(added) && added.length ? added : [document.body]);
+                };
+                addScopedMutationRule('hidePlannedLivestreams', 'ytd-rich-item-renderer, yt-lockup-view-model', this._rule);
+                this._navRule = () => { this._scan([document.body]); };
+                addNavigateRule('hidePlannedLivestreams', this._navRule);
+                this._scan([document.body]);
+            },
+            destroy() {
+                removeScopedMutationRule('hidePlannedLivestreams');
+                removeNavigateRule('hidePlannedLivestreams');
+                this._rule = null;
+                this._navRule = null;
+                document.querySelectorAll('.ytkit-planned-livestream-hidden').forEach(el => el.classList.remove('ytkit-planned-livestream-hidden'));
+                document.getElementById('yt-suite-style-planned-livestream-hidden')?.remove();
             }
         },
         {

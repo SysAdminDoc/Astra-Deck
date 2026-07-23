@@ -1583,6 +1583,12 @@
   "feature_hidePinnedComments_name": {
     "message": "إخفاء التعليقات المثبتة"
   },
+  "feature_hidePlannedLivestreams_desc": {
+    "message": "في صفحة الاشتراكات، إخفاء عمليات البث المباشر المجدولة والعروض الأولى التي تعرض زر \"إعلامي\" فقط. تظهر تلقائيًا بمجرد أن تبدأ."
+  },
+  "feature_hidePlannedLivestreams_name": {
+    "message": "إخفاء عمليات البث المباشر المجدولة"
+  },
   "feature_hidePlayables_desc": {
     "message": "إخفاء محتوى ألعاب YouTube Playables من الخلاصات"
   },
