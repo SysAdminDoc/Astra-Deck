@@ -216,7 +216,7 @@
                     html:not([dark]) .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                     html:not([dark]) .ytkit-sub-group-chip[data-depth="1"]{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.34);color:#1d4ed8;}
                     html:not([dark]) .ytkit-sub-group-empty{background:rgba(245,158,11,0.1);border-color:rgba(180,83,9,0.4);color:#92400e;}
-                `, 'subscription-groups');
+                `, 'subscription-groups', true);
             },
 
             _readGroups() {
@@ -579,7 +579,7 @@
             _applyNewSinceMarkers() {
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                 if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
-                const lastVisit = this._readLastVisit();
+                const lastVisit = this._sessionLastVisit || this._readLastVisit();
                 const cards = Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'));
                 return this._runCardBatch('new-since-markers', cards, card => {
                     const channelId = this._extractChannelIdFromCard(card);
@@ -668,7 +668,7 @@
                 return '';
             },
 
-            _isCardNewSinceLastVisit(card, channelId, lastVisit = this._readLastVisit()) {
+            _isCardNewSinceLastVisit(card, channelId, lastVisit = this._sessionLastVisit || this._readLastVisit()) {
                 const id = String(channelId || '');
                 if (!id) return false;
                 const lastSeen = Number(lastVisit?.[id]) || 0;
@@ -678,7 +678,7 @@
                 return (Date.now() - ageMs) > lastSeen;
             },
 
-            _collectRenderedCardSummaries(lastVisit = this._readLastVisit()) {
+            _collectRenderedCardSummaries(lastVisit = this._sessionLastVisit || this._readLastVisit()) {
                 return Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'))
                     .map(card => {
                         const channelId = this._extractChannelIdFromCard(card);
@@ -747,6 +747,11 @@
                     }
                 }
                 const marked = markedChannels.size;
+                if (this._sessionLastVisit) {
+                    for (const channelId of markedChannels) {
+                        this._sessionLastVisit[channelId] = now;
+                    }
+                }
                 this._writeLastVisit(this._capLastVisitMap(next));
                 this._applyNewSinceMarkers();
                 this._applySort();
@@ -1024,7 +1029,7 @@
             _renderDigestPanel() {
                 if (!this._toolbar?.isConnected) this._renderToolbar();
                 if (!this._toolbar?.isConnected) return;
-                const lastVisit = this._readLastVisit();
+                const lastVisit = this._sessionLastVisit || this._readLastVisit();
                 const summaries = this._collectRenderedCardSummaries(lastVisit);
                 const entries = this._buildGroupDigestEntries(this._readGroups(), lastVisit);
                 const allNew = summaries.filter(item => item.isNew);
@@ -1773,6 +1778,10 @@
                         this._renderDeadChannelMarkers();
                         this._applySort();
                     }, 1200);
+                    // Freeze the pre-stamp map for this pageview: markers and
+                    // digest re-renders keep using it after the 8s stamp so
+                    // badges survive the whole visit.
+                    this._sessionLastVisit = this._readLastVisit();
                     this._stampTimer = setTimeout(() => {
                         this._stampTimer = null;
                         if (window.location.pathname !== '/feed/subscriptions') return;
@@ -1791,6 +1800,7 @@
             },
 
             destroy() {
+                this._sessionLastVisit = null;
                 removeNavigateRule(this.id);
                 removeScopedMutationRule(this.id);
                 this._cancelAllBudgetedScans();

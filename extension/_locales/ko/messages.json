@@ -311,6 +311,12 @@
   "dlProgressLostToast": {
     "message": "Astra Downloader와의 연결이 끊어졌습니다."
   },
+  "dlProgressLostTrackCopy": {
+    "message": "Astra Downloader reported an unrecognized status. Check its window for the result."
+  },
+  "dlProgressLostTrackTitle": {
+    "message": "Lost track of this download"
+  },
   "dlProgressPreparing": {
     "message": "다운로드 준비 중…"
   },
@@ -358,6 +364,9 @@
   },
   "dlProgressStateSkipped": {
     "message": "건너뜀"
+  },
+  "dlProgressStateUnknown": {
+    "message": "Status Unknown"
   },
   "dlProgressWaiting": {
     "message": "대기 중"

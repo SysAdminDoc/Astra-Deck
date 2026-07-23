@@ -713,6 +713,7 @@
             let pollTimer = null;
             let stopped = false;
             let consecutiveErrors = 0;
+            let unknownStatusStrikes = 0;
             const MAX_CONSECUTIVE_ERRORS = 5;
 
             const stopPolling = () => {
@@ -740,7 +741,8 @@
                     consecutiveErrors = 0;
 
                     if (data.title) title.textContent = data.title;
-                    const p = Math.min(data.progress || 0, 100);
+                    const rawProgress = Number(data.progress);
+                    const p = Number.isFinite(rawProgress) ? Math.max(0, Math.min(rawProgress, 100)) : 0;
                     fill.style.width = p + '%';
                     pct.textContent = p.toFixed(1) + '%';
                     const pendingStatus = ['pending', 'queued', 'paused', 'needs-auth'].includes(data.status);
@@ -814,6 +816,22 @@
                             MediaDLManager.showInstallPrompt('retry');
                         }
                         return;
+                    }
+                    const knownStatuses = ['pending', 'queued', 'paused', 'needs-auth', 'downloading', 'processing', 'merging', 'extracting', 'retrying'];
+                    if (data.status && !knownStatuses.includes(data.status)) {
+                        unknownStatusStrikes += 1;
+                        if (unknownStatusStrikes >= 8) {
+                            stopPolling();
+                            title.textContent = t('dlProgressLostTrackTitle', 'Lost track of this download');
+                            pct.textContent = '';
+                            spd.textContent = '';
+                            eta.textContent = '';
+                            setProgressState('warning', t('dlProgressStateUnknown', 'Status Unknown'), t('dlProgressLostTrackCopy', 'Astra Downloader reported an unrecognized status. Check its window for the result.'));
+                            setTimeout(() => panel.remove(), 8000);
+                            return;
+                        }
+                    } else {
+                        unknownStatusStrikes = 0;
                     }
                 } catch (err) {
                     consecutiveErrors += 1;
@@ -1063,7 +1081,12 @@
                 }
             };
 
-            if (browserCookies.listAsync) {
+            // SECURITY: only ship YouTube session cookies when the companion's
+            // identity was proven through the native-messaging host. On the
+            // legacy /health token path any local process that binds a
+            // candidate port and echoes the health shape could otherwise
+            // harvest the full cookie jar.
+            if (browserCookies.listAsync && MediaDLManager._tokenSource === 'native') {
                 try {
                     const cookies = await browserCookies.listAsync({ domain: '.youtube.com' });
                     if (cookies.length > 0) {
@@ -1080,6 +1103,8 @@
                 } catch (e) {
                     DebugManager.log('MediaDL', `Extension cookie bridge error: ${e.message}`);
                 }
+            } else if (browserCookies.listAsync) {
+                DebugManager.log('MediaDL', 'Cookies withheld: companion identity not native-verified (legacy health token)');
             }
 
             await sendDownload();
@@ -1425,6 +1450,10 @@
                 };
                 const escHandler = (e) => { if (e.key === 'Escape') _closeDlPopup(); };
                 setTimeout(() => {
+                    // If the popup was closed inside the 50ms arm window its
+                    // cleanup already ran — attaching now would leak both
+                    // capture-phase listeners for the rest of the page.
+                    if (!popup.isConnected) return;
                     document.addEventListener('click', outsideClick, true);
                     document.addEventListener('keydown', escHandler);
                 }, 50);
@@ -1484,7 +1513,7 @@
                     .ytkit-download-health__pill[data-tone="ok"]{background:rgba(34,197,94,0.12);color:#bbf7d0;border-color:rgba(34,197,94,0.32);}
                     .ytkit-download-health__pill[data-tone="warn"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
                     .ytkit-download-health__pill[data-tone="err"]{background:rgba(239,68,68,0.14);color:#fecaca;border-color:rgba(239,68,68,0.36);}
-                `, 'download-health');
+                `, 'download-health', true);
             },
 
             async _fetchHealth() {
@@ -1675,7 +1704,7 @@
                     .ytkit-stream-links-panel button:hover{background:rgba(255,255,255,0.12);}
                     .ytkit-stream-links-panel__close{position:absolute;top:8px;right:8px;}
                     .ytkit-stream-links-panel__warn{color:#fbbf24;font-size:11px;margin-top:8px;}
-                `, 'stream-links-panel');
+                `, 'stream-links-panel', true);
             },
 
             _parsePlayerResponse() {
@@ -1868,7 +1897,11 @@
                     });
                     if (data?.status === 'redirect' || data?.status === 'stream' || data?.status === 'tunnel') {
                         const mediaUrl = data.url || data.tunnel || data.stream;
-                        if (mediaUrl) {
+                        // Only open web URLs — the instance is remote/user-set
+                        // and its response must not steer us to another scheme.
+                        let mediaProtocol = '';
+                        try { mediaProtocol = new URL(mediaUrl).protocol; } catch (e) { void e; }
+                        if (mediaProtocol === 'https:' || mediaProtocol === 'http:') {
                             window.open(mediaUrl, '_blank', 'noopener,noreferrer');
                             if (typeof showToast === 'function') showToast('Cobalt fallback: opened media URL in new tab.', '#22c55e');
                             return;
@@ -1939,7 +1972,7 @@
                     .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-dl-history-btn:hover,.ytkit-dl-history-panel__close:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
-                `, 'dl-history-panel');
+                `, 'dl-history-panel', true);
             },
 
             async _fetchHistory() {

@@ -308,6 +308,12 @@
   "dlProgressLostToast": {
     "message": "已失去与本地下载器的联系。"
   },
+  "dlProgressLostTrackCopy": {
+    "message": "Astra Downloader 报告了无法识别的状态。请在其窗口中查看结果。"
+  },
+  "dlProgressLostTrackTitle": {
+    "message": "已无法跟踪此下载"
+  },
   "dlProgressPreparing": {
     "message": "正在准备下载…"
   },
@@ -355,6 +361,9 @@
   },
   "dlProgressStateSkipped": {
     "message": "已跳过"
+  },
+  "dlProgressStateUnknown": {
+    "message": "状态未知"
   },
   "dlProgressWaiting": {
     "message": "等待中"
