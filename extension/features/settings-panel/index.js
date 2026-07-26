@@ -227,8 +227,16 @@ function buildSettingsPanel() {
 
         const categoryOrder = ['Video Player', 'Playback', 'Comments', 'Watch Page', 'Content', 'Home / Subscriptions', 'Theme', 'Live Chat', 'Downloads', 'Advanced'];
 
-        // Group labels: maps first category of each group → label text
-        const categoryGroupLabels = {};
+        // Group labels: maps first category of each group → label text.
+        // These make the dense category list scan like a deliberate control
+        // center while preserving the existing tab order and drag contract.
+        const categoryGroupLabels = {
+            'Video Player': t('panelNavGroupPlayer', 'Player'),
+            'Comments': t('panelNavGroupInteraction', 'Interaction'),
+            'Home / Subscriptions': t('panelNavGroupPersonalization', 'Personalization'),
+            'Live Chat': t('panelNavGroupCommunity', 'Community'),
+            'Advanced': t('panelNavGroupSystem', 'System'),
+        };
         const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
         liveFeatureList.forEach(f => {
             if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f);
@@ -1738,6 +1746,15 @@ function buildSettingsPanel() {
             const catId = cat.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
             const parentFeatures = categoryFeatures.filter(f => !f.isSubFeature);
             const subFeatures = categoryFeatures.filter(f => f.isSubFeature);
+            // Keep the established preference-first ordering, then use the
+            // first three select controls as a compact category snapshot.
+            const sortedParentFeatures = [...parentFeatures].sort((a, b) => {
+                const aIsDropdown = a.type === 'select';
+                const bIsDropdown = b.type === 'select';
+                if (aIsDropdown && !bIsDropdown) return -1;
+                if (!aIsDropdown && bIsDropdown) return 1;
+                return 0;
+            });
 
             const pane = document.createElement('section');
             pane.id = `ytkit-pane-${catId}`;
@@ -1777,6 +1794,39 @@ function buildSettingsPanel() {
             paneTitle.appendChild(paneTitleH2);
             paneTitle.appendChild(paneDescription);
             paneTitle.appendChild(paneMeta);
+
+            const paneContextFeatures = sortedParentFeatures
+                .filter((feature) => feature.type === 'select')
+                .slice(0, 3);
+            const paneContext = document.createElement('div');
+            paneContext.className = 'ytkit-pane-context';
+            paneContext.setAttribute(
+                'aria-label',
+                t('panelPaneContextAria', `${cat} current preferences`)
+            );
+            paneContextFeatures.forEach((feature) => {
+                const settingKey = feature.settingKey || feature.id;
+                const options = normalizeSelectOptions(feature.options);
+                const currentValue = String(appState.settings[settingKey] ?? options[0]?.value ?? '');
+                const currentLabel = options.find((option) => option.value === currentValue)?.label || currentValue;
+                const item = document.createElement('div');
+                item.className = 'ytkit-pane-context-item';
+                const label = document.createElement('span');
+                label.className = 'ytkit-pane-context-label';
+                const fullFeatureName = getFeatureName(feature);
+                label.textContent = fullFeatureName
+                    .replace(/^(Persistent|Preferred|Initial)\s+/, '')
+                    .replace(/\s+(Selector|Format|Language)$/, '');
+                label.title = fullFeatureName;
+                const value = document.createElement('strong');
+                value.className = 'ytkit-pane-context-value';
+                value.dataset.featureId = feature.id;
+                value.textContent = currentLabel;
+                value.title = currentLabel;
+                item.appendChild(label);
+                item.appendChild(value);
+                paneContext.appendChild(item);
+            });
 
             const toggleAllLabel = document.createElement('label');
             toggleAllLabel.className = 'ytkit-toggle-all';
@@ -1872,6 +1922,7 @@ function buildSettingsPanel() {
             paneActions.appendChild(toggleAllLabel);
 
             paneHeader.appendChild(paneTitle);
+            if (paneContextFeatures.length > 0) paneHeader.appendChild(paneContext);
             paneHeader.appendChild(paneActions);
             pane.appendChild(paneHeader);
 
@@ -2029,15 +2080,6 @@ function buildSettingsPanel() {
             // Features grid
             const grid = document.createElement('div');
             grid.className = 'ytkit-features-grid';
-
-            // Sort features: dropdowns/selects first, then others
-            const sortedParentFeatures = [...parentFeatures].sort((a, b) => {
-                const aIsDropdown = a.type === 'select';
-                const bIsDropdown = b.type === 'select';
-                if (aIsDropdown && !bIsDropdown) return -1;
-                if (!aIsDropdown && bIsDropdown) return 1;
-                return 0;
-            });
 
             sortedParentFeatures.forEach(f => {
                 const card = buildFeatureCard(f, config.color);
@@ -3192,6 +3234,13 @@ function attachUIEventListeners() {
                 }
 
                 const selectedText = e.target.options[e.target.selectedIndex].text;
+                const contextValue = doc.querySelector(
+                    `.ytkit-pane-context-value[data-feature-id="${featureId}"]`
+                );
+                if (contextValue) {
+                    contextValue.textContent = selectedText;
+                    contextValue.title = selectedText;
+                }
                 createToast(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}`, 'success');
                 setPanelStatus(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}.`, 'success');
             }

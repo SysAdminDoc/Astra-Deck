@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- Re-imagined the in-page Settings workspace as a premium control center:
+  grouped category navigation, live category preference summaries, visible
+  setting glyphs, a contained control canvas, clearer live-apply state, and
+  stronger footer actions across desktop, mobile, light, dark, and RTL modes.
+
+### Fixed
+
+- The Settings and recovery actions now download the real
+  `AstraDownloader.exe` asset from GitHub release `v4.46.4`; the former
+  `releases/latest/download` alias resolved against an extension-only release
+  and returned an HTML/404 response instead of the executable.
+
 ## [4.50.1] - 2026-07-23
 
 Deep engineering + product-quality audit: ~45 verified fixes across seven

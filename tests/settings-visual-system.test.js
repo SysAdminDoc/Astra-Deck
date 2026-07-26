@@ -18,19 +18,23 @@ const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
 
-test('settings visual system replaces boxed dashboard chrome with a compact settings document', () => {
-    assert.match(visualSystemSource, /settings visual system v4 — calm, compact document UI/);
+test('settings visual system renders the premium control-center hierarchy', () => {
+    assert.match(visualSystemSource, /settings visual system v4 — premium control-center UI/);
     assert.match(
         visualSystemSource,
-        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*70px[\s\S]*?border:\s*0[\s\S]*?border-bottom:\s*1px solid var\(--ytkit-v3-border\)[\s\S]*?background:\s*transparent/
+        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*76px[\s\S]*?border:\s*0[\s\S]*?border-bottom:\s*1px solid var\(--ytkit-v3-border\)[\s\S]*?background:\s*rgba\(255,255,255,0\.008\)/
     );
     assert.match(visualSystemSource, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*29px/);
     assert.match(visualSystemSource, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
     assert.match(visualSystemSource, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*14px[\s\S]*?white-space:\s*nowrap/);
     assert.match(
         visualSystemSource,
-        /\.ytkit-feature-glyph,[\s\S]*?\.ytkit-feature-meta,[\s\S]*?\.ytkit-feature-badge\s*\{\s*display:\s*none/
+        /\.ytkit-feature-glyph\s*\{[\s\S]*?display:\s*grid[\s\S]*?width:\s*28px/
     );
+    assert.match(visualSystemSource, /\.ytkit-nav-group-label\s*\{[\s\S]*?display:\s*block[\s\S]*?text-transform:\s*uppercase/);
+    assert.match(visualSystemSource, /\.ytkit-pane-context\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+    assert.match(settingsPanel, /categoryGroupLabels = \{[\s\S]*?panelNavGroupPlayer[\s\S]*?panelNavGroupSystem/);
+    assert.match(settingsPanel, /paneContextFeatures[\s\S]*?ytkit-pane-context-value/);
     assert.match(visualSystemSource, /\.ytkit-info-card\s*\{\s*grid-column:\s*1 \/ -1/);
     assert.doesNotMatch(settingsPanel, /card\.style\.cssText = 'background: linear-gradient/);
     assert.match(
@@ -53,7 +57,7 @@ test('settings visual system replaces boxed dashboard chrome with a compact sett
     assert.match(visualSystemSource, /#ytkit-reset-active-section\s*\{\s*display:\s*none/);
     assert.match(
         visualSystemSource,
-        /\.ytkit-body\s*\{[\s\S]*?grid-template-columns:\s*240px minmax\(0, 1fr\)/
+        /\.ytkit-body\s*\{[\s\S]*?grid-template-columns:\s*260px minmax\(0, 1fr\)/
     );
     assert.match(visualSystemSource, /\.ytkit-insights\s*\{\s*display:\s*none/);
     assert.match(visualSystemSource, /\.ytkit-header\s*\{[\s\S]*?min-height:\s*64px/);

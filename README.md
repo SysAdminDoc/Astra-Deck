@@ -62,14 +62,11 @@ Astra Deck and Astra Downloader are separate installs. The browser extension can
 be installed from the release ZIP/XPI or userscript path above; video and audio
 downloads need the local Astra Downloader companion running on this device.
 
-Current public release state: the latest release ships extension and
-userscript artifacts only — `AstraDownloader.exe` and
-`AstraDownloader.exe.sha256` are **not** attached yet. The in-page setup
-prompt, toolbar recovery action, and companion update button are already wired
-to the release asset path, but the public download cannot complete until a
-release attaches both companion assets. Check the
-[latest release page](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
-for the live asset list.
+The in-page setup prompt and toolbar recovery action download
+[`AstraDownloader.exe`](https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.46.4/AstraDownloader.exe)
+directly from the newest GitHub release that carries the companion. This URL is
+pinned because newer extension-only releases do not carry the executable, so
+GitHub's `releases/latest/download` alias cannot resolve it.
 
 For current source-checkout testing on Windows:
 
