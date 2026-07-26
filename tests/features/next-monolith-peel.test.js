@@ -159,6 +159,28 @@ test('downloadUI factory returns all required exports', () => {
     assert.equal(typeof result.showNativeChannelRequired, 'function');
 });
 
+test('downloadUI Settings installer downloads the real GitHub release asset', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const result = mod.createDownloadUIFeature({
+        triggerDownload: async (...args) => { calls.push(args); },
+    });
+
+    assert.equal(
+        result.MediaDLManager.INSTALLER_URL,
+        'https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.46.4/AstraDownloader.exe'
+    );
+    assert.equal(await result.MediaDLManager.downloadInstaller(), true);
+    assert.deepEqual(calls, [[
+        result.MediaDLManager.INSTALLER_URL,
+        'AstraDownloader.exe',
+        { showInFolder: true },
+    ]]);
+});
+
 test('downloadUI MediaDLManager prefers native messaging token over /health token echo', async () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',

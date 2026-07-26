@@ -2084,7 +2084,7 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     );
 });
 
-test('README documents Astra Downloader companion setup and pending release assets', () => {
+test('README documents the working Astra Downloader companion release asset', () => {
     const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
     const signingDocs = fs.readFileSync(
         path.join(__dirname, '..', 'docs', 'signing-keys.md'), 'utf8'
@@ -2092,10 +2092,10 @@ test('README documents Astra Downloader companion setup and pending release asse
 
     assert.match(readme, /### Astra Downloader Companion Setup/,
         'README must give the companion its own setup section');
-    assert.match(readme, /`AstraDownloader\.exe` and\s+`AstraDownloader\.exe\.sha256` are \*\*not\*\* attached yet/,
-        'README must disclose that companion release assets are pending without hardcoding a tag');
-    assert.match(readme, /releases\/latest\)\s*\nfor the live asset list/,
-        'README must point readers at the live release page instead of a hardcoded version claim');
+    assert.match(readme, /releases\/download\/v4\.46\.4\/AstraDownloader\.exe/,
+        'README must link to the newest release that actually carries AstraDownloader.exe');
+    assert.match(readme, /GitHub's `releases\/latest\/download` alias cannot resolve it/,
+        'README must explain why the generic latest-release asset route is not used');
     assert.match(readme, /py -3\.12 -m venv \.venv/,
         'README must isolate source-checkout companion dependencies in a virtual environment');
     assert.match(readme, /\.\\\.venv\\Scripts\\python\.exe -m pip install --require-virtualenv -r astra_downloader\/requirements\.txt/,
@@ -9084,8 +9084,8 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
         'updateCompanion must forward the per-install token');
     assert.match(updateBlock, /timeout:\s*180000/,
         'updateCompanion must allow enough time for exe download and scheduling');
-    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe'/,
-        'installer and companion update paths must point at the GitHub Release exe, not a raw-root file');
+    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/download\/v4\.46\.4\/AstraDownloader\.exe'/,
+        'installer paths must point at a GitHub Release that actually carries the exe, not the asset-less latest release or a raw-root file');
 
     const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_COMPANION'");
     assert.ok(handlerStart > -1,
