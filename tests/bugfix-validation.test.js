@@ -1716,3 +1716,65 @@ test('core storage retry rebuild uses a prototype-less merge target', () => {
     assert.ok(source.includes('Object.create(null)'),
         'storage module should keep using Object.create(null) for pending writes');
 });
+
+test('compact layout preserves YouTube playlist and show sidebar offsets', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf("cssFeature('compactLayout'");
+    const end = source.indexOf("cssFeature('thinScrollbar'", start);
+    assert.ok(start > -1 && end > start, 'compactLayout feature should exist');
+
+    const block = source.slice(start, end);
+    assert.match(
+        block,
+        /ytd-two-column-browse-results-renderer:not\(\[page-subtype="playlist"\]\):not\(\[page-subtype="show"\]\)\s*\{\s*padding:\s*8px !important;/,
+        'compact spacing must not override YouTube sidebar offsets on playlist or show pages'
+    );
+    assert.doesNotMatch(
+        block,
+        /(?:^|[\s`])ytd-two-column-browse-results-renderer\s*\{\s*padding:\s*8px !important;/,
+        'a bare padding shorthand would move playlist rows underneath the fixed sidebar'
+    );
+});
+
+test('hidden guide re-anchors fixed playlist and show headers to the full-width page', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf("id: 'hideSidebar'");
+    const end = source.indexOf("id: 'uiStyleManager'", start);
+    assert.ok(start > -1 && end > start, 'hideSidebar feature should exist');
+
+    const block = source.slice(start, end);
+    assert.match(
+        block,
+        /ytd-browse\[page-subtype="playlist"\]\s+yt-page-header-renderer\.page-header-sidebar,\s*ytd-browse\[page-subtype="show"\]\s+yt-page-header-renderer\.page-header-sidebar\s*\{\s*left:\s*0 !important;/,
+        'fixed playlist/show headers must move with the full-width page manager when the guide is hidden'
+    );
+});
+
+test('info-panel cleanup hides age-warning endpoints without hiding generic watch links', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf("cssFeature('hideInfoPanels'");
+    const end = source.indexOf("id: 'redirectToVideosTab'", start);
+    assert.ok(start > -1 && end > start, 'hideInfoPanels feature should exist');
+
+    const block = source.slice(start, end);
+    const endpoint = '.yt-formatted-string.style-scope.yt-simple-endpoint';
+    assert.ok(
+        block.includes(`ytd-watch-flexy ytd-player-error-message-renderer ${endpoint}`),
+        'player error age-warning endpoints should be hidden'
+    );
+    assert.ok(
+        block.includes(`ytd-watch-flexy ytd-watch-metadata .ytd-watch-metadata.style-scope > ${endpoint}`),
+        'watch metadata age-warning endpoints should be hidden'
+    );
+    assert.doesNotMatch(
+        block,
+        new RegExp(`(?:^|[,\\n]\\s*)${endpoint.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[,\\{]`),
+        'the generic endpoint selector must stay context-scoped so channel and product links remain visible'
+    );
+});
