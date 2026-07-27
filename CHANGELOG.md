@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.2] - 2026-07-26
+
 ### Changed
 
 - Re-imagined the in-page Settings workspace as a premium control center:
@@ -15,6 +17,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Compact Layout no longer overrides YouTube's reserved playlist/show sidebar
+  offset, preventing playlist rows from sliding underneath the fixed playlist
+  card on the current `page-subtype="playlist"` layout. Hide Sidebar now also
+  re-anchors that fixed card to the full-width page instead of leaving it at
+  YouTube's removed 240px guide offset.
+- Age-restriction/player-warning endpoints are hidden in their watch-page error
+  and title-metadata contexts without globally suppressing the same generic
+  endpoint class used by channel and product links.
+- The local Firefox lint toolchain now resolves `brace-expansion` to the
+  patched 5.0.8 release, clearing the current unbounded-expansion audit finding
+  without downgrading `web-ext`.
 - The Settings and recovery actions now download the real
   `AstraDownloader.exe` asset from GitHub release `v4.46.4`; the former
   `releases/latest/download` alias resolved against an extension-only release

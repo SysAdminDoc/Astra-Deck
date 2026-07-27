@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "astra-deck",
-  "version": "4.50.1",
+  "version": "4.50.2",
   "description": "Chrome/Firefox MV3 extension and Tampermonkey userscript for YouTube enhancement",
   "author": "SysAdminDoc",
   "license": "MIT",
@@ -64,6 +64,7 @@
   },
   "overrides": {
     "adm-zip": "^0.6.0",
+    "brace-expansion": "5.0.8",
     "shell-quote": "^1.10.0"
   }
 }

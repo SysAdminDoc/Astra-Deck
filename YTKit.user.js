@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.50.1
+// @name         YTKit v4.50.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.50.1
+// @version      4.50.2
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -26736,7 +26736,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.50.1';
+    const YTKIT_VERSION = '4.50.2';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -29707,6 +29707,10 @@
                     #guide, #guide-button, ytd-mini-guide-renderer, tp-yt-app-drawer { display: none !important; }
                     tp-yt-app-drawer[opened] + .opened, #scrim.opened { display: none !important; pointer-events: none !important; }
                     ytd-page-manager { margin-left: 0 !important; }
+                    ytd-browse[page-subtype="playlist"] yt-page-header-renderer.page-header-sidebar,
+                    ytd-browse[page-subtype="show"] yt-page-header-renderer.page-header-sidebar {
+                        left: 0 !important;
+                    }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
@@ -30077,7 +30081,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             `ytd-rich-grid-renderer { --ytd-rich-grid-row-padding: 0 !important; }
                     ytd-rich-item-renderer { margin-bottom: 8px !important; }
                     #contents.ytd-rich-grid-renderer { padding-top: 8px !important; }
-                    ytd-two-column-browse-results-renderer { padding: 8px !important; }
+                    ytd-two-column-browse-results-renderer:not([page-subtype="playlist"]):not([page-subtype="show"]) { padding: 8px !important; }
                     ytd-watch-flexy[flexy] #primary.ytd-watch-flexy { padding-top: 12px !important; }`),
         cssFeature('thinScrollbar', 'Thin Scrollbar', 'Use a slim, unobtrusive scrollbar', 'Theme', 'grip-vertical',
             `*::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
@@ -30389,7 +30393,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .YtmPaidContentOverlayHost, .ytmPaidContentOverlayHost,
                     .ytp-paid-content-overlay, .ytp-paid-content-overlay-link`),
         cssFeature('hideInfoPanels', 'Hide Info Panels', 'Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)', 'Watch Page', 'info-off',
-            `#clarify-box,#clarify-box.attached-message,ytd-info-panel-container-renderer,ytd-info-panel-content-renderer,ytd-watch-flexy #clarify-box,ytd-watch-flexy ytd-info-panel-container-renderer,ytd-clarification-renderer,.ytd-info-panel-container-renderer,.ytp-info-panel-preview{display:none !important;}`),
+            `#clarify-box,#clarify-box.attached-message,ytd-info-panel-container-renderer,ytd-info-panel-content-renderer,ytd-watch-flexy #clarify-box,ytd-watch-flexy ytd-info-panel-container-renderer,ytd-clarification-renderer,.ytd-info-panel-container-renderer,.ytp-info-panel-preview,
+                    ytd-watch-flexy ytd-player-error-message-renderer .yt-formatted-string.style-scope.yt-simple-endpoint,
+                    ytd-watch-flexy ytd-video-primary-info-renderer > .yt-formatted-string.style-scope.yt-simple-endpoint,
+                    ytd-watch-flexy ytd-video-primary-info-renderer .ytd-video-primary-info-renderer.style-scope > .yt-formatted-string.style-scope.yt-simple-endpoint,
+                    ytd-watch-flexy ytd-watch-metadata > .yt-formatted-string.style-scope.yt-simple-endpoint,
+                    ytd-watch-flexy ytd-watch-metadata .ytd-watch-metadata.style-scope > .yt-formatted-string.style-scope.yt-simple-endpoint{display:none !important;}`),
         {
             id: 'redirectToVideosTab',
             name: 'Channels → Videos Tab',
