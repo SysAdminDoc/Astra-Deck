@@ -614,6 +614,11 @@ class DownloadManagerCore:
     ALLOWED_VIDEO_FMT = {'mp4', 'mkv', 'webm'}
     ALLOWED_AUDIO_FMT = {'mp3', 'm4a', 'opus', 'flac', 'wav'}
     ALLOWED_QUALITY = {'best', '2160', '1440', '1080', '720', '480'}
+    FORMATS_PROBE_LIMIT = 2
+    FORMATS_BUSY_MESSAGE = (
+        'Astra Downloader is already looking up formats for other videos. '
+        'Try again in a moment.'
+    )
 
     def __init__(self, config, history, queue_path=None, *, dependencies, progress_updated, download_completed):
         missing = sorted(set(_REQUIRED_MANAGER_DEPENDENCIES) - set(dependencies))
@@ -629,6 +634,10 @@ class DownloadManagerCore:
         self._next_order = 0
         self._lock = threading.Lock()
         self._running_ids = set()
+        # Bound concurrent `yt-dlp -J` format probes: each one holds a
+        # waitress worker thread for up to 60s, and the pool only has 8 —
+        # unbounded probes could starve /health, /status and /download.
+        self._formats_gate = threading.Semaphore(self.FORMATS_PROBE_LIMIT)
         self._queue_path = Path(queue_path) if queue_path else None
         self._queue_store = (
             DownloadQueueStore(
@@ -975,11 +984,13 @@ class DownloadManagerCore:
             return None, err
         audio_only = self._dependencies['coerce_bool'](audio_only, False)
 
-        # A download was initiated — open the throttled yt-dlp auto-update
-        # window. Fire-and-forget: it only acts once per interval and defers
-        # while downloads are active, so this call is a cheap no-op in the
-        # common case and never delays the download being started here.
-        self.maybe_refresh_ytdlp('download-initiated')
+        # No update trigger here: firing before the download was enqueued let
+        # the updater pass its active_count()==0 idle gate and then race the
+        # yt-dlp.exe this very download spawns milliseconds later — the
+        # binary swap hit file-in-use, failed, and re-downloaded the whole
+        # release at the next window. The server-start hook plus the
+        # queue-idle hook in _worker_entry (fires after every drain,
+        # including failures) cover staleness without a race.
 
         with self._lock:
             self._reclaim_terminal_records_locked()
@@ -1887,8 +1898,8 @@ class DownloadManagerCore:
         """Open the throttled, race-safe yt-dlp auto-update window from the
         download path.
 
-        Called when a download is initiated and again when the queue drains to
-        idle. The updater it delegates to is throttled (one check per interval),
+        Called when the queue drains to idle — the moment no yt-dlp.exe is in
+        flight. The updater it delegates to is throttled (one check per interval),
         stages a *sibling* copy, verifies ``--version``, keeps a byte-verified
         rollback, and only atomically swaps the live binary when no download is
         running — so an in-flight download is never blocked or corrupted. This
@@ -1920,6 +1931,14 @@ class DownloadManagerCore:
             return None, err
         if not self._dependencies['is_youtube_url'](url):
             return None, 'Astra Downloader only lists formats for YouTube.'
+        if not self._formats_gate.acquire(blocking=False):
+            return None, self.FORMATS_BUSY_MESSAGE
+        try:
+            return self._list_formats_gated(url, timeout)
+        finally:
+            self._formats_gate.release()
+
+    def _list_formats_gated(self, url, timeout):
         ytdlp = str(self._dependencies['YTDLP_PATH']())
         args = [ytdlp, '--ignore-config', '--no-colors', '--no-warnings',
                 '--no-playlist', '-J', '--skip-download']
