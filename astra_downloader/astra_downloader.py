@@ -1244,8 +1244,18 @@ def _run_ytdlp_self_update(config, source_tag):
             }
 
         try:
+            channel = str((config.get('YtDlpUpdateChannel', 'nightly') if config else 'nightly') or 'nightly').lower()
+        except Exception:
+            channel = 'nightly'
+        if channel not in ('stable', 'nightly'):
+            channel = 'nightly'
+        # `--update-to <channel>@latest` both switches channel and updates,
+        # replacing the old plain `-U` (which was locked to whatever channel the
+        # binary shipped as — stable — and so lagged YouTube breakage).
+        update_args = [str(stage_path), '--update-to', f'{channel}@latest']
+        try:
             result = subprocess.run(
-                [str(stage_path), '-U'],
+                update_args,
                 capture_output=True,
                 text=True,
                 timeout=120,

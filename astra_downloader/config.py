@@ -96,6 +96,10 @@ DEFAULT_CONFIG = {
     "ConcurrentFragments": 4,
     "JavaScriptRuntime": "auto",
     "AutoUpdateYtDlp": True,
+    # yt-dlp release channel the self-updater tracks. Nightly is yt-dlp's own
+    # recommendation for regular users: the monthly stable channel lags YouTube
+    # breakage by weeks, while nightly ships same-day extractor fixes.
+    "YtDlpUpdateChannel": "nightly",
     "RateLimit": "",
     "Proxy": "",
     "StartMinimized": False,
@@ -293,6 +297,8 @@ def sanitize_config(raw):
     data["ConcurrentFragments"] = clamp_int(data.get("ConcurrentFragments"), 4, 1, 32)
     runtime = clean_text(data.get("JavaScriptRuntime"), "auto", 16).lower()
     data["JavaScriptRuntime"] = runtime if runtime in {"auto", "deno", "node"} else "auto"
+    channel = clean_text(data.get("YtDlpUpdateChannel"), "nightly", 16).lower()
+    data["YtDlpUpdateChannel"] = channel if channel in {"stable", "nightly"} else "nightly"
     data["RateLimit"] = normalize_rate_limit(data.get("RateLimit"))
     data["Proxy"] = normalize_proxy(data.get("Proxy"))
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
