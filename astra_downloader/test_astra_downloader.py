@@ -1446,6 +1446,31 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 502)
         self.assertEqual(resp.get_json().get("error"), "Video unavailable")
 
+    def test_formats_probe_concurrency_is_bounded(self):
+        # Each `yt-dlp -J` probe holds a waitress worker thread for up to
+        # 60s; the semaphore keeps saturating /formats calls from starving
+        # /health, /status and /download.
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        # Occupy every probe slot.
+        for _ in range(manager.FORMATS_PROBE_LIMIT):
+            self.assertTrue(manager._formats_gate.acquire(blocking=False))
+        try:
+            result, err = manager.list_formats("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            self.assertIsNone(result)
+            self.assertEqual(err, manager.FORMATS_BUSY_MESSAGE)
+            api = ad.create_api(config, manager, FakeHistory())
+            resp = api.test_client().post(
+                "/formats", json={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                headers={"X-Auth-Token": token})
+            self.assertEqual(resp.status_code, 429)
+            self.assertEqual(resp.get_json().get("code"), "formats-busy")
+            self.assertTrue(resp.headers.get("Retry-After"))
+        finally:
+            for _ in range(manager.FORMATS_PROBE_LIMIT):
+                manager._formats_gate.release()
+
     def test_shutdown_is_post_only(self):
         token = "a" * 32
         config = FakeConfig({"ServerToken": token})
@@ -5979,11 +6004,13 @@ class DownloadWorkerRaceGuardTests(unittest.TestCase):
             manager._running_ids.add(dl_id)
         return dl
 
-    def test_start_download_opens_ytdlp_autoupdate_window(self):
-        # Initiating a download must trigger the throttled yt-dlp auto-update
-        # check (v1.5.4) so a long-running companion keeps yt-dlp fresh between
-        # restarts — passing the live active_count so the updater can defer
-        # while downloads run.
+    def test_start_download_does_not_race_the_ytdlp_updater(self):
+        # Regression: the v1.5.4 'download-initiated' trigger fired BEFORE the
+        # download was enqueued, so the updater passed its active_count()==0
+        # idle gate and its binary swap raced the yt-dlp.exe this download
+        # spawned milliseconds later (file-in-use failure + a wasted full
+        # re-download of the release). Initiation must not trigger the
+        # updater; the queue-idle hook in _worker_entry covers staleness.
         manager = self._manager()
         calls = []
         manager._dependencies['maybe_auto_update_ytdlp'] = (
@@ -5991,12 +6018,15 @@ class DownloadWorkerRaceGuardTests(unittest.TestCase):
         )
         dl_id, err = manager.start_download("https://www.youtube.com/watch?v=autoupd001")
         self.assertIsNone(err)
-        self.assertEqual(len(calls), 1, "download initiation must open the update window exactly once")
-        passed_config, passed_active = calls[0]
-        self.assertIs(passed_config, manager.config)
-        self.assertEqual(passed_active, manager.active_count,
-                         "the live active_count must be passed so the updater can defer while busy")
-        self.assertEqual(passed_active(), 0)
+        self.assertEqual(calls, [], "initiation must not open the update window while the download is about to spawn")
+
+    def test_worker_entry_triggers_ytdlp_update_at_queue_idle(self):
+        import inspect
+        import download as download_module
+
+        source = inspect.getsource(download_module.DownloadManagerCore._worker_entry)
+        self.assertIn("self.maybe_refresh_ytdlp('queue-idle')", source)
+        self.assertIn('if self.active_count() == 0:', source)
 
     def test_maybe_refresh_ytdlp_is_a_safe_noop_without_the_hook(self):
         manager = self._manager()

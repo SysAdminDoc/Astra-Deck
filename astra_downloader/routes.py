@@ -569,7 +569,7 @@ def create_api(config, dl_manager, history, *, dependencies):
             )
         body = request.get_json(silent=True)
         if not isinstance(body, dict) or not isinstance(body.get('url'), str):
-            return cors_response({"error": "A 'url' string is required."}, 400)
+            return cors_response({"error": "Missing video URL."}, 400)
         url, url_err = normalize_url(body['url'])
         if url_err:
             return cors_response({"error": url_err}, 400)
@@ -582,6 +582,14 @@ def create_api(config, dl_manager, history, *, dependencies):
             )
         result, err = dl_manager.list_formats(url)
         if err:
+            if err == getattr(dl_manager, 'FORMATS_BUSY_MESSAGE', None):
+                # All probe slots are occupied — a retryable condition, not
+                # an extraction failure.
+                return cors_response(
+                    {"error": err, "code": "formats-busy"},
+                    429,
+                    extra_headers={"Retry-After": "5"},
+                )
             return cors_response({"error": err, "code": "formats-unavailable"}, 502)
         return cors_response(result)
 
