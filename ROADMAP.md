@@ -115,13 +115,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P1 — Next: freshness, transport survivability, real format choice
 
-- [ ] P1 — Per-URL format listing endpoint (real format picker, not a static list)
-  Why: `/config` returns only a hardcoded quality/format list, so neither the extension nor the GUI can offer the actual formats a video exposes; competitors (Seal, Parabolic, Stacher) all list real formats, and MeTube's static builder produces recurring "best isn't best" bugs.
-  Evidence: RESEARCH.md §Competitive + Exec Summary; `astra_downloader/routes.py:691` (`/config` static lists); https://github.com/alexta69/metube/issues/452
-  Touches: `astra_downloader/routes.py` (new `POST /formats` → yt-dlp `--dump-json`/`-F`, auth+rate-limited+YouTube-allowlisted), `download.py` (format enumeration helper), extension download-options UI.
-  Acceptance: `POST /formats {url}` returns the video's real available formats (id, ext, resolution, codec, filesize/estimate, has-audio); a malformed/non-YouTube URL is rejected exactly like `/download`.
-  Complexity: M
-
 - [ ] P1 — Native-messaging download-command transport as a Chrome-LNA fallback
   Why: Chrome 142 (Oct 2025) enforces Local Network Access, which can gate/block the extension's `127.0.0.1` fetch to the companion; the token path already rides native messaging but the *download command* path is HTTP-only, so downloads can fail while auth still works. Native messaging is the LNA-immune bridge (browserpass/KeePassXC/1Password pattern).
   Evidence: RESEARCH.md §Security/Reliability + Open Questions; `astra_downloader/astra_downloader.py` (`handle_native_bootstrap_request` serves only ping/get-token); https://developer.chrome.com/blog/local-network-access . Extends the `Roadmap_Blocked.md` "Validate Chrome LNA exemption" item from validation to implementation.

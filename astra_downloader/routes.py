@@ -554,6 +554,35 @@ def create_api(config, dl_manager, history, *, dependencies):
             "capacity": dl_manager.capacity(),
         })
 
+    @api.route('/formats', methods=['POST'])
+    def formats():
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        allowed, retry_after = download_rate_limiter.allow('formats')
+        if not allowed:
+            return cors_response(
+                {"error": "Too many format requests in a short period. Please wait a moment."},
+                429,
+                extra_headers={"Retry-After": str(int(retry_after) + 1)},
+            )
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict) or not isinstance(body.get('url'), str):
+            return cors_response({"error": "A 'url' string is required."}, 400)
+        url, url_err = normalize_url(body['url'])
+        if url_err:
+            return cors_response({"error": url_err}, 400)
+        # Same YouTube-only trust boundary as /download — never point yt-dlp
+        # (and any attached cookie jar) at arbitrary hosts.
+        if not is_youtube_url(url):
+            return cors_response(
+                {"error": "Astra Downloader only lists formats for YouTube.", "code": "non-youtube-url"},
+                400,
+            )
+        result, err = dl_manager.list_formats(url)
+        if err:
+            return cors_response({"error": err, "code": "formats-unavailable"}, 502)
+        return cors_response(result)
+
     @api.route('/status/<dl_id>')
     def status(dl_id):
         if not check_auth():
