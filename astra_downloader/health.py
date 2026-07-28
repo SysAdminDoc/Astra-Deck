@@ -28,7 +28,7 @@ __all__ = (
     "validate_companion_update_binary", "probe_companion_update_binary",
     "read_last_installed_update_sha256", "record_last_installed_update_sha256",
     "schedule_companion_update_restart", "schedule_companion_process_exit",
-    "_compare_semver",
+    "_compare_semver", "evaluate_sabr_support", "SABR_NATIVE_MIN_VERSION",
     "ExecutableVersionProbe", "parse_ytdlp_version_output",
     "parse_ffmpeg_version_output",
     "PoTokenProviderProbe",
@@ -78,6 +78,24 @@ def _compare_semver(a, b):
     left += [0] * (length - len(left))
     right += [0] * (length - len(right))
     return -1 if left < right else 1 if left > right else 0
+
+
+# The yt-dlp release that first ships the native SABR downloader (PR #13515).
+# Until it merges upstream, no version can download SABR-only streams, so SABR
+# support is reported as "limited" for every installed version. When it lands,
+# set this to that version string and evaluate_sabr_support flips to "supported"
+# automatically for capable installs — no other change needed.
+SABR_NATIVE_MIN_VERSION = None
+
+
+def evaluate_sabr_support(ytdlp_version):
+    """Real SABR capability of the installed yt-dlp: 'supported' only when the
+    installed version can download SABR-only streams (native SABR downloader),
+    else 'limited'. Replaces a hardcoded constant so the health/readiness pill
+    reflects the actual binary instead of always claiming 'limited'."""
+    if not SABR_NATIVE_MIN_VERSION or not ytdlp_version:
+        return "limited"
+    return "supported" if _compare_semver(str(ytdlp_version), SABR_NATIVE_MIN_VERSION) >= 0 else "limited"
 
 
 def _parse_ytdlp_release_date(version_string):
@@ -457,6 +475,7 @@ _OWNED_EXPORTS = {
     "PO_TOKEN_PROVIDER_PORT", "BGUTIL_POT_MIN_VERSION",
     "YTDLP_EXTERNAL_RUNTIME_CUTOFF", "DENO_MIN_VERSION", "NODE_MIN_VERSION",
     "is_youtube_url", "_compare_semver", "_parse_ytdlp_release_date",
+    "evaluate_sabr_support", "SABR_NATIVE_MIN_VERSION",
     "ytdlp_needs_external_runtime", "build_javascript_runtime_args",
     "build_youtube_extractor_args", "parse_ffmpeg_major",
     "_run_captured", "ExecutableVersionProbe", "parse_ytdlp_version_output",

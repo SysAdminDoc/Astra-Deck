@@ -1312,6 +1312,27 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn("path", body["javascriptRuntime"])
         self.assertEqual(body["javascriptRuntime"]["source"], "bundled")
 
+    def test_evaluate_sabr_support_reflects_capability(self):
+        import health as _health
+        # Until the native SABR downloader (PR #13515) merges, the sentinel is
+        # None and every version reports "limited".
+        self.assertIsNone(_health.SABR_NATIVE_MIN_VERSION)
+        self.assertEqual(_health.evaluate_sabr_support("2026.07.04"), "limited")
+        self.assertEqual(_health.evaluate_sabr_support(""), "limited")
+        # When the sentinel is set, capable versions flip to "supported".
+        with mock.patch.object(_health, "SABR_NATIVE_MIN_VERSION", "2026.09.01"):
+            self.assertEqual(_health.evaluate_sabr_support("2026.09.01"), "supported")
+            self.assertEqual(_health.evaluate_sabr_support("2026.10.15"), "supported")
+            self.assertEqual(_health.evaluate_sabr_support("2026.07.04"), "limited")
+
+    def test_health_sabr_support_is_not_hardcoded(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        body = api.test_client().get("/health").get_json()
+        self.assertIn(body.get("sabrSupport"), ("limited", "supported"))
+
     def test_summarize_ytdlp_formats_filters_and_shapes(self):
         info = {
             "id": "abc", "title": "T", "duration": 12,

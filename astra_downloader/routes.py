@@ -162,6 +162,7 @@ _REQUIRED_API_DEPENDENCIES = frozenset({
     'get_last_deno_provision_error',
     'get_recent_log_entries',
     'get_ytdlp_version',
+    'evaluate_sabr_support',
     'is_youtube_url',
     'legacy_health_token_origin_allowlist',
     'normalize_extension_origin',
@@ -208,6 +209,7 @@ def create_api(config, dl_manager, history, *, dependencies):
     get_last_deno_provision_error = dependencies['get_last_deno_provision_error']
     get_recent_log_entries = dependencies['get_recent_log_entries']
     get_ytdlp_version = dependencies['get_ytdlp_version']
+    evaluate_sabr_support = dependencies['evaluate_sabr_support']
     is_youtube_url = dependencies['is_youtube_url']
     legacy_health_token_origin_allowlist = dependencies['legacy_health_token_origin_allowlist']
     normalize_extension_origin = dependencies['normalize_extension_origin']
@@ -385,7 +387,7 @@ def create_api(config, dl_manager, history, *, dependencies):
             # and SABR entries, but SABR entries cannot be downloaded. The
             # extension health panel surfaces "SABR: limited" when native
             # support is absent, so users understand why some downloads fail.
-            "sabrSupport": "limited",
+            "sabrSupport": evaluate_sabr_support(get_ytdlp_version()),
             "rateLimit": {
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,

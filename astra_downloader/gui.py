@@ -1098,8 +1098,18 @@ class MainWindowCore(QMainWindow):
         readiness_layout.addWidget(self._make_readiness_row("ffmpeg", "FFmpeg"))
         readiness_layout.addWidget(self._make_readiness_row("deno", "JavaScript runtime"))
         readiness_layout.addWidget(self._make_readiness_row("provider", "PO provider"))
-        readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Limited"))
-        self._set_readiness("sabr", "Limited", "warning")
+        try:
+            sabr_status = self._dependencies['evaluate_sabr_support'](
+                self._dependencies['get_ytdlp_version']()
+            )
+        except Exception:
+            sabr_status = "limited"
+        if sabr_status == "supported":
+            readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Supported"))
+            self._set_readiness("sabr", "Supported", "success")
+        else:
+            readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Limited"))
+            self._set_readiness("sabr", "Limited", "warning")
 
         hero = QHBoxLayout()
         hero.setSpacing(0)

@@ -34,6 +34,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   safe-method semantics for the loopback API; GET returns 405.
 
 ### Changed
+- **SABR support status reflects the real yt-dlp binary.** The `/health` `sabrSupport` field and the readiness pill are now derived from the installed yt-dlp's capability (`evaluate_sabr_support`) instead of a hardcoded "limited" string; flips to "supported" automatically once yt-dlp ships the native SABR downloader (PR #13515).
 - **Companion tracks the yt-dlp nightly channel by default.** yt-dlp updates now
   run `--update-to <channel>@latest` instead of the channel-locked `-U`, and a
   new "yt-dlp update channel" setting (Nightly/Stable, default Nightly) is in
