@@ -451,6 +451,10 @@ class ConfigStore:
         self._writer = writer
         self._logger = logger
         self._lock = threading.RLock()
+        # Session-only overrides (e.g. a fallback ServerPort after a bind
+        # conflict): visible through get()/data so the running process uses
+        # them, but never serialized — save()/update() persist _data only.
+        self._session_overrides = {}
         self._resolve(self._install_dir).mkdir(parents=True, exist_ok=True)
         self._data = self._sanitizer(self._loader(self._resolve(self._path), {}))
         self._persisted_data = dict(self._data)
@@ -462,17 +466,35 @@ class ConfigStore:
 
     def get(self, key, default=None):
         with self._lock:
+            if key in self._session_overrides:
+                return self._session_overrides[key]
+            return self._data.get(key, default)
+
+    def get_persisted(self, key, default=None):
+        """The durable value, ignoring any session-only override."""
+        with self._lock:
             return self._data.get(key, default)
 
     def set(self, key, value):
         with self._lock:
             self._data[key] = value
 
+    def set_session(self, key, value):
+        """Override a key for this process lifetime without persisting it."""
+        with self._lock:
+            self._session_overrides[key] = value
+
     def update(self, mapping):
         with self._lock:
             candidate = dict(self._data)
             candidate.update(mapping)
-            return self._save_candidate_unlocked(candidate)
+            saved = self._save_candidate_unlocked(candidate)
+            if saved:
+                # An explicit write re-asserts these keys; a session override
+                # must not keep shadowing the user's new value.
+                for key in mapping:
+                    self._session_overrides.pop(key, None)
+            return saved
 
     def save(self):
         with self._lock:
@@ -493,7 +515,9 @@ class ConfigStore:
     @property
     def data(self):
         with self._lock:
-            return dict(self._data)
+            merged = dict(self._data)
+            merged.update(self._session_overrides)
+            return merged
 
 
 class HistoryStore:
