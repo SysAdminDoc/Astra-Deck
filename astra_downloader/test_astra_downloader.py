@@ -4048,10 +4048,11 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_4(self):
-        # v1.5.4 opens the throttled yt-dlp auto-update window from the download
-        # path (initiation + queue-idle), not just at server startup.
-        self.assertEqual(ad.APP_VERSION, "1.5.4")
+    def test_app_version_bumped_to_1_5_5(self):
+        # v1.5.5 session: nightly yt-dlp channel, POST /formats, POST-only
+        # /shutdown, configurable concurrency/retries, output template, tray
+        # completion notifications, session-only port fallback, real SABR pill.
+        self.assertEqual(ad.APP_VERSION, "1.5.5")
 
 
 class EndToEndDownloadTests(unittest.TestCase):
