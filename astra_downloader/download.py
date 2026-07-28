@@ -787,7 +787,7 @@ class DownloadManagerCore:
         total = running + pending
         return {
             'running': running,
-            'runningLimit': MAX_CONCURRENT,
+            'runningLimit': self._max_concurrent(),
             'pending': pending,
             'total': total,
             'totalLimit': MAX_QUEUED_TOTAL,
@@ -918,12 +918,23 @@ class DownloadManagerCore:
                 if self.active_count() == 0:
                     self.maybe_refresh_ytdlp('queue-idle')
 
+    def _max_concurrent(self):
+        """Configured simultaneous-download limit, clamped. Defaults to the
+        historical MAX_CONCURRENT (3) when unset."""
+        try:
+            return self._dependencies['clamp_int'](
+                self.config.get('MaxConcurrentDownloads', MAX_CONCURRENT),
+                MAX_CONCURRENT, 1, 10,
+            )
+        except Exception:  # noqa: BLE001
+            return MAX_CONCURRENT
+
     def _schedule(self):
         to_start = []
         with self._lock:
             if self._closing or self.intake_paused:
                 return
-            available = max(0, MAX_CONCURRENT - len(self._running_ids))
+            available = max(0, self._max_concurrent() - len(self._running_ids))
             if available <= 0:
                 return
             candidates = [
@@ -1123,6 +1134,8 @@ class DownloadManagerCore:
 
         frags = self._dependencies['clamp_int'](self.config.get("ConcurrentFragments", 4), 4, 1, 32)
         args += ['--concurrent-fragments', str(frags)]
+        retries = self._dependencies['clamp_int'](self.config.get("DownloadRetries", 10), 10, 0, 50)
+        args += ['--retries', str(retries), '--fragment-retries', str(retries)]
         if self.config.get("EmbedMetadata"):
             args.append('--embed-metadata')
         if self.config.get("EmbedThumbnail"):

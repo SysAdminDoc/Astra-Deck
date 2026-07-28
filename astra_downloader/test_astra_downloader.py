@@ -396,6 +396,8 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_js_runtime = ComboField("auto")
         window.cfg_ytdlp_channel = ComboField("nightly")
         window.cfg_fragments = NumberField(4)
+        window.cfg_maxconcurrent = NumberField(3)
+        window.cfg_retries = NumberField(10)
         window.cfg_autoupdate = CheckField()
         window.cfg_closetotray = CheckField()
         window.cfg_startmin = CheckField()
@@ -5128,6 +5130,24 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(_config.sanitize_config({"YtDlpUpdateChannel": "stable"})["YtDlpUpdateChannel"], "stable")
         self.assertEqual(_config.sanitize_config({"YtDlpUpdateChannel": "bogus"})["YtDlpUpdateChannel"], "nightly")
         self.assertEqual(_config.sanitize_config({})["YtDlpUpdateChannel"], "nightly")
+
+    def test_config_defaults_and_clamps_concurrency_and_retries(self):
+        import config as _config
+        self.assertEqual(_config.DEFAULT_CONFIG["MaxConcurrentDownloads"], 3)
+        self.assertEqual(_config.DEFAULT_CONFIG["DownloadRetries"], 10)
+        self.assertEqual(_config.sanitize_config({"MaxConcurrentDownloads": 99})["MaxConcurrentDownloads"], 10)
+        self.assertEqual(_config.sanitize_config({"MaxConcurrentDownloads": 0})["MaxConcurrentDownloads"], 1)
+        self.assertEqual(_config.sanitize_config({"DownloadRetries": -5})["DownloadRetries"], 0)
+        self.assertEqual(_config.sanitize_config({"DownloadRetries": 999})["DownloadRetries"], 50)
+
+    def test_manager_max_concurrent_reads_config(self):
+        mgr = ad.DownloadManager(FakeConfig({"MaxConcurrentDownloads": 5}), FakeHistory())
+        self.assertEqual(mgr._max_concurrent(), 5)
+        self.assertEqual(mgr.capacity()["runningLimit"], 5)
+        mgr2 = ad.DownloadManager(FakeConfig({"MaxConcurrentDownloads": 99}), FakeHistory())
+        self.assertEqual(mgr2._max_concurrent(), 10, "clamped to the max")
+        mgr3 = ad.DownloadManager(FakeConfig(), FakeHistory())
+        self.assertEqual(mgr3._max_concurrent(), 3, "defaults to historical MAX_CONCURRENT")
 
 
 class CompanionUpdateEndpointTests(unittest.TestCase):
