@@ -6,6 +6,75 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.7] - 2026-07-28
+
+Deep-audit release (companion v1.5.6). Four parallel auditors over the
+v4.50.2–v4.50.6 wave; ~20 verified findings fixed across correctness,
+security posture, UX, theming, i18n, and release distribution.
+
+### Fixed
+- **Session-only port fallback truly session-only.** The bind-conflict
+  fallback wrote the fallback port into the shared config dict, and any later
+  full-config save (yt-dlp update-check timestamp, ffmpeg setup stamp,
+  settings save) persisted it — permanently rewriting the user's configured
+  port, the exact bug the v4.50.6 fix set out to prevent. Config now has a
+  session-override layer excluded from every save, and an unrelated settings
+  save during a fallback session no longer surprise-restarts the server.
+- **yt-dlp auto-update no longer races the download that triggered it.** The
+  v1.5.4 download-initiated trigger fired before the download was enqueued,
+  so the updater passed its idle gate and its binary swap collided with the
+  yt-dlp.exe spawned milliseconds later (file-in-use failure + a wasted full
+  release re-download). The race-free server-start and queue-idle hooks cover
+  staleness on their own.
+- **Invalid filename templates are flagged, not silently discarded.** A
+  rejected template used to save "successfully" while sanitize blanked it to
+  the default naming; the field now shows a clear validation error, and the
+  validator additionally rejects broken printf syntax (unclosed `%(field`,
+  stray `%`) that previously failed every download with an opaque yt-dlp
+  startup error.
+- **Completion toasts fire for a taskbar-minimized window**, matching the
+  "while minimized" setting label (was hidden-to-tray only).
+- **Settings pane header alignment.** The "Enable all" actions block floated
+  into the middle column on panes without select-type features (Comments,
+  Live Chat, Video Hider) and on every pane during search; it is now pinned
+  to the header's end column.
+- **Repair prompt stays truthful.** The port-squatter description re-renders
+  on every retry/recheck instead of blaming a program the user already
+  closed; first-time users see the install prompt again (the retry/install
+  mode ternary was always retry on the download path); and with no native
+  host and no responding port, the futile 12s "Starting…" poll is skipped.
+- **Per-feature reinit debounce.** A range drag and a color input within
+  300ms shared one debounce timer (module + monolith), cancelling the first
+  feature's pending apply.
+- **Monolith RYD fallback cache-clobber** ported from the module fix.
+- **/formats concurrency bounded.** Concurrent yt-dlp probe processes are
+  capped (2) with a 429 `formats-busy` + Retry-After response — saturating
+  format lookups could occupy the whole HTTP worker pool for up to 60s and
+  starve /health//status//download.
+- **SABR pill via the async readiness probe.** No more cold 5s yt-dlp
+  subprocess on the GUI thread during window construction; the pill also
+  refreshes after setup installs or updates yt-dlp.
+- **Post-save status clear is generation-guarded** so it can't wipe a newer
+  "Unsaved changes" indicator written within 3.2s of a save.
+- **Test isolation.** The companion suite no longer appends fabricated
+  failure lines to the production `server.log`.
+
+### Changed
+- **Companion download links point at a release that carries the binary.**
+  The v1.5.6 `AstraDownloader.exe` (+ SHA-256 sidecar) ships with this
+  release, restoring the companion's `/update` self-update path (the
+  `releases/latest` alias had 404'd since v4.47.0 because no newer release
+  carried the exe) and retiring the v4.46.4-era pinned installer.
+- **Userscript downloader parity.** Cold-start poll window widened to
+  8 × 1.5s to match the extension, and port-squatter detection + the named
+  repair message ported to the GM implementation.
+- **i18n.** Sidebar nav-group labels and the pane-context ARIA label are now
+  localized in all 11 locales (were English-only); the ARIA label uses a
+  `{category}` placeholder template.
+- **Theming.** Nine stale inline companion colors from the superseded
+  premium palette snapped to the active quiet-desktop tokens; active
+  stylesheet radii aligned to the sanctioned 4/6 scale.
+
 ## [4.50.6] - 2026-07-27
 
 ### Added

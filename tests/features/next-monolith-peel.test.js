@@ -171,7 +171,7 @@ test('downloadUI Settings installer downloads the real GitHub release asset', as
 
     assert.equal(
         result.MediaDLManager.INSTALLER_URL,
-        'https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.46.4/AstraDownloader.exe'
+        'https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.50.7/AstraDownloader.exe'
     );
     assert.equal(await result.MediaDLManager.downloadInstaller(), true);
     assert.deepEqual(calls, [[
