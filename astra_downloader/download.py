@@ -29,6 +29,7 @@ __all__ = (
     "DOWNLOAD_STALL_TIMEOUT_SECONDS", "DOWNLOAD_WATCHDOG_POLL_SECONDS",
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
+    "summarize_ytdlp_formats",
     "ALLOWED_COOKIE_DOMAINS", "build_subprocess_env",
     "DownloadQueueStore", "DOWNLOAD_QUEUE_SCHEMA_VERSION",
 )
@@ -344,6 +345,42 @@ def download_error_payload(error_code, error=None, advice=None):
         'error_code': error_code,
         'advice': advice or meta.get('advice') or 'Retry after checking Astra Downloader diagnostics.',
         'next_action': meta.get('next_action', 'retry'),
+    }
+
+
+def summarize_ytdlp_formats(info):
+    """Reduce a yt-dlp `-J` info dict to a concise, UI-ready format list:
+    real available formats with id/ext/resolution/codec/size/audio-video flags.
+    Storyboard (mhtml) and empty (no vcodec+acodec) entries are dropped."""
+    if not isinstance(info, dict):
+        return {'id': '', 'title': '', 'duration': 0, 'formats': []}
+    out = []
+    for f in (info.get('formats') or []):
+        if not isinstance(f, dict) or f.get('format_id') is None:
+            continue
+        vcodec = f.get('vcodec') or 'none'
+        acodec = f.get('acodec') or 'none'
+        if f.get('ext') == 'mhtml' or (vcodec == 'none' and acodec == 'none'):
+            continue
+        out.append({
+            'format_id': str(f.get('format_id')),
+            'ext': f.get('ext') or '',
+            'height': int(f.get('height') or 0),
+            'width': int(f.get('width') or 0),
+            'fps': f.get('fps') or 0,
+            'vcodec': vcodec,
+            'acodec': acodec,
+            'has_video': vcodec != 'none',
+            'has_audio': acodec != 'none',
+            'filesize': int(f.get('filesize') or f.get('filesize_approx') or 0),
+            'tbr': f.get('tbr') or 0,
+            'format_note': (f.get('format_note') or '')[:80],
+        })
+    return {
+        'id': str(info.get('id') or ''),
+        'title': (info.get('title') or '')[:300],
+        'duration': info.get('duration') or 0,
+        'formats': out,
     }
 
 
@@ -1854,6 +1891,56 @@ class DownloadManagerCore:
                 # reason: logging must not turn an update hiccup into a crash
                 pass
 
+    def list_formats(self, url, timeout=60):
+        """Return `(summary, error)` of the real available formats for a single
+        YouTube URL via `yt-dlp -J`, run under the same extractor + JS-runtime
+        conditions as an actual download so the listing matches what would be
+        downloaded."""
+        url, err = self._dependencies['normalize_url'](url)
+        if err:
+            return None, err
+        if not self._dependencies['is_youtube_url'](url):
+            return None, 'Astra Downloader only lists formats for YouTube.'
+        ytdlp = str(self._dependencies['YTDLP_PATH']())
+        args = [ytdlp, '--ignore-config', '--no-colors', '--no-warnings',
+                '--no-playlist', '-J', '--skip-download']
+        args += self._dependencies['build_youtube_extractor_args'](
+            url, po_token_provider=self._dependencies['probe_po_token_provider'](),
+        )
+        runtime = self._dependencies['probe_javascript_runtime'](
+            configured_runtime=self.config.get('JavaScriptRuntime', 'auto')
+        )
+        args += self._dependencies['build_javascript_runtime_args'](runtime)
+        args.append(url)
+        try:
+            env = self._dependencies['_build_subprocess_env']()
+            proc = self._dependencies['spawn_ytdlp'](
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, encoding='utf-8', errors='replace',
+                creationflags=self._dependencies['CREATE_NO_WINDOW'],
+                env=env,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return None, f'Could not start yt-dlp: {exc}'
+        try:
+            out, errout = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            try:
+                self._dependencies['terminate_process_tree'](proc)
+            except Exception:
+                # reason: best-effort kill; process may already be gone
+                pass
+            return None, 'Timed out while listing formats.'
+        if proc.returncode != 0:
+            tail = [ln.strip() for ln in (errout or '').splitlines() if ln.strip()]
+            msg = next((ln for ln in reversed(tail) if not _is_benign_failure_noise(ln)), '')
+            return None, (msg or 'yt-dlp could not list formats.')[:240]
+        try:
+            info = json.loads(out)
+        except Exception:  # noqa: BLE001
+            return None, 'Could not parse yt-dlp output while listing formats.'
+        return summarize_ytdlp_formats(info), None
+
     def exists(self, dl_id):
         """True while the download id is still tracked in the active queue."""
         with self._lock:
@@ -1919,6 +2006,7 @@ _OWNED_EXPORTS = {
     "Download", "build_video_format_args", "is_playlist_url",
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
+    "summarize_ytdlp_formats",
     "DOWNLOAD_ACTIVE_STATES", "DOWNLOAD_RUNNING_STATES",
     "DOWNLOAD_PENDING_STATES", "DOWNLOAD_TERMINAL_STATES",
     "DOWNLOAD_RETRYABLE_ERROR_CODES", "MAX_CONCURRENT", "MAX_QUEUED_TOTAL",

@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+- **Per-URL format listing (`POST /formats`).** The companion can now report a
+  video's real available formats (id, ext, resolution, codec, filesize, has
+  audio/video) via yt-dlp `-J`, run under the same extractor + JS-runtime
+  conditions as an actual download. Auth + rate-limited + YouTube-allowlisted
+  exactly like `/download`; enables a real format picker instead of a static
+  quality list.
+
 ### Changed
 - **Companion tracks the yt-dlp nightly channel by default.** yt-dlp updates now
   run `--update-to <channel>@latest` instead of the channel-locked `-U`, and a

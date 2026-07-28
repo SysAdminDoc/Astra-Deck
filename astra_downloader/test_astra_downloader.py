@@ -1307,6 +1307,70 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn("path", body["javascriptRuntime"])
         self.assertEqual(body["javascriptRuntime"]["source"], "bundled")
 
+    def test_summarize_ytdlp_formats_filters_and_shapes(self):
+        info = {
+            "id": "abc", "title": "T", "duration": 12,
+            "formats": [
+                {"format_id": "18", "ext": "mp4", "height": 360, "width": 640,
+                 "vcodec": "avc1", "acodec": "mp4a", "filesize": 1000, "fps": 30},
+                {"format_id": "251", "ext": "webm", "vcodec": "none", "acodec": "opus",
+                 "filesize_approx": 500},
+                {"format_id": "sb0", "ext": "mhtml", "vcodec": "none", "acodec": "none"},
+                {"format_id": None, "ext": "mp4"},
+            ],
+        }
+        summary = ad.summarize_ytdlp_formats(info)
+        ids = [f["format_id"] for f in summary["formats"]]
+        self.assertEqual(ids, ["18", "251"], "mhtml + null-id + empty entries dropped")
+        muxed = summary["formats"][0]
+        self.assertTrue(muxed["has_video"] and muxed["has_audio"])
+        audio = summary["formats"][1]
+        self.assertFalse(audio["has_video"])
+        self.assertTrue(audio["has_audio"])
+        self.assertEqual(audio["filesize"], 500)
+        self.assertEqual(summary["id"], "abc")
+
+    def test_formats_endpoint_requires_auth_and_youtube(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        # no token
+        self.assertEqual(client.post("/formats", json={"url": "https://youtube.com/watch?v=x"}).status_code, 401)
+        # non-YouTube rejected before spawning yt-dlp
+        resp = client.post("/formats", json={"url": "https://example.com/x"}, headers={"X-Auth-Token": token})
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json().get("code"), "non-youtube-url")
+        # missing url
+        self.assertEqual(client.post("/formats", json={}, headers={"X-Auth-Token": token}).status_code, 400)
+
+    def test_formats_endpoint_returns_summary(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        summary = {"id": "dQw4w9WgXcQ", "title": "T", "duration": 1,
+                   "formats": [{"format_id": "18", "ext": "mp4", "has_video": True, "has_audio": True}]}
+        with mock.patch.object(manager, 'list_formats', return_value=(summary, None)):
+            api = ad.create_api(config, manager, FakeHistory())
+            resp = api.test_client().post(
+                "/formats", json={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                headers={"X-Auth-Token": token})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json()["formats"][0]["format_id"], "18")
+
+    def test_formats_endpoint_surfaces_listing_error(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        with mock.patch.object(manager, 'list_formats', return_value=(None, "Video unavailable")):
+            api = ad.create_api(config, manager, FakeHistory())
+            resp = api.test_client().post(
+                "/formats", json={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+                headers={"X-Auth-Token": token})
+        self.assertEqual(resp.status_code, 502)
+        self.assertEqual(resp.get_json().get("error"), "Video unavailable")
+
     def test_config_response_is_allowlisted(self):
         token = "a" * 32
         config = FakeConfig({
