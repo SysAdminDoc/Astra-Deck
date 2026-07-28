@@ -140,13 +140,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P3 — Under consideration: breadth, coherence, and larger bets
 
-- [ ] P3 — Make the SABR readiness pill reflect real capability
-  Why: `sabrSupport` is the hardcoded constant `"limited"` surfaced as a live readiness row, so it never reflects the installed yt-dlp; correct once the native SABR downloader (PR #13515) merges.
-  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/routes.py:388`, `gui.py:1098`; https://github.com/yt-dlp/yt-dlp/pull/13515
-  Touches: `astra_downloader/health.py` (derive SABR status from yt-dlp version/capability), `routes.py`, `gui.py`.
-  Acceptance: the SABR row reads "limited" while the installed yt-dlp lacks native SABR download and flips to "supported" once a capable version is installed; no more hardcoded string.
-  Complexity: S
-
 - [ ] P3 — Companion GUI accessibility pass
   Why: status is conveyed by color-only dots, the log `QTextEdit` and the dashboard state dot have no accessible names, inline hardcoded hex greys risk sub-4.5:1 contrast, and the page fade ignores reduced-motion — the GUI's a11y lags the extension's WCAG-gated surfaces.
   Evidence: RESEARCH.md §Architecture (GUI robustness); `astra_downloader/gui.py` (status dots ~L934/L1042, log QTextEdit ~L1136, inline hex ~L792-826, page fade `_animate_page` ~L1489).
