@@ -109,3 +109,138 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-21). Validates t
   Touches: `astra_downloader/download.py` (map LOGIN_REQUIRED/UNPLAYABLE/format-degraded outcomes to advice), companion download-card `error_advice` surface, popup health banner.
   Acceptance: when a YouTube download fails with a sign-in/age-gate/UNPLAYABLE class or completes with only a 360p muxed format while no provider is running, the error/advice line explicitly suggests installing a PO-token provider; unchanged when a provider is live.
   Complexity: M
+
+## Research-Driven Additions — 2026-07-27 (Astra Downloader companion deep research)
+Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-scoped). No P0 — the companion is well-hardened; these are reliability/capability/UX gaps. Does not duplicate the companion items already in `Roadmap_Blocked.md` (bgutil auto-provision, playlist bounding, /health token echo, unauth /health log leak, license route, release assets, Chrome-LNA validation, cookie-domain tightening, native-host handshake).
+
+### P1 — Next: freshness, transport survivability, real format choice
+
+- [ ] P1 — Move the bundled yt-dlp to the nightly update channel (configurable)
+  Why: updates run plain `yt-dlp -U` = the monthly stable channel, which lags YouTube breakage by weeks; yt-dlp recommends nightly for regular users. Cheapest reliability win against the "downloads suddenly break" class.
+  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/astra_downloader.py:1248` (`[stage_path, '-U']`); https://github.com/yt-dlp/yt-dlp-nightly-builds
+  Touches: `astra_downloader/astra_downloader.py` (`_run_ytdlp_self_update` → `--update-to nightly@latest`), `config.py` (new `YtDlpUpdateChannel` = stable|nightly, default nightly), `gui.py` Maintenance UI.
+  Acceptance: a fresh install tracks nightly by default; the channel is switchable in Settings; `/health.ytDlpVersion` reflects the nightly build after an update; rollback still works.
+  Complexity: S
+
+- [ ] P1 — Per-URL format listing endpoint (real format picker, not a static list)
+  Why: `/config` returns only a hardcoded quality/format list, so neither the extension nor the GUI can offer the actual formats a video exposes; competitors (Seal, Parabolic, Stacher) all list real formats, and MeTube's static builder produces recurring "best isn't best" bugs.
+  Evidence: RESEARCH.md §Competitive + Exec Summary; `astra_downloader/routes.py:691` (`/config` static lists); https://github.com/alexta69/metube/issues/452
+  Touches: `astra_downloader/routes.py` (new `POST /formats` → yt-dlp `--dump-json`/`-F`, auth+rate-limited+YouTube-allowlisted), `download.py` (format enumeration helper), extension download-options UI.
+  Acceptance: `POST /formats {url}` returns the video's real available formats (id, ext, resolution, codec, filesize/estimate, has-audio); a malformed/non-YouTube URL is rejected exactly like `/download`.
+  Complexity: M
+
+- [ ] P1 — Native-messaging download-command transport as a Chrome-LNA fallback
+  Why: Chrome 142 (Oct 2025) enforces Local Network Access, which can gate/block the extension's `127.0.0.1` fetch to the companion; the token path already rides native messaging but the *download command* path is HTTP-only, so downloads can fail while auth still works. Native messaging is the LNA-immune bridge (browserpass/KeePassXC/1Password pattern).
+  Evidence: RESEARCH.md §Security/Reliability + Open Questions; `astra_downloader/astra_downloader.py` (`handle_native_bootstrap_request` serves only ping/get-token); https://developer.chrome.com/blog/local-network-access . Extends the `Roadmap_Blocked.md` "Validate Chrome LNA exemption" item from validation to implementation.
+  Touches: `astra_downloader/astra_downloader.py` (native host message loop → accept download/status/queue verbs), extension `MediaDLManager` (detect localhost-fetch blocked → fall back to native transport), native-host manifest.
+  Acceptance: with the extension's `127.0.0.1` fetch blocked/denied by LNA, a download can still be initiated and its status polled over the native-messaging channel; when direct fetch works, behavior is unchanged.
+  Complexity: L
+
+### P2 — Later: expose the knobs yt-dlp already has + GUI truthfulness/robustness
+
+- [ ] P2 — Fix the transient-bind-failure port rewrite (session-only fallback)
+  Why: `_start_server` calls `config.set('ServerPort', …)` + save when it falls back off a busy 9751, permanently rewriting the user's configured port on a transient conflict — the same state-drift class behind port-shadowing confusion.
+  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/gui.py` (`_start_server` fallback-persist path).
+  Touches: `astra_downloader/gui.py` (bind fallback), `astra_downloader/routes.py` (port selection).
+  Acceptance: a transient bind conflict binds a fallback port for that session only; the persisted `ServerPort` is unchanged; a user-chosen port survives a restart after the conflict clears.
+  Complexity: S
+
+- [ ] P2 — Expose concurrent-downloads and explicit yt-dlp retries as config
+  Why: `MAX_CONCURRENT=3` is a hardcoded module constant and the pipeline relies solely on the stall watchdog with no `--retries`/`--fragment-retries`/`--extractor-retries`, so transient throttling fails a download instead of retrying.
+  Evidence: RESEARCH.md §Exec Summary; `astra_downloader/download.py:36` (MAX_CONCURRENT), `download.py:1077` (arg builder has no retry flags).
+  Touches: `config.py` (clamped `MaxConcurrentDownloads`, retry counts), `download.py` (consume them), `gui.py` Performance settings.
+  Acceptance: concurrent-download limit is settable (clamped) and takes effect; `--retries`/`--fragment-retries` appear in the yt-dlp argv; defaults preserve current behavior.
+  Complexity: S
+
+- [ ] P2 — Configurable output/filename template
+  Why: the output template is hardcoded `%(title).200B.%(ext)s` (playlist: `%(playlist_title).200B/…`); archivers need Plex/Jellyfin-style naming and folder organization (ytdl-sub/MeTube ship this).
+  Evidence: RESEARCH.md §Competitive; `astra_downloader/download.py:1070-1072`; https://github.com/jmbannon/ytdl-sub
+  Touches: `config.py` (`OutputTemplate`, validated against a safe field allowlist to preserve CVE-2024-38519 hardening), `download.py` (template build), `gui.py` Storage settings.
+  Acceptance: a user-set template drives output paths for single + playlist downloads; an unsafe/invalid template is rejected and falls back to the current default.
+  Complexity: M
+
+- [ ] P2 — Clip / section download via ffmpeg re-cut
+  Why: clipping a slice is a popular request (Stacher trim sliders); Parabolic deliberately uses an ffmpeg re-cut instead of yt-dlp `--download-sections` because the native flag is inaccurate.
+  Evidence: RESEARCH.md §Competitive; https://github.com/NickvisionApps/Parabolic/releases
+  Touches: `astra_downloader/download.py` (optional start/end → ffmpeg re-cut post-step), `routes.py` `/download` body (`section: {start,end}`), extension/GUI trim UI.
+  Acceptance: a download with a start/end range produces an accurately trimmed file; omitting the range is unchanged.
+  Complexity: M
+
+- [ ] P2 — Playlist preview + `--playlist-items` subset selection
+  Why: today a playlist URL is all-or-nothing; users want to see items and pick a subset before enqueue (MeTube/Parabolic/4K). Complements the tracked `Roadmap_Blocked.md` "Bound companion playlist downloads" safety item — this is the feature half.
+  Evidence: RESEARCH.md §Competitive; `astra_downloader/download.py:1120` (`--yes-playlist`, no item control).
+  Touches: `routes.py` (new `POST /playlist` → `--flat-playlist` preview), `download.py` (`--playlist-items` passthrough, validated), extension playlist UI.
+  Acceptance: `POST /playlist {url}` returns the item list without downloading; a download can specify a validated item range; unbounded playlist behavior stays gated by the existing safety cap.
+  Complexity: M
+
+- [ ] P2 — Diff/patch the GUI download list instead of full teardown
+  Why: `_update_ui` deletes and recreates every card via `_clear_layout` on each content-signature change at up to 2 Hz, destroying scroll position and focus and churning widgets.
+  Evidence: RESEARCH.md §Architecture; `astra_downloader/gui.py:1797` (`_clear_layout` rebuild), `gui.py:1742` (`_update_ui`).
+  Touches: `astra_downloader/gui.py` (`_update_ui`/`_download_card` → keyed reconciliation).
+  Acceptance: updating one download's progress mutates only that card; scroll position and keyboard focus survive a refresh.
+  Complexity: M
+
+- [ ] P2 — Download-complete tray/toast notification
+  Why: minimized-to-tray users get no signal a download finished; completion notifications are table-stakes (Seal, MeTube).
+  Evidence: RESEARCH.md §Competitive; `astra_downloader/gui.py:1813` (recent-transition detection point; no notification).
+  Touches: `astra_downloader/gui.py` (tray `showMessage` on terminal-success transition), `config.py` (toggle).
+  Acceptance: a download reaching `complete` while the window is hidden raises a tray notification; toggle in Settings; no notification for cancelled/failed unless opted in.
+  Complexity: S
+
+- [ ] P2 — `/shutdown` must not be a state-changing GET
+  Why: `/shutdown` performs teardown on GET (`@api.route('/shutdown')`, no methods), violating safe-method semantics for a local API in the active DNS-rebinding/CSRF threat class (token+Host-gating mitigates, but the shape is wrong).
+  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/routes.py:850`.
+  Touches: `astra_downloader/routes.py` (`/shutdown` → POST/DELETE), any caller.
+  Acceptance: teardown is reachable only via POST/DELETE with auth; GET returns 405.
+  Complexity: S
+
+### P3 — Under consideration: breadth, coherence, and larger bets
+
+- [ ] P3 — Make the SABR readiness pill reflect real capability
+  Why: `sabrSupport` is the hardcoded constant `"limited"` surfaced as a live readiness row, so it never reflects the installed yt-dlp; correct once the native SABR downloader (PR #13515) merges.
+  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/routes.py:388`, `gui.py:1098`; https://github.com/yt-dlp/yt-dlp/pull/13515
+  Touches: `astra_downloader/health.py` (derive SABR status from yt-dlp version/capability), `routes.py`, `gui.py`.
+  Acceptance: the SABR row reads "limited" while the installed yt-dlp lacks native SABR download and flips to "supported" once a capable version is installed; no more hardcoded string.
+  Complexity: S
+
+- [ ] P3 — Companion GUI accessibility pass
+  Why: status is conveyed by color-only dots, the log `QTextEdit` and the dashboard state dot have no accessible names, inline hardcoded hex greys risk sub-4.5:1 contrast, and the page fade ignores reduced-motion — the GUI's a11y lags the extension's WCAG-gated surfaces.
+  Evidence: RESEARCH.md §Architecture (GUI robustness); `astra_downloader/gui.py` (status dots ~L934/L1042, log QTextEdit ~L1136, inline hex ~L792-826, page fade `_animate_page` ~L1489).
+  Touches: `astra_downloader/gui.py` (accessible names on dots/log, text+icon status not color-alone, centralize colors + contrast audit, honor `prefers-reduced-motion`).
+  Acceptance: every status indicator exposes an accessible name and a non-color cue; the log and state dot are screen-reader nameable; readiness/text colors meet 4.5:1; the fade is skipped under reduced-motion.
+  Complexity: M
+
+- [ ] P3 — Clipboard link-grabber (paste YouTube URLs straight into the app)
+  Why: lets users download without the extension (e.g. links from chat/email); the link-grabber is JDownloader/Stacher's signature capture UX.
+  Evidence: RESEARCH.md §Competitive; https://jdownloader.org
+  Touches: `astra_downloader/gui.py` (opt-in persistent clipboard watcher → detected YouTube URLs staged for confirm), `config.py` (toggle).
+  Acceptance: with the opt-in on, copying a YouTube URL surfaces a stage-to-download prompt; off by default; ignores non-YouTube clipboard content.
+  Complexity: M
+
+- [ ] P3 — aria2c external-downloader option
+  Why: aria2c splits fragmented streams into many parallel connections for large speed gains on big/segmented media (Seal ships it); the app has only native download + concurrent fragments.
+  Evidence: RESEARCH.md §Competitive; https://github.com/JunkFood02/Seal
+  Touches: `astra_downloader/download.py` (`--external-downloader aria2c --downloader-args`), provisioning + checksum verify (mirror the Deno provisioner), `config.py`, `health.py` readiness row.
+  Acceptance: enabling aria2c provisions/verifies the binary and routes downloads through it; disabled keeps native download; a missing/failed aria2c falls back with clear advice.
+  Complexity: L
+
+- [ ] P3 — Companion GUI i18n scaffolding
+  Why: the companion GUI is entirely English (no `tr()`/QTranslator) while the paired extension ships 11 locales — a coherence gap for non-English users.
+  Evidence: RESEARCH.md §Exec Summary; `astra_downloader/gui.py` (all string literals).
+  Touches: `astra_downloader/gui.py` (wrap user-facing strings in `tr()`), `.ts`/`.qm` pipeline in `build.py`, at minimum the extension's shipped locale set.
+  Acceptance: GUI strings load from translation catalogs; at least one non-English locale renders; build packages the `.qm` files.
+  Complexity: L
+
+- [ ] P3 — Channel subscriptions + scheduled rescan (archiver bet)
+  Why: subscribe to a channel/playlist and auto-download new uploads on a schedule — the single feature 4K Video Downloader paywalls and the clearest competitive leapfrog (Stacher/ytdl-sub/TubeArchivist). Tradeoff: turns the app into an always-on stateful archiver (durable dedupe/archive state, storage growth, new failure surface) — must be built on a real archive-state store from day one, not bolted on.
+  Evidence: RESEARCH.md §Competitive + Open Questions; https://github.com/tubearchivist/tubearchivist, https://github.com/jmbannon/ytdl-sub
+  Touches: new subscription store + scheduler in the companion, `download.py` (archive-aware dedupe), `routes.py` (subscription CRUD), `gui.py` Subscriptions page, extension surface.
+  Acceptance: a subscribed channel auto-enqueues only genuinely new uploads on its schedule; already-downloaded items are not re-fetched across restarts; subscriptions and archive state survive a companion update.
+  Complexity: XL
+
+- [ ] P3 — Pin the companion self-update version manifest to the tagged Release
+  Why: the self-update reads `APP_VERSION` from `main` HEAD raw source; the binary is Release-sourced + digest-pinned + guarded, but keying the version check on branch HEAD leaves a branch-trust edge (a premature/bad main commit drives update logic).
+  Evidence: RESEARCH.md §Architecture; `astra_downloader/astra_downloader.py:~225` (companion update version URL).
+  Touches: `astra_downloader/astra_downloader.py` (read version from the latest tagged Release/manifest, not `main` raw source).
+  Acceptance: the update version comparison is sourced from the tagged Release/its digest manifest; a version bump on `main` without a published Release does not trigger update logic.
+  Complexity: M
