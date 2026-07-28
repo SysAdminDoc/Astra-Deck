@@ -516,12 +516,14 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_sublangs = Field("en")
         window.cfg_ratelimit = Field("")
         window.cfg_proxy = Field("")
+        window.cfg_outtmpl = Field("")
         window.statuses = []
         window._set_input_error = lambda field, value: setattr(field, "has_error", value)
         window._show_settings_status = lambda message, tone="neutral": window.statuses.append((message, tone))
         window._dependencies = {
             "clamp_int": ad.clamp_int,
             "normalize_output_dir": lambda value, fallback: (fallback, "invalid"),
+            "normalize_output_template": ad.normalize_output_template,
             "normalize_proxy": ad.normalize_proxy,
             "normalize_rate_limit": ad.normalize_rate_limit,
             "normalize_sublangs": ad.normalize_sublangs,
@@ -5259,6 +5261,30 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(n("%(filepath)s.%(ext)s"), "")
         self.assertEqual(n("%(title)s.%(ext)s; rm -rf"), "")
 
+    def test_normalize_output_template_rejects_broken_printf_syntax(self):
+        # These passed the charset/field checks but made yt-dlp fail EVERY
+        # download at startup with an opaque "Invalid output template".
+        import config as _config
+        n = _config.normalize_output_template
+        self.assertEqual(n("%(title/%(ext)s"), "", "unclosed field must be rejected")
+        self.assertEqual(n("50% %(title)s.%(ext)s"), "", "stray percent must be rejected")
+        self.assertEqual(n("%(title)s.%(ext)"), "", "field without conversion must be rejected")
+        # yt-dlp precision/padding conversions stay valid.
+        self.assertEqual(n("%(title).200B.%(ext)s"), "%(title).200B.%(ext)s")
+        self.assertEqual(n("%%/%(title)s.%(ext)s"), "%%/%(title)s.%(ext)s",
+                         "literal %% is valid printf")
+
+    def test_save_settings_flags_invalid_output_template(self):
+        # A rejected template must surface as a field error, never a silent
+        # "Settings saved." while sanitize blanks it to the default naming.
+        import inspect
+
+        gui_module = __import__("gui")
+        source = inspect.getsource(gui_module.MainWindowCore._save_settings)
+        self.assertIn("normalize_output_template", source)
+        self.assertIn("mark_error(\n                self.cfg_outtmpl", source)
+        self.assertIn('"OutputTemplate": outtmpl,', source)
+
     def test_manager_max_concurrent_reads_config(self):
         mgr = ad.DownloadManager(FakeConfig({"MaxConcurrentDownloads": 5}), FakeHistory())
         self.assertEqual(mgr._max_concurrent(), 5)
@@ -5269,10 +5295,52 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(mgr3._max_concurrent(), 3, "defaults to historical MAX_CONCURRENT")
 
 
-class TrayCompletionNotifyTests(unittest.TestCase):
-    """Download-complete tray notification: one-shot, hidden-only, toggleable."""
+class SabrReadinessTests(unittest.TestCase):
+    """SABR support pill: derived by the async readiness probe, refreshed on
+    every probe run — never a synchronous yt-dlp probe on the GUI thread."""
 
-    def _window(self, hidden=True, notify=True):
+    def _window(self):
+        calls = []
+        win = types.SimpleNamespace(
+            _set_readiness=lambda key, text, tone="neutral", tooltip="": calls.append((key, text, tone)),
+            _dependencies={'evaluate_sabr_support': lambda v: self._sabr_result},
+        )
+        return win, calls
+
+    def test_apply_readiness_updates_sabr_from_ytdlp_version(self):
+        win, calls = self._window()
+        self._sabr_result = "supported"
+        ad.MainWindow._apply_readiness(win, {"ytDlp": "2026.07.04", "ffmpeg": "8.1.2"})
+        self.assertIn(("sabr", "Supported", "success"), calls)
+        calls.clear()
+        self._sabr_result = "limited"
+        ad.MainWindow._apply_readiness(win, {"ytDlp": "2026.07.04", "ffmpeg": "8.1.2"})
+        self.assertIn(("sabr", "Limited", "warning"), calls)
+
+    def test_apply_readiness_survives_a_broken_sabr_evaluator(self):
+        win, calls = self._window()
+        def boom(_v):
+            raise RuntimeError("no")
+        win._dependencies['evaluate_sabr_support'] = boom
+        ad.MainWindow._apply_readiness(win, {"ytDlp": "2026.07.04", "ffmpeg": "8.1.2"})
+        self.assertIn(("sabr", "Limited", "warning"), calls)
+
+    def test_dashboard_build_never_probes_ytdlp_synchronously_for_sabr(self):
+        import inspect
+
+        gui_module = __import__("gui")
+        source = inspect.getsource(gui_module.MainWindowCore._build_dashboard)
+        self.assertNotIn("evaluate_sabr_support", source,
+                         "SABR must come from the async readiness probe, not a cold GUI-thread subprocess")
+
+
+class TrayCompletionNotifyTests(unittest.TestCase):
+    """Download-complete tray notification: one-shot, out-of-sight-only,
+    toggleable. 'Out of sight' = hidden to tray OR minimized to taskbar —
+    both states where the user can't see the queue (the settings label says
+    'while minimized')."""
+
+    def _window(self, hidden=True, notify=True, minimized=False):
         msgs = []
         tray = types.SimpleNamespace(showMessage=lambda *a: msgs.append(a))
         win = types.SimpleNamespace(
@@ -5280,6 +5348,7 @@ class TrayCompletionNotifyTests(unittest.TestCase):
             _seen_complete=set(),
             tray=tray,
             isHidden=lambda: hidden,
+            isMinimized=lambda: minimized,
         )
         return win, msgs
 
@@ -5307,6 +5376,14 @@ class TrayCompletionNotifyTests(unittest.TestCase):
         win, msgs = self._window(hidden=True, notify=False)
         ad.MainWindow._notify_completed_downloads(win, [self._dl("a", "complete")])
         self.assertEqual(len(msgs), 0)
+
+    def test_taskbar_minimized_window_notifies(self):
+        # A minimized-but-not-hidden window (title-bar minimize, no
+        # close-to-tray) is the most common "while minimized" state — the
+        # user can't see the queue, so the toast must fire.
+        win, msgs = self._window(hidden=False, minimized=True)
+        ad.MainWindow._notify_completed_downloads(win, [self._dl("a", "complete")])
+        self.assertEqual(len(msgs), 1)
 
     def test_seen_set_is_pruned_to_present_downloads(self):
         win, _ = self._window(hidden=True)

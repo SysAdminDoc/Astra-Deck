@@ -699,11 +699,13 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'build_diagnostics_bundle',
     'clamp_int',
     'create_api',
+    'evaluate_sabr_support',
     'get_ffmpeg_version',
     'get_recent_log_entries',
     'get_ytdlp_version',
     'maybe_auto_update_ytdlp',
     'normalize_output_dir',
+    'normalize_output_template',
     'normalize_proxy',
     'normalize_rate_limit',
     'normalize_sublangs',
@@ -786,7 +788,7 @@ class MainWindowCore(QMainWindow):
         if brand_icon.pixmap().isNull():
             brand_icon.setText("A")
             brand_icon.setStyleSheet(
-                "background:#ff5f4b;color:#180706;border-radius:8px;"
+                "background:#ff6552;color:#180706;border-radius:8px;"
                 "font-size:18px;font-weight:800;"
             )
         brand_copy = QVBoxLayout()
@@ -824,9 +826,9 @@ class MainWindowCore(QMainWindow):
         status_row.setContentsMargins(22, 0, 18, 22)
         status_row.setSpacing(8)
         self.status_dot = QLabel("\u2022")
-        self.status_dot.setStyleSheet("color: #697381; font-size: 20px;")
+        self.status_dot.setStyleSheet("color: #747f8d; font-size: 20px;")
         self.status_label = make_label("Stopped", "muted")
-        self.status_label.setStyleSheet("font-size: 12px; color: #8e98a5; font-weight: 600;")
+        self.status_label.setStyleSheet("font-size: 12px; color: #8d97a4; font-weight: 600;")
         status_row.addWidget(self.status_dot)
         status_row.addWidget(self.status_label)
         status_row.addStretch()
@@ -989,6 +991,20 @@ class MainWindowCore(QMainWindow):
         self._set_readiness("ytDlp", yt_dlp or "Missing", "success" if yt_dlp else "danger")
         self._set_readiness("ffmpeg", ffmpeg or "Missing", "success" if ffmpeg else "danger")
 
+        try:
+            sabr = self._dependencies['evaluate_sabr_support'](yt_dlp or "")
+        except Exception:
+            sabr = "limited"
+        if sabr == "supported":
+            self._set_readiness("sabr", "Supported", "success")
+        else:
+            self._set_readiness(
+                "sabr", "Limited", "warning",
+                "The installed yt-dlp streams SABR formats through fallback "
+                "clients. Updates flip this automatically once native "
+                "support ships.",
+            )
+
         runtime_name = str(runtime.get('runtime') or 'JS').title()
         runtime_version = runtime.get("version")
         if runtime.get("supported") and runtime.get('ejsReady'):
@@ -1097,19 +1113,13 @@ class MainWindowCore(QMainWindow):
         readiness_layout.addWidget(self._make_readiness_row("ytDlp", "yt-dlp"))
         readiness_layout.addWidget(self._make_readiness_row("ffmpeg", "FFmpeg"))
         readiness_layout.addWidget(self._make_readiness_row("deno", "JavaScript runtime"))
-        readiness_layout.addWidget(self._make_readiness_row("provider", "PO provider"))
-        try:
-            sabr_status = self._dependencies['evaluate_sabr_support'](
-                self._dependencies['get_ytdlp_version']()
-            )
-        except Exception:
-            sabr_status = "limited"
-        if sabr_status == "supported":
-            readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Supported"))
-            self._set_readiness("sabr", "Supported", "success")
-        else:
-            readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Limited"))
-            self._set_readiness("sabr", "Limited", "warning")
+        # SABR support is derived from the yt-dlp version by the async
+        # readiness probe (_apply_readiness) — never probe yt-dlp --version
+        # synchronously here: this runs on the GUI thread before first paint
+        # and a cold probe costs up to 5s. It also keeps the pill fresh after
+        # setup installs or updates yt-dlp mid-session.
+        readiness_layout.addWidget(self._make_readiness_row("sabr", "SABR", "Limited"))
+        self._set_readiness("sabr", "Limited", "warning")
 
         hero = QHBoxLayout()
         hero.setSpacing(0)
@@ -1314,7 +1324,8 @@ class MainWindowCore(QMainWindow):
         paths_l.addWidget(make_label("Filename template", "fieldLabel"))
         paths_l.addWidget(make_label(
             "Optional yt-dlp output template, relative to the folder above "
-            "(e.g. %(uploader)s/%(title)s.%(ext)s). Blank uses the default.",
+            "(e.g. %(uploader)s/%(title)s.%(ext)s). Must keep %(ext)s. "
+            "Blank uses the default.",
             "fieldHint", word_wrap=True,
         ))
         self.cfg_outtmpl = QLineEdit(self.config.get("OutputTemplate", ""))
@@ -1708,9 +1719,9 @@ class MainWindowCore(QMainWindow):
 
     def _update_server_ui(self):
         if self.server_running:
-            self.status_dot.setStyleSheet("color: #4cd6a2; font-size: 20px;")
+            self.status_dot.setStyleSheet("color: #55d69f; font-size: 20px;")
             self.status_label.setText("Running")
-            self.status_label.setStyleSheet("color: #aef2d5; font-size: 12px; font-weight: 650;")
+            self.status_label.setStyleSheet("color: #75dcb1; font-size: 12px; font-weight: 650;")
             self.dash_status.setText("Server online")
             self.dash_hint.setText("Local only \u00b7 ready for Astra Deck")
             self.server_badge.setProperty("tone", "success")
@@ -1721,9 +1732,9 @@ class MainWindowCore(QMainWindow):
             self.tray.setToolTip(f"{self._value('APP_NAME')} - Running")
             self._set_readiness("server", "Running", "success")
         else:
-            self.status_dot.setStyleSheet("color: #697381; font-size: 20px;")
+            self.status_dot.setStyleSheet("color: #747f8d; font-size: 20px;")
             self.status_label.setText("Stopped")
-            self.status_label.setStyleSheet("color: #8e98a5; font-size: 12px; font-weight: 650;")
+            self.status_label.setStyleSheet("color: #8d97a4; font-size: 12px; font-weight: 650;")
             self.dash_status.setText("Server offline")
             self.dash_hint.setText("Local only \u00b7 start before downloading")
             self.server_badge.setProperty("tone", "neutral")
@@ -1825,9 +1836,11 @@ class MainWindowCore(QMainWindow):
         return card
 
     def _notify_completed_downloads(self, downloads):
-        """Raise a one-shot tray notification when a download finishes while the
-        window is hidden. Completions seen while the window is visible are
-        marked as already-notified so they never fire a stale toast later."""
+        """Raise a one-shot tray notification when a download finishes while
+        the window is hidden (tray) or minimized to the taskbar — the states
+        where the user can't see the queue. Completions seen while the window
+        is visible are marked as already-notified so they never fire a stale
+        toast later."""
         present = {d.id for d in downloads}
         # Prune ids that left the active queue so the set can't grow unbounded.
         self._seen_complete &= present
@@ -1835,11 +1848,12 @@ class MainWindowCore(QMainWindow):
                           if d.status == 'complete' and d.id not in self._seen_complete]
         if not newly_complete:
             return
-        notify = self.config.get("NotifyOnComplete", True) and self.isHidden()
+        notify = (self.config.get("NotifyOnComplete", True)
+                  and (self.isHidden() or self.isMinimized()))
         for d in newly_complete:
             self._seen_complete.add(d.id)
             if notify:
-                title = (getattr(d, 'title', '') or '').strip() or 'Your download'
+                title = (getattr(d, 'title', '') or '').strip() or 'Your download is finished.'
                 try:
                     self.tray.showMessage(
                         "Download complete", title,
@@ -2055,13 +2069,21 @@ class MainWindowCore(QMainWindow):
 
     def _show_settings_status(self, message, tone="neutral"):
         colors = {
-            "success": "#9ff3bd",
-            "danger": "#ffb8b8",
-            "warning": "#ffe4a3",
-            "neutral": "#7b8794",
+            "success": "#75dcb1",
+            "danger": "#ff8d82",
+            "warning": "#edbd76",
+            "neutral": "#8d97a4",
         }
+        # Each status write bumps the generation so a delayed clear (the
+        # post-save 3.2s timer) never wipes a NEWER message — e.g. the
+        # "Unsaved changes" indicator from an edit made right after saving.
+        self._settings_status_generation = getattr(self, "_settings_status_generation", 0) + 1
         self.settings_status.setText(message)
         self.settings_status.setStyleSheet(f"color: {colors.get(tone, colors['neutral'])}; font-size: 12px;")
+
+    def _clear_settings_status_if_current(self, generation):
+        if getattr(self, "_settings_status_generation", 0) == generation:
+            self._show_settings_status("")
 
     def _mark_settings_dirty(self, *_args):
         if not hasattr(self, "settings_status") or not hasattr(self, "btn_save"):
@@ -2192,6 +2214,7 @@ class MainWindowCore(QMainWindow):
         validated_fields = (
             self.cfg_token, self.cfg_dl_path, self.cfg_audio_path,
             self.cfg_sublangs, self.cfg_ratelimit, self.cfg_proxy,
+            self.cfg_outtmpl,
         )
         for field in validated_fields:
             self._set_input_error(field, False)
@@ -2239,6 +2262,16 @@ class MainWindowCore(QMainWindow):
             proxy = self._dependencies['normalize_proxy'](proxy)
         if not new_token:
             mark_error(self.cfg_token, "The private API token cannot be empty.")
+        outtmpl_raw = self.cfg_outtmpl.text().strip()
+        outtmpl = self._dependencies['normalize_output_template'](outtmpl_raw) if outtmpl_raw else ""
+        if outtmpl_raw and not outtmpl:
+            # Never silently drop a rejected template — the save used to
+            # report success while sanitize blanked it to the default naming.
+            mark_error(
+                self.cfg_outtmpl,
+                "Keep %(ext)s and use only safe yt-dlp fields such as "
+                "%(title)s, %(id)s, %(uploader)s — no absolute paths or '..'.",
+            )
 
         if has_error:
             self._show_settings_status("Check the highlighted fields before saving.", "danger")
@@ -2254,12 +2287,13 @@ class MainWindowCore(QMainWindow):
         self.cfg_sublangs.setText(sublangs)
         self.cfg_ratelimit.setText(rate)
         self.cfg_proxy.setText(proxy)
+        self.cfg_outtmpl.setText(outtmpl)
         saved = self.config.update({
             "ServerPort": new_port,
             "ServerToken": new_token,
             "DownloadPath": dl_path,
             "AudioDownloadPath": audio_path,
-            "OutputTemplate": self.cfg_outtmpl.text().strip(),
+            "OutputTemplate": outtmpl,
             "EmbedMetadata": self.cfg_metadata.isChecked(),
             "EmbedThumbnail": self.cfg_thumbnail.isChecked(),
             "EmbedChapters": self.cfg_chapters.isChecked(),
@@ -2301,7 +2335,8 @@ class MainWindowCore(QMainWindow):
             self._show_settings_status("Settings saved.", "success")
         self.btn_save.setText("Saved")
         QTimer.singleShot(1500, lambda: self.btn_save.setText("Save changes"))
-        QTimer.singleShot(3200, lambda: self._show_settings_status(""))
+        status_generation = getattr(self, "_settings_status_generation", 0)
+        QTimer.singleShot(3200, lambda: self._clear_settings_status_if_current(status_generation))
 
     def _browse(self, line_edit):
         path = QFileDialog.getExistingDirectory(self, "Select Folder", line_edit.text())
@@ -2410,7 +2445,7 @@ class MainWindowCore(QMainWindow):
         try:
             self._append_log(f"Server failed to start: {msg}")
             self.status_label.setText("Server error")
-            self.status_label.setStyleSheet("color: #ffb8b8; font-size: 12px;")
+            self.status_label.setStyleSheet("color: #ff8d82; font-size: 12px;")
             self.dash_hint.setText("Server failed to start. Check the log for details.")
             if self.tray.isVisible():
                 self.tray.showMessage(
