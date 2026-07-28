@@ -6,6 +6,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.3] - 2026-07-27
+
+### Fixed
+- **Downloads silently routed to a stale/legacy companion.** The extension
+  probes `127.0.0.1:9751` (the companion's primary port) first and adopted any
+  server that answered `/health`. A leftover legacy downloader (e.g. an old
+  "YTYT-Downloader" started from a Startup shortcut) could squat that port with
+  a months-old bundled yt-dlp, so every download failed even though the real
+  Astra Downloader was running fine on a fallback port. `MediaDLManager` now
+  records the shadowing server it skips, and the repair prompt names the exact
+  port + version and points at Startup apps instead of failing with a generic
+  "not installed" message.
+- **Companion surfaced benign warnings as the failure reason.** A failed
+  download whose output contained only yt-dlp WARNING noise (most notoriously
+  "Your yt-dlp version … is older than 90 days") reported that warning as the
+  error, masking the true cause. The companion (v1.5.3) now filters benign
+  warning/progress lines, falls back to a clear exit-code message, and attaches
+  an actionable failure classification (advice + next action).
+
 ## [4.50.2] - 2026-07-26
 
 ### Changed

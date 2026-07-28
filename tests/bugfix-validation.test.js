@@ -1547,7 +1547,8 @@ test('MediaDL probe rejects legacy localhost services without Astra health ident
     assert.ok(block.includes("_SERVICE_ID: 'astra-downloader'"), 'MediaDLManager should define the expected service id');
     assert.ok(block.includes('data.service === this._SERVICE_ID'), 'MediaDLManager should prefer explicit Astra health identity');
     assert.ok(block.includes('data.token_required === true && Number.isInteger(data.port)'), 'MediaDLManager should only accept legacy health responses with the Astra schema');
-    assert.ok(block.includes('Ignoring non-Astra downloader response'), 'MediaDLManager should log ignored localhost impostor responses');
+    assert.ok(block.includes('is occupied by a non-Astra downloader'), 'MediaDLManager should log ignored localhost impostor responses');
+    assert.ok(block.includes('foreignServer = { port'), 'MediaDLManager should record the shadowing server so the repair prompt can name it');
 });
 
 // ── findBalancedObjectLiteral: edge cases ──

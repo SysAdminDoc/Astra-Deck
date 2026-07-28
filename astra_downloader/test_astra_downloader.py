@@ -1152,6 +1152,29 @@ class DownloadFailureClassifierTests(unittest.TestCase):
             'po-token-required',
         )
 
+    def test_benign_failure_noise_never_becomes_the_surfaced_error(self):
+        import download
+        noise = [
+            'WARNING: Your yt-dlp version (2026.03.17) is older than 90 days!',
+            '[youtube] dQw4w9WgXcQ: Downloading webpage',
+            'WARNING: [youtube] some web formats require a PO Token',
+            '[download] Destination: video.mp4',
+            'MDLP_JSON {"downloaded_bytes": 1}',
+        ]
+        for line in noise:
+            with self.subTest(line=line):
+                self.assertTrue(download._is_benign_failure_noise(line))
+        for line in (
+            'ERROR: Video unavailable',
+            'ERROR: Sign in to confirm you are not a bot',
+            'ffmpeg exited with code 1',
+        ):
+            with self.subTest(line=line):
+                self.assertFalse(download._is_benign_failure_noise(line))
+        # The whole point: the version-age nag must never be the failure reason.
+        meaningful = [ln for ln in noise if not download._is_benign_failure_noise(ln)]
+        self.assertEqual(meaningful, [])
+
     def test_download_error_payload_keeps_legacy_code_and_action_fields(self):
         payload = ad.download_error_payload('po-token-required')
 
@@ -3915,10 +3938,10 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_2(self):
-        # v1.5.2 identifies the bounded helper installation, rollback, and
-        # maintenance-state hardening in every companion version surface.
-        self.assertEqual(ad.APP_VERSION, "1.5.2")
+    def test_app_version_bumped_to_1_5_3(self):
+        # v1.5.3 surfaces the true download-failure cause instead of benign
+        # yt-dlp WARNING noise (e.g. the "older than 90 days" version nag).
+        self.assertEqual(ad.APP_VERSION, "1.5.3")
 
 
 class EndToEndDownloadTests(unittest.TestCase):

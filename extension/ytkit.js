@@ -883,7 +883,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.50.2';
+    const YTKIT_VERSION = '4.50.3';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
