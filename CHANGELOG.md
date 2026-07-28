@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.5] - 2026-07-27
+
+### Changed
+- **Auto-start the companion on download with a cold-start-safe wait.**
+  Initiating a download while Astra Downloader is stopped already fires the
+  registered `mediadl://start` protocol to launch it, but the initial attempt
+  used the shortest poll window (4 × 1.5s ≈ 6s) — too tight for a cold start of
+  the 40 MB one-file companion (self-unpack + Qt init + server bind can take
+  8–10s). The initial auto-start now waits up to 8 × 1.5s ≈ 12s, so a download
+  clicked against a stopped companion reliably starts it and proceeds instead of
+  falling through to the install/repair prompt. (Requires the companion to have
+  run once so the protocol is registered; the first protocol launch shows a
+  one-time browser "Open Astra Downloader?" confirmation.)
+
 ## [4.50.4] - 2026-07-27
 
 ### Changed

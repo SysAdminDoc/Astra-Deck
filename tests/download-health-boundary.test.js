@@ -168,3 +168,26 @@ test('a non-Astra server squatting the primary port is skipped and recorded', as
     assert.equal(shadowResult.ok, false);
     assert.deepEqual(shadowResult.foreignServer, { port: 9751, version: '4.1.0' });
 });
+
+// A download initiated while the companion is stopped must fire mediadl://start
+// and adopt the server once it comes up — the "start it on download" path.
+test('initiating a download auto-starts a stopped companion via mediadl://start', async () => {
+    let started = false;
+    const protocolCalls = [];
+    const realHealth = { ...fixture, port: 9751 };
+    const feature = createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: 'native-token' }),
+        openProtocol: (uri) => { protocolCalls.push(uri); if (uri === 'mediadl://start') started = true; },
+        showToast: () => {},
+        extensionFetchJson: async ({ url }) => {
+            // Server is down until the protocol launch flips `started`.
+            if (!started) throw new Error('ECONNREFUSED');
+            if (url.includes(':9751/')) return { data: realHealth };
+            throw new Error('ECONNREFUSED');
+        },
+    });
+    const result = await feature.MediaDLManager.tryAutoStart(4);
+    assert.deepEqual(protocolCalls, ['mediadl://start'], 'must launch the companion via its registered protocol');
+    assert.equal(result.ok, true, 'must adopt the server once it responds');
+    assert.equal(result.port, 9751);
+});
