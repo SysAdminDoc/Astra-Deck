@@ -1802,7 +1802,8 @@ function buildSettingsPanel() {
             paneContext.className = 'ytkit-pane-context';
             paneContext.setAttribute(
                 'aria-label',
-                t('panelPaneContextAria', `${cat} current preferences`)
+                t('panelPaneContextAriaTpl', '{category} current preferences')
+                    .replace('{category}', cat)
             );
             paneContextFeatures.forEach((feature) => {
                 const settingKey = feature.settingKey || feature.id;
@@ -3184,7 +3185,11 @@ function attachUIEventListeners() {
 
         // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
         let _textareaReinitTimer = null;
-        let _rangeReinitTimer = null;
+        // Per-feature reinit debounce. A single shared timer let a color
+        // input within 300ms of a range drag (or a second control) cancel the
+        // FIRST feature's pending destroy/init — its value was saved but
+        // never applied until an unrelated reinit or navigation.
+        const _reinitTimers = new Map();
         doc.addEventListener('input', (e) => {
             if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-input')) {
@@ -3256,16 +3261,16 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Range setting'} saved.`, 'success');
                 if (feature) {
-                    if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
-                    _rangeReinitTimer = setTimeout(() => {
-                        _rangeReinitTimer = null;
+                    if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                    _reinitTimers.set(featureId, setTimeout(() => {
+                        _reinitTimers.delete(featureId);
                         try { destroyFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Destroy failed for "${featureId}": ${err.message}`);
                         }
                         try { initFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Init failed for "${featureId}": ${err.message}`);
                         }
-                    }, 300);
+                    }, 300));
                 }
             }
             // Color picker
@@ -3282,16 +3287,16 @@ function attachUIEventListeners() {
                     // Native color dialogs fire `input` continuously while
                     // dragging — debounce the full destroy/init cycle like the
                     // range handler does.
-                    if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
-                    _rangeReinitTimer = setTimeout(() => {
-                        _rangeReinitTimer = null;
+                    if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                    _reinitTimers.set(featureId, setTimeout(() => {
+                        _reinitTimers.delete(featureId);
                         try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
                             DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
                         }
                         try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
                             DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
                         }
-                    }, 300);
+                    }, 300));
                 }
             }
         });

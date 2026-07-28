@@ -2894,6 +2894,24 @@
   "panelLiveApplyBadge": {
     "message": "实时应用"
   },
+  "panelNavGroupCommunity": {
+    "message": "社区"
+  },
+  "panelNavGroupInteraction": {
+    "message": "互动"
+  },
+  "panelNavGroupPersonalization": {
+    "message": "个性化"
+  },
+  "panelNavGroupPlayer": {
+    "message": "播放器"
+  },
+  "panelNavGroupSystem": {
+    "message": "系统"
+  },
+  "panelPaneContextAriaTpl": {
+    "message": "{category} 当前偏好设置"
+  },
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },

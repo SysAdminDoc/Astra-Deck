@@ -2897,6 +2897,24 @@
   "panelLiveApplyBadge": {
     "message": "Aplicar ao vivo"
   },
+  "panelNavGroupCommunity": {
+    "message": "Community"
+  },
+  "panelNavGroupInteraction": {
+    "message": "Interaction"
+  },
+  "panelNavGroupPersonalization": {
+    "message": "Personalization"
+  },
+  "panelNavGroupPlayer": {
+    "message": "Player"
+  },
+  "panelNavGroupSystem": {
+    "message": "System"
+  },
+  "panelPaneContextAriaTpl": {
+    "message": "{category} current preferences"
+  },
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },
