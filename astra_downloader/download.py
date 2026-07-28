@@ -347,6 +347,26 @@ def download_error_payload(error_code, error=None, advice=None):
     }
 
 
+def _is_benign_failure_noise(line):
+    """True for yt-dlp output lines that must never be surfaced as the failure
+    reason. These are informational/warning/progress lines that routinely
+    appear in the tail of a failed run and would otherwise masquerade as the
+    cause (most notoriously the "your yt-dlp version is older than 90 days"
+    nag and the "PO Token which was not provided" web-formats warning)."""
+    low = str(line or '').strip().lower()
+    if not low:
+        return True
+    if low.startswith('warning:'):
+        return True
+    if 'is older than' in low and 'yt-dlp' in low:
+        return True
+    if low.startswith('[download]') or low.startswith('[youtube]'):
+        return True
+    if low.startswith('mdlp'):  # our own progress prefix
+        return True
+    return False
+
+
 def classify_download_failure(message='', lines=None):
     # Two-pass: classify the definitive final error message first, and only
     # consult the output tail when the message alone is unrecognized. Without
@@ -1276,10 +1296,37 @@ class DownloadManagerCore:
                     # blow past the JSON payload UI budget.
                     if last_error:
                         dl.error = last_error[-240:]
-                    elif last_lines:
-                        dl.error = " ".join(last_lines)[-240:]
                     else:
-                        dl.error = "Unknown error"
+                        # No real `ERROR:` line. yt-dlp still emits benign
+                        # WARNING noise (e.g. "Your yt-dlp version … is older
+                        # than 90 days", "PO Token which was not provided",
+                        # progress residue) that must NEVER be surfaced as the
+                        # failure reason — doing so masks the true cause and
+                        # reads as "the downloader is broken" when it merely
+                        # exited. Drop that noise before falling back.
+                        meaningful = [
+                            ln for ln in last_lines
+                            if ln and not _is_benign_failure_noise(ln)
+                        ]
+                        if meaningful:
+                            dl.error = " ".join(meaningful)[-240:]
+                        else:
+                            dl.error = (
+                                f"yt-dlp exited with code {proc.returncode} "
+                                "without reporting a specific error. The video "
+                                "may be unavailable, private, region-locked, or "
+                                "require sign-in."
+                            )
+                    # Attach an actionable classification (error_code / advice /
+                    # next_action) so the extension can render recovery guidance
+                    # instead of raw yt-dlp text. Preserves the message above.
+                    _failure_code = classify_download_failure(
+                        last_error or dl.error, last_lines
+                    )
+                    if _failure_code:
+                        apply_download_failure_classification(
+                            dl, _failure_code, error=dl.error
+                        )
                     combined = " ".join(last_lines).lower()
                     if 'live event has ended' in combined and dl.cookies_file:
                         self._dependencies['write_persistent_log'](

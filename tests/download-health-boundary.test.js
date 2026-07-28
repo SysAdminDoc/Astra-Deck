@@ -127,3 +127,44 @@ test('download health polling and navigation teardown use a deterministic lifecy
         else globalThis.document = previousDocument;
     }
 });
+
+// Regression: a stale/legacy downloader (e.g. an old YTYT-Downloader) can
+// answer /health on 9751 — the companion's primary port — without being Astra
+// Downloader. The extension must reject it by service identity, keep probing,
+// adopt the real companion on a fallback port, and record the shadowing server
+// so the repair prompt can name it instead of failing generically.
+test('a non-Astra server squatting the primary port is skipped and recorded', async () => {
+    // Legacy YTYT-Downloader health shape: no service/api/name, no token_required,
+    // no port — but a token + status:ok, exactly what fooled older builds.
+    const legacyHealth = { status: 'ok', downloads: 0, token: 'legacy-token', version: '4.1.0' };
+    const realHealth = { ...fixture, port: 9761 };
+
+    const feature = createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: 'native-token' }),
+        extensionFetchJson: async ({ url }) => {
+            if (url.includes(':9751/')) return { data: legacyHealth };
+            if (url.includes(':9761/')) return { data: realHealth };
+            throw new Error('ECONNREFUSED');
+        },
+    });
+    const mgr = feature.MediaDLManager;
+
+    const result = await mgr.check(true);
+    assert.equal(result.ok, true, 'should adopt the real companion despite the squatter');
+    assert.equal(result.port, 9761, 'must fall through to the fallback port');
+    assert.equal(mgr._foreignServer && mgr._foreignServer.port, 9751);
+    assert.equal(mgr._foreignServer && mgr._foreignServer.version, '4.1.0');
+
+    // And when ONLY the squatter is present, report not-installed but still
+    // surface which port is shadowed.
+    const shadowOnly = createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => ({ token: null, error: 'no native host' }),
+        extensionFetchJson: async ({ url }) => {
+            if (url.includes(':9751/')) return { data: legacyHealth };
+            throw new Error('ECONNREFUSED');
+        },
+    });
+    const shadowResult = await shadowOnly.MediaDLManager.check(true);
+    assert.equal(shadowResult.ok, false);
+    assert.deepEqual(shadowResult.foreignServer, { port: 9751, version: '4.1.0' });
+});

@@ -117,6 +117,11 @@
             _tokenSource: null,
             _nativeTokenError: null,
             _nativeChannelRequired: false,
+            // A non-Astra server answering /health on a companion port (e.g. a
+            // stale/legacy downloader squatting 9751). Recorded so we can tell
+            // the user exactly what is shadowing the companion instead of
+            // failing with a generic "not installed" message. { port, version }.
+            _foreignServer: null,
             _lastCheck: 0,
             _serverVersion: null,
             _autoStartAttempted: false,
@@ -187,6 +192,8 @@
             async _checkImpl(force) {
                 const now = Date.now();
                 const nativeToken = await this._requestNativeToken();
+                // First non-Astra server found squatting a companion port, if any.
+                let foreignServer = null;
                 const tryPort = async (port) => {
                     try {
                         const headers = { 'X-MDL-Client': 'MediaDL' };
@@ -198,8 +205,15 @@
                             timeout: 1500
                         });
                         if (this._isAstraDownloaderHealth(data)) return data;
-                        if (data && data.token) {
-                            DebugManager.log('MediaDL', `Ignoring non-Astra downloader response on port ${port}`);
+                        // Something answered /health here but it is NOT Astra
+                        // Downloader — most often a stale/legacy downloader
+                        // (e.g. an old YTYT-Downloader on 9751) that shadows the
+                        // real companion. Remember the first one so the repair
+                        // prompt can name the exact port instead of failing
+                        // silently.
+                        if (data && (data.token || data.status === 'ok' || data.version) && !foreignServer) {
+                            foreignServer = { port, version: (data && data.version) || null };
+                            DebugManager.log('MediaDL', `Port ${port} is occupied by a non-Astra downloader (v${foreignServer.version || '?'}); skipping`);
                         }
                     } catch (_) {
                         // reason: port may be occupied by unrelated local service; skip
@@ -236,6 +250,10 @@
                         this._tokenSource = nativeToken.token ? 'native' : 'legacy-health';
                         this._nativeTokenError = nativeToken.token ? null : nativeToken.error;
                         this._nativeChannelRequired = false;
+                        // Keep any squatter we passed on the way to the real
+                        // companion: it still shadows a companion port and may
+                        // win the race on the next restart. Fresh every check.
+                        this._foreignServer = foreignServer;
                         this._serverVersion = data.version || null;
                         this._lastCheck = now;
                         DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, auth=${this._tokenSource}, ${data.downloads || 0} active)`);
@@ -258,9 +276,10 @@
                     this._tokenSource = null;
                     this._nativeTokenError = nativeRequiredStatus.nativeTokenError;
                     this._nativeChannelRequired = true;
+                    this._foreignServer = foreignServer;
                     this._serverVersion = nativeRequiredStatus.version || null;
                     this._lastCheck = now;
-                    return nativeRequiredStatus;
+                    return { ...nativeRequiredStatus, foreignServer };
                 }
 
                 this._status = 'not-installed';
@@ -268,7 +287,8 @@
                 this._tokenSource = null;
                 this._nativeTokenError = nativeToken.error;
                 this._nativeChannelRequired = false;
-                return { ok: false };
+                this._foreignServer = foreignServer;
+                return { ok: false, foreignServer };
             },
 
             // v4.47.0 NF18: on-demand yt-dlp self-update via the
@@ -352,7 +372,7 @@
                 return { ok: false };
             },
 
-            resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; },
+            resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; this._foreignServer = null; },
 
             async copyInstallCommand() {
                 try {
@@ -437,6 +457,23 @@
                 desc.textContent = isRetryMode
                     ? 'Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service.'
                     : 'Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads.';
+
+                // A stale/legacy downloader squatting a companion port is a
+                // common, confusing failure: /health answers, so the extension
+                // used to just fail generically. Name the exact port + version
+                // and point at Startup apps so the user can evict it.
+                const foreign = this._foreignServer;
+                if (foreign && foreign.port) {
+                    desc.textContent =
+                        `Another program is answering on Astra Downloader's port ` +
+                        `(127.0.0.1:${foreign.port}` +
+                        (foreign.version ? `, reporting version ${foreign.version}` : '') +
+                        `). This is usually a leftover or older downloader shadowing the real one. ` +
+                        `Close it and remove it from your Startup apps (a common culprit is an old ` +
+                        `"YTYT-Downloader"/"Astra Deck Downloader" startup entry), then start Astra ` +
+                        `Downloader and choose Check again.`;
+                    prompt.dataset.state = 'error';
+                }
 
                 const note = document.createElement('div');
                 note.className = 'ytkit-install-prompt__note';
