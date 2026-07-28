@@ -215,6 +215,14 @@ def normalize_output_template(value):
     fields = _OUTPUT_FIELD_RE.findall(norm)
     if not fields or any(f not in _SAFE_OUTPUT_FIELDS for f in fields):
         return ""
+    # Printf-syntax check: after removing literal %% and every well-formed
+    # %(field)[pad][.prec]conv token, no stray % may remain. Without this an
+    # unclosed "%(title" or a lone "50%" passed the charset/field checks and
+    # then failed EVERY download at yt-dlp startup with an opaque
+    # "Invalid output template" error.
+    stripped = re.sub(r"%\(\w+\)(?:0?\d+)?(?:\.\d+)?[sdBjlqDSU]", "", norm.replace("%%", ""))
+    if "%" in stripped:
+        return ""
     return norm
 
 

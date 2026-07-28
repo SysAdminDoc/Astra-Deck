@@ -64,7 +64,7 @@ try:
         HistoryStore,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
         clean_path_text, clean_text, coerce_bool, load_json_file,
-        normalize_output_dir, normalize_proxy,
+        normalize_output_dir, normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
         sanitize_history_entries,
         validate_download_request_body,
@@ -121,7 +121,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
         HistoryStore,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
         clean_path_text, clean_text, coerce_bool, load_json_file,
-        normalize_output_dir, normalize_proxy,
+        normalize_output_dir, normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
         sanitize_history_entries,
         validate_download_request_body,
@@ -2773,7 +2773,7 @@ QPushButton {
     background-color: transparent;
     color: #d8dde3;
     border: 1px solid #343d49;
-    border-radius: 7px;
+    border-radius: 6px;
     padding: 7px 13px;
     min-height: 36px;
     font-size: 13px;
@@ -2799,7 +2799,7 @@ QPushButton[class="nav"] {
     background: transparent;
     border: none;
     border-left: 3px solid transparent;
-    border-radius: 5px;
+    border-radius: 4px;
     text-align: left;
     padding: 11px 14px;
     margin: 0 12px 5px 12px;
@@ -2821,7 +2821,7 @@ QLineEdit, QSpinBox, QComboBox {
     background-color: #11161d;
     color: #f0eeeb;
     border: 1px solid #343e4a;
-    border-radius: 7px;
+    border-radius: 6px;
     padding: 7px 10px;
     min-height: 36px;
     font-size: 13px;
@@ -2875,7 +2875,7 @@ QTextEdit {
     background-color: #0d1218;
     color: #b4bcc6;
     border: 1px solid #303945;
-    border-radius: 7px;
+    border-radius: 6px;
     font-family: "Cascadia Code", "Consolas", monospace;
     font-size: 12px;
     padding: 12px;
@@ -2884,13 +2884,13 @@ QScrollArea { border: none; background: transparent; }
 QScrollArea > QWidget > QWidget { background: transparent; }
 QScrollBar:vertical { background: transparent; width: 8px; border: none; margin: 2px; }
 QScrollBar::handle:vertical { background: #394350; border-radius: 4px; min-height: 28px; }
-QProgressBar { background: #151b22; border: none; border-radius: 3px; height: 6px; }
-QProgressBar::chunk { background: #ff6552; border-radius: 3px; }
+QProgressBar { background: #151b22; border: none; border-radius: 4px; height: 6px; }
+QProgressBar::chunk { background: #ff6552; border-radius: 4px; }
 QTabWidget::pane { border: none; }
 QTabBar { background: transparent; }
 QTabBar::tab { height: 0; width: 0; }
 QMenu { background: #11161d; color: #f0eeeb; border: 1px solid #343e4a; padding: 5px; }
-QMenu::item { padding: 7px 22px 7px 10px; border-radius: 5px; }
+QMenu::item { padding: 7px 22px 7px 10px; border-radius: 4px; }
 QMenu::item:selected { background: #242b35; }
 QToolTip { background: #11161d; color: #f0eeeb; border: 1px solid #343e4a; padding: 6px 8px; }
 """
@@ -3090,7 +3090,6 @@ class SetupWorker(SetupWorkerCore):
                 'extract_archive_executable_atomic': lambda *args, **kwargs: extract_archive_executable_atomic(*args, **kwargs),
                 'fetch_expected_sha256': lambda *args, **kwargs: fetch_expected_sha256(*args, **kwargs),
                 'get_ytdlp_version': lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
-                'evaluate_sabr_support': lambda *args, **kwargs: evaluate_sabr_support(*args, **kwargs),
                 'http_get': lambda *args, **kwargs: http_requests.get(*args, **kwargs),
                 'launch_command_parts': lambda *args, **kwargs: launch_command_parts(*args, **kwargs),
                 'log_crash': lambda *args, **kwargs: log_crash(*args, **kwargs),
@@ -3275,6 +3274,7 @@ class MainWindow(MainWindowCore):
                 'evaluate_sabr_support': lambda *args, **kwargs: evaluate_sabr_support(*args, **kwargs),
                 'maybe_auto_update_ytdlp': lambda *args, **kwargs: maybe_auto_update_ytdlp(*args, **kwargs),
                 'normalize_output_dir': lambda *args, **kwargs: normalize_output_dir(*args, **kwargs),
+                'normalize_output_template': lambda *args, **kwargs: normalize_output_template(*args, **kwargs),
                 'normalize_proxy': lambda *args, **kwargs: normalize_proxy(*args, **kwargs),
                 'normalize_rate_limit': lambda *args, **kwargs: normalize_rate_limit(*args, **kwargs),
                 'normalize_sublangs': lambda *args, **kwargs: normalize_sublangs(*args, **kwargs),
