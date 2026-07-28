@@ -117,13 +117,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P2 — Later: expose the knobs yt-dlp already has + GUI truthfulness/robustness
 
-- [ ] P2 — Expose concurrent-downloads and explicit yt-dlp retries as config
-  Why: `MAX_CONCURRENT=3` is a hardcoded module constant and the pipeline relies solely on the stall watchdog with no `--retries`/`--fragment-retries`/`--extractor-retries`, so transient throttling fails a download instead of retrying.
-  Evidence: RESEARCH.md §Exec Summary; `astra_downloader/download.py:36` (MAX_CONCURRENT), `download.py:1077` (arg builder has no retry flags).
-  Touches: `config.py` (clamped `MaxConcurrentDownloads`, retry counts), `download.py` (consume them), `gui.py` Performance settings.
-  Acceptance: concurrent-download limit is settable (clamped) and takes effect; `--retries`/`--fragment-retries` appear in the yt-dlp argv; defaults preserve current behavior.
-  Complexity: S
-
 - [ ] P2 — Configurable output/filename template
   Why: the output template is hardcoded `%(title).200B.%(ext)s` (playlist: `%(playlist_title).200B/…`); archivers need Plex/Jellyfin-style naming and folder organization (ytdl-sub/MeTube ship this).
   Evidence: RESEARCH.md §Competitive; `astra_downloader/download.py:1070-1072`; https://github.com/jmbannon/ytdl-sub

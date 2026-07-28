@@ -94,6 +94,12 @@ DEFAULT_CONFIG = {
     "SponsorBlock": False,
     "SponsorBlockAction": "remove",
     "ConcurrentFragments": 4,
+    # How many downloads run at once (was the hardcoded MAX_CONCURRENT=3).
+    "MaxConcurrentDownloads": 3,
+    # yt-dlp --retries / --fragment-retries. 10 matches yt-dlp's own default,
+    # so the shipped value preserves current behavior while letting users on
+    # flaky networks raise it.
+    "DownloadRetries": 10,
     "JavaScriptRuntime": "auto",
     "AutoUpdateYtDlp": True,
     # yt-dlp release channel the self-updater tracks. Nightly is yt-dlp's own
@@ -295,6 +301,8 @@ def sanitize_config(raw):
     data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))
     data["SponsorBlockAction"] = "mark" if data.get("SponsorBlockAction") == "mark" else "remove"
     data["ConcurrentFragments"] = clamp_int(data.get("ConcurrentFragments"), 4, 1, 32)
+    data["MaxConcurrentDownloads"] = clamp_int(data.get("MaxConcurrentDownloads"), 3, 1, 10)
+    data["DownloadRetries"] = clamp_int(data.get("DownloadRetries"), 10, 0, 50)
     runtime = clean_text(data.get("JavaScriptRuntime"), "auto", 16).lower()
     data["JavaScriptRuntime"] = runtime if runtime in {"auto", "deno", "node"} else "auto"
     channel = clean_text(data.get("YtDlpUpdateChannel"), "nightly", 16).lower()

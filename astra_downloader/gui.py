@@ -1359,6 +1359,36 @@ class MainWindowCore(QMainWindow):
         frag_row.addWidget(self.cfg_fragments)
         perf_l.addLayout(frag_row)
         perf_l.addWidget(make_divider())
+
+        conc_row = QHBoxLayout()
+        conc_copy = QVBoxLayout()
+        conc_copy.setSpacing(2)
+        conc_copy.addWidget(make_label("Simultaneous downloads", "fieldLabel"))
+        conc_copy.addWidget(make_label("How many downloads run at once.", "fieldHint", word_wrap=True))
+        conc_row.addLayout(conc_copy, 1)
+        self.cfg_maxconcurrent = QSpinBox()
+        self.cfg_maxconcurrent.setAccessibleName("Simultaneous downloads")
+        self.cfg_maxconcurrent.setRange(1, 10)
+        self.cfg_maxconcurrent.setValue(self._dependencies['clamp_int'](self.config.get("MaxConcurrentDownloads", 3), 3, 1, 10))
+        self.cfg_maxconcurrent.setFixedWidth(86)
+        conc_row.addWidget(self.cfg_maxconcurrent)
+        perf_l.addLayout(conc_row)
+        perf_l.addWidget(make_divider())
+
+        retries_row = QHBoxLayout()
+        retries_copy = QVBoxLayout()
+        retries_copy.setSpacing(2)
+        retries_copy.addWidget(make_label("Download retries", "fieldLabel"))
+        retries_copy.addWidget(make_label("Retry attempts on transient network errors.", "fieldHint", word_wrap=True))
+        retries_row.addLayout(retries_copy, 1)
+        self.cfg_retries = QSpinBox()
+        self.cfg_retries.setAccessibleName("Download retries")
+        self.cfg_retries.setRange(0, 50)
+        self.cfg_retries.setValue(self._dependencies['clamp_int'](self.config.get("DownloadRetries", 10), 10, 0, 50))
+        self.cfg_retries.setFixedWidth(86)
+        retries_row.addWidget(self.cfg_retries)
+        perf_l.addLayout(retries_row)
+        perf_l.addWidget(make_divider())
         rate_row = QHBoxLayout()
         rate_copy = QVBoxLayout()
         rate_copy.setSpacing(2)
@@ -1481,6 +1511,8 @@ class MainWindowCore(QMainWindow):
             self.cfg_sponsorblock.toggled,
             self.cfg_sb_action.currentIndexChanged,
             self.cfg_fragments.valueChanged,
+            self.cfg_maxconcurrent.valueChanged,
+            self.cfg_retries.valueChanged,
             self.cfg_ratelimit.textChanged,
             self.cfg_proxy.textChanged,
             self.cfg_js_runtime.currentIndexChanged,
@@ -2173,6 +2205,8 @@ class MainWindowCore(QMainWindow):
             "SponsorBlock": self.cfg_sponsorblock.isChecked(),
             "SponsorBlockAction": self.cfg_sb_action.currentData(),
             "ConcurrentFragments": self.cfg_fragments.value(),
+            "MaxConcurrentDownloads": self.cfg_maxconcurrent.value(),
+            "DownloadRetries": self.cfg_retries.value(),
             "RateLimit": rate,
             "Proxy": proxy,
             "JavaScriptRuntime": self.cfg_js_runtime.currentData(),

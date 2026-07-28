@@ -7,6 +7,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Configurable simultaneous downloads and retries.** New "Simultaneous
+  downloads" (1–10, default 3 — previously a hardcoded limit) and "Download
+  retries" (0–50, default 10) settings in the companion's Performance settings;
+  retries map to yt-dlp `--retries`/`--fragment-retries`.
 - **Per-URL format listing (`POST /formats`).** The companion can now report a
   video's real available formats (id, ext, resolution, codec, filesize, has
   audio/video) via yt-dlp `-J`, run under the same extractor + JS-runtime
