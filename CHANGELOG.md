@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+- **Companion tracks the yt-dlp nightly channel by default.** yt-dlp updates now
+  run `--update-to <channel>@latest` instead of the channel-locked `-U`, and a
+  new "yt-dlp update channel" setting (Nightly/Stable, default Nightly) is in
+  the companion's Performance settings. Nightly ships same-day YouTube extractor
+  fixes; the monthly stable channel lagged breakage by weeks. Rollback is
+  unchanged.
+
 ## [4.50.5] - 2026-07-27
 
 ### Changed

@@ -115,13 +115,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P1 — Next: freshness, transport survivability, real format choice
 
-- [ ] P1 — Move the bundled yt-dlp to the nightly update channel (configurable)
-  Why: updates run plain `yt-dlp -U` = the monthly stable channel, which lags YouTube breakage by weeks; yt-dlp recommends nightly for regular users. Cheapest reliability win against the "downloads suddenly break" class.
-  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/astra_downloader.py:1248` (`[stage_path, '-U']`); https://github.com/yt-dlp/yt-dlp-nightly-builds
-  Touches: `astra_downloader/astra_downloader.py` (`_run_ytdlp_self_update` → `--update-to nightly@latest`), `config.py` (new `YtDlpUpdateChannel` = stable|nightly, default nightly), `gui.py` Maintenance UI.
-  Acceptance: a fresh install tracks nightly by default; the channel is switchable in Settings; `/health.ytDlpVersion` reflects the nightly build after an update; rollback still works.
-  Complexity: S
-
 - [ ] P1 — Per-URL format listing endpoint (real format picker, not a static list)
   Why: `/config` returns only a hardcoded quality/format list, so neither the extension nor the GUI can offer the actual formats a video exposes; competitors (Seal, Parabolic, Stacher) all list real formats, and MeTube's static builder produces recurring "best isn't best" bugs.
   Evidence: RESEARCH.md §Competitive + Exec Summary; `astra_downloader/routes.py:691` (`/config` static lists); https://github.com/alexta69/metube/issues/452

@@ -1402,6 +1402,24 @@ class MainWindowCore(QMainWindow):
         self.cfg_js_runtime.setCurrentIndex(max(0, self.cfg_js_runtime.findData(selected_runtime)))
         runtime_row.addWidget(self.cfg_js_runtime)
         perf_l.addLayout(runtime_row)
+        perf_l.addWidget(make_divider())
+        channel_row = QHBoxLayout()
+        channel_copy = QVBoxLayout()
+        channel_copy.setSpacing(2)
+        channel_copy.addWidget(make_label("yt-dlp update channel", "fieldLabel"))
+        channel_copy.addWidget(make_label(
+            "Nightly ships same-day YouTube fixes; stable lags by weeks.",
+            "fieldHint", word_wrap=True,
+        ))
+        channel_row.addLayout(channel_copy, 1)
+        self.cfg_ytdlp_channel = QComboBox()
+        self.cfg_ytdlp_channel.setAccessibleName("yt-dlp update channel")
+        self.cfg_ytdlp_channel.addItem("Nightly (recommended)", "nightly")
+        self.cfg_ytdlp_channel.addItem("Stable", "stable")
+        selected_channel = self.config.get("YtDlpUpdateChannel", "nightly")
+        self.cfg_ytdlp_channel.setCurrentIndex(max(0, self.cfg_ytdlp_channel.findData(selected_channel)))
+        channel_row.addWidget(self.cfg_ytdlp_channel)
+        perf_l.addLayout(channel_row)
         layout.addWidget(perf_card)
 
         # Behavior
@@ -1466,6 +1484,7 @@ class MainWindowCore(QMainWindow):
             self.cfg_ratelimit.textChanged,
             self.cfg_proxy.textChanged,
             self.cfg_js_runtime.currentIndexChanged,
+            self.cfg_ytdlp_channel.currentIndexChanged,
             self.cfg_autoupdate.toggled,
             self.cfg_closetotray.toggled,
             self.cfg_startmin.toggled,
@@ -2154,6 +2173,7 @@ class MainWindowCore(QMainWindow):
             "RateLimit": rate,
             "Proxy": proxy,
             "JavaScriptRuntime": self.cfg_js_runtime.currentData(),
+            "YtDlpUpdateChannel": self.cfg_ytdlp_channel.currentData(),
             "AutoUpdateYtDlp": self.cfg_autoupdate.isChecked(),
             "CloseToTray": self.cfg_closetotray.isChecked(),
             "StartMinimized": self.cfg_startmin.isChecked(),

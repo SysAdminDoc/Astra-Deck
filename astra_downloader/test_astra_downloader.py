@@ -394,6 +394,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_sponsorblock = CheckField()
         window.cfg_sb_action = ComboField()
         window.cfg_js_runtime = ComboField("auto")
+        window.cfg_ytdlp_channel = ComboField("nightly")
         window.cfg_fragments = NumberField(4)
         window.cfg_autoupdate = CheckField()
         window.cfg_closetotray = CheckField()
@@ -4880,7 +4881,8 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
             return '2026.04.01' if payload == old_payload else ('2026.05.10' if payload == new_payload else '')
 
         def run_update(args, **_kwargs):
-            self.assertEqual(args[1], '-U')
+            self.assertEqual(args[1], '--update-to')
+            self.assertEqual(args[2], 'nightly@latest')
             Path(args[0]).write_bytes(new_payload)
             return subprocess.CompletedProcess(args=args, returncode=0, stdout='updated', stderr='')
 
@@ -5016,6 +5018,39 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
             self.assertIn(required, result,
                           f"_run_ytdlp_self_update result must carry {required!r}")
         self.assertEqual(result['source'], 'unit-test')
+
+    def test_self_update_targets_configured_channel(self):
+        # v1.5.5: the updater must switch/track the configured channel via
+        # --update-to <channel>@latest instead of the old channel-locked -U.
+        self._client()
+        completed = subprocess.CompletedProcess(args=[], returncode=0, stdout="ok", stderr="")
+        captured = {}
+
+        def _capture(args, **kwargs):
+            captured['args'] = list(args)
+            return completed
+
+        cases = (("nightly", "nightly@latest"), ("stable", "stable@latest"), (None, "nightly@latest"))
+        for channel, expected in cases:
+            with self.subTest(channel=channel):
+                cfg = {"ServerToken": self.TOKEN, "LastYtDlpUpdateCheck": ""}
+                if channel is not None:
+                    cfg["YtDlpUpdateChannel"] = channel
+                with mock.patch.object(ad.subprocess, 'run', side_effect=_capture), \
+                        mock.patch.object(ad, '_probe_ytdlp_binary', return_value='2026.04.01'), \
+                        mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
+                    ad._run_ytdlp_self_update(cfg, source_tag='unit-test')
+                self.assertIn('--update-to', captured['args'])
+                target = captured['args'][captured['args'].index('--update-to') + 1]
+                self.assertEqual(target, expected)
+                self.assertNotIn('-U', captured['args'])
+
+    def test_config_defaults_and_clamps_update_channel(self):
+        import config as _config
+        self.assertEqual(_config.DEFAULT_CONFIG["YtDlpUpdateChannel"], "nightly")
+        self.assertEqual(_config.sanitize_config({"YtDlpUpdateChannel": "stable"})["YtDlpUpdateChannel"], "stable")
+        self.assertEqual(_config.sanitize_config({"YtDlpUpdateChannel": "bogus"})["YtDlpUpdateChannel"], "nightly")
+        self.assertEqual(_config.sanitize_config({})["YtDlpUpdateChannel"], "nightly")
 
 
 class CompanionUpdateEndpointTests(unittest.TestCase):
