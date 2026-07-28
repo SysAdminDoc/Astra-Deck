@@ -876,7 +876,7 @@ def create_api(config, dl_manager, history, *, dependencies):
         status = 502 if result.get('error_code') == 'version-check-failed' else 500
         return cors_response(result, status)
 
-    @api.route('/shutdown')
+    @api.route('/shutdown', methods=['POST'])
     def shutdown():
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)

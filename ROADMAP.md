@@ -117,13 +117,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P2 — Later: expose the knobs yt-dlp already has + GUI truthfulness/robustness
 
-- [ ] P2 — Fix the transient-bind-failure port rewrite (session-only fallback)
-  Why: `_start_server` calls `config.set('ServerPort', …)` + save when it falls back off a busy 9751, permanently rewriting the user's configured port on a transient conflict — the same state-drift class behind port-shadowing confusion.
-  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/gui.py` (`_start_server` fallback-persist path).
-  Touches: `astra_downloader/gui.py` (bind fallback), `astra_downloader/routes.py` (port selection).
-  Acceptance: a transient bind conflict binds a fallback port for that session only; the persisted `ServerPort` is unchanged; a user-chosen port survives a restart after the conflict clears.
-  Complexity: S
-
 - [ ] P2 — Expose concurrent-downloads and explicit yt-dlp retries as config
   Why: `MAX_CONCURRENT=3` is a hardcoded module constant and the pipeline relies solely on the stall watchdog with no `--retries`/`--fragment-retries`/`--extractor-retries`, so transient throttling fails a download instead of retrying.
   Evidence: RESEARCH.md §Exec Summary; `astra_downloader/download.py:36` (MAX_CONCURRENT), `download.py:1077` (arg builder has no retry flags).
@@ -164,13 +157,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
   Evidence: RESEARCH.md §Competitive; `astra_downloader/gui.py:1813` (recent-transition detection point; no notification).
   Touches: `astra_downloader/gui.py` (tray `showMessage` on terminal-success transition), `config.py` (toggle).
   Acceptance: a download reaching `complete` while the window is hidden raises a tray notification; toggle in Settings; no notification for cancelled/failed unless opted in.
-  Complexity: S
-
-- [ ] P2 — `/shutdown` must not be a state-changing GET
-  Why: `/shutdown` performs teardown on GET (`@api.route('/shutdown')`, no methods), violating safe-method semantics for a local API in the active DNS-rebinding/CSRF threat class (token+Host-gating mitigates, but the shape is wrong).
-  Evidence: RESEARCH.md §Security/Reliability; `astra_downloader/routes.py:850`.
-  Touches: `astra_downloader/routes.py` (`/shutdown` → POST/DELETE), any caller.
-  Acceptance: teardown is reachable only via POST/DELETE with auth; GET returns 405.
   Complexity: S
 
 ### P3 — Under consideration: breadth, coherence, and larger bets
