@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.50.4] - 2026-07-27
+
+### Changed
+- **yt-dlp now auto-updates from the download path, not just at startup.**
+  YouTube regularly breaks older yt-dlp builds, so a companion that stayed
+  running for days could go stale between the rare server restarts that were
+  the only auto-update trigger. The companion (v1.5.4) now opens the throttled,
+  race-safe yt-dlp update window when a download is **initiated** and again when
+  the **queue drains to idle** (the race-free moment to swap the binary). The
+  updater still stages a sibling copy, verifies `--version`, keeps a
+  byte-verified rollback, and only replaces the live binary when no download is
+  running — so in-flight downloads are never blocked or corrupted. Check
+  throttle lowered 24h → 12h. This keeps yt-dlp current without shipping a new
+  extension or companion build: fresh yt-dlp releases land automatically the
+  next time the user downloads.
+
 ## [4.50.3] - 2026-07-27
 
 ### Fixed

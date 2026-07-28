@@ -31,6 +31,12 @@ class FakeConfig:
             "SponsorBlock": False,
             "RateLimit": "",
             "Proxy": "",
+            # Keep tests hermetic: start_download now opens the throttled
+            # yt-dlp auto-update window, and the real DownloadManager wires the
+            # real network updater. Default it off here so exercising a
+            # download never spawns a background `yt-dlp -U`. Auto-update tests
+            # pass their own config with this enabled.
+            "AutoUpdateYtDlp": False,
         }
         if data:
             self.data.update(data)
@@ -3938,10 +3944,10 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_3(self):
-        # v1.5.3 surfaces the true download-failure cause instead of benign
-        # yt-dlp WARNING noise (e.g. the "older than 90 days" version nag).
-        self.assertEqual(ad.APP_VERSION, "1.5.3")
+    def test_app_version_bumped_to_1_5_4(self):
+        # v1.5.4 opens the throttled yt-dlp auto-update window from the download
+        # path (initiation + queue-idle), not just at server startup.
+        self.assertEqual(ad.APP_VERSION, "1.5.4")
 
 
 class EndToEndDownloadTests(unittest.TestCase):
@@ -5699,6 +5705,37 @@ class DownloadWorkerRaceGuardTests(unittest.TestCase):
             dl.status = 'queued'
             manager._running_ids.add(dl_id)
         return dl
+
+    def test_start_download_opens_ytdlp_autoupdate_window(self):
+        # Initiating a download must trigger the throttled yt-dlp auto-update
+        # check (v1.5.4) so a long-running companion keeps yt-dlp fresh between
+        # restarts — passing the live active_count so the updater can defer
+        # while downloads run.
+        manager = self._manager()
+        calls = []
+        manager._dependencies['maybe_auto_update_ytdlp'] = (
+            lambda config, active_count_fn: calls.append((config, active_count_fn))
+        )
+        dl_id, err = manager.start_download("https://www.youtube.com/watch?v=autoupd001")
+        self.assertIsNone(err)
+        self.assertEqual(len(calls), 1, "download initiation must open the update window exactly once")
+        passed_config, passed_active = calls[0]
+        self.assertIs(passed_config, manager.config)
+        self.assertEqual(passed_active, manager.active_count,
+                         "the live active_count must be passed so the updater can defer while busy")
+        self.assertEqual(passed_active(), 0)
+
+    def test_maybe_refresh_ytdlp_is_a_safe_noop_without_the_hook(self):
+        manager = self._manager()
+        manager._dependencies.pop('maybe_auto_update_ytdlp', None)
+        manager.maybe_refresh_ytdlp('test')  # must not raise
+
+    def test_maybe_refresh_ytdlp_swallows_hook_failures(self):
+        manager = self._manager()
+        def boom(*_a, **_k):
+            raise RuntimeError('updater exploded')
+        manager._dependencies['maybe_auto_update_ytdlp'] = boom
+        manager.maybe_refresh_ytdlp('test')  # a broken updater must never crash a download
 
     def test_run_download_bails_when_cancel_lands_before_worker_entry(self):
         manager = self._manager()

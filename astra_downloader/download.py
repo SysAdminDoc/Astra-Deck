@@ -874,6 +874,12 @@ class DownloadManagerCore:
                 self._persist_locked()
             if not self._closing:
                 self._schedule()
+                # Queue drained to idle: this is the race-free window to
+                # actually apply a yt-dlp update that was deferred while
+                # downloads were running. No yt-dlp.exe is in flight, so the
+                # staged binary can be swapped in without a file-in-use race.
+                if self.active_count() == 0:
+                    self.maybe_refresh_ytdlp('queue-idle')
 
     def _schedule(self):
         to_start = []
@@ -920,6 +926,12 @@ class DownloadManagerCore:
         if err:
             return None, err
         audio_only = self._dependencies['coerce_bool'](audio_only, False)
+
+        # A download was initiated — open the throttled yt-dlp auto-update
+        # window. Fire-and-forget: it only acts once per interval and defers
+        # while downloads are active, so this call is a cheap no-op in the
+        # common case and never delays the download being started here.
+        self.maybe_refresh_ytdlp('download-initiated')
 
         with self._lock:
             self._reclaim_terminal_records_locked()
@@ -1814,6 +1826,33 @@ class DownloadManagerCore:
     def active_count(self):
         with self._lock:
             return len(self._running_ids)
+
+    def maybe_refresh_ytdlp(self, reason):
+        """Open the throttled, race-safe yt-dlp auto-update window from the
+        download path.
+
+        Called when a download is initiated and again when the queue drains to
+        idle. The updater it delegates to is throttled (one check per interval),
+        stages a *sibling* copy, verifies ``--version``, keeps a byte-verified
+        rollback, and only atomically swaps the live binary when no download is
+        running — so an in-flight download is never blocked or corrupted. This
+        is what keeps yt-dlp current WITHOUT shipping a new extension or
+        companion build: fresh yt-dlp releases land automatically the next time
+        the user downloads, or the moment the queue goes idle. Best-effort and
+        fully swallowed — an update hiccup must never fail a download."""
+        hook = self._dependencies.get('maybe_auto_update_ytdlp')
+        if hook is None:
+            return
+        try:
+            hook(self.config, self.active_count)
+        except Exception as exc:  # noqa: BLE001
+            try:
+                self._dependencies['write_persistent_log'](
+                    f"yt-dlp auto-update trigger ({reason}) failed: {exc}"
+                )
+            except Exception:
+                # reason: logging must not turn an update hiccup into a crash
+                pass
 
     def exists(self, dl_id):
         """True while the download id is still tracked in the active queue."""

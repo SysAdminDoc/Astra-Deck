@@ -172,7 +172,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.5.3"
+APP_VERSION = "1.5.4"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
@@ -1079,7 +1079,12 @@ def reset_ffmpeg_capabilities_cache():
 
 
 # ── v1.2.0: throttled yt-dlp auto-update helpers ──
-_YTDLP_UPDATE_INTERVAL_HOURS = 24
+# v1.5.4: 24h -> 12h. The check now fires on the download path (initiation +
+# queue-idle), not just at the rare server restart, so a shorter throttle keeps
+# yt-dlp fresh — important when YouTube breaks older builds and yt-dlp ships a
+# same-day fix — while still bounding GitHub release checks to at most twice a
+# day per user.
+_YTDLP_UPDATE_INTERVAL_HOURS = 12
 _YTDLP_UPDATE_LOCK = threading.Lock()
 _COMPANION_UPDATE_LOCK = threading.Lock()
 
@@ -2983,6 +2988,11 @@ class DownloadManager(DownloadManagerCore):
                 'coerce_bool': lambda *args, **kwargs: coerce_bool(*args, **kwargs),
                 'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
                 'load_json_file': lambda *args, **kwargs: load_json_file(*args, **kwargs),
+                # v1.5.4: let the download path drive the throttled, race-safe
+                # yt-dlp auto-update so a long-running companion keeps yt-dlp
+                # current between restarts — the download path, not just server
+                # startup, now opens the update window.
+                'maybe_auto_update_ytdlp': lambda *args, **kwargs: maybe_auto_update_ytdlp(*args, **kwargs),
                 'normalize_output_dir': lambda *args, **kwargs: normalize_output_dir(*args, **kwargs),
                 'normalize_url': lambda *args, **kwargs: normalize_url(*args, **kwargs),
                 'probe_javascript_runtime': lambda *args, **kwargs: probe_javascript_runtime(*args, **kwargs),
