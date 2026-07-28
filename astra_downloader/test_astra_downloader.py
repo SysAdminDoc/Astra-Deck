@@ -385,6 +385,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_token = TextField("b" * 32)
         window.cfg_dl_path = TextField(window.config.get("DownloadPath"))
         window.cfg_audio_path = TextField("")
+        window.cfg_outtmpl = TextField("")
         window.cfg_sublangs = TextField("en")
         window.cfg_ratelimit = TextField("")
         window.cfg_proxy = TextField("")
@@ -5141,6 +5142,26 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(_config.sanitize_config({"MaxConcurrentDownloads": 0})["MaxConcurrentDownloads"], 1)
         self.assertEqual(_config.sanitize_config({"DownloadRetries": -5})["DownloadRetries"], 0)
         self.assertEqual(_config.sanitize_config({"DownloadRetries": 999})["DownloadRetries"], 50)
+
+    def test_normalize_output_template_allows_safe_and_rejects_unsafe(self):
+        import config as _config
+        n = _config.normalize_output_template
+        # valid
+        self.assertEqual(n("%(uploader)s/%(title)s.%(ext)s"), "%(uploader)s/%(title)s.%(ext)s")
+        self.assertEqual(n("%(title)s [%(id)s].%(ext)s"), "%(title)s [%(id)s].%(ext)s")
+        self.assertEqual(n("%(title)s.%(ext)s".replace("/", "\\")), "%(title)s.%(ext)s")
+        # empty -> ""
+        self.assertEqual(n(""), "")
+        self.assertEqual(n("   "), "")
+        # missing %(ext)s -> rejected
+        self.assertEqual(n("%(title)s"), "")
+        # traversal / absolute -> rejected
+        self.assertEqual(n("../%(title)s.%(ext)s"), "")
+        self.assertEqual(n("/etc/%(title)s.%(ext)s"), "")
+        self.assertEqual(n("C:/x/%(title)s.%(ext)s"), "")
+        # non-allowlisted field -> rejected
+        self.assertEqual(n("%(filepath)s.%(ext)s"), "")
+        self.assertEqual(n("%(title)s.%(ext)s; rm -rf"), "")
 
     def test_manager_max_concurrent_reads_config(self):
         mgr = ad.DownloadManager(FakeConfig({"MaxConcurrentDownloads": 5}), FakeHistory())

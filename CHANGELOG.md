@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Configurable filename template.** A new "Filename template" setting (companion Storage settings) accepts a yt-dlp output template relative to the download folder (e.g. `%(uploader)s/%(title)s.%(ext)s`). Validated against a field allowlist with no path traversal and a required `%(ext)s`; blank uses the default.
 - **Download-complete tray notification.** When a download finishes while the
   companion window is minimized to the tray, a one-shot notification is raised
   (toggle in Tray behavior settings, on by default).

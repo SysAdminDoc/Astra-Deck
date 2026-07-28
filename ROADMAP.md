@@ -117,13 +117,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P2 — Later: expose the knobs yt-dlp already has + GUI truthfulness/robustness
 
-- [ ] P2 — Configurable output/filename template
-  Why: the output template is hardcoded `%(title).200B.%(ext)s` (playlist: `%(playlist_title).200B/…`); archivers need Plex/Jellyfin-style naming and folder organization (ytdl-sub/MeTube ship this).
-  Evidence: RESEARCH.md §Competitive; `astra_downloader/download.py:1070-1072`; https://github.com/jmbannon/ytdl-sub
-  Touches: `config.py` (`OutputTemplate`, validated against a safe field allowlist to preserve CVE-2024-38519 hardening), `download.py` (template build), `gui.py` Storage settings.
-  Acceptance: a user-set template drives output paths for single + playlist downloads; an unsafe/invalid template is rejected and falls back to the current default.
-  Complexity: M
-
 - [ ] P2 — Clip / section download via ffmpeg re-cut
   Why: clipping a slice is a popular request (Stacher trim sliders); Parabolic deliberately uses an ffmpeg re-cut instead of yt-dlp `--download-sections` because the native flag is inaccurate.
   Evidence: RESEARCH.md §Competitive; https://github.com/NickvisionApps/Parabolic/releases
