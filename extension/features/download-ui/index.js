@@ -107,7 +107,7 @@
         // Newer extension-only releases have no companion asset, so GitHub's
         // /releases/latest/download route returns a 404 HTML page. Pin the
         // newest release that actually carries AstraDownloader.exe.
-        const ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.46.4/AstraDownloader.exe';
+        const ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.50.7/AstraDownloader.exe';
 
         // ── MediaDL Server Manager ──
         // Caches server availability, provides install/status helpers, and auto-start logic.

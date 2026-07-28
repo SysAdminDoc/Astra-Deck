@@ -63,7 +63,7 @@ be installed from the release ZIP/XPI or userscript path above; video and audio
 downloads need the local Astra Downloader companion running on this device.
 
 The in-page setup prompt and toolbar recovery action download
-[`AstraDownloader.exe`](https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.46.4/AstraDownloader.exe)
+[`AstraDownloader.exe`](https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.50.7/AstraDownloader.exe)
 directly from the newest GitHub release that carries the companion. This URL is
 pinned because newer extension-only releases do not carry the executable, so
 GitHub's `releases/latest/download` alias cannot resolve it.

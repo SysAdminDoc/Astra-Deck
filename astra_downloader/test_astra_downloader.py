@@ -4124,11 +4124,12 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_5(self):
-        # v1.5.5 session: nightly yt-dlp channel, POST /formats, POST-only
-        # /shutdown, configurable concurrency/retries, output template, tray
-        # completion notifications, session-only port fallback, real SABR pill.
-        self.assertEqual(ad.APP_VERSION, "1.5.5")
+    def test_app_version_bumped_to_1_5_6(self):
+        # v1.5.6 audit session: session-port persistence leak closed, racy
+        # download-initiated updater trigger removed, /formats concurrency
+        # cap, output-template validation feedback + printf-syntax checks,
+        # minimized-window completion toasts, async SABR pill, palette sync.
+        self.assertEqual(ad.APP_VERSION, "1.5.6")
 
 
 class EndToEndDownloadTests(unittest.TestCase):

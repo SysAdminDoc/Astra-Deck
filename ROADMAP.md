@@ -2,6 +2,24 @@
 
 Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
+## Deep-audit backlog — 2026-07-28 (verified, unfixed)
+
+- [ ] P3 — Bound custom output-template field expansions
+  Why: built-in templates bound fields (`%(title).200B`); a custom `%(uploader)s/%(title)s.%(ext)s` passes validation unbounded, so a 200+-char title under a deep DownloadPath exceeds MAX_PATH and fails with an opaque file error. Rewrite `%(field)s` → bounded forms on save, or document the limit in the field hint.
+  Where: astra_downloader/config.py (normalize_output_template), astra_downloader/download.py (template selection)
+- [ ] P3 — Sync remaining monolith fallback copies with module fixes (DeArrow _routeToken/lazy-img guard, SponsorBlock observer self-disarm, RYD _rydGeneration/pagehide flush)
+  Why: the 9a9fe31 module fixes never reached the ytkit.js `|| {…}` fallbacks (only reachable when a module content script fails to load); the RYD cache-clobber guard was ported 2026-07-28, the rest still drift.
+  Where: extension/ytkit.js (ReturnDislike/DeArrow/SponsorBlock fallback objects) vs extension/features/{return-dislike,dearrow,sponsorblock}/index.js
+- [ ] P3 — Fold the two dead companion STYLESHEET layers
+  Why: astra_downloader.py carries two superseded stylesheet blocks ("retained historical source rules") before the active reassignment; auditors keep re-deriving which palette is live, and inline-color drift traces back to the dead layers.
+  Where: astra_downloader/astra_downloader.py (first two STYLESHEET assignments)
+- [ ] P3 — Show the session-fallback port on the Settings page
+  Why: during a bind-conflict session the dashboard shows the bound fallback port but the Settings port spinbox shows the configured one with no explanation; a fieldHint ("Currently bound to fallback port NNNN for this session") would close the gap.
+  Where: astra_downloader/gui.py (_start_server fallback branch, _build_settings port row)
+- [ ] P3 — Wire the extension format picker to POST /formats
+  Why: the endpoint (auth + rate-limit + busy-cap) ships since v1.5.5 with no extension consumer; the download options UI still offers the static quality list.
+  Where: extension/features/download-ui (options dialog), astra_downloader/routes.py (/formats)
+
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
 - [ ] P2 — Popup Export/Import/Reset degrade gracefully without a YouTube tab

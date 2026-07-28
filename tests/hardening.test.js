@@ -2092,7 +2092,7 @@ test('README documents the working Astra Downloader companion release asset', ()
 
     assert.match(readme, /### Astra Downloader Companion Setup/,
         'README must give the companion its own setup section');
-    assert.match(readme, /releases\/download\/v4\.46\.4\/AstraDownloader\.exe/,
+    assert.match(readme, /releases\/download\/v4\.50\.7\/AstraDownloader\.exe/,
         'README must link to the newest release that actually carries AstraDownloader.exe');
     assert.match(readme, /GitHub's `releases\/latest\/download` alias cannot resolve it/,
         'README must explain why the generic latest-release asset route is not used');
@@ -9084,7 +9084,7 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
         'updateCompanion must forward the per-install token');
     assert.match(updateBlock, /timeout:\s*180000/,
         'updateCompanion must allow enough time for exe download and scheduling');
-    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/download\/v4\.46\.4\/AstraDownloader\.exe'/,
+    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/download\/v4\.50\.7\/AstraDownloader\.exe'/,
         'installer paths must point at a GitHub Release that actually carries the exe, not the asset-less latest release or a raw-root file');
 
     const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_COMPANION'");
