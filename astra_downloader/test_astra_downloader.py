@@ -151,6 +151,55 @@ class PersistenceTests(unittest.TestCase):
             self.assertEqual(errors, ["Config save failed: disk full"])
             self.assertEqual(Path(config_module.__file__).name, "config.py")
 
+    def test_session_override_is_never_persisted_by_later_saves(self):
+        # Session-only port fallback regression: a bind conflict overrides
+        # ServerPort for the running process, but ANY later full-config save
+        # (e.g. the yt-dlp update-check timestamp write) must keep the user's
+        # configured port on disk.
+        import importlib
+
+        config_module = importlib.import_module("config")
+        with tempfile.TemporaryDirectory() as tmp:
+            durable = {"ServerPort": 9751}
+
+            def writer(_path, data):
+                durable.clear()
+                durable.update(data)
+
+            store = config_module.ConfigStore(
+                install_dir=Path(tmp),
+                path=Path(tmp) / "cfg.json",
+                sanitizer=lambda data: dict(data),
+                loader=lambda _path, _default: dict(durable),
+                writer=writer,
+                logger=self.fail,
+            )
+            store.set_session("ServerPort", 9761)
+            # Live readers see the fallback; persistence helpers do not.
+            self.assertEqual(store.get("ServerPort"), 9761)
+            self.assertEqual(store.data["ServerPort"], 9761)
+            self.assertEqual(store.get_persisted("ServerPort"), 9751)
+            # An unrelated timestamp save must not leak the fallback port.
+            store.set("LastYtDlpUpdateCheck", "2026-07-27T00:00:00")
+            self.assertTrue(store.save())
+            self.assertEqual(durable["ServerPort"], 9751)
+            self.assertTrue(store.update({"AutoUpdateYtDlp": False}))
+            self.assertEqual(durable["ServerPort"], 9751)
+            # Explicitly saving the key clears the override.
+            self.assertTrue(store.update({"ServerPort": 9800}))
+            self.assertEqual(durable["ServerPort"], 9800)
+            self.assertEqual(store.get("ServerPort"), 9800)
+
+    def test_start_server_port_fallback_uses_session_override(self):
+        import inspect
+
+        gui_module = __import__("gui")
+        source = inspect.getsource(gui_module.MainWindowCore._start_server)
+        self.assertIn('set_session("ServerPort", chosen_port)', source)
+        self.assertNotIn('self.config.set("ServerPort"', source)
+        save_source = inspect.getsource(gui_module.MainWindowCore._save_settings)
+        self.assertIn('get_persisted', save_source)
+
     def test_owned_history_store_enforces_injected_retention_limit(self):
         import importlib
 

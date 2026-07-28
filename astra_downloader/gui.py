@@ -1643,12 +1643,15 @@ class MainWindowCore(QMainWindow):
             self._append_log(
                 f"Port {configured_port} is unavailable; using fallback port {chosen_port} for this session."
             )
-            # Session-only: update the in-memory port so the dashboard/health
-            # reflect the bound port, but do NOT save(). A transient conflict
-            # (e.g. a stale instance briefly holding the port) must not
-            # permanently rewrite the user's configured ServerPort — the next
-            # start retries the configured port once the conflict clears.
-            self.config.set("ServerPort", chosen_port)
+            # Session-only override: the dashboard/health see the bound port,
+            # but it is excluded from every save()/update() so a transient
+            # conflict (e.g. a stale instance briefly holding the port) can
+            # never permanently rewrite the user's configured ServerPort —
+            # the next start retries the configured port. (A plain set() here
+            # leaked to disk through any later full-config save, e.g. the
+            # yt-dlp update-check timestamp write.)
+            set_session = getattr(self.config, 'set_session', self.config.set)
+            set_session("ServerPort", chosen_port)
             self._sync_connection_ui()
 
         try:
@@ -2194,7 +2197,12 @@ class MainWindowCore(QMainWindow):
             self._set_input_error(field, False)
             field.setAccessibleDescription("")
 
-        old_port = self._dependencies['clamp_int'](self.config.get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
+        # Compare against the PERSISTED port: during a session-only fallback
+        # (bind conflict) the live port differs from the configured one, and
+        # an unrelated settings save must not read that as a port change and
+        # surprise-restart the server.
+        persisted_get = getattr(self.config, 'get_persisted', self.config.get)
+        old_port = self._dependencies['clamp_int'](persisted_get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
         old_token = self.config.get("ServerToken", "")
         new_port = self.cfg_port.value()
         new_token = self.cfg_token.text().strip()
