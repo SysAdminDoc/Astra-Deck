@@ -1300,6 +1300,17 @@ class MainWindowCore(QMainWindow):
         btn2.clicked.connect(lambda: self._browse(self.cfg_audio_path))
         row2.addWidget(btn2)
         paths_l.addLayout(row2)
+        paths_l.addWidget(make_divider())
+        paths_l.addWidget(make_label("Filename template", "fieldLabel"))
+        paths_l.addWidget(make_label(
+            "Optional yt-dlp output template, relative to the folder above "
+            "(e.g. %(uploader)s/%(title)s.%(ext)s). Blank uses the default.",
+            "fieldHint", word_wrap=True,
+        ))
+        self.cfg_outtmpl = QLineEdit(self.config.get("OutputTemplate", ""))
+        self.cfg_outtmpl.setAccessibleName("Filename template")
+        self.cfg_outtmpl.setPlaceholderText("%(title)s.%(ext)s")
+        paths_l.addWidget(self.cfg_outtmpl)
         layout.addWidget(paths_card)
 
         # Post-processing
@@ -1508,6 +1519,7 @@ class MainWindowCore(QMainWindow):
             self.cfg_token.textChanged,
             self.cfg_dl_path.textChanged,
             self.cfg_audio_path.textChanged,
+            self.cfg_outtmpl.textChanged,
             self.cfg_metadata.toggled,
             self.cfg_thumbnail.toggled,
             self.cfg_chapters.toggled,
@@ -2229,6 +2241,7 @@ class MainWindowCore(QMainWindow):
             "ServerToken": new_token,
             "DownloadPath": dl_path,
             "AudioDownloadPath": audio_path,
+            "OutputTemplate": self.cfg_outtmpl.text().strip(),
             "EmbedMetadata": self.cfg_metadata.isChecked(),
             "EmbedThumbnail": self.cfg_thumbnail.isChecked(),
             "EmbedChapters": self.cfg_chapters.isChecked(),

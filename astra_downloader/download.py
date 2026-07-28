@@ -1113,8 +1113,14 @@ class DownloadManagerCore:
         ffmpeg_dir = str(self._dependencies['FFMPEG_PATH']().parent)
         is_playlist = is_playlist_url(dl.url)
 
-        # Output template
-        if is_playlist:
+        # Output template. A user-configured template (already validated by
+        # config.normalize_output_template — allowlisted fields, no traversal,
+        # keeps %(ext)s) is always relative to the download root and, when set,
+        # governs both single and playlist layout.
+        custom_tpl = str(self.config.get("OutputTemplate", "") or "")
+        if custom_tpl:
+            out_tpl = str(Path(dl.output_dir) / custom_tpl)
+        elif is_playlist:
             out_tpl = str(Path(dl.output_dir) / "%(playlist_title).200B" / "%(title).200B.%(ext)s")
         else:
             out_tpl = str(Path(dl.output_dir) / "%(title).200B.%(ext)s")

@@ -41,6 +41,7 @@ __all__ = (
 _OWNED_EXPORTS = {
     "clean_text", "clean_path_text", "coerce_bool", "clamp_int",
     "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
+    "normalize_output_template",
     "normalize_url", "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
     "DEFAULT_CONFIG", "sanitize_config",
@@ -115,6 +116,11 @@ DEFAULT_CONFIG = {
     "ExtraOutputRoots": [],
     "LastFfmpegCheck": "",
     "MaxFileSizeMB": 0,
+    # yt-dlp output template (filename + optional subdirs), relative to the
+    # download root. Empty = the built-in default. Validated against a field
+    # allowlist so a template can never drive the output path with arbitrary
+    # fields/traversal (CVE-2024-38519 posture).
+    "OutputTemplate": "",
     "NativeChromeExtensionIds": os.environ.get("ASTRA_NATIVE_CHROME_EXTENSION_IDS", ""),
     "NativeFirefoxExtensionIds": os.environ.get(
         "ASTRA_NATIVE_FIREFOX_EXTENSION_IDS",
@@ -179,6 +185,37 @@ def normalize_sublangs(value):
     cleaned = clean_text(value, "en", 80)
     cleaned = re.sub(r"[^a-zA-Z0-9,\-]", "", cleaned)
     return cleaned or "en"
+
+
+_SAFE_OUTPUT_FIELDS = frozenset({
+    "title", "id", "ext", "uploader", "uploader_id", "channel", "channel_id",
+    "upload_date", "release_date", "playlist_title", "playlist", "playlist_index",
+    "resolution", "height", "width", "fps", "format_id", "autonumber", "epoch",
+    "duration_string", "season_number", "episode_number", "view_count", "like_count",
+})
+_OUTPUT_FIELD_RE = re.compile(r"%\((\w+)")
+
+
+def normalize_output_template(value):
+    """Return a safe yt-dlp output template (relative to the download root) or
+    "" when empty/invalid. Rejects absolute paths, `..` traversal, unsafe
+    characters, and any field outside the allowlist; requires `%(ext)s` so the
+    extension is always preserved. This keeps a user-supplied template from
+    driving the output path with arbitrary fields (CVE-2024-38519 posture)."""
+    tpl = clean_text(value, "", 300).strip()
+    if not tpl:
+        return ""
+    norm = tpl.replace("\\", "/")
+    if norm.startswith("/") or re.match(r"^[A-Za-z]:", norm) or ".." in norm.split("/"):
+        return ""
+    if not re.fullmatch(r"[A-Za-z0-9 %()._\-/\[\]]+", norm):
+        return ""
+    if "%(ext)s" not in norm:
+        return ""
+    fields = _OUTPUT_FIELD_RE.findall(norm)
+    if not fields or any(f not in _SAFE_OUTPUT_FIELDS for f in fields):
+        return ""
+    return norm
 
 
 def normalize_url(value):
@@ -313,6 +350,7 @@ def sanitize_config(raw):
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
     data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
     data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
+    data["OutputTemplate"] = normalize_output_template(data.get("OutputTemplate"))
     data["NativeChromeExtensionIds"] = clean_text(data.get("NativeChromeExtensionIds"), "", 2048)
     data["NativeFirefoxExtensionIds"] = clean_text(data.get("NativeFirefoxExtensionIds"), "", 2048)
     data["LegacyHealthTokenOrigins"] = clean_text(data.get("LegacyHealthTokenOrigins"), "", 2048)
