@@ -1371,6 +1371,19 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 502)
         self.assertEqual(resp.get_json().get("error"), "Video unavailable")
 
+    def test_shutdown_is_post_only(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        # GET is no longer allowed (state-changing action must not be a safe method)
+        self.assertEqual(client.get("/shutdown", headers={"X-Auth-Token": token}).status_code, 405)
+        # POST still requires auth
+        self.assertEqual(client.post("/shutdown").status_code, 401)
+        # POST with auth returns a teardown status (202 when no werkzeug hook)
+        self.assertIn(client.post("/shutdown", headers={"X-Auth-Token": token}).status_code, (200, 202))
+
     def test_config_response_is_allowlisted(self):
         token = "a" * 32
         config = FakeConfig({

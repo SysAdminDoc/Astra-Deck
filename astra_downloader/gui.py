@@ -1581,11 +1581,14 @@ class MainWindowCore(QMainWindow):
 
         if chosen_port != configured_port:
             self._append_log(
-                f"Port {configured_port} is unavailable; using fallback port {chosen_port}."
+                f"Port {configured_port} is unavailable; using fallback port {chosen_port} for this session."
             )
-            # Persist so future starts prefer the working port.
+            # Session-only: update the in-memory port so the dashboard/health
+            # reflect the bound port, but do NOT save(). A transient conflict
+            # (e.g. a stale instance briefly holding the port) must not
+            # permanently rewrite the user's configured ServerPort — the next
+            # start retries the configured port once the conflict clears.
             self.config.set("ServerPort", chosen_port)
-            self.config.save()
             self._sync_connection_ui()
 
         try:

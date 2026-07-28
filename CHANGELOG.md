@@ -14,6 +14,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   exactly like `/download`; enables a real format picker instead of a static
   quality list.
 
+### Fixed
+- **Transient port conflicts no longer rewrite the configured server port.**
+  When the primary port is briefly held (e.g. by a stale instance), the
+  companion binds a fallback for that session only instead of permanently
+  saving it — the user's chosen port is retried on the next start once the
+  conflict clears.
+
+### Security
+- **`/shutdown` is now POST-only** (was a state-changing GET), aligning with
+  safe-method semantics for the loopback API; GET returns 405.
+
 ### Changed
 - **Companion tracks the yt-dlp nightly channel by default.** yt-dlp updates now
   run `--update-to <channel>@latest` instead of the channel-locked `-U`, and a
