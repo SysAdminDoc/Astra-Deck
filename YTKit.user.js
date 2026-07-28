@@ -795,6 +795,12 @@
                 align-items: center !important;
                 gap: 10px !important;
                 flex: 0 0 auto !important;
+                /* Pin to the last grid column: the middle context block is
+                   conditional (absent on panes without select features, hidden
+                   during search), and auto-placement would otherwise float the
+                   actions into the 320px middle column. */
+                grid-column: -2 / -1 !important;
+                justify-self: end !important;
             }
 
             #ytkit-settings-panel .ytkit-reset-group-btn {
@@ -22673,7 +22679,8 @@
                 paneContext.className = 'ytkit-pane-context';
                 paneContext.setAttribute(
                     'aria-label',
-                    t('panelPaneContextAria', `${cat} current preferences`)
+                    t('panelPaneContextAriaTpl', '{category} current preferences')
+                        .replace('{category}', cat)
                 );
                 paneContextFeatures.forEach((feature) => {
                     const settingKey = feature.settingKey || feature.id;
@@ -24055,7 +24062,11 @@
 
             // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
             let _textareaReinitTimer = null;
-            let _rangeReinitTimer = null;
+            // Per-feature reinit debounce. A single shared timer let a color
+            // input within 300ms of a range drag (or a second control) cancel the
+            // FIRST feature's pending destroy/init — its value was saved but
+            // never applied until an unrelated reinit or navigation.
+            const _reinitTimers = new Map();
             doc.addEventListener('input', (e) => {
                 if (!isSettingsPanelOpen()) return;
                 if (e.target.matches('.ytkit-input')) {
@@ -24127,16 +24138,16 @@
                     settingsManager.save(appState.settings);
                     setPanelStatus(`${getFeatureName(feature) || 'Range setting'} saved.`, 'success');
                     if (feature) {
-                        if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
-                        _rangeReinitTimer = setTimeout(() => {
-                            _rangeReinitTimer = null;
+                        if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                        _reinitTimers.set(featureId, setTimeout(() => {
+                            _reinitTimers.delete(featureId);
                             try { destroyFeatureLifecycle(feature, 'Range'); } catch(err) {
                                 DebugManager.log('Range', `Destroy failed for "${featureId}": ${err.message}`);
                             }
                             try { initFeatureLifecycle(feature, 'Range'); } catch(err) {
                                 DebugManager.log('Range', `Init failed for "${featureId}": ${err.message}`);
                             }
-                        }, 300);
+                        }, 300));
                     }
                 }
                 // Color picker
@@ -24153,16 +24164,16 @@
                         // Native color dialogs fire `input` continuously while
                         // dragging — debounce the full destroy/init cycle like the
                         // range handler does.
-                        if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
-                        _rangeReinitTimer = setTimeout(() => {
-                            _rangeReinitTimer = null;
+                        if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                        _reinitTimers.set(featureId, setTimeout(() => {
+                            _reinitTimers.delete(featureId);
                             try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
                                 DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
                             }
                             try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
                                 DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
                             }
-                        }, 300);
+                        }, 300));
                     }
                 }
             });
@@ -27964,6 +27975,14 @@
                         try {
                             const data = JSON.parse(res.responseText);
                             if (this._isAstraDownloaderHealth(data)) { resolve(data); return; }
+                            // Something answered /health here but it is NOT
+                            // Astra Downloader — usually a stale/legacy
+                            // downloader squatting the port. Remember the
+                            // first one so the repair prompt can name it.
+                            if (data && (data.token || data.status === 'ok' || data.version) && !this._foreignServer) {
+                                this._foreignServer = { port, version: (data && data.version) || null };
+                                DebugManager.log('MediaDL', `Port ${port} is occupied by a non-Astra downloader (v${this._foreignServer.version || '?'}); skipping`);
+                            }
                         } catch (_) {}
                         resolve(null);
                     },
@@ -27993,6 +28012,7 @@
 
         async _checkImpl(force) {
             const now = Date.now();
+            this._foreignServer = null; // fresh every sweep
             const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
             for (const port of order) {
                 const data = await this._probePort(port);
@@ -28039,7 +28059,7 @@
 
         // Reset auto-start flag so the next download re-attempts.
         // Called from the "Retry" button after user installs.
-        resetAutoStart() { this._autoStartAttempted = false; this._status = null; },
+        resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._foreignServer = null; },
 
         get isRunning() { return this._status === 'running'; },
         get token() { return this._token; },
@@ -28082,6 +28102,15 @@
             desc.textContent = isRetryMode
                 ? 'The server didn\'t start. It may not be installed yet, or the scheduled task stopped. Choose an option below:'
                 : 'Install MediaDL for 1080p+ downloads with automatic video+audio merging, background downloads, and progress tracking.';
+            const foreign = this._foreignServer;
+            if (isRetryMode && foreign && foreign.port) {
+                desc.textContent =
+                    `Another program is answering on Astra Downloader's port ${foreign.port}` +
+                    (foreign.version ? ` (reporting version ${foreign.version})` : '') +
+                    `. It is usually a leftover downloader from an earlier install. Close it, ` +
+                    `remove it from Startup apps (look for "YTYT-Downloader" or ` +
+                    `"Astra Deck Downloader"), then start Astra Downloader and try again.`;
+            }
 
             // ── Buttons ──
             const btnCol = document.createElement('div');
@@ -28579,7 +28608,9 @@
 
         // ── Step 2: Try to wake the server if not running ──
         if (!mdl.ok) {
-            mdl = await MediaDLManager.tryAutoStart();
+            // COLD start of the 40 MB one-file companion can take ~8-10s —
+            // poll 8 x 1.5s like the extension instead of the 4-try default.
+            mdl = await MediaDLManager.tryAutoStart(8);
         }
 
         // ── Use MediaDL if available ──

@@ -544,6 +544,12 @@
             align-items: center !important;
             gap: 10px !important;
             flex: 0 0 auto !important;
+            /* Pin to the last grid column: the middle context block is
+               conditional (absent on panes without select features, hidden
+               during search), and auto-placement would otherwise float the
+               actions into the 320px middle column. */
+            grid-column: -2 / -1 !important;
+            justify-self: end !important;
         }
 
         #ytkit-settings-panel .ytkit-reset-group-btn {

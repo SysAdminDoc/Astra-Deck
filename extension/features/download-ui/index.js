@@ -454,26 +454,34 @@
                 const desc = document.createElement('p');
                 desc.id = 'ytkit-install-prompt-desc';
                 desc.className = 'ytkit-install-prompt__desc';
-                desc.textContent = isRetryMode
+                const baseDesc = isRetryMode
                     ? 'Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service.'
                     : 'Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads.';
 
                 // A stale/legacy downloader squatting a companion port is a
                 // common, confusing failure: /health answers, so the extension
                 // used to just fail generically. Name the exact port + version
-                // and point at Startup apps so the user can evict it.
-                const foreign = this._foreignServer;
-                if (foreign && foreign.port) {
-                    desc.textContent =
-                        `Another program is answering on Astra Downloader's port ` +
-                        `(127.0.0.1:${foreign.port}` +
-                        (foreign.version ? `, reporting version ${foreign.version}` : '') +
-                        `). This is usually a leftover or older downloader shadowing the real one. ` +
-                        `Close it and remove it from your Startup apps (a common culprit is an old ` +
-                        `"YTYT-Downloader"/"Astra Deck Downloader" startup entry), then start Astra ` +
-                        `Downloader and choose Check again.`;
-                    prompt.dataset.state = 'error';
-                }
+                // and point at Startup apps so the user can evict it. Rendered
+                // as a closure so the retry/recheck handlers refresh it —
+                // the squatter state changes when the user evicts it (or a
+                // new one appears), and a stale blame line sent users chasing
+                // a program that was already gone.
+                const renderPromptDesc = () => {
+                    const foreign = this._foreignServer;
+                    if (foreign && foreign.port) {
+                        desc.textContent =
+                            `Another program is answering on Astra Downloader's port ${foreign.port}` +
+                            (foreign.version ? ` (reporting version ${foreign.version})` : '') +
+                            `. It is usually a leftover downloader from an earlier install. Close it, ` +
+                            `remove it from Startup apps (look for "YTYT-Downloader" or ` +
+                            `"Astra Deck Downloader"), then start Astra Downloader and choose Check again.`;
+                        prompt.dataset.state = 'error';
+                    } else {
+                        desc.textContent = baseDesc;
+                        if (prompt.dataset.state === 'error') delete prompt.dataset.state;
+                    }
+                };
+                renderPromptDesc();
 
                 const note = document.createElement('div');
                 note.className = 'ytkit-install-prompt__note';
@@ -554,6 +562,7 @@
                             prompt.remove();
                         } else {
                             retryBtn.setAttribute('aria-busy', 'false');
+                            renderPromptDesc();
                             setPromptNote('The service did not respond. Run setup below to repair Astra Downloader, then check again.', 'error');
                             setPromptButtonState(retryBtn, 'Try again', 'danger');
                             retryBtn.disabled = false;
@@ -608,6 +617,7 @@
                         prompt.remove();
                     } else {
                         recheckBtn.setAttribute('aria-busy', 'false');
+                        renderPromptDesc();
                         setPromptButtonState(recheckBtn, 'Not detected yet', 'danger');
                         setPromptNote('Setup was not detected yet. Make sure the installer finished, then check again.', 'error');
                         recheckBtn.disabled = false;
@@ -1044,13 +1054,19 @@
             showToast(audioOnly ? 'Preparing your audio download…' : 'Preparing your video download…', '#3b82f6', { duration: 2 });
 
             let mdl = await MediaDLManager.check(true);
+            let likelyNeverInstalled = false;
             if (!mdl.ok && !mdl.nativeChannelRequired) {
                 // Server isn't running: fire mediadl://start and wait. This is a
                 // COLD start of the 40 MB PyInstaller one-file companion (self
                 // unpack + Qt init + server bind), which can take ~8–10s — so
                 // give it a generous poll window (8 × 1.5s = 12s) rather than the
                 // default. A warm restart mid-download can afford to be shorter.
-                mdl = await MediaDLManager.tryAutoStart(8);
+                // Exception: no native messaging host AND nothing answering on
+                // any port means the companion has almost certainly never been
+                // installed — the mediadl:// launch is a silent no-op then, so
+                // don't hold the user under a false "Starting…" toast for 12s.
+                likelyNeverInstalled = !!MediaDLManager._nativeTokenError && !MediaDLManager._foreignServer;
+                mdl = await MediaDLManager.tryAutoStart(likelyNeverInstalled ? 2 : 8);
             }
             if (!mdl.ok) {
                 if (mdl.nativeChannelRequired) {
@@ -1062,7 +1078,11 @@
                 DebugManager.log('Download', 'Local yt-dlp server unavailable');
                 showToast(t('toastDlInstallPrompt', 'Install Astra Downloader to enable downloads.'), '#f59e0b', { duration: 4 });
                 if (!storageRead('ytkit_mediadl_prompt_dismissed', false)) {
-                    MediaDLManager.showInstallPrompt(MediaDLManager._autoStartAttempted ? 'retry' : 'install');
+                    // The old `_autoStartAttempted ? 'retry' : 'install'` was
+                    // always 'retry' here (tryAutoStart just set the flag), so
+                    // first-time users never saw the install copy or its
+                    // persisted "Skip for now" dismissal.
+                    MediaDLManager.showInstallPrompt(likelyNeverInstalled ? 'install' : 'retry');
                 }
                 _downloadInProgress = false;
                 return;

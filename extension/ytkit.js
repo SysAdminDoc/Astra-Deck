@@ -34751,7 +34751,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _writeCache(videoId, data) {
-                if (!this._cache) this._cache = {};
+                if (!this._cache) {
+                    // Load the persisted cache first — starting from {} here
+                    // let a post-destroy fetch resolution overwrite the stored
+                    // 500-entry cache with a single entry (same fix as the
+                    // return-dislike module).
+                    try { this._cache = storageReadJSON('ytkit-ryd-cache', {}) || {}; }
+                    catch { this._cache = {}; }
+                }
                 this._cache[videoId] = { ts: Date.now(), ...data };
                 // Cap cache to 500 entries (LRU by ts).
                 const keys = Object.keys(this._cache);
@@ -43944,7 +43951,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
         let _textareaReinitTimer = null;
-        let _rangeReinitTimer = null;
+        // Per-feature reinit debounce. A single shared timer let a color
+        // input within 300ms of a range drag (or a second control) cancel the
+        // FIRST feature's pending destroy/init — its value was saved but
+        // never applied until an unrelated reinit or navigation.
+        const _reinitTimers = new Map();
         doc.addEventListener('input', (e) => {
             if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-input')) {
@@ -44009,16 +44020,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Range setting'} saved.`, 'success');
                 if (feature) {
-                    if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
-                    _rangeReinitTimer = setTimeout(() => {
-                        _rangeReinitTimer = null;
+                    if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                    _reinitTimers.set(featureId, setTimeout(() => {
+                        _reinitTimers.delete(featureId);
                         try { destroyFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Destroy failed for "${featureId}": ${err.message}`);
                         }
                         try { initFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Init failed for "${featureId}": ${err.message}`);
                         }
-                    }, 300);
+                    }, 300));
                 }
             }
             // Color picker
@@ -44035,16 +44046,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Native color dialogs fire `input` continuously while
                     // dragging — debounce the full destroy/init cycle like the
                     // range handler does.
-                    if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
-                    _rangeReinitTimer = setTimeout(() => {
-                        _rangeReinitTimer = null;
+                    if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                    _reinitTimers.set(featureId, setTimeout(() => {
+                        _reinitTimers.delete(featureId);
                         try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
                             DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
                         }
                         try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
                             DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
                         }
-                    }, 300);
+                    }, 300));
                 }
             }
         });

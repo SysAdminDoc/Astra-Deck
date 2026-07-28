@@ -2894,6 +2894,24 @@
   "panelLiveApplyBadge": {
     "message": "تطبيق فوري"
   },
+  "panelNavGroupCommunity": {
+    "message": "المجتمع"
+  },
+  "panelNavGroupInteraction": {
+    "message": "التفاعل"
+  },
+  "panelNavGroupPersonalization": {
+    "message": "التخصيص"
+  },
+  "panelNavGroupPlayer": {
+    "message": "المشغل"
+  },
+  "panelNavGroupSystem": {
+    "message": "النظام"
+  },
+  "panelPaneContextAriaTpl": {
+    "message": "التفضيلات الحالية لـ {category}"
+  },
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
   },
