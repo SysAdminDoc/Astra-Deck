@@ -110,6 +110,7 @@ DEFAULT_CONFIG = {
     "Proxy": "",
     "StartMinimized": False,
     "CloseToTray": True,
+    "NotifyOnComplete": True,
     "LastYtDlpUpdateCheck": "",
     "ExtraOutputRoots": [],
     "LastFfmpegCheck": "",
@@ -295,7 +296,7 @@ def sanitize_config(raw):
     for key in (
         "EmbedMetadata", "EmbedThumbnail", "EmbedChapters", "EmbedSubs",
         "SponsorBlock", "AutoUpdateYtDlp", "StartMinimized", "CloseToTray",
-        "LegacyHealthTokenEcho",
+        "NotifyOnComplete", "LegacyHealthTokenEcho",
     ):
         data[key] = coerce_bool(data.get(key), DEFAULT_CONFIG[key])
     data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))

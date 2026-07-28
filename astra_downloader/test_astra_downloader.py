@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+import types
 import unittest
 import zipfile
 from unittest import mock
@@ -401,6 +402,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_autoupdate = CheckField()
         window.cfg_closetotray = CheckField()
         window.cfg_startmin = CheckField()
+        window.cfg_notify = CheckField()
         window.btn_save = Button()
         window.statuses = []
         window.logs = []
@@ -5148,6 +5150,53 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(mgr2._max_concurrent(), 10, "clamped to the max")
         mgr3 = ad.DownloadManager(FakeConfig(), FakeHistory())
         self.assertEqual(mgr3._max_concurrent(), 3, "defaults to historical MAX_CONCURRENT")
+
+
+class TrayCompletionNotifyTests(unittest.TestCase):
+    """Download-complete tray notification: one-shot, hidden-only, toggleable."""
+
+    def _window(self, hidden=True, notify=True):
+        msgs = []
+        tray = types.SimpleNamespace(showMessage=lambda *a: msgs.append(a))
+        win = types.SimpleNamespace(
+            config=FakeConfig({"NotifyOnComplete": notify}),
+            _seen_complete=set(),
+            tray=tray,
+            isHidden=lambda: hidden,
+        )
+        return win, msgs
+
+    @staticmethod
+    def _dl(dl_id, status, title="T"):
+        return types.SimpleNamespace(id=dl_id, status=status, title=title)
+
+    def test_notifies_once_per_completion_when_hidden(self):
+        win, msgs = self._window(hidden=True)
+        dls = [self._dl("a", "complete"), self._dl("b", "downloading")]
+        ad.MainWindow._notify_completed_downloads(win, dls)
+        ad.MainWindow._notify_completed_downloads(win, dls)  # second tick
+        self.assertEqual(len(msgs), 1, "notifies exactly once, not every tick")
+
+    def test_completion_seen_while_visible_never_notifies_later(self):
+        win, msgs = self._window(hidden=False)
+        dls = [self._dl("a", "complete")]
+        ad.MainWindow._notify_completed_downloads(win, dls)
+        self.assertEqual(len(msgs), 0)
+        win.isHidden = lambda: True
+        ad.MainWindow._notify_completed_downloads(win, dls)
+        self.assertEqual(len(msgs), 0, "a completion seen while visible must not fire a stale toast")
+
+    def test_toggle_off_suppresses_notification(self):
+        win, msgs = self._window(hidden=True, notify=False)
+        ad.MainWindow._notify_completed_downloads(win, [self._dl("a", "complete")])
+        self.assertEqual(len(msgs), 0)
+
+    def test_seen_set_is_pruned_to_present_downloads(self):
+        win, _ = self._window(hidden=True)
+        ad.MainWindow._notify_completed_downloads(win, [self._dl("a", "complete")])
+        self.assertIn("a", win._seen_complete)
+        ad.MainWindow._notify_completed_downloads(win, [self._dl("b", "downloading")])
+        self.assertNotIn("a", win._seen_complete, "reclaimed ids are pruned so the set can't grow")
 
 
 class CompanionUpdateEndpointTests(unittest.TestCase):

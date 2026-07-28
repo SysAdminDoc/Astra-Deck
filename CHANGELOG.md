@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Download-complete tray notification.** When a download finishes while the
+  companion window is minimized to the tray, a one-shot notification is raised
+  (toggle in Tray behavior settings, on by default).
 - **Configurable simultaneous downloads and retries.** New "Simultaneous
   downloads" (1–10, default 3 — previously a hardcoded limit) and "Download
   retries" (0–50, default 10) settings in the companion's Performance settings;

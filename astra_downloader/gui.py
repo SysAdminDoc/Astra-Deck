@@ -732,6 +732,9 @@ class MainWindowCore(QMainWindow):
         self._page_anim = None
         self._setup_running = False
         self._tray_hint_shown = False
+        # Download ids already accounted for by the completion notifier, so a
+        # finished download notifies at most once and never re-fires each tick.
+        self._seen_complete = set()
         self._cleared_history_snapshot = []
         self._downloads_signature = None
         self.log_message.connect(self._append_log)
@@ -1460,7 +1463,9 @@ class MainWindowCore(QMainWindow):
         self.cfg_closetotray.setChecked(self.config.get("CloseToTray", True))
         self.cfg_startmin = QCheckBox("Start minimized to the tray")
         self.cfg_startmin.setChecked(self.config.get("StartMinimized", False))
-        for w in [self.cfg_autoupdate, self.cfg_closetotray, self.cfg_startmin]:
+        self.cfg_notify = QCheckBox("Notify when a download finishes (while minimized)")
+        self.cfg_notify.setChecked(self.config.get("NotifyOnComplete", True))
+        for w in [self.cfg_autoupdate, self.cfg_closetotray, self.cfg_startmin, self.cfg_notify]:
             beh_l.addWidget(w)
         layout.addWidget(beh_card)
 
@@ -1520,6 +1525,7 @@ class MainWindowCore(QMainWindow):
             self.cfg_autoupdate.toggled,
             self.cfg_closetotray.toggled,
             self.cfg_startmin.toggled,
+            self.cfg_notify.toggled,
         ):
             signal.connect(self._mark_settings_dirty)
 
@@ -1793,6 +1799,31 @@ class MainWindowCore(QMainWindow):
             card_l.addWidget(make_label(recovery, "errorCallout", word_wrap=True))
         return card
 
+    def _notify_completed_downloads(self, downloads):
+        """Raise a one-shot tray notification when a download finishes while the
+        window is hidden. Completions seen while the window is visible are
+        marked as already-notified so they never fire a stale toast later."""
+        present = {d.id for d in downloads}
+        # Prune ids that left the active queue so the set can't grow unbounded.
+        self._seen_complete &= present
+        newly_complete = [d for d in downloads
+                          if d.status == 'complete' and d.id not in self._seen_complete]
+        if not newly_complete:
+            return
+        notify = self.config.get("NotifyOnComplete", True) and self.isHidden()
+        for d in newly_complete:
+            self._seen_complete.add(d.id)
+            if notify:
+                title = (getattr(d, 'title', '') or '').strip() or 'Your download'
+                try:
+                    self.tray.showMessage(
+                        "Download complete", title,
+                        QSystemTrayIcon.MessageIcon.Information, 4000,
+                    )
+                except Exception:
+                    # reason: tray notifications are best-effort polish
+                    pass
+
     def _update_ui(self):
         if self.server_running and self.server_thread and not self.server_thread.is_alive():
             self.server_running = False
@@ -1817,6 +1848,7 @@ class MainWindowCore(QMainWindow):
 
         # Downloads tab
         downloads = self.dl_manager.snapshot()
+        self._notify_completed_downloads(downloads)
         active = [d for d in downloads if d.status in self._value('DOWNLOAD_RUNNING_STATES')]
         pending = [d for d in downloads if d.status in self._value('DOWNLOAD_PENDING_STATES')]
         recent = [d for d in downloads
@@ -2214,6 +2246,7 @@ class MainWindowCore(QMainWindow):
             "AutoUpdateYtDlp": self.cfg_autoupdate.isChecked(),
             "CloseToTray": self.cfg_closetotray.isChecked(),
             "StartMinimized": self.cfg_startmin.isChecked(),
+            "NotifyOnComplete": self.cfg_notify.isChecked(),
         })
         if not saved:
             self.btn_save.setText("Save changes")

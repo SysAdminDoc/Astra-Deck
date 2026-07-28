@@ -145,13 +145,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
   Acceptance: updating one download's progress mutates only that card; scroll position and keyboard focus survive a refresh.
   Complexity: M
 
-- [ ] P2 — Download-complete tray/toast notification
-  Why: minimized-to-tray users get no signal a download finished; completion notifications are table-stakes (Seal, MeTube).
-  Evidence: RESEARCH.md §Competitive; `astra_downloader/gui.py:1813` (recent-transition detection point; no notification).
-  Touches: `astra_downloader/gui.py` (tray `showMessage` on terminal-success transition), `config.py` (toggle).
-  Acceptance: a download reaching `complete` while the window is hidden raises a tray notification; toggle in Settings; no notification for cancelled/failed unless opted in.
-  Complexity: S
-
 ### P3 — Under consideration: breadth, coherence, and larger bets
 
 - [ ] P3 — Make the SABR readiness pill reflect real capability
