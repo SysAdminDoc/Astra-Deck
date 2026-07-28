@@ -115,13 +115,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
 
 ### P1 — Next: freshness, transport survivability, real format choice
 
-- [ ] P1 — Native-messaging download-command transport as a Chrome-LNA fallback
-  Why: Chrome 142 (Oct 2025) enforces Local Network Access, which can gate/block the extension's `127.0.0.1` fetch to the companion; the token path already rides native messaging but the *download command* path is HTTP-only, so downloads can fail while auth still works. Native messaging is the LNA-immune bridge (browserpass/KeePassXC/1Password pattern).
-  Evidence: RESEARCH.md §Security/Reliability + Open Questions; `astra_downloader/astra_downloader.py` (`handle_native_bootstrap_request` serves only ping/get-token); https://developer.chrome.com/blog/local-network-access . Extends the `Roadmap_Blocked.md` "Validate Chrome LNA exemption" item from validation to implementation.
-  Touches: `astra_downloader/astra_downloader.py` (native host message loop → accept download/status/queue verbs), extension `MediaDLManager` (detect localhost-fetch blocked → fall back to native transport), native-host manifest.
-  Acceptance: with the extension's `127.0.0.1` fetch blocked/denied by LNA, a download can still be initiated and its status polled over the native-messaging channel; when direct fetch works, behavior is unchanged.
-  Complexity: L
-
 ### P2 — Later: expose the knobs yt-dlp already has + GUI truthfulness/robustness
 
 - [ ] P2 — Fix the transient-bind-failure port rewrite (session-only fallback)
