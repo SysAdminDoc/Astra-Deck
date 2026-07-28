@@ -1045,7 +1045,12 @@
 
             let mdl = await MediaDLManager.check(true);
             if (!mdl.ok && !mdl.nativeChannelRequired) {
-                mdl = await MediaDLManager.tryAutoStart();
+                // Server isn't running: fire mediadl://start and wait. This is a
+                // COLD start of the 40 MB PyInstaller one-file companion (self
+                // unpack + Qt init + server bind), which can take ~8–10s — so
+                // give it a generous poll window (8 × 1.5s = 12s) rather than the
+                // default. A warm restart mid-download can afford to be shorter.
+                mdl = await MediaDLManager.tryAutoStart(8);
             }
             if (!mdl.ok) {
                 if (mdl.nativeChannelRequired) {
