@@ -359,10 +359,15 @@ def spawn_ytdlp(args, **kwargs):
     return subprocess.Popen(validate_ytdlp_spawn_args(args), **kwargs)
 
 
-def write_persistent_log(message, path=LOG_PATH):
-    """Best-effort disk log for diagnostics when the windowed exe has no console."""
+def write_persistent_log(message, path=None):
+    """Best-effort disk log for diagnostics when the windowed exe has no console.
+
+    ``path`` binds LOG_PATH late so the test suite can redirect the module
+    global to a temp file — unit runs used to interleave fabricated failure
+    lines ("updater exploded", "disk full") into the REAL
+    %LOCALAPPDATA%/AstraDownloader/server.log, poisoning support reads."""
     try:
-        path = Path(path)
+        path = Path(LOG_PATH if path is None else path)
         path.parent.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with _LOG_LOCK:
