@@ -7,6 +7,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Deterministic companion operational-state visual QA.** The Qt smoke renderer
+  now captures server startup/online/degraded states, the complete queue and
+  recovery lifecycle, history clear/Undo, Settings dirty/error/busy states, and
+  900x620 large-font reflow at 2× DPI. Every fixture uses the native whole-window
+  backing store, including the real navigation rail.
 - **Preferred, descriptive, and original audio now use one MAIN-world player
   bridge.** Language selection prefers an exact BCP-47 match, falls back to the
   primary language, can favor same-language audio description, and reapplies
