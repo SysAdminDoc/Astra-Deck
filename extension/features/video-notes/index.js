@@ -20,7 +20,8 @@
             showToast = () => {},
             handleFileExport = () => {},
             addNavigateRule = () => {},
-            removeNavigateRule = () => {}
+            removeNavigateRule = () => {},
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
@@ -138,7 +139,7 @@
                         delete notes[videoId];
                         this._writeNotes(notes);
                     }
-                    this._updateStatus('No note saved for this video.');
+                    this._updateStatus(t('videoNotesEmpty', 'No note saved for this video.'));
                     this._updateCount('');
                     return;
                 }
@@ -155,14 +156,14 @@
                 // Notes are user-authored data — never claim success when the
                 // storage write failed.
                 this._updateStatus(this._lastWriteOk !== false
-                    ? 'Saved locally.'
-                    : 'Couldn\u2019t save \u2014 storage full or unavailable.');
+                    ? t('videoNotesSaved', 'Saved locally.')
+                    : t('videoNotesSaveFailed', 'Couldn\u2019t save \u2014 storage full or unavailable.'));
                 this._updateCount(text);
             },
 
             _scheduleSave(value) {
                 if (this._saveTimer) clearTimeout(this._saveTimer);
-                this._updateStatus('Saving...');
+                this._updateStatus(t('videoNotesSaving', 'Saving…'));
                 this._updateCount(value);
                 this._pendingSave = {
                     value,
@@ -192,24 +193,24 @@
                 const notes = this._readNotes();
                 const removed = notes[videoId];
                 if (!removed) {
-                    if (typeof showToast === 'function') showToast('No note saved for this video.', '#6b7280');
+                    if (typeof showToast === 'function') showToast(t('videoNotesEmpty', 'No note saved for this video.'), '#6b7280');
                     return;
                 }
                 delete notes[videoId];
                 this._writeNotes(notes);
                 this._renderPanel();
                 if (typeof showToast === 'function') {
-                    showToast('Removed video note', '#6b7280', {
+                    showToast(t('videoNotesRemoved', 'Removed video note'), '#6b7280', {
                         duration: 5,
                         tone: 'neutral',
                         action: {
-                            text: 'Undo',
+                            text: t('toastActionUndo', 'Undo'),
                             onClick: () => {
                                 const next = this._readNotes();
                                 next[videoId] = { ...removed, updatedAt: Date.now() };
                                 this._writeNotes(next);
                                 this._renderPanel();
-                                showToast('Video note restored', '#22c55e');
+                                showToast(t('videoNotesRestored', 'Video note restored'), '#22c55e');
                             }
                         }
                     });
@@ -220,7 +221,7 @@
                 const notes = this._readNotes();
                 const entries = Object.values(notes).sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0));
                 if (!entries.length) {
-                    if (typeof showToast === 'function') showToast('No video notes to export.', '#6b7280');
+                    if (typeof showToast === 'function') showToast(t('videoNotesExportEmpty', 'No video notes to export.'), '#6b7280');
                     return;
                 }
                 const payload = {
@@ -230,7 +231,10 @@
                     notes: Object.fromEntries(entries.map(entry => [entry.videoId, entry]))
                 };
                 handleFileExport(`astra-deck-video-notes-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload, null, 2));
-                if (typeof showToast === 'function') showToast(`Exported ${entries.length} video note${entries.length === 1 ? '' : 's'}`, '#22c55e');
+                if (typeof showToast === 'function') {
+                    showToast(t('videoNotesExportedTpl', 'Exported {count} video notes')
+                        .replace('{count}', String(entries.length)), '#22c55e');
+                }
             },
 
             _renderPanel() {
@@ -246,13 +250,15 @@
                 titleWrap.className = 'ytkit-video-notes-title';
                 const eyebrow = document.createElement('span');
                 eyebrow.className = 'ytkit-video-notes-eyebrow';
-                eyebrow.textContent = 'Local Notes';
+                eyebrow.textContent = t('videoNotesEyebrow', 'Local Notes');
                 const title = document.createElement('span');
                 title.className = 'ytkit-video-notes-name';
-                title.textContent = 'Video Notes';
+                title.textContent = t('videoNotesTitle', 'Video Notes');
                 const status = document.createElement('p');
                 status.className = 'ytkit-video-notes-status';
-                status.textContent = current ? 'Saved locally.' : 'No note saved for this video.';
+                status.textContent = current
+                    ? t('videoNotesSaved', 'Saved locally.')
+                    : t('videoNotesEmpty', 'No note saved for this video.');
                 status.setAttribute('role', 'status');
                 status.setAttribute('aria-live', 'polite');
                 this._statusEl = status;
@@ -263,14 +269,14 @@
                 const exportBtn = document.createElement('button');
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
-                exportBtn.textContent = 'Export Notes';
-                exportBtn.setAttribute('aria-label', 'Export all video notes');
+                exportBtn.textContent = t('videoNotesExport', 'Export Notes');
+                exportBtn.setAttribute('aria-label', t('videoNotesExportAria', 'Export all video notes'));
                 exportBtn.addEventListener('click', () => this._exportNotes());
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
                 deleteBtn.dataset.action = 'delete';
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.setAttribute('aria-label', 'Delete the note for this video');
+                deleteBtn.textContent = t('videoNotesDelete', 'Delete');
+                deleteBtn.setAttribute('aria-label', t('videoNotesDeleteAria', 'Delete the note for this video'));
                 deleteBtn.addEventListener('click', () => this._deleteCurrentNote());
                 actions.append(exportBtn, deleteBtn);
                 header.append(titleWrap, actions);
@@ -279,15 +285,17 @@
                 textarea.className = 'ytkit-video-notes-input';
                 textarea.maxLength = this._MAX_NOTE_CHARS;
                 textarea.value = current?.note || '';
-                textarea.placeholder = 'Write notes for this video...';
-                textarea.setAttribute('aria-label', 'Notes for this video');
+                textarea.placeholder = t('videoNotesPlaceholder', 'Write notes for this video…');
+                textarea.setAttribute('aria-label', t('videoNotesInputAria', 'Notes for this video'));
                 textarea.addEventListener('input', () => this._scheduleSave(textarea.value));
                 this._textarea = textarea;
 
                 const footer = document.createElement('div');
                 footer.className = 'ytkit-video-notes-footer';
                 const scope = document.createElement('span');
-                scope.textContent = videoId ? `Saved under ${videoId}` : 'Video ID unavailable';
+                scope.textContent = videoId
+                    ? t('videoNotesSavedUnderTpl', 'Saved under {videoId}').replace('{videoId}', videoId)
+                    : t('videoNotesIdUnavailable', 'Video ID unavailable');
                 scope.setAttribute('translate', 'no');
                 const count = document.createElement('span');
                 count.className = 'ytkit-video-notes-count';
@@ -313,7 +321,7 @@
                 this._container = document.createElement('section');
                 this._container.className = 'ytkit-video-notes-container';
                 this._container.setAttribute('role', 'region');
-                this._container.setAttribute('aria-label', 'Per-video notes');
+                this._container.setAttribute('aria-label', t('videoNotesRegionAria', 'Per-video notes'));
                 const bookmarkPanel = target.querySelector('.ytkit-bookmarks-container');
                 if (bookmarkPanel?.nextSibling) target.insertBefore(this._container, bookmarkPanel.nextSibling);
                 else target.insertBefore(this._container, target.firstChild);

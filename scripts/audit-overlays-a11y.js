@@ -276,8 +276,8 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         toastDom.includes("actionBtn.type = 'button'") && ytkit.includes("actionBtn.type = 'button'"),
         'Toast action buttons must be real button elements');
     add('Toast close button has aria-label',
-        toastDom.includes("closeBtn.setAttribute('aria-label', 'Dismiss notification')") &&
-        ytkit.includes("closeBtn.setAttribute('aria-label', 'Dismiss notification')"),
+        toastDom.includes("closeBtn.setAttribute('aria-label', t('toastDismissAria', 'Dismiss notification'))") &&
+        ytkit.includes("closeBtn.setAttribute('aria-label', t('toastDismissAria', 'Dismiss notification'))"),
         'Toast close button must have aria-label Dismiss notification');
     add('Toast actions and close controls have focus-visible styles',
         ytkit.includes('.ytkit-toast-action:focus-visible') &&
@@ -294,7 +294,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         downloadUi.includes("prompt.setAttribute('aria-describedby', 'ytkit-install-prompt-desc')"),
         'Install prompt must be a labelled/described region');
     add('Install prompt close button has aria-label',
-        downloadUi.includes("closeBtn.setAttribute('aria-label', 'Close local downloader prompt')"),
+        downloadUi.includes("closeBtn.setAttribute('aria-label', t('dlInstallCloseAria', 'Close local downloader prompt'))"),
         'Install prompt close button must have aria-label Close local downloader prompt');
     add('Install prompt note is a polite status',
         downloadUi.includes("note.setAttribute('role', 'status')") &&
@@ -356,13 +356,13 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Transcript viewer must be a region labelled by its title');
     add('Transcript viewer status/export/body announce changes',
         ytkit.includes("meta.setAttribute('aria-live', 'polite')") &&
-        ytkit.includes("exportBar.setAttribute('aria-label', 'Transcript export actions')") &&
+        ytkit.includes("exportBar.setAttribute('aria-label', t('transcriptExportActionsAria', 'Transcript export actions'))") &&
         ytkit.includes("b.setAttribute('aria-label', title)") &&
         ytkit.includes("body.setAttribute('aria-live', 'polite')"),
         'Transcript viewer must expose polite state updates and named export actions');
     add('Transcript lines and toggle are labelled',
-        ytkit.includes("closeBtn.setAttribute('aria-label', 'Collapse transcript')") &&
-        ytkit.includes("line.setAttribute('aria-label', `Jump to ${stamp} in the transcript`)"),
+        ytkit.includes("closeBtn.setAttribute('aria-label', t('transcriptCollapseAria', 'Collapse transcript'))") &&
+        ytkit.includes("line.setAttribute('aria-label', t('transcriptJumpAriaTpl', 'Jump to {time} in the transcript')"),
         'Transcript toggle and lines must have accessible names');
     add('Transcript viewer controls have focus-visible and target size',
         ytkit.includes('.ytkit-transcript-toggle:focus-visible') &&
@@ -408,16 +408,16 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     add('Downloader health is a polite named status',
         downloadUi.includes("this._container.setAttribute('role', 'status')") &&
         downloadUi.includes("this._container.setAttribute('aria-live', 'polite')") &&
-        downloadUi.includes("this._container.setAttribute('aria-label', 'Downloader health')") &&
+        downloadUi.includes("this._container.setAttribute('aria-label', t('dlHealthRegionAria', 'Downloader health'))") &&
         downloadUi.includes("pill.setAttribute('aria-label', `${label} ${value}`)"),
         'Downloader health pills must expose a polite named status');
     add('Downloader health pills meet target-size floor',
         hasMinTarget(downloadUi, '.ytkit-download-health__pill'),
         'Downloader health pills must declare at least 24px height');
     add('Download history dialog is labelled and controls are named',
-        downloadUi.includes("panel.setAttribute('aria-label', 'Recent downloads')") &&
-        downloadUi.includes("close.setAttribute('aria-label', 'Close recent downloads')") &&
-        downloadUi.includes("this._btn.setAttribute('aria-label', 'View recent downloads')"),
+        downloadUi.includes("panel.setAttribute('aria-label', t('dlHistoryRegionAria', 'Recent downloads'))") &&
+        downloadUi.includes("close.setAttribute('aria-label', t('dlHistoryCloseAria', 'Close recent downloads'))") &&
+        downloadUi.includes("this._btn.setAttribute('aria-label', t('dlHistoryButtonTitle', 'View recent downloads'))"),
         'Download history panel and controls must have accessible names');
     add('Download history controls have focus-visible and target size',
         downloadUi.includes('.ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible') &&
@@ -526,7 +526,7 @@ function runSelfTest(baseSources) {
             name: 'unlabeled close button',
             target: 'downloadUi',
             expected: 'Install prompt close button must have aria-label Close local downloader prompt',
-            mutate: (source) => source.replace("closeBtn.setAttribute('aria-label', 'Close local downloader prompt');", '')
+            mutate: (source) => source.replace("closeBtn.setAttribute('aria-label', t('dlInstallCloseAria', 'Close local downloader prompt'));", '')
         },
         {
             name: 'missing focus-visible',

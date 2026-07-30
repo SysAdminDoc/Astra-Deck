@@ -17,6 +17,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Remaining named in-page English surfaces now use the locale catalog.**
+  Subscription digest/health, video notes, downloader setup/health/history,
+  Settings search/reset/insights, transcript export/translation, bulk actions,
+  popup maintenance statuses, and toast chrome resolve through `t()`. Locale
+  extraction now covers feature modules, gates missing English keys, and keeps
+  Arabic and Simplified Chinese in generated-catalog parity.
 - **Popup data recovery now works without an open YouTube tab.** Export writes
   a truthful extension-only backup that marks the transcript index unavailable;
   Import and Reset keep local rollback/Undo guarantees while leaving inaccessible

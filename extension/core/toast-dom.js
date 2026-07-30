@@ -32,6 +32,7 @@
         const normalizeToastTone = deps.normalizeToastTone || ((tone) => tone || 'neutral');
         const getToastRgb = deps.getToastRgb || (() => '53,199,127');
         const getToastBadgeLabel = deps.getToastBadgeLabel || (() => 'Done');
+        const t = deps.t || ((_key, fallback) => fallback);
         const getToastAriaDefaults = deps.getToastAriaDefaults
             || ((tone) => tone === 'error'
                 ? { role: 'alert', ariaLive: 'assertive' }
@@ -86,7 +87,14 @@
 
             const badge = document.createElement('span');
             badge.className = 'ytkit-toast-badge';
-            badge.textContent = getToastBadgeLabel(tone);
+            const badgeKey = {
+                error: 'toastBadgeError',
+                warning: 'toastBadgeWarning',
+                info: 'toastBadgeInfo',
+                neutral: 'toastBadgeNeutral',
+                success: 'toastBadgeSuccess'
+            }[tone] || 'toastBadgeNeutral';
+            badge.textContent = t(badgeKey, getToastBadgeLabel(tone));
 
             const body = document.createElement('div');
             body.className = 'ytkit-toast-body';
@@ -103,7 +111,9 @@
                 const actionBtn = document.createElement('button');
                 actionBtn.className = `ytkit-toast-action${index > 0 ? ' ytkit-toast-action--secondary' : ''}`;
                 actionBtn.type = 'button';
-                actionBtn.textContent = action.text || (index === 0 ? 'Undo' : 'Open');
+                actionBtn.textContent = action.text || (index === 0
+                    ? t('toastActionUndo', 'Undo')
+                    : t('toastActionOpen', 'Open'));
                 actionBtn.addEventListener('click', (event) => {
                     event.stopPropagation();
                     dismissToast(toast);
@@ -116,7 +126,7 @@
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'ytkit-toast-close';
                 closeBtn.type = 'button';
-                closeBtn.setAttribute('aria-label', 'Dismiss notification');
+                closeBtn.setAttribute('aria-label', t('toastDismissAria', 'Dismiss notification'));
                 closeBtn.textContent = '✕';
                 closeBtn.addEventListener('click', (event) => {
                     event.stopPropagation();

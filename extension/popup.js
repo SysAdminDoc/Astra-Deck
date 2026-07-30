@@ -4340,22 +4340,31 @@ async function updateYtdlpNow() {
             // matches the version chip in the popup header so users
             // visually anchor on the same shape.
             const detail = (before && after && before === after)
-                ? `yt-dlp already at v${after}`
-                : `yt-dlp updated to v${after || '?'}${before ? ` (from v${before})` : ''}`;
+                ? t('statusYtdlpCurrentTpl', 'yt-dlp already at v{version}')
+                    .replace('{version}', after)
+                : t('statusYtdlpUpdatedTpl', 'yt-dlp updated to v{version}{from}')
+                    .replace('{version}', after || '?')
+                    .replace('{from}', before
+                        ? t('statusYtdlpFromTpl', ' (from v{version})').replace('{version}', before)
+                        : '');
             const rollback = result.rollback_version
-                ? ` Last-known-good: v${result.rollback_version}.`
+                ? t('statusYtdlpRollbackTpl', ' Last-known-good: v{version}.')
+                    .replace('{version}', result.rollback_version)
                 : '';
             showStatus(detail + rollback, 'success', 6200);
         } else {
-            const rawErr = (result && (result.error || result.stderr)) || 'Update failed.';
+            const rawErr = (result && (result.error || result.stderr)) || t('statusUpdateFailed', 'Update failed.');
             // stderr can be a multi-line traceback wall — the status strip is
             // two lines tall; keep the first meaningful line.
-            const err = String(rawErr).split('\n').find((line) => line.trim()) || 'Update failed.';
+            const err = String(rawErr).split('\n').find((line) => line.trim()) || t('statusUpdateFailed', 'Update failed.');
             const recovery = result?.rolled_back
-                ? ` Active version restored to v${result.version_after || result.rollback_version || '?'}.`
+                ? t('statusYtdlpRestoredTpl', ' Active version restored to v{version}.')
+                    .replace('{version}', result.version_after || result.rollback_version || '?')
                 : '';
             // Same reasoning — t() would lose the stderr appendix.
-            showStatus('yt-dlp update failed — ' + err + recovery, 'error', 7200);
+            showStatus(t('statusYtdlpUpdateFailedTpl', 'yt-dlp update failed — {error}{recovery}')
+                .replace('{error}', err)
+                .replace('{recovery}', recovery), 'error', 7200);
         }
     } finally {
         updateYtdlpButton.removeAttribute('aria-busy');
@@ -4382,14 +4391,19 @@ async function updateCompanionNow() {
             const current = result.current_version || '';
             const latest = result.latest_version || '';
             if (result.update_available === false || result.status === 'current') {
-                showStatus(`Astra Downloader already at v${latest || current || '?'}.`, 'success', 5200);
+                showStatus(t('statusCompanionCurrentTpl', 'Astra Downloader already at v{version}.')
+                    .replace('{version}', latest || current || '?'), 'success', 5200);
             } else {
                 const rollback = result.rollback_version || current || '?';
-                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting with v${rollback} retained for automatic rollback.`, 'success', 8200);
+                showStatus(t('statusCompanionReadyTpl', 'Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback.')
+                    .replace('{current}', current || '?')
+                    .replace('{latest}', latest || '?')
+                    .replace('{rollback}', rollback), 'success', 8200);
             }
         } else {
-            const err = (result && result.error) || 'Update failed.';
-            showStatus('Astra Downloader update failed — ' + err, 'error', 7200);
+            const err = (result && result.error) || t('statusUpdateFailed', 'Update failed.');
+            showStatus(t('statusCompanionUpdateFailedTpl', 'Astra Downloader update failed — {error}')
+                .replace('{error}', err), 'error', 7200);
         }
     } finally {
         updateCompanionButton.removeAttribute('aria-busy');

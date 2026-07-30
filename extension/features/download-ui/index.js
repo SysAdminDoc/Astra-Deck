@@ -434,15 +434,19 @@
                 heading.className = 'ytkit-install-prompt__heading';
                 const eyebrow = document.createElement('span');
                 eyebrow.className = 'ytkit-install-prompt__eyebrow';
-                eyebrow.textContent = isRetryMode ? 'Connection check' : 'Local downloads';
+                eyebrow.textContent = isRetryMode
+                    ? t('dlInstallConnectionCheck', 'Connection check')
+                    : t('dlInstallLocalDownloads', 'Local downloads');
                 const titleEl = document.createElement('span');
                 titleEl.id = 'ytkit-install-prompt-title';
                 titleEl.className = 'ytkit-install-prompt__title';
-                titleEl.textContent = isRetryMode ? 'Reconnect Astra Downloader' : 'Set up local downloads';
+                titleEl.textContent = isRetryMode
+                    ? t('dlInstallReconnectTitle', 'Reconnect Astra Downloader')
+                    : t('dlInstallSetupTitle', 'Set up local downloads');
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'ytkit-install-prompt__close';
                 closeBtn.type = 'button';
-                closeBtn.setAttribute('aria-label', 'Close local downloader prompt');
+                closeBtn.setAttribute('aria-label', t('dlInstallCloseAria', 'Close local downloader prompt'));
                 closeBtn.textContent = '✕';
                 closeBtn.onclick = () => prompt.remove();
                 heading.appendChild(eyebrow);
@@ -455,8 +459,8 @@
                 desc.id = 'ytkit-install-prompt-desc';
                 desc.className = 'ytkit-install-prompt__desc';
                 const baseDesc = isRetryMode
-                    ? 'Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service.'
-                    : 'Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads.';
+                    ? t('dlInstallRepairDesc', 'Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service.')
+                    : t('dlInstallSetupDesc', 'Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads.');
 
                 // A stale/legacy downloader squatting a companion port is a
                 // common, confusing failure: /health answers, so the extension
@@ -469,12 +473,12 @@
                 const renderPromptDesc = () => {
                     const foreign = this._foreignServer;
                     if (foreign && foreign.port) {
-                        desc.textContent =
-                            `Another program is answering on Astra Downloader's port ${foreign.port}` +
-                            (foreign.version ? ` (reporting version ${foreign.version})` : '') +
-                            `. It is usually a leftover downloader from an earlier install. Close it, ` +
-                            `remove it from Startup apps (look for "YTYT-Downloader" or ` +
-                            `"Astra Deck Downloader"), then start Astra Downloader and choose Check again.`;
+                        desc.textContent = t('dlInstallPortConflictTpl',
+                            'Another program is answering on Astra Downloader’s port {port}{version}. It is usually a leftover downloader from an earlier install. Close it, remove it from Startup apps (look for “YTYT-Downloader” or “Astra Deck Downloader”), then start Astra Downloader and choose Check again.')
+                            .replace('{port}', String(foreign.port))
+                            .replace('{version}', foreign.version
+                                ? t('dlInstallPortVersionTpl', ' (reporting version {version})').replace('{version}', foreign.version)
+                                : '');
                         prompt.dataset.state = 'error';
                     } else {
                         desc.textContent = baseDesc;
@@ -488,17 +492,17 @@
                 note.setAttribute('role', 'status');
                 note.setAttribute('aria-live', 'polite');
                 note.textContent = isRetryMode
-                    ? 'Fastest path: start the service again first. If it still does not respond, run setup to repair the install.'
-                    : 'Recommended path: download setup, open the file, then return here and check again.';
+                    ? t('dlInstallRepairHint', 'Fastest path: start the service again first. If it still does not respond, run setup to repair the install.')
+                    : t('dlInstallSetupHint', 'Recommended path: download setup, open the file, then return here and check again.');
 
                 const steps = document.createElement('ol');
                 steps.className = 'ytkit-install-prompt__steps';
                 [
                     isRetryMode
-                        ? 'Start the service again if the downloader is already installed.'
-                        : 'Download the Astra Downloader setup file.',
-                    'Open the setup file from Downloads and finish installation.',
-                    'Choose Check again so Astra Deck can confirm the service is ready.'
+                        ? t('dlInstallStepStart', 'Start the service again if the downloader is already installed.')
+                        : t('dlInstallStepDownload', 'Download the Astra Downloader setup file.'),
+                    t('dlInstallStepOpen', 'Open the setup file from Downloads and finish installation.'),
+                    t('dlInstallStepCheck', 'Choose Check again so Astra Deck can confirm the service is ready.')
                 ].forEach((copy) => {
                     const item = document.createElement('li');
                     item.className = 'ytkit-install-prompt__step';
@@ -550,9 +554,9 @@
 
                 // 1. Retry / Start Server
                 if (isRetryMode) {
-                    const retryBtn = makeBtn('Start service', 'primary', async () => {
-                        setPromptNote('Starting the Astra Downloader service…', 'warning');
-                        setPromptButtonState(retryBtn, 'Starting…');
+                    const retryBtn = makeBtn(t('dlInstallStartService', 'Start service'), 'primary', async () => {
+                        setPromptNote(t('dlInstallStartingService', 'Starting the Astra Downloader service…'), 'warning');
+                        setPromptButtonState(retryBtn, t('dlInstallStarting', 'Starting…'));
                         retryBtn.disabled = true;
                         retryBtn.setAttribute('aria-busy', 'true');
                         this.resetAutoStart();
@@ -563,51 +567,53 @@
                         } else {
                             retryBtn.setAttribute('aria-busy', 'false');
                             renderPromptDesc();
-                            setPromptNote('The service did not respond. Run setup below to repair Astra Downloader, then check again.', 'error');
-                            setPromptButtonState(retryBtn, 'Try again', 'danger');
+                            setPromptNote(t('dlInstallNoResponse', 'The service did not respond. Run setup below to repair Astra Downloader, then check again.'), 'error');
+                            setPromptButtonState(retryBtn, t('commonTryAgain', 'Try again'), 'danger');
                             retryBtn.disabled = false;
                         }
-                    }, 'Fastest fix if the downloader is installed but idle.');
+                    }, t('dlInstallStartDetail', 'Fastest fix if the downloader is installed but idle.'));
                     btnCol.appendChild(retryBtn);
                 }
 
                 // 2. Download setup
-                const copyBtn = makeBtn('Download setup', 'accent', async () => {
-                    setPromptNote('Downloading the setup file…', 'warning');
-                    setPromptButtonState(copyBtn, 'Downloading setup…');
+                const copyBtn = makeBtn(t('dlInstallDownloadSetup', 'Download setup'), 'accent', async () => {
+                    setPromptNote(t('dlInstallDownloadingSetup', 'Downloading the setup file…'), 'warning');
+                    setPromptButtonState(copyBtn, t('dlInstallDownloadingSetupShort', 'Downloading setup…'));
                     copyBtn.disabled = true;
                     copyBtn.setAttribute('aria-busy', 'true');
                     const result = await this.runInstallAssist();
                     copyBtn.setAttribute('aria-busy', 'false');
-                    setPromptButtonState(copyBtn, result.downloaded ? 'Setup ready' : 'Open setup file', result.downloaded ? 'success' : '');
+                    setPromptButtonState(copyBtn, result.downloaded
+                        ? t('dlInstallSetupReady', 'Setup ready')
+                        : t('dlInstallOpenSetup', 'Open setup file'), result.downloaded ? 'success' : '');
                     setPromptNote(
                         result.downloaded
-                            ? 'Setup downloaded. Open the file, finish installation, then choose Check again.'
-                            : 'The setup file should be open. Finish installation, then choose Check again.',
+                            ? t('dlInstallDownloadedHint', 'Setup downloaded. Open the file, finish installation, then choose Check again.')
+                            : t('dlInstallOpenedHint', 'The setup file should be open. Finish installation, then choose Check again.'),
                         'success'
                     );
                     copyBtn.disabled = false;
-                }, 'Recommended. Installs or repairs Astra Downloader.');
+                }, t('dlInstallDownloadDetail', 'Recommended. Installs or repairs Astra Downloader.'));
                 btnCol.appendChild(copyBtn);
 
                 // 3. Copy PowerShell command
-                const dlBtn = makeBtn('Copy fallback command', 'ghost', async () => {
+                const dlBtn = makeBtn(t('dlInstallCopyCommand', 'Copy fallback command'), 'ghost', async () => {
                     const copied = await this.copyInstallCommand();
                     if (copied) {
-                        setPromptButtonState(dlBtn, 'Command copied', 'success');
-                        setPromptNote('Fallback command copied. Use it in PowerShell only if the setup file cannot run.', 'success');
+                        setPromptButtonState(dlBtn, t('dlInstallCommandCopied', 'Command copied'), 'success');
+                        setPromptNote(t('dlInstallCommandCopiedHint', 'Fallback command copied. Use it in PowerShell only if the setup file cannot run.'), 'success');
                         showToast(t('toastDlCmdCopied', 'Fallback install command copied. Use it only if you cannot run the downloaded setup file.'), '#3b82f6', { duration: 6 });
-                        setTimeout(() => { setPromptButtonState(dlBtn, 'Copy fallback command'); }, 3500);
+                        setTimeout(() => { setPromptButtonState(dlBtn, t('dlInstallCopyCommand', 'Copy fallback command')); }, 3500);
                     } else {
                         void openExternalUrl(this.INSTALLER_URL).catch(() => {});
                     }
-                }, 'Use only if the downloaded setup file cannot run.');
+                }, t('dlInstallCommandDetail', 'Use only if the downloaded setup file cannot run.'));
                 btnCol.appendChild(dlBtn);
 
                 // 4. "I just installed it" — re-check
-                const recheckBtn = makeBtn('Check again', 'ghost', async () => {
-                    setPromptNote('Checking for the Astra Downloader service…', 'warning');
-                    setPromptButtonState(recheckBtn, 'Checking…');
+                const recheckBtn = makeBtn(t('dlInstallCheckAgain', 'Check again'), 'ghost', async () => {
+                    setPromptNote(t('dlInstallCheckingService', 'Checking for the Astra Downloader service…'), 'warning');
+                    setPromptButtonState(recheckBtn, t('commonChecking', 'Checking…'));
                     recheckBtn.disabled = true;
                     recheckBtn.setAttribute('aria-busy', 'true');
                     this.resetAutoStart();
@@ -618,17 +624,17 @@
                     } else {
                         recheckBtn.setAttribute('aria-busy', 'false');
                         renderPromptDesc();
-                        setPromptButtonState(recheckBtn, 'Not detected yet', 'danger');
-                        setPromptNote('Setup was not detected yet. Make sure the installer finished, then check again.', 'error');
+                        setPromptButtonState(recheckBtn, t('dlInstallNotDetected', 'Not detected yet'), 'danger');
+                        setPromptNote(t('dlInstallNotDetectedHint', 'Setup was not detected yet. Make sure the installer finished, then check again.'), 'error');
                         recheckBtn.disabled = false;
-                        setTimeout(() => { setPromptButtonState(recheckBtn, 'Check again'); }, 4000);
+                        setTimeout(() => { setPromptButtonState(recheckBtn, t('dlInstallCheckAgain', 'Check again')); }, 4000);
                     }
-                }, 'Use this after running the setup file.');
+                }, t('dlInstallCheckDetail', 'Use this after running the setup file.'));
                 btnCol.appendChild(recheckBtn);
 
                 // 5. Dismiss
                 if (!isRetryMode) {
-                    const dismissBtn = makeBtn('Skip for now', 'quiet', () => {
+                    const dismissBtn = makeBtn(t('dlInstallSkip', 'Skip for now'), 'quiet', () => {
                         prompt.remove();
                         storageWrite('ytkit_mediadl_prompt_dismissed', true);
                     });
@@ -1051,7 +1057,10 @@
             }
             _downloadInProgress = true;
             DebugManager.log('Download', `Download requested: ${videoUrl} (audio=${audioOnly}, format=${opts.format || 'default'}, dir=${opts.outputDir || 'default'})`);
-            showToast(audioOnly ? 'Preparing your audio download…' : 'Preparing your video download…', '#3b82f6', { duration: 2 });
+            showToast(audioOnly
+                ? t('toastDlPreparingAudio', 'Preparing your audio download…')
+                : t('toastDlPreparingVideo', 'Preparing your video download…'),
+            '#3b82f6', { duration: 2 });
 
             let mdl = await MediaDLManager.check(true);
             let likelyNeverInstalled = false;
@@ -1614,16 +1623,22 @@
                 if (!this._container?.isConnected) return;
                 this._container.replaceChildren();
                 if (!data) {
-                    this._container.appendChild(this._renderPill('Downloader', 'offline', 'warn'));
+                    this._container.appendChild(this._renderPill(
+                        t('dlHealthDownloader', 'Downloader'),
+                        t('dlHealthOffline', 'offline'),
+                        'warn'
+                    ));
                     return;
                 }
                 if (data.tokenSource) {
                     const authTone = data.tokenSource === 'native' ? 'ok' : 'warn';
-                    const authLabel = data.tokenSource === 'native' ? 'native' : 'legacy';
-                    const authPill = this._renderPill('Auth', authLabel, authTone);
+                    const authLabel = data.tokenSource === 'native'
+                        ? t('dlHealthNative', 'native')
+                        : t('dlHealthLegacy', 'legacy');
+                    const authPill = this._renderPill(t('dlHealthAuth', 'Auth'), authLabel, authTone);
                     authPill.title = data.tokenSource === 'native'
-                        ? 'Token received over browser native messaging; /health token echo suppressed.'
-                        : 'Using legacy /health token bootstrap because native messaging is unavailable.';
+                        ? t('dlHealthNativeAuthTitle', 'Token received over browser native messaging; /health token echo suppressed.')
+                        : t('dlHealthLegacyAuthTitle', 'Using legacy /health token bootstrap because native messaging is unavailable.');
                     this._container.appendChild(authPill);
                 }
                 if (data.ytDlpVersion) {
@@ -1632,22 +1647,22 @@
                 if (data.ffmpegCapabilities) {
                     const cap = data.ffmpegCapabilities;
                     const tone = cap.current === false ? 'warn' : 'ok';
-                    this._container.appendChild(this._renderPill('ffmpeg', cap.version || 'unknown', tone));
+                    this._container.appendChild(this._renderPill('ffmpeg', cap.version || t('dlHealthUnknown', 'unknown'), tone));
                 }
                 const po = data.poTokenProvider;
                 if (po === null || po === undefined) {
-                    this._container.appendChild(this._renderPill('PO Token', 'not running', 'warn'));
+                    this._container.appendChild(this._renderPill('PO Token', t('dlHealthNotRunning', 'not running'), 'warn'));
                 } else if (po && po.ok) {
-                    this._container.appendChild(this._renderPill('PO Token', 'live', 'ok'));
+                    this._container.appendChild(this._renderPill('PO Token', t('dlHealthLive', 'live'), 'ok'));
                 } else {
-                    this._container.appendChild(this._renderPill('PO Token', 'unreachable', 'err'));
+                    this._container.appendChild(this._renderPill('PO Token', t('dlHealthUnreachable', 'unreachable'), 'err'));
                 }
                 if (data.sabrSupport) {
                     const sabrTone = data.sabrSupport === 'native' ? 'ok' : 'warn';
                     const sabrLabel = data.sabrSupport === 'native' ? 'native' : 'limited';
                     const sabrPill = this._renderPill('SABR', sabrLabel, sabrTone);
                     if (data.sabrSupport !== 'native') {
-                        sabrPill.title = 'Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482.';
+                        sabrPill.title = t('dlHealthSabrLimitedTitle', 'Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482.');
                     }
                     this._container.appendChild(sabrPill);
                 }
@@ -1670,7 +1685,7 @@
                         if (deno.canProvisionDeno) {
                             pill.style.cursor = 'pointer';
                             pill.addEventListener('click', async () => {
-                                pill.textContent = 'Provisioning...';
+                                pill.textContent = t('dlHealthProvisioning', 'Provisioning…');
                                 try {
                                     const { data: resp } = await extensionFetchJson({
                                         method: 'POST',
@@ -1678,15 +1693,15 @@
                                         headers: { 'X-MDL-Token': data.token }
                                     });
                                     if (resp?.ok) {
-                                        showToast('Deno provisioned successfully', '#22c55e');
+                                        showToast(t('dlHealthDenoProvisioned', 'Deno provisioned successfully'), '#22c55e');
                                         this._render();
                                     } else {
-                                        showToast(resp?.error || 'Deno provision failed', '#ef4444');
-                                        pill.textContent = 'Deno: failed';
+                                        showToast(resp?.error || t('dlHealthDenoFailed', 'Deno provision failed'), '#ef4444');
+                                        pill.textContent = t('dlHealthDenoFailedLabel', 'Deno: failed');
                                     }
                                 } catch (e) {
-                                    showToast('Deno provision failed: ' + e.message, '#ef4444');
-                                    pill.textContent = 'Deno: failed';
+                                    showToast(t('dlHealthDenoFailedTpl', 'Deno provision failed: {error}').replace('{error}', e.message), '#ef4444');
+                                    pill.textContent = t('dlHealthDenoFailedLabel', 'Deno: failed');
                                 }
                             }, { once: true });
                         }
@@ -1707,7 +1722,7 @@
                 this._container.className = 'ytkit-download-health';
                 this._container.setAttribute('role', 'status');
                 this._container.setAttribute('aria-live', 'polite');
-                this._container.setAttribute('aria-label', 'Downloader health');
+                this._container.setAttribute('aria-label', t('dlHealthRegionAria', 'Downloader health'));
                 anchor.insertAdjacentElement('afterend', this._container);
             },
 
@@ -1812,16 +1827,16 @@
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-stream-links-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', 'Stream Links');
+                panel.setAttribute('aria-label', t('dlStreamLinksTitle', 'Stream Links'));
 
                 const heading = document.createElement('h4');
-                heading.textContent = 'Stream Links';
+                heading.textContent = t('dlStreamLinksTitle', 'Stream Links');
                 panel.appendChild(heading);
 
                 const close = document.createElement('button');
                 close.className = 'ytkit-stream-links-panel__close';
                 close.type = 'button';
-                close.textContent = 'Close';
+                close.textContent = t('commonClose', 'Close');
                 close.addEventListener('click', () => { panel.remove(); this._panel = null; });
                 panel.appendChild(close);
 
@@ -1837,13 +1852,13 @@
                         label.textContent = this._formatLabel(f);
                         const btn = document.createElement('button');
                         btn.type = 'button';
-                        btn.textContent = f.url ? 'Copy URL' : 'SABR-only';
+                        btn.textContent = f.url ? t('dlStreamCopyUrl', 'Copy URL') : t('dlStreamSabrOnly', 'SABR-only');
                         btn.disabled = !f.url;
                         if (f.url) {
                             btn.addEventListener('click', () => {
                                 navigator.clipboard?.writeText(f.url).then(
-                                    () => typeof showToast === 'function' && showToast('Stream URL copied', '#22c55e'),
-                                    () => typeof showToast === 'function' && showToast('Copy failed', '#ef4444')
+                                    () => typeof showToast === 'function' && showToast(t('dlStreamCopied', 'Stream URL copied'), '#22c55e'),
+                                    () => typeof showToast === 'function' && showToast(t('commonCopyFailed', 'Copy failed'), '#ef4444')
                                 );
                             });
                         }
@@ -1855,7 +1870,7 @@
 
                 if (!formats.length && !adaptive.length) {
                     const empty = document.createElement('div');
-                    empty.textContent = 'No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate.';
+                    empty.textContent = t('dlStreamEmpty', 'No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate.');
                     panel.appendChild(empty);
                 } else {
                     renderList('Combined (legacy)', formats);
@@ -1863,7 +1878,7 @@
                 }
                 const warn = document.createElement('div');
                 warn.className = 'ytkit-stream-links-panel__warn';
-                warn.textContent = 'URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead.';
+                warn.textContent = t('dlStreamWarning', 'URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead.');
                 panel.appendChild(warn);
 
                 document.body.appendChild(panel);
@@ -1881,8 +1896,8 @@
                 this._btn = document.createElement('button');
                 this._btn.type = 'button';
                 this._btn.className = 'ytkit-stream-links-btn';
-                this._btn.textContent = 'Stream Links';
-                this._btn.title = 'Show adaptive format URLs';
+                this._btn.textContent = t('dlStreamLinksTitle', 'Stream Links');
+                this._btn.title = t('dlStreamButtonTitle', 'Show adaptive format URLs');
                 this._btn.addEventListener('click', () => this._renderPanel());
                 anchor.insertAdjacentElement('afterend', this._btn);
             },
@@ -2064,13 +2079,13 @@
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-dl-history-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', 'Recent downloads');
+                panel.setAttribute('aria-label', t('dlHistoryRegionAria', 'Recent downloads'));
                 const h = document.createElement('h4');
-                h.textContent = 'Recent Downloads';
+                h.textContent = t('dlHistoryTitle', 'Recent Downloads');
                 panel.appendChild(h);
                 const placeholder = document.createElement('div');
                 placeholder.className = 'ytkit-dl-history-panel__empty';
-                placeholder.textContent = 'Loading…';
+                placeholder.textContent = t('commonLoading', 'Loading…');
                 panel.appendChild(placeholder);
                 document.body.appendChild(panel);
                 this._panel = panel;
@@ -2079,25 +2094,25 @@
                 if (!this._panel) return;
                 panel.replaceChildren();
                 const heading = document.createElement('h4');
-                heading.textContent = 'Recent Downloads';
+                heading.textContent = t('dlHistoryTitle', 'Recent Downloads');
                 panel.appendChild(heading);
 
                 if (!history) {
                     const err = document.createElement('div');
                     err.className = 'ytkit-dl-history-panel__empty';
-                    err.textContent = 'Astra Downloader unreachable. Start Astra Downloader and try again.';
+                    err.textContent = t('dlHistoryUnreachable', 'Astra Downloader unreachable. Start Astra Downloader and try again.');
                     panel.appendChild(err);
                 } else if (!history.length) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-dl-history-panel__empty';
-                    empty.textContent = 'No completed downloads yet.';
+                    empty.textContent = t('dlHistoryEmpty', 'No completed downloads yet.');
                     panel.appendChild(empty);
                 } else {
                     const ul = document.createElement('ul');
                     for (const entry of history.slice().reverse()) {
                         const li = document.createElement('li');
                         const title = document.createElement('div');
-                        title.textContent = entry.title || entry.filename || entry.url || 'Untitled';
+                        title.textContent = entry.title || entry.filename || entry.url || t('commonUntitled', 'Untitled');
                         const meta = document.createElement('div');
                         meta.className = 'meta';
                         const parts = [];
@@ -2119,8 +2134,8 @@
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.className = 'ytkit-dl-history-panel__close';
-                close.textContent = 'Close';
-                close.setAttribute('aria-label', 'Close recent downloads');
+                close.textContent = t('commonClose', 'Close');
+                close.setAttribute('aria-label', t('dlHistoryCloseAria', 'Close recent downloads'));
                 close.addEventListener('click', () => { panel.remove(); this._panel = null; });
                 panel.appendChild(close);
             },
@@ -2132,9 +2147,9 @@
                 this._btn = document.createElement('button');
                 this._btn.type = 'button';
                 this._btn.className = 'ytkit-dl-history-btn';
-                this._btn.textContent = 'History';
-                this._btn.title = 'View recent downloads';
-                this._btn.setAttribute('aria-label', 'View recent downloads');
+                this._btn.textContent = t('dlHistoryButton', 'History');
+                this._btn.title = t('dlHistoryButtonTitle', 'View recent downloads');
+                this._btn.setAttribute('aria-label', t('dlHistoryButtonTitle', 'View recent downloads'));
                 this._btn.addEventListener('click', () => this._open());
                 anchor.insertAdjacentElement('afterend', this._btn);
             },

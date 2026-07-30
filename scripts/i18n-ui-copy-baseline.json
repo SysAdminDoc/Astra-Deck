@@ -5,10 +5,6 @@
       "count": 2,
       "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
     },
-    "extension/core/toast-dom.js": {
-      "count": 1,
-      "digest": "06191305cffcb2b125c9bba687b1278b887f67145bdce1548b88764f101b7764"
-    },
     "extension/core/transcript-service.js": {
       "count": 11,
       "digest": "4c50f3c01414595cb4de438c817debdd2df321738b8e792ac9ea30d3446db92c"
@@ -26,8 +22,8 @@
       "digest": "beac0f6b3078a6c27186bf870efdb047eb62db2d260143a5092eb45521281a2a"
     },
     "extension/features/download-ui/index.js": {
-      "count": 59,
-      "digest": "a05789e2aef1edbf1d3963900840ef60b7265556a81c3ac5689a41b7c18d0b23"
+      "count": 30,
+      "digest": "6fe2b225b1d98803dd0c5744603473bdbba81929c3fbdbc7cd76d22f607455cc"
     },
     "extension/features/player-dock/index.js": {
       "count": 3,
@@ -42,8 +38,8 @@
       "digest": "d0319ba4029625649258bf038b45490dc385c8ec44cf4f7fde2387dc41385ea2"
     },
     "extension/features/settings-panel/index.js": {
-      "count": 176,
-      "digest": "c2b8bf6b74e76d718f50253c23365f0bcafc060d7f70ca4c2b04eabc0b73ef3c"
+      "count": 134,
+      "digest": "26872b8ea86a924aa49838afdf6caf127880c3ce6007ff3e52a1865f9a193ab7"
     },
     "extension/features/sponsorblock/index.js": {
       "count": 2,
@@ -54,16 +50,16 @@
       "digest": "c82eb242c13aa707294b6615bdc0e07e3b987d65c325c64e005338f9cf88e06e"
     },
     "extension/features/subscription-groups/index.js": {
-      "count": 121,
-      "digest": "9115d5a56de5a308c0461bb4217b2e99b622959c28574dc2c3c99c6c2cb44dd3"
+      "count": 40,
+      "digest": "ce332c783bc2c3ac13de97f0f0e658a67812bc22ecc99c339f3b206b5ce4ee41"
     },
     "extension/features/video-hider/index.js": {
       "count": 28,
       "digest": "87d289a5312fa087b4c6ed43009f720f3269df7be04947bb8189f0c35e84d926"
     },
     "extension/features/video-notes/index.js": {
-      "count": 18,
-      "digest": "8c845d5961b4a200f7780e57666d48a6819445b50829e3924573bde6e9194482"
+      "count": 4,
+      "digest": "bbe4aeca4b14a3dba986d1c3be1bade4be2a48ad7515946b2eeffb6077fa8188"
     },
     "extension/features/youtube-music-compat/index.js": {
       "count": 2,
@@ -74,16 +70,16 @@
       "digest": "1b20784b77f1812dd547d9336e3f4237670353dc860219bff5b254656636d255"
     },
     "extension/popup.js": {
-      "count": 30,
-      "digest": "ef52e7e29633406ac9d2aea3a85096bd08d6638a813cad0f6a365d6af526b280"
+      "count": 26,
+      "digest": "61de917573030d9f1450615b5b596b0409190c66fae6ebbc80b1ea327aa5bf30"
     },
     "extension/sidepanel.js": {
       "count": 3,
       "digest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
-      "count": 1376,
-      "digest": "ed091df0b7f31ed296d31b99b8c16ddd9eefbddde7241afaccbf85087a78c71c"
+      "count": 1334,
+      "digest": "15fbeb0f7fcfae2f632a83bf75f37c9c4228f8b7ad4a3468b16d6da395f3d194"
     }
   }
 }

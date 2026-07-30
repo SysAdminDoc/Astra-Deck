@@ -10,10 +10,18 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const FILES = [
-    path.join(ROOT, 'extension', 'ytkit.js'),
-    path.join(ROOT, 'extension', 'popup.js'),
-];
+const EN_PATH = path.join(ROOT, 'extension', '_locales', 'en', 'messages.json');
+function listJavaScriptFiles(dir) {
+    const out = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) out.push(...listJavaScriptFiles(full));
+        else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
+    }
+    return out;
+}
+
+const FILES = listJavaScriptFiles(path.join(ROOT, 'extension'));
 
 const keys = new Map();
 
@@ -141,4 +149,26 @@ const out = {};
 for (const [k, v] of [...keys.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     out[k] = { message: v };
 }
-process.stdout.write(JSON.stringify(out, null, 2) + '\n');
+if (process.argv.includes('--merge-en')) {
+    const existing = JSON.parse(fs.readFileSync(EN_PATH, 'utf8'));
+    let added = 0;
+    for (const [key, value] of Object.entries(out)) {
+        if (Object.prototype.hasOwnProperty.call(existing, key)) continue;
+        existing[key] = value;
+        added += 1;
+    }
+    fs.writeFileSync(EN_PATH, JSON.stringify(existing, null, 2) + '\n');
+    process.stdout.write(`[extract-i18n-keys] added ${added} key(s) to ${path.relative(ROOT, EN_PATH)}\n`);
+} else if (process.argv.includes('--check-en')) {
+    const existing = JSON.parse(fs.readFileSync(EN_PATH, 'utf8'));
+    const missing = Object.keys(out).filter(key => !Object.prototype.hasOwnProperty.call(existing, key));
+    if (missing.length) {
+        process.stderr.write(`[extract-i18n-keys] ${missing.length} extracted key(s) are missing from ${path.relative(ROOT, EN_PATH)}:\n`);
+        for (const key of missing) process.stderr.write(`  - ${key}\n`);
+        process.exitCode = 1;
+    } else {
+        process.stdout.write(`[extract-i18n-keys] ${Object.keys(out).length} extracted key(s) are present in ${path.relative(ROOT, EN_PATH)}\n`);
+    }
+} else {
+    process.stdout.write(JSON.stringify(out, null, 2) + '\n');
+}

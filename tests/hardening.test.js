@@ -11807,3 +11807,63 @@ test('v4.49.7 popup residual i18n — AI credential section is data-i18n localiz
             `extension/_locales/en/messages.json must declare ${k}`);
     }
 });
+
+test('remaining in-page operations route visible copy through the shared locale catalog', () => {
+    const read = relative => fs.readFileSync(path.join(__dirname, '..', relative), 'utf8');
+    const sources = {
+        videoNotes: read('extension/features/video-notes/index.js'),
+        subscriptions: read('extension/features/subscription-groups/index.js'),
+        downloads: read('extension/features/download-ui/index.js'),
+        settings: read('extension/features/settings-panel/index.js'),
+        popup: read('extension/popup.js'),
+        toast: read('extension/core/toast-dom.js'),
+        ytkit: read('extension/ytkit.js'),
+    };
+
+    const requiredKeys = {
+        videoNotes: ['videoNotesTitle', 'videoNotesPlaceholder', 'videoNotesExportedTpl'],
+        subscriptions: ['subscriptionDigestTitle', 'subscriptionHealthTitle', 'subscriptionHealthStagedCountTpl'],
+        downloads: ['dlInstallSetupTitle', 'dlHealthRegionAria', 'dlHistoryTitle', 'dlStreamLinksTitle'],
+        settings: ['settingsResetGroupTitle', 'settingsSearchNoMatches', 'settingsInsightsAria', 'settingsDlActionsAria'],
+        popup: ['statusYtdlpUpdatedTpl', 'statusYtdlpRollbackTpl', 'statusCompanionUpdateFailedTpl'],
+        toast: ['toastActionUndo', 'toastDismissAria'],
+        ytkit: ['bulkActionsAria', 'bulkScrubRunning', 'transcriptExportActionsAria', 'transcriptJumpAriaTpl', 'transcriptTranslationFailedTpl'],
+    };
+    for (const [surface, keys] of Object.entries(requiredKeys)) {
+        for (const key of keys) {
+            assert.ok(sources[surface].includes(`t('${key}'`),
+                `${surface} must route ${key} through t()`);
+        }
+    }
+
+    assert.match(sources.videoNotes, /t\s*=\s*\(_key,\s*fallback\)\s*=>\s*fallback/,
+        'video-notes feature factory must accept the shared translator dependency');
+    assert.match(sources.toast, /function createToastSystem\(deps = \{\}\)[\s\S]*const t = deps\.t \|\| \(\(_key,\s*fallback\) => fallback\)/,
+        'toast DOM factory must accept the shared translator dependency');
+    assert.match(sources.toast, /success:\s*'toastBadgeSuccess'[\s\S]*t\(badgeKey,\s*getToastBadgeLabel\(tone\)\)/,
+        'toast badge tones must map to locale keys before rendering');
+    assert.match(sources.ytkit, /_toastSystem = mod\(\{[\s\S]*\n\s*t,\n/,
+        'the monolith must pass the active translator into the toast DOM factory');
+
+    const extractor = read('scripts/extract-i18n-keys.js');
+    const generator = read('scripts/generate-locales.js');
+    const packageJson = JSON.parse(read('package.json'));
+    assert.match(extractor, /listJavaScriptFiles\(path\.join\(ROOT,\s*'extension'\)\)/,
+        'locale extraction must scan feature modules, not only the monolith and popup');
+    assert.match(extractor, /--check-en/,
+        'locale extraction must expose a non-mutating catalog gate');
+    assert.match(packageJson.scripts.check, /extract-i18n-keys\.js --check-en/,
+        'the full check must reject uncatalogued t() calls');
+    assert.match(generator, /T\.ar\s*=\s*\{\}/,
+        'Arabic must remain part of generated locale parity');
+    assert.match(generator, /T\.zh_CN\s*=\s*\{\}/,
+        'Simplified Chinese must remain part of generated locale parity');
+
+    const enMessages = JSON.parse(read('extension/_locales/en/messages.json'));
+    for (const keys of Object.values(requiredKeys)) {
+        for (const key of keys) {
+            assert.ok(enMessages[key]?.message,
+                `extension/_locales/en/messages.json must declare ${key}`);
+        }
+    }
+});
