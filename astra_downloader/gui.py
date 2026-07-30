@@ -894,6 +894,14 @@ class MainWindowCore(QMainWindow):
         self._instance_command_thread = None
         self._start_instance_command_listener()
         self._start_readiness_probe()
+        # Let the first window frame render before probing external tools.
+        # Both getters can shell out for up to five seconds on a cold cache;
+        # scheduling the existing worker-backed refresh after construction
+        # keeps startup responsive without sacrificing version visibility.
+        self.tools_status_timer = QTimer(self)
+        self.tools_status_timer.setSingleShot(True)
+        self.tools_status_timer.timeout.connect(self._refresh_tools_status)
+        self.tools_status_timer.start(0)
 
         if start_minimized:
             QTimer.singleShot(100, self._minimize_to_tray)
@@ -1504,7 +1512,7 @@ class MainWindowCore(QMainWindow):
         # Tools — v1.2.0 downloader-maintenance actions
         tools_card, tools_l = self._make_settings_group("Maintenance")
         tools_l.addWidget(make_label("Installed tools", "fieldLabel"))
-        self.tools_status = make_label(self._tools_status_text(), "fieldHint", word_wrap=True)
+        self.tools_status = make_label("Checking installed tools…", "fieldHint", word_wrap=True)
         tools_l.addWidget(self.tools_status)
         tools_row = QHBoxLayout()
         tools_row.setSpacing(8)
@@ -2583,6 +2591,7 @@ class MainWindowCore(QMainWindow):
                     readiness_thread.terminate()
                     readiness_thread.wait()
             self.tray.hide()
+            self.tools_status_timer.stop()
             self.update_timer.stop()
             self.cleanup_timer.stop()
             event.accept()
