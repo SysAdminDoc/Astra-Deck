@@ -1478,7 +1478,11 @@ async function sendPanelOpenMessage(tabId) {
 async function sendTabMessageResponse(tabId, message) {
     if (!tabId) throw new Error('No YouTube tab is available');
     const response = await callExtensionApi(ext?.tabs, 'sendMessage', tabId, message);
-    if (!response?.ok) throw new Error(response?.error || 'YouTube data operation failed');
+    if (!response?.ok) {
+        const error = new Error(response?.error || 'YouTube data operation failed');
+        error.code = 'YTKIT_PERSISTED_DATA_OPERATION_FAILED';
+        throw error;
+    }
     return response;
 }
 
@@ -1505,15 +1509,24 @@ async function sendPersistedDataMessage(message, requiredOrigin = '') {
             return score(right) - score(left);
         });
     let lastError = null;
+    let lastOperationError = null;
     for (const tab of ordered) {
         try {
             const response = await sendTabMessageResponse(tab.id, { type: PERSISTED_DATA_MESSAGE, ...message });
             return { response, origin: getTabOrigin(tab), tabId: tab.id };
         } catch (error) {
             lastError = error;
+            if (error?.code === 'YTKIT_PERSISTED_DATA_OPERATION_FAILED') lastOperationError = error;
         }
     }
-    throw new Error(lastError?.message || 'Open a YouTube tab so Astra Deck can include its transcript index');
+    if (lastOperationError) throw lastOperationError;
+    const unavailable = new Error(lastError?.message || 'No responsive YouTube tab is available');
+    unavailable.code = 'YTKIT_PERSISTED_DATA_UNAVAILABLE';
+    throw unavailable;
+}
+
+function isPersistedDataUnavailable(error) {
+    return error?.code === 'YTKIT_PERSISTED_DATA_UNAVAILABLE';
 }
 
 function sendRuntimeMessage(message) {
@@ -3821,7 +3834,7 @@ function mergeLegacySettings(settings, legacySidebarOrder = null) {
     return merged;
 }
 
-function buildExportData(allStorage, transcriptRecords = []) {
+function buildExportData(allStorage, transcriptRecords) {
     const mergedSettings = mergeLegacySettings(
         allStorage[STORAGE_KEYS.settings] || {},
         getLegacySidebarOrder(allStorage)
@@ -3847,7 +3860,10 @@ function buildExportData(allStorage, transcriptRecords = []) {
         blockedChannels,
         bookmarks
     };
-    domains.transcriptIndex = persistedDomains?.sanitizeTranscriptRecords(transcriptRecords) || transcriptRecords;
+    const transcriptAvailable = Array.isArray(transcriptRecords);
+    if (transcriptAvailable) {
+        domains.transcriptIndex = persistedDomains?.sanitizeTranscriptRecords(transcriptRecords) || transcriptRecords;
+    }
     return {
         astraDeckBackup: true,
         settings: exportSettings.settings,
@@ -3857,6 +3873,7 @@ function buildExportData(allStorage, transcriptRecords = []) {
         blockedChannels: domains.blockedChannels || blockedChannels,
         bookmarks: domains.bookmarks || bookmarks,
         domains,
+        unavailableDomains: transcriptAvailable ? [] : ['transcriptIndex'],
         exclusions: (persistedDomains?.EXCLUDED_DOMAINS || []).map(({ id, reason }) => ({ id, reason })),
         exportVersion: persistedDomains?.BACKUP_EXPORT_VERSION || 5,
         backupSchemaVersion: persistedDomains?.BACKUP_SCHEMA_VERSION || 2,
@@ -3886,20 +3903,35 @@ function buildExportData(allStorage, transcriptRecords = []) {
 
 // ── Export / Import / Reset ──
 
-async function readAllTranscriptRecords() {
+async function readAllTranscriptRecords(options = {}) {
     if (!persistedDomains) throw new Error('Persisted-domain service unavailable');
     const records = [];
     let afterKey = '';
     let origin = '';
     for (let chunkIndex = 0; chunkIndex < 1100; chunkIndex += 1) {
-        const { response, origin: responseOrigin } = await sendPersistedDataMessage({
-            action: 'export-chunk',
-            afterKey,
-            maxBytes: persistedDomains.MAX_MESSAGE_BYTES
-        }, origin);
+        let page;
+        try {
+            page = await sendPersistedDataMessage({
+                action: 'export-chunk',
+                afterKey,
+                maxBytes: persistedDomains.MAX_MESSAGE_BYTES
+            }, origin);
+        } catch (error) {
+            if (options.allowUnavailable && isPersistedDataUnavailable(error)) {
+                return { records: null, origin: '', available: false };
+            }
+            throw error;
+        }
+        const { response, origin: responseOrigin } = page;
         origin = responseOrigin;
         records.push(...(Array.isArray(response.records) ? response.records : []));
-        if (response.done) return { records: persistedDomains.sanitizeTranscriptRecords(records), origin };
+        if (response.done) {
+            return {
+                records: persistedDomains.sanitizeTranscriptRecords(records),
+                origin,
+                available: true
+            };
+        }
         if (!response.nextCursor || response.nextCursor === afterKey) throw new Error('Transcript export did not advance');
         afterKey = response.nextCursor;
     }
@@ -3944,7 +3976,7 @@ async function exportSettings() {
     try {
         const [allStorage, transcript] = await Promise.all([
             callExtensionApi(ext?.storage?.local, 'get', null),
-            readAllTranscriptRecords()
+            readAllTranscriptRecords({ allowUnavailable: true })
         ]);
         const exportData = buildExportData(allStorage, transcript.records);
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -3971,7 +4003,11 @@ async function exportSettings() {
             }
         }
         setTimeout(() => URL.revokeObjectURL(url), 60000);
-        showStatus(t('statusBackupExported', 'Backup exported.'), 'success');
+        showStatus(transcript.available
+            ? t('statusBackupExported', 'Backup exported.')
+            : t('statusBackupExportedNoTranscript',
+                'Backup exported without the transcript index because no responsive YouTube tab was available.'),
+        'success', transcript.available ? 3200 : 6000);
     } catch (error) {
         showStatus(t('statusExportFail', 'Export failed') + ': ' + error.message, 'error', 4200);
     } finally {
@@ -4022,6 +4058,7 @@ async function importSettings(file) {
         const keysToRemove = persistedDomains.extensionKeysToRemove(sanitized.domains, currentLocal);
         const snapshot = await createCoordinatedSnapshot('import', {
             includePage: hasTranscriptDomain,
+            allowPageUnavailable: true,
             localSnapshot: currentLocal
         });
         const snapped = await writeImportSnapshot(snapshot);
@@ -4043,7 +4080,7 @@ async function importSettings(file) {
                 const result = await replaceSettings(importedSettingsToApply);
                 writes[STORAGE_KEYS.settings] = result.settings;
             }
-            if (hasTranscriptDomain) {
+            if (hasTranscriptDomain && snapshot.pageSnapshotId) {
                 await replaceTranscriptDomain(sanitized.domains.transcriptIndex, snapshot.pageOrigin);
             }
         } catch (error) {
@@ -4067,11 +4104,15 @@ async function importSettings(file) {
         await loadSettings();
         render(popupState.settings, q.value);
         await refreshUndoImportVisibility();
-        const importedStatus = undoAvailable
+        const transcriptSkipped = hasTranscriptDomain && !snapshot.pageSnapshotId;
+        const importedStatus = transcriptSkipped
+            ? t('statusBackupImportedNoTranscript',
+                'Extension data imported with Undo available. The transcript index was left unchanged because no responsive YouTube tab was available.')
+            : (undoAvailable
             ? t('statusBackupImportedUndo',
                 'Backup imported. Click Undo Import to restore the previous state until you close the browser.')
             : t('statusBackupImportedNoUndo',
-                'Backup imported. Undo is unavailable on this browser.');
+                'Backup imported. Undo is unavailable on this browser.'));
         const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
             .replace('{preview}', previewText);
         showStatus(`${importedStatus} ${previewSummary}`,
@@ -4530,16 +4571,22 @@ async function createCoordinatedSnapshot(kind, options = {}) {
     const local = options.localSnapshot || await readLocalStorageSnapshot();
     await persistedDomains.writeExtensionSnapshot(snapshotId, local);
     let pageOrigin = '';
+    let pageSnapshotId = '';
     try {
         if (options.includePage) {
-            const page = await sendPersistedDataMessage({ action: 'snapshot', snapshotId });
-            pageOrigin = page.origin;
+            try {
+                const page = await sendPersistedDataMessage({ action: 'snapshot', snapshotId });
+                pageOrigin = page.origin;
+                pageSnapshotId = snapshotId;
+            } catch (error) {
+                if (!options.allowPageUnavailable || !isPersistedDataUnavailable(error)) throw error;
+            }
         }
         return {
             schemaVersion: 2,
             kind,
             snapshotId,
-            pageSnapshotId: options.includePage ? snapshotId : '',
+            pageSnapshotId,
             pageOrigin,
             createdAt: Date.now()
         };
@@ -4697,7 +4744,10 @@ async function resetAllData() {
         // Snapshot extension-local data in extension IndexedDB and the
         // YouTube-origin transcript store in its own origin. Session storage
         // holds only the small capability token, avoiding its quota ceiling.
-        const snapshot = await createCoordinatedSnapshot('reset', { includePage: true });
+        const snapshot = await createCoordinatedSnapshot('reset', {
+            includePage: true,
+            allowPageUnavailable: true
+        });
         const snapped = await writeResetSnapshot(snapshot);
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
@@ -4715,7 +4765,9 @@ async function resetAllData() {
                 [FIRST_RUN_SEEN_KEY]: true,
                 [LAST_SEEN_VERSION_KEY]: (manifestVersion && manifestVersion !== '—') ? manifestVersion : '',
             });
-            await sendPersistedDataMessage({ action: 'clear' }, snapshot.pageOrigin);
+            if (snapshot.pageSnapshotId) {
+                await sendPersistedDataMessage({ action: 'clear' }, snapshot.pageOrigin);
+            }
         } catch (error) {
             await restoreCoordinatedSnapshot(snapshot);
             await clearResetSnapshot();
@@ -4726,11 +4778,14 @@ async function resetAllData() {
         render(popupState.settings, q.value);
         await refreshUndoResetVisibility();
         undoResetButton?.focus?.({ preventScroll: true });
-        showStatus(undoAvailable
+        showStatus(!snapshot.pageSnapshotId
+            ? t('statusResetDoneNoTranscript',
+                'Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained.')
+            : (undoAvailable
             ? t('statusResetDoneUndo',
                 'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.')
             : t('statusResetDoneNoUndo',
-                'Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser.'),
+                'Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser.')),
         'success', 6000);
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);

@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Backup esportato."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "Backup esportato senza l’indice delle trascrizioni perché non era disponibile alcuna scheda YouTube reattiva."
+  },
   "statusBackupImported": {
     "message": "Backup importato."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Dati dell’estensione importati con Annulla disponibile. L’indice delle trascrizioni è rimasto invariato perché non era disponibile alcuna scheda YouTube reattiva."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Dati portabili cancellati; le credenziali IA memorizzate sono state conservate. Annulla non è disponibile in questo browser."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Dati dell’estensione cancellati con Annulla disponibile. Le trascrizioni sono rimaste invariate perché non era disponibile alcuna scheda YouTube reattiva. Le credenziali IA memorizzate sono state conservate."
   },
   "statusResetDoneUndo": {
     "message": "Impostazioni portabili, cronologie, code e dati di trascrizione cancellati. Le credenziali IA memorizzate sono conservate; usa Elimina credenziale per rimuoverle. Fai clic su Annulla ripristino per ripristinare finché non chiudi il browser."

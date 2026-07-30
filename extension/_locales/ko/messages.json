@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "백업이 내보내졌습니다."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "응답하는 YouTube 탭이 없어 대본 색인을 제외하고 백업을 내보냈습니다."
+  },
   "statusBackupImported": {
     "message": "백업이 가져와졌습니다."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "확장 프로그램 데이터를 가져왔으며 실행 취소할 수 있습니다. 응답하는 YouTube 탭이 없어 대본 색인은 변경하지 않았습니다."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "이동식 데이터가 삭제되었습니다. 저장된 AI 자격 증명은 유지되었습니다. 이 브라우저에서는 실행 취소를 사용할 수 없습니다."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "확장 프로그램 데이터를 지웠으며 실행 취소할 수 있습니다. 응답하는 YouTube 탭이 없어 대본 데이터는 변경하지 않았습니다. 저장된 AI 자격 증명은 유지했습니다."
   },
   "statusResetDoneUndo": {
     "message": "이동식 설정, 기록, 대기열, 자막 데이터가 삭제되었습니다. 저장된 AI 자격 증명은 유지됩니다. 제거하려면 자격 증명 삭제를 사용하세요. 브라우저를 닫기 전까지 재설정 실행 취소를 클릭해 복원할 수 있습니다."

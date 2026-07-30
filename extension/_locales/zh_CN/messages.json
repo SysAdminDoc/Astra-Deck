@@ -3686,11 +3686,17 @@
   "statusBackupExported": {
     "message": "备份已导出。"
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "备份已导出，但由于没有响应的 YouTube 标签页，未包含转录索引。"
+  },
   "statusBackupImported": {
     "message": "备份已导入。"
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "扩展数据已导入，并可撤销。由于没有响应的 YouTube 标签页，转录索引保持不变。"
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3751,6 +3757,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "已清除便携数据;已保留存储的 AI 凭据。此浏览器不支持撤销。"
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "扩展数据已清除，并可撤销。由于没有响应的 YouTube 标签页，转录数据保持不变。已保留存储的 AI 凭据。"
   },
   "statusResetDoneUndo": {
     "message": "已清除便携设置、历史记录、队列和转录数据。存储的 AI 凭据将保留;如需移除,请使用删除凭据。在关闭浏览器之前,点击撤销重置即可恢复。"

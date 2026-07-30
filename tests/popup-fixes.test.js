@@ -199,6 +199,49 @@ test('popup import stages a session undo snapshot before applying backup data', 
     }
 });
 
+test('backup, import, and reset preserve extension recovery when page storage is unavailable', () => {
+    assert.match(popupSource,
+        /unavailable\.code = 'YTKIT_PERSISTED_DATA_UNAVAILABLE'/,
+        'the page-storage bridge must distinguish an unavailable tab from an operation failure');
+    assert.match(popupSource,
+        /readAllTranscriptRecords\(\{ allowUnavailable: true \}\)/,
+        'export must allow extension-local backup when no page bridge responds');
+    assert.match(popupSource,
+        /unavailableDomains: transcriptAvailable \? \[\] : \['transcriptIndex'\]/,
+        'a partial backup must explicitly identify its unavailable transcript domain');
+
+    const importStart = popupSource.indexOf('async function importSettings(file)');
+    const importEnd = popupSource.indexOf('\n}\n\nasync function undoImportSettings', importStart);
+    const importBlock = popupSource.slice(importStart, importEnd);
+    assert.match(importBlock, /allowPageUnavailable: true/,
+        'import must stage a local rollback snapshot even without a YouTube tab');
+    assert.match(importBlock, /hasTranscriptDomain && snapshot\.pageSnapshotId/,
+        'import must leave transcript data unchanged when no page snapshot was captured');
+    assert.match(importBlock, /statusBackupImportedNoTranscript/,
+        'partial import must report that transcript data was retained');
+
+    const resetStart = popupSource.indexOf('async function resetAllData()');
+    const resetEnd = popupSource.indexOf('\n}\n\nasync function undoResetAllData', resetStart);
+    const resetBlock = popupSource.slice(resetStart, resetEnd);
+    assert.match(resetBlock, /allowPageUnavailable: true/,
+        'reset must stage a local rollback snapshot even without a YouTube tab');
+    assert.match(resetBlock, /if \(snapshot\.pageSnapshotId\)/,
+        'reset must clear page data only after capturing its rollback snapshot');
+    assert.match(resetBlock, /statusResetDoneNoTranscript/,
+        'partial reset must report that transcript data was retained');
+
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const key of [
+        'statusBackupExportedNoTranscript',
+        'statusBackupImportedNoTranscript',
+        'statusResetDoneNoTranscript',
+    ]) {
+        assert.ok(enMessages[key]?.message, `EN locale must declare ${key}`);
+    }
+});
+
 // ── 2. Corruption-diagnostic dedupe ──
 
 test('recordCorruptionDiagnostic dedupes by corruption signature so the write loop terminates', () => {

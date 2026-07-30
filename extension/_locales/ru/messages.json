@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Резервная копия экспортирована."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "Резервная копия экспортирована без индекса расшифровок: доступная вкладка YouTube не найдена."
+  },
   "statusBackupImported": {
     "message": "Резервная копия импортирована."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Данные расширения импортированы с возможностью отмены. Индекс расшифровок не изменён, поскольку доступная вкладка YouTube не найдена."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Переносимые данные удалены; сохранённые учётные данные ИИ оставлены. Отмена недоступна в этом браузере."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Данные расширения очищены с возможностью отмены. Данные расшифровок не изменены, поскольку доступная вкладка YouTube не найдена. Сохранённые учётные данные ИИ оставлены без изменений."
   },
   "statusResetDoneUndo": {
     "message": "Переносимые настройки, истории, очереди и данные расшифровок удалены. Сохранённые учётные данные ИИ остаются; используйте «Удалить учётные данные», чтобы убрать их. Нажмите «Отменить сброс», чтобы восстановить данные до закрытия браузера."

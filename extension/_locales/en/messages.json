@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Backup exported."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "Backup exported without the transcript index because no responsive YouTube tab was available."
+  },
   "statusBackupImported": {
     "message": "Backup imported."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Extension data imported with Undo available. The transcript index was left unchanged because no responsive YouTube tab was available."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained."
   },
   "statusResetDoneUndo": {
     "message": "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser."
