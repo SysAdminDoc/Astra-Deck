@@ -407,6 +407,58 @@ test('downloadUI factory returns all four feature objects', () => {
     }
 });
 
+test('download history sends bounded filters and preserves page metadata', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const expected = {
+        history: [{ id: 'row-51' }],
+        count: 1,
+        total: 120,
+        filteredTotal: 61,
+        offset: 50,
+        limit: 50,
+        hasMore: true,
+        sort: 'oldest',
+    };
+    const result = mod.createDownloadUIFeature({
+        extensionFetchJson: async (details) => {
+            calls.push(details);
+            return { data: expected };
+        },
+        DebugManager: { log() {} },
+    });
+    result.MediaDLManager.check = async () => ({ ok: true, token: 'history-token' });
+    result.MediaDLManager.baseUrl = () => 'http://127.0.0.1:9751';
+    Object.assign(result.downloadHistoryPanel._filters, {
+        q: 'lecture',
+        status: 'complete',
+        format: 'mp4',
+        dateFrom: '2026-07-01',
+        dateTo: '2026-07-31',
+        sort: 'oldest',
+        offset: 50,
+    });
+
+    const response = await result.downloadHistoryPanel._fetchHistory();
+
+    assert.deepEqual(response, expected);
+    assert.equal(calls.length, 1);
+    const url = new URL(calls[0].url);
+    assert.equal(url.pathname, '/history');
+    assert.equal(url.searchParams.get('limit'), '50');
+    assert.equal(url.searchParams.get('offset'), '50');
+    assert.equal(url.searchParams.get('q'), 'lecture');
+    assert.equal(url.searchParams.get('status'), 'complete');
+    assert.equal(url.searchParams.get('format'), 'mp4');
+    assert.equal(url.searchParams.get('dateFrom'), '2026-07-01');
+    assert.equal(url.searchParams.get('dateTo'), '2026-07-31');
+    assert.equal(url.searchParams.get('sort'), 'oldest');
+    assert.equal(calls[0].headers.Authorization, 'Bearer history-token');
+});
+
 test('downloadUI module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];

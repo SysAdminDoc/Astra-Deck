@@ -1,6 +1,7 @@
 """PyQt presentation helpers and lazy legacy GUI compatibility boundary."""
 
 import os
+import csv
 import json
 import queue
 import socket
@@ -170,6 +171,19 @@ def make_line_icon(name, size=18):
         painter.drawLine(9, y_tail, 9, y_tip)
         painter.drawLine(9, y_tip, 5, y_tip - (4 * direction))
         painter.drawLine(9, y_tip, 13, y_tip - (4 * direction))
+    elif "previous" in key or "next" in key:
+        direction = -1 if "previous" in key else 1
+        x_tip = 5 if direction == -1 else 13
+        x_tail = 12 if direction == -1 else 6
+        painter.drawLine(x_tail, 3, x_tip, 9)
+        painter.drawLine(x_tip, 9, x_tail, 15)
+    elif "export" in key:
+        painter.drawLine(9, 2, 9, 12)
+        painter.drawLine(5, 6, 9, 2)
+        painter.drawLine(13, 6, 9, 2)
+        painter.drawLine(3, 10, 3, 16)
+        painter.drawLine(3, 16, 15, 16)
+        painter.drawLine(15, 16, 15, 10)
     else:
         painter.drawLine(2, 5, 16, 5)
         painter.drawLine(2, 9, 16, 9)
@@ -709,6 +723,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'normalize_proxy',
     'normalize_rate_limit',
     'normalize_sublangs',
+    'query_history_entries',
     'reset_deno_runtime_cache',
     'reset_ffmpeg_capabilities_cache',
     'write_persistent_log',
@@ -738,6 +753,8 @@ class MainWindowCore(QMainWindow):
         # finished download notifies at most once and never re-fires each tick.
         self._seen_complete = set()
         self._cleared_history_snapshot = []
+        self._history_offset = 0
+        self._history_page_size = 50
         self._downloads_signature = None
         self.log_message.connect(self._append_log)
         self.instance_command.connect(self._handle_instance_command)
@@ -1222,7 +1239,71 @@ class MainWindowCore(QMainWindow):
         self.btn_undo_clear_history.clicked.connect(self._undo_clear_history)
         self.btn_undo_clear_history.hide()
         header.addWidget(self.btn_undo_clear_history, 0, Qt.AlignmentFlag.AlignTop)
+        self.btn_export_history = self._make_tool_button("Export filtered", "secondary")
+        self.btn_export_history.setToolTip("Export every row matching the current filters as CSV.")
+        self.btn_export_history.clicked.connect(self._export_history)
+        header.addWidget(self.btn_export_history, 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(header)
+
+        filters = QHBoxLayout()
+        filters.setSpacing(8)
+        self.history_search = QLineEdit()
+        self.history_search.setAccessibleName("Search download history")
+        self.history_search.setPlaceholderText("Search title or filename")
+        self.history_search.setClearButtonEnabled(True)
+        filters.addWidget(self.history_search, 2)
+        self.history_status = QComboBox()
+        self.history_status.setAccessibleName("History status")
+        self.history_status.addItem("All statuses", "")
+        self.history_status.addItem("Complete", "complete")
+        filters.addWidget(self.history_status)
+        self.history_format = QComboBox()
+        self.history_format.setAccessibleName("History format")
+        self.history_format.addItem("All formats", "")
+        for fmt in ("mp4", "mkv", "webm", "mp3", "m4a", "opus", "flac", "wav"):
+            self.history_format.addItem(fmt.upper(), fmt)
+        filters.addWidget(self.history_format)
+        self.history_sort = QComboBox()
+        self.history_sort.setAccessibleName("History sort order")
+        self.history_sort.addItem("Newest first", "newest")
+        self.history_sort.addItem("Oldest first", "oldest")
+        filters.addWidget(self.history_sort)
+        layout.addLayout(filters)
+
+        range_row = QHBoxLayout()
+        range_row.setSpacing(8)
+        range_row.addWidget(make_label("Saved from", "fieldHint"))
+        self.history_date_from = QLineEdit()
+        self.history_date_from.setAccessibleName("History start date")
+        self.history_date_from.setPlaceholderText("YYYY-MM-DD")
+        self.history_date_from.setMaximumWidth(125)
+        range_row.addWidget(self.history_date_from)
+        range_row.addWidget(make_label("through", "fieldHint"))
+        self.history_date_to = QLineEdit()
+        self.history_date_to.setAccessibleName("History end date")
+        self.history_date_to.setPlaceholderText("YYYY-MM-DD")
+        self.history_date_to.setMaximumWidth(125)
+        range_row.addWidget(self.history_date_to)
+        range_row.addStretch()
+        self.history_meta = make_label("0 of 0 retained", "toolbarMeta")
+        range_row.addWidget(self.history_meta)
+        self.btn_history_prev = self._make_tool_button("Previous", "ghost")
+        self.btn_history_prev.clicked.connect(lambda: self._move_history_page(-1))
+        range_row.addWidget(self.btn_history_prev)
+        self.btn_history_next = self._make_tool_button("Next", "ghost")
+        self.btn_history_next.clicked.connect(lambda: self._move_history_page(1))
+        range_row.addWidget(self.btn_history_next)
+        layout.addLayout(range_row)
+
+        for signal in (
+            self.history_search.textChanged,
+            self.history_status.currentIndexChanged,
+            self.history_format.currentIndexChanged,
+            self.history_sort.currentIndexChanged,
+            self.history_date_from.textChanged,
+            self.history_date_to.textChanged,
+        ):
+            signal.connect(self._history_filters_changed)
 
         columns = QFrame()
         columns.setProperty("class", "listHeader")
@@ -1949,11 +2030,87 @@ class MainWindowCore(QMainWindow):
                 self.downloads_list_layout.addWidget(self._download_card(dl, recent=True))
         self.downloads_list_layout.addStretch()
 
+    def _history_query(self, *, entries=None, offset=None, limit=None):
+        return self._dependencies['query_history_entries'](
+            self.history_mgr.load() if entries is None else entries,
+            query=self.history_search.text(),
+            status=self.history_status.currentData() or "",
+            fmt=self.history_format.currentData() or "",
+            date_from=self.history_date_from.text().strip(),
+            date_to=self.history_date_to.text().strip(),
+            sort=self.history_sort.currentData() or "newest",
+            offset=self._history_offset if offset is None else offset,
+            limit=self._history_page_size if limit is None else limit,
+        )
+
+    def _history_filters_changed(self, *_args):
+        self._history_offset = 0
+        self._refresh_history()
+
+    def _move_history_page(self, direction):
+        direction = -1 if direction < 0 else 1
+        next_offset = self._history_offset + (direction * self._history_page_size)
+        self._history_offset = max(0, next_offset)
+        self._refresh_history()
+
+    def _export_history(self):
+        result = self._history_query(offset=0, limit=500)
+        rows = result["history"]
+        if not rows:
+            self._append_log("No filtered history rows are available to export.")
+            return
+        default_path = Path(self.config.get("DownloadPath", str(Path.home())))
+        suggested = default_path / "astra-download-history.csv"
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Export Download History",
+            str(suggested),
+            "CSV files (*.csv)",
+        )
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8-sig", newline="") as output:
+                writer = csv.DictWriter(
+                    output,
+                    fieldnames=(
+                        "title", "filename", "format", "quality", "status",
+                        "duration", "date", "url",
+                    ),
+                    extrasaction="ignore",
+                )
+                writer.writeheader()
+                writer.writerows(rows)
+        except OSError as error:
+            self._append_log(f"Could not export download history: {error}")
+            return
+        self._append_log(f"Exported {len(rows)} filtered history row(s) to {path}")
+
     def _refresh_history(self):
         self._clear_layout(self.history_container)
 
         data = self.history_mgr.load()
         self.btn_clear_history.setEnabled(bool(data))
+        result = self._history_query(entries=data)
+        filtered_total = result["filteredTotal"]
+        if self._history_offset and self._history_offset >= filtered_total:
+            self._history_offset = max(
+                0,
+                ((max(0, filtered_total - 1)) // self._history_page_size)
+                * self._history_page_size,
+            )
+            result = self._history_query(entries=data)
+        rows = result["history"]
+        start = result["offset"] + 1 if rows else 0
+        end = result["offset"] + len(rows)
+        self.history_meta.setText(
+            f"{start}–{end} of {filtered_total} filtered · {result['total']} retained"
+            if rows else
+            f"0 of {filtered_total} filtered · {result['total']} retained"
+        )
+        self.btn_history_prev.setEnabled(result["offset"] > 0)
+        self.btn_history_next.setEnabled(result["hasMore"])
+        self.btn_export_history.setEnabled(filtered_total > 0)
         if not data:
             self.history_container.addWidget(make_empty_state(
                 "No downloads yet",
@@ -1963,8 +2120,15 @@ class MainWindowCore(QMainWindow):
             ))
             self.history_container.addStretch()
             return
+        if not rows:
+            self.history_container.addWidget(make_empty_state(
+                "No matching downloads",
+                "Adjust the search, status, format, or saved-date filters.",
+            ))
+            self.history_container.addStretch()
+            return
 
-        for h in reversed(data[-50:]):
+        for h in rows:
             card = make_card("historyRow")
             card_l = QHBoxLayout(card)
             card_l.setContentsMargins(0, 12, 0, 12)

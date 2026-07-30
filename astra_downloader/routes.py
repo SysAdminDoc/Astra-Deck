@@ -170,6 +170,7 @@ _REQUIRED_API_DEPENDENCIES = frozenset({
     'probe_javascript_runtime',
     'probe_po_token_provider',
     'provision_deno',
+    'query_history_entries',
     'read_update_recovery_status',
     'validate_download_request_body',
 })
@@ -217,6 +218,7 @@ def create_api(config, dl_manager, history, *, dependencies):
     probe_javascript_runtime = dependencies['probe_javascript_runtime']
     probe_po_token_provider = dependencies['probe_po_token_provider']
     provision_deno = dependencies['provision_deno']
+    query_history_entries = dependencies['query_history_entries']
     read_update_recovery_status = dependencies['read_update_recovery_status']
     validate_download_request_body = dependencies['validate_download_request_body']
 
@@ -711,21 +713,59 @@ def create_api(config, dl_manager, history, *, dependencies):
     def hist():
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        h = history.load()
-        raw_limit = request.args.get('limit')
-        limit = None
-        if raw_limit is not None:
+        raw_limit = request.args.get('limit', '50')
+        raw_offset = request.args.get('offset', '0')
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            return cors_response({
+                "error": "History limit must be an integer.",
+                "code": "invalid-limit",
+            }, 400)
+        try:
+            offset = int(raw_offset)
+        except (TypeError, ValueError):
+            return cors_response({
+                "error": "History offset must be an integer.",
+                "code": "invalid-offset",
+            }, 400)
+        limit = clamp_int(limit, 50, 1, 500)
+        offset = clamp_int(offset, 0, 0, 500)
+        sort = request.args.get('sort', 'newest').strip().lower()
+        if sort not in {'newest', 'oldest'}:
+            return cors_response({
+                "error": "History sort must be newest or oldest.",
+                "code": "invalid-sort",
+            }, 400)
+        date_from = request.args.get('dateFrom', '').strip()
+        date_to = request.args.get('dateTo', '').strip()
+        for key, value in (('dateFrom', date_from), ('dateTo', date_to)):
+            if not value:
+                continue
             try:
-                limit = int(raw_limit)
+                time.strptime(value, '%Y-%m-%d')
             except (TypeError, ValueError):
                 return cors_response({
-                    "error": "History limit must be an integer.",
-                    "code": "invalid-limit",
+                    "error": f"History {key} must use YYYY-MM-DD.",
+                    "code": "invalid-date",
                 }, 400)
-            limit = clamp_int(limit, 50, 1, 500)
-        if limit and len(h) > limit:
-            h = h[-limit:]
-        return cors_response({"history": h, "count": len(h)})
+        if date_from and date_to and date_from > date_to:
+            return cors_response({
+                "error": "History dateFrom cannot be after dateTo.",
+                "code": "invalid-date-range",
+            }, 400)
+        result = query_history_entries(
+            history.load(),
+            query=clean_text(request.args.get('q'), '', 200),
+            status=clean_text(request.args.get('status'), '', 32),
+            fmt=clean_text(request.args.get('format'), '', 16),
+            date_from=date_from,
+            date_to=date_to,
+            sort=sort,
+            offset=offset,
+            limit=limit,
+        )
+        return cors_response(result)
 
     @api.route('/config', methods=['GET'])
     def get_config():

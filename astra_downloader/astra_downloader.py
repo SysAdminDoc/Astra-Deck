@@ -66,7 +66,7 @@ try:
         clean_path_text, clean_text, coerce_bool, load_json_file,
         normalize_output_dir, normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
-        sanitize_history_entries,
+        query_history_entries, sanitize_history_entries,
         validate_download_request_body,
     )
     from .download import (
@@ -123,7 +123,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
         clean_path_text, clean_text, coerce_bool, load_json_file,
         normalize_output_dir, normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
-        sanitize_history_entries,
+        query_history_entries, sanitize_history_entries,
         validate_download_request_body,
     )
     from download import (
@@ -3062,6 +3062,7 @@ def create_api(config, dl_manager, history):
         'probe_javascript_runtime': lambda *args, **kwargs: probe_javascript_runtime(*args, **kwargs),
         'probe_po_token_provider': lambda *args, **kwargs: probe_po_token_provider(*args, **kwargs),
         'provision_deno': lambda *args, **kwargs: provision_deno(*args, **kwargs),
+        'query_history_entries': lambda *args, **kwargs: query_history_entries(*args, **kwargs),
         'read_update_recovery_status': lambda *args, **kwargs: read_update_recovery_status(*args, **kwargs),
         'validate_download_request_body': lambda *args, **kwargs: validate_download_request_body(*args, **kwargs),
     })
@@ -3283,6 +3284,7 @@ class MainWindow(MainWindowCore):
                 'normalize_proxy': lambda *args, **kwargs: normalize_proxy(*args, **kwargs),
                 'normalize_rate_limit': lambda *args, **kwargs: normalize_rate_limit(*args, **kwargs),
                 'normalize_sublangs': lambda *args, **kwargs: normalize_sublangs(*args, **kwargs),
+                'query_history_entries': lambda *args, **kwargs: query_history_entries(*args, **kwargs),
                 'reset_deno_runtime_cache': lambda *args, **kwargs: reset_deno_runtime_cache(*args, **kwargs),
                 'reset_ffmpeg_capabilities_cache': lambda *args, **kwargs: reset_ffmpeg_capabilities_cache(*args, **kwargs),
                 'write_persistent_log': lambda *args, **kwargs: write_persistent_log(*args, **kwargs),
