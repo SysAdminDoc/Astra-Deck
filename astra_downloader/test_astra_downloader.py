@@ -402,6 +402,54 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         self.assertIn('"Open dashboard"', source)
         self.assertIn('"View download queue"', source)
 
+    def test_companion_status_palette_meets_wcag_aa_on_its_real_surfaces(self):
+        import gui as gui_module
+
+        def luminance(color):
+            channels = [
+                int(color[index:index + 2], 16) / 255
+                for index in (1, 3, 5)
+            ]
+            linear = [
+                value / 12.92
+                if value <= 0.04045
+                else ((value + 0.055) / 1.055) ** 2.4
+                for value in channels
+            ]
+            return (
+                0.2126 * linear[0]
+                + 0.7152 * linear[1]
+                + 0.0722 * linear[2]
+            )
+
+        def ratio(foreground, background):
+            lighter, darker = sorted(
+                (luminance(foreground), luminance(background)),
+                reverse=True,
+            )
+            return (lighter + 0.05) / (darker + 0.05)
+
+        colors = gui_module.GUI_ACCESSIBILITY_COLORS
+        surface_pairs = {
+            "muted": "surface",
+            "neutral": "surface",
+            "neutral_indicator": "surface",
+            "readiness_text": "surface",
+            "success": "surface",
+            "warning": "surface",
+            "danger": "surface",
+            "log_text": "log_surface",
+        }
+        for foreground, background in surface_pairs.items():
+            with self.subTest(foreground=foreground, background=background):
+                self.assertGreaterEqual(
+                    ratio(colors[foreground], colors[background]),
+                    4.5,
+                )
+
+        for color in colors.values():
+            self.assertIn(color, ad.STYLESHEET)
+
     def test_failed_settings_write_keeps_server_running_and_form_dirty(self):
         class TextField:
             def __init__(self, value=""):
@@ -5236,6 +5284,25 @@ class GuiSmokeTests(unittest.TestCase):
                 self.assertEqual(progress.value(), 73)
                 self.assertEqual(scroll_bar.value(), old_scroll)
                 self.assertIs(QApplication.focusWidget(), cancel)
+
+                window._set_readiness("ffmpeg", "7.1", "success")
+                readiness_dot, readiness_value = window.readiness_values["ffmpeg"]
+                self.assertEqual(
+                    readiness_dot.accessibleName(),
+                    "FFmpeg status indicator: 7.1",
+                )
+                self.assertEqual(
+                    readiness_value.accessibleName(),
+                    "FFmpeg status: 7.1",
+                )
+                self.assertEqual(window.log_text.accessibleName(), "Server log")
+                self.assertIn("Server status", window.status_dot.accessibleName())
+                self.assertTrue(window.status_label.text())
+
+                with mock.patch.dict(os.environ, {"ASTRA_REDUCED_MOTION": "1"}):
+                    window._animate_page()
+                self.assertIsNone(window._page_anim)
+                self.assertIsNone(window.tabs.currentWidget().graphicsEffect())
             finally:
                 window.update_timer.stop()
                 window.cleanup_timer.stop()

@@ -40,7 +40,48 @@ __all__ = (
     "ReadinessProbe",
     "SetupWorkerCore",
     "MainWindowCore",
+    "GUI_ACCESSIBILITY_COLORS", "system_reduced_motion_enabled",
 )
+
+GUI_ACCESSIBILITY_COLORS = {
+    "surface": "#0a0d12",
+    "sidebar": "#080b0f",
+    "log_surface": "#0d1218",
+    "primary": "#fff8f4",
+    "muted": "#8d97a4",
+    "neutral": "#9ca5b0",
+    "neutral_indicator": "#747f8d",
+    "readiness_text": "#d9dde2",
+    "log_text": "#b4bcc6",
+    "success": "#75dcb1",
+    "warning": "#edbd76",
+    "danger": "#ff8d82",
+}
+
+
+def system_reduced_motion_enabled():
+    """Honor the Windows animation accessibility preference.
+
+    ``ASTRA_REDUCED_MOTION`` is an explicit test/automation override; the
+    production path reads SPI_GETCLIENTAREAANIMATION, which is disabled by
+    Windows when the user turns off UI animations.
+    """
+    override = str(os.environ.get("ASTRA_REDUCED_MOTION", "")).strip().lower()
+    if override in {"1", "true", "yes", "on"}:
+        return True
+    if override in {"0", "false", "no", "off"}:
+        return False
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        animations_enabled = ctypes.c_bool(True)
+        success = ctypes.windll.user32.SystemParametersInfoW(
+            0x1042, 0, ctypes.byref(animations_enabled), 0
+        )
+        return bool(success) and not animations_enabled.value
+    except Exception:
+        return False
 
 
 def repolish(widget):
@@ -85,6 +126,7 @@ def make_status_badge(text, tone="neutral"):
     badge.setProperty("tone", tone)
     badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
     badge.setMinimumHeight(22)
+    badge.setAccessibleName(f"Status: {text}")
     return badge
 
 
@@ -92,6 +134,7 @@ def make_state_label(text, tone="neutral"):
     label = QLabel(f"\u25cf  {text}")
     label.setProperty("class", "stateLabel")
     label.setProperty("tone", tone)
+    label.setAccessibleName(f"Status: {text}")
     return label
 
 
@@ -814,9 +857,14 @@ class MainWindowCore(QMainWindow):
         brand_copy = QVBoxLayout()
         brand_copy.setSpacing(2)
         title_lbl = make_label("ASTRA DOWNLOADER")
-        title_lbl.setStyleSheet("font-size: 12px; font-weight: 750; color: #fff8f2; letter-spacing: .35px;")
+        title_lbl.setStyleSheet(
+            "font-size: 12px; font-weight: 750; "
+            f"color: {GUI_ACCESSIBILITY_COLORS['primary']}; letter-spacing: .35px;"
+        )
         ver_lbl = make_label(f"LOCAL  ·  v{self._value('APP_VERSION')}", "muted")
-        ver_lbl.setStyleSheet("font-size: 11px; color: #818b98;")
+        ver_lbl.setStyleSheet(
+            f"font-size: 11px; color: {GUI_ACCESSIBILITY_COLORS['muted']};"
+        )
         brand_copy.addWidget(title_lbl)
         brand_copy.addWidget(ver_lbl)
         brand_layout.addWidget(brand_icon)
@@ -845,10 +893,12 @@ class MainWindowCore(QMainWindow):
         status_row = QHBoxLayout()
         status_row.setContentsMargins(22, 0, 18, 22)
         status_row.setSpacing(8)
-        self.status_dot = QLabel("\u2022")
-        self.status_dot.setStyleSheet("color: #747f8d; font-size: 20px;")
-        self.status_label = make_label("Stopped", "muted")
-        self.status_label.setStyleSheet("font-size: 12px; color: #8d97a4; font-weight: 600;")
+        self.status_dot = make_label("\u2022", "stateDot")
+        self.status_dot.setProperty("tone", "neutral")
+        self.status_dot.setAccessibleName("Server status indicator: Stopped")
+        self.status_label = make_state_label("Stopped", "neutral")
+        self.status_label.setText("Stopped")
+        self.status_label.setAccessibleName("Server status: Stopped")
         status_row.addWidget(self.status_dot)
         status_row.addWidget(self.status_label)
         status_row.addStretch()
@@ -966,11 +1016,15 @@ class MainWindowCore(QMainWindow):
         row_layout.setSpacing(8)
         dot = make_label("●", "readinessDot")
         dot.setProperty("tone", "neutral")
+        dot.setProperty("statusLabel", label_text)
+        dot.setAccessibleName(f"{label_text} status indicator: {value_text}")
         dot.setFixedWidth(12)
         row_layout.addWidget(dot)
-        row_layout.addWidget(make_label(label_text, "fieldHint"), 1)
+        name = make_label(label_text, "fieldHint")
+        row_layout.addWidget(name, 1)
         value = make_label(value_text, "readinessValue")
         value.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        value.setAccessibleName(f"{label_text} status: {value_text}")
         row_layout.addWidget(value)
         self.readiness_values[key] = (dot, value)
         return row
@@ -982,6 +1036,9 @@ class MainWindowCore(QMainWindow):
         dot, value = widgets
         dot.setProperty("tone", tone)
         value.setText(text)
+        label_text = str(dot.property("statusLabel") or key)
+        dot.setAccessibleName(f"{label_text} status indicator: {text}")
+        value.setAccessibleName(f"{label_text} status: {text}")
         value.setToolTip(tooltip)
         dot.setToolTip(tooltip)
         repolish(dot)
@@ -1088,6 +1145,7 @@ class MainWindowCore(QMainWindow):
         state_row.setSpacing(10)
         self.server_badge = make_label("\u25cf", "stateDot")
         self.server_badge.setProperty("tone", "neutral")
+        self.server_badge.setAccessibleName("Dashboard server status indicator: Offline")
         self.dash_status = make_label("Server offline", "heroTitle")
         state_row.addWidget(self.server_badge)
         state_row.addWidget(self.dash_status)
@@ -1120,9 +1178,11 @@ class MainWindowCore(QMainWindow):
         ctrl_layout.addLayout(actions)
 
         self.setup_status = make_label("", "fieldHint")
+        self.setup_status.setAccessibleName("Download tool setup status")
         self.setup_status.hide()
         self.setup_progress = QProgressBar()
         self.setup_progress.setRange(0, 100)
+        self.setup_progress.setAccessibleName("Download tool setup progress")
         self.setup_progress.setValue(0)
         self.setup_progress.setTextVisible(False)
         self.setup_progress.hide()
@@ -1186,6 +1246,10 @@ class MainWindowCore(QMainWindow):
         layout.addLayout(log_header)
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
+        self.log_text.setAccessibleName("Server log")
+        self.log_text.setAccessibleDescription(
+            "Recent local companion events. Use Clear to remove visible entries."
+        )
         self.log_text.setMinimumHeight(180)
         self.log_text.document().setMaximumBlockCount(300)
         self.log_text.setPlainText("Ready.")
@@ -1252,6 +1316,7 @@ class MainWindowCore(QMainWindow):
         options_row.addWidget(self.quick_download_end)
         quick_layout.addLayout(options_row)
         self.quick_download_status = make_label("", "fieldHint")
+        self.quick_download_status.setAccessibleName("Quick download status")
         self.quick_download_status.hide()
         quick_layout.addWidget(self.quick_download_status)
         layout.addWidget(quick_card)
@@ -1715,6 +1780,7 @@ class MainWindowCore(QMainWindow):
         tools_card, tools_l = self._make_settings_group("Maintenance")
         tools_l.addWidget(make_label("Installed tools", "fieldLabel"))
         self.tools_status = make_label("Checking installed tools…", "fieldHint", word_wrap=True)
+        self.tools_status.setAccessibleName("Installed tools status")
         tools_l.addWidget(self.tools_status)
         tools_row = QHBoxLayout()
         tools_row.setSpacing(8)
@@ -1737,6 +1803,7 @@ class MainWindowCore(QMainWindow):
         save_row = QHBoxLayout()
         save_row.setContentsMargins(166, 14, 0, 0)
         self.settings_status = make_label("", "fieldHint")
+        self.settings_status.setAccessibleName("Settings status")
         save_row.addWidget(self.settings_status, 1)
         btn_save = self._make_tool_button("Save changes", "primary")
         btn_save.clicked.connect(self._save_settings)
@@ -1789,6 +1856,10 @@ class MainWindowCore(QMainWindow):
     def _animate_page(self):
         widget = self.tabs.currentWidget()
         if not widget:
+            return
+        if system_reduced_motion_enabled():
+            widget.setGraphicsEffect(None)
+            self._page_anim = None
             return
         effect = QGraphicsOpacityEffect(widget)
         widget.setGraphicsEffect(effect)
@@ -1929,12 +2000,17 @@ class MainWindowCore(QMainWindow):
 
     def _update_server_ui(self):
         if self.server_running:
-            self.status_dot.setStyleSheet("color: #55d69f; font-size: 20px;")
+            self.status_dot.setProperty("tone", "success")
+            self.status_dot.setAccessibleName("Server status indicator: Running")
             self.status_label.setText("Running")
-            self.status_label.setStyleSheet("color: #75dcb1; font-size: 12px; font-weight: 650;")
+            self.status_label.setProperty("tone", "success")
+            self.status_label.setAccessibleName("Server status: Running")
             self.dash_status.setText("Server online")
             self.dash_hint.setText("Local only \u00b7 ready for Astra Deck")
             self.server_badge.setProperty("tone", "success")
+            self.server_badge.setAccessibleName(
+                "Dashboard server status indicator: Online"
+            )
             self.btn_startstop.setText("Stop Server")
             self.btn_startstop.setIcon(make_line_icon("Stop Server"))
             self.btn_startstop.setProperty("class", "secondary")
@@ -1942,12 +2018,17 @@ class MainWindowCore(QMainWindow):
             self.tray.setToolTip(f"{self._value('APP_NAME')} - Running")
             self._set_readiness("server", "Running", "success")
         else:
-            self.status_dot.setStyleSheet("color: #747f8d; font-size: 20px;")
+            self.status_dot.setProperty("tone", "neutral")
+            self.status_dot.setAccessibleName("Server status indicator: Stopped")
             self.status_label.setText("Stopped")
-            self.status_label.setStyleSheet("color: #8d97a4; font-size: 12px; font-weight: 650;")
+            self.status_label.setProperty("tone", "neutral")
+            self.status_label.setAccessibleName("Server status: Stopped")
             self.dash_status.setText("Server offline")
             self.dash_hint.setText("Local only \u00b7 start before downloading")
             self.server_badge.setProperty("tone", "neutral")
+            self.server_badge.setAccessibleName(
+                "Dashboard server status indicator: Offline"
+            )
             self.btn_startstop.setText("Start Server")
             self.btn_startstop.setIcon(make_line_icon("Start Server"))
             self.btn_startstop.setProperty("class", "primary")
@@ -1956,6 +2037,8 @@ class MainWindowCore(QMainWindow):
             self._set_readiness("server", "Stopped", "neutral")
         repolish(self.btn_startstop)
         repolish(self.server_badge)
+        repolish(self.status_dot)
+        repolish(self.status_label)
 
     def _clear_layout(self, layout):
         while layout.count():
@@ -2023,6 +2106,9 @@ class MainWindowCore(QMainWindow):
         )
         state_label = refs["state"]
         state_label.setText(f"\u25cf  {human_status(dl.status)}")
+        state_label.setAccessibleName(
+            f"{dl.title or 'Download'} status: {human_status(dl.status)}"
+        )
         tone = download_status_tone(dl.status)
         if state_label.property("tone") != tone:
             state_label.setProperty("tone", tone)
@@ -2031,6 +2117,8 @@ class MainWindowCore(QMainWindow):
         progress = refs.get("progress")
         if progress is not None:
             progress.setValue(int(min(max(dl.progress, 0), 100)))
+            progress.setAccessibleName(f"{dl.title or 'Download'} progress")
+            progress.setAccessibleDescription(f"{dl.progress:.1f} percent complete")
         refs["meta"].setText(self._download_meta_text(dl))
 
         recovery = refs.get("recovery")
@@ -2500,18 +2588,18 @@ class MainWindowCore(QMainWindow):
         repolish(widget)
 
     def _show_settings_status(self, message, tone="neutral"):
-        colors = {
-            "success": "#75dcb1",
-            "danger": "#ff8d82",
-            "warning": "#edbd76",
-            "neutral": "#8d97a4",
-        }
         # Each status write bumps the generation so a delayed clear (the
         # post-save 3.2s timer) never wipes a NEWER message — e.g. the
         # "Unsaved changes" indicator from an edit made right after saving.
         self._settings_status_generation = getattr(self, "_settings_status_generation", 0) + 1
         self.settings_status.setText(message)
-        self.settings_status.setStyleSheet(f"color: {colors.get(tone, colors['neutral'])}; font-size: 12px;")
+        color = GUI_ACCESSIBILITY_COLORS.get(
+            tone, GUI_ACCESSIBILITY_COLORS["neutral"]
+        )
+        self.settings_status.setStyleSheet(f"color: {color}; font-size: 12px;")
+        self.settings_status.setAccessibleName(
+            f"Settings status: {message or 'No current message'}"
+        )
 
     def _clear_settings_status_if_current(self, generation):
         if getattr(self, "_settings_status_generation", 0) == generation:
@@ -2877,7 +2965,17 @@ class MainWindowCore(QMainWindow):
         try:
             self._append_log(f"Server failed to start: {msg}")
             self.status_label.setText("Server error")
-            self.status_label.setStyleSheet("color: #ff8d82; font-size: 12px;")
+            self.status_label.setProperty("tone", "danger")
+            self.status_label.setAccessibleName("Server status: Error")
+            self.status_dot.setProperty("tone", "danger")
+            self.status_dot.setAccessibleName("Server status indicator: Error")
+            self.server_badge.setProperty("tone", "danger")
+            self.server_badge.setAccessibleName(
+                "Dashboard server status indicator: Error"
+            )
+            repolish(self.status_label)
+            repolish(self.status_dot)
+            repolish(self.server_badge)
             self.dash_hint.setText("Server failed to start. Check the log for details.")
             if self.tray.isVisible():
                 self.tray.showMessage(
@@ -3103,6 +3201,7 @@ _OWNED_EXPORTS = {
     "FolderPickerService",
     "SetupWorker", "SetupWorkerCore",
     "MainWindow", "MainWindowCore",
+    "GUI_ACCESSIBILITY_COLORS", "system_reduced_motion_enabled",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS

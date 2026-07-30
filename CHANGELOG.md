@@ -36,6 +36,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Companion status accessibility.** Sidebar, dashboard, readiness, setup,
+  download-progress, settings, and log surfaces now expose descriptive
+  accessible names and retain text alongside every color cue. Audited status
+  colors meet WCAG AA, and page fades honor the Windows reduced-animation
+  preference.
 - **Download progress no longer rebuilds the queue UI.** The companion keys
   cards by download ID and patches volatile labels, progress, and recovery
   copy in place. Structural state changes replace only the affected card, so
