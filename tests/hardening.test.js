@@ -11867,3 +11867,34 @@ test('remaining in-page operations route visible copy through the shared locale 
         }
     }
 });
+
+test('settings focus trap includes actionable Undo toasts without timing them out', () => {
+    const read = relative => fs.readFileSync(path.join(__dirname, '..', relative), 'utf8');
+    const settingsPanel = read('extension/features/settings-panel/index.js');
+    const toastDom = read('extension/core/toast-dom.js');
+    const ytkit = read('extension/ytkit.js');
+
+    for (const source of [settingsPanel, ytkit]) {
+        assert.match(source, /\.ytkit-global-toast\[data-ytkit-focus-portal="true"\]/,
+            'settings panel trap must discover the active actionable toast portal');
+        assert.match(source, /trapFocusWithin\(activeDialog,\s*e,\s*toastPortal \? \[toastPortal\] : \[\]\)/,
+            'settings panel trap must include the actionable toast root');
+    }
+    assert.match(ytkit, /function trapFocusWithin\(root,\s*event,\s*additionalRoots = \[\]\)/,
+        'shared focus trap must accept additional portal roots');
+    assert.match(ytkit, /roots\.flatMap\(candidate => getFocusableUiElements\(candidate\)\)/,
+        'shared focus trap must merge dialog and portal controls into one cycle');
+    assert.match(ytkit, /roots\.some\(candidate => candidate\.contains\(activeElement\)\)/,
+        'focus inside an included toast portal must remain inside the combined trap');
+    assert.match(ytkit, /\(activeIndex \+ direction \+ focusable\.length\) % focusable\.length/,
+        'portal focus traversal must explicitly skip unrelated page controls between DOM roots');
+
+    for (const source of [toastDom, ytkit]) {
+        assert.match(source, /actions\.length > 0[\s\S]*classList\.contains\('ytkit-panel-open'\)/,
+            'actionable Settings toasts must opt into persistent recovery');
+        assert.match(source, /toast\.setAttribute\('data-ytkit-focus-portal',\s*'true'\)/,
+            'actionable toasts must identify themselves as focus portals');
+        assert.match(source, /if \(!persistent && durationMs > 0\)/,
+            'Settings recovery toast must not auto-dismiss before keyboard access');
+    }
+});

@@ -74,6 +74,9 @@
                 ...(options.action ? [options.action] : [])
             ].filter(Boolean).slice(0, 2);
             const durationMs = Math.max(0, Number(options.duration ?? 2.5) * 1000);
+            const keepActionReachable = actions.length > 0
+                && document.body?.classList.contains('ytkit-panel-open');
+            const persistent = options.persistent === true || keepActionReachable;
 
             const toast = document.createElement('div');
             toast.className = 'ytkit-global-toast';
@@ -84,6 +87,9 @@
             toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive);
             toast.setAttribute('aria-atomic', 'true');
             toast.tabIndex = -1;
+            if (actions.length > 0) {
+                toast.setAttribute('data-ytkit-focus-portal', 'true');
+            }
 
             const badge = document.createElement('span');
             badge.className = 'ytkit-toast-badge';
@@ -148,7 +154,7 @@
                 remainingMs = Math.max(0, dismissAt - Date.now());
             };
             const resumeDismiss = () => {
-                if (!toast.isConnected || remainingMs <= 0 || options.persistent) return;
+                if (!toast.isConnected || remainingMs <= 0 || persistent) return;
                 dismissAt = Date.now() + remainingMs;
                 toast._dismissTimer = setTimeout(() => dismissToast(toast), remainingMs);
             };
@@ -167,7 +173,7 @@
             });
 
             requestAnimationFrame(() => toast.classList.add('is-visible'));
-            if (!options.persistent && durationMs > 0) {
+            if (!persistent && durationMs > 0) {
                 toast._dismissTimer = setTimeout(() => dismissToast(toast), durationMs);
             }
 

@@ -17,6 +17,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Settings Undo is keyboard-reachable.** Actionable toasts join the open
+  Settings dialog focus cycle, skip unrelated page controls between DOM roots,
+  and remain available until the user activates or dismisses them.
 - **Remaining named in-page English surfaces now use the locale catalog.**
   Subscription digest/health, video notes, downloader setup/health/history,
   Settings search/reset/insights, transcript export/translation, bulk actions,

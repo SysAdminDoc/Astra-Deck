@@ -2681,7 +2681,10 @@ function attachUIEventListeners() {
                         ? document.getElementById('ytkit-settings-panel')
                         : null;
                 if (e.key === 'Tab' && activeDialog) {
-                    trapFocusWithin(activeDialog, e);
+                    const toastPortal = document.querySelector(
+                        '.ytkit-global-toast[data-ytkit-focus-portal="true"]'
+                    );
+                    trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);
                 }
                 // v4.5.3: Ctrl+Alt+Y in-page toggle retired with the rest of
                 // the shortcut surface per the "no keyboard shortcuts" rule.

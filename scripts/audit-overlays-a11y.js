@@ -453,10 +453,18 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Subscription group modal must be labelled, modal, and close on Escape');
     add('Settings panel traps Tab and Shift+Tab in active dialogs',
         settingsPanel.includes("if (e.key === 'Tab' && activeDialog)") &&
-        settingsPanel.includes('trapFocusWithin(activeDialog, e)') &&
-        ytkit.includes('function trapFocusWithin(root, event)') &&
+        settingsPanel.includes('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : [])') &&
+        ytkit.includes('function trapFocusWithin(root, event, additionalRoots = [])') &&
         ytkit.includes('event.shiftKey'),
         'Settings panel must trap Tab and Shift+Tab inside the active settings dialog');
+    add('Settings panel focus trap includes actionable toast recovery controls',
+        settingsPanel.includes('.ytkit-global-toast[data-ytkit-focus-portal="true"]') &&
+        settingsPanel.includes('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : [])') &&
+        toastDom.includes("toast.setAttribute('data-ytkit-focus-portal', 'true')") &&
+        toastDom.includes("document.body?.classList.contains('ytkit-panel-open')") &&
+        ytkit.includes('(activeIndex + direction + focusable.length) % focusable.length') &&
+        toastDom.includes('const persistent = options.persistent === true || keepActionReachable'),
+        'Settings Undo toasts must join the focus trap and remain until dismissed or activated');
     add('Settings panel tabs expose keyboard navigation and selected state',
         ['ArrowRight', 'ArrowLeft', 'Home', 'End'].every((key) => settingsPanel.includes(`event.key === '${key}'`)) &&
         settingsPanel.includes("button.setAttribute('aria-selected', String(isActive))") &&
@@ -542,7 +550,13 @@ function runSelfTest(baseSources) {
             name: 'missing Tab trap',
             target: 'settingsPanel',
             expected: 'Settings panel must trap Tab and Shift+Tab inside the active settings dialog',
-            mutate: (source) => source.replace('trapFocusWithin(activeDialog, e);', '')
+            mutate: (source) => source.replace('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);', '')
+        },
+        {
+            name: 'missing toast focus portal',
+            target: 'settingsPanel',
+            expected: 'Settings Undo toasts must join the focus trap and remain until dismissed or activated',
+            mutate: (source) => source.replace('.ytkit-global-toast[data-ytkit-focus-portal="true"]', '.ytkit-global-toast')
         },
         {
             name: 'missing aria-expanded close',
