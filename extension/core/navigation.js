@@ -7,13 +7,22 @@
 
     const runtime = {
         navDebounce: 50,
-        elementTimeout: 3000
+        elementTimeout: 3000,
+        mutationRuleWindowMs: 5000,
+        mutationRuleMaxInvocations: 120,
+        mutationRuleMaxDurationMs: 120,
+        mutationRuleMaxSingleDurationMs: 32
     };
 
     let mutationObserver = null;
     const mutationRules = new Map();
     const scopedMutationRules = new Map();
     const navigateRules = new Map();
+    const mutationRuleHealth = new Map();
+    const mutationRuleDiagnostics = [];
+    const MUTATION_DIAGNOSTIC_CAP = 20;
+    let mutationRouteGeneration = 0;
+    let pendingMutationRouteReset = false;
     let isNavigateListenerAttached = false;
     let watchFlexyObserver = null;
     let watchFlexyObservedNode = null;
@@ -30,6 +39,18 @@
         }
         if (Number.isFinite(options.elementTimeout)) {
             runtime.elementTimeout = Math.max(0, options.elementTimeout);
+        }
+        if (Number.isFinite(options.mutationRuleWindowMs)) {
+            runtime.mutationRuleWindowMs = Math.max(1, options.mutationRuleWindowMs);
+        }
+        if (Number.isFinite(options.mutationRuleMaxInvocations)) {
+            runtime.mutationRuleMaxInvocations = Math.max(1, Math.floor(options.mutationRuleMaxInvocations));
+        }
+        if (Number.isFinite(options.mutationRuleMaxDurationMs)) {
+            runtime.mutationRuleMaxDurationMs = Math.max(1, options.mutationRuleMaxDurationMs);
+        }
+        if (Number.isFinite(options.mutationRuleMaxSingleDurationMs)) {
+            runtime.mutationRuleMaxSingleDurationMs = Math.max(1, options.mutationRuleMaxSingleDurationMs);
         }
     }
 
@@ -162,6 +183,10 @@
         const href = (typeof location !== 'undefined') ? location.href : '';
         const urlChanged = href !== lastNavHref;
         lastNavHref = href;
+        if (urlChanged || pendingMutationRouteReset) {
+            resetMutationRuleHealthForRoute();
+        }
+        pendingMutationRouteReset = false;
         // Only pay for a full-page view-transition snapshot on a real URL
         // change. `yt-page-data-updated` also fires as the feed appends items
         // during infinite scroll (same URL) — wrapping those in
@@ -189,7 +214,10 @@
         }
     }
 
-    function debouncedRunNavigateRules() {
+    function debouncedRunNavigateRules(event) {
+        if (event?.type === 'yt-navigate-finish' || event?.type === 'popstate') {
+            pendingMutationRouteReset = true;
+        }
         if (navigateDebounceTimer) clearTimeout(navigateDebounceTimer);
         navigateDebounceTimer = setTimeout(runNavigateRules, runtime.navDebounce);
     }
@@ -210,7 +238,10 @@
     function attachNavigationApi() {
         if (navigationApiHandler) return;
         if (typeof window.navigation?.addEventListener !== 'function') return;
-        navigationApiHandler = () => debouncedRunNavigateRules();
+        navigationApiHandler = () => {
+            pendingMutationRouteReset = true;
+            debouncedRunNavigateRules();
+        };
         try {
             window.navigation.addEventListener('navigate', navigationApiHandler);
         } catch (_) {
@@ -273,7 +304,7 @@
 
     function removeNavigateRule(id) {
         navigateRules.delete(id);
-        if (navigateRules.size === 0) {
+        if (navigateRules.size === 0 && !hasAnyMutationRule()) {
             stopNavigateListener();
         }
     }
@@ -300,24 +331,143 @@
         return false;
     }
 
+    function getRouteLabel() {
+        return String((typeof location !== 'undefined' && location.pathname) || 'unknown').slice(0, 160);
+    }
+
+    function createMutationRuleHealth(id, kind) {
+        const now = nowMs();
+        return {
+            featureId: String(id).slice(0, 100),
+            kind,
+            route: getRouteLabel(),
+            routeGeneration: mutationRouteGeneration,
+            invocations: 0,
+            durationMs: 0,
+            windowStartedAt: now,
+            windowInvocations: 0,
+            windowDurationMs: 0,
+            ownedMutations: 0,
+            windowOwnedMutations: 0,
+            circuitOpen: false,
+            reason: null,
+            openedAt: null
+        };
+    }
+
+    function getOrCreateMutationRuleHealth(id, kind) {
+        let health = mutationRuleHealth.get(id);
+        if (!health || health.routeGeneration !== mutationRouteGeneration || health.kind !== kind) {
+            health = createMutationRuleHealth(id, kind);
+            mutationRuleHealth.set(id, health);
+        }
+        return health;
+    }
+
+    function emitMutationRuleDiagnostic(health) {
+        const diagnostic = {
+            at: new Date().toISOString(),
+            featureId: health.featureId,
+            kind: health.kind,
+            route: health.route,
+            routeGeneration: health.routeGeneration,
+            reason: health.reason,
+            invocations: health.invocations,
+            durationMs: Math.round(health.durationMs * 10) / 10,
+            windowInvocations: health.windowInvocations,
+            windowDurationMs: Math.round(health.windowDurationMs * 10) / 10,
+            ownedMutations: health.ownedMutations
+        };
+        mutationRuleDiagnostics.push(diagnostic);
+        while (mutationRuleDiagnostics.length > MUTATION_DIAGNOSTIC_CAP) {
+            mutationRuleDiagnostics.shift();
+        }
+        if (typeof document?.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+            document.dispatchEvent(new CustomEvent('ytkit-mutation-rule-circuit-open', {
+                detail: diagnostic
+            }));
+        }
+    }
+
+    function openMutationRuleCircuit(health, reason) {
+        if (health.circuitOpen) return;
+        health.circuitOpen = true;
+        health.reason = reason;
+        health.openedAt = new Date().toISOString();
+        emitMutationRuleDiagnostic(health);
+    }
+
+    function evaluateMutationRuleBudget(health, elapsedMs) {
+        if (elapsedMs >= runtime.mutationRuleMaxSingleDurationMs) {
+            openMutationRuleCircuit(health, 'single-duration');
+            return;
+        }
+        if (health.windowDurationMs >= runtime.mutationRuleMaxDurationMs) {
+            openMutationRuleCircuit(health, 'window-duration');
+            return;
+        }
+        // Scoped rules are invoked only for their own selector. Broad rules
+        // share every observer batch, so an invocation-only breaker would
+        // disable innocent peers during a DOM storm. For broad rules, require
+        // direct synchronous mutation evidence captured via takeRecords().
+        if (health.windowInvocations >= runtime.mutationRuleMaxInvocations
+            && (health.kind === 'scoped' || health.windowOwnedMutations > 0)) {
+            openMutationRuleCircuit(health, 'window-invocations');
+        }
+    }
+
+    function executeMutationRule(id, kind, ruleFn, args) {
+        const health = getOrCreateMutationRuleHealth(id, kind);
+        if (health.circuitOpen) return false;
+        const startedAt = nowMs();
+        if ((startedAt - health.windowStartedAt) >= runtime.mutationRuleWindowMs) {
+            health.windowStartedAt = startedAt;
+            health.windowInvocations = 0;
+            health.windowDurationMs = 0;
+            health.windowOwnedMutations = 0;
+        }
+        let error = null;
+        try {
+            ruleFn(...args);
+        } catch (caught) {
+            error = caught;
+        }
+        const ownedRecords = typeof mutationObserver?.takeRecords === 'function'
+            ? mutationObserver.takeRecords()
+            : [];
+        const ownedMutationCount = Array.isArray(ownedRecords) ? ownedRecords.length : 0;
+        const elapsedMs = Math.max(0, nowMs() - startedAt);
+        health.invocations += 1;
+        health.durationMs += elapsedMs;
+        health.windowInvocations += 1;
+        health.windowDurationMs += elapsedMs;
+        health.ownedMutations += ownedMutationCount;
+        health.windowOwnedMutations += ownedMutationCount;
+        evaluateMutationRuleBudget(health, elapsedMs);
+        if (ownedMutationCount > 0) observerCallback(ownedRecords);
+        if (error) {
+            console.error(
+                kind === 'scoped' ? '[YTKit] Scoped mutation rule error:' : '[YTKit] Mutation rule error:',
+                error
+            );
+        }
+        return !health.circuitOpen;
+    }
+
     function runMutationRules(targetNode, records) {
-        for (const rule of mutationRules.values()) {
-            try {
-                rule(targetNode);
-            } catch (error) {
-                console.error('[YTKit] Mutation rule error:', error);
-            }
+        for (const [id, rule] of mutationRules) {
+            executeMutationRule(id, 'broad', rule, [targetNode]);
         }
 
         if (scopedMutationRules.size === 0) return;
         const addedElements = collectAddedElements(records);
-        for (const entry of scopedMutationRules.values()) {
+        for (const [id, entry] of scopedMutationRules) {
             try {
                 // Fast path: empty batch (observer fired from attribute-only
                 // mutation) — skip the rule entirely.
                 if (!addedElements.length) continue;
                 if (!anyAddedMatchesSelector(addedElements, entry.selector)) continue;
-                entry.ruleFn(targetNode, addedElements);
+                executeMutationRule(id, 'scoped', entry.ruleFn, [targetNode, addedElements]);
             } catch (error) {
                 console.error('[YTKit] Scoped mutation rule error:', error);
             }
@@ -389,18 +539,22 @@
 
     function addMutationRule(id, ruleFn) {
         if (!id || typeof ruleFn !== 'function') return;
-        if (!hasAnyMutationRule()) startObserver();
-        mutationRules.set(id, ruleFn);
-        try {
-            ruleFn(document.body);
-        } catch (error) {
-            console.error('[YTKit] Mutation rule error:', error);
+        if (!hasAnyMutationRule()) {
+            startObserver();
+            ensureNavigateListener();
         }
+        mutationRules.set(id, ruleFn);
+        mutationRuleHealth.set(id, createMutationRuleHealth(id, 'broad'));
+        executeMutationRule(id, 'broad', ruleFn, [document.body]);
     }
 
     function removeMutationRule(id) {
         mutationRules.delete(id);
-        if (!hasAnyMutationRule()) stopObserver();
+        mutationRuleHealth.delete(id);
+        if (!hasAnyMutationRule()) {
+            stopObserver();
+            if (navigateRules.size === 0) stopNavigateListener();
+        }
     }
 
     // Scoped mutation rule — only runs when a node matching `selector` is
@@ -413,18 +567,65 @@
     // scope its own work to that array instead of the whole document.
     function addScopedMutationRule(id, selector, ruleFn) {
         if (!id || typeof selector !== 'string' || typeof ruleFn !== 'function') return;
-        if (!hasAnyMutationRule()) startObserver();
-        scopedMutationRules.set(id, { selector, ruleFn });
-        try {
-            ruleFn(document.body, []);
-        } catch (error) {
-            console.error('[YTKit] Scoped mutation rule error:', error);
+        if (!hasAnyMutationRule()) {
+            startObserver();
+            ensureNavigateListener();
         }
+        scopedMutationRules.set(id, { selector, ruleFn });
+        mutationRuleHealth.set(id, createMutationRuleHealth(id, 'scoped'));
+        executeMutationRule(id, 'scoped', ruleFn, [document.body, []]);
     }
 
     function removeScopedMutationRule(id) {
         scopedMutationRules.delete(id);
-        if (!hasAnyMutationRule()) stopObserver();
+        mutationRuleHealth.delete(id);
+        if (!hasAnyMutationRule()) {
+            stopObserver();
+            if (navigateRules.size === 0) stopNavigateListener();
+        }
+    }
+
+    function resetMutationRuleHealthForRoute() {
+        mutationRouteGeneration += 1;
+        for (const id of mutationRules.keys()) {
+            mutationRuleHealth.set(id, createMutationRuleHealth(id, 'broad'));
+        }
+        for (const id of scopedMutationRules.keys()) {
+            mutationRuleHealth.set(id, createMutationRuleHealth(id, 'scoped'));
+        }
+    }
+
+    function retryMutationRule(id) {
+        if (mutationRules.has(id)) {
+            mutationRuleHealth.set(id, createMutationRuleHealth(id, 'broad'));
+            return true;
+        }
+        if (scopedMutationRules.has(id)) {
+            mutationRuleHealth.set(id, createMutationRuleHealth(id, 'scoped'));
+            return true;
+        }
+        return false;
+    }
+
+    function getMutationRuleHealthSnapshot() {
+        return Array.from(mutationRuleHealth.values(), (health) => ({
+            featureId: health.featureId,
+            kind: health.kind,
+            route: health.route,
+            routeGeneration: health.routeGeneration,
+            invocations: health.invocations,
+            durationMs: Math.round(health.durationMs * 10) / 10,
+            windowInvocations: health.windowInvocations,
+            windowDurationMs: Math.round(health.windowDurationMs * 10) / 10,
+            ownedMutations: health.ownedMutations,
+            circuitOpen: health.circuitOpen,
+            reason: health.reason,
+            openedAt: health.openedAt
+        }));
+    }
+
+    function getMutationRuleDiagnostics() {
+        return mutationRuleDiagnostics.slice();
     }
 
     const budgetedScanDiagnostics = [];
@@ -539,9 +740,12 @@
         addScopedMutationRule,
         configureNavigationRuntime,
         getBudgetedScanDiagnostics,
+        getMutationRuleDiagnostics,
+        getMutationRuleHealthSnapshot,
         removeMutationRule,
         removeNavigateRule,
         removeScopedMutationRule,
+        retryMutationRule,
         runBudgetedElementBatch,
         waitForElement,
         waitForPageContent

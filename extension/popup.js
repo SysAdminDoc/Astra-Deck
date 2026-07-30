@@ -2079,7 +2079,10 @@ async function renderSelectorHealthDashboard() {
                 .filter(([, v]) => Number(v) > 0)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 5);
-            if (ordered.length === 0) {
+            const degradedMutationRules = Array.isArray(response.mutationRules)
+                ? response.mutationRules.filter(rule => rule?.circuitOpen).slice(0, 5)
+                : [];
+            if (ordered.length === 0 && degradedMutationRules.length === 0) {
                 selectorHealthCtx.hidden = true;
             } else {
                 selectorHealthCtx.hidden = false;
@@ -2087,6 +2090,12 @@ async function renderSelectorHealthDashboard() {
                     const chip = document.createElement('span');
                     chip.className = 'sh-ctx-chip';
                     chip.textContent = `${ctx}: ${count}`;
+                    selectorHealthCtx.appendChild(chip);
+                }
+                for (const rule of degradedMutationRules) {
+                    const chip = document.createElement('span');
+                    chip.className = 'sh-ctx-chip sh-errors';
+                    chip.textContent = String(rule.featureId || 'unknown');
                     selectorHealthCtx.appendChild(chip);
                 }
             }
@@ -2147,6 +2156,7 @@ async function copySelectorHealthReport() {
                 exportedAt: new Date().toISOString(),
                 productVersion: getVersion(),
                 browserUA: (navigator && navigator.userAgent) || 'unknown',
+                mutationRules: response.mutationRules,
                 topN: 10
             });
             // Prepend the active tab URL + the per-ctx counts the formatter

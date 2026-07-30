@@ -11,6 +11,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   bridge.** Language selection prefers an exact BCP-47 match, falls back to the
   primary language, can favor same-language audio description, and reapplies
   safely after YouTube SPA navigation without opening the native settings menu.
+- **Mutation-rule health circuits.** Shared broad and selector-scoped mutation
+  rules now track route-local invocation and runtime budgets, isolate noisy
+  rules behind per-feature circuits, reset on SPA navigation or explicit retry,
+  and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
 - **Companion first paint no longer waits on executable probes.** The Settings

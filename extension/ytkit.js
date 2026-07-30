@@ -678,6 +678,17 @@
         DiagnosticLog.record('selector-health', `${surface} ${issue}: ${selector}`);
     });
 
+    document.addEventListener('ytkit-mutation-rule-circuit-open', (event) => {
+        const detail = event?.detail || {};
+        const featureId = String(detail.featureId || 'unknown').slice(0, 100);
+        const reason = String(detail.reason || 'budget').slice(0, 40);
+        const route = String(detail.route || 'unknown').slice(0, 160);
+        DiagnosticLog.record(
+            'mutation-rule',
+            `${featureId} circuit opened (${reason}) on ${route}`
+        );
+    });
+
     async function extensionFetchJson(details) {
         const req = {
             ...details,
@@ -5347,11 +5358,13 @@ return response;
                         const ctxCounts = (typeof DiagnosticLog !== 'undefined' && DiagnosticLog?.countsByCtx)
                             ? DiagnosticLog.countsByCtx()
                             : {};
+                        const mutationRules = globalThis.YTKitCore?.getMutationRuleHealthSnapshot?.() || [];
                         sendResponse?.({
                             ok: true,
                             surfaces: surfaces.slice(0, 12),  // bound payload — popup only shows top few
                             totalSurfaces: surfaces.length,
-                            ctxCounts
+                            ctxCounts,
+                            mutationRules
                         });
                     } catch (e) {
                         sendResponse?.({ ok: false, error: String(e?.message || e) });

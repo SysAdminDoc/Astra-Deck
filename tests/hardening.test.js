@@ -936,6 +936,31 @@ test('addScopedMutationRule exists in core/navigation.js and is selector-filtere
     assert.match(navSource, /removeScopedMutationRule/, 'removeScopedMutationRule must be exported on core');
 });
 
+test('shared mutation runtime exposes route-scoped health circuits and degraded feature IDs', () => {
+    const navSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'navigation.js'),
+        'utf8'
+    );
+    assert.match(navSource, /function\s+executeMutationRule\s*\(/,
+        'all mutation callbacks must pass through one health-budget boundary');
+    assert.match(navSource, /mutationRuleMaxInvocations/,
+        'the runtime must enforce a configurable invocation budget');
+    assert.match(navSource, /mutationRuleMaxDurationMs/,
+        'the runtime must enforce a configurable duration budget');
+    assert.match(navSource, /function\s+retryMutationRule\s*\(/,
+        'an explicit per-rule retry must reset an open circuit');
+    assert.match(navSource, /resetMutationRuleHealthForRoute/,
+        'SPA navigation must reset route-scoped circuits');
+    assert.match(navSource, /MUTATION_DIAGNOSTIC_CAP\s*=\s*20/,
+        'local circuit diagnostics must have a hard cap');
+    assert.match(navSource, /getMutationRuleHealthSnapshot,/,
+        'the runtime must expose degraded feature IDs to health surfaces');
+    assert.match(ytkitSource, /getMutationRuleHealthSnapshot\?\.\(\)/,
+        'selector-health responses must include mutation-rule health');
+    assert.match(popupSource, /response\.mutationRules/,
+        'the popup must render degraded mutation-rule IDs');
+});
+
 test('hot feed-driven mutation rules are migrated to scoped form', () => {
     // These four features ran `document.querySelectorAll`/debounced schedulers
     // on every mutation tick. After the perf pass they only fire when a
@@ -5773,12 +5798,20 @@ test('v5.1.0 selector-health: copy report begins with product header and lists t
         productVersion: '4.8.0',
         browserUA: 'unit-test',
         exportedAt: '2026-05-21T00:00:00Z',
+        mutationRules: [{
+            featureId: 'self-trigger',
+            circuitOpen: true,
+            reason: 'window-invocations',
+            invocations: 120,
+            durationMs: 18.5
+        }],
         topN: 3
     });
     assert.match(report, /^Astra Deck selector-health report/);
     assert.match(report, /product: 4\.8\.0/);
     assert.match(report, /exportedAt: 2026-05-21T00:00:00Z/);
     assert.match(report, /miss rate:\s+50%/);
+    assert.match(report, /degraded mutation rules:[\s\S]*self-trigger: window-invocations/);
     assert.match(report, /- feed: 50\/100 attempts failed \(50%\)\s+\[high-churn\]/);
     // Investigation guidance must always be present in non-clean reports.
     assert.match(report, /Investigate by:/);
