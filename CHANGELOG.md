@@ -36,6 +36,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Download progress no longer rebuilds the queue UI.** The companion keys
+  cards by download ID and patches volatile labels, progress, and recovery
+  copy in place. Structural state changes replace only the affected card, so
+  scrolling and keyboard focus survive the 500 ms refresh loop.
 - **Side dashboard RTL and reflow.** Search controls, empty/timing metadata,
   list spacing, busy indicators, and switches now use logical geometry. The
   rendered accessibility smoke covers Arabic at 200% zoom in both Chromium
