@@ -227,6 +227,42 @@
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
   },
+  "dlPopupPlaylistClear": {
+    "message": "Clear"
+  },
+  "dlPopupPlaylistClipConflict": {
+    "message": "Choose either a clip range or playlist items."
+  },
+  "dlPopupPlaylistHint": {
+    "message": "Preview to choose a bounded subset. Without a selection, this video downloads normally."
+  },
+  "dlPopupPlaylistItems": {
+    "message": "Playlist items"
+  },
+  "dlPopupPlaylistListAria": {
+    "message": "Playlist item selection"
+  },
+  "dlPopupPlaylistLoading": {
+    "message": "Loading…"
+  },
+  "dlPopupPlaylistPreview": {
+    "message": "Preview playlist"
+  },
+  "dlPopupPlaylistRefresh": {
+    "message": "Refresh preview"
+  },
+  "dlPopupPlaylistSelectAll": {
+    "message": "Select all"
+  },
+  "dlPopupPlaylistSelectionTpl": {
+    "message": "{selected} selected · {shown} shown · {total} total"
+  },
+  "dlPopupPlaylistSelectRequired": {
+    "message": "Select at least one playlist item."
+  },
+  "dlPopupPlaylistUnavailable": {
+    "message": "Playlist preview unavailable."
+  },
   "dlPopupCtaAudio": {
     "message": "下载音频"
   },

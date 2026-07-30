@@ -115,6 +115,28 @@ class NormalizationTests(unittest.TestCase):
         self.assertIsNone(path)
         self.assertEqual(err, "Output folder path is too long.")
 
+    def test_playlist_item_selection_is_bounded_normalized_and_injection_safe(self):
+        items, err = ad.normalize_playlist_items(["5", 1, 3, 3])
+        self.assertEqual(items, [1, 3, 5])
+        self.assertIsNone(err)
+
+        invalid = (
+            [],
+            "1,2",
+            [0],
+            [-1],
+            [True],
+            ["1-3"],
+            ["1,3"],
+            ["1 --exec calc.exe"],
+            list(range(1, 202)),
+        )
+        for value in invalid:
+            with self.subTest(value=value):
+                items, err = ad.normalize_playlist_items(value)
+                self.assertIsNone(items)
+                self.assertTrue(err)
+
 
 class PersistenceTests(unittest.TestCase):
     def test_owned_config_store_uses_injected_persistence_and_rolls_back(self):
@@ -1016,11 +1038,16 @@ class DownloadManagerTests(unittest.TestCase):
                 'https://www.youtube.com/watch?v=plainQueue',
                 section={"start": "1:02.5", "end": "1:05"},
             )
+            playlist_id, playlist_err = manager.start_download(
+                'https://www.youtube.com/playlist?list=PLplaylistQueue',
+                playlist_items=[5, 1, 3, 3],
+            )
             auth_id, auth_err = manager.start_download(
                 'https://www.youtube.com/watch?v=authQueue1',
                 cookies=cookies,
             )
             self.assertIsNone(plain_err)
+            self.assertIsNone(playlist_err)
             self.assertIsNone(auth_err)
 
             persisted = queue_path.read_text(encoding='utf-8')
@@ -1036,6 +1063,10 @@ class DownloadManagerTests(unittest.TestCase):
             self.assertEqual(
                 restored.downloads[plain_id].section,
                 {"start": 62.5, "end": 65.0},
+            )
+            self.assertEqual(
+                restored.downloads[playlist_id].playlist_items,
+                [1, 3, 5],
             )
             self.assertEqual(restored.downloads[auth_id].status, 'needs-auth')
 
@@ -1417,6 +1448,116 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(audio["filesize"], 500)
         self.assertEqual(summary["id"], "abc")
 
+    def test_summarize_ytdlp_playlist_is_bounded_and_ui_safe(self):
+        entries = [
+            {
+                "playlist_index": index,
+                "id": f"video-{index}",
+                "title": f"Video {index}",
+                "channel": "Fixture channel",
+                "duration": "12.9",
+                "availability": "public",
+            }
+            for index in range(1, ad.PLAYLIST_PREVIEW_LIMIT + 2)
+        ]
+        summary = ad.summarize_ytdlp_playlist({
+            "id": "PLfixture",
+            "title": "Fixture playlist",
+            "channel": "Fixture channel",
+            "playlist_count": 275,
+            "entries": entries,
+        })
+
+        self.assertEqual(summary["id"], "PLfixture")
+        self.assertEqual(summary["total"], 275)
+        self.assertTrue(summary["truncated"])
+        self.assertEqual(summary["limit"], ad.PLAYLIST_PREVIEW_LIMIT)
+        self.assertEqual(len(summary["items"]), ad.PLAYLIST_PREVIEW_LIMIT)
+        self.assertEqual(summary["items"][0]["index"], 1)
+        self.assertEqual(summary["items"][0]["duration"], 12)
+        self.assertEqual(summary["items"][-1]["index"], ad.PLAYLIST_PREVIEW_LIMIT)
+
+    def test_playlist_endpoint_requires_auth_youtube_playlist_and_returns_preview(self):
+        token = "a" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+
+        playlist_url = "https://www.youtube.com/playlist?list=PLfixture"
+        self.assertEqual(client.post("/playlist", json={"url": playlist_url}).status_code, 401)
+        rejected = client.post(
+            "/playlist",
+            json={"url": "https://example.com/playlist?list=PLfixture"},
+            headers={"X-Auth-Token": token},
+        )
+        self.assertEqual(rejected.status_code, 400)
+        self.assertEqual(rejected.get_json()["code"], "non-youtube-url")
+
+        preview = {
+            "id": "PLfixture",
+            "title": "Fixture",
+            "total": 2,
+            "truncated": False,
+            "limit": 200,
+            "items": [{"index": 1, "id": "one", "title": "One"}],
+        }
+        with mock.patch.object(manager, "preview_playlist", return_value=(preview, None)):
+            response = client.post(
+                "/playlist",
+                json={"url": playlist_url},
+                headers={"X-Auth-Token": token},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), preview)
+
+    def test_playlist_preview_uses_flat_bounded_probe_and_shared_gate(self):
+        captured = []
+
+        class FakeProc:
+            returncode = 0
+
+            def communicate(self, timeout=None):
+                self.timeout = timeout
+                return json.dumps({
+                    "id": "PLfixture",
+                    "playlist_count": 1,
+                    "entries": [{"id": "one", "title": "One"}],
+                }), ""
+
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        with mock.patch.object(ad, "spawn_ytdlp", side_effect=lambda args, **_kwargs: captured.append(list(args)) or FakeProc()), \
+             mock.patch.object(ad, "probe_po_token_provider", return_value=None), \
+             mock.patch.object(ad, "probe_javascript_runtime", return_value={}):
+            result, err = manager.preview_playlist(
+                "https://www.youtube.com/playlist?list=PLfixture",
+                timeout=7,
+            )
+
+        self.assertIsNone(err)
+        self.assertEqual(result["items"][0]["id"], "one")
+        args = captured[0]
+        self.assertIn("--flat-playlist", args)
+        self.assertIn("--dump-single-json", args)
+        self.assertIn("--skip-download", args)
+        self.assertEqual(
+            args[args.index("--playlist-end") + 1],
+            str(ad.PLAYLIST_PREVIEW_LIMIT + 1),
+        )
+        self.assertNotIn("--yes-playlist", args)
+
+        for _ in range(manager.FORMATS_PROBE_LIMIT):
+            self.assertTrue(manager._formats_gate.acquire(blocking=False))
+        try:
+            result, err = manager.preview_playlist(
+                "https://www.youtube.com/playlist?list=PLfixture"
+            )
+            self.assertIsNone(result)
+            self.assertEqual(err, manager.PLAYLIST_BUSY_MESSAGE)
+        finally:
+            for _ in range(manager.FORMATS_PROBE_LIMIT):
+                manager._formats_gate.release()
+
     def test_formats_endpoint_requires_auth_and_youtube(self):
         token = "a" * 32
         config = FakeConfig({"ServerToken": token})
@@ -1674,9 +1815,11 @@ class ApiSecurityTests(unittest.TestCase):
             "referer": "https://www.youtube.com/",
             "cookies": [],
             "section": {"start": "1:02.5", "end": "1:05"},
+            "playlistItems": ["5", 1, 3, 3],
         }
         validated, err, code = ad.validate_download_request_body(body)
         self.assertEqual(validated["section"], {"start": 62.5, "end": 65.0})
+        self.assertEqual(validated["playlistItems"], [1, 3, 5])
         self.assertIsNone(err)
         self.assertIsNone(code)
 
@@ -1695,6 +1838,16 @@ class ApiSecurityTests(unittest.TestCase):
                     "section": section,
                 })
                 self.assertEqual(code, "invalid-download-section")
+                self.assertTrue(err)
+
+    def test_download_request_body_rejects_invalid_playlist_items(self):
+        for playlist_items in ([], "1-3", [0], [1, "--exec"], list(range(1, 202))):
+            with self.subTest(playlist_items=playlist_items):
+                _validated, err, code = ad.validate_download_request_body({
+                    "url": "https://www.youtube.com/playlist?list=PLfixture",
+                    "playlistItems": playlist_items,
+                })
+                self.assertEqual(code, "invalid-playlist-items")
                 self.assertTrue(err)
 
     def test_download_request_body_rejects_client_supplied_ytdlp_flags(self):
@@ -4430,6 +4583,55 @@ class EndToEndDownloadTests(unittest.TestCase):
         self.assertIn('--ignore-config', captured_args[0])
         self.assertIn('--no-js-runtimes', captured_args[0])
         self.assertIn('deno:C:/Tools/deno.exe', captured_args[0])
+
+    def test_playlist_subset_is_the_only_playlist_selection_passed_to_ytdlp(self):
+        captured_args = []
+        base_factory = self._make_fake_popen([], returncode=0)
+
+        def capture(args, **kwargs):
+            captured_args.append(list(args))
+            return base_factory(args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = ad.DownloadManager(
+                FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir}),
+                FakeHistory(),
+            )
+            download = ad.Download(
+                "dl_playlist_subset",
+                "https://www.youtube.com/playlist?list=PLfixture",
+                output_dir=tmpdir,
+                playlist_items=[1, 3, 5],
+            )
+            download.status = "queued"
+            with mock.patch.object(ad.subprocess, "Popen", capture), \
+                 mock.patch.object(ad, "probe_po_token_provider", return_value=None), \
+                 mock.patch.object(ad, "write_persistent_log", return_value=None):
+                manager._run_download(download)
+
+        self.assertEqual(download.status, "complete")
+        args = captured_args[0]
+        self.assertIn("--yes-playlist", args)
+        self.assertEqual(args[args.index("--playlist-items") + 1], "1,3,5")
+        self.assertNotIn("--playlist-start", args)
+        self.assertNotIn("--playlist-end", args)
+
+    def test_playlist_subset_rejects_video_urls_and_clip_combinations(self):
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        download_id, err = manager.start_download(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            playlist_items=[1],
+        )
+        self.assertIsNone(download_id)
+        self.assertIn("playlist URL", err)
+
+        download_id, err = manager.start_download(
+            "https://www.youtube.com/playlist?list=PLfixture",
+            playlist_items=[1],
+            section={"start": 1, "end": 2},
+        )
+        self.assertIsNone(download_id)
+        self.assertIn("single-video", err)
 
     def test_completed_download_closes_subprocess_stdout(self):
         token = "z" * 32

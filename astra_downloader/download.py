@@ -29,9 +29,10 @@ __all__ = (
     "DOWNLOAD_STALL_TIMEOUT_SECONDS", "DOWNLOAD_WATCHDOG_POLL_SECONDS",
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
-    "summarize_ytdlp_formats",
+    "summarize_ytdlp_formats", "summarize_ytdlp_playlist",
     "ALLOWED_COOKIE_DOMAINS", "build_subprocess_env",
     "DownloadQueueStore", "DOWNLOAD_QUEUE_SCHEMA_VERSION",
+    "PLAYLIST_PREVIEW_LIMIT",
 )
 
 MAX_CONCURRENT = 3
@@ -39,6 +40,7 @@ MAX_QUEUED_TOTAL = 200
 DOWNLOAD_STALL_TIMEOUT_SECONDS = 1800
 DOWNLOAD_WATCHDOG_POLL_SECONDS = 15
 DOWNLOAD_QUEUE_SCHEMA_VERSION = 1
+PLAYLIST_PREVIEW_LIMIT = 200
 DOWNLOAD_RUNNING_STATES = {'queued', 'downloading', 'merging', 'extracting', 'trimming'}
 DOWNLOAD_PENDING_STATES = {'pending', 'paused', 'needs-auth'}
 DOWNLOAD_ACTIVE_STATES = DOWNLOAD_RUNNING_STATES | DOWNLOAD_PENDING_STATES
@@ -384,6 +386,54 @@ def summarize_ytdlp_formats(info):
     }
 
 
+def summarize_ytdlp_playlist(info, limit=PLAYLIST_PREVIEW_LIMIT):
+    """Reduce a flat-playlist probe to a bounded, UI-safe preview."""
+    if not isinstance(info, dict):
+        return {
+            'id': '', 'title': '', 'channel': '', 'total': 0,
+            'truncated': False, 'items': [],
+        }
+    limit = max(1, min(PLAYLIST_PREVIEW_LIMIT, int(limit or PLAYLIST_PREVIEW_LIMIT)))
+    raw_entries = info.get('entries') or []
+    items = []
+    for position, entry in enumerate(raw_entries[:limit], start=1):
+        if not isinstance(entry, dict):
+            continue
+        try:
+            index = int(entry.get('playlist_index') or position)
+        except (TypeError, ValueError, OverflowError):
+            index = position
+        try:
+            duration = max(0, int(float(entry.get('duration') or 0)))
+        except (TypeError, ValueError, OverflowError):
+            duration = 0
+        items.append({
+            'index': max(1, index),
+            'id': str(entry.get('id') or '')[:120],
+            'title': str(entry.get('title') or '(untitled)')[:300],
+            'channel': str(
+                entry.get('channel') or entry.get('uploader') or ''
+            )[:200],
+            'duration': duration,
+            'availability': str(entry.get('availability') or '')[:40],
+        })
+    try:
+        declared_total = max(0, int(info.get('playlist_count') or 0))
+    except (TypeError, ValueError, OverflowError):
+        declared_total = 0
+    observed_total = len(raw_entries)
+    total = max(declared_total, observed_total)
+    return {
+        'id': str(info.get('id') or '')[:120],
+        'title': str(info.get('title') or '(untitled playlist)')[:300],
+        'channel': str(info.get('channel') or info.get('uploader') or '')[:200],
+        'total': total,
+        'truncated': total > limit or observed_total > limit,
+        'limit': limit,
+        'items': items,
+    }
+
+
 def _is_benign_failure_noise(line):
     """True for yt-dlp output lines that must never be surfaced as the failure
     reason. These are informational/warning/progress lines that routinely
@@ -478,7 +528,7 @@ class Download:
     def __init__(self, dl_id, url, audio_only=False, fmt=None, quality='best',
                  output_dir=None, title=None, referer=None, cookies_file=None,
                  requires_auth=False, created_at=None, queue_order=0, section=None,
-                 clock=None):
+                 playlist_items=None, clock=None):
         self._clock = clock or time.time
         self.id = dl_id
         self.url = url
@@ -489,6 +539,7 @@ class Download:
         self.title = title or "Unknown"
         self.referer = referer
         self.section = dict(section) if isinstance(section, dict) else None
+        self.playlist_items = list(playlist_items) if playlist_items else None
         self.cookies_file = cookies_file
         self.requires_auth = bool(requires_auth)
         self._cookies = None
@@ -529,6 +580,8 @@ class Download:
             payload["next_action"] = self.error_action
         if self.section:
             payload["section"] = dict(self.section)
+        if self.playlist_items:
+            payload["playlistItems"] = list(self.playlist_items)
         return payload
 
 
@@ -569,6 +622,8 @@ class DownloadQueueStore:
             'referer': download.referer,
             'requiresAuth': bool(download.requires_auth),
             **({'section': dict(download.section)} if download.section else {}),
+            **({'playlistItems': list(download.playlist_items)}
+               if download.playlist_items else {}),
             'createdAt': float(download.start_time),
             'order': int(download.queue_order),
         } for download in unfinished]
@@ -607,6 +662,7 @@ _REQUIRED_MANAGER_DEPENDENCIES = frozenset({
     'load_json_file',
     'normalize_output_dir',
     'normalize_download_section',
+    'normalize_playlist_items',
     'normalize_url',
     'probe_javascript_runtime',
     'probe_po_token_provider',
@@ -624,6 +680,10 @@ class DownloadManagerCore:
     FORMATS_PROBE_LIMIT = 2
     FORMATS_BUSY_MESSAGE = (
         'Astra Downloader is already looking up formats for other videos. '
+        'Try again in a moment.'
+    )
+    PLAYLIST_BUSY_MESSAGE = (
+        'Astra Downloader is already previewing media for other requests. '
         'Try again in a moment.'
     )
 
@@ -732,6 +792,11 @@ class DownloadManagerCore:
             )
             if section_error:
                 section = None
+            playlist_items, playlist_error = self._dependencies['normalize_playlist_items'](
+                item.get('playlistItems')
+            )
+            if playlist_error:
+                playlist_items = None
             referer, _ = self._dependencies['normalize_url'](item.get('referer')) if item.get('referer') else (None, None)
             dl_id = self._dependencies['clean_text'](item.get('id'), '', 120)
             if not dl_id or dl_id in seen_ids:
@@ -759,6 +824,7 @@ class DownloadManagerCore:
                 created_at=created_at,
                 queue_order=self._next_order,
                 section=section,
+                playlist_items=playlist_items,
             )
             dl.status = 'needs-auth' if requires_auth else 'paused'
             dl.error = (
@@ -992,7 +1058,7 @@ class DownloadManagerCore:
 
     def start_download(self, url, audio_only=False, fmt=None, quality=None,
                        output_dir=None, title=None, referer=None, cookies=None,
-                       section=None):
+                       section=None, playlist_items=None):
         url, err = self._dependencies['normalize_url'](url)
         if err:
             return None, err
@@ -1000,6 +1066,16 @@ class DownloadManagerCore:
         section, section_error = self._dependencies['normalize_download_section'](section)
         if section_error:
             return None, section_error
+        playlist_items, playlist_error = self._dependencies['normalize_playlist_items'](
+            playlist_items
+        )
+        if playlist_error:
+            return None, playlist_error
+        playlist_request = is_playlist_url(url)
+        if playlist_items and not playlist_request:
+            return None, "Playlist item selection requires a playlist URL."
+        if section and playlist_request:
+            return None, "Clip ranges are available for single-video downloads only."
 
         # No update trigger here: firing before the download was enqueued let
         # the updater pass its active_count()==0 idle gate and then race the
@@ -1067,7 +1143,8 @@ class DownloadManagerCore:
                 dl_id = dl.id
                 recovery_previous = (
                     dl.audio_only, dl.format, dl.quality, dl.output_dir,
-                    dl.title, dl.referer, dl.section, dl.requires_auth, dl.status,
+                    dl.title, dl.referer, dl.section, dl.playlist_items,
+                    dl.requires_auth, dl.status,
                     dl.error, dl.error_code, dl.error_advice, dl.error_action,
                 )
                 dl.audio_only = audio_only
@@ -1077,6 +1154,7 @@ class DownloadManagerCore:
                 dl.title = title or dl.title
                 dl.referer = referer
                 dl.section = dict(section) if section else None
+                dl.playlist_items = list(playlist_items) if playlist_items else None
                 dl.requires_auth = True
                 dl._cookies = list(cookies)
                 dl.status = 'pending'
@@ -1100,6 +1178,7 @@ class DownloadManagerCore:
                     requires_auth=bool(cookies),
                     queue_order=self._next_order,
                     section=section,
+                    playlist_items=playlist_items,
                 )
                 dl._cookies = list(cookies) if cookies else None
                 self.downloads[dl_id] = dl
@@ -1109,7 +1188,8 @@ class DownloadManagerCore:
                 else:
                     (
                         dl.audio_only, dl.format, dl.quality, dl.output_dir,
-                        dl.title, dl.referer, dl.section, dl.requires_auth, dl.status,
+                        dl.title, dl.referer, dl.section, dl.playlist_items,
+                        dl.requires_auth, dl.status,
                         dl.error, dl.error_code, dl.error_advice, dl.error_action,
                     ) = recovery_previous
                 dl._cookies = None
@@ -1309,6 +1389,8 @@ class DownloadManagerCore:
             args += ['--cookies', dl.cookies_file]
         if is_playlist:
             args.append('--yes-playlist')
+            if dl.playlist_items:
+                args += ['--playlist-items', ','.join(str(item) for item in dl.playlist_items)]
 
         # Format selection
         if dl.audio_only:
@@ -2130,6 +2212,69 @@ class DownloadManagerCore:
             return None, 'Could not parse yt-dlp output while listing formats.'
         return summarize_ytdlp_formats(info), None
 
+    def preview_playlist(self, url, timeout=60):
+        """Return a bounded flat-playlist preview without downloading media."""
+        url, err = self._dependencies['normalize_url'](url)
+        if err:
+            return None, err
+        if not self._dependencies['is_youtube_url'](url) or not is_playlist_url(url):
+            return None, 'Enter a YouTube playlist URL.'
+        if not self._formats_gate.acquire(blocking=False):
+            return None, self.PLAYLIST_BUSY_MESSAGE
+        try:
+            return self._preview_playlist_gated(url, timeout)
+        finally:
+            self._formats_gate.release()
+
+    def _preview_playlist_gated(self, url, timeout):
+        ytdlp = str(self._dependencies['YTDLP_PATH']())
+        args = [
+            ytdlp, '--ignore-config', '--no-colors', '--no-warnings',
+            '--flat-playlist', '--dump-single-json', '--skip-download',
+            '--playlist-end', str(PLAYLIST_PREVIEW_LIMIT + 1),
+        ]
+        args += self._dependencies['build_youtube_extractor_args'](
+            url, po_token_provider=self._dependencies['probe_po_token_provider'](),
+        )
+        runtime = self._dependencies['probe_javascript_runtime'](
+            configured_runtime=self.config.get('JavaScriptRuntime', 'auto')
+        )
+        args += self._dependencies['build_javascript_runtime_args'](runtime)
+        args.append(url)
+        try:
+            proc = self._dependencies['spawn_ytdlp'](
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                creationflags=self._dependencies['CREATE_NO_WINDOW'],
+                env=self._dependencies['_build_subprocess_env'](),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return None, f'Could not start yt-dlp: {exc}'
+        try:
+            out, errout = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            try:
+                self._dependencies['terminate_process_tree'](proc)
+            except Exception:
+                pass
+            return None, 'Timed out while previewing the playlist.'
+        if proc.returncode != 0:
+            tail = [line.strip() for line in (errout or '').splitlines() if line.strip()]
+            message = next(
+                (line for line in reversed(tail) if not _is_benign_failure_noise(line)),
+                '',
+            )
+            return None, (message or 'yt-dlp could not preview the playlist.')[:240]
+        try:
+            info = json.loads(out)
+        except Exception:  # noqa: BLE001
+            return None, 'Could not parse yt-dlp output while previewing the playlist.'
+        return summarize_ytdlp_playlist(info), None
+
     def exists(self, dl_id):
         """True while the download id is still tracked in the active queue."""
         with self._lock:
@@ -2195,7 +2340,7 @@ _OWNED_EXPORTS = {
     "Download", "build_video_format_args", "is_playlist_url",
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
-    "summarize_ytdlp_formats",
+    "summarize_ytdlp_formats", "summarize_ytdlp_playlist",
     "DOWNLOAD_ACTIVE_STATES", "DOWNLOAD_RUNNING_STATES",
     "DOWNLOAD_PENDING_STATES", "DOWNLOAD_TERMINAL_STATES",
     "DOWNLOAD_RETRYABLE_ERROR_CODES", "MAX_CONCURRENT", "MAX_QUEUED_TOTAL",
@@ -2203,7 +2348,7 @@ _OWNED_EXPORTS = {
     "write_cookies_netscape", "cleanup_stale_cookie_jars",
     "terminate_process_tree", "build_subprocess_env", "ALLOWED_COOKIE_DOMAINS",
     "DownloadQueueStore", "DownloadManager", "DownloadManagerCore",
-    "DOWNLOAD_QUEUE_SCHEMA_VERSION",
+    "DOWNLOAD_QUEUE_SCHEMA_VERSION", "PLAYLIST_PREVIEW_LIMIT",
 }
 _resolve_legacy = make_legacy_resolver(
     name for name in __all__ if name not in _OWNED_EXPORTS

@@ -528,6 +528,7 @@ def create_api(config, dl_manager, history, *, dependencies):
             referer=body.get('referer'),
             cookies=cookies,
             section=body.get('section'),
+            playlist_items=body.get('playlistItems'),
         )
         if err:
             if 'queue is full' in err.lower():
@@ -558,6 +559,45 @@ def create_api(config, dl_manager, history, *, dependencies):
             "status": status_value,
             "capacity": dl_manager.capacity(),
         })
+
+    @api.route('/playlist', methods=['POST'])
+    def playlist():
+        if not check_auth():
+            return cors_response({
+                "error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."
+            }, 401)
+        allowed, retry_after = download_rate_limiter.allow('playlist')
+        if not allowed:
+            return cors_response(
+                {"error": "Too many playlist previews in a short period. Please wait a moment."},
+                429,
+                extra_headers={"Retry-After": str(int(retry_after) + 1)},
+            )
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict) or not isinstance(body.get('url'), str):
+            return cors_response({"error": "Missing playlist URL."}, 400)
+        url, url_err = normalize_url(body['url'])
+        if url_err:
+            return cors_response({"error": url_err}, 400)
+        if not is_youtube_url(url):
+            return cors_response({
+                "error": "Astra Downloader only previews YouTube playlists.",
+                "code": "non-youtube-url",
+            }, 400)
+        result, err = dl_manager.preview_playlist(url)
+        if err:
+            if err == getattr(dl_manager, 'PLAYLIST_BUSY_MESSAGE', None):
+                return cors_response(
+                    {"error": err, "code": "playlist-busy"},
+                    429,
+                    extra_headers={"Retry-After": "5"},
+                )
+            status_code = 400 if 'playlist URL' in err else 502
+            return cors_response({
+                "error": err,
+                "code": "invalid-playlist-url" if status_code == 400 else "playlist-unavailable",
+            }, status_code)
+        return cors_response(result)
 
     @api.route('/formats', methods=['POST'])
     def formats():

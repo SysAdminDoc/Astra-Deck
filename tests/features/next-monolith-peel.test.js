@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const { sources, config } = require('../helpers/source');
 
 function loadFeatureModule(modulePath, namespaceKey) {
@@ -385,7 +386,7 @@ test('downloadUI classified failures render recovery toast and diagnostic code',
     assert.match(diagnostics[0][1], /po-token-required/);
 });
 
-test('downloadUI sends a normalized clip section without exposing yt-dlp flags', async () => {
+test('downloadUI sends reviewed clip and playlist selections without exposing yt-dlp flags', async () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',
         'createDownloadUIFeature'
@@ -408,14 +409,36 @@ test('downloadUI sends a normalized clip section without exposing yt-dlp flags',
         'https://www.youtube.com/watch?v=abcdefghijk',
         false,
         'token',
-        { format: 'mp4', section: { start: 62.5, end: 65 } }
+        {
+            format: 'mp4',
+            section: { start: 62.5, end: 65 },
+            playlistItems: [1, 3, 5],
+        }
     );
 
     const payload = JSON.parse(calls[0].data);
     assert.deepEqual(payload.section, { start: 62.5, end: 65 });
+    assert.deepEqual(payload.playlistItems, [1, 3, 5]);
     assert.equal(payload.format, 'mp4');
     assert.equal(Object.hasOwn(payload, 'args'), false);
     assert.equal(Object.hasOwn(payload, 'downloadSections'), false);
+    assert.equal(Object.hasOwn(payload, 'playlist-items'), false);
+    assert.equal(Object.hasOwn(payload, 'playlistRange'), false);
+});
+
+test('downloadUI playlist chooser uses preview endpoint and canonical subset request', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
+
+    assert.match(source, /MediaDLManager\.baseUrl\(\) \+ '\/playlist'/);
+    assert.match(source, /https:\/\/www\.youtube\.com\/playlist\?list=/);
+    assert.match(source, /opts\.playlistItems = Array\.from\(playlistSelection\)\.sort/);
+    assert.match(source, /if \(!playlistSelection\.size\)/);
+    assert.match(source, /if \(clip\.section\)/);
+    assert.match(source, /playlistList\.setAttribute\('aria-label'/);
+    assert.match(source, /checkbox\.type = 'checkbox'/);
 });
 
 test('downloadUI factory returns all four feature objects', () => {

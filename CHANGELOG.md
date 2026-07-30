@@ -7,6 +7,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Bounded playlist previews and subset downloads.** Playlist-aware extension
+  dialogs can preview up to 200 flat items, choose an explicit subset, and send
+  only normalized item indexes to the authenticated companion. The durable
+  queue preserves that selection and yt-dlp receives one reviewed
+  `--playlist-items` value without exposing arbitrary client flags.
 - **Frame-accurate clip downloads.** The extension download dialog and native
   companion now accept start/end timestamps, validate and persist the range,
   download the complete source through the existing safe yt-dlp path, and
