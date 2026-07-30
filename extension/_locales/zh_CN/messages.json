@@ -531,7 +531,7 @@
     "message": "始终显示进度条"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "当 YouTube 提供自动配音音轨时，尝试切换回原始音轨。尽力而为 — 通过 movie_player getAvailableAudioTracks() / setAudioTrack() 实现（如果可用）。"
+    "message": "当 YouTube 提供自动配音轨道时，通过经过审核的播放器桥接选择原始轨道。"
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "反翻译音轨"
@@ -567,7 +567,7 @@
     "message": "音频平衡"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "存储首选音频语言，无需自动打开 YouTube 设置。通过原生菜单切换音轨时 YouTube 会重新开始播放。"
+    "message": "通过播放器桥接选择首选音频语言，无需打开或点击 YouTube 设置。"
   },
   "feature_audioTrackLanguage_name": {
     "message": "首选音轨语言"
@@ -4072,5 +4072,11 @@
   },
   "aiSummarySaveFailed": {
     "message": "Saving the summary failed — it may disappear after a reload."
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "当首选语言提供音频描述轨道时，优先于标准轨道选择它。"
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "优先选择音频描述"
   }
 }

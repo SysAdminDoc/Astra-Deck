@@ -531,7 +531,7 @@
     "message": "إظهار شريط التقدم دائماً"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "عندما يقدّم YouTube مساراً صوتياً مُدبلجاً تلقائياً، يحاول الرجوع إلى الأصلي. أفضل جهد — يعمل عبر movie_player getAvailableAudioTracks() / setAudioTrack() عند توفره."
+    "message": "عندما يوفّر YouTube مساراً مدبلجاً تلقائياً، حدّد المسار الأصلي عبر جسر المشغّل المُراجع."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "منع ترجمة المسار الصوتي"
@@ -567,7 +567,7 @@
     "message": "توازن الصوت"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "يحفظ لغة الصوت المفضلة دون فتح إعدادات YouTube تلقائياً. يعيد YouTube تشغيل الفيديو عند تبديل المسارات الصوتية عبر القائمة الأصلية."
+    "message": "حدّد لغة الصوت المفضلة عبر جسر المشغّل دون فتح إعدادات YouTube أو النقر عليها."
   },
   "feature_audioTrackLanguage_name": {
     "message": "لغة المسار الصوتي المفضلة"
@@ -4072,5 +4072,11 @@
   },
   "aiSummarySaveFailed": {
     "message": "Saving the summary failed — it may disappear after a reload."
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "عندما تتوفر للغة المفضلة مسار وصف صوتي، حدّده قبل المسار القياسي."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "تفضيل الوصف الصوتي"
   }
 }

@@ -534,7 +534,7 @@
     "message": "Always Show Progress Bar"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
+    "message": "When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-Translate Audio Track"
@@ -570,10 +570,16 @@
     "message": "Audio Pan"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu."
+    "message": "Select your preferred audio language through the player bridge without opening or clicking YouTube settings."
   },
   "feature_audioTrackLanguage_name": {
     "message": "Preferred Audio Track Language"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "When the preferred language offers an audio-description track, select it before the standard track."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "Prefer Descriptive Audio"
   },
   "feature_autoClosePopups_desc": {
     "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"

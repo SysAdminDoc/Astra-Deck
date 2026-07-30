@@ -1692,6 +1692,58 @@ const AI_SUMMARY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(AI_SUMMARY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const AUDIO_TRACK_TRANSLATIONS = {
+  de: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'Wenn YouTube eine automatisch synchronisierte Audiospur bereitstellt, wählen Sie über die geprüfte Player-Brücke das Original aus.',
+    'Prefer Descriptive Audio': 'Audiodeskription bevorzugen',
+    'When the preferred language offers an audio-description track, select it before the standard track.': 'Wenn für die bevorzugte Sprache eine Audiodeskriptionsspur verfügbar ist, wählen Sie sie vor der Standardspur aus.'
+  },
+  es: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Selecciona tu idioma de audio preferido mediante el puente del reproductor sin abrir ni pulsar la configuración de YouTube.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'Cuando YouTube ofrezca una pista doblada automáticamente, selecciona la original mediante el puente revisado del reproductor.',
+    'Prefer Descriptive Audio': 'Preferir audiodescripción',
+    'When the preferred language offers an audio-description track, select it before the standard track.': 'Cuando el idioma preferido ofrezca una pista de audiodescripción, selecciónala antes que la pista estándar.'
+  },
+  fr: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Sélectionnez votre langue audio préférée via la passerelle du lecteur, sans ouvrir ni cliquer sur les paramètres YouTube.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'Lorsque YouTube propose une piste doublée automatiquement, sélectionnez l’original via la passerelle vérifiée du lecteur.',
+    'Prefer Descriptive Audio': 'Préférer l’audiodescription',
+    'When the preferred language offers an audio-description track, select it before the standard track.': 'Lorsque la langue préférée propose une piste d’audiodescription, sélectionnez-la avant la piste standard.'
+  },
+  it: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Seleziona la lingua audio preferita tramite il bridge del lettore senza aprire o fare clic sulle impostazioni di YouTube.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'Quando YouTube fornisce una traccia doppiata automaticamente, seleziona l’originale tramite il bridge verificato del lettore.',
+    'Prefer Descriptive Audio': 'Preferisci audiodescrizione',
+    'When the preferred language offers an audio-description track, select it before the standard track.': 'Quando la lingua preferita offre una traccia con audiodescrizione, selezionala prima della traccia standard.'
+  },
+  pt_BR: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Selecione seu idioma de áudio preferido pela ponte do player sem abrir nem clicar nas configurações do YouTube.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'Quando o YouTube oferecer uma faixa dublada automaticamente, selecione a original pela ponte revisada do player.',
+    'Prefer Descriptive Audio': 'Preferir audiodescrição',
+    'When the preferred language offers an audio-description track, select it before the standard track.': 'Quando o idioma preferido oferecer uma faixa de audiodescrição, selecione-a antes da faixa padrão.'
+  },
+  ru: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Выбирайте предпочитаемый язык аудио через мост плеера, не открывая и не нажимая настройки YouTube.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'Когда YouTube предлагает автоматически дублированную дорожку, выбирайте оригинал через проверенный мост плеера.',
+    'Prefer Descriptive Audio': 'Предпочитать аудиодескрипцию',
+    'When the preferred language offers an audio-description track, select it before the standard track.': 'Если для предпочитаемого языка доступна дорожка с аудиодескрипцией, выбирайте её вместо стандартной дорожки.'
+  },
+  ja: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'プレーヤーブリッジを使用して、YouTube の設定を開いたりクリックしたりせずに優先する音声言語を選択します。',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'YouTube が自動吹き替え音声を提供する場合、検証済みのプレーヤーブリッジを介してオリジナル音声を選択します。',
+    'Prefer Descriptive Audio': '音声解説を優先',
+    'When the preferred language offers an audio-description track, select it before the standard track.': '優先する言語に音声解説トラックがある場合は、標準トラックより先に選択します。'
+  },
+  ko: {
+    'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': '플레이어 브리지를 통해 YouTube 설정을 열거나 클릭하지 않고 선호하는 오디오 언어를 선택합니다.',
+    'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.': 'YouTube에서 자동 더빙 트랙을 제공하면 검토된 플레이어 브리지를 통해 원본을 선택합니다.',
+    'Prefer Descriptive Audio': '화면 해설 오디오 우선',
+    'When the preferred language offers an audio-description track, select it before the standard track.': '선호하는 언어로 화면 해설 트랙이 제공되면 표준 트랙보다 먼저 선택합니다.'
+  }
+};
+for (const [locale, messages] of Object.entries(AUDIO_TRACK_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

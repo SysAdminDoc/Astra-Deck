@@ -375,8 +375,8 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
     assert.deepEqual(
         mainEntry.js,
-        ['core/resource-unlock.js', 'core/player.js', 'ytkit-main.js'],
-        'resource unlock and player helpers must load before ytkit-main.js in MAIN world'
+        ['core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'ytkit-main.js'],
+        'resource unlock, player, and audio helpers must load before ytkit-main.js in MAIN world'
     );
 
     const playerCore = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'player.js'), 'utf8');
@@ -417,7 +417,7 @@ test('player-facing features schedule through the shared player task manager', (
     }
 });
 
-test('audio track language does not drive the native player settings menu', () => {
+test('audio track language delegates to the MAIN bridge without driving native menus', () => {
     const start = ytkitSource.indexOf("id: 'audioTrackLanguage'");
     // Bound the slice to the next feature object, not the end of the array —
     // otherwise later features unrelated to audioTrackLanguage pollute the
@@ -429,13 +429,13 @@ test('audio track language does not drive the native player settings menu', () =
 
     assert.match(
         block,
-        /without opening YouTube settings automatically/,
-        'Feature description should state that it does not open YouTube settings automatically'
+        /data-ytkit-audio-language/,
+        'Feature should publish the requested language through the reviewed bridge'
     );
     assert.match(
         block,
-        /Automatic audio track switching skipped/,
-        'Feature should log that automatic switching is skipped instead of driving native menus'
+        /data-ytkit-audio-description/,
+        'Feature should publish the optional descriptive-audio preference'
     );
     assert.doesNotMatch(
         block,
@@ -3720,16 +3720,22 @@ test('store-safe manifest makes SponsorBlock and DeArrow a runtime optional host
     );
 });
 
-test('antiTranslateAudioTrack uses movie_player.setAudioTrack and caps retries', () => {
+test('antiTranslateAudioTrack delegates original selection to the MAIN player bridge', () => {
     const start = ytkitSource.indexOf("id: 'antiTranslateAudioTrack'");
     assert.ok(start > -1, 'antiTranslateAudioTrack must exist');
     const block = ytkitSource.slice(start, start + 5000);
-    assert.match(block, /movie\.getAvailableAudioTracks/,
-        'must call getAvailableAudioTracks');
-    assert.match(block, /movie\.setAudioTrack/,
-        'must call setAudioTrack with the chosen track');
-    assert.match(block, /_MAX_ATTEMPTS:\s*5/,
-        'must cap retry attempts at 5');
+    assert.match(block, /data-ytkit-audio-original/,
+        'must request original audio through the reviewed MAIN bridge');
+    assert.doesNotMatch(block, /window\.movie_player|\.ytp-settings-button|\.click\(/,
+        'must not access isolated-world player globals or automate native menus');
+    const mainSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
+        'utf8'
+    );
+    assert.match(mainSource, /createAudioTrackBridge/,
+        'MAIN-world runtime must install the shared audio-track bridge');
+    assert.match(mainSource, /playerTaskManager/,
+        'MAIN-world audio selection must use the shared player task manager');
 });
 
 test('monetizationIndicator paints exactly one pill and removes it on destroy', () => {
@@ -5151,10 +5157,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Search-while-watching adds one extension-only opt-in (408 → 409).
     // v4.49.7 moved aiSummaryArtifactsData to the top-level
     // ytkit-ai-summaries storage key (416 → 415).
+    // v4.50.8 added the extension-only descriptive-audio preference
+    // alongside the existing preferred-language selector (416 → 417).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 416,
-        'SETTINGS_SCHEMA must cover all 416 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 417,
+        'SETTINGS_SCHEMA must cover all 417 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

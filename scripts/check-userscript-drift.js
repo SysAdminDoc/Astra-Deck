@@ -98,6 +98,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     audioNormalization: 'intentional-extension-only',
     audioPan: 'intentional-extension-only',
     audioTrackLanguage: 'intentional-extension-only',
+    preferDescriptiveAudio: 'intentional-extension-only',
     autoDismissContentWarning: 'not-yet-ported',
     autoExitFullscreen: 'intentional-extension-only',
     autoSubtitlesWhenMuted: 'intentional-extension-only',

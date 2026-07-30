@@ -534,7 +534,7 @@
     "message": "Fortschrittsbalken immer anzeigen"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "Wenn YouTube eine automatisch synchronisierte Audiospur liefert, wird versucht, zur Originalspur zurückzuwechseln. Best-Effort — funktioniert über movie_player getAvailableAudioTracks() / setAudioTrack(), sofern vorhanden."
+    "message": "Wenn YouTube eine automatisch synchronisierte Audiospur bereitstellt, wählen Sie über die geprüfte Player-Brücke das Original aus."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-Übersetzung Audiospur"
@@ -570,10 +570,16 @@
     "message": "Audio-Balance"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Speichert die bevorzugte Audiosprache, ohne die YouTube-Einstellungen automatisch zu öffnen. YouTube startet die Wiedergabe neu, wenn Skripte Audiospuren über das native Menü wechseln."
+    "message": "Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken."
   },
   "feature_audioTrackLanguage_name": {
     "message": "Bevorzugte Audiospursprache"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "Wenn für die bevorzugte Sprache eine Audiodeskriptionsspur verfügbar ist, wählen Sie sie vor der Standardspur aus."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "Audiodeskription bevorzugen"
   },
   "feature_autoClosePopups_desc": {
     "message": "Schließt automatisch Cookie-Banner, Umfragen und andere YouTube-Popups"

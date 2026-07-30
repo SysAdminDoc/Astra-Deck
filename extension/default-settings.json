@@ -514,6 +514,7 @@
   "transcriptAiTarget": "notebooklm",
   "audioTrackLanguage": false,
   "preferredAudioLang": "en",
+  "preferDescriptiveAudio": false,
   "notifyAutoDubbedAudio": false,
   "sleepTimer": false,
   "restoreNativeYouTubeUi": false,

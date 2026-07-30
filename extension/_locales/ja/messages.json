@@ -534,7 +534,7 @@
     "message": "プログレスバーを常時表示"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "YouTube が自動吹き替え音声トラックを配信した場合、元の音声に切り替えを試みます。ベストエフォート — movie_player の getAvailableAudioTracks() / setAudioTrack() を使用。"
+    "message": "YouTube が自動吹き替え音声を提供する場合、検証済みのプレーヤーブリッジを介してオリジナル音声を選択します。"
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "音声トラック翻訳防止"
@@ -570,10 +570,16 @@
     "message": "オーディオパン"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "YouTube の設定を開かずに優先音声言語を保存します。スクリプトがネイティブメニューから音声トラックを切り替えると、YouTube は再生を再開します。"
+    "message": "プレーヤーブリッジを使用して、YouTube の設定を開いたりクリックしたりせずに優先する音声言語を選択します。"
   },
   "feature_audioTrackLanguage_name": {
     "message": "優先音声トラック言語"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "優先する言語に音声解説トラックがある場合は、標準トラックより先に選択します。"
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "音声解説を優先"
   },
   "feature_autoClosePopups_desc": {
     "message": "Cookie 同意、アンケート、その他の YouTube ポップアップを自動的に閉じる"

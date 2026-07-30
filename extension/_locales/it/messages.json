@@ -534,7 +534,7 @@
     "message": "Mostra sempre la barra di avanzamento"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "Quando YouTube serve una traccia audio doppiata automaticamente, tenta di tornare all'originale. Approssimativo -- funziona tramite movie_player getAvailableAudioTracks() / setAudioTrack() quando presente."
+    "message": "Quando YouTube fornisce una traccia doppiata automaticamente, seleziona l’originale tramite il bridge verificato del lettore."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-traduzione traccia audio"
@@ -570,10 +570,16 @@
     "message": "Bilanciamento audio"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Memorizza la lingua audio preferita senza aprire automaticamente le impostazioni di YouTube. YouTube riavvia la riproduzione quando gli script cambiano le tracce audio tramite il menu nativo."
+    "message": "Seleziona la lingua audio preferita tramite il bridge del lettore senza aprire o fare clic sulle impostazioni di YouTube."
   },
   "feature_audioTrackLanguage_name": {
     "message": "Lingua traccia audio preferita"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "Quando la lingua preferita offre una traccia con audiodescrizione, selezionala prima della traccia standard."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "Preferisci audiodescrizione"
   },
   "feature_autoClosePopups_desc": {
     "message": "Chiude automaticamente il consenso dei cookie, i sondaggi e altri popup di YouTube"

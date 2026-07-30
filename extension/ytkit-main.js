@@ -393,7 +393,30 @@
 })();
 
     // ──────────────────────────────────────────────────────────────────
-    // Feature 3+4: Shared audio processing graph
+    // Feature 3: Audio-track preference bridge
+    // ──────────────────────────────────────────────────────────────────
+    // Audio-track APIs are page-owned and are not reliably visible from an
+    // MV3 content script's ISOLATED world. The content runtime writes only
+    // reviewed, bounded attributes; this MAIN-world bridge performs the
+    // player call through the same route-aware retry manager as quality.
+(function() {
+    'use strict';
+    var selection = globalThis.YTKitCore && globalThis.YTKitCore.audioTrackSelection;
+    if (!selection || typeof selection.createAudioTrackBridge !== 'function') return;
+
+    var bridge = selection.createAudioTrackBridge({
+        document: document,
+        taskManager: globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager
+    });
+    var attrs = selection.ATTRS;
+    _obsRegister([attrs.language, attrs.descriptive, attrs.original], function() {
+        bridge.sync('attribute');
+    });
+    bridge.sync('init');
+})();
+
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 4+5: Shared audio processing graph
     // ──────────────────────────────────────────────────────────────────
     // Single AudioContext for ALL audio features (mono-to-stereo,
     // volume boost, audio normalization). createMediaElementSource is

@@ -74,7 +74,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Subscription list/compact view and loaded-only ordering add 3 preferences (96 bytes).
     // v4.49.7 moved the AI summary archive to the top-level
     // ytkit-ai-summaries key (-28 bytes from the settings bag).
-    assert.equal(assessment.totalBytes, 179475);
+    // v4.50.8 descriptive-audio preference adds 31 bytes.
+    assert.equal(assessment.totalBytes, 179506);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

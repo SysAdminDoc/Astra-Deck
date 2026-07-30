@@ -534,7 +534,7 @@
     "message": "Всегда показывать полосу прогресса"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "Когда YouTube подставляет автоматически дублированную аудиодорожку, попытаться переключиться на оригинальную. Наилучшие усилия — работает через movie_player getAvailableAudioTracks() / setAudioTrack() при наличии."
+    "message": "Когда YouTube предлагает автоматически дублированную дорожку, выбирайте оригинал через проверенный мост плеера."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "Антиперевод аудиодорожки"
@@ -570,10 +570,16 @@
     "message": "Панорамирование"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Сохраняет предпочтительный язык аудио без автоматического открытия настроек YouTube. YouTube перезапускает воспроизведение при переключении аудиодорожки через встроенное меню."
+    "message": "Выбирайте предпочитаемый язык аудио через мост плеера, не открывая и не нажимая настройки YouTube."
   },
   "feature_audioTrackLanguage_name": {
     "message": "Предпочтительный язык аудиодорожки"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "Если для предпочитаемого языка доступна дорожка с аудиодескрипцией, выбирайте её вместо стандартной дорожки."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "Предпочитать аудиодескрипцию"
   },
   "feature_autoClosePopups_desc": {
     "message": "Автоматически закрывает согласие на cookie, опросы и другие всплывающие окна YouTube"
