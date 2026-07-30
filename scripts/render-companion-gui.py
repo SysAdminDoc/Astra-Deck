@@ -17,6 +17,7 @@ CAPTURE_NAMES = (
     "dashboard-online",
     "dashboard-error-degraded",
     "downloads-active-pending",
+    "downloads-clipboard-staged",
     "downloads-recovery-terminal",
     "history-populated",
     "history-cleared-undo",
@@ -331,7 +332,10 @@ def main():
 
         def capture_download_state(window, manager):
             seed_download_matrix(manager)
-            if scenario == "downloads-recovery-terminal":
+            if scenario == "downloads-clipboard-staged":
+                manager.downloads = {}
+                manager._running_ids.clear()
+            elif scenario == "downloads-recovery-terminal":
                 manager.downloads = {
                     dl_id: manager.downloads[dl_id]
                     for dl_id in ("paused", "needsauth", "failed", "complete")
@@ -345,7 +349,27 @@ def main():
             window._downloads_signature = None
             window._update_ui()
             select_page(window, "Downloads")
-            if scenario == "downloads-active-pending":
+            if scenario == "downloads-clipboard-staged":
+                window.config.set("ClipboardLinkGrabber", True)
+                window.tray.hide()
+                window._handle_clipboard_change(
+                    "https://www.youtube.com/watch?v=clipboard01"
+                )
+                app.processEvents()
+                scroll_current_page_to_top(window)
+                assert_visible_text(
+                    window,
+                    {
+                        "Copied YouTube link staged. Review the options, then choose Add to queue.",
+                    },
+                )
+                if window.quick_download_url.text() != (
+                    "https://www.youtube.com/watch?v=clipboard01"
+                ):
+                    raise RuntimeError("Clipboard fixture did not stage the copied URL")
+                if manager.downloads:
+                    raise RuntimeError("Clipboard fixture enqueued a download without confirmation")
+            elif scenario == "downloads-active-pending":
                 scroll_current_page_to_top(window)
                 assert_visible_text(window, {"Downloading documentary", "Queued lecture"})
             else:

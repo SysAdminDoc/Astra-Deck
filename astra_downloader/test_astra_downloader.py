@@ -5779,6 +5779,21 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(_config.sanitize_config({"DownloadRetries": -5})["DownloadRetries"], 0)
         self.assertEqual(_config.sanitize_config({"DownloadRetries": 999})["DownloadRetries"], 50)
 
+    def test_clipboard_link_grabber_is_opt_in_and_boolean_sanitized(self):
+        import config as _config
+        self.assertFalse(_config.DEFAULT_CONFIG["ClipboardLinkGrabber"])
+        self.assertFalse(_config.sanitize_config({})["ClipboardLinkGrabber"])
+        self.assertTrue(
+            _config.sanitize_config({"ClipboardLinkGrabber": "yes"})[
+                "ClipboardLinkGrabber"
+            ]
+        )
+        self.assertFalse(
+            _config.sanitize_config({"ClipboardLinkGrabber": "invalid"})[
+                "ClipboardLinkGrabber"
+            ]
+        )
+
     def test_normalize_output_template_allows_safe_and_rejects_unsafe(self):
         import config as _config
         n = _config.normalize_output_template
@@ -5929,6 +5944,81 @@ class TrayCompletionNotifyTests(unittest.TestCase):
         self.assertIn("a", win._seen_complete)
         ad.MainWindow._notify_completed_downloads(win, [self._dl("b", "downloading")])
         self.assertNotIn("a", win._seen_complete, "reclaimed ids are pruned so the set can't grow")
+
+
+class ClipboardLinkGrabberTests(unittest.TestCase):
+    """Clipboard capture stages reviewed YouTube URLs and never enqueues them."""
+
+    class _TextWidget:
+        def __init__(self):
+            self.value = ""
+            self.visible = False
+            self.properties = {}
+
+        def setText(self, value):
+            self.value = value
+
+        def text(self):
+            return self.value
+
+        def setProperty(self, key, value):
+            self.properties[key] = value
+
+        def show(self):
+            self.visible = True
+
+    def _window(self, enabled=True):
+        messages = []
+        logs = []
+        window = types.SimpleNamespace(
+            config=FakeConfig({"ClipboardLinkGrabber": enabled}),
+            _clipboard_last_seen="",
+            _clipboard_staged_url="",
+            _dependencies={
+                "normalize_url": ad.normalize_url,
+                "is_youtube_url": ad.is_youtube_url,
+            },
+            quick_download_url=self._TextWidget(),
+            quick_download_status=self._TextWidget(),
+            _append_log=logs.append,
+            _value=lambda key: ad.APP_NAME if key == "APP_NAME" else None,
+            tray=types.SimpleNamespace(showMessage=lambda *args: messages.append(args)),
+        )
+        return window, messages, logs
+
+    def test_disabled_grabber_ignores_youtube_url(self):
+        window, messages, logs = self._window(enabled=False)
+        ad.MainWindow._handle_clipboard_change(
+            window, "https://youtu.be/abcdefghijk"
+        )
+        self.assertEqual(window.quick_download_url.text(), "")
+        self.assertEqual(messages, [])
+        self.assertEqual(logs, [])
+
+    def test_enabled_grabber_stages_only_youtube_and_deduplicates(self):
+        import gui as gui_module
+
+        window, messages, logs = self._window()
+        with mock.patch.object(gui_module, "repolish"):
+            ad.MainWindow._handle_clipboard_change(
+                window, "https://example.com/watch?v=abcdefghijk"
+            )
+            ad.MainWindow._handle_clipboard_change(
+                window, "https://youtube.com.evil/watch?v=abcdefghijk"
+            )
+            self.assertEqual(window.quick_download_url.text(), "")
+
+            url = "https://www.youtube.com/watch?v=abcdefghijk"
+            ad.MainWindow._handle_clipboard_change(window, f"  {url}  ")
+            ad.MainWindow._handle_clipboard_change(window, url)
+
+        self.assertEqual(window.quick_download_url.text(), url)
+        self.assertEqual(window._clipboard_staged_url, url)
+        self.assertTrue(window.quick_download_status.visible)
+        self.assertEqual(window.quick_download_status.properties["state"], "success")
+        self.assertIn("Review the options", window.quick_download_status.text())
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(logs, ["Staged a copied YouTube link for review."])
 
 
 class CompanionUpdateEndpointTests(unittest.TestCase):

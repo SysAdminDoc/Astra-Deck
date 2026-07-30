@@ -7,6 +7,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Opt-in clipboard link staging.** Astra Downloader can watch clipboard
+  changes for strict YouTube URLs, stage each unique match in Quick download,
+  and prompt for review without ever starting a download automatically.
+  Non-YouTube content is ignored and the privacy-sensitive watcher is off by
+  default.
 - **Bounded playlist previews and subset downloads.** Playlist-aware extension
   dialogs can preview up to 200 flat items, choose an explicit subset, and send
   only normalized item indexes to the authenticated companion. The durable
