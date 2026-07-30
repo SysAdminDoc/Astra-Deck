@@ -758,6 +758,7 @@ class MainWindowCore(QMainWindow):
         self._history_offset = 0
         self._history_page_size = 50
         self._downloads_signature = None
+        self._download_widgets = {}
         self.log_message.connect(self._append_log)
         self.instance_command.connect(self._handle_instance_command)
         self.tools_update_finished.connect(self._finish_ytdlp_update)
@@ -1279,6 +1280,7 @@ class MainWindowCore(QMainWindow):
         self.downloads_list_layout.setContentsMargins(0, 0, 0, 0)
         self.downloads_list_layout.setSpacing(10)
         scroll.setWidget(content)
+        self.downloads_scroll = scroll
         layout.addWidget(scroll, 1)
         self.tabs.addTab(page, "Downloads")
 
@@ -1963,11 +1965,86 @@ class MainWindowCore(QMainWindow):
             elif item.layout():
                 self._clear_layout(item.layout())
 
+    def _download_card_structure(self, dl, recent=False):
+        """Return the widget structure needed for a download's current state."""
+        if recent:
+            if dl.status == "failed" and dl.error_code in self._value(
+                    'DOWNLOAD_RETRYABLE_ERROR_CODES'):
+                action = "retry"
+            elif dl.status == "complete" and dl.filename:
+                action = "show"
+            else:
+                action = "none"
+            phase = "recent"
+        elif dl.status in self._value('DOWNLOAD_RUNNING_STATES'):
+            action = "cancel"
+            phase = "running"
+        elif dl.status in self._value('DOWNLOAD_PENDING_STATES'):
+            action = (
+                "auth-cancel" if dl.status == "needs-auth"
+                else "resume-cancel" if dl.status == "paused"
+                else "reorder-cancel"
+            )
+            phase = "pending"
+        else:
+            action = "none"
+            phase = "other"
+        return recent, phase, action, bool(dl.error and dl.error_advice)
+
+    def _download_meta_text(self, dl):
+        meta_parts = []
+        if dl.status in ("downloading", "merging", "extracting"):
+            meta_parts.append(f"{dl.progress:.1f}%")
+        if dl.speed:
+            meta_parts.append(dl.speed)
+        if dl.eta:
+            meta_parts.append(f"ETA {dl.eta}")
+        if dl.format:
+            meta_parts.append(dl.format.upper())
+        if dl.quality:
+            meta_parts.append(str(dl.quality))
+        if dl.error:
+            meta_parts.append(dl.error)
+        elif dl.filename:
+            meta_parts.append(Path(dl.filename).name)
+        return "  /  ".join(meta_parts) if meta_parts else dl.url
+
+    def _update_download_card(self, card, dl):
+        """Patch volatile card fields without replacing the focused widget."""
+        refs = card._astra_refs
+        card_state = dl.status if dl.status in ("failed", "complete") else ""
+        if card.property("state") != card_state:
+            card.setProperty("state", card_state)
+            repolish(card)
+
+        refs["title"].setText(
+            dl.title if dl.title and dl.title != "Unknown"
+            else "Preparing download"
+        )
+        state_label = refs["state"]
+        state_label.setText(f"\u25cf  {human_status(dl.status)}")
+        tone = download_status_tone(dl.status)
+        if state_label.property("tone") != tone:
+            state_label.setProperty("tone", tone)
+            repolish(state_label)
+
+        progress = refs.get("progress")
+        if progress is not None:
+            progress.setValue(int(min(max(dl.progress, 0), 100)))
+        refs["meta"].setText(self._download_meta_text(dl))
+
+        recovery = refs.get("recovery")
+        if recovery is not None:
+            recovery_text = dl.error_advice
+            if dl.error_action:
+                recovery_text = f"{recovery_text}\nNext: {dl.error_action}"
+            recovery.setText(recovery_text)
+
     def _download_card(self, dl, recent=False):
         card = QFrame()
         card.setProperty("class", "download")
-        if dl.status in ("failed", "complete"):
-            card.setProperty("state", dl.status)
+        card.setProperty("downloadId", dl.id)
+        card.setObjectName(f"download_{dl.id}")
         card_l = QVBoxLayout(card)
         card_l.setContentsMargins(16, 13, 16, 13)
         card_l.setSpacing(9)
@@ -1975,7 +2052,8 @@ class MainWindowCore(QMainWindow):
         top = QHBoxLayout()
         title = make_label(dl.title if dl.title and dl.title != "Unknown" else "Preparing download", "fieldLabel", word_wrap=True)
         top.addWidget(title, 1)
-        top.addWidget(make_state_label(human_status(dl.status), download_status_tone(dl.status)))
+        state_label = make_state_label(human_status(dl.status), download_status_tone(dl.status))
+        top.addWidget(state_label)
         if not recent and dl.status in self._value('DOWNLOAD_PENDING_STATES'):
             if dl.status != 'needs-auth':
                 btn_up = self._make_tool_button("Up", "ghost")
@@ -2012,6 +2090,7 @@ class MainWindowCore(QMainWindow):
             top.addWidget(btn_show)
         card_l.addLayout(top)
 
+        bar = None
         if dl.status in self._value('DOWNLOAD_RUNNING_STATES'):
             bar = QProgressBar()
             bar.setRange(0, 100)
@@ -2019,29 +2098,110 @@ class MainWindowCore(QMainWindow):
             bar.setTextVisible(False)
             card_l.addWidget(bar)
 
-        meta_parts = []
-        if dl.status in ("downloading", "merging", "extracting"):
-            meta_parts.append(f"{dl.progress:.1f}%")
-        if dl.speed:
-            meta_parts.append(dl.speed)
-        if dl.eta:
-            meta_parts.append(f"ETA {dl.eta}")
-        if dl.format:
-            meta_parts.append(dl.format.upper())
-        if dl.quality:
-            meta_parts.append(str(dl.quality))
-        if dl.error:
-            meta_parts.append(dl.error)
-        elif dl.filename:
-            meta_parts.append(Path(dl.filename).name)
-        meta = make_label("  /  ".join(meta_parts) if meta_parts else dl.url, "fieldHint", word_wrap=True)
+        meta = make_label(self._download_meta_text(dl), "fieldHint", word_wrap=True)
         card_l.addWidget(meta)
+        recovery_label = None
         if dl.error and dl.error_advice:
             recovery = dl.error_advice
             if dl.error_action:
                 recovery = f"{recovery}\nNext: {dl.error_action}"
-            card_l.addWidget(make_label(recovery, "errorCallout", word_wrap=True))
+            recovery_label = make_label(recovery, "errorCallout", word_wrap=True)
+            card_l.addWidget(recovery_label)
+        card._astra_structure = self._download_card_structure(dl, recent)
+        card._astra_refs = {
+            "title": title,
+            "state": state_label,
+            "progress": bar,
+            "meta": meta,
+            "recovery": recovery_label,
+        }
+        self._update_download_card(card, dl)
         return card
+
+    def _reconcile_download_list(self, active, pending, recent):
+        """Key the queue layout by download id and retain unchanged widgets."""
+        layout = self.downloads_list_layout
+        scroll_bar = self.downloads_scroll.verticalScrollBar()
+        scroll_value = scroll_bar.value()
+        focused = QApplication.focusWidget()
+        focused_entry = next((
+            (key, widget) for key, widget in self._download_widgets.items()
+            if focused is not None
+            and (focused is widget or widget.isAncestorOf(focused))
+        ), (None, None))
+        focused_key, focused_owner = focused_entry
+        desired = []
+
+        def retain(key, factory):
+            widget = self._download_widgets.get(key)
+            if widget is None:
+                widget = factory()
+                self._download_widgets[key] = widget
+            desired.append((key, widget))
+            return widget
+
+        if not active and not pending and not recent:
+            retain(("empty",), lambda: make_empty_state(
+                "Queue is clear",
+                "Downloads sent from Astra Deck appear here.",
+                "Open dashboard",
+                lambda: self._nav_click("Dashboard"),
+            ))
+        for section_key, section_title, downloads, is_recent in (
+            ("active", "In progress", active, False),
+            ("pending", "Pending", pending, False),
+            ("recent", "Recent activity", recent[:8], True),
+        ):
+            if not downloads:
+                continue
+            retain(("section", section_key), lambda title=section_title: make_section_label(title))
+            for dl in downloads:
+                key = ("download", dl.id)
+                card = self._download_widgets.get(key)
+                structure = self._download_card_structure(dl, is_recent)
+                if card is None or getattr(card, "_astra_structure", None) != structure:
+                    if card is not None:
+                        layout.removeWidget(card)
+                        card.deleteLater()
+                    card = self._download_card(dl, recent=is_recent)
+                    self._download_widgets[key] = card
+                else:
+                    self._update_download_card(card, dl)
+                desired.append((key, card))
+
+        def make_spacer():
+            spacer = QWidget()
+            spacer.setObjectName("downloads_list_spacer")
+            spacer.setSizePolicy(
+                QSizePolicy.Policy.Preferred,
+                QSizePolicy.Policy.Expanding,
+            )
+            return spacer
+
+        retain(("spacer",), make_spacer)
+        desired_keys = {key for key, _widget in desired}
+        for key in tuple(self._download_widgets):
+            if key in desired_keys:
+                continue
+            widget = self._download_widgets.pop(key)
+            layout.removeWidget(widget)
+            widget.deleteLater()
+
+        for index, (_key, widget) in enumerate(desired):
+            item = layout.itemAt(index)
+            if item is not None and item.widget() is widget:
+                continue
+            layout.removeWidget(widget)
+            layout.insertWidget(index, widget)
+
+        layout.activate()
+        scroll_bar.setValue(min(scroll_value, scroll_bar.maximum()))
+        if (
+            focused_key in desired_keys
+            and focused is not None
+            and self._download_widgets.get(focused_key) is focused_owner
+        ):
+            focused.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _notify_completed_downloads(self, downloads):
         """Raise a one-shot tray notification when a download finishes while
@@ -2120,34 +2280,15 @@ class MainWindowCore(QMainWindow):
         )
         signature = tuple(
             (d.id, d.status, d.queue_order, round(d.progress, 1), d.speed, d.eta,
-             d.title, d.error, d.filename)
+             d.title, d.error, d.error_code, d.error_advice, d.error_action,
+             d.filename, d.format, d.quality, d.url)
             for d in active + pending + recent[:8]
         ) + ((capacity['intakePaused'], capacity['total']),)
         if signature == self._downloads_signature:
             return
         self._downloads_signature = signature
 
-        self._clear_layout(self.downloads_list_layout)
-        if not active and not pending and not recent:
-            self.downloads_list_layout.addWidget(make_empty_state(
-                "Queue is clear",
-                "Downloads sent from Astra Deck appear here.",
-                "Open dashboard",
-                lambda: self._nav_click("Dashboard"),
-            ))
-        if active:
-            self.downloads_list_layout.addWidget(make_section_label("In progress"))
-            for dl in active:
-                self.downloads_list_layout.addWidget(self._download_card(dl))
-        if pending:
-            self.downloads_list_layout.addWidget(make_section_label("Pending"))
-            for dl in pending:
-                self.downloads_list_layout.addWidget(self._download_card(dl))
-        if recent:
-            self.downloads_list_layout.addWidget(make_section_label("Recent activity"))
-            for dl in recent[:8]:
-                self.downloads_list_layout.addWidget(self._download_card(dl, recent=True))
-        self.downloads_list_layout.addStretch()
+        self._reconcile_download_list(active, pending, recent)
 
     def _history_query(self, *, entries=None, offset=None, limit=None):
         return self._dependencies['query_history_entries'](

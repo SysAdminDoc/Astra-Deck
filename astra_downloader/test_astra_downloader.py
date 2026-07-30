@@ -5185,6 +5185,67 @@ class GuiSmokeTests(unittest.TestCase):
                 # by Qt itself; application shutdown performs final disposal.
                 self._retained_windows.append(window)
 
+    def test_download_progress_patches_one_card_and_preserves_scroll_and_focus(self):
+        from PyQt6.QtWidgets import QApplication, QProgressBar, QPushButton
+
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        for index in range(24):
+            download = ad.Download(
+                f"download-{index}",
+                f"https://www.youtube.com/watch?v=fixture{index:04d}",
+                title=f"Fixture download {index}",
+                created_at=float(index + 1),
+            )
+            download.status = "downloading"
+            download.progress = float(index)
+            manager.downloads[download.id] = download
+
+        with mock.patch.object(ad.MainWindow, "_start_instance_command_listener"), \
+                mock.patch.object(ad.MainWindow, "_start_readiness_probe"), \
+                mock.patch.object(ad.MainWindow, "_refresh_tools_status"), \
+                mock.patch.object(ad.QSystemTrayIcon, "show"):
+            window = ad.MainWindow(FakeConfig(), manager, FakeHistory())
+            try:
+                window.resize(900, 620)
+                window.show()
+                window._nav_click("Downloads")
+                window._update_ui()
+                QApplication.processEvents()
+
+                key = ("download", "download-12")
+                card = window._download_widgets[key]
+                progress = card.findChild(QProgressBar)
+                cancel = card.findChild(QPushButton)
+                self.assertIsNotNone(progress)
+                self.assertIsNotNone(cancel)
+                cancel.setFocus()
+                QApplication.processEvents()
+                self.assertIs(QApplication.focusWidget(), cancel)
+
+                scroll_bar = window.downloads_scroll.verticalScrollBar()
+                self.assertGreater(scroll_bar.maximum(), 0)
+                scroll_bar.setValue(scroll_bar.maximum() // 2)
+                old_scroll = scroll_bar.value()
+
+                manager.downloads["download-12"].progress = 73.4
+                manager.downloads["download-12"].speed = "2.1 MiB/s"
+                window._update_ui()
+                QApplication.processEvents()
+
+                self.assertIs(window._download_widgets[key], card)
+                self.assertEqual(progress.value(), 73)
+                self.assertEqual(scroll_bar.value(), old_scroll)
+                self.assertIs(QApplication.focusWidget(), cancel)
+            finally:
+                window.update_timer.stop()
+                window.cleanup_timer.stop()
+                window.tools_status_timer.stop()
+                window.tray.hide()
+                window._force_exit = True
+                window.close()
+                QApplication.processEvents()
+                self._retained_windows.append(window)
+
     def test_make_line_icon_renders_glyph_at_native_requested_size(self):
         from PyQt6.QtCore import QSize
         # The default 18 px icon cannot satisfy a 36 px request without
