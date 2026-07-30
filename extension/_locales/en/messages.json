@@ -420,7 +420,7 @@
     "message": "Copy report"
   },
   "externalHealthCopyDone": {
-    "message": "Copied \u2014 paste into a GitHub issue."
+    "message": "Copied — paste into a GitHub issue."
   },
   "externalHealthCopyFail": {
     "message": "Could not copy."
@@ -4087,5 +4087,1070 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
+  },
+  "blockedWatchAllowOnce": {
+    "message": "Allow once"
+  },
+  "blockedWatchBack": {
+    "message": "Back"
+  },
+  "blockedWatchDescription": {
+    "message": "This video is from a channel you blocked."
+  },
+  "blockedWatchTitle": {
+    "message": "Blocked channel"
+  },
+  "blockedWatchUnblock": {
+    "message": "Unblock"
+  },
+  "blockedWatchUnknownChannel": {
+    "message": "Unknown channel"
+  },
+  "bulkActionsAria": {
+    "message": "Bulk card actions"
+  },
+  "bulkAllow": {
+    "message": "Allow"
+  },
+  "bulkAllowedTpl": {
+    "message": "Allowed {count} videos"
+  },
+  "bulkCopiedTpl": {
+    "message": "Copied {count} URLs"
+  },
+  "bulkCopyUrls": {
+    "message": "Copy URLs"
+  },
+  "bulkDontRecommend": {
+    "message": "Don’t recommend"
+  },
+  "bulkDontRecommendTitleTpl": {
+    "message": "Apply YouTube’s native “Don’t recommend channel” to up to {count} selected cards, hide them locally, and log the session."
+  },
+  "bulkExportedScrubTpl": {
+    "message": "Exported {count} scrub sessions"
+  },
+  "bulkExportLog": {
+    "message": "Export log"
+  },
+  "bulkExportLogTitle": {
+    "message": "Download the local scrub-session summary as JSON. Nothing leaves this device."
+  },
+  "bulkHiddenTpl": {
+    "message": "Hidden {count} videos"
+  },
+  "bulkHide": {
+    "message": "Hide"
+  },
+  "bulkNoScrubSessions": {
+    "message": "No scrub sessions recorded yet."
+  },
+  "bulkNotInterested": {
+    "message": "Not interested"
+  },
+  "bulkNotInterestedTitleTpl": {
+    "message": "Apply YouTube’s native “Not interested” to up to {count} selected cards, hide them locally, and log the session."
+  },
+  "bulkRestoredTpl": {
+    "message": "Restored {count} local hides (native feedback stays applied)"
+  },
+  "bulkScrubCapTpl": {
+    "message": " ({skipped} over the {cap}-per-run cap left selected)"
+  },
+  "bulkScrubDoneTpl": {
+    "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
+  },
+  "bulkScrubPartialTpl": {
+    "message": "YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}"
+  },
+  "bulkScrubRunning": {
+    "message": "A scrub session is already running."
+  },
+  "bulkScrubSelectFirst": {
+    "message": "Select cards to scrub first."
+  },
+  "bulkSelect": {
+    "message": "Bulk Select"
+  },
+  "bulkSelectedTpl": {
+    "message": "{count} selected"
+  },
+  "bulkUndoHides": {
+    "message": "Undo hides"
+  },
+  "clipboardWriteFailed": {
+    "message": "Clipboard write failed"
+  },
+  "commonActive": {
+    "message": "Active"
+  },
+  "commonAll": {
+    "message": "All"
+  },
+  "commonChecking": {
+    "message": "Checking…"
+  },
+  "commonClear": {
+    "message": "Clear"
+  },
+  "commonClose": {
+    "message": "Close"
+  },
+  "commonCopyFailed": {
+    "message": "Copy failed"
+  },
+  "commonDone": {
+    "message": "Done"
+  },
+  "commonExport": {
+    "message": "Export"
+  },
+  "commonImport": {
+    "message": "Import"
+  },
+  "commonJustNow": {
+    "message": "Just now"
+  },
+  "commonLoading": {
+    "message": "Loading…"
+  },
+  "commonPreparing": {
+    "message": "Preparing…"
+  },
+  "commonReady": {
+    "message": "Ready"
+  },
+  "commonRefresh": {
+    "message": "Refresh"
+  },
+  "commonReset": {
+    "message": "Reset"
+  },
+  "commonTryAgain": {
+    "message": "Try again"
+  },
+  "commonUnexpectedError": {
+    "message": "unexpected error"
+  },
+  "commonUntitled": {
+    "message": "Untitled"
+  },
+  "dataFlowGrant": {
+    "message": "grant"
+  },
+  "dataFlowGrantActive": {
+    "message": "granted"
+  },
+  "dataFlowGrantNeeded": {
+    "message": "permission needed"
+  },
+  "dlHealthAuth": {
+    "message": "Auth"
+  },
+  "dlHealthDenoFailed": {
+    "message": "Deno provision failed"
+  },
+  "dlHealthDenoFailedLabel": {
+    "message": "Deno: failed"
+  },
+  "dlHealthDenoFailedTpl": {
+    "message": "Deno provision failed: {error}"
+  },
+  "dlHealthDenoProvisioned": {
+    "message": "Deno provisioned successfully"
+  },
+  "dlHealthDownloader": {
+    "message": "Downloader"
+  },
+  "dlHealthLegacy": {
+    "message": "legacy"
+  },
+  "dlHealthLegacyAuthTitle": {
+    "message": "Using legacy /health token bootstrap because native messaging is unavailable."
+  },
+  "dlHealthLive": {
+    "message": "live"
+  },
+  "dlHealthNative": {
+    "message": "native"
+  },
+  "dlHealthNativeAuthTitle": {
+    "message": "Token received over browser native messaging; /health token echo suppressed."
+  },
+  "dlHealthNotRunning": {
+    "message": "not running"
+  },
+  "dlHealthOffline": {
+    "message": "offline"
+  },
+  "dlHealthProvisioning": {
+    "message": "Provisioning…"
+  },
+  "dlHealthRegionAria": {
+    "message": "Downloader health"
+  },
+  "dlHealthSabrLimitedTitle": {
+    "message": "Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482."
+  },
+  "dlHealthUnknown": {
+    "message": "unknown"
+  },
+  "dlHealthUnreachable": {
+    "message": "unreachable"
+  },
+  "dlHistoryButton": {
+    "message": "History"
+  },
+  "dlHistoryButtonTitle": {
+    "message": "View recent downloads"
+  },
+  "dlHistoryCloseAria": {
+    "message": "Close recent downloads"
+  },
+  "dlHistoryEmpty": {
+    "message": "No completed downloads yet."
+  },
+  "dlHistoryRegionAria": {
+    "message": "Recent downloads"
+  },
+  "dlHistoryTitle": {
+    "message": "Recent Downloads"
+  },
+  "dlHistoryUnreachable": {
+    "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
+  },
+  "dlInstallCheckAgain": {
+    "message": "Check again"
+  },
+  "dlInstallCheckDetail": {
+    "message": "Use this after running the setup file."
+  },
+  "dlInstallCheckingService": {
+    "message": "Checking for the Astra Downloader service…"
+  },
+  "dlInstallCloseAria": {
+    "message": "Close local downloader prompt"
+  },
+  "dlInstallCommandCopied": {
+    "message": "Command copied"
+  },
+  "dlInstallCommandCopiedHint": {
+    "message": "Fallback command copied. Use it in PowerShell only if the setup file cannot run."
+  },
+  "dlInstallCommandDetail": {
+    "message": "Use only if the downloaded setup file cannot run."
+  },
+  "dlInstallConnectionCheck": {
+    "message": "Connection check"
+  },
+  "dlInstallCopyCommand": {
+    "message": "Copy fallback command"
+  },
+  "dlInstallDownloadDetail": {
+    "message": "Recommended. Installs or repairs Astra Downloader."
+  },
+  "dlInstallDownloadedHint": {
+    "message": "Setup downloaded. Open the file, finish installation, then choose Check again."
+  },
+  "dlInstallDownloadingSetup": {
+    "message": "Downloading the setup file…"
+  },
+  "dlInstallDownloadingSetupShort": {
+    "message": "Downloading setup…"
+  },
+  "dlInstallDownloadSetup": {
+    "message": "Download setup"
+  },
+  "dlInstallLocalDownloads": {
+    "message": "Local downloads"
+  },
+  "dlInstallNoResponse": {
+    "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
+  },
+  "dlInstallNotDetected": {
+    "message": "Not detected yet"
+  },
+  "dlInstallNotDetectedHint": {
+    "message": "Setup was not detected yet. Make sure the installer finished, then check again."
+  },
+  "dlInstallOpenedHint": {
+    "message": "The setup file should be open. Finish installation, then choose Check again."
+  },
+  "dlInstallOpenSetup": {
+    "message": "Open setup file"
+  },
+  "dlInstallPortConflictTpl": {
+    "message": "Another program is answering on Astra Downloader’s port {port}{version}. It is usually a leftover downloader from an earlier install. Close it, remove it from Startup apps (look for “YTYT-Downloader” or “Astra Deck Downloader”), then start Astra Downloader and choose Check again."
+  },
+  "dlInstallPortVersionTpl": {
+    "message": " (reporting version {version})"
+  },
+  "dlInstallReconnectTitle": {
+    "message": "Reconnect Astra Downloader"
+  },
+  "dlInstallRepairDesc": {
+    "message": "Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service."
+  },
+  "dlInstallRepairHint": {
+    "message": "Fastest path: start the service again first. If it still does not respond, run setup to repair the install."
+  },
+  "dlInstallSetupDesc": {
+    "message": "Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads."
+  },
+  "dlInstallSetupHint": {
+    "message": "Recommended path: download setup, open the file, then return here and check again."
+  },
+  "dlInstallSetupReady": {
+    "message": "Setup ready"
+  },
+  "dlInstallSetupTitle": {
+    "message": "Set up local downloads"
+  },
+  "dlInstallSkip": {
+    "message": "Skip for now"
+  },
+  "dlInstallStartDetail": {
+    "message": "Fastest fix if the downloader is installed but idle."
+  },
+  "dlInstallStarting": {
+    "message": "Starting…"
+  },
+  "dlInstallStartingService": {
+    "message": "Starting the Astra Downloader service…"
+  },
+  "dlInstallStartService": {
+    "message": "Start service"
+  },
+  "dlInstallStepCheck": {
+    "message": "Choose Check again so Astra Deck can confirm the service is ready."
+  },
+  "dlInstallStepDownload": {
+    "message": "Download the Astra Downloader setup file."
+  },
+  "dlInstallStepOpen": {
+    "message": "Open the setup file from Downloads and finish installation."
+  },
+  "dlInstallStepStart": {
+    "message": "Start the service again if the downloader is already installed."
+  },
+  "dlPopupOutsideRoots": {
+    "message": "That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path."
+  },
+  "dlStreamButtonTitle": {
+    "message": "Show adaptive format URLs"
+  },
+  "dlStreamCopied": {
+    "message": "Stream URL copied"
+  },
+  "dlStreamCopyUrl": {
+    "message": "Copy URL"
+  },
+  "dlStreamEmpty": {
+    "message": "No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate."
+  },
+  "dlStreamLinksTitle": {
+    "message": "Stream Links"
+  },
+  "dlStreamSabrOnly": {
+    "message": "SABR-only"
+  },
+  "dlStreamWarning": {
+    "message": "URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead."
+  },
+  "floatingChatControlsAria": {
+    "message": "Floating chat controls"
+  },
+  "floatingChatDragAria": {
+    "message": "Move floating chat"
+  },
+  "floatingChatDragTitle": {
+    "message": "Drag to move"
+  },
+  "floatingChatOpacityAria": {
+    "message": "Chat opacity"
+  },
+  "optionalHostBannerDetailMany": {
+    "message": "{count} enabled enrichment features need host access: {origins}."
+  },
+  "optionalHostBannerDetailOne": {
+    "message": "1 enabled enrichment feature needs host access: {origins}."
+  },
+  "optionalHostBannerTitle": {
+    "message": "External access needed"
+  },
+  "optionalHostGrantAria": {
+    "message": "Grant optional host access"
+  },
+  "optionalHostGrantBtn": {
+    "message": "Grant access"
+  },
+  "optionalHostGrantName": {
+    "message": "optional host access"
+  },
+  "optionalHostPermissionAria": {
+    "message": "Permission needed."
+  },
+  "optionalHostPermissionBadge": {
+    "message": "permission needed"
+  },
+  "optionalHostPermissionGranted": {
+    "message": "Optional host access granted."
+  },
+  "optionalHostPermissionMissingTooltip": {
+    "message": "Host access for this optional feature is denied or was revoked. Enable the setting again to grant access."
+  },
+  "optionalHostPermissionRevoked": {
+    "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
+  },
+  "optionalHostUnknown": {
+    "message": "optional host access"
+  },
+  "selectorHealthCopySaveFallback": {
+    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+  },
+  "settingsDlActionsAria": {
+    "message": "Downloader actions"
+  },
+  "settingsDlCheckingStatus": {
+    "message": "Checking downloader status…"
+  },
+  "settingsDlCommandCopied": {
+    "message": "Fallback command copied. Use it only if the setup file cannot run."
+  },
+  "settingsDlCopyCommand": {
+    "message": "Copy command"
+  },
+  "settingsDlCopyCommandTitle": {
+    "message": "Copy the fallback PowerShell install command"
+  },
+  "settingsDlDownloadTitle": {
+    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+  },
+  "settingsDlNotConnected": {
+    "message": "Not connected. Local downloads need the setup helper."
+  },
+  "settingsDlOpenSetup": {
+    "message": "Open setup"
+  },
+  "settingsDlPreparingSetup": {
+    "message": "Preparing the setup file…"
+  },
+  "settingsDlRunning": {
+    "message": "Running"
+  },
+  "settingsDlRunningTpl": {
+    "message": "Running{version} — yt-dlp server ready"
+  },
+  "settingsDlSetupDownloaded": {
+    "message": "Setup downloaded. Open the file, finish installation, then refresh."
+  },
+  "settingsDlSetupOpened": {
+    "message": "Setup opened. Finish installation, then refresh."
+  },
+  "settingsDlStartFailed": {
+    "message": "The service did not start. Run setup to repair Astra Downloader."
+  },
+  "settingsDlStartFailedToast": {
+    "message": "Astra Downloader did not start. Run setup to repair it."
+  },
+  "settingsDlStartTitle": {
+    "message": "Try to start the Astra Downloader service"
+  },
+  "settingsDlTryingStart": {
+    "message": "Trying to start the Astra Downloader service…"
+  },
+  "settingsEnableAllAriaTpl": {
+    "message": "Enable all settings in {category}"
+  },
+  "settingsImportDoneTpl": {
+    "message": "{message} Undo is available in the toast."
+  },
+  "settingsImportInvalid": {
+    "message": "Import failed. Choose a valid Astra Deck settings export."
+  },
+  "settingsImportUndoUnavailable": {
+    "message": "Import undo is no longer available."
+  },
+  "settingsInsightsAria": {
+    "message": "Settings status and backup actions"
+  },
+  "settingsInsightsEnabled": {
+    "message": "Enabled"
+  },
+  "settingsInsightsExtension": {
+    "message": "Extension"
+  },
+  "settingsInsightsHealth": {
+    "message": "Health"
+  },
+  "settingsInsightsLastSave": {
+    "message": "Last save"
+  },
+  "settingsInsightsLiveApply": {
+    "message": "Live apply"
+  },
+  "settingsInsightsProfile": {
+    "message": "Profile"
+  },
+  "settingsInsightsReadyDesc": {
+    "message": "Controls are loaded. Service health appears beside affected features."
+  },
+  "settingsInsightsRecovery": {
+    "message": "Recovery"
+  },
+  "settingsInsightsRuleEngine": {
+    "message": "Rule engine"
+  },
+  "settingsInsightsSavedLocally": {
+    "message": "Saved locally"
+  },
+  "settingsInsightsSections": {
+    "message": "Sections"
+  },
+  "settingsInsightsStatus": {
+    "message": "Status"
+  },
+  "settingsInsightsUndoToasts": {
+    "message": "Undo toasts"
+  },
+  "settingsResetChooseSection": {
+    "message": "Choose a settings section before resetting."
+  },
+  "settingsResetDoneTpl": {
+    "message": "{category} reset to defaults. Undo is available in the toast."
+  },
+  "settingsResetGroupTitle": {
+    "message": "Reset this group to defaults"
+  },
+  "settingsResetRestoredToastTpl": {
+    "message": "“{category}” restored"
+  },
+  "settingsResetRestoredTpl": {
+    "message": "{category} restored."
+  },
+  "settingsResetToastTpl": {
+    "message": "“{category}” reset to defaults"
+  },
+  "settingsSearchHint": {
+    "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
+  },
+  "settingsSearchMatchesTpl": {
+    "message": "{count} matches"
+  },
+  "settingsSearchMatchingTpl": {
+    "message": "{count} matching settings"
+  },
+  "settingsSearchNoMatches": {
+    "message": "No matches"
+  },
+  "settingsSearchNoneTpl": {
+    "message": "No settings found for “{query}”"
+  },
+  "settingsSearchShowingTpl": {
+    "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsTakeoutImportInvalid": {
+    "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "statusCompanionCurrentTpl": {
+    "message": "Astra Downloader already at v{version}."
+  },
+  "statusCompanionReadyTpl": {
+    "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
+  },
+  "statusCompanionUpdateFailedTpl": {
+    "message": "Astra Downloader update failed — {error}"
+  },
+  "statusPerKeyReset": {
+    "message": "… reset to default."
+  },
+  "statusPerKeyResetFail": {
+    "message": "Could not reset"
+  },
+  "statusUpdateFailed": {
+    "message": "Update failed."
+  },
+  "statusWelcomeProfileFail": {
+    "message": "Could not apply profile"
+  },
+  "statusWelcomeProfileFull": {
+    "message": "GitHub-Full profile enabled. The download companion and AI providers are now available."
+  },
+  "statusWelcomeProfileSafe": {
+    "message": "Store-safe profile active. Open Full Settings to explore features."
+  },
+  "statusYtdlpCurrentTpl": {
+    "message": "yt-dlp already at v{version}"
+  },
+  "statusYtdlpFromTpl": {
+    "message": " (from v{version})"
+  },
+  "statusYtdlpRestoredTpl": {
+    "message": " Active version restored to v{version}."
+  },
+  "statusYtdlpRollbackTpl": {
+    "message": " Last-known-good: v{version}."
+  },
+  "statusYtdlpUpdatedTpl": {
+    "message": "yt-dlp updated to v{version}{from}"
+  },
+  "statusYtdlpUpdateFailedTpl": {
+    "message": "yt-dlp update failed — {error}{recovery}"
+  },
+  "subscriptionDigestCloseAria": {
+    "message": "Close group notifications digest"
+  },
+  "subscriptionDigestEmpty": {
+    "message": "Create subscription groups with + Group to split new-video counts by topic."
+  },
+  "subscriptionDigestMarkAllRead": {
+    "message": "Mark all read"
+  },
+  "subscriptionDigestMarkAllReadAria": {
+    "message": "Mark every rendered channel as read"
+  },
+  "subscriptionDigestMarkRead": {
+    "message": "Mark read"
+  },
+  "subscriptionDigestMarkReadAriaTpl": {
+    "message": "Mark {group} digest as read"
+  },
+  "subscriptionDigestMetaTpl": {
+    "message": "{newCount} new of {renderedCount} rendered videos"
+  },
+  "subscriptionDigestNewTpl": {
+    "message": "{count} new"
+  },
+  "subscriptionDigestOpen": {
+    "message": "Open Digest"
+  },
+  "subscriptionDigestOpenAria": {
+    "message": "Open the per-group notifications digest"
+  },
+  "subscriptionDigestRegionAria": {
+    "message": "Group notifications digest"
+  },
+  "subscriptionDigestRenderedTpl": {
+    "message": "{shown} shown / {channels} channels"
+  },
+  "subscriptionDigestTitle": {
+    "message": "Group Digest"
+  },
+  "subscriptionDigestView": {
+    "message": "View"
+  },
+  "subscriptionDigestViewAriaTpl": {
+    "message": "View {group} subscriptions"
+  },
+  "subscriptionExportCsvAria": {
+    "message": "Export subscription groups as CSV"
+  },
+  "subscriptionExportJsonAria": {
+    "message": "Export subscription groups as JSON"
+  },
+  "subscriptionExportOpmlAria": {
+    "message": "Export subscription groups as OPML"
+  },
+  "subscriptionGroupEmpty": {
+    "message": "No channels in this group yet — click Edit Channels to add some."
+  },
+  "subscriptionHealthCloseAria": {
+    "message": "Close subscription health center"
+  },
+  "subscriptionHealthFailedTpl": {
+    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+  },
+  "subscriptionHealthMetaTpl": {
+    "message": "{channels} rendered channels · {groups} groups"
+  },
+  "subscriptionHealthMoreTpl": {
+    "message": "+{count} more — use Stage Stale in the toolbar to stage every candidate at once."
+  },
+  "subscriptionHealthNewEmpty": {
+    "message": "Nothing new since your last visit stamp."
+  },
+  "subscriptionHealthNewHeading": {
+    "message": "New since last visit"
+  },
+  "subscriptionHealthNewSummaryTpl": {
+    "message": "{videos} new videos from {channels} channels since your last visit."
+  },
+  "subscriptionHealthNoStaleCards": {
+    "message": "No stale subscription cards found in the rendered feed."
+  },
+  "subscriptionHealthOpenAria": {
+    "message": "Open the subscription health center"
+  },
+  "subscriptionHealthRegionAria": {
+    "message": "Subscription health center"
+  },
+  "subscriptionHealthRemovedStagedTpl": {
+    "message": "Removed {count} staged unsubscribes"
+  },
+  "subscriptionHealthRescan": {
+    "message": "Rescan"
+  },
+  "subscriptionHealthRescanAria": {
+    "message": "Rescan the rendered feed for subscription health"
+  },
+  "subscriptionHealthStage": {
+    "message": "Stage"
+  },
+  "subscriptionHealthStageAriaTpl": {
+    "message": "Stage {channel} for unsubscribe review"
+  },
+  "subscriptionHealthStaged": {
+    "message": "staged"
+  },
+  "subscriptionHealthStagedCountTpl": {
+    "message": "Staged {count} stale channels for unsubscribe review"
+  },
+  "subscriptionHealthStagedEmpty": {
+    "message": "Nothing staged. Staging flags channels for your review — it never clicks YouTube unsubscribe controls."
+  },
+  "subscriptionHealthStagedHeading": {
+    "message": "Staged unsubscribes (review-only, 30-day undo window)"
+  },
+  "subscriptionHealthStaleEmpty": {
+    "message": "No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan."
+  },
+  "subscriptionHealthStaleHeadingTpl": {
+    "message": "Stale channels (≥{days} days, rendered feed)"
+  },
+  "subscriptionHealthStatNewChannels": {
+    "message": "new channels"
+  },
+  "subscriptionHealthStatNewVideos": {
+    "message": "new videos"
+  },
+  "subscriptionHealthStatStaged": {
+    "message": "staged for review"
+  },
+  "subscriptionHealthStatStale": {
+    "message": "stale candidates"
+  },
+  "subscriptionHealthTitle": {
+    "message": "Subscription Health"
+  },
+  "subscriptionHealthUndoAllAria": {
+    "message": "Undo every staged unsubscribe"
+  },
+  "subscriptionHealthUndoAllTpl": {
+    "message": "Undo all staged ({count})"
+  },
+  "subscriptionHealthUndoByTpl": {
+    "message": "undo by {date}"
+  },
+  "subscriptionHealthUndoStage": {
+    "message": "Undo stage"
+  },
+  "subscriptionHealthUndoStageAriaTpl": {
+    "message": "Undo staged unsubscribe for {channel}"
+  },
+  "subscriptionImportAria": {
+    "message": "Import subscription groups"
+  },
+  "subscriptionMembersAdded": {
+    "message": "Channel added to group"
+  },
+  "subscriptionMembersCloseAria": {
+    "message": "Close the channel membership editor"
+  },
+  "subscriptionMembersEmpty": {
+    "message": "No channels rendered yet — scroll the subscriptions feed, then reopen this panel."
+  },
+  "subscriptionMembersListAria": {
+    "message": "Rendered channels"
+  },
+  "subscriptionMembersMeta": {
+    "message": "Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels."
+  },
+  "subscriptionMembersRegionAriaTpl": {
+    "message": "Edit channels in {group}"
+  },
+  "subscriptionMembersRemoved": {
+    "message": "Channel removed from group"
+  },
+  "subscriptionMembersTitleTpl": {
+    "message": "Edit channels — {group}"
+  },
+  "subscriptionToolbarAllAria": {
+    "message": "Show all subscriptions"
+  },
+  "subscriptionToolbarAria": {
+    "message": "Subscription group controls"
+  },
+  "subscriptionToolbarDigest": {
+    "message": "Digest"
+  },
+  "subscriptionToolbarEditChannels": {
+    "message": "Edit Channels"
+  },
+  "subscriptionToolbarGroups": {
+    "message": "Groups"
+  },
+  "subscriptionToolbarHealth": {
+    "message": "Health"
+  },
+  "subscriptionToolbarHealthCountTpl": {
+    "message": "Health ({count})"
+  },
+  "subscriptionToolbarHealthTitle": {
+    "message": "Stale channels, staged unsubscribes, new-video counts, and exports in one panel."
+  },
+  "subscriptionToolbarNewGroup": {
+    "message": "+ Group"
+  },
+  "subscriptionToolbarNewGroupAria": {
+    "message": "Create subscription group"
+  },
+  "subscriptionToolbarNewSubgroup": {
+    "message": "+ Subgroup"
+  },
+  "subscriptionToolbarNewSubgroupAria": {
+    "message": "Create subscription subgroup"
+  },
+  "subscriptionToolbarPlayAll": {
+    "message": "Play All"
+  },
+  "subscriptionToolbarScanStale": {
+    "message": "Scan Stale"
+  },
+  "subscriptionToolbarScanStaleAria": {
+    "message": "Scan rendered subscriptions for stale channels"
+  },
+  "subscriptionToolbarSort": {
+    "message": "Sort"
+  },
+  "subscriptionToolbarSortAria": {
+    "message": "Sort subscriptions"
+  },
+  "subscriptionToolbarStageStale": {
+    "message": "Stage Stale"
+  },
+  "subscriptionToolbarStageStaleAria": {
+    "message": "Stage rendered stale channels for unsubscribe review"
+  },
+  "subscriptionToolbarStageStaleTitle": {
+    "message": "Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked."
+  },
+  "subscriptionToolbarStale": {
+    "message": "Stale"
+  },
+  "subscriptionToolbarStaleFlaggedTpl": {
+    "message": "{count} stale channels flagged"
+  },
+  "subscriptionToolbarUndoStagedAriaTpl": {
+    "message": "Undo {count} staged unsubscribe items"
+  },
+  "subscriptionToolbarUndoStagedTpl": {
+    "message": "Undo Staged ({count})"
+  },
+  "toastActionOpen": {
+    "message": "Open"
+  },
+  "toastActionUndo": {
+    "message": "Undo"
+  },
+  "toastDismissAria": {
+    "message": "Dismiss notification"
+  },
+  "toastDlPreparingAudio": {
+    "message": "Preparing your audio download…"
+  },
+  "toastDlPreparingVideo": {
+    "message": "Preparing your video download…"
+  },
+  "transcriptCaptions": {
+    "message": "Captions"
+  },
+  "transcriptCollapse": {
+    "message": "Collapse"
+  },
+  "transcriptCollapseAria": {
+    "message": "Collapse transcript"
+  },
+  "transcriptCopiedTpl": {
+    "message": "{label} copied to clipboard"
+  },
+  "transcriptCopyAiPrompt": {
+    "message": "Copy AI Prompt"
+  },
+  "transcriptCopyAiPromptTitle": {
+    "message": "Copy a ready-to-paste summary prompt"
+  },
+  "transcriptCopyFailedTpl": {
+    "message": "Failed to copy {label}"
+  },
+  "transcriptCopyText": {
+    "message": "Copy Text"
+  },
+  "transcriptCopyTextTitle": {
+    "message": "Copy plain-text transcript to clipboard"
+  },
+  "transcriptDownloadFailed": {
+    "message": "Download failed"
+  },
+  "transcriptDownloadSrt": {
+    "message": "Download SRT"
+  },
+  "transcriptDownloadSrtTitle": {
+    "message": "Download SubRip subtitle file"
+  },
+  "transcriptDownloadTxt": {
+    "message": "Download TXT"
+  },
+  "transcriptDownloadTxtTitle": {
+    "message": "Download plain-text transcript"
+  },
+  "transcriptExpand": {
+    "message": "Expand"
+  },
+  "transcriptExpandAria": {
+    "message": "Expand transcript"
+  },
+  "transcriptExportActionsAria": {
+    "message": "Transcript export actions"
+  },
+  "transcriptEyebrow": {
+    "message": "Captions & Exports"
+  },
+  "transcriptLlmPrompt": {
+    "message": "LLM prompt"
+  },
+  "transcriptPreparingControls": {
+    "message": "Preparing transcript controls for this video."
+  },
+  "transcriptShowOriginal": {
+    "message": "Show Original"
+  },
+  "transcriptTitle": {
+    "message": "Transcript"
+  },
+  "transcriptTranslate": {
+    "message": "Translate"
+  },
+  "transcriptTranslatedTpl": {
+    "message": "Translated to {language}"
+  },
+  "transcriptTranslateTitle": {
+    "message": "Translate transcript on-device using Chrome Translator API"
+  },
+  "transcriptTranslateUnavailable": {
+    "message": "Chrome Translator API not available in this browser"
+  },
+  "transcriptTranslating": {
+    "message": "Translating…"
+  },
+  "transcriptTranslationFailedTpl": {
+    "message": "Translation failed: {error}"
+  },
+  "undo": {
+    "message": "Undo"
+  },
+  "updateYtdlpAria": {
+    "message": "Force yt-dlp self-update"
+  },
+  "updateYtdlpBtn": {
+    "message": "Update yt-dlp"
+  },
+  "videoNotesDelete": {
+    "message": "Delete"
+  },
+  "videoNotesDeleteAria": {
+    "message": "Delete the note for this video"
+  },
+  "videoNotesEmpty": {
+    "message": "No note saved for this video."
+  },
+  "videoNotesExport": {
+    "message": "Export Notes"
+  },
+  "videoNotesExportAria": {
+    "message": "Export all video notes"
+  },
+  "videoNotesExportedTpl": {
+    "message": "Exported {count} video notes"
+  },
+  "videoNotesExportEmpty": {
+    "message": "No video notes to export."
+  },
+  "videoNotesEyebrow": {
+    "message": "Local Notes"
+  },
+  "videoNotesIdUnavailable": {
+    "message": "Video ID unavailable"
+  },
+  "videoNotesInputAria": {
+    "message": "Notes for this video"
+  },
+  "videoNotesPlaceholder": {
+    "message": "Write notes for this video…"
+  },
+  "videoNotesRegionAria": {
+    "message": "Per-video notes"
+  },
+  "videoNotesRemoved": {
+    "message": "Removed video note"
+  },
+  "videoNotesRestored": {
+    "message": "Video note restored"
+  },
+  "videoNotesSaved": {
+    "message": "Saved locally."
+  },
+  "videoNotesSavedUnderTpl": {
+    "message": "Saved under {videoId}"
+  },
+  "videoNotesSaveFailed": {
+    "message": "Couldn\\u2019t save \\u2014 storage full or unavailable."
+  },
+  "videoNotesSaving": {
+    "message": "Saving…"
+  },
+  "videoNotesTitle": {
+    "message": "Video Notes"
+  },
+  "welcomeBody": {
+    "message": "Pick a profile to start. You can change it any time in Settings."
+  },
+  "welcomeDismiss": {
+    "message": "Skip"
+  },
+  "welcomeDismissAria": {
+    "message": "Dismiss welcome card"
+  },
+  "welcomeProfileFullDesc": {
+    "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."
+  },
+  "welcomeProfileFullTitle": {
+    "message": "GitHub-Full"
+  },
+  "welcomeProfileRecommended": {
+    "message": "Recommended"
+  },
+  "welcomeProfileSafeDesc": {
+    "message": "Everything that ships on extension stores. No download companion, no BYO AI keys."
+  },
+  "welcomeProfileSafeTitle": {
+    "message": "Store-Safe"
+  },
+  "welcomeTitle": {
+    "message": "Welcome to Astra Deck"
+  },
+  "whatsNewDismiss": {
+    "message": "Dismiss"
+  },
+  "whatsNewDismissAria": {
+    "message": "Dismiss"
+  },
+  "whatsNewOpen": {
+    "message": "Read changelog"
+  },
+  "whatsNewTitle": {
+    "message": "Updated"
+  },
+  "transcriptJumpAriaTpl": {
+    "message": "Jump to {time} in the transcript"
   }
 }

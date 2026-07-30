@@ -2337,6 +2337,7 @@ return response;
                 normalizeToastTone,
                 getToastRgb,
                 getToastBadgeLabel,
+                t,
                 getToastAriaDefaults: (tone) => normalizeToastTone(tone) === 'error'
                     ? { role: 'alert', ariaLive: 'assertive' }
                     : { role: 'status', ariaLive: 'polite' }
@@ -2464,7 +2465,14 @@ return response;
 
         const badge = document.createElement('span');
         badge.className = 'ytkit-toast-badge';
-        badge.textContent = getToastBadgeLabel(tone);
+        const badgeKey = {
+            error: 'toastBadgeError',
+            warning: 'toastBadgeWarning',
+            info: 'toastBadgeInfo',
+            neutral: 'toastBadgeNeutral',
+            success: 'toastBadgeSuccess'
+        }[tone] || 'toastBadgeNeutral';
+        badge.textContent = t(badgeKey, getToastBadgeLabel(tone));
 
         const body = document.createElement('div');
         body.className = 'ytkit-toast-body';
@@ -2481,7 +2489,9 @@ return response;
             const actionBtn = document.createElement('button');
             actionBtn.className = `ytkit-toast-action${index > 0 ? ' ytkit-toast-action--secondary' : ''}`;
             actionBtn.type = 'button';
-            actionBtn.textContent = action.text || (index === 0 ? 'Undo' : 'Open');
+            actionBtn.textContent = action.text || (index === 0
+                ? t('toastActionUndo', 'Undo')
+                : t('toastActionOpen', 'Open'));
             actionBtn.addEventListener('click', (event) => {
                 event.stopPropagation();
                 dismissToast(toast);
@@ -2494,7 +2504,7 @@ return response;
             const closeBtn = document.createElement('button');
             closeBtn.className = 'ytkit-toast-close';
             closeBtn.type = 'button';
-            closeBtn.setAttribute('aria-label', 'Dismiss notification');
+            closeBtn.setAttribute('aria-label', t('toastDismissAria', 'Dismiss notification'));
             closeBtn.textContent = '\u2715';
             closeBtn.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -21571,7 +21581,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             showToast,
             handleFileExport,
             addNavigateRule,
-            removeNavigateRule
+            removeNavigateRule,
+            t
         }) || {
             id: 'videoNotes',
             name: 'Per-Video Notes',
@@ -23061,18 +23072,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _translateTranscript() {
                 if (!this._hasTranslatorApi()) {
-                    if (typeof showToast === 'function') showToast('Chrome Translator API not available in this browser', '#f59e0b', { tone: 'warning' });
+                    if (typeof showToast === 'function') {
+                        showToast(t('transcriptTranslateUnavailable', 'Chrome Translator API not available in this browser'), '#f59e0b', { tone: 'warning' });
+                    }
                     return;
                 }
                 if (this._showingTranslation && this._translatedCues) {
                     this._showingTranslation = false;
                     this._renderCueTexts();
                     const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
-                    if (btn) btn.textContent = 'Translate';
+                    if (btn) btn.textContent = t('transcriptTranslate', 'Translate');
                     return;
                 }
                 const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
-                if (btn) { btn.textContent = 'Translating…'; btn.disabled = true; }
+                if (btn) { btn.textContent = t('transcriptTranslating', 'Translating…'); btn.disabled = true; }
                 try {
                     const factory = window.Translator || window.ai?.translator;
                     const userLang = (navigator.language || 'en').split('-')[0];
@@ -23099,12 +23112,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._translatedCues = translated;
                     this._showingTranslation = true;
                     this._renderCueTexts();
-                    if (btn) { btn.textContent = 'Show Original'; btn.disabled = false; }
-                    if (typeof showToast === 'function') showToast(`Translated to ${targetLang}`, '#22c55e');
+                    if (btn) { btn.textContent = t('transcriptShowOriginal', 'Show Original'); btn.disabled = false; }
+                    if (typeof showToast === 'function') {
+                        showToast(t('transcriptTranslatedTpl', 'Translated to {language}')
+                            .replace('{language}', targetLang), '#22c55e');
+                    }
                 } catch (e) {
                     DebugManager.log('TranscriptTranslate', `Translation failed: ${e.message}`);
-                    if (typeof showToast === 'function') showToast(`Translation failed: ${e.message}`, '#ef4444');
-                    if (btn) { btn.textContent = 'Translate'; btn.disabled = false; }
+                    if (typeof showToast === 'function') {
+                        showToast(t('transcriptTranslationFailedTpl', 'Translation failed: {error}')
+                            .replace('{error}', e.message), '#ef4444');
+                    }
+                    if (btn) { btn.textContent = t('transcriptTranslate', 'Translate'); btn.disabled = false; }
                 }
             },
 
@@ -23134,9 +23153,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _copyToClipboard(text, label) {
                 try {
                     await navigator.clipboard.writeText(text);
-                    if (typeof showToast === 'function') showToast(`${label} copied to clipboard`, '#22c55e');
+                    if (typeof showToast === 'function') {
+                        showToast(t('transcriptCopiedTpl', '{label} copied to clipboard')
+                            .replace('{label}', label), '#22c55e');
+                    }
                 } catch (_) {
-                    if (typeof showToast === 'function') showToast(`Failed to copy ${label}`, '#ef4444');
+                    if (typeof showToast === 'function') {
+                        showToast(t('transcriptCopyFailedTpl', 'Failed to copy {label}')
+                            .replace('{label}', label), '#ef4444');
+                    }
                 }
             },
 
@@ -23152,7 +23177,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     a.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 } catch (_) {
-                    if (typeof showToast === 'function') showToast('Download failed', '#ef4444');
+                    if (typeof showToast === 'function') showToast(t('transcriptDownloadFailed', 'Download failed'), '#ef4444');
                 }
             },
 
@@ -23165,7 +23190,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || track?.name?.runs?.map((run) => run.text).join('')
                     || track?.languageName?.simpleText
                     || track?.languageCode;
-                return label ? label.trim() : 'Captions';
+                return label ? label.trim() : t('transcriptCaptions', 'Captions');
             },
 
             _setTranscriptMeta(label, copy, tone = 'default') {
@@ -23276,7 +23301,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         line.type = 'button';
                         line.className = 'ytkit-transcript-line';
                         line.title = `Jump to ${stamp}`;
-                        line.setAttribute('aria-label', `Jump to ${stamp} in the transcript`);
+                        line.setAttribute('aria-label', t('transcriptJumpAriaTpl', 'Jump to {time} in the transcript')
+                            .replace('{time}', stamp));
 
                         const ts = document.createElement('span');
                         ts.className = 'ytkit-transcript-line__ts';
@@ -23327,19 +23353,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 heading.className = 'ytkit-transcript-heading';
                 const eyebrow = document.createElement('span');
                 eyebrow.className = 'ytkit-transcript-eyebrow';
-                eyebrow.textContent = 'Captions & Exports';
+                eyebrow.textContent = t('transcriptEyebrow', 'Captions & Exports');
                 const title = document.createElement('span');
                 title.id = 'ytkit-transcript-title';
                 title.className = 'ytkit-transcript-title';
-                title.textContent = 'Transcript';
+                title.textContent = t('transcriptTitle', 'Transcript');
                 heading.appendChild(eyebrow);
                 heading.appendChild(title);
                 const closeBtn = document.createElement('button');
                 closeBtn.type = 'button';
                 closeBtn.className = 'ytkit-transcript-toggle';
-                closeBtn.textContent = 'Collapse';
+                closeBtn.textContent = t('transcriptCollapse', 'Collapse');
                 closeBtn.setAttribute('aria-expanded', 'true');
-                closeBtn.setAttribute('aria-label', 'Collapse transcript');
+                closeBtn.setAttribute('aria-label', t('transcriptCollapseAria', 'Collapse transcript'));
                 header.appendChild(heading);
                 header.appendChild(closeBtn);
 
@@ -23349,17 +23375,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const metaPill = document.createElement('span');
                 metaPill.className = 'ytkit-transcript-meta__pill';
                 metaPill.dataset.tone = 'info';
-                metaPill.textContent = 'Loading…';
+                metaPill.textContent = t('commonLoading', 'Loading…');
                 const metaCopy = document.createElement('span');
                 metaCopy.className = 'ytkit-transcript-meta__copy';
-                metaCopy.textContent = 'Preparing transcript controls for this video.';
+                metaCopy.textContent = t('transcriptPreparingControls', 'Preparing transcript controls for this video.');
                 meta.appendChild(metaPill);
                 meta.appendChild(metaCopy);
 
                 const exportBar = document.createElement('div');
                 exportBar.className = 'ytkit-transcript-export';
                 exportBar.hidden = true;
-                exportBar.setAttribute('aria-label', 'Transcript export actions');
+                exportBar.setAttribute('aria-label', t('transcriptExportActionsAria', 'Transcript export actions'));
                 const mkBtn = (label, title, handler) => {
                     const b = document.createElement('button');
                     b.type = 'button';
@@ -23370,16 +23396,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     b.addEventListener('click', handler);
                     return b;
                 };
-                exportBar.appendChild(mkBtn('Copy Text', 'Copy plain-text transcript to clipboard',
-                    () => this._copyToClipboard(this._buildPlainText(), 'Transcript')));
-                exportBar.appendChild(mkBtn('Download TXT', 'Download plain-text transcript',
+                exportBar.appendChild(mkBtn(t('transcriptCopyText', 'Copy Text'), t('transcriptCopyTextTitle', 'Copy plain-text transcript to clipboard'),
+                    () => this._copyToClipboard(this._buildPlainText(), t('transcriptTitle', 'Transcript'))));
+                exportBar.appendChild(mkBtn(t('transcriptDownloadTxt', 'Download TXT'), t('transcriptDownloadTxtTitle', 'Download plain-text transcript'),
                     () => this._downloadFile(this._buildPlainText(), `${this._videoIdSafe()}.txt`, 'text/plain;charset=utf-8')));
-                exportBar.appendChild(mkBtn('Download SRT', 'Download SubRip subtitle file',
+                exportBar.appendChild(mkBtn(t('transcriptDownloadSrt', 'Download SRT'), t('transcriptDownloadSrtTitle', 'Download SubRip subtitle file'),
                     () => this._downloadFile(this._buildSrt(), `${this._videoIdSafe()}.srt`, 'application/x-subrip;charset=utf-8')));
-                exportBar.appendChild(mkBtn('Copy AI Prompt', 'Copy a ready-to-paste summary prompt',
-                    () => this._copyToClipboard(this._buildLlmPrompt(), 'LLM prompt')));
+                exportBar.appendChild(mkBtn(t('transcriptCopyAiPrompt', 'Copy AI Prompt'), t('transcriptCopyAiPromptTitle', 'Copy a ready-to-paste summary prompt'),
+                    () => this._copyToClipboard(this._buildLlmPrompt(), t('transcriptLlmPrompt', 'LLM prompt'))));
                 if (this._hasTranslatorApi()) {
-                    const translateBtn = mkBtn('Translate', 'Translate transcript on-device using Chrome Translator API',
+                    const translateBtn = mkBtn(t('transcriptTranslate', 'Translate'), t('transcriptTranslateTitle', 'Translate transcript on-device using Chrome Translator API'),
                         () => this._translateTranscript());
                     translateBtn.dataset.ytkitTranslateBtn = '1';
                     exportBar.appendChild(translateBtn);
@@ -23393,9 +23419,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     body.hidden = collapsed;
                     meta.hidden = collapsed;
                     exportBar.hidden = collapsed || !this._cues.length;
-                    closeBtn.textContent = collapsed ? 'Expand' : 'Collapse';
+                    closeBtn.textContent = collapsed
+                        ? t('transcriptExpand', 'Expand')
+                        : t('transcriptCollapse', 'Collapse');
                     closeBtn.setAttribute('aria-expanded', String(!collapsed));
-                    closeBtn.setAttribute('aria-label', collapsed ? 'Expand transcript' : 'Collapse transcript');
+                    closeBtn.setAttribute('aria-label', collapsed
+                        ? t('transcriptExpandAria', 'Expand transcript')
+                        : t('transcriptCollapseAria', 'Collapse transcript'));
                 });
 
                 panel.appendChild(header);
@@ -33784,43 +33814,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._actionBar = document.createElement('div');
                 this._actionBar.className = 'ytkit-bulk-bar';
                 this._actionBar.setAttribute('role', 'toolbar');
-                this._actionBar.setAttribute('aria-label', 'Bulk card actions');
+                this._actionBar.setAttribute('aria-label', t('bulkActionsAria', 'Bulk card actions'));
                 const count = document.createElement('span');
                 count.className = 'ytkit-bulk-count';
                 count.dataset.role = 'count';
                 count.setAttribute('role', 'status');
                 count.setAttribute('aria-live', 'polite');
-                count.textContent = '0 selected';
+                count.textContent = t('bulkSelectedTpl', '{count} selected').replace('{count}', '0');
                 const hideBtn = document.createElement('button');
                 hideBtn.type = 'button';
-                hideBtn.textContent = 'Hide';
+                hideBtn.textContent = t('bulkHide', 'Hide');
                 hideBtn.addEventListener('click', () => this._bulkHide());
                 const allowBtn = document.createElement('button');
                 allowBtn.type = 'button';
-                allowBtn.textContent = 'Allow';
+                allowBtn.textContent = t('bulkAllow', 'Allow');
                 allowBtn.addEventListener('click', () => this._bulkAllow());
                 const copyBtn = document.createElement('button');
                 copyBtn.type = 'button';
-                copyBtn.textContent = 'Copy URLs';
+                copyBtn.textContent = t('bulkCopyUrls', 'Copy URLs');
                 copyBtn.addEventListener('click', () => this._bulkCopy());
                 const scrubNiBtn = document.createElement('button');
                 scrubNiBtn.type = 'button';
-                scrubNiBtn.textContent = 'Not interested';
-                scrubNiBtn.title = `Apply YouTube's native "Not interested" to up to ${this._SCRUB_CAP} selected cards, hide them locally, and log the session.`;
+                scrubNiBtn.textContent = t('bulkNotInterested', 'Not interested');
+                scrubNiBtn.title = t('bulkNotInterestedTitleTpl', 'Apply YouTube’s native “Not interested” to up to {count} selected cards, hide them locally, and log the session.')
+                    .replace('{count}', String(this._SCRUB_CAP));
                 scrubNiBtn.addEventListener('click', () => this._runScrubSession('not-interested'));
                 const scrubDrBtn = document.createElement('button');
                 scrubDrBtn.type = 'button';
-                scrubDrBtn.textContent = "Don't recommend";
-                scrubDrBtn.title = `Apply YouTube's native "Don't recommend channel" to up to ${this._SCRUB_CAP} selected cards, hide them locally, and log the session.`;
+                scrubDrBtn.textContent = t('bulkDontRecommend', 'Don’t recommend');
+                scrubDrBtn.title = t('bulkDontRecommendTitleTpl', 'Apply YouTube’s native “Don’t recommend channel” to up to {count} selected cards, hide them locally, and log the session.')
+                    .replace('{count}', String(this._SCRUB_CAP));
                 scrubDrBtn.addEventListener('click', () => this._runScrubSession('dont-recommend'));
                 const exportBtn = document.createElement('button');
                 exportBtn.type = 'button';
-                exportBtn.textContent = 'Export log';
-                exportBtn.title = 'Download the local scrub-session summary as JSON. Nothing leaves this device.';
+                exportBtn.textContent = t('bulkExportLog', 'Export log');
+                exportBtn.title = t('bulkExportLogTitle', 'Download the local scrub-session summary as JSON. Nothing leaves this device.');
                 exportBtn.addEventListener('click', () => this._exportScrubSummary());
                 const clearBtn = document.createElement('button');
                 clearBtn.type = 'button';
-                clearBtn.textContent = 'Clear';
+                clearBtn.textContent = t('commonClear', 'Clear');
                 clearBtn.addEventListener('click', () => this._clearSelection());
                 this._actionBar.append(count, hideBtn, allowBtn, copyBtn, scrubNiBtn, scrubDrBtn, exportBtn, clearBtn);
                 document.body.appendChild(this._actionBar);
@@ -33833,7 +33865,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._actionBar.hidden = !this._selectMode;
                 if (!this._selectMode) return;
                 const count = this._actionBar.querySelector('[data-role="count"]');
-                if (count) count.textContent = `${this._selected?.size || 0} selected`;
+                if (count) {
+                    count.textContent = t('bulkSelectedTpl', '{count} selected')
+                        .replace('{count}', String(this._selected?.size || 0));
+                }
             },
 
             _findCard(target) {
@@ -33875,7 +33910,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._selected.clear();
                 this._renderActionBar();
-                if (typeof showToast === 'function') showToast(`Hidden ${ids.length} video${ids.length === 1 ? '' : 's'}`, '#22c55e');
+                if (typeof showToast === 'function') {
+                    showToast(t('bulkHiddenTpl', 'Hidden {count} videos').replace('{count}', String(ids.length)), '#22c55e');
+                }
                 vh._processAllVideos?.();
             },
 
@@ -33892,7 +33929,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._selected.clear();
                 this._renderActionBar();
-                if (typeof showToast === 'function') showToast(`Allowed ${ids.length} video${ids.length === 1 ? '' : 's'}`, '#22c55e');
+                if (typeof showToast === 'function') {
+                    showToast(t('bulkAllowedTpl', 'Allowed {count} videos').replace('{count}', String(ids.length)), '#22c55e');
+                }
                 vh._processAllVideos?.();
             },
 
@@ -33901,8 +33940,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const urls = Array.from(this._selected.keys()).map(id => `https://www.youtube.com/watch?v=${id}`).join('\n');
                 if (navigator.clipboard?.writeText) {
                     navigator.clipboard.writeText(urls).then(
-                        () => typeof showToast === 'function' && showToast(`Copied ${this._selected.size} URLs`, '#22c55e'),
-                        () => typeof showToast === 'function' && showToast('Copy failed', '#ef4444')
+                        () => typeof showToast === 'function' && showToast(
+                            t('bulkCopiedTpl', 'Copied {count} URLs').replace('{count}', String(this._selected.size)),
+                            '#22c55e'
+                        ),
+                        () => typeof showToast === 'function' && showToast(t('commonCopyFailed', 'Copy failed'), '#ef4444')
                     );
                 }
             },
@@ -33968,11 +34010,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _runScrubSession(kind) {
                 if (this._scrubRunning) {
-                    if (typeof showToast === 'function') showToast('A scrub session is already running.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('bulkScrubRunning', 'A scrub session is already running.'), '#f59e0b');
                     return;
                 }
                 if (!this._selected?.size) {
-                    if (typeof showToast === 'function') showToast('Select cards to scrub first.', '#6b7280');
+                    if (typeof showToast === 'function') showToast(t('bulkScrubSelectFirst', 'Select cards to scrub first.'), '#6b7280');
                     return;
                 }
                 const matchTexts = kind === 'dont-recommend'
@@ -34021,20 +34063,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     videoIds: hiddenIds
                 });
                 if (typeof showToast === 'function') {
-                    const capNote = skipped > 0 ? ` (${skipped} over the ${this._SCRUB_CAP}-per-run cap left selected)` : '';
+                    const capNote = skipped > 0
+                        ? t('bulkScrubCapTpl', ' ({skipped} over the {cap}-per-run cap left selected)')
+                            .replace('{skipped}', String(skipped))
+                            .replace('{cap}', String(this._SCRUB_CAP))
+                        : '';
                     // Zero native applications is a partial failure, not a
                     // success — say so and use the warning tone.
                     showToast(appliedCount === 0
-                        ? `YouTube's menu item wasn't found — 0 native, ${picked.length} hidden locally only${capNote}`
-                        : `Scrubbed ${picked.length}: ${appliedCount} native, ${picked.length} hidden locally${capNote}`,
+                        ? t('bulkScrubPartialTpl', 'YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}')
+                            .replace('{count}', String(picked.length))
+                            .replace('{capNote}', capNote)
+                        : t('bulkScrubDoneTpl', 'Scrubbed {count}: {native} native, {count} hidden locally{capNote}')
+                            .replaceAll('{count}', String(picked.length))
+                            .replace('{native}', String(appliedCount))
+                            .replace('{capNote}', capNote),
                     appliedCount === 0 ? '#f59e0b' : '#22c55e', {
                         duration: 8,
                         action: {
-                            text: 'Undo hides',
+                            text: t('bulkUndoHides', 'Undo hides'),
                             onClick: () => {
                                 vh?._removeHiddenVideos?.(hiddenIds);
                                 vh?._processAllVideos?.();
-                                if (typeof showToast === 'function') showToast(`Restored ${hiddenIds.length} local hide${hiddenIds.length === 1 ? '' : 's'} (native feedback stays applied)`, '#6b7280');
+                                if (typeof showToast === 'function') {
+                                    showToast(t('bulkRestoredTpl', 'Restored {count} local hides (native feedback stays applied)')
+                                        .replace('{count}', String(hiddenIds.length)), '#6b7280');
+                                }
                             }
                         }
                     });
@@ -34044,14 +34098,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _exportScrubSummary() {
                 const log = this._readScrubLog();
                 if (!log.length) {
-                    if (typeof showToast === 'function') showToast('No scrub sessions recorded yet.', '#6b7280');
+                    if (typeof showToast === 'function') showToast(t('bulkNoScrubSessions', 'No scrub sessions recorded yet.'), '#6b7280');
                     return;
                 }
                 handleFileExport(
                     `ytkit-scrub-summary-${new Date().toISOString().slice(0, 10)}.json`,
                     JSON.stringify({ exportedAt: new Date().toISOString(), sessions: log }, null, 2)
                 );
-                if (typeof showToast === 'function') showToast(`Exported ${log.length} scrub session${log.length === 1 ? '' : 's'}`, '#22c55e');
+                if (typeof showToast === 'function') {
+                    showToast(t('bulkExportedScrubTpl', 'Exported {count} scrub sessions')
+                        .replace('{count}', String(log.length)), '#22c55e');
+                }
             },
 
             _enterSelectMode() {
@@ -34082,7 +34139,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._toggleBtn.type = 'button';
                 this._toggleBtn.className = 'ytkit-bulk-toggle';
                 this._toggleBtn.dataset.active = '0';
-                this._toggleBtn.textContent = 'Bulk Select';
+                this._toggleBtn.textContent = t('bulkSelect', 'Bulk Select');
                 this._toggleBtn.addEventListener('click', () => this._toggleSelectMode());
                 document.body.appendChild(this._toggleBtn);
 

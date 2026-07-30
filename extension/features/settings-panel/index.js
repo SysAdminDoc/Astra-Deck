@@ -386,7 +386,7 @@ function buildSettingsPanel() {
         const searchMeta = document.createElement('span');
         searchMeta.className = 'ytkit-search-meta';
         searchMeta.id = 'ytkit-search-count';
-        searchMeta.textContent = 'All';
+        searchMeta.textContent = t('commonAll', 'All');
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
         searchActions.appendChild(searchClearBtn);
@@ -1833,7 +1833,7 @@ function buildSettingsPanel() {
             toggleAllLabel.className = 'ytkit-toggle-all';
 
             const toggleAllText = document.createElement('span');
-            toggleAllText.textContent = 'All';
+            toggleAllText.textContent = t('commonAll', 'All');
 
             const toggleAllSwitch = document.createElement('div');
             toggleAllSwitch.className = 'ytkit-switch';
@@ -1854,7 +1854,8 @@ function buildSettingsPanel() {
             toggleAllSwitch.appendChild(toggleAllTrack);
             toggleAllLabel.appendChild(toggleAllText);
             toggleAllLabel.appendChild(toggleAllSwitch);
-            toggleAllInput.setAttribute('aria-label', `Enable all settings in ${cat}`);
+            toggleAllInput.setAttribute('aria-label', t('settingsEnableAllAriaTpl', 'Enable all settings in {category}')
+                .replace('{category}', cat));
 
             const paneActions = document.createElement('div');
             paneActions.className = 'ytkit-pane-actions';
@@ -1863,8 +1864,8 @@ function buildSettingsPanel() {
             const resetBtn = document.createElement('button');
             resetBtn.type = 'button';
             resetBtn.className = 'ytkit-reset-group-btn';
-            resetBtn.title = 'Reset this group to defaults';
-            resetBtn.textContent = 'Reset';
+            resetBtn.title = t('settingsResetGroupTitle', 'Reset this group to defaults');
+            resetBtn.textContent = t('commonReset', 'Reset');
             resetBtn.onclick = () => {
                 const categoryFeatures = featuresByCategory[cat];
                 const backup = {};
@@ -1885,7 +1886,8 @@ function buildSettingsPanel() {
                 });
                 settingsManager.save(appState.settings);
                 updateAllToggleStates();
-                setPanelStatus(`${cat} reset to defaults. Undo is available in the toast.`, 'warn');
+                setPanelStatus(t('settingsResetDoneTpl', '{category} reset to defaults. Undo is available in the toast.')
+                    .replace('{category}', cat), 'warn');
                 // Update UI
                 categoryFeatures.forEach(f => {
                     const toggle = document.getElementById(`ytkit-toggle-${f.id}`);
@@ -1895,7 +1897,9 @@ function buildSettingsPanel() {
                         if (switchEl) switchEl.classList.toggle('active', toggle.checked);
                     }
                 });
-                showToast(`"${cat}" reset to defaults`, '#f97316', { duration: 5, action: { text: 'Undo', onClick: async () => {
+                showToast(t('settingsResetToastTpl', '“{category}” reset to defaults').replace('{category}', cat), '#f97316', {
+                    duration: 5,
+                    action: { text: t('toastActionUndo', 'Undo'), onClick: async () => {
                     categoryFeatures.forEach(f => {
                         if (backup[f.id] !== undefined) {
                             appState.settings[f.id] = backup[f.id];
@@ -1911,12 +1915,12 @@ function buildSettingsPanel() {
                     });
                     settingsManager.save(appState.settings);
                     updateAllToggleStates();
-                    setPanelStatus(`${cat} restored.`, 'success');
+                    setPanelStatus(t('settingsResetRestoredTpl', '{category} restored.').replace('{category}', cat), 'success');
                     categoryFeatures.forEach(f => {
                         const t = document.getElementById(`ytkit-toggle-${f.id}`);
                         if (t) { t.checked = appState.settings[f.id]; const s = t.closest('.ytkit-switch'); if (s) s.classList.toggle('active', t.checked); }
                     });
-                    showToast(`"${cat}" restored`, '#22c55e');
+                    showToast(t('settingsResetRestoredToastTpl', '“{category}” restored').replace('{category}', cat), '#22c55e');
                 }}});
             };
             paneActions.appendChild(resetBtn);
@@ -1957,7 +1961,7 @@ function buildSettingsPanel() {
                 bannerStatus.className = 'ytkit-mediadl-banner__status';
                 bannerStatus.setAttribute('role', 'status');
                 bannerStatus.setAttribute('aria-live', 'polite');
-                bannerStatus.textContent = 'Checking downloader status…';
+                bannerStatus.textContent = t('settingsDlCheckingStatus', 'Checking downloader status…');
                 bannerInfo.appendChild(bannerTitle);
                 bannerInfo.appendChild(bannerStatus);
                 bannerLeft.appendChild(statusDot);
@@ -1966,7 +1970,7 @@ function buildSettingsPanel() {
                 const bannerActions = document.createElement('div');
                 bannerActions.id = 'ytkit-mediadl-banner-actions';
                 bannerActions.className = 'ytkit-mediadl-banner__actions';
-                bannerActions.setAttribute('aria-label', 'Downloader actions');
+                bannerActions.setAttribute('aria-label', t('settingsDlActionsAria', 'Downloader actions'));
 
                 bannerTop.appendChild(bannerLeft);
                 bannerTop.appendChild(bannerActions);
@@ -1991,68 +1995,73 @@ function buildSettingsPanel() {
 
                     if (result.ok) {
                         banner.dataset.state = 'ready';
-                        text.textContent = `Running${result.version ? ' (v' + result.version + ')' : ''} \u2014 yt-dlp server ready`;
+                        text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                            .replace('{version}', result.version ? ` (v${result.version})` : '');
                         // Add a "Check" refresh button
-                        const refreshBtn = makeBannerButton('Refresh');
-                        refreshBtn.textContent = 'Refresh';
+                        const refreshBtn = makeBannerButton(t('commonRefresh', 'Refresh'));
                         refreshBtn.onclick = async () => {
-                            refreshBtn.textContent = 'Checking…';
+                            refreshBtn.textContent = t('commonChecking', 'Checking…');
                             refreshBtn.disabled = true;
                             banner.dataset.state = 'checking';
                             const r = await MediaDLManager.check(true);
                             banner.dataset.state = r.ok ? 'ready' : 'missing';
-                            text.textContent = r.ok ? `Running${r.version ? ' (v' + r.version + ')' : ''} \u2014 yt-dlp server ready` : 'Not connected. Local downloads need the setup helper.';
-                            refreshBtn.textContent = 'Refresh';
+                            text.textContent = r.ok
+                                ? t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                    .replace('{version}', r.version ? ` (v${r.version})` : '')
+                                : t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
+                            refreshBtn.textContent = t('commonRefresh', 'Refresh');
                             refreshBtn.disabled = false;
                         };
                         actions.appendChild(refreshBtn);
                     } else {
                         banner.dataset.state = 'missing';
-                        text.textContent = 'Not connected. Local downloads need the setup helper.';
+                        text.textContent = t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
 
                         // "Try Start" button — attempts auto-start via mediadl:// protocol
-                        const startBtn = makeBannerButton('Start service');
-                        startBtn.title = 'Try to start the Astra Downloader service';
+                        const startBtn = makeBannerButton(t('dlInstallStartService', 'Start service'));
+                        startBtn.title = t('settingsDlStartTitle', 'Try to start the Astra Downloader service');
                         startBtn.onclick = async () => {
-                            startBtn.textContent = 'Starting…';
+                            startBtn.textContent = t('dlInstallStarting', 'Starting…');
                             startBtn.disabled = true;
                             banner.dataset.state = 'checking';
-                            text.textContent = 'Trying to start the Astra Downloader service…';
+                            text.textContent = t('settingsDlTryingStart', 'Trying to start the Astra Downloader service…');
                             MediaDLManager.resetAutoStart();
                             const r = await MediaDLManager.tryAutoStart(5);
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
-                                text.textContent = `Running${r.version ? ' (v' + r.version + ')' : ''} \u2014 yt-dlp server ready`;
-                                startBtn.textContent = 'Running';
+                                text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                    .replace('{version}', r.version ? ` (v${r.version})` : '');
+                                startBtn.textContent = t('settingsDlRunning', 'Running');
                                 startBtn.classList.add('is-success');
                             } else {
                                 banner.dataset.state = 'missing';
-                                text.textContent = 'The service did not start. Run setup to repair Astra Downloader.';
-                                startBtn.textContent = 'Start service';
+                                text.textContent = t('settingsDlStartFailed', 'The service did not start. Run setup to repair Astra Downloader.');
+                                startBtn.textContent = t('dlInstallStartService', 'Start service');
                                 startBtn.disabled = false;
-                                showToast('Astra Downloader did not start. Run setup to repair it.', '#f59e0b', { duration: 4 });
+                                showToast(t('settingsDlStartFailedToast', 'Astra Downloader did not start. Run setup to repair it.'), '#f59e0b', { duration: 4 });
                             }
                         };
                         actions.appendChild(startBtn);
 
                         // "Install" button — downloads the setup file and copies the fallback command
-                        const installBtn = makeBannerButton('Download setup', 'accent');
-                        installBtn.textContent = 'Download setup';
-                        installBtn.title = 'Download the Astra Deck setup file and reveal it in Downloads';
+                        const installBtn = makeBannerButton(t('dlInstallDownloadSetup', 'Download setup'), 'accent');
+                        installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Deck setup file and reveal it in Downloads');
                         installBtn.onclick = async () => {
-                            installBtn.textContent = 'Preparing…';
+                            installBtn.textContent = t('commonPreparing', 'Preparing…');
                             installBtn.disabled = true;
                             banner.dataset.state = 'checking';
-                            text.textContent = 'Preparing the setup file…';
+                            text.textContent = t('settingsDlPreparingSetup', 'Preparing the setup file…');
                             const result = await MediaDLManager.runInstallAssist();
-                            installBtn.textContent = result.downloaded ? 'Setup ready' : 'Open setup';
+                            installBtn.textContent = result.downloaded
+                                ? t('dlInstallSetupReady', 'Setup ready')
+                                : t('settingsDlOpenSetup', 'Open setup');
                             installBtn.classList.toggle('is-success', !!result.downloaded);
                             banner.dataset.state = result.downloaded ? 'ready' : 'checking';
                             text.textContent = result.downloaded
-                                ? 'Setup downloaded. Open the file, finish installation, then refresh.'
-                                : 'Setup opened. Finish installation, then refresh.';
+                                ? t('settingsDlSetupDownloaded', 'Setup downloaded. Open the file, finish installation, then refresh.')
+                                : t('settingsDlSetupOpened', 'Setup opened. Finish installation, then refresh.');
                             setTimeout(() => {
-                                installBtn.textContent = 'Download setup';
+                                installBtn.textContent = t('dlInstallDownloadSetup', 'Download setup');
                                 installBtn.classList.remove('is-success');
                                 installBtn.disabled = false;
                             }, 3500);
@@ -2060,15 +2069,15 @@ function buildSettingsPanel() {
                         actions.appendChild(installBtn);
 
                         // "Copy command" button
-                        const dlBtn = makeBannerButton('Copy command');
-                        dlBtn.title = 'Copy the fallback PowerShell install command';
+                        const dlBtn = makeBannerButton(t('settingsDlCopyCommand', 'Copy command'));
+                        dlBtn.title = t('settingsDlCopyCommandTitle', 'Copy the fallback PowerShell install command');
                         dlBtn.onclick = async () => {
                             const copied = await MediaDLManager.copyInstallCommand();
                             if (copied) {
-                                dlBtn.textContent = 'Command copied';
-                                text.textContent = 'Fallback command copied. Use it only if the setup file cannot run.';
+                                dlBtn.textContent = t('dlInstallCommandCopied', 'Command copied');
+                                text.textContent = t('settingsDlCommandCopied', 'Fallback command copied. Use it only if the setup file cannot run.');
                                 showToast(t('toastDlCmdCopied', 'Fallback install command copied. Use it only if you cannot run the downloaded setup file.'), '#3b82f6', { duration: 6 });
-                                setTimeout(() => { dlBtn.textContent = 'Copy command'; }, 3000);
+                                setTimeout(() => { dlBtn.textContent = t('settingsDlCopyCommand', 'Copy command'); }, 3000);
                             } else {
                                 void openExternalUrl(MediaDLManager.INSTALLER_URL).catch(() => {});
                             }
@@ -2157,9 +2166,9 @@ function buildSettingsPanel() {
             const populatedSections = categoryOrder.filter((cat) => (featuresByCategory[cat] || []).length > 0).length;
             const rail = document.createElement('aside');
             rail.className = 'ytkit-insights';
-            rail.setAttribute('aria-label', 'Settings status and backup actions');
+            rail.setAttribute('aria-label', t('settingsInsightsAria', 'Settings status and backup actions'));
 
-            const statusSection = makeInsightSection('Status', 'status');
+            const statusSection = makeInsightSection(t('settingsInsightsStatus', 'Status'), 'status');
             const statusCard = document.createElement('div');
             statusCard.className = 'ytkit-insight-card ytkit-status-card';
             const statusHero = document.createElement('div');
@@ -2171,28 +2180,28 @@ function buildSettingsPanel() {
             const statusHeroCopy = document.createElement('div');
             statusHeroCopy.className = 'ytkit-status-hero-copy';
             const statusHeroTitle = document.createElement('strong');
-            statusHeroTitle.textContent = 'Ready';
+            statusHeroTitle.textContent = t('commonReady', 'Ready');
             const statusHeroMeta = document.createElement('span');
-            statusHeroMeta.textContent = 'Controls are loaded. Service health appears beside affected features.';
+            statusHeroMeta.textContent = t('settingsInsightsReadyDesc', 'Controls are loaded. Service health appears beside affected features.');
             statusHeroCopy.appendChild(statusHeroTitle);
             statusHeroCopy.appendChild(statusHeroMeta);
             statusHero.appendChild(statusHeroIcon);
             statusHero.appendChild(statusHeroCopy);
             statusCard.appendChild(statusHero);
-            statusCard.appendChild(makeStatusRow('Extension', `v${YTKIT_VERSION}`, 'ok', '', 'extension'));
-            statusCard.appendChild(makeStatusRow('Live apply', 'Active', 'ok', '', 'live-apply'));
-            statusCard.appendChild(makeStatusRow('Enabled', `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count', 'enabled'));
-            statusCard.appendChild(makeStatusRow('Sections', String(populatedSections), 'neutral', 'ytkit-insight-section-count', 'sections'));
-            statusCard.appendChild(makeStatusRow('Profile', getActiveSettingsProfileLabel(), 'neutral', 'ytkit-insight-profile-name', 'profile'));
+            statusCard.appendChild(makeStatusRow(t('settingsInsightsExtension', 'Extension'), `v${YTKIT_VERSION}`, 'ok', '', 'extension'));
+            statusCard.appendChild(makeStatusRow(t('settingsInsightsLiveApply', 'Live apply'), t('commonActive', 'Active'), 'ok', '', 'live-apply'));
+            statusCard.appendChild(makeStatusRow(t('settingsInsightsEnabled', 'Enabled'), `${countEnabledToggleFeatures(topLevelFeatures)}/${topLevelFeatures.length}`, 'info', 'ytkit-insight-enabled-count', 'enabled'));
+            statusCard.appendChild(makeStatusRow(t('settingsInsightsSections', 'Sections'), String(populatedSections), 'neutral', 'ytkit-insight-section-count', 'sections'));
+            statusCard.appendChild(makeStatusRow(t('settingsInsightsProfile', 'Profile'), getActiveSettingsProfileLabel(), 'neutral', 'ytkit-insight-profile-name', 'profile'));
             statusSection.appendChild(statusCard);
             rail.appendChild(statusSection);
 
-            const backupSection = makeInsightSection('Health', 'health');
+            const backupSection = makeInsightSection(t('settingsInsightsHealth', 'Health'), 'health');
             const backupCard = document.createElement('div');
             backupCard.className = 'ytkit-insight-card ytkit-backup-card';
-            backupCard.appendChild(makeStatusRow('Last save', 'Saved locally', 'ok', 'ytkit-insight-saved-state'));
-            backupCard.appendChild(makeStatusRow('Rule engine', 'Ready', 'ok'));
-            backupCard.appendChild(makeStatusRow('Recovery', 'Undo toasts', 'info'));
+            backupCard.appendChild(makeStatusRow(t('settingsInsightsLastSave', 'Last save'), t('settingsInsightsSavedLocally', 'Saved locally'), 'ok', 'ytkit-insight-saved-state'));
+            backupCard.appendChild(makeStatusRow(t('settingsInsightsRuleEngine', 'Rule engine'), t('commonReady', 'Ready'), 'ok'));
+            backupCard.appendChild(makeStatusRow(t('settingsInsightsRecovery', 'Recovery'), t('settingsInsightsUndoToasts', 'Undo toasts'), 'info'));
             const historyImportAction = createPanelActionButton({
                 id: 'ytkit-import-history',
                 label: t('settingsImportHistoryLabel', 'Import History'),
@@ -2721,7 +2730,7 @@ function attachUIEventListeners() {
                 createToast('Settings exported successfully', 'success');
                 setPanelStatus('Settings exported. The download is ready.', 'success');
                 const lastExport = doc.getElementById('ytkit-insight-last-export');
-                if (lastExport) lastExport.textContent = 'Just now';
+                if (lastExport) lastExport.textContent = t('commonJustNow', 'Just now');
                 return;
             }
             if (e.target.closest('#ytkit-reset-active-section')) {
@@ -2730,9 +2739,10 @@ function attachUIEventListeners() {
                 const sectionReset = activePane?.querySelector('.ytkit-reset-group-btn');
                 if (sectionReset) {
                     sectionReset.click();
-                    setPanelStatus(`${activeName} reset to defaults. Undo is available in the toast.`, 'warn');
+                setPanelStatus(t('settingsResetDoneTpl', '{category} reset to defaults. Undo is available in the toast.')
+                    .replace('{category}', activeName), 'warn');
                 } else {
-                    setPanelStatus('Choose a settings section before resetting.', 'warn');
+                    setPanelStatus(t('settingsResetChooseSection', 'Choose a settings section before resetting.'), 'warn');
                 }
                 return;
             }
@@ -2750,7 +2760,7 @@ function attachUIEventListeners() {
                         showToast(result.message, '#22c55e', {
                             duration: 8,
                             action: {
-                                text: 'Undo',
+                                text: t('toastActionUndo', 'Undo'),
                                 onClick: () => {
                                     const undo = settingsManager.undoLastSettingsImport();
                                     if (undo?.ok) {
@@ -2764,18 +2774,19 @@ function attachUIEventListeners() {
                                         showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });
                                         setPanelStatus(undo.message, 'warn');
                                     } else {
-                                        const message = undo?.message || 'Import undo is no longer available.';
+                                        const message = undo?.message || t('settingsImportUndoUnavailable', 'Import undo is no longer available.');
                                         showToast(message, '#f59e0b', { duration: 4, tone: 'warning' });
                                         setPanelStatus(message, 'warn');
                                     }
                                 }
                             }
                         });
-                        setPanelStatus(`${result.message} Undo is available in the toast.`, 'success');
+                        setPanelStatus(t('settingsImportDoneTpl', '{message} Undo is available in the toast.')
+                            .replace('{message}', result.message), 'success');
                         const lastImport = doc.getElementById('ytkit-insight-last-import');
-                        if (lastImport) lastImport.textContent = 'Just now';
+                        if (lastImport) lastImport.textContent = t('commonJustNow', 'Just now');
                     } else {
-                        const message = result?.message || 'Import failed. Choose a valid Astra Deck settings export.';
+                        const message = result?.message || t('settingsImportInvalid', 'Import failed. Choose a valid Astra Deck settings export.');
                         createToast(message, 'error');
                         setPanelStatus(message, 'error');
                     }
@@ -2788,7 +2799,7 @@ function attachUIEventListeners() {
                     const result = settingsManager.importYouTubeTakeoutWatchHistory(content);
                     if (result?.ok) {
                         const lastImport = doc.getElementById('ytkit-insight-last-import');
-                        if (lastImport) lastImport.textContent = 'Just now';
+                        if (lastImport) lastImport.textContent = t('commonJustNow', 'Just now');
                         if (result.changed) {
                             handleExternalStorageChanges({
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
@@ -2815,7 +2826,7 @@ function attachUIEventListeners() {
                         }
                         setPanelStatus(result.message, result.statusTone || result.tone || 'success');
                     } else {
-                        const message = result?.message || 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.';
+                        const message = result?.message || t('settingsTakeoutImportInvalid', 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.');
                         createToast(message, 'error');
                         setPanelStatus(message, 'error');
                     }
@@ -2835,7 +2846,7 @@ function attachUIEventListeners() {
             if (searchClearBtn) searchClearBtn.hidden = !query;
 
             if (!query) {
-                if (searchMeta) searchMeta.textContent = 'All';
+                if (searchMeta) searchMeta.textContent = t('commonAll', 'All');
                 if (searchState) {
                     searchState.hidden = true;
                     searchState.classList.remove('is-empty');
@@ -2845,8 +2856,8 @@ function attachUIEventListeners() {
 
             if (searchMeta) {
                 searchMeta.textContent = matchCount > 0
-                    ? `${matchCount} match${matchCount === 1 ? '' : 'es'}`
-                    : 'No matches';
+                    ? t('settingsSearchMatchesTpl', '{count} matches').replace('{count}', String(matchCount))
+                    : t('settingsSearchNoMatches', 'No matches');
             }
 
             if (!searchState || !searchStateTitle || !searchStateCopy) return;
@@ -2855,11 +2866,15 @@ function attachUIEventListeners() {
             searchState.classList.toggle('is-empty', matchCount === 0);
 
             if (matchCount > 0) {
-                searchStateTitle.textContent = `${matchCount} matching setting${matchCount === 1 ? '' : 's'}`;
-                searchStateCopy.textContent = `Showing results across ${visibleSectionCount} section${visibleSectionCount === 1 ? '' : 's'} for "${rawLabel}". Changes save automatically as you toggle or edit a result.`;
+                searchStateTitle.textContent = t('settingsSearchMatchingTpl', '{count} matching settings')
+                    .replace('{count}', String(matchCount));
+                searchStateCopy.textContent = t('settingsSearchShowingTpl', 'Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result.')
+                    .replace('{sections}', String(visibleSectionCount))
+                    .replace('{query}', rawLabel);
             } else {
-                searchStateTitle.textContent = `No settings found for "${rawLabel}"`;
-                searchStateCopy.textContent = 'Try a feature name, page, or words like comments, transcript, download, or theme.';
+                searchStateTitle.textContent = t('settingsSearchNoneTpl', 'No settings found for “{query}”')
+                    .replace('{query}', rawLabel);
+                searchStateCopy.textContent = t('settingsSearchHint', 'Try a feature name, page, or words like comments, transcript, download, or theme.');
             }
         }
 

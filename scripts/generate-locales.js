@@ -40,6 +40,12 @@ const en = JSON.parse(fs.readFileSync(EN_PATH, 'utf8'));
 
 const T = {};
 
+// Arabic and Simplified Chinese were originally proofed directly in their
+// locale catalogs. Include them in generation so newly extracted keys retain
+// parity while those checked-in translations remain authoritative.
+T.ar = {};
+T.zh_CN = {};
+
 // ── German (de) ──
 T.de = {
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Wählen Sie Raster-, Listen- oder Kompaktansicht für Abonnements und sortieren Sie optional die aktuell geladenen Karten nach den neuesten.',
