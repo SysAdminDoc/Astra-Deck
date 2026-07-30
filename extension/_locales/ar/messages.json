@@ -3686,11 +3686,17 @@
   "statusBackupExported": {
     "message": "تم تصدير النسخة الاحتياطية."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "تم تصدير النسخة الاحتياطية بدون فهرس النصوص لعدم توفر علامة تبويب YouTube مستجيبة."
+  },
   "statusBackupImported": {
     "message": "تم استيراد النسخة الاحتياطية."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "تم استيراد بيانات الإضافة مع إتاحة التراجع. تُرك فهرس النصوص دون تغيير لعدم توفر علامة تبويب YouTube مستجيبة."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3751,6 +3757,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "تم مسح البيانات المحمولة؛ واحتُفظ ببيانات اعتماد الذكاء الاصطناعي المخزّنة. التراجع غير متاح في هذا المتصفح."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "تم مسح بيانات الإضافة مع إتاحة التراجع. تُركت بيانات النصوص دون تغيير لعدم توفر علامة تبويب YouTube مستجيبة. تم الاحتفاظ ببيانات اعتماد الذكاء الاصطناعي المخزنة."
   },
   "statusResetDoneUndo": {
     "message": "تم مسح الإعدادات المحمولة والسجلات وقوائم الانتظار وبيانات النصوص المفرّغة. يُحتفظ ببيانات اعتماد الذكاء الاصطناعي المخزّنة؛ استخدم حذف بيانات الاعتماد لإزالتها. انقر على التراجع عن إعادة التعيين للاستعادة حتى إغلاق المتصفح."

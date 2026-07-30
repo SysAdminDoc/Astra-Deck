@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Backup exportiert."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "Backup ohne Transkriptindex exportiert, da kein antwortender YouTube-Tab verfügbar war."
+  },
   "statusBackupImported": {
     "message": "Backup importiert."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Erweiterungsdaten wurden mit verfügbarer Rückgängig-Funktion importiert. Der Transkriptindex blieb unverändert, da kein antwortender YouTube-Tab verfügbar war."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Portable Daten gelöscht; gespeicherte KI-Anmeldedaten wurden beibehalten. Rückgängig ist in diesem Browser nicht verfügbar."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Erweiterungsdaten wurden mit verfügbarer Rückgängig-Funktion gelöscht. Transkriptdaten blieben unverändert, da kein antwortender YouTube-Tab verfügbar war. Gespeicherte KI-Zugangsdaten wurden beibehalten."
   },
   "statusResetDoneUndo": {
     "message": "Portable Einstellungen, Verläufe, Warteschlangen und Transkriptdaten gelöscht. Gespeicherte KI-Anmeldedaten bleiben erhalten; verwenden Sie „Anmeldedaten löschen“, um sie zu entfernen. Klicken Sie auf „Zurücksetzen rückgängig“, um bis zum Schließen des Browsers wiederherzustellen."

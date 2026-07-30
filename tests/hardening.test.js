@@ -10107,7 +10107,7 @@ test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pa
     // wiping so Undo Reset can restore byte-identical. This test
     // belongs to EI2 conceptually but we pin it here too so the NF14
     // pass can't silently remove the snapshot path.
-    assert.match(resetFnBody, /createCoordinatedSnapshot\('reset',\s*\{ includePage: true \}\)/,
+    assert.match(resetFnBody, /createCoordinatedSnapshot\('reset',\s*\{[\s\S]*?includePage: true[\s\S]*?\}\)/,
         'resetAllData must snapshot extension and YouTube-origin data before wiping');
     assert.match(popupJs, /function readLocalStorageSnapshot|async function readLocalStorageSnapshot/,
         'popup.js must keep the shared local-storage snapshot helper');

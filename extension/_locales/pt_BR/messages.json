@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Backup exportado."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "Backup exportado sem o índice de transcrições porque nenhuma aba responsiva do YouTube estava disponível."
+  },
   "statusBackupImported": {
     "message": "Backup importado."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Dados da extensão importados com a opção Desfazer disponível. O índice de transcrições não foi alterado porque nenhuma aba responsiva do YouTube estava disponível."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Dados portáteis apagados; as credenciais de IA armazenadas foram mantidas. Desfazer não está disponível neste navegador."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Dados da extensão apagados com a opção Desfazer disponível. As transcrições não foram alteradas porque nenhuma aba responsiva do YouTube estava disponível. As credenciais de IA armazenadas foram mantidas."
   },
   "statusResetDoneUndo": {
     "message": "Configurações portáteis, históricos, filas e dados de transcrição apagados. As credenciais de IA armazenadas são mantidas; use Excluir credencial para removê-las. Clique em Desfazer redefinição para restaurar até fechar o navegador."

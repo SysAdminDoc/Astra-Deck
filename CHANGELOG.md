@@ -17,6 +17,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Popup data recovery now works without an open YouTube tab.** Export writes
+  a truthful extension-only backup that marks the transcript index unavailable;
+  Import and Reset keep local rollback/Undo guarantees while leaving inaccessible
+  YouTube-origin transcript data unchanged and reporting the partial result.
 - **Companion first paint no longer waits on executable probes.** The Settings
   maintenance row now renders a checking state immediately and refreshes
   yt-dlp/ffmpeg versions through the existing worker-backed signal after

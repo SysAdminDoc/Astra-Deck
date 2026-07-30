@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Copia de seguridad exportada."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "La copia se exportó sin el índice de transcripciones porque no había ninguna pestaña de YouTube disponible."
+  },
   "statusBackupImported": {
     "message": "Copia de seguridad importada."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Los datos de la extensión se importaron con la opción Deshacer disponible. El índice de transcripciones no cambió porque no había ninguna pestaña de YouTube disponible."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Datos portátiles borrados; las credenciales de IA almacenadas se conservaron. Deshacer no está disponible en este navegador."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Los datos de la extensión se borraron con la opción Deshacer disponible. Los datos de transcripciones no cambiaron porque no había ninguna pestaña de YouTube disponible. Se conservaron las credenciales de IA almacenadas."
   },
   "statusResetDoneUndo": {
     "message": "Se borraron los ajustes portátiles, historiales, colas y datos de transcripción. Las credenciales de IA almacenadas se conservan; usa Eliminar credencial para quitarlas. Haz clic en Deshacer restablecimiento para restaurar hasta que cierres el navegador."

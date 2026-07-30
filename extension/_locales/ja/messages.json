@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "バックアップをエクスポートしました。"
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "応答する YouTube タブがなかったため、文字起こしインデックスを含めずにバックアップをエクスポートしました。"
+  },
   "statusBackupImported": {
     "message": "バックアップをインポートしました。"
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "拡張機能のデータをインポートしました。元に戻すことができます。応答する YouTube タブがなかったため、文字起こしインデックスは変更していません。"
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "ポータブルデータを消去しました。保存済みの AI 資格情報は保持されています。このブラウザーでは元に戻す操作を利用できません。"
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "拡張機能のデータを消去しました。元に戻すことができます。応答する YouTube タブがなかったため、文字起こしデータは変更していません。保存済みの AI 認証情報は保持しました。"
   },
   "statusResetDoneUndo": {
     "message": "ポータブルな設定、履歴、キュー、文字起こしデータを消去しました。保存済みの AI 資格情報は保持されます。削除するには「資格情報を削除」を使用してください。ブラウザーを閉じるまでは「リセットを元に戻す」で復元できます。"

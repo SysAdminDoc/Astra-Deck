@@ -3695,11 +3695,17 @@
   "statusBackupExported": {
     "message": "Sauvegarde exportée."
   },
+  "statusBackupExportedNoTranscript": {
+    "message": "Sauvegarde exportée sans l’index des transcriptions, car aucun onglet YouTube réactif n’était disponible."
+  },
   "statusBackupImported": {
     "message": "Sauvegarde importée."
   },
   "statusBackupImportedNoUndo": {
     "message": "Backup imported. Undo is unavailable on this browser."
+  },
+  "statusBackupImportedNoTranscript": {
+    "message": "Données de l’extension importées avec possibilité d’annulation. L’index des transcriptions est resté inchangé, car aucun onglet YouTube réactif n’était disponible."
   },
   "statusBackupImportedUndo": {
     "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
@@ -3760,6 +3766,9 @@
   },
   "statusResetDoneNoUndo": {
     "message": "Données portables effacées ; les identifiants IA stockés ont été conservés. Annuler n'est pas disponible dans ce navigateur."
+  },
+  "statusResetDoneNoTranscript": {
+    "message": "Données de l’extension effacées avec possibilité d’annulation. Les transcriptions sont restées inchangées, car aucun onglet YouTube réactif n’était disponible. Les identifiants d’IA enregistrés ont été conservés."
   },
   "statusResetDoneUndo": {
     "message": "Réglages portables, historiques, files d'attente et données de transcription effacés. Les identifiants IA stockés sont conservés ; utilisez Supprimer l'identifiant pour les retirer. Cliquez sur Annuler la réinitialisation pour restaurer jusqu'à la fermeture du navigateur."
