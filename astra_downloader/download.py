@@ -39,7 +39,7 @@ MAX_QUEUED_TOTAL = 200
 DOWNLOAD_STALL_TIMEOUT_SECONDS = 1800
 DOWNLOAD_WATCHDOG_POLL_SECONDS = 15
 DOWNLOAD_QUEUE_SCHEMA_VERSION = 1
-DOWNLOAD_RUNNING_STATES = {'queued', 'downloading', 'merging', 'extracting'}
+DOWNLOAD_RUNNING_STATES = {'queued', 'downloading', 'merging', 'extracting', 'trimming'}
 DOWNLOAD_PENDING_STATES = {'pending', 'paused', 'needs-auth'}
 DOWNLOAD_ACTIVE_STATES = DOWNLOAD_RUNNING_STATES | DOWNLOAD_PENDING_STATES
 DOWNLOAD_TERMINAL_STATES = {'complete', 'failed', 'cancelled'}
@@ -477,7 +477,8 @@ def apply_download_failure_classification(download, error_code, error=None, advi
 class Download:
     def __init__(self, dl_id, url, audio_only=False, fmt=None, quality='best',
                  output_dir=None, title=None, referer=None, cookies_file=None,
-                 requires_auth=False, created_at=None, queue_order=0, clock=None):
+                 requires_auth=False, created_at=None, queue_order=0, section=None,
+                 clock=None):
         self._clock = clock or time.time
         self.id = dl_id
         self.url = url
@@ -487,6 +488,7 @@ class Download:
         self.output_dir = output_dir
         self.title = title or "Unknown"
         self.referer = referer
+        self.section = dict(section) if isinstance(section, dict) else None
         self.cookies_file = cookies_file
         self.requires_auth = bool(requires_auth)
         self._cookies = None
@@ -525,6 +527,8 @@ class Download:
             payload["error_code"] = self.error_code
             payload["advice"] = self.error_advice
             payload["next_action"] = self.error_action
+        if self.section:
+            payload["section"] = dict(self.section)
         return payload
 
 
@@ -564,6 +568,7 @@ class DownloadQueueStore:
             'outputDir': self._clean_path_text(download.output_dir),
             'referer': download.referer,
             'requiresAuth': bool(download.requires_auth),
+            **({'section': dict(download.section)} if download.section else {}),
             'createdAt': float(download.start_time),
             'order': int(download.queue_order),
         } for download in unfinished]
@@ -601,9 +606,11 @@ _REQUIRED_MANAGER_DEPENDENCIES = frozenset({
     'is_youtube_url',
     'load_json_file',
     'normalize_output_dir',
+    'normalize_download_section',
     'normalize_url',
     'probe_javascript_runtime',
     'probe_po_token_provider',
+    'spawn_media_process',
     'spawn_ytdlp',
     'terminate_process_tree',
     'write_persistent_log',
@@ -720,6 +727,11 @@ class DownloadManagerCore:
             else:
                 fmt = item.get('format') if item.get('format') in self.ALLOWED_VIDEO_FMT else 'mp4'
             quality = item.get('quality') if item.get('quality') in self.ALLOWED_QUALITY else 'best'
+            section, section_error = self._dependencies['normalize_download_section'](
+                item.get('section')
+            )
+            if section_error:
+                section = None
             referer, _ = self._dependencies['normalize_url'](item.get('referer')) if item.get('referer') else (None, None)
             dl_id = self._dependencies['clean_text'](item.get('id'), '', 120)
             if not dl_id or dl_id in seen_ids:
@@ -746,6 +758,7 @@ class DownloadManagerCore:
                 requires_auth=requires_auth,
                 created_at=created_at,
                 queue_order=self._next_order,
+                section=section,
             )
             dl.status = 'needs-auth' if requires_auth else 'paused'
             dl.error = (
@@ -978,11 +991,15 @@ class DownloadManagerCore:
         return removed
 
     def start_download(self, url, audio_only=False, fmt=None, quality=None,
-                       output_dir=None, title=None, referer=None, cookies=None):
+                       output_dir=None, title=None, referer=None, cookies=None,
+                       section=None):
         url, err = self._dependencies['normalize_url'](url)
         if err:
             return None, err
         audio_only = self._dependencies['coerce_bool'](audio_only, False)
+        section, section_error = self._dependencies['normalize_download_section'](section)
+        if section_error:
+            return None, section_error
 
         # No update trigger here: firing before the download was enqueued let
         # the updater pass its active_count()==0 idle gate and then race the
@@ -1050,7 +1067,7 @@ class DownloadManagerCore:
                 dl_id = dl.id
                 recovery_previous = (
                     dl.audio_only, dl.format, dl.quality, dl.output_dir,
-                    dl.title, dl.referer, dl.requires_auth, dl.status,
+                    dl.title, dl.referer, dl.section, dl.requires_auth, dl.status,
                     dl.error, dl.error_code, dl.error_advice, dl.error_action,
                 )
                 dl.audio_only = audio_only
@@ -1059,6 +1076,7 @@ class DownloadManagerCore:
                 dl.output_dir = output_dir
                 dl.title = title or dl.title
                 dl.referer = referer
+                dl.section = dict(section) if section else None
                 dl.requires_auth = True
                 dl._cookies = list(cookies)
                 dl.status = 'pending'
@@ -1081,6 +1099,7 @@ class DownloadManagerCore:
                     referer,
                     requires_auth=bool(cookies),
                     queue_order=self._next_order,
+                    section=section,
                 )
                 dl._cookies = list(cookies) if cookies else None
                 self.downloads[dl_id] = dl
@@ -1090,7 +1109,7 @@ class DownloadManagerCore:
                 else:
                     (
                         dl.audio_only, dl.format, dl.quality, dl.output_dir,
-                        dl.title, dl.referer, dl.requires_auth, dl.status,
+                        dl.title, dl.referer, dl.section, dl.requires_auth, dl.status,
                         dl.error, dl.error_code, dl.error_advice, dl.error_action,
                     ) = recovery_previous
                 dl._cookies = None
@@ -1106,6 +1125,109 @@ class DownloadManagerCore:
         self._schedule()
 
         return dl_id, None
+
+    def _recut_section(self, dl, env):
+        """Replace a completed file with a frame-accurate ffmpeg re-cut."""
+        if not dl.section:
+            return True
+        input_path = Path(dl.filename or "")
+        try:
+            input_path = input_path.resolve(strict=True)
+            output_root = Path(dl.output_dir).resolve(strict=True)
+            if input_path != output_root and not input_path.is_relative_to(output_root):
+                raise ValueError("download output escaped its configured directory")
+        except (OSError, RuntimeError, ValueError) as error:
+            dl.status = "failed"
+            dl.error = f"Accurate clip could not locate the downloaded file: {error}"
+            return False
+
+        start = float(dl.section["start"])
+        duration = float(dl.section["end"]) - start
+        temporary = input_path.with_name(
+            f".{input_path.stem}.astra-section-{uuid.uuid4().hex}{input_path.suffix}"
+        )
+        ffmpeg = str(self._dependencies['FFMPEG_PATH']())
+        args = [
+            ffmpeg, '-hide_banner', '-nostdin', '-loglevel', 'error', '-y',
+            '-i', str(input_path), '-ss', f'{start:.3f}', '-t', f'{duration:.3f}',
+            '-map_metadata', '0',
+        ]
+        suffix = input_path.suffix.lower()
+        if dl.audio_only:
+            audio_codec_args = {
+                '.mp3': ['-c:a', 'libmp3lame', '-q:a', '0'],
+                '.m4a': ['-c:a', 'aac', '-b:a', '256k'],
+                '.opus': ['-c:a', 'libopus', '-b:a', '192k'],
+                '.flac': ['-c:a', 'flac'],
+                '.wav': ['-c:a', 'pcm_s16le'],
+            }
+            args += ['-map', '0:a:0', '-vn']
+            args += audio_codec_args.get(suffix, ['-c:a', 'aac', '-b:a', '256k'])
+        elif suffix == '.webm':
+            args += [
+                '-map', '0:v:0?', '-map', '0:a:0?', '-map', '0:s?',
+                '-c:v', 'libvpx-vp9', '-crf', '24', '-b:v', '0',
+                '-c:a', 'libopus', '-b:a', '192k', '-c:s', 'webvtt',
+            ]
+        else:
+            args += [
+                '-map', '0:v:0?', '-map', '0:a:0?', '-map', '0:s?',
+                '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
+                '-c:a', 'aac', '-b:a', '192k',
+                '-c:s', 'mov_text' if suffix == '.mp4' else 'copy',
+            ]
+            if suffix == '.mp4':
+                args += ['-movflags', '+faststart']
+        args.append(str(temporary))
+
+        dl.status = 'trimming'
+        dl.speed = ''
+        dl.eta = ''
+        self.progress_updated.emit()
+        proc = None
+        try:
+            proc = self._dependencies['spawn_media_process'](
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                creationflags=(
+                    self._dependencies['CREATE_NO_WINDOW']
+                    | self._dependencies['CREATE_NEW_PROCESS_GROUP']
+                ),
+                env=env,
+            )
+            dl.process = proc
+            output, _ = proc.communicate()
+            if dl.status == 'cancelled':
+                return False
+            if proc.returncode != 0 or not temporary.is_file():
+                detail = " ".join(str(output or "").split())[-220:]
+                dl.status = 'failed'
+                dl.error = (
+                    "ffmpeg could not create the requested clip."
+                    + (f" {detail}" if detail else "")
+                )
+                apply_download_failure_classification(
+                    dl, 'ffmpeg-missing-or-stale', error=dl.error
+                )
+                return False
+            os.replace(temporary, input_path)
+            dl.filename = str(input_path)
+            return True
+        finally:
+            dl.process = None
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+            if proc is not None and proc.poll() is None:
+                try:
+                    self._dependencies['terminate_process_tree'](proc)
+                except Exception:
+                    pass
 
     def _run_download(self, dl):
         with self._lock:
@@ -1147,7 +1269,8 @@ class DownloadManagerCore:
                 '--progress-template',
                 'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s',
                 '--progress-template',
-                'download:MDLP_JSON %(progress)j']
+                'download:MDLP_JSON %(progress)j',
+                '--print', 'after_move:MDLP_FILEPATH %(filepath)j']
 
         frags = self._dependencies['clamp_int'](self.config.get("ConcurrentFragments", 4), 4, 1, 32)
         args += ['--concurrent-fragments', str(frags)]
@@ -1307,6 +1430,14 @@ class DownloadManagerCore:
                     except Exception:
                         # reason: yt-dlp occasionally emits a malformed JSON
                         # line on extractor exit. Fall through to MDLP.
+                        pass
+                if line.startswith('MDLP_FILEPATH '):
+                    try:
+                        filepath = json.loads(line[len('MDLP_FILEPATH '):])
+                        if isinstance(filepath, str) and filepath:
+                            dl.filename = filepath
+                            continue
+                    except Exception:
                         pass
 
                 # Structured progress (MDLP prefix, legacy fallback)
@@ -1500,6 +1631,14 @@ class DownloadManagerCore:
                                     continue
                                 except Exception:
                                     pass
+                            if line.startswith('MDLP_FILEPATH '):
+                                try:
+                                    filepath = json.loads(line[len('MDLP_FILEPATH '):])
+                                    if isinstance(filepath, str) and filepath:
+                                        dl.filename = filepath
+                                        continue
+                                except Exception:
+                                    pass
                             m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
                             if m:
                                 dl.progress = float(m.group(1))
@@ -1572,6 +1711,17 @@ class DownloadManagerCore:
                             dl,
                             classify_download_failure(dl.error, last_lines),
                         )
+            if dl.status == "complete" and dl.section:
+                if stop_watchdog is not None:
+                    stop_watchdog.set()
+                try:
+                    if getattr(proc, 'stdout', None) is not None:
+                        proc.stdout.close()
+                except Exception:
+                    pass
+                if self._recut_section(dl, env):
+                    dl.status = "complete"
+                    dl.progress = 100
 
         except FileNotFoundError:
             if dl.status != "cancelled":
@@ -1637,6 +1787,7 @@ class DownloadManagerCore:
                 "id": dl.id, "url": dl.url, "title": dl.title,
                 "filename": dl.filename, "format": dl.format,
                 "quality": dl.quality, "audioOnly": dl.audio_only,
+                "section": dict(dl.section) if dl.section else None,
                 "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "duration": duration,
             })

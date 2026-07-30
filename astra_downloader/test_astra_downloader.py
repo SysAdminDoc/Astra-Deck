@@ -1014,6 +1014,7 @@ class DownloadManagerTests(unittest.TestCase):
             self.assertTrue(manager.pause_intake())
             plain_id, plain_err = manager.start_download(
                 'https://www.youtube.com/watch?v=plainQueue',
+                section={"start": "1:02.5", "end": "1:05"},
             )
             auth_id, auth_err = manager.start_download(
                 'https://www.youtube.com/watch?v=authQueue1',
@@ -1032,6 +1033,10 @@ class DownloadManagerTests(unittest.TestCase):
             self.assertEqual(restored.active_count(), 0)
             self.assertTrue(restored.intake_paused)
             self.assertEqual(restored.downloads[plain_id].status, 'paused')
+            self.assertEqual(
+                restored.downloads[plain_id].section,
+                {"start": 62.5, "end": 65.0},
+            )
             self.assertEqual(restored.downloads[auth_id].status, 'needs-auth')
 
             started = []
@@ -1668,11 +1673,29 @@ class ApiSecurityTests(unittest.TestCase):
             "title": "Fixture",
             "referer": "https://www.youtube.com/",
             "cookies": [],
+            "section": {"start": "1:02.5", "end": "1:05"},
         }
         validated, err, code = ad.validate_download_request_body(body)
-        self.assertIs(validated, body)
+        self.assertEqual(validated["section"], {"start": 62.5, "end": 65.0})
         self.assertIsNone(err)
         self.assertIsNone(code)
+
+    def test_download_request_body_rejects_invalid_clip_ranges(self):
+        invalid_sections = (
+            {"start": "", "end": "1:00"},
+            {"start": "1:00", "end": "0:59"},
+            {"start": "0:00", "end": "25:00:00"},
+            {"start": "0:00", "end": "1:00", "args": "--copy"},
+            ["0:00", "1:00"],
+        )
+        for section in invalid_sections:
+            with self.subTest(section=section):
+                _validated, err, code = ad.validate_download_request_body({
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "section": section,
+                })
+                self.assertEqual(code, "invalid-download-section")
+                self.assertTrue(err)
 
     def test_download_request_body_rejects_client_supplied_ytdlp_flags(self):
         hostile_args = ["--netrc-cmd", "calc.exe", *ad.YTDLP_FORBIDDEN_LINK_FLAGS]
@@ -4313,6 +4336,55 @@ class EndToEndDownloadTests(unittest.TestCase):
             self.assertEqual(entry["filename"], "fake-video.mp4")
             self.assertEqual(entry["format"], "mp4")
             self.assertFalse(entry["audioOnly"])
+
+    def test_accurate_section_recut_reencodes_then_atomically_replaces_source(self):
+        captured = []
+
+        class FakeFfmpeg:
+            returncode = 0
+            stdout = None
+
+            def __init__(self, args):
+                self.args = list(args)
+
+            def communicate(self):
+                Path(self.args[-1]).write_bytes(b"trimmed-media")
+                return "", None
+
+            def poll(self):
+                return self.returncode
+
+        def spawn(args, **_kwargs):
+            captured.append(list(args))
+            return FakeFfmpeg(args)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "source.mp4"
+            source.write_bytes(b"full-media")
+            manager = ad.DownloadManager(
+                FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir}),
+                FakeHistory(),
+            )
+            download = ad.Download(
+                "dl_section",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir=tmpdir,
+                fmt="mp4",
+                section={"start": 62.5, "end": 65.0},
+            )
+            download.filename = str(source)
+
+            with mock.patch.object(ad, "FFMPEG_PATH", Path(tmpdir) / "ffmpeg.exe"), \
+                 mock.patch.object(ad, "spawn_media_process", side_effect=spawn):
+                self.assertTrue(manager._recut_section(download, {}))
+
+            self.assertEqual(source.read_bytes(), b"trimmed-media")
+            args = captured[0]
+            self.assertLess(args.index("-i"), args.index("-ss"))
+            self.assertEqual(args[args.index("-ss") + 1], "62.500")
+            self.assertEqual(args[args.index("-t") + 1], "2.500")
+            self.assertIn("libx264", args)
+            self.assertNotIn("--download-sections", args)
 
     def test_saved_config_cannot_inject_link_file_flags_into_spawn(self):
         captured_args = []

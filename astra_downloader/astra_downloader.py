@@ -64,7 +64,7 @@ try:
         HistoryStore,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
         clean_path_text, clean_text, coerce_bool, load_json_file,
-        normalize_output_dir, normalize_output_template, normalize_proxy,
+        normalize_download_section, normalize_output_dir, normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
         query_history_entries, sanitize_history_entries,
         validate_download_request_body,
@@ -121,7 +121,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
         HistoryStore,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
         clean_path_text, clean_text, coerce_bool, load_json_file,
-        normalize_output_dir, normalize_output_template, normalize_proxy,
+        normalize_download_section, normalize_output_dir, normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
         query_history_entries, sanitize_history_entries,
         validate_download_request_body,
@@ -357,6 +357,11 @@ def validate_ytdlp_spawn_args(args):
 def spawn_ytdlp(args, **kwargs):
     """Launch yt-dlp only after applying final process-boundary policy."""
     return subprocess.Popen(validate_ytdlp_spawn_args(args), **kwargs)
+
+
+def spawn_media_process(args, **kwargs):
+    """Launch a server-built media helper command without accepting client flags."""
+    return subprocess.Popen(list(args), **kwargs)
 
 
 def write_persistent_log(message, path=None):
@@ -3009,10 +3014,12 @@ class DownloadManager(DownloadManagerCore):
                 # startup, now opens the update window.
                 'maybe_auto_update_ytdlp': lambda *args, **kwargs: maybe_auto_update_ytdlp(*args, **kwargs),
                 'normalize_output_dir': lambda *args, **kwargs: normalize_output_dir(*args, **kwargs),
+                'normalize_download_section': lambda *args, **kwargs: normalize_download_section(*args, **kwargs),
                 'normalize_url': lambda *args, **kwargs: normalize_url(*args, **kwargs),
                 'probe_javascript_runtime': lambda *args, **kwargs: probe_javascript_runtime(*args, **kwargs),
                 'probe_po_token_provider': lambda *args, **kwargs: probe_po_token_provider(*args, **kwargs),
                 'spawn_ytdlp': lambda *args, **kwargs: spawn_ytdlp(*args, **kwargs),
+                'spawn_media_process': lambda *args, **kwargs: spawn_media_process(*args, **kwargs),
                 'terminate_process_tree': lambda *args, **kwargs: terminate_process_tree(*args, **kwargs),
                 'write_persistent_log': lambda *args, **kwargs: write_persistent_log(*args, **kwargs),
             },
@@ -3280,6 +3287,7 @@ class MainWindow(MainWindowCore):
                 'evaluate_sabr_support': lambda *args, **kwargs: evaluate_sabr_support(*args, **kwargs),
                 'maybe_auto_update_ytdlp': lambda *args, **kwargs: maybe_auto_update_ytdlp(*args, **kwargs),
                 'normalize_output_dir': lambda *args, **kwargs: normalize_output_dir(*args, **kwargs),
+                'normalize_download_section': lambda *args, **kwargs: normalize_download_section(*args, **kwargs),
                 'normalize_output_template': lambda *args, **kwargs: normalize_output_template(*args, **kwargs),
                 'normalize_proxy': lambda *args, **kwargs: normalize_proxy(*args, **kwargs),
                 'normalize_rate_limit': lambda *args, **kwargs: normalize_rate_limit(*args, **kwargs),

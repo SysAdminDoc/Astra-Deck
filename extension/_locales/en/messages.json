@@ -206,6 +206,27 @@
   "dlPopupChangeAria": {
     "message": "Choose a download folder"
   },
+  "dlPopupClipEndAria": {
+    "message": "Clip end timestamp"
+  },
+  "dlPopupClipEndPlaceholder": {
+    "message": "End · 1:30"
+  },
+  "dlPopupClipHint": {
+    "message": "Leave blank for the full video. Clips are frame-accurately re-cut after download."
+  },
+  "dlPopupClipInvalid": {
+    "message": "Enter a valid clip range with an end later than its start."
+  },
+  "dlPopupClipRange": {
+    "message": "Clip range (optional)"
+  },
+  "dlPopupClipStartAria": {
+    "message": "Clip start timestamp"
+  },
+  "dlPopupClipStartPlaceholder": {
+    "message": "Start · 0:00"
+  },
   "dlPopupCtaAudio": {
     "message": "Download audio"
   },

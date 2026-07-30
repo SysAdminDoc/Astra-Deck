@@ -49258,6 +49258,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         .ytkit-dl-popup__close:focus-visible,
         .ytkit-dl-popup__tab:focus-visible,
         .ytkit-dl-popup__chip:focus-visible,
+        .ytkit-dl-popup__clip-input:focus-visible,
         .ytkit-dl-popup__dir-btn:focus-visible,
         .ytkit-dl-popup__go:focus-visible {
             box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 3px rgba(255,107,74,0.45);
@@ -49361,6 +49362,41 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             align-items: center;
             gap: 6px;
             min-height: 28px;
+        }
+
+        .ytkit-dl-popup__clip-wrap {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ytkit-dl-popup__clip-input {
+            box-sizing: border-box;
+            min-width: 0;
+            height: 32px;
+            padding: 0 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(6,9,13,0.7);
+            color: rgba(255,255,255,0.92);
+            font: 500 11px/1 "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace;
+            outline: none;
+        }
+
+        .ytkit-dl-popup__clip-input:focus,
+        .ytkit-dl-popup__clip-input:focus-visible {
+            border-color: rgba(255,107,74,0.5);
+        }
+
+        .ytkit-dl-popup__clip-separator,
+        .ytkit-dl-popup__clip-hint {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .ytkit-dl-popup__clip-hint {
+            font-size: 10px;
+            line-height: 1.35;
         }
 
         .ytkit-dl-popup__dir-path {
@@ -49468,6 +49504,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         html:not([dark]) .ytkit-dl-popup__close:focus-visible,
         html:not([dark]) .ytkit-dl-popup__tab:focus-visible,
         html:not([dark]) .ytkit-dl-popup__chip:focus-visible,
+        html:not([dark]) .ytkit-dl-popup__clip-input:focus-visible,
         html:not([dark]) .ytkit-dl-popup__dir-btn:focus-visible,
         html:not([dark]) .ytkit-dl-popup__go:focus-visible {
             box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(207,53,47,0.42);
@@ -49522,6 +49559,17 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             border-color: #d8dde5;
             background: #ffffff;
             color: #17202b;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__clip-input {
+            border-color: #d8dde5;
+            background: #ffffff;
+            color: #17202b;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__clip-separator,
+        html:not([dark]) .ytkit-dl-popup__clip-hint {
+            color: #5f6b79;
         }
 
         #ytkit-subs-load-banner {

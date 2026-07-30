@@ -200,7 +200,7 @@ def download_status_tone(status):
         return "success"
     if status in ("failed", "cancelled"):
         return "danger"
-    if status in ("merging", "extracting", "queued", "pending", "paused", "needs-auth"):
+    if status in ("merging", "extracting", "trimming", "queued", "pending", "paused", "needs-auth"):
         return "warning"
     if status == "downloading":
         return "info"
@@ -216,6 +216,7 @@ def human_status(status):
         "downloading": "Downloading",
         "merging": "Merging",
         "extracting": "Extracting",
+        "trimming": "Trimming",
         "complete": "Complete",
         "failed": "Failed",
         "cancelled": "Cancelled",
@@ -719,6 +720,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'get_ytdlp_version',
     'maybe_auto_update_ytdlp',
     'normalize_output_dir',
+    'normalize_download_section',
     'normalize_output_template',
     'normalize_proxy',
     'normalize_rate_limit',
@@ -1197,6 +1199,63 @@ class MainWindowCore(QMainWindow):
         layout.setSpacing(12)
         layout.addLayout(self._make_page_header("Downloads", ""))
 
+        quick_card = make_card()
+        quick_layout = QVBoxLayout(quick_card)
+        quick_layout.setContentsMargins(16, 14, 16, 14)
+        quick_layout.setSpacing(10)
+        quick_layout.addWidget(make_section_label("Quick download"))
+        url_row = QHBoxLayout()
+        self.quick_download_url = QLineEdit()
+        self.quick_download_url.setAccessibleName("YouTube URL")
+        self.quick_download_url.setPlaceholderText("Paste a YouTube video or playlist URL")
+        self.quick_download_url.returnPressed.connect(self._start_quick_download)
+        url_row.addWidget(self.quick_download_url, 1)
+        self.btn_quick_download = self._make_tool_button("Add to queue", "primary")
+        self.btn_quick_download.clicked.connect(self._start_quick_download)
+        url_row.addWidget(self.btn_quick_download)
+        quick_layout.addLayout(url_row)
+
+        options_row = QHBoxLayout()
+        options_row.setSpacing(8)
+        self.quick_download_type = QComboBox()
+        self.quick_download_type.setAccessibleName("Download type")
+        self.quick_download_type.addItem("Video", False)
+        self.quick_download_type.addItem("Audio", True)
+        self.quick_download_type.currentIndexChanged.connect(
+            self._sync_quick_download_options
+        )
+        options_row.addWidget(self.quick_download_type)
+        self.quick_download_format = QComboBox()
+        self.quick_download_format.setAccessibleName("Download format")
+        options_row.addWidget(self.quick_download_format)
+        self.quick_download_quality = QComboBox()
+        self.quick_download_quality.setAccessibleName("Download quality")
+        for label, value in (
+            ("Best", "best"), ("2160p", "2160"), ("1440p", "1440"),
+            ("1080p", "1080"), ("720p", "720"), ("480p", "480"),
+        ):
+            self.quick_download_quality.addItem(label, value)
+        options_row.addWidget(self.quick_download_quality)
+        options_row.addStretch()
+        options_row.addWidget(make_label("Clip from", "fieldHint"))
+        self.quick_download_start = QLineEdit()
+        self.quick_download_start.setAccessibleName("Clip start timestamp")
+        self.quick_download_start.setPlaceholderText("0:00")
+        self.quick_download_start.setMaximumWidth(84)
+        options_row.addWidget(self.quick_download_start)
+        options_row.addWidget(make_label("to", "fieldHint"))
+        self.quick_download_end = QLineEdit()
+        self.quick_download_end.setAccessibleName("Clip end timestamp")
+        self.quick_download_end.setPlaceholderText("1:30")
+        self.quick_download_end.setMaximumWidth(84)
+        options_row.addWidget(self.quick_download_end)
+        quick_layout.addLayout(options_row)
+        self.quick_download_status = make_label("", "fieldHint")
+        self.quick_download_status.hide()
+        quick_layout.addWidget(self.quick_download_status)
+        layout.addWidget(quick_card)
+        self._sync_quick_download_options()
+
         toolbar = QHBoxLayout()
         self.queue_capacity_badge = make_label("0 / 200 jobs", "toolbarMeta")
         self.queue_capacity_badge.setToolTip("Running and pending downloads stored in the durable queue.")
@@ -1222,6 +1281,66 @@ class MainWindowCore(QMainWindow):
         scroll.setWidget(content)
         layout.addWidget(scroll, 1)
         self.tabs.addTab(page, "Downloads")
+
+    def _sync_quick_download_options(self, *_args):
+        if not hasattr(self, "quick_download_format"):
+            return
+        audio_only = bool(self.quick_download_type.currentData())
+        current = self.quick_download_format.currentData()
+        values = (
+            (("MP3", "mp3"), ("M4A", "m4a"), ("Opus", "opus"),
+             ("FLAC", "flac"), ("WAV", "wav"))
+            if audio_only else
+            (("MP4", "mp4"), ("MKV", "mkv"), ("WebM", "webm"))
+        )
+        self.quick_download_format.blockSignals(True)
+        self.quick_download_format.clear()
+        for label, value in values:
+            self.quick_download_format.addItem(label, value)
+        restored = self.quick_download_format.findData(current)
+        if restored >= 0:
+            self.quick_download_format.setCurrentIndex(restored)
+        self.quick_download_format.blockSignals(False)
+        self.quick_download_quality.setEnabled(not audio_only)
+
+    def _start_quick_download(self):
+        url = self.quick_download_url.text().strip()
+        start = self.quick_download_start.text().strip()
+        end = self.quick_download_end.text().strip()
+        section = None
+        if start or end:
+            section, error = self._dependencies['normalize_download_section']({
+                "start": start,
+                "end": end,
+            })
+            if error:
+                self.quick_download_status.setText(error)
+                self.quick_download_status.setProperty("state", "error")
+                self.quick_download_status.show()
+                repolish(self.quick_download_status)
+                return
+        dl_id, error = self.dl_manager.start_download(
+            url=url,
+            audio_only=bool(self.quick_download_type.currentData()),
+            fmt=self.quick_download_format.currentData(),
+            quality=self.quick_download_quality.currentData() or "best",
+            section=section,
+        )
+        if error:
+            self.quick_download_status.setText(error)
+            self.quick_download_status.setProperty("state", "error")
+        else:
+            self.quick_download_status.setText(
+                f"Queued {dl_id}"
+                + (" for an accurate ffmpeg clip." if section else ".")
+            )
+            self.quick_download_status.setProperty("state", "success")
+            self.quick_download_url.clear()
+            self.quick_download_start.clear()
+            self.quick_download_end.clear()
+            self._update_ui()
+        self.quick_download_status.show()
+        repolish(self.quick_download_status)
 
     def _build_history(self):
         page = QWidget()

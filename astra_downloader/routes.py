@@ -527,6 +527,7 @@ def create_api(config, dl_manager, history, *, dependencies):
             title=body.get('title'),
             referer=body.get('referer'),
             cookies=cookies,
+            section=body.get('section'),
         )
         if err:
             if 'queue is full' in err.lower():
