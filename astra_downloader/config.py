@@ -28,6 +28,7 @@ __all__ = (
     "RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS", "MAX_REQUEST_BYTES",
     "MAX_RESPONSE_BYTES", "HELPER_DOWNLOAD_MAX_BYTES", "sanitize_config",
     "normalize_url", "normalize_output_dir", "normalize_download_section",
+    "normalize_playlist_items",
     "validate_download_request_body",
     "allowed_output_roots", "clean_text", "clean_path_text", "coerce_bool",
     "clamp_int", "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
@@ -44,7 +45,8 @@ _OWNED_EXPORTS = {
     "clean_text", "clean_path_text", "coerce_bool", "clamp_int",
     "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "normalize_output_template",
-    "normalize_url", "normalize_download_section", "validate_download_request_body",
+    "normalize_url", "normalize_download_section", "normalize_playlist_items",
+    "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
     "DEFAULT_CONFIG", "sanitize_config",
     "ConfigStore", "HistoryStore", "atomic_write_json", "load_json_file",
@@ -61,7 +63,7 @@ _MAX_PATH_FIELD = 2048
 MAX_LOCAL_JSON_BYTES = 16 * 1024 * 1024
 DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
     "url", "audioOnly", "format", "quality", "outputDir", "title",
-    "referer", "cookies", "section",
+    "referer", "cookies", "section", "playlistItems",
 })
 DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
     "args", "argv", "flags", "extraArgs", "extractorArgs",
@@ -291,6 +293,37 @@ def normalize_download_section(value):
     return {"start": start, "end": end}, None
 
 
+def normalize_playlist_items(value):
+    """Return a bounded, deduplicated list of positive yt-dlp playlist indexes."""
+    if value in (None, ""):
+        return None, None
+    if not isinstance(value, (list, tuple)):
+        return None, "Playlist items must be an array of item numbers."
+    if not value:
+        return None, "Select at least one playlist item."
+    if len(value) > 200:
+        return None, "Select no more than 200 playlist items at once."
+    items = []
+    seen = set()
+    for raw in value:
+        if isinstance(raw, bool):
+            return None, "Playlist item numbers must be positive integers."
+        if isinstance(raw, int):
+            item = raw
+        elif isinstance(raw, str) and re.fullmatch(r"\d+", raw.strip()):
+            item = int(raw.strip())
+        else:
+            return None, "Playlist item numbers must be positive integers."
+        if item < 1 or item > 100000:
+            return None, "Playlist item numbers must be between 1 and 100000."
+        if item not in seen:
+            items.append(item)
+            seen.add(item)
+    if not items:
+        return None, "Select at least one playlist item."
+    return sorted(items), None
+
+
 def validate_download_request_body(body):
     """Reject unreviewed client fields before any queue or process side effect."""
     if not isinstance(body, dict) or not body.get("url"):
@@ -316,6 +349,12 @@ def validate_download_request_body(body):
             return None, section_error, "invalid-download-section"
         body = dict(body)
         body["section"] = section
+    if "playlistItems" in body:
+        playlist_items, items_error = normalize_playlist_items(body.get("playlistItems"))
+        if items_error:
+            return None, items_error, "invalid-playlist-items"
+        body = dict(body)
+        body["playlistItems"] = playlist_items
     return body, None, None
 
 

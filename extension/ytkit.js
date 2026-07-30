@@ -49215,6 +49215,9 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             z-index: 2147483647;
             animation: ytkit-slide-in 180ms var(--ytkit-ease-out);
             overflow: hidden;
+            max-height: calc(100vh - 16px);
+            display: flex;
+            flex-direction: column;
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
         }
@@ -49305,6 +49308,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             padding: 10px 12px 5px;
             display: grid;
             gap: 10px;
+            overflow-y: auto;
         }
 
         .ytkit-dl-popup__row {
@@ -49392,6 +49396,55 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         .ytkit-dl-popup__clip-separator,
         .ytkit-dl-popup__clip-hint {
             color: rgba(255,255,255,0.5);
+        }
+
+        .ytkit-dl-popup__playlist-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .ytkit-dl-popup__playlist-meta {
+            color: rgba(255,255,255,0.56);
+            font-size: 10px;
+            line-height: 1.35;
+        }
+
+        .ytkit-dl-popup__playlist-list {
+            max-height: 168px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 7px;
+            background: rgba(6,9,13,0.45);
+        }
+
+        .ytkit-dl-popup__playlist-item {
+            display: grid;
+            grid-template-columns: 24px minmax(0, 1fr);
+            align-items: center;
+            gap: 4px;
+            min-height: 34px;
+            padding: 4px 7px;
+            color: rgba(255,255,255,0.78);
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .ytkit-dl-popup__playlist-item + .ytkit-dl-popup__playlist-item {
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .ytkit-dl-popup__playlist-item input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: #ff6b4a;
+        }
+
+        .ytkit-dl-popup__playlist-item-copy {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .ytkit-dl-popup__clip-hint {
@@ -49570,6 +49623,23 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         html:not([dark]) .ytkit-dl-popup__clip-separator,
         html:not([dark]) .ytkit-dl-popup__clip-hint {
             color: #5f6b79;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__playlist-meta {
+            color: #5f6b79;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__playlist-list {
+            border-color: #d8dde5;
+            background: #f8fafc;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__playlist-item {
+            color: #263442;
+        }
+
+        html:not([dark]) .ytkit-dl-popup__playlist-item + .ytkit-dl-popup__playlist-item {
+            border-top-color: #e5e9ef;
         }
 
         #ytkit-subs-load-banner {

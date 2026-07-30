@@ -1168,6 +1168,7 @@
             };
             if (opts.outputDir) payload.outputDir = opts.outputDir;
             if (opts.section) payload.section = opts.section;
+            if (Array.isArray(opts.playlistItems)) payload.playlistItems = opts.playlistItems;
 
             const sendDownload = async () => {
                 try {
@@ -1279,8 +1280,16 @@
             let customDir = '';
             let clipStartInput = null;
             let clipEndInput = null;
+            let playlistSelection = null;
             let dlBtn = null;
             let chipRowCount = 0;
+            let playlistId = '';
+            try {
+                playlistId = new URL(window.location.href).searchParams.get('list') || '';
+            } catch (_) { /* reason: malformed navigation URL; playlist UI stays hidden */ }
+            const playlistUrl = playlistId
+                ? `https://www.youtube.com/playlist?list=${encodeURIComponent(playlistId)}`
+                : '';
             const syncDownloadCta = () => {
                 if (!dlBtn) return;
                 const isAudio = selectedMode === 'audio';
@@ -1527,6 +1536,132 @@
             clipRow.appendChild(clipHint);
             body.appendChild(clipRow);
 
+            if (playlistUrl) {
+                const playlistRow = document.createElement('div');
+                playlistRow.className = 'ytkit-dl-popup__row';
+                const playlistLabel = document.createElement('div');
+                playlistLabel.className = 'ytkit-dl-popup__label';
+                playlistLabel.id = 'ytkit-dl-popup-playlist-label';
+                playlistLabel.textContent = t('dlPopupPlaylistItems', 'Playlist items');
+                playlistRow.appendChild(playlistLabel);
+                const playlistActions = document.createElement('div');
+                playlistActions.className = 'ytkit-dl-popup__playlist-actions';
+                playlistActions.setAttribute('role', 'group');
+                playlistActions.setAttribute('aria-labelledby', playlistLabel.id);
+                const previewBtn = document.createElement('button');
+                previewBtn.type = 'button';
+                previewBtn.className = 'ytkit-dl-popup__dir-btn';
+                previewBtn.textContent = t('dlPopupPlaylistPreview', 'Preview playlist');
+                const selectAllBtn = document.createElement('button');
+                selectAllBtn.type = 'button';
+                selectAllBtn.className = 'ytkit-dl-popup__dir-btn';
+                selectAllBtn.textContent = t('dlPopupPlaylistSelectAll', 'Select all');
+                selectAllBtn.hidden = true;
+                playlistActions.appendChild(previewBtn);
+                playlistActions.appendChild(selectAllBtn);
+                playlistRow.appendChild(playlistActions);
+                const playlistMeta = document.createElement('div');
+                playlistMeta.className = 'ytkit-dl-popup__playlist-meta';
+                playlistMeta.setAttribute('role', 'status');
+                playlistMeta.setAttribute('aria-live', 'polite');
+                playlistMeta.textContent = t(
+                    'dlPopupPlaylistHint',
+                    'Preview to choose a bounded subset. Without a selection, this video downloads normally.'
+                );
+                playlistRow.appendChild(playlistMeta);
+                const playlistList = document.createElement('div');
+                playlistList.className = 'ytkit-dl-popup__playlist-list';
+                playlistList.setAttribute('role', 'group');
+                playlistList.setAttribute('aria-label', t('dlPopupPlaylistListAria', 'Playlist item selection'));
+                playlistList.hidden = true;
+                playlistRow.appendChild(playlistList);
+
+                const syncPlaylistMeta = (preview) => {
+                    const selected = playlistSelection?.size || 0;
+                    playlistMeta.textContent = t(
+                        'dlPopupPlaylistSelectionTpl',
+                        '{selected} selected · {shown} shown · {total} total'
+                    )
+                        .replace('{selected}', String(selected))
+                        .replace('{shown}', String(preview.items.length))
+                        .replace('{total}', String(preview.total || preview.items.length));
+                };
+                selectAllBtn.addEventListener('click', () => {
+                    const inputs = Array.from(playlistList.querySelectorAll('input[type="checkbox"]'));
+                    const shouldSelect = inputs.some(input => !input.checked);
+                    playlistSelection = new Set();
+                    inputs.forEach((input) => {
+                        input.checked = shouldSelect;
+                        if (shouldSelect) playlistSelection.add(Number(input.value));
+                    });
+                    selectAllBtn.textContent = shouldSelect
+                        ? t('dlPopupPlaylistClear', 'Clear')
+                        : t('dlPopupPlaylistSelectAll', 'Select all');
+                    const preview = playlistList._preview;
+                    if (preview) syncPlaylistMeta(preview);
+                });
+                previewBtn.addEventListener('click', async () => {
+                    previewBtn.disabled = true;
+                    previewBtn.textContent = t('dlPopupPlaylistLoading', 'Loading…');
+                    playlistMeta.textContent = t('dlPopupPlaylistLoading', 'Loading…');
+                    try {
+                        const status = await MediaDLManager.check();
+                        if (!status.ok) throw new Error(t('dlPopupDownloaderOffline', 'Downloader not running'));
+                        const { response, data } = await extensionFetchJson({
+                            method: 'POST',
+                            url: MediaDLManager.baseUrl() + '/playlist',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Auth-Token': status.token,
+                            },
+                            data: JSON.stringify({ url: playlistUrl }),
+                            timeout: 65000,
+                        });
+                        if (!response || response.status < 200 || response.status >= 300 || !Array.isArray(data?.items)) {
+                            throw new Error(data?.error || t('dlPopupPlaylistUnavailable', 'Playlist preview unavailable.'));
+                        }
+                        playlistList.replaceChildren();
+                        playlistSelection = new Set();
+                        const currentVideoId = getVideoId();
+                        data.items.forEach((item) => {
+                            const option = document.createElement('label');
+                            option.className = 'ytkit-dl-popup__playlist-item';
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.value = String(item.index);
+                            checkbox.checked = Boolean(currentVideoId && item.id === currentVideoId);
+                            if (checkbox.checked) playlistSelection.add(Number(item.index));
+                            checkbox.addEventListener('change', () => {
+                                const index = Number(checkbox.value);
+                                if (checkbox.checked) playlistSelection.add(index);
+                                else playlistSelection.delete(index);
+                                selectAllBtn.textContent = t('dlPopupPlaylistSelectAll', 'Select all');
+                                syncPlaylistMeta(data);
+                            });
+                            const copy = document.createElement('span');
+                            copy.className = 'ytkit-dl-popup__playlist-item-copy';
+                            copy.textContent = `${item.index}. ${item.title || t('commonUntitled', 'Untitled')}`;
+                            option.appendChild(checkbox);
+                            option.appendChild(copy);
+                            playlistList.appendChild(option);
+                        });
+                        playlistList._preview = data;
+                        playlistList.hidden = false;
+                        selectAllBtn.hidden = false;
+                        syncPlaylistMeta(data);
+                    } catch (error) {
+                        playlistSelection = null;
+                        playlistList.hidden = true;
+                        selectAllBtn.hidden = true;
+                        playlistMeta.textContent = error.message || t('dlPopupPlaylistUnavailable', 'Playlist preview unavailable.');
+                    } finally {
+                        previewBtn.disabled = false;
+                        previewBtn.textContent = t('dlPopupPlaylistRefresh', 'Refresh preview');
+                    }
+                });
+                body.appendChild(playlistRow);
+            }
+
             popup.appendChild(body);
 
             // ── Footer: Download button ──
@@ -1550,6 +1685,22 @@
                     return;
                 }
                 if (clip.section) opts.section = clip.section;
+                let requestUrl = window.location.href;
+                if (playlistSelection instanceof Set) {
+                    if (clip.section) {
+                        showToast(
+                            t('dlPopupPlaylistClipConflict', 'Choose either a clip range or playlist items.'),
+                            '#f59e0b'
+                        );
+                        return;
+                    }
+                    if (!playlistSelection.size) {
+                        showToast(t('dlPopupPlaylistSelectRequired', 'Select at least one playlist item.'), '#f59e0b');
+                        return;
+                    }
+                    opts.playlistItems = Array.from(playlistSelection).sort((a, b) => a - b);
+                    requestUrl = playlistUrl;
+                }
                 if (appState?.settings) {
                     appState.settings.downloadQuality = selectedQuality;
                     if (isAudio) appState.settings.downloadAudioFormat = selectedAudioFormat;
@@ -1557,7 +1708,7 @@
                     storageWriteJSON('ytSuiteSettings', appState.settings);
                 }
                 _closeDlPopup();
-                ytKitDownload(window.location.href, isAudio, opts);
+                ytKitDownload(requestUrl, isAudio, opts);
             });
             footer.appendChild(dlBtn);
             popup.appendChild(footer);
