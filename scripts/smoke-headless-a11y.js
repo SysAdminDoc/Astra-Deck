@@ -55,6 +55,18 @@ const SURFACES = Object.freeze([
         height: 800,
         settleMs: 1000,
         themes: Object.freeze(['dark']),
+        rtlLocales: Object.freeze(['ar']),
+    }),
+    Object.freeze({
+        name: 'sidebar',
+        page: 'sidebar-a11y.html',
+        selector: 'body',
+        ready: 'document.querySelectorAll("button, input, select, textarea, [tabindex]").length >= 4',
+        width: 420,
+        height: 800,
+        settleMs: 1000,
+        themes: Object.freeze(['dark']),
+        rtlLocales: Object.freeze(['ar']),
     }),
     Object.freeze({
         name: 'settings',
@@ -92,13 +104,19 @@ const SURFACES = Object.freeze([
 ]);
 
 function parseArgs(argv) {
-    const options = { browser: '', keepStage: false, timeoutMs: 45000 };
+    const options = { browser: '', keepStage: false, surfaces: [], timeoutMs: 45000 };
     for (let index = 0; index < argv.length; index += 1) {
         const arg = argv[index];
         if (arg === '--browser') {
             options.browser = path.resolve(argv[++index] || '');
         } else if (arg === '--keep-stage') {
             options.keepStage = true;
+        } else if (arg === '--surface') {
+            const surface = argv[++index] || '';
+            if (!SURFACES.some((candidate) => candidate.name === surface)) {
+                throw new Error(`--surface requires one of: ${SURFACES.map((candidate) => candidate.name).join(', ')}`);
+            }
+            if (!options.surfaces.includes(surface)) options.surfaces.push(surface);
         } else if (arg === '--timeout') {
             options.timeoutMs = Number(argv[++index]) || options.timeoutMs;
         } else {
@@ -122,6 +140,7 @@ function createStage(stageDir) {
     const fixturePath = buildFixture(stageDir);
     injectChromeStub(stageDir, 'popup.html', 'popup-a11y.html');
     injectChromeStub(stageDir, 'sidepanel.html', 'sidepanel-a11y.html');
+    injectChromeStub(stageDir, 'sidebar.html', 'sidebar-a11y.html');
     return fixturePath;
 }
 
@@ -379,9 +398,10 @@ async function configureRenderedState(client, surface, theme, mode) {
     return { width, height };
 }
 
-async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = 'dark') {
+async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = 'dark', locale = '') {
     const url = new URL(fileUrl(path.join(stageDir, surface.page)));
     url.searchParams.set('theme', theme);
+    if (locale) url.searchParams.set('locale', locale);
     await client.send('Page.navigate', { url: url.href });
     await waitFor(
         () => client.evaluate("document.readyState === 'complete'"),
@@ -402,6 +422,51 @@ async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = '
         `${surface.name} rendered surface`
     );
     await sleep(surface.settleMs || 300);
+}
+
+async function auditRtlLayout(client, surface, locale) {
+    const result = await client.evaluate(`(() => {
+        const search = document.querySelector('.sp-search');
+        const icon = document.querySelector('.sp-search-icon');
+        const clear = document.querySelector('.sp-search-clear');
+        const row = document.querySelector('.sp-setting-row');
+        const toggle = row?.querySelector('.sp-setting-switch');
+        const rect = (element) => {
+            const value = element?.getBoundingClientRect();
+            return value ? { left: value.left, right: value.right, width: value.width } : null;
+        };
+        if (!search || !icon || !clear || !row || !toggle) {
+            return { error: 'RTL fixture controls missing' };
+        }
+        const searchRect = rect(search);
+        const iconRect = rect(icon);
+        const clearRect = rect(clear);
+        const wasChecked = row.getAttribute('aria-checked');
+        row.setAttribute('aria-checked', 'true');
+        const transform = getComputedStyle(toggle, '::after').transform;
+        if (wasChecked == null) row.removeAttribute('aria-checked');
+        else row.setAttribute('aria-checked', wasChecked);
+        const matrix = transform && transform !== 'none' ? new DOMMatrixReadOnly(transform) : null;
+        return {
+            dir: document.documentElement.dir,
+            lang: document.documentElement.lang,
+            iconAtInlineStart: (searchRect.right - iconRect.right) < (iconRect.left - searchRect.left),
+            clearAtInlineEnd: (clearRect.left - searchRect.left) < (searchRect.right - clearRect.right),
+            searchControlsSeparated: iconRect.left >= clearRect.right,
+            checkedTravel: matrix ? matrix.m41 : 0,
+        };
+    })()`);
+    if (result.error) throw new Error(`${surface.name}/${locale}/zoom-200: ${result.error}`);
+    const failures = [];
+    if (result.dir !== 'rtl') failures.push(`document dir is ${result.dir || '(empty)'}`);
+    if (!String(result.lang || '').toLowerCase().startsWith(locale.toLowerCase())) {
+        failures.push(`document lang is ${result.lang || '(empty)'}`);
+    }
+    if (!result.iconAtInlineStart) failures.push('search icon is not at RTL inline-start');
+    if (!result.clearAtInlineEnd) failures.push('search clear is not at RTL inline-end');
+    if (!result.searchControlsSeparated) failures.push('search icon and clear overlap');
+    if (!(result.checkedTravel < 0)) failures.push(`checked switch travel is ${result.checkedTravel}, expected negative`);
+    if (failures.length) throw new Error(`${surface.name}/${locale}/zoom-200: ${failures.join('; ')}`);
 }
 
 async function captureSurface(client, surface, theme) {
@@ -462,6 +527,14 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         theme: surface.themes[0],
         viewport: forcedViewport,
     });
+    for (const locale of surface.rtlLocales || []) {
+        await navigateToSurface(client, stageDir, surface, timeoutMs, 'dark', locale);
+        const viewport = await configureRenderedState(client, surface, 'dark', 'zoom-200');
+        await auditRtlLayout(client, surface, locale);
+        await captureSurface(client, surface, `${locale}-dark-zoom-200`);
+        const controls = await auditKeyboardPath(client, surface, `${locale}/dark/zoom-200`);
+        reports.push({ controls, locale, mode: 'zoom-200', theme: 'dark', viewport });
+    }
     return reports;
 }
 
@@ -519,7 +592,10 @@ async function main(argv = process.argv.slice(2)) {
         await client.send('Page.enable');
         await client.send('Runtime.enable');
 
-        for (const surface of SURFACES) {
+        const selectedSurfaces = options.surfaces.length
+            ? SURFACES.filter((surface) => options.surfaces.includes(surface.name))
+            : SURFACES;
+        for (const surface of selectedSurfaces) {
             const reports = await auditSurface(client, stageDir, surface, options.timeoutMs);
             const total = reports.reduce((sum, report) => sum + report.controls, 0);
             console.log(
@@ -562,6 +638,7 @@ if (require.main === module) {
 
 module.exports = {
     auditKeyboardPath,
+    auditRtlLayout,
     collectFocusableExpression,
     configureRenderedState,
     createStage,

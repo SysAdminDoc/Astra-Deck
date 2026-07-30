@@ -85,6 +85,8 @@ const CHROME_STUB = `'use strict';
 (() => {
     const store = Object.create(null);
     store.ytSuiteSettings = { transcriptViewer: true };
+    const requestedLocale = new URLSearchParams(globalThis.location?.search || '').get('locale');
+    if (requestedLocale) store._localeOverride = requestedLocale;
     const messageListeners = [];
     const changeListeners = [];
     const normalizeKeys = (keys) => {

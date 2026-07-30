@@ -17,6 +17,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Side dashboard RTL and reflow.** Search controls, empty/timing metadata,
+  list spacing, busy indicators, and switches now use logical geometry. The
+  rendered accessibility smoke covers Arabic at 200% zoom in both Chromium
+  sidepanel and Firefox sidebar shells.
 - **Settings Undo is keyboard-reachable.** Actionable toasts join the open
   Settings dialog focus cycle, skip unrelated page controls between DOM roots,
   and remain available until the user activates or dismisses them.
