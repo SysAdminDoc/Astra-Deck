@@ -385,6 +385,39 @@ test('downloadUI classified failures render recovery toast and diagnostic code',
     assert.match(diagnostics[0][1], /po-token-required/);
 });
 
+test('downloadUI sends a normalized clip section without exposing yt-dlp flags', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const calls = [];
+    const result = mod.createDownloadUIFeature({
+        extensionFetchJson: async (details) => {
+            calls.push(details);
+            return {
+                response: { status: 400, responseText: '{"error":"fixture"}' },
+                data: { error: 'fixture' },
+            };
+        },
+        showToast() {},
+        browserCookies: {},
+        DebugManager: { log() {} },
+    });
+
+    await result._mediaDLSendDownload(
+        'https://www.youtube.com/watch?v=abcdefghijk',
+        false,
+        'token',
+        { format: 'mp4', section: { start: 62.5, end: 65 } }
+    );
+
+    const payload = JSON.parse(calls[0].data);
+    assert.deepEqual(payload.section, { start: 62.5, end: 65 });
+    assert.equal(payload.format, 'mp4');
+    assert.equal(Object.hasOwn(payload, 'args'), false);
+    assert.equal(Object.hasOwn(payload, 'downloadSections'), false);
+});
+
 test('downloadUI factory returns all four feature objects', () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',

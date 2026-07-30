@@ -331,15 +331,20 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     add('Download options path and CTA controls have accessible names',
         downloadUi.includes("dirWrap.setAttribute('role', 'group')") &&
         downloadUi.includes("dirToggle.setAttribute('aria-label', t('dlPopupChangeAria', 'Choose a download folder'))") &&
+        downloadUi.includes("clipWrap.setAttribute('aria-labelledby', clipLabel.id)") &&
+        downloadUi.includes("clipStartInput.setAttribute('aria-label', t('dlPopupClipStartAria', 'Clip start timestamp'))") &&
+        downloadUi.includes("clipEndInput.setAttribute('aria-label', t('dlPopupClipEndAria', 'Clip end timestamp'))") &&
         downloadUi.includes("dlBtn.setAttribute("),
-        'Download options folder and CTA controls must have accessible names');
+        'Download options folder, clip, and CTA controls must have accessible names');
     add('Download options controls have focus-visible styles and target size',
         ['.ytkit-dl-popup__close:focus-visible', '.ytkit-dl-popup__tab:focus-visible',
-            '.ytkit-dl-popup__chip:focus-visible', '.ytkit-dl-popup__dir-btn:focus-visible',
+            '.ytkit-dl-popup__chip:focus-visible', '.ytkit-dl-popup__clip-input:focus-visible',
+            '.ytkit-dl-popup__dir-btn:focus-visible',
             '.ytkit-dl-popup__go:focus-visible'].every((selector) => ytkit.includes(selector)) &&
         hasSquareTarget(ytkit, '.ytkit-dl-popup__close') &&
         hasMinTarget(ytkit, '.ytkit-dl-popup__tab') &&
         hasMinTarget(ytkit, '.ytkit-dl-popup__chip') &&
+        hasMinTarget(ytkit, '.ytkit-dl-popup__clip-input') &&
         hasMinTarget(ytkit, '.ytkit-dl-popup__dir-btn') &&
         hasMinTarget(ytkit, '.ytkit-dl-popup__go'),
         'Download options controls must declare focus-visible and at least 24px target size');

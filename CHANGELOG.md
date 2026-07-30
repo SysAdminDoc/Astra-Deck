@@ -7,6 +7,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Frame-accurate clip downloads.** The extension download dialog and native
+  companion now accept start/end timestamps, validate and persist the range,
+  download the complete source through the existing safe yt-dlp path, and
+  atomically replace it with an ffmpeg re-encode at the requested boundaries.
 - **Download history is fully accessible.** The companion and in-page History
   surfaces now search title/filename, filter status/format/saved dates, sort
   newest or oldest, page through the retained 500-row store in bounded 50-row

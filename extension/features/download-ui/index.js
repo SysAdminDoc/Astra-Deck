@@ -16,6 +16,40 @@
         return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
     }
 
+    function parseSectionTimestampInput(value) {
+        const raw = String(value ?? '').trim();
+        if (!raw) return null;
+        const parts = raw.split(':');
+        if (parts.length > 3 || parts.some(part => !/^\d+(?:\.\d+)?$/.test(part))) return null;
+        const values = parts.map(Number);
+        if (values.some((part, index) => !Number.isFinite(part)
+            || part < 0
+            || (index > 0 && part >= 60))) return null;
+        const seconds = values.reduce(
+            (total, part, index) => total + (part * (60 ** (values.length - index - 1))),
+            0
+        );
+        return seconds <= 86400 ? Math.round(seconds * 1000) / 1000 : null;
+    }
+
+    function normalizeSectionInput(startValue, endValue) {
+        const startRaw = String(startValue ?? '').trim();
+        const endRaw = String(endValue ?? '').trim();
+        if (!startRaw && !endRaw) return { section: null, error: '' };
+        const start = parseSectionTimestampInput(startRaw);
+        const end = parseSectionTimestampInput(endRaw);
+        if (start === null || end === null) {
+            return { section: null, error: 'Enter both clip times as seconds, MM:SS, or HH:MM:SS.' };
+        }
+        if (end <= start) {
+            return { section: null, error: 'Clip end must be later than its start.' };
+        }
+        if (end - start < 0.1) {
+            return { section: null, error: 'Clip must be at least 0.1 seconds long.' };
+        }
+        return { section: { start, end }, error: '' };
+    }
+
     function normalizeDownloadHealthSnapshot(raw, authenticatedStatus = {}) {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
         const port = Number(raw.port);
@@ -873,7 +907,7 @@
                         }
                         return;
                     }
-                    const knownStatuses = ['pending', 'queued', 'paused', 'needs-auth', 'downloading', 'processing', 'merging', 'extracting', 'retrying'];
+                    const knownStatuses = ['pending', 'queued', 'paused', 'needs-auth', 'downloading', 'processing', 'merging', 'extracting', 'trimming', 'retrying'];
                     if (data.status && !knownStatuses.includes(data.status)) {
                         unknownStatusStrikes += 1;
                         if (unknownStatusStrikes >= 8) {
@@ -1133,6 +1167,7 @@
                 format: opts.format || (audioOnly ? (s?.downloadAudioFormat || 'mp3') : (s?.downloadVideoFormat || 'mp4'))
             };
             if (opts.outputDir) payload.outputDir = opts.outputDir;
+            if (opts.section) payload.section = opts.section;
 
             const sendDownload = async () => {
                 try {
@@ -1242,6 +1277,8 @@
             let selectedAudioFormat = s.downloadAudioFormat || 'mp3';
             let selectedQuality = s.downloadQuality || 'best';
             let customDir = '';
+            let clipStartInput = null;
+            let clipEndInput = null;
             let dlBtn = null;
             let chipRowCount = 0;
             const syncDownloadCta = () => {
@@ -1442,6 +1479,54 @@
             dirRow.appendChild(dirWrap);
             body.appendChild(dirRow);
 
+            const clipRow = document.createElement('div');
+            clipRow.className = 'ytkit-dl-popup__row';
+            const clipLabel = document.createElement('div');
+            clipLabel.className = 'ytkit-dl-popup__label';
+            clipLabel.id = 'ytkit-dl-popup-clip-label';
+            clipLabel.textContent = t('dlPopupClipRange', 'Clip range (optional)');
+            clipRow.appendChild(clipLabel);
+            const clipWrap = document.createElement('div');
+            clipWrap.className = 'ytkit-dl-popup__clip-wrap';
+            clipWrap.setAttribute('role', 'group');
+            clipWrap.setAttribute('aria-labelledby', clipLabel.id);
+            clipStartInput = document.createElement('input');
+            clipStartInput.type = 'text';
+            clipStartInput.inputMode = 'decimal';
+            clipStartInput.className = 'ytkit-dl-popup__clip-input';
+            clipStartInput.placeholder = t('dlPopupClipStartPlaceholder', 'Start · 0:00');
+            clipStartInput.setAttribute('aria-label', t('dlPopupClipStartAria', 'Clip start timestamp'));
+            clipStartInput.autocomplete = 'off';
+            const clipSeparator = document.createElement('span');
+            clipSeparator.className = 'ytkit-dl-popup__clip-separator';
+            clipSeparator.textContent = '→';
+            clipSeparator.setAttribute('aria-hidden', 'true');
+            clipEndInput = document.createElement('input');
+            clipEndInput.type = 'text';
+            clipEndInput.inputMode = 'decimal';
+            clipEndInput.className = 'ytkit-dl-popup__clip-input';
+            clipEndInput.placeholder = t('dlPopupClipEndPlaceholder', 'End · 1:30');
+            clipEndInput.setAttribute('aria-label', t('dlPopupClipEndAria', 'Clip end timestamp'));
+            clipEndInput.autocomplete = 'off';
+            const clearClipValidity = () => {
+                clipStartInput.setCustomValidity('');
+                clipEndInput.setCustomValidity('');
+            };
+            clipStartInput.addEventListener('input', clearClipValidity);
+            clipEndInput.addEventListener('input', clearClipValidity);
+            clipWrap.appendChild(clipStartInput);
+            clipWrap.appendChild(clipSeparator);
+            clipWrap.appendChild(clipEndInput);
+            clipRow.appendChild(clipWrap);
+            const clipHint = document.createElement('span');
+            clipHint.className = 'ytkit-dl-popup__clip-hint';
+            clipHint.textContent = t(
+                'dlPopupClipHint',
+                'Leave blank for the full video. Clips are frame-accurately re-cut after download.'
+            );
+            clipRow.appendChild(clipHint);
+            body.appendChild(clipRow);
+
             popup.appendChild(body);
 
             // ── Footer: Download button ──
@@ -1456,6 +1541,15 @@
                 const format = isAudio ? selectedAudioFormat : selectedVideoFormat;
                 const opts = { format };
                 if (customDir) opts.outputDir = customDir;
+                const clip = normalizeSectionInput(clipStartInput.value, clipEndInput.value);
+                if (clip.error) {
+                    const message = t('dlPopupClipInvalid', clip.error);
+                    clipStartInput.setCustomValidity(message);
+                    clipEndInput.setCustomValidity(message);
+                    (clipStartInput.value.trim() ? clipEndInput : clipStartInput).reportValidity();
+                    return;
+                }
+                if (clip.section) opts.section = clip.section;
                 if (appState?.settings) {
                     appState.settings.downloadQuality = selectedQuality;
                     if (isAudio) appState.settings.downloadAudioFormat = selectedAudioFormat;

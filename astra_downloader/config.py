@@ -7,6 +7,7 @@ frameworks, which lets config tooling and tests run without PyQt or Flask.
 
 import os
 import json
+import math
 import re
 import threading
 import uuid
@@ -26,7 +27,8 @@ __all__ = (
     "CORS_MAX_AGE_SECONDS", "RATE_LIMIT_DOWNLOAD_MAX",
     "RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS", "MAX_REQUEST_BYTES",
     "MAX_RESPONSE_BYTES", "HELPER_DOWNLOAD_MAX_BYTES", "sanitize_config",
-    "normalize_url", "normalize_output_dir", "validate_download_request_body",
+    "normalize_url", "normalize_output_dir", "normalize_download_section",
+    "validate_download_request_body",
     "allowed_output_roots", "clean_text", "clean_path_text", "coerce_bool",
     "clamp_int", "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "write_persistent_log", "get_recent_log_entries", "log_crash",
@@ -42,7 +44,7 @@ _OWNED_EXPORTS = {
     "clean_text", "clean_path_text", "coerce_bool", "clamp_int",
     "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "normalize_output_template",
-    "normalize_url", "validate_download_request_body",
+    "normalize_url", "normalize_download_section", "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
     "DEFAULT_CONFIG", "sanitize_config",
     "ConfigStore", "HistoryStore", "atomic_write_json", "load_json_file",
@@ -59,7 +61,7 @@ _MAX_PATH_FIELD = 2048
 MAX_LOCAL_JSON_BYTES = 16 * 1024 * 1024
 DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
     "url", "audioOnly", "format", "quality", "outputDir", "title",
-    "referer", "cookies",
+    "referer", "cookies", "section",
 })
 DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
     "args", "argv", "flags", "extraArgs", "extractorArgs",
@@ -238,6 +240,57 @@ def normalize_url(value):
     return url, None
 
 
+def _parse_section_timestamp(value):
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        seconds = float(value)
+    elif isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return None
+        parts = raw.split(":")
+        if len(parts) > 3:
+            return None
+        try:
+            values = [float(part) for part in parts]
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if any(part < 0 for part in values):
+            return None
+        if len(values) > 1 and any(part >= 60 for part in values[1:]):
+            return None
+        seconds = sum(
+            part * (60 ** (len(values) - index - 1))
+            for index, part in enumerate(values)
+        )
+    else:
+        return None
+    if not math.isfinite(seconds) or seconds < 0 or seconds > 86400:
+        return None
+    return round(seconds, 3)
+
+
+def normalize_download_section(value):
+    """Normalize an accurate re-cut range expressed as seconds or HH:MM:SS."""
+    if value in (None, ""):
+        return None, None
+    if not isinstance(value, dict):
+        return None, "Section must contain start and end timestamps."
+    unknown = sorted(str(key) for key in value if str(key) not in {"start", "end"})
+    if unknown:
+        return None, "Unsupported section field(s): {}.".format(", ".join(unknown))
+    start = _parse_section_timestamp(value.get("start"))
+    end = _parse_section_timestamp(value.get("end"))
+    if start is None or end is None:
+        return None, "Section start and end must be timestamps between 0:00 and 24:00:00."
+    if end <= start:
+        return None, "Section end must be later than its start."
+    if end - start < 0.1:
+        return None, "Section must be at least 0.1 seconds long."
+    return {"start": start, "end": end}, None
+
+
 def validate_download_request_body(body):
     """Reject unreviewed client fields before any queue or process side effect."""
     if not isinstance(body, dict) or not body.get("url"):
@@ -257,6 +310,12 @@ def validate_download_request_body(body):
             "Unsupported /download field(s): {}.".format(", ".join(unknown)),
             "unsupported-download-fields",
         )
+    if "section" in body:
+        section, section_error = normalize_download_section(body.get("section"))
+        if section_error:
+            return None, section_error, "invalid-download-section"
+        body = dict(body)
+        body["section"] = section
     return body, None, None
 
 
@@ -434,7 +493,8 @@ def sanitize_history_entries(raw, limit=500):
     for item in raw[-max(1, int(limit)):]:
         if not isinstance(item, dict):
             continue
-        entries.append({
+        section, _section_error = normalize_download_section(item.get("section"))
+        entry = {
             "id": clean_text(item.get("id"), "", 120),
             "url": clean_text(item.get("url"), "", 4096),
             "title": clean_text(item.get("title"), "(untitled)", 500) or "(untitled)",
@@ -445,7 +505,10 @@ def sanitize_history_entries(raw, limit=500):
             "date": clean_text(item.get("date"), "", 40),
             "duration": max(0, clamp_int(item.get("duration"), 0, 0, 60 * 60 * 24 * 30)),
             "status": clean_text(item.get("status"), "complete", 32) or "complete",
-        })
+        }
+        if section:
+            entry["section"] = section
+        entries.append(entry)
     return entries
 
 

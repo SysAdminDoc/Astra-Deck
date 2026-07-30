@@ -1,5 +1,6 @@
 node_modules/
 .venv/
+.release-venv/
 build/
 *.pem
 *.mhtml
