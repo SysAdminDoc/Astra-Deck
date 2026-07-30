@@ -116,6 +116,9 @@ DEFAULT_CONFIG = {
     "StartMinimized": False,
     "CloseToTray": True,
     "NotifyOnComplete": True,
+    # Privacy-sensitive clipboard monitoring is opt-in. Matching links are
+    # staged in the GUI and never enqueued without an explicit user action.
+    "ClipboardLinkGrabber": False,
     "LastYtDlpUpdateCheck": "",
     "ExtraOutputRoots": [],
     "LastFfmpegCheck": "",
@@ -439,7 +442,7 @@ def sanitize_config(raw):
     for key in (
         "EmbedMetadata", "EmbedThumbnail", "EmbedChapters", "EmbedSubs",
         "SponsorBlock", "AutoUpdateYtDlp", "StartMinimized", "CloseToTray",
-        "NotifyOnComplete", "LegacyHealthTokenEcho",
+        "NotifyOnComplete", "ClipboardLinkGrabber", "LegacyHealthTokenEcho",
     ):
         data[key] = coerce_bool(data.get(key), DEFAULT_CONFIG[key])
     data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))

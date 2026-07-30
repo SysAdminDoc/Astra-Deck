@@ -761,6 +761,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'get_ffmpeg_version',
     'get_recent_log_entries',
     'get_ytdlp_version',
+    'is_youtube_url',
     'maybe_auto_update_ytdlp',
     'normalize_output_dir',
     'normalize_download_section',
@@ -768,6 +769,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'normalize_proxy',
     'normalize_rate_limit',
     'normalize_sublangs',
+    'normalize_url',
     'query_history_entries',
     'reset_deno_runtime_cache',
     'reset_ffmpeg_capabilities_cache',
@@ -802,6 +804,8 @@ class MainWindowCore(QMainWindow):
         self._history_page_size = 50
         self._downloads_signature = None
         self._download_widgets = {}
+        self._clipboard_last_seen = ""
+        self._clipboard_staged_url = ""
         self.log_message.connect(self._append_log)
         self.instance_command.connect(self._handle_instance_command)
         self.tools_update_finished.connect(self._finish_ytdlp_update)
@@ -939,6 +943,8 @@ class MainWindowCore(QMainWindow):
         self.tray.activated.connect(self._tray_activated)
         self.tray.setToolTip(f"{self._value('APP_NAME')} - Running")
         self.tray.show()
+        self._clipboard = QApplication.clipboard()
+        self._clipboard.dataChanged.connect(self._handle_clipboard_change)
 
         # Timer
         self.update_timer = QTimer(self)
@@ -1274,6 +1280,7 @@ class MainWindowCore(QMainWindow):
         self.quick_download_url.setAccessibleName("YouTube URL")
         self.quick_download_url.setPlaceholderText("Paste a YouTube video or playlist URL")
         self.quick_download_url.returnPressed.connect(self._start_quick_download)
+        self.quick_download_url.textEdited.connect(self._quick_download_url_edited)
         url_row.addWidget(self.quick_download_url, 1)
         self.btn_quick_download = self._make_tool_button("Add to queue", "primary")
         self.btn_quick_download.clicked.connect(self._start_quick_download)
@@ -1402,6 +1409,7 @@ class MainWindowCore(QMainWindow):
                 + (" for an accurate ffmpeg clip." if section else ".")
             )
             self.quick_download_status.setProperty("state", "success")
+            self._clipboard_staged_url = ""
             self.quick_download_url.clear()
             self.quick_download_start.clear()
             self.quick_download_end.clear()
@@ -1772,7 +1780,20 @@ class MainWindowCore(QMainWindow):
         self.cfg_startmin.setChecked(self.config.get("StartMinimized", False))
         self.cfg_notify = QCheckBox("Notify when a download finishes (while minimized)")
         self.cfg_notify.setChecked(self.config.get("NotifyOnComplete", True))
-        for w in [self.cfg_autoupdate, self.cfg_closetotray, self.cfg_startmin, self.cfg_notify]:
+        self.cfg_clipboard = QCheckBox("Stage copied YouTube links for review")
+        self.cfg_clipboard.setChecked(self.config.get("ClipboardLinkGrabber", False))
+        self.cfg_clipboard.setToolTip(
+            "Watch clipboard changes for YouTube links. Matching links fill the "
+            "Quick download field but are never downloaded until you confirm."
+        )
+        self.cfg_clipboard.setAccessibleDescription(
+            "Off by default. Non-YouTube clipboard content is ignored, and a "
+            "matching link is staged without starting a download."
+        )
+        for w in [
+            self.cfg_autoupdate, self.cfg_closetotray, self.cfg_startmin,
+            self.cfg_notify, self.cfg_clipboard,
+        ]:
             beh_l.addWidget(w)
         layout.addWidget(beh_card)
 
@@ -1836,6 +1857,7 @@ class MainWindowCore(QMainWindow):
             self.cfg_closetotray.toggled,
             self.cfg_startmin.toggled,
             self.cfg_notify.toggled,
+            self.cfg_clipboard.toggled,
         ):
             signal.connect(self._mark_settings_dirty)
 
@@ -2747,6 +2769,7 @@ class MainWindowCore(QMainWindow):
         persisted_get = getattr(self.config, 'get_persisted', self.config.get)
         old_port = self._dependencies['clamp_int'](persisted_get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
         old_token = self.config.get("ServerToken", "")
+        old_clipboard_grabber = self.config.get("ClipboardLinkGrabber", False)
         new_port = self.cfg_port.value()
         new_token = self.cfg_token.text().strip()
         dl_path = self.cfg_dl_path.text().strip()
@@ -2832,6 +2855,11 @@ class MainWindowCore(QMainWindow):
             "CloseToTray": self.cfg_closetotray.isChecked(),
             "StartMinimized": self.cfg_startmin.isChecked(),
             "NotifyOnComplete": self.cfg_notify.isChecked(),
+            "ClipboardLinkGrabber": (
+                self.cfg_clipboard.isChecked()
+                if hasattr(self, "cfg_clipboard")
+                else old_clipboard_grabber
+            ),
         })
         if not saved:
             self.btn_save.setText("Save changes")
@@ -2853,6 +2881,14 @@ class MainWindowCore(QMainWindow):
             self._show_settings_status("Settings saved and server restarted.", "success")
         else:
             self._show_settings_status("Settings saved.", "success")
+        if (
+            hasattr(self, "cfg_clipboard")
+            and self.cfg_clipboard.isChecked()
+            and not old_clipboard_grabber
+        ):
+            # Enabling is an explicit opt-in, so consider the current
+            # clipboard value without making the user copy it again.
+            self._handle_clipboard_change()
         self.btn_save.setText("Saved")
         QTimer.singleShot(1500, lambda: self.btn_save.setText("Save changes"))
         status_generation = getattr(self, "_settings_status_generation", 0)
@@ -2862,6 +2898,48 @@ class MainWindowCore(QMainWindow):
         path = QFileDialog.getExistingDirectory(self, "Select Folder", line_edit.text())
         if path:
             line_edit.setText(path)
+
+    def _quick_download_url_edited(self, *_args):
+        """Clear clipboard-specific guidance once the user edits a staged URL."""
+        if not self._clipboard_staged_url:
+            return
+        self._clipboard_staged_url = ""
+        self.quick_download_status.hide()
+
+    def _handle_clipboard_change(self, clipboard_text=None):
+        """Stage a copied YouTube URL for review without starting a download."""
+        if not self.config.get("ClipboardLinkGrabber", False):
+            return
+        if clipboard_text is None:
+            clipboard_text = self._clipboard.text()
+        if not isinstance(clipboard_text, str):
+            return
+        raw = clipboard_text.strip()
+        if not raw or raw == self._clipboard_last_seen:
+            return
+        self._clipboard_last_seen = raw
+        url, error = self._dependencies['normalize_url'](raw)
+        if error or not self._dependencies['is_youtube_url'](url):
+            return
+        if url == self._clipboard_staged_url:
+            return
+
+        self._clipboard_staged_url = url
+        self.quick_download_url.setText(url)
+        self.quick_download_status.setText(
+            "Copied YouTube link staged. Review the options, then choose Add to queue."
+        )
+        self.quick_download_status.setProperty("state", "success")
+        self.quick_download_status.show()
+        repolish(self.quick_download_status)
+        self._append_log("Staged a copied YouTube link for review.")
+        if hasattr(self, "tray"):
+            self.tray.showMessage(
+                self._value('APP_NAME'),
+                "YouTube link staged. Open Downloads to review it before adding it to the queue.",
+                QSystemTrayIcon.MessageIcon.Information,
+                5000,
+            )
 
     def _copy_endpoint(self):
         QApplication.clipboard().setText(self.dash_endpoint.text())
