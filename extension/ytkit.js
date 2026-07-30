@@ -2452,6 +2452,9 @@ return response;
             ...(options.action ? [options.action] : [])
         ].filter(Boolean).slice(0, 2);
         const durationMs = Math.max(0, Number(options.duration ?? 2.5) * 1000);
+        const keepActionReachable = actions.length > 0
+            && document.body?.classList.contains('ytkit-panel-open');
+        const persistent = options.persistent === true || keepActionReachable;
 
         const toast = document.createElement('div');
         toast.className = 'ytkit-global-toast';
@@ -2462,6 +2465,9 @@ return response;
         toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive);
         toast.setAttribute('aria-atomic', 'true');
         toast.tabIndex = -1;
+        if (actions.length > 0) {
+            toast.setAttribute('data-ytkit-focus-portal', 'true');
+        }
 
         const badge = document.createElement('span');
         badge.className = 'ytkit-toast-badge';
@@ -2526,7 +2532,7 @@ return response;
             remainingMs = Math.max(0, dismissAt - Date.now());
         };
         const resumeDismiss = () => {
-            if (!toast.isConnected || remainingMs <= 0 || options.persistent) return;
+            if (!toast.isConnected || remainingMs <= 0 || persistent) return;
             dismissAt = Date.now() + remainingMs;
             toast._dismissTimer = setTimeout(() => dismissToast(toast), remainingMs);
         };
@@ -2545,7 +2551,7 @@ return response;
         });
 
         requestAnimationFrame(() => toast.classList.add('is-visible'));
-        if (!options.persistent && durationMs > 0) {
+        if (!persistent && durationMs > 0) {
             toast._dismissTimer = setTimeout(() => dismissToast(toast), durationMs);
         }
 
@@ -4988,24 +4994,37 @@ return response;
         });
     }
 
-    function trapFocusWithin(root, event) {
+    function trapFocusWithin(root, event, additionalRoots = []) {
         if (event.key !== 'Tab') return;
-        const focusable = getFocusableUiElements(root);
+        const roots = [root, ...additionalRoots].filter(Boolean);
+        const focusable = [...new Set(roots.flatMap(candidate => getFocusableUiElements(candidate)))];
         if (focusable.length === 0) return;
 
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         const activeElement = document.activeElement;
+        const activeInside = roots.some(candidate => candidate.contains(activeElement));
+
+        if (additionalRoots.length > 0) {
+            const activeIndex = focusable.indexOf(activeElement);
+            const direction = event.shiftKey ? -1 : 1;
+            const nextIndex = activeIndex < 0
+                ? (event.shiftKey ? focusable.length - 1 : 0)
+                : (activeIndex + direction + focusable.length) % focusable.length;
+            event.preventDefault();
+            focusable[nextIndex].focus();
+            return;
+        }
 
         if (event.shiftKey) {
-            if (activeElement === first || !root.contains(activeElement)) {
+            if (activeElement === first || !activeInside) {
                 event.preventDefault();
                 last.focus();
             }
             return;
         }
 
-        if (activeElement === last || !root.contains(activeElement)) {
+        if (activeElement === last || !activeInside) {
             event.preventDefault();
             first.focus();
         }
@@ -43497,7 +43516,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         ? document.getElementById('ytkit-settings-panel')
                         : null;
                 if (e.key === 'Tab' && activeDialog) {
-                    trapFocusWithin(activeDialog, e);
+                    const toastPortal = document.querySelector(
+                        '.ytkit-global-toast[data-ytkit-focus-portal="true"]'
+                    );
+                    trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);
                 }
                 // v4.5.3: Ctrl+Alt+Y in-page toggle retired with the rest of
                 // the shortcut surface per the "no keyboard shortcuts" rule.
