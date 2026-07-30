@@ -285,3 +285,84 @@ test('long-session route/mutation stress keeps observers and diagnostics bounded
     assert.equal(harness.listenerCount('document', 'yt-page-data-updated'), 0);
     assert.equal(harness.listenerCount('window', 'popstate'), 0);
 });
+
+test('mutation-rule circuit isolates a self-triggering rule and resets on navigation or retry', () => {
+    const harness = createLongSessionHarness();
+    const { core } = harness;
+    core.configureNavigationRuntime({
+        navDebounce: 0,
+        mutationRuleMaxInvocations: 3,
+        mutationRuleMaxDurationMs: 1000,
+        mutationRuleMaxSingleDurationMs: 1000
+    });
+
+    let selfRuns = 0;
+    let unrelatedRuns = 0;
+    core.addScopedMutationRule('self-trigger', 'self-node', () => { selfRuns += 1; });
+    core.addScopedMutationRule('unrelated', 'other-node', () => { unrelatedRuns += 1; });
+
+    const emitMatching = (selector) => {
+        harness.sharedMutationObserver().emit([{
+            type: 'childList',
+            addedNodes: [{
+                nodeType: 1,
+                matches(candidate) { return candidate === selector; },
+                querySelector() { return null; }
+            }]
+        }]);
+        harness.flushRaf();
+    };
+
+    emitMatching('self-node');
+    emitMatching('self-node');
+    let health = core.getMutationRuleHealthSnapshot();
+    assert.equal(health.find(rule => rule.featureId === 'self-trigger').circuitOpen, true);
+    assert.equal(health.find(rule => rule.featureId === 'unrelated').circuitOpen, false);
+    assert.equal(core.getMutationRuleDiagnostics().length, 1,
+        'opening one circuit must record exactly one bounded local diagnostic');
+
+    const runsAtOpen = selfRuns;
+    emitMatching('self-node');
+    assert.equal(selfRuns, runsAtOpen, 'an open circuit must suppress only its owning rule');
+    emitMatching('other-node');
+    assert.equal(unrelatedRuns, 2, 'unrelated matching rules must keep running');
+
+    harness.location.href = 'https://www.youtube.com/watch?v=route-reset';
+    harness.document.dispatchEvent({ type: 'yt-navigate-finish' });
+    harness.flushTimers();
+    health = core.getMutationRuleHealthSnapshot();
+    assert.equal(health.find(rule => rule.featureId === 'self-trigger').circuitOpen, false,
+        'SPA navigation must reset route-scoped mutation circuits');
+    emitMatching('self-node');
+    assert.equal(selfRuns, runsAtOpen + 1);
+
+    emitMatching('self-node');
+    emitMatching('self-node');
+    assert.equal(
+        core.getMutationRuleHealthSnapshot().find(rule => rule.featureId === 'self-trigger').circuitOpen,
+        true
+    );
+    assert.equal(core.retryMutationRule('self-trigger'), true);
+    assert.equal(
+        core.getMutationRuleHealthSnapshot().find(rule => rule.featureId === 'self-trigger').circuitOpen,
+        false,
+        'explicit retry must reset the selected rule without touching peers'
+    );
+});
+
+test('mutation-rule circuit diagnostics stay capped across repeated degraded routes', () => {
+    const harness = createLongSessionHarness();
+    const { core } = harness;
+    core.configureNavigationRuntime({
+        mutationRuleMaxInvocations: 1,
+        mutationRuleMaxDurationMs: 1000,
+        mutationRuleMaxSingleDurationMs: 1000
+    });
+    for (let index = 0; index < 25; index += 1) {
+        core.addScopedMutationRule(`noisy-${index}`, `.noisy-${index}`, () => {});
+    }
+    const diagnostics = core.getMutationRuleDiagnostics();
+    assert.equal(diagnostics.length, 20);
+    assert.equal(diagnostics[0].featureId, 'noisy-5');
+    assert.equal(diagnostics.at(-1).featureId, 'noisy-24');
+});

@@ -153,6 +153,7 @@
         const productVersion = options.productVersion || 'unknown';
         const browserUA = options.browserUA || 'unknown';
         const budgetedScans = Array.isArray(options.budgetedScans) ? options.budgetedScans : [];
+        const mutationRules = Array.isArray(options.mutationRules) ? options.mutationRules : [];
         const lines = [];
         const summary = summarize(snapshot);
         const top = rankProblemSurfaces(snapshot, options.topN || 5);
@@ -193,6 +194,18 @@
             lines.push('');
         }
 
+        const degradedMutationRules = mutationRules.filter(rule => rule?.circuitOpen);
+        if (degradedMutationRules.length) {
+            lines.push('degraded mutation rules:');
+            for (const rule of degradedMutationRules.slice(0, 10)) {
+                lines.push('  - ' + String(rule.featureId || 'unknown') +
+                    ': ' + String(rule.reason || 'budget') +
+                    '; ' + safeNumber(rule.invocations) + ' invocation(s)' +
+                    '; ' + safeNumber(rule.durationMs) + 'ms');
+            }
+            lines.push('');
+        }
+
         if (top.length === 0) {
             lines.push('No problem surfaces — every tracked selector is hitting.');
             return lines.join('\n');
@@ -229,6 +242,8 @@
             || (() => (core.exportSelectorHealth ? core.exportSelectorHealth() : null));
         const budgetedScanProvider = options.budgetedScanProvider
             || (() => (core.getBudgetedScanDiagnostics ? core.getBudgetedScanDiagnostics() : []));
+        const mutationRuleProvider = options.mutationRuleProvider
+            || (() => (core.getMutationRuleHealthSnapshot ? core.getMutationRuleHealthSnapshot() : []));
 
         function getReport() {
             const snap = snapshotProvider();
@@ -236,7 +251,8 @@
                 summary: summarize(snap),
                 topProblems: rankProblemSurfaces(snap, options.topN || 5),
                 snapshot: snap,
-                budgetedScans: budgetedScanProvider()
+                budgetedScans: budgetedScanProvider(),
+                mutationRules: mutationRuleProvider()
             };
         }
 
@@ -245,7 +261,10 @@
             const budgetedScans = Array.isArray(extra.budgetedScans)
                 ? extra.budgetedScans
                 : budgetedScanProvider();
-            return formatCopyReport(snap, { ...options, ...extra, budgetedScans });
+            const mutationRules = Array.isArray(extra.mutationRules)
+                ? extra.mutationRules
+                : mutationRuleProvider();
+            return formatCopyReport(snap, { ...options, ...extra, budgetedScans, mutationRules });
         }
 
         function exportSnapshotJson() {
