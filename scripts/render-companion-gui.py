@@ -276,20 +276,27 @@ def main():
             select_page(window, "Dashboard")
             if scenario == "dashboard-starting":
                 window.status_label.setText("Starting")
+                window.status_label.setProperty("tone", "warning")
+                window.status_dot.setProperty("tone", "warning")
+                window.server_badge.setProperty("tone", "warning")
                 window.dash_status.setText("Starting local server")
                 window.dash_hint.setText("Checking the local API and installed tools…")
                 window._set_readiness("server", "Starting", "warning")
+                for status_widget in (
+                        window.status_label, window.status_dot, window.server_badge):
+                    app_module.repolish(status_widget)
                 assert_visible_text(window, {"Starting", "Starting local server", "Checking"})
             elif scenario == "dashboard-online":
                 window.status_label.setText("Running")
-                window.status_label.setStyleSheet(
-                    "color: #75dcb1; font-size: 12px; font-weight: 650;"
-                )
+                window.status_label.setProperty("tone", "success")
+                window.status_dot.setProperty("tone", "success")
                 window.dash_status.setText("Server online")
                 window.dash_hint.setText("Local only · ready for Astra Deck")
                 window.server_badge.setProperty("tone", "success")
                 window.btn_startstop.setText("Stop Server")
-                app_module.repolish(window.server_badge)
+                for status_widget in (
+                        window.status_label, window.status_dot, window.server_badge):
+                    app_module.repolish(status_widget)
                 window._set_readiness("server", "Running", "success")
                 window._set_readiness("ytDlp", "2026.07.04", "success")
                 window._set_readiness("ffmpeg", "7.1", "success")
@@ -298,20 +305,25 @@ def main():
                 assert_visible_text(window, {"Running", "Server online", "2026.07.04", "7.1"})
             else:
                 window.status_label.setText("Server error")
+                window.status_label.setProperty("tone", "danger")
+                window.status_dot.setProperty("tone", "danger")
+                window.server_badge.setProperty("tone", "danger")
+                for status_widget in (
+                        window.status_label, window.status_dot, window.server_badge):
+                    app_module.repolish(status_widget)
                 window.dash_status.setText("Server unavailable")
                 window.dash_hint.setText(
                     "Server failed to start. The configured port is already in use."
                 )
                 degraded = {
-                    "server": "Error",
-                    "ytDlp": "Missing",
-                    "ffmpeg": "7.1",
-                    "deno": "Update Deno",
-                    "sabr": "Limited",
+                    "server": ("Error", "danger"),
+                    "ytDlp": ("Missing", "danger"),
+                    "ffmpeg": ("7.1", "success"),
+                    "deno": ("Update Deno", "warning"),
+                    "sabr": ("Limited", "warning"),
                 }
-                for key, text in degraded.items():
-                    _dot, value = window.readiness_values[key]
-                    value.setText(text)
+                for key, (text, tone) in degraded.items():
+                    window._set_readiness(key, text, tone)
                 assert_visible_text(
                     window, {"Server error", "Server unavailable", "Missing", "Update Deno"}
                 )
