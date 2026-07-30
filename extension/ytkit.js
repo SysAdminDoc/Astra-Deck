@@ -3404,6 +3404,7 @@ return response;
             transcriptAiTarget: 'notebooklm',   // 'notebooklm' | 'chatgpt' | 'claude' | 'gemini' | 'perplexity'
             audioTrackLanguage: false,
             preferredAudioLang: 'en',           // BCP-47 primary subtag
+            preferDescriptiveAudio: false,
             // v3.23.0 (NX8): surface a one-time notice when YouTube
             // serves an AI-dubbed audio track. Doesn't auto-switch
             // (the native menu restarts playback per the
@@ -33485,7 +33486,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'audioTrackLanguage',
             name: 'Preferred Audio Track Language',
-            description: 'Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu.',
+            description: t(
+                'feature_audioTrackLanguage_desc',
+                'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.'
+            ),
             group: 'Video Player',
             icon: 'languages',
             pages: [PageTypes.WATCH],
@@ -33500,27 +33504,44 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             settingKey: 'preferredAudioLang',
             _navRule: null,
-            _noticeLogged: false,
-            _reportUnavailable() {
-                if (this._noticeLogged) return;
-                this._noticeLogged = true;
-                const target = String(getSetting('preferredAudioLang', 'en') || 'en').toLowerCase();
-                DebugManager.log(
-                    'AudioLang',
-                    `Automatic audio track switching skipped for ${target}: YouTube only exposes this through the native settings menu, which restarts playback.`
+            _syncBridge() {
+                const target = String(getSetting('preferredAudioLang', 'en') || 'en')
+                    .trim()
+                    .replace(/_/g, '-')
+                    .toLowerCase();
+                document.documentElement.setAttribute('data-ytkit-audio-language', target);
+                document.documentElement.setAttribute(
+                    'data-ytkit-audio-description',
+                    getSetting('preferDescriptiveAudio', false) ? 'on' : 'off'
                 );
             },
             init() {
-                this._navRule = () => {
-                    this._reportUnavailable();
-                };
+                this._navRule = () => this._syncBridge();
                 addNavigateRule('audioTrackLanguage', this._navRule);
                 this._navRule();
             },
             destroy() {
                 removeNavigateRule('audioTrackLanguage');
                 this._navRule = null;
-                this._noticeLogged = false;
+                document.documentElement.removeAttribute('data-ytkit-audio-language');
+                document.documentElement.removeAttribute('data-ytkit-audio-description');
+            }
+        },
+        {
+            id: 'preferDescriptiveAudio',
+            name: t('feature_preferDescriptiveAudio_name', 'Prefer Descriptive Audio'),
+            description: t(
+                'feature_preferDescriptiveAudio_desc',
+                'When the preferred language offers an audio-description track, select it before the standard track.'
+            ),
+            group: 'Video Player',
+            icon: 'audio-lines',
+            pages: [PageTypes.WATCH],
+            init() {
+                document.documentElement.setAttribute('data-ytkit-audio-description', 'on');
+            },
+            destroy() {
+                document.documentElement.removeAttribute('data-ytkit-audio-description');
             }
         },
         // ═══════════════════════════════════════════════════════════════════
@@ -34956,50 +34977,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'antiTranslateAudioTrack',
             name: 'Anti-Translate Audio Track',
-            description: 'When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present.',
+            description: t(
+                'feature_antiTranslateAudioTrack_desc',
+                'When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge.'
+            ),
             group: 'Content',
             icon: 'languages',
             pages: [PageTypes.WATCH],
             _navRule: null,
-            _attempts: 0,
-            _MAX_ATTEMPTS: 5,
-
-            _switchToOriginal() {
-                const movie = window.movie_player;
-                if (!movie?.getAvailableAudioTracks) return false;
-                try {
-                    const tracks = movie.getAvailableAudioTracks();
-                    if (!Array.isArray(tracks) || !tracks.length) return false;
-                    // Prefer the track marked as "original" or matching the
-                    // primary track in player response. YouTube's getAudioTrack()
-                    // returns the current; tracks contain `displayName` / `id`.
-                    const original = tracks.find(t => {
-                        const label = String(t?.displayName?.simpleText || t?.name || '').toLowerCase();
-                        return label.includes('original') || t?.isDefault;
-                    });
-                    if (original && movie.setAudioTrack) {
-                        movie.setAudioTrack(original);
-                        return true;
-                    }
-                } catch (e) {
-                    DebugManager.log('AntiTranslateAudio', `Switch failed: ${e.message}`);
-                }
-                return false;
-            },
-
-            _scheduleAttempts() {
-                this._attempts = 0;
-                const tick = () => {
-                    if (this._attempts >= this._MAX_ATTEMPTS) return;
-                    this._attempts++;
-                    if (this._switchToOriginal()) return;
-                    setTimeout(tick, 1000);
-                };
-                setTimeout(tick, 1500);
-            },
 
             init() {
-                this._navRule = () => this._scheduleAttempts();
+                this._navRule = () => {
+                    document.documentElement.setAttribute('data-ytkit-audio-original', 'on');
+                };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
@@ -35007,7 +34997,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
-                this._attempts = 0;
+                document.documentElement.removeAttribute('data-ytkit-audio-original');
             }
         },
         // ═══════════════════════════════════════════════════════════════════

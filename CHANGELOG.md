@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+- **Preferred, descriptive, and original audio now use one MAIN-world player
+  bridge.** Language selection prefers an exact BCP-47 match, falls back to the
+  primary language, can favor same-language audio description, and reapplies
+  safely after YouTube SPA navigation without opening the native settings menu.
+
 ### Fixed
 - **Companion first paint no longer waits on executable probes.** The Settings
   maintenance row now renders a checking state immediately and refreshes

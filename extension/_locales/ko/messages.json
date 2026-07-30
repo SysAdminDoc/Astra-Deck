@@ -534,7 +534,7 @@
     "message": "진행 표시줄 항상 표시"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "YouTube가 자동 더빙 오디오 트랙을 제공할 때 원본으로 전환을 시도합니다. 최선의 노력 — movie_player의 getAvailableAudioTracks() / setAudioTrack()이 있을 때 작동합니다."
+    "message": "YouTube에서 자동 더빙 트랙을 제공하면 검토된 플레이어 브리지를 통해 원본을 선택합니다."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "오디오 트랙 자동 번역 방지"
@@ -570,10 +570,16 @@
     "message": "오디오 팬"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "YouTube 설정을 열지 않고 선호하는 오디오 언어를 저장합니다. 스크립트가 네이티브 메뉴를 통해 오디오 트랙을 전환하면 YouTube가 재생을 다시 시작합니다."
+    "message": "플레이어 브리지를 통해 YouTube 설정을 열거나 클릭하지 않고 선호하는 오디오 언어를 선택합니다."
   },
   "feature_audioTrackLanguage_name": {
     "message": "선호 오디오 트랙 언어"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "선호하는 언어로 화면 해설 트랙이 제공되면 표준 트랙보다 먼저 선택합니다."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "화면 해설 오디오 우선"
   },
   "feature_autoClosePopups_desc": {
     "message": "쿠키 동의, 설문 프롬프트 및 기타 YouTube 팝업을 자동으로 닫기"

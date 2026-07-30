@@ -88,6 +88,7 @@
       "js": [
         "core/resource-unlock.js",
         "core/player.js",
+        "core/audio-track.js",
         "ytkit-main.js"
       ],
       "run_at": "document_start",

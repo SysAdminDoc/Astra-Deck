@@ -534,7 +534,7 @@
     "message": "Sempre Mostrar Barra de Progresso"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "Quando o YouTube exibe uma faixa de áudio dublada automaticamente, tenta voltar para o original. Melhor esforço — funciona através de movie_player getAvailableAudioTracks() / setAudioTrack() quando presente."
+    "message": "Quando o YouTube oferecer uma faixa dublada automaticamente, selecione a original pela ponte revisada do player."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-Tradução de Faixa de Áudio"
@@ -570,10 +570,16 @@
     "message": "Pan de áudio"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Armazena seu idioma de áudio preferido sem abrir as configurações do YouTube automaticamente. O YouTube reinicia a reprodução quando scripts alternam faixas de áudio pelo menu nativo."
+    "message": "Selecione seu idioma de áudio preferido pela ponte do player sem abrir nem clicar nas configurações do YouTube."
   },
   "feature_audioTrackLanguage_name": {
     "message": "Idioma de Faixa de Áudio Preferido"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "Quando o idioma preferido oferecer uma faixa de audiodescrição, selecione-a antes da faixa padrão."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "Preferir audiodescrição"
   },
   "feature_autoClosePopups_desc": {
     "message": "Fecha automaticamente consentimento de cookies, pesquisas e outros popups do YouTube"
