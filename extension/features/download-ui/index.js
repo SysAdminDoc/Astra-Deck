@@ -1837,7 +1837,13 @@
                 close.className = 'ytkit-stream-links-panel__close';
                 close.type = 'button';
                 close.textContent = t('commonClose', 'Close');
-                close.addEventListener('click', () => { panel.remove(); this._panel = null; });
+                close.addEventListener('click', () => {
+                    this._requestToken++;
+                    if (this._searchTimer) clearTimeout(this._searchTimer);
+                    this._searchTimer = null;
+                    panel.remove();
+                    this._panel = null;
+                });
                 panel.appendChild(close);
 
                 const renderList = (title, list) => {
@@ -2034,102 +2040,262 @@
         const downloadHistoryPanel = {
             id: 'downloadHistoryPanel',
             name: 'Download History Panel',
-            description: 'Adds a "History" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.',
+            description: 'Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.',
             group: 'Downloads',
             icon: 'history',
             pages: [PageTypes.WATCH],
             _btn: null,
             _panel: null,
             _styleElement: null,
+            _searchTimer: null,
+            _requestToken: 0,
+            _pageSize: 50,
+            _filters: {
+                q: '', status: '', format: '', dateFrom: '', dateTo: '',
+                sort: 'newest', offset: 0
+            },
 
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-dl-history-panel{position:fixed;right:24px;top:80px;z-index:9000;width:560px;max-height:60vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
-                    .ytkit-dl-history-panel h4{margin:0 0 8px;font-size:13px;font-weight:700;color:#fafafa;}
+                    .ytkit-dl-history-panel{position:fixed;inset-inline-end:24px;top:80px;z-index:9000;width:min(680px,calc(100vw - 32px));max-height:72vh;display:flex;flex-direction:column;padding:16px;border-radius:12px;background:var(--yt-spec-base-background,#0f0f10);color:var(--yt-spec-text-primary,#e5e7eb);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:13px/1.5 Roboto,Arial,sans-serif;box-shadow:0 18px 48px rgba(0,0,0,.55);}
+                    .ytkit-dl-history-panel h4{margin:0 0 10px;font-size:16px;font-weight:700;color:var(--yt-spec-text-primary,#fafafa);}
+                    .ytkit-dl-history-panel__filters{display:grid;grid-template-columns:minmax(180px,2fr) repeat(3,minmax(110px,1fr));gap:8px;margin-block-end:8px;}
+                    .ytkit-dl-history-panel__dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-block-end:10px;}
+                    .ytkit-dl-history-panel input,.ytkit-dl-history-panel select{box-sizing:border-box;min-height:36px;width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);background:var(--yt-spec-menu-background,#18181b);color:var(--yt-spec-text-primary,#f4f4f5);font:inherit;outline:none;color-scheme:dark;}
+                    .ytkit-dl-history-panel__body{min-height:120px;overflow:auto;border-block:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.08));}
                     .ytkit-dl-history-panel ul{margin:0;padding:0;list-style:none;}
-                    .ytkit-dl-history-panel li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;}
-                    .ytkit-dl-history-panel .meta{color:rgba(255,255,255,0.55);font-size:11px;font-variant-numeric:tabular-nums;}
-                    .ytkit-dl-history-panel__empty{color:rgba(255,255,255,0.6);font-style:italic;}
-                    .ytkit-dl-history-panel__close{position:absolute;top:8px;right:8px;min-height:28px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                    .ytkit-dl-history-panel li{padding:9px 2px;border-block-end:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.05));font-size:12px;}
+                    .ytkit-dl-history-panel .meta{color:var(--yt-spec-text-secondary,rgba(255,255,255,0.62));font-size:11px;font-variant-numeric:tabular-nums;}
+                    .ytkit-dl-history-panel__empty{padding:24px 4px;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.65));font-style:italic;}
+                    .ytkit-dl-history-panel__footer{display:flex;align-items:center;gap:8px;padding-block-start:10px;}
+                    .ytkit-dl-history-panel__count{margin-inline-end:auto;color:var(--yt-spec-text-secondary,rgba(255,255,255,.65));font-variant-numeric:tabular-nums;}
+                    .ytkit-dl-history-panel__action,.ytkit-dl-history-panel__close{min-height:32px;padding:5px 10px;border-radius:7px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.06));color:var(--yt-spec-text-primary,#e5e7eb);font:600 12px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;}
+                    .ytkit-dl-history-panel__close{position:absolute;top:10px;inset-inline-end:10px;}
+                    .ytkit-dl-history-panel__action:disabled{opacity:.45;cursor:default;}
                     .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;margin-inline-start:8px;border-radius:8px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
-                    .ytkit-dl-history-btn:hover,.ytkit-dl-history-panel__close:hover{background:rgba(255,255,255,0.1);}
-                    .ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
+                    .ytkit-dl-history-btn:hover,.ytkit-dl-history-panel__action:not(:disabled):hover,.ytkit-dl-history-panel__close:hover{background:var(--yt-spec-10-percent-layer,rgba(255,255,255,0.1));}
+                    .ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel button:focus-visible,.ytkit-dl-history-panel input:focus-visible,.ytkit-dl-history-panel select:focus-visible{box-shadow:0 0 0 2px var(--yt-spec-base-background,#080b10),0 0 0 4px rgba(124,58,237,0.5);}
+                    @media(max-width:700px){.ytkit-dl-history-panel{inset-inline:16px;width:auto}.ytkit-dl-history-panel__filters{grid-template-columns:1fr 1fr}.ytkit-dl-history-panel__dates{grid-template-columns:1fr}}
                 `, 'dl-history-panel', true);
             },
 
-            async _fetchHistory() {
+            async _fetchHistory({ offset = this._filters.offset, limit = this._pageSize } = {}) {
                 try {
                     const status = await MediaDLManager.check();
                     if (!status?.ok) return null;
+                    const params = new URLSearchParams({
+                        limit: String(limit),
+                        offset: String(offset),
+                        sort: this._filters.sort
+                    });
+                    for (const key of ['q', 'status', 'format', 'dateFrom', 'dateTo']) {
+                        if (this._filters[key]) params.set(key, this._filters[key]);
+                    }
                     const { data } = await extensionFetchJson({
                         method: 'GET',
-                        url: MediaDLManager.baseUrl() + '/history?limit=50',
+                        url: MediaDLManager.baseUrl() + '/history?' + params.toString(),
                         headers: MediaDLManager._headers({ 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') })
                     });
-                    return data?.history || [];
+                    return data && Array.isArray(data.history) ? data : null;
                 } catch (e) {
                     DebugManager.log('DownloadHistory', `Fetch failed: ${e.message}`);
                     return null;
                 }
             },
 
+            _makeControl(tag, ariaLabel, value, options = null) {
+                const control = document.createElement(tag);
+                control.setAttribute('aria-label', ariaLabel);
+                if (options) {
+                    for (const [label, optionValue] of options) {
+                        const option = document.createElement('option');
+                        option.textContent = label;
+                        option.value = optionValue;
+                        control.appendChild(option);
+                    }
+                }
+                control.value = value;
+                return control;
+            },
+
+            _csvCell(value) {
+                return `"${String(value ?? '').replaceAll('"', '""')}"`;
+            },
+
+            async _exportFiltered(button) {
+                const oldText = button.textContent;
+                button.disabled = true;
+                button.textContent = t('dlHistoryExporting', 'Exporting…');
+                try {
+                    const data = await this._fetchHistory({ offset: 0, limit: 500 });
+                    if (!data) {
+                        showToast(t('dlHistoryUnreachable', 'Astra Downloader unreachable. Start Astra Downloader and try again.'), '#ef4444');
+                        return;
+                    }
+                    if (!data.history.length) {
+                        showToast(t('dlHistoryNoMatches', 'No downloads match these filters.'), '#f59e0b');
+                        return;
+                    }
+                    const fields = ['title', 'filename', 'format', 'quality', 'status', 'duration', 'date', 'url'];
+                    const lines = [
+                        fields.map(field => this._csvCell(field)).join(','),
+                        ...data.history.map(entry => fields.map(field => this._csvCell(entry[field])).join(','))
+                    ];
+                    const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+                    const href = URL.createObjectURL(blob);
+                    const anchor = document.createElement('a');
+                    anchor.href = href;
+                    anchor.download = 'astra-download-history.csv';
+                    anchor.hidden = true;
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    anchor.remove();
+                    setTimeout(() => URL.revokeObjectURL(href), 0);
+                } finally {
+                    button.disabled = false;
+                    button.textContent = oldText;
+                }
+            },
+
+            async _renderHistory() {
+                const panel = this._panel;
+                if (!panel) return;
+                const body = panel.querySelector('.ytkit-dl-history-panel__body');
+                const count = panel.querySelector('.ytkit-dl-history-panel__count');
+                const previous = panel.querySelector('[data-history-action="previous"]');
+                const next = panel.querySelector('[data-history-action="next"]');
+                const exportButton = panel.querySelector('[data-history-action="export"]');
+                const requestToken = ++this._requestToken;
+                body.replaceChildren();
+                const loading = document.createElement('div');
+                loading.className = 'ytkit-dl-history-panel__empty';
+                loading.textContent = t('commonLoading', 'Loading…');
+                body.appendChild(loading);
+                const data = await this._fetchHistory();
+                if (!this._panel || requestToken !== this._requestToken) return;
+                body.replaceChildren();
+                if (!data) {
+                    const error = document.createElement('div');
+                    error.className = 'ytkit-dl-history-panel__empty';
+                    error.textContent = t('dlHistoryUnreachable', 'Astra Downloader unreachable. Start Astra Downloader and try again.');
+                    body.appendChild(error);
+                    count.textContent = t('dlHistoryUnavailableCount', 'History unavailable');
+                    previous.disabled = true;
+                    next.disabled = true;
+                    exportButton.disabled = true;
+                    return;
+                }
+                const history = data.history;
+                const start = history.length ? data.offset + 1 : 0;
+                const end = data.offset + history.length;
+                count.textContent = t(
+                    'dlHistoryCount',
+                    '{start}–{end} of {filtered} filtered · {total} retained'
+                )
+                    .replace('{start}', String(start))
+                    .replace('{end}', String(end))
+                    .replace('{filtered}', String(data.filteredTotal))
+                    .replace('{total}', String(data.total));
+                previous.disabled = data.offset <= 0;
+                next.disabled = !data.hasMore;
+                exportButton.disabled = data.filteredTotal <= 0;
+                if (!history.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-dl-history-panel__empty';
+                    empty.textContent = data.total
+                        ? t('dlHistoryNoMatches', 'No downloads match these filters.')
+                        : t('dlHistoryEmpty', 'No completed downloads yet.');
+                    body.appendChild(empty);
+                    return;
+                }
+                const list = document.createElement('ul');
+                for (const entry of history) {
+                    const item = document.createElement('li');
+                    const title = document.createElement('div');
+                    title.textContent = entry.title || entry.filename || entry.url || t('commonUntitled', 'Untitled');
+                    const meta = document.createElement('div');
+                    meta.className = 'meta';
+                    meta.textContent = [
+                        entry.format?.toUpperCase(),
+                        entry.quality,
+                        entry.status,
+                        entry.date
+                    ].filter(Boolean).join(' • ');
+                    item.append(title, meta);
+                    list.appendChild(item);
+                }
+                body.appendChild(list);
+            },
+
             async _open() {
-                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                if (this._panel) {
+                    this._requestToken++;
+                    if (this._searchTimer) clearTimeout(this._searchTimer);
+                    this._searchTimer = null;
+                    this._panel.remove();
+                    this._panel = null;
+                    return;
+                }
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-dl-history-panel';
                 panel.setAttribute('role', 'dialog');
                 panel.setAttribute('aria-label', t('dlHistoryRegionAria', 'Recent downloads'));
-                const h = document.createElement('h4');
-                h.textContent = t('dlHistoryTitle', 'Recent Downloads');
-                panel.appendChild(h);
-                const placeholder = document.createElement('div');
-                placeholder.className = 'ytkit-dl-history-panel__empty';
-                placeholder.textContent = t('commonLoading', 'Loading…');
-                panel.appendChild(placeholder);
-                document.body.appendChild(panel);
-                this._panel = panel;
-
-                const history = await this._fetchHistory();
-                if (!this._panel) return;
-                panel.replaceChildren();
                 const heading = document.createElement('h4');
                 heading.textContent = t('dlHistoryTitle', 'Recent Downloads');
                 panel.appendChild(heading);
 
-                if (!history) {
-                    const err = document.createElement('div');
-                    err.className = 'ytkit-dl-history-panel__empty';
-                    err.textContent = t('dlHistoryUnreachable', 'Astra Downloader unreachable. Start Astra Downloader and try again.');
-                    panel.appendChild(err);
-                } else if (!history.length) {
-                    const empty = document.createElement('div');
-                    empty.className = 'ytkit-dl-history-panel__empty';
-                    empty.textContent = t('dlHistoryEmpty', 'No completed downloads yet.');
-                    panel.appendChild(empty);
-                } else {
-                    const ul = document.createElement('ul');
-                    for (const entry of history.slice().reverse()) {
-                        const li = document.createElement('li');
-                        const title = document.createElement('div');
-                        title.textContent = entry.title || entry.filename || entry.url || t('commonUntitled', 'Untitled');
-                        const meta = document.createElement('div');
-                        meta.className = 'meta';
-                        const parts = [];
-                        if (entry.format) parts.push(entry.format);
-                        if (entry.quality) parts.push(entry.quality);
-                        if (entry.completedAt || entry.timestamp) {
-                            try {
-                                const ts = new Date(entry.completedAt || entry.timestamp);
-                                parts.push(ts.toLocaleString());
-                            } catch { /* reason: invalid history timestamp; omit date metadata */ }
-                        }
-                        meta.textContent = parts.join(' • ');
-                        li.append(title, meta);
-                        ul.appendChild(li);
-                    }
-                    panel.appendChild(ul);
-                }
+                const filters = document.createElement('div');
+                filters.className = 'ytkit-dl-history-panel__filters';
+                const search = this._makeControl('input', t('dlHistorySearchAria', 'Search download history'), this._filters.q);
+                search.type = 'search';
+                search.placeholder = t('dlHistorySearchPlaceholder', 'Search title or filename');
+                const status = this._makeControl('select', t('dlHistoryStatusAria', 'Filter history by status'), this._filters.status, [
+                    [t('dlHistoryAllStatuses', 'All statuses'), ''],
+                    [t('dlHistoryComplete', 'Complete'), 'complete']
+                ]);
+                const format = this._makeControl('select', t('dlHistoryFormatAria', 'Filter history by format'), this._filters.format, [
+                    [t('dlHistoryAllFormats', 'All formats'), ''],
+                    ...['mp4', 'mkv', 'webm', 'mp3', 'm4a', 'opus', 'flac', 'wav'].map(value => [value.toUpperCase(), value])
+                ]);
+                const sort = this._makeControl('select', t('dlHistorySortAria', 'Sort download history'), this._filters.sort, [
+                    [t('dlHistoryNewest', 'Newest first'), 'newest'],
+                    [t('dlHistoryOldest', 'Oldest first'), 'oldest']
+                ]);
+                filters.append(search, status, format, sort);
+                panel.appendChild(filters);
+
+                const dates = document.createElement('div');
+                dates.className = 'ytkit-dl-history-panel__dates';
+                const dateFrom = this._makeControl('input', t('dlHistoryDateFromAria', 'Filter history saved from date'), this._filters.dateFrom);
+                dateFrom.type = 'date';
+                const dateTo = this._makeControl('input', t('dlHistoryDateToAria', 'Filter history saved through date'), this._filters.dateTo);
+                dateTo.type = 'date';
+                dates.append(dateFrom, dateTo);
+                panel.appendChild(dates);
+
+                const body = document.createElement('div');
+                body.className = 'ytkit-dl-history-panel__body';
+                panel.appendChild(body);
+                const footer = document.createElement('div');
+                footer.className = 'ytkit-dl-history-panel__footer';
+                const count = document.createElement('span');
+                count.className = 'ytkit-dl-history-panel__count';
+                count.setAttribute('aria-live', 'polite');
+                footer.appendChild(count);
+                const makeAction = (text, action) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'ytkit-dl-history-panel__action';
+                    button.dataset.historyAction = action;
+                    button.textContent = text;
+                    return button;
+                };
+                const previous = makeAction(t('dlHistoryPrevious', 'Previous'), 'previous');
+                const next = makeAction(t('dlHistoryNext', 'Next'), 'next');
+                const exportButton = makeAction(t('commonExport', 'Export'), 'export');
+                footer.append(previous, next, exportButton);
+                panel.appendChild(footer);
 
                 const close = document.createElement('button');
                 close.type = 'button';
@@ -2138,6 +2304,37 @@
                 close.setAttribute('aria-label', t('dlHistoryCloseAria', 'Close recent downloads'));
                 close.addEventListener('click', () => { panel.remove(); this._panel = null; });
                 panel.appendChild(close);
+
+                const updateFilter = (key, value) => {
+                    this._filters[key] = value;
+                    this._filters.offset = 0;
+                    this._renderHistory();
+                };
+                search.addEventListener('input', () => {
+                    if (this._searchTimer) clearTimeout(this._searchTimer);
+                    this._searchTimer = setTimeout(() => {
+                        this._searchTimer = null;
+                        updateFilter('q', search.value.trim());
+                    }, 250);
+                });
+                status.addEventListener('change', () => updateFilter('status', status.value));
+                format.addEventListener('change', () => updateFilter('format', format.value));
+                sort.addEventListener('change', () => updateFilter('sort', sort.value));
+                dateFrom.addEventListener('change', () => updateFilter('dateFrom', dateFrom.value));
+                dateTo.addEventListener('change', () => updateFilter('dateTo', dateTo.value));
+                previous.addEventListener('click', () => {
+                    this._filters.offset = Math.max(0, this._filters.offset - this._pageSize);
+                    this._renderHistory();
+                });
+                next.addEventListener('click', () => {
+                    this._filters.offset += this._pageSize;
+                    this._renderHistory();
+                });
+                exportButton.addEventListener('click', () => this._exportFiltered(exportButton));
+
+                document.body.appendChild(panel);
+                this._panel = panel;
+                this._renderHistory();
             },
 
             _attach() {
@@ -2172,6 +2369,8 @@
                 this._destroyed = true;
                 removeNavigateRule(this.id);
                 if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null; }
+                if (this._searchTimer) { clearTimeout(this._searchTimer); this._searchTimer = null; }
+                this._requestToken++;
                 this._btn?.remove();
                 this._btn = null;
                 this._panel?.remove();

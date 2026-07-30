@@ -4304,17 +4304,71 @@
   "dlHistoryButtonTitle": {
     "message": "View recent downloads"
   },
+  "dlHistoryAllFormats": {
+    "message": "All formats"
+  },
+  "dlHistoryAllStatuses": {
+    "message": "All statuses"
+  },
   "dlHistoryCloseAria": {
     "message": "Close recent downloads"
+  },
+  "dlHistoryComplete": {
+    "message": "Completato"
+  },
+  "dlHistoryCount": {
+    "message": "{start}–{end} of {filtered} filtered · {total} retained"
+  },
+  "dlHistoryDateFromAria": {
+    "message": "Filter history saved from date"
+  },
+  "dlHistoryDateToAria": {
+    "message": "Filter history saved through date"
   },
   "dlHistoryEmpty": {
     "message": "No completed downloads yet."
   },
+  "dlHistoryExporting": {
+    "message": "Exporting…"
+  },
+  "dlHistoryFormatAria": {
+    "message": "Filter history by format"
+  },
+  "dlHistoryNewest": {
+    "message": "Newest first"
+  },
+  "dlHistoryNext": {
+    "message": "Next"
+  },
+  "dlHistoryNoMatches": {
+    "message": "No downloads match these filters."
+  },
+  "dlHistoryOldest": {
+    "message": "Oldest first"
+  },
+  "dlHistoryPrevious": {
+    "message": "Previous"
+  },
   "dlHistoryRegionAria": {
     "message": "Recent downloads"
   },
+  "dlHistorySearchAria": {
+    "message": "Search download history"
+  },
+  "dlHistorySearchPlaceholder": {
+    "message": "Search title or filename"
+  },
+  "dlHistorySortAria": {
+    "message": "Sort download history"
+  },
+  "dlHistoryStatusAria": {
+    "message": "Filter history by status"
+  },
   "dlHistoryTitle": {
     "message": "Recent Downloads"
+  },
+  "dlHistoryUnavailableCount": {
+    "message": "History unavailable"
   },
   "dlHistoryUnreachable": {
     "message": "Astra Downloader unreachable. Start Astra Downloader and try again."

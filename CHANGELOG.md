@@ -7,6 +7,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Download history is fully accessible.** The companion and in-page History
+  surfaces now search title/filename, filter status/format/saved dates, sort
+  newest or oldest, page through the retained 500-row store in bounded 50-row
+  slices, show filtered and retained totals, and export all matching rows to
+  CSV.
 - **Deterministic companion operational-state visual QA.** The Qt smoke renderer
   now captures server startup/online/degraded states, the complete queue and
   recovery lifecycle, history clear/Undo, Settings dirty/error/busy states, and

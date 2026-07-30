@@ -420,9 +420,11 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         downloadUi.includes("this._btn.setAttribute('aria-label', t('dlHistoryButtonTitle', 'View recent downloads'))"),
         'Download history panel and controls must have accessible names');
     add('Download history controls have focus-visible and target size',
-        downloadUi.includes('.ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible') &&
+        downloadUi.includes('.ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel button:focus-visible,.ytkit-dl-history-panel input:focus-visible,.ytkit-dl-history-panel select:focus-visible') &&
         hasMinTarget(downloadUi, '.ytkit-dl-history-btn') &&
-        hasMinTarget(downloadUi, '.ytkit-dl-history-panel__close'),
+        hasMinTarget(downloadUi, '.ytkit-dl-history-panel__close') &&
+        hasMinTarget(downloadUi, '.ytkit-dl-history-panel__action') &&
+        hasMinTarget(downloadUi, '.ytkit-dl-history-panel input'),
         'Download history controls must declare focus-visible and at least 24px target size');
 
     // Subscription groups toolbar, digest, and modal.

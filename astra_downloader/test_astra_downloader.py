@@ -1869,6 +1869,74 @@ class ApiSecurityTests(unittest.TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.get_json()["count"], 1)
+        self.assertEqual(resp.get_json()["filteredTotal"], 3)
+        self.assertEqual(resp.get_json()["total"], 3)
+
+    def test_history_query_filters_sorts_and_pages_retained_rows(self):
+        entries = ad.sanitize_history_entries([
+            {
+                "id": "1", "title": "Alpha lecture", "filename": "alpha.mp4",
+                "format": "mp4", "quality": "1080", "date": "2026-07-27",
+            },
+            {
+                "id": "2", "title": "Beta lecture", "filename": "beta.m4a",
+                "format": "m4a", "quality": "best", "date": "2026-07-28",
+            },
+            {
+                "id": "3", "title": "Beta follow-up", "filename": "follow-up.mp4",
+                "format": "mp4", "quality": "720", "date": "2026-07-29",
+            },
+        ])
+
+        result = ad.query_history_entries(
+            entries,
+            query="beta",
+            status="complete",
+            fmt="mp4",
+            date_from="2026-07-28",
+            date_to="2026-07-30",
+            sort="oldest",
+            offset=0,
+            limit=1,
+        )
+
+        self.assertEqual([item["id"] for item in result["history"]], ["3"])
+        self.assertEqual(result["total"], 3)
+        self.assertEqual(result["filteredTotal"], 1)
+        self.assertFalse(result["hasMore"])
+        self.assertEqual(entries[0]["status"], "complete")
+
+    def test_history_route_exposes_filtered_page_metadata(self):
+        token = "d" * 32
+        history = FakeHistory()
+        history.entries = [
+            {
+                "id": str(index),
+                "title": f"Lecture {index}",
+                "filename": f"lecture-{index}.mp4",
+                "format": "mp4" if index % 2 else "m4a",
+                "date": f"2026-07-{20 + index:02d}",
+            }
+            for index in range(1, 6)
+        ]
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, history)
+        client = ad.create_api(config, manager, history).test_client()
+
+        response = client.get(
+            "/history?q=lecture&format=mp4&sort=oldest&offset=1&limit=1"
+            "&dateFrom=2026-07-20&dateTo=2026-07-29",
+            headers={"X-Auth-Token": token},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertEqual([item["id"] for item in body["history"]], ["3"])
+        self.assertEqual(body["count"], 1)
+        self.assertEqual(body["total"], 5)
+        self.assertEqual(body["filteredTotal"], 3)
+        self.assertTrue(body["hasMore"])
+        self.assertEqual(body["sort"], "oldest")
 
     def test_history_rejects_malformed_limit(self):
         token = "d" * 32
@@ -1883,6 +1951,13 @@ class ApiSecurityTests(unittest.TestCase):
 
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.get_json()["code"], "invalid-limit")
+
+        bad_date = api.test_client().get(
+            "/history?dateFrom=07-29-2026",
+            headers={"X-Auth-Token": token},
+        )
+        self.assertEqual(bad_date.status_code, 400)
+        self.assertEqual(bad_date.get_json()["code"], "invalid-date")
 
     def test_cancel_finished_download_returns_conflict_not_not_found(self):
         token = "b" * 32

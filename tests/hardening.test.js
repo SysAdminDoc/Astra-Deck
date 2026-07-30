@@ -3620,12 +3620,24 @@ test('downloadCobaltFallback records an actionable diagnostic when Cobalt is unr
         'diagnostic text must include actionable next steps');
 });
 
-test('downloadHistoryPanel reads /history with auth + limit=50 and shows offline state', () => {
+test('downloadHistoryPanel pages, filters, exports, and shows an offline state', () => {
     const start = downloadUiSource.indexOf("id: 'downloadHistoryPanel'");
     assert.ok(start > -1, 'downloadHistoryPanel must exist');
-    const block = downloadUiSource.slice(start, start + 10000);
-    assert.match(block, /\/history\?limit=50/,
-        'must request a bounded history slice');
+    const block = downloadUiSource.slice(start, start + 26000);
+    assert.match(block, /new URLSearchParams/,
+        'must encode bounded history query parameters');
+    assert.match(block, /_pageSize:\s*50/,
+        'must keep the initial history page bounded at 50 rows');
+    for (const filter of ['q', 'status', 'format', 'dateFrom', 'dateTo']) {
+        assert.match(block, new RegExp(`'${filter}'`), `must forward the ${filter} filter`);
+    }
+    assert.match(block, /data\.filteredTotal/);
+    assert.match(block, /data\.hasMore/);
+    assert.match(block, /_exportFiltered/);
+    assert.match(block, /limit:\s*500/,
+        'filtered export may load the bounded retained-history ceiling');
+    assert.match(block, /text\/csv;charset=utf-8/,
+        'filtered export must produce a local CSV file');
     assert.match(block, /'X-MDL-Client': 'MediaDL'/,
         'must send the MediaDL client header');
     assert.match(block, /'Bearer ' \+ \(status\.token \|\| ''\)/,

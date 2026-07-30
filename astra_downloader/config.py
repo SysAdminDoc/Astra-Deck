@@ -31,7 +31,7 @@ __all__ = (
     "clamp_int", "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
     "write_persistent_log", "get_recent_log_entries", "log_crash",
     "atomic_write_json", "download_file_atomic", "load_json_file",
-    "backup_corrupt_file", "sanitize_history_entries",
+    "backup_corrupt_file", "sanitize_history_entries", "query_history_entries",
     "verify_file_sha256", "fetch_expected_sha256", "cleanup_stale_cookie_jars",
     "write_cookies_netscape", "RateLimiter", "Config", "History",
     "DOWNLOAD_REQUEST_ALLOWED_FIELDS", "DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS",
@@ -444,8 +444,71 @@ def sanitize_history_entries(raw, limit=500):
             "audioOnly": coerce_bool(item.get("audioOnly"), False),
             "date": clean_text(item.get("date"), "", 40),
             "duration": max(0, clamp_int(item.get("duration"), 0, 0, 60 * 60 * 24 * 30)),
+            "status": clean_text(item.get("status"), "complete", 32) or "complete",
         })
     return entries
+
+
+def query_history_entries(entries, *, query="", status="", fmt="",
+                          date_from="", date_to="", sort="newest",
+                          offset=0, limit=50):
+    """Filter, sort, and page a bounded sanitized history collection."""
+    query = str(query or "").strip().casefold()
+    status = str(status or "").strip().casefold()
+    fmt = str(fmt or "").strip().casefold()
+    date_from = str(date_from or "").strip()
+    date_to = str(date_to or "").strip()
+    sort = "oldest" if sort == "oldest" else "newest"
+    try:
+        offset = max(0, int(offset))
+    except (TypeError, ValueError, OverflowError):
+        offset = 0
+    try:
+        limit = max(1, min(500, int(limit)))
+    except (TypeError, ValueError, OverflowError):
+        limit = 50
+
+    indexed = []
+    for index, entry in enumerate(entries if isinstance(entries, list) else []):
+        if not isinstance(entry, dict):
+            continue
+        entry_status = str(entry.get("status") or "complete").strip().casefold()
+        entry_format = str(entry.get("format") or "").strip().casefold()
+        entry_date = str(
+            entry.get("date") or entry.get("completedAt") or entry.get("timestamp") or ""
+        )[:10]
+        haystack = "\n".join((
+            str(entry.get("title") or ""),
+            str(entry.get("filename") or ""),
+        )).casefold()
+        if query and query not in haystack:
+            continue
+        if status and status != "all" and entry_status != status:
+            continue
+        if fmt and fmt != "all" and entry_format != fmt:
+            continue
+        if date_from and (not entry_date or entry_date < date_from):
+            continue
+        if date_to and (not entry_date or entry_date > date_to):
+            continue
+        indexed.append((entry_date, index, entry))
+
+    indexed.sort(
+        key=lambda item: (item[0], item[1]),
+        reverse=sort == "newest",
+    )
+    filtered_total = len(indexed)
+    page = [item[2] for item in indexed[offset:offset + limit]]
+    return {
+        "history": page,
+        "count": len(page),
+        "total": len(entries) if isinstance(entries, list) else 0,
+        "filteredTotal": filtered_total,
+        "offset": offset,
+        "limit": limit,
+        "hasMore": offset + len(page) < filtered_total,
+        "sort": sort,
+    }
 
 
 class ConfigStore:
