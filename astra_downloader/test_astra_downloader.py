@@ -4760,6 +4760,8 @@ class GuiSmokeTests(unittest.TestCase):
     watchdog log path with a mocked-slow QFileDialog.exec.
     """
 
+    _retained_windows = []
+
     def setUp(self):
         _get_qapp_or_skip(self)
         # Drain any leftover queue entries from prior test interactions
@@ -4775,6 +4777,59 @@ class GuiSmokeTests(unittest.TestCase):
         from PyQt6.QtWidgets import QApplication
         self.assertIsNotNone(QApplication.instance(),
                              "QApplication.instance() must be available after setUp")
+
+    def test_main_window_construction_defers_executable_version_probes(self):
+        from PyQt6.QtWidgets import QApplication
+
+        calls = []
+
+        def ytdlp_version(*_args, **_kwargs):
+            calls.append("yt-dlp")
+            return "2026.07.04"
+
+        def ffmpeg_version(*_args, **_kwargs):
+            calls.append("ffmpeg")
+            return "8.1.2"
+
+        manager = ad.DownloadManager(FakeConfig(), FakeHistory())
+        with mock.patch.object(ad, "get_ytdlp_version", side_effect=ytdlp_version), \
+                mock.patch.object(ad, "get_ffmpeg_version", side_effect=ffmpeg_version), \
+                mock.patch.object(ad.MainWindow, "_start_instance_command_listener"), \
+                mock.patch.object(ad.MainWindow, "_start_readiness_probe"), \
+                mock.patch.object(ad.QSystemTrayIcon, "show"):
+            window = ad.MainWindow(FakeConfig(), manager, FakeHistory())
+            try:
+                self.assertEqual(calls, [],
+                                 "MainWindow construction must not shell out before first paint")
+                self.assertEqual(window.tools_status.text(), "Checking installed tools…")
+
+                deadline = time.monotonic() + 2
+                while len(calls) < 2 and time.monotonic() < deadline:
+                    QApplication.processEvents()
+                    time.sleep(0.01)
+                self.assertCountEqual(calls, ["yt-dlp", "ffmpeg"])
+
+                deadline = time.monotonic() + 2
+                while "yt-dlp 2026.07.04" not in window.tools_status.text() \
+                        and time.monotonic() < deadline:
+                    QApplication.processEvents()
+                    time.sleep(0.01)
+                self.assertEqual(
+                    window.tools_status.text(),
+                    "yt-dlp 2026.07.04    •    ffmpeg 8.1.2",
+                )
+            finally:
+                window.update_timer.stop()
+                window.cleanup_timer.stop()
+                window.tray.hide()
+                window._force_exit = True
+                window.close()
+                QApplication.processEvents()
+                # Keep the closed C++ object alive for the remainder of the
+                # shared-QApplication suite. Deleting a complex Qt window
+                # immediately can invalidate queued animation callbacks owned
+                # by Qt itself; application shutdown performs final disposal.
+                self._retained_windows.append(window)
 
     def test_make_line_icon_renders_glyph_at_native_requested_size(self):
         from PyQt6.QtCore import QSize

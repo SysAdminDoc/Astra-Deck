@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- **Companion first paint no longer waits on executable probes.** The Settings
+  maintenance row now renders a checking state immediately and refreshes
+  yt-dlp/ffmpeg versions through the existing worker-backed signal after
+  `MainWindow` construction.
+
 ## [4.50.7] - 2026-07-28
 
 Deep-audit release (companion v1.5.6). Four parallel auditors over the
