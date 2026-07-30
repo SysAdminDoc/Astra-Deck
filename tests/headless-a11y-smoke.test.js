@@ -24,10 +24,11 @@ test('headless accessibility smoke covers every roadmap surface through real UI 
     assert.equal(pkg.scripts['smoke:a11y'], 'node scripts/smoke-headless-a11y.js');
     assert.deepEqual(
         smoke.SURFACES.map((surface) => surface.name),
-        ['popup', 'sidepanel', 'settings', 'transcript', 'download']
+        ['popup', 'sidepanel', 'sidebar', 'settings', 'transcript', 'download']
     );
     assert.match(source, /injectChromeStub\(stageDir, 'popup\.html', 'popup-a11y\.html'\)/);
     assert.match(source, /injectChromeStub\(stageDir, 'sidepanel\.html', 'sidepanel-a11y\.html'\)/);
+    assert.match(source, /injectChromeStub\(stageDir, 'sidebar\.html', 'sidebar-a11y\.html'\)/);
     assert.match(source, /globalThis\.__ytkitSmoke\.openPanel\(\)/);
     assert.match(source, /#ytkit-transcript-panel/);
     assert.match(source, /globalThis\.__ytkitA11y\.openDownload\(\)/);
@@ -60,9 +61,13 @@ test('headless accessibility smoke CLI parsing stays deterministic', () => {
     assert.deepEqual(smoke.parseArgs([]), {
         browser: '',
         keepStage: false,
+        surfaces: [],
         timeoutMs: 45000,
     });
     assert.equal(smoke.parseArgs(['--timeout', '9000']).timeoutMs, 9000);
+    assert.deepEqual(smoke.parseArgs(['--surface', 'sidepanel', '--surface', 'sidebar']).surfaces,
+        ['sidepanel', 'sidebar']);
+    assert.throws(() => smoke.parseArgs(['--surface', 'unknown']), /requires one of/);
     assert.throws(() => smoke.parseArgs(['--headed']), /unknown argument/);
 });
 

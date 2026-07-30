@@ -85,7 +85,7 @@ button {
 
 .sp-skip-link {
   position: absolute;
-  left: -9999px;
+  inset-inline-start: -9999px;
   top: auto;
   width: 1px;
   height: 1px;
@@ -102,7 +102,7 @@ button {
 
 .sp-skip-link:focus {
   position: fixed;
-  left: 12px;
+  inset-inline-start: 12px;
   top: 12px;
   width: auto;
   height: auto;
@@ -286,8 +286,7 @@ button {
   content: '';
   position: absolute;
   top: 0;
-  left: 12px;
-  right: 12px;
+  inset-inline: 12px;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 142, 116, 0.42), transparent);
 }
@@ -409,7 +408,7 @@ button {
     radial-gradient(80% 70% at 0% 0%, rgba(255, 107, 74, 0.055), transparent 72%),
     rgba(255, 255, 255, 0.012);
   color: var(--text-secondary);
-  text-align: left;
+  text-align: start;
 }
 
 .sp-empty-icon {
@@ -555,7 +554,7 @@ button {
   font-size: 10px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: end;
 }
 
 .sp-perf-slow .fp-name,
@@ -601,7 +600,8 @@ button {
 .sp-search {
   width: 100%;
   min-height: 34px;
-  padding: 0 58px 0 32px;
+  padding-block: 0;
+  padding-inline: 32px 58px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
   background: var(--surface-raised);
@@ -638,7 +638,7 @@ button {
 
 .sp-search-icon {
   position: absolute;
-  left: 10px;
+  inset-inline-start: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -648,7 +648,7 @@ button {
 
 .sp-search-clear {
   position: absolute;
-  right: 5px;
+  inset-inline-end: 5px;
   top: 50%;
   transform: translateY(-50%);
   min-height: 24px;
@@ -690,7 +690,7 @@ button {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
   scrollbar-gutter: stable;
-  padding-right: 2px;
+  padding-inline-end: 2px;
 }
 
 .sp-settings-list::-webkit-scrollbar { width: 6px; }
@@ -861,7 +861,7 @@ button {
   content: '';
   position: absolute;
   top: 2px;
-  left: 2px;
+  inset-inline-start: 2px;
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -883,8 +883,12 @@ button {
 }
 
 .sp-setting-row[aria-checked="true"] .sp-setting-switch::after {
-  transform: translateX(14px);
+  transform: translateX(var(--sp-switch-travel, 14px));
   background: linear-gradient(180deg, #ffffff, #f2f3f5);
+}
+
+[dir="rtl"] {
+  --sp-switch-travel: -14px;
 }
 
 .sp-footer {
@@ -959,7 +963,7 @@ button {
   display: inline-block;
   width: 11px;
   height: 11px;
-  margin-right: 6px;
+  margin-inline-end: 6px;
   vertical-align: -1px;
   border-radius: 50%;
   border: 1.6px solid currentColor;

@@ -12,8 +12,10 @@ const path = require('node:path');
 
 const repoRoot = path.join(__dirname, '..');
 const sidepanelJs = fs.readFileSync(path.join(repoRoot, 'extension', 'sidepanel.js'), 'utf8');
+const sidepanelCss = fs.readFileSync(path.join(repoRoot, 'extension', 'sidepanel.css'), 'utf8');
 const sidepanelHtml = fs.readFileSync(path.join(repoRoot, 'extension', 'sidepanel.html'), 'utf8');
 const sidebarHtml = fs.readFileSync(path.join(repoRoot, 'extension', 'sidebar.html'), 'utf8');
+const a11ySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-headless-a11y.js'), 'utf8');
 const enMessages = JSON.parse(fs.readFileSync(
     path.join(repoRoot, 'extension', '_locales', 'en', 'messages.json'), 'utf8'
 ));
@@ -87,4 +89,37 @@ test('sidepanel locale keys exist in every bundled locale', () => {
                 `${locale} must define sidepanel key "${key}"`);
         }
     }
+});
+
+test('side dashboard uses logical layout and reverses switch travel for RTL', () => {
+    assert.match(sidepanelCss, /\.sp-search[\s\S]*padding-inline:\s*32px 58px/,
+        'search reserves logical start/end space for its icon and clear action');
+    assert.match(sidepanelCss, /\.sp-search-icon[\s\S]*inset-inline-start:\s*10px/,
+        'search icon must anchor to inline-start');
+    assert.match(sidepanelCss, /\.sp-search-clear[\s\S]*inset-inline-end:\s*5px/,
+        'search clear action must anchor to inline-end');
+    assert.match(sidepanelCss, /\.sp-empty[\s\S]*text-align:\s*start/,
+        'empty-state copy must follow document direction');
+    assert.match(sidepanelCss, /\.fp-ms,[\s\S]*text-align:\s*end/,
+        'timing and health metadata must align to logical end');
+    assert.match(sidepanelCss, /\.sp-settings-list[\s\S]*padding-inline-end:\s*2px/,
+        'scrollbar breathing room must use a logical edge');
+    assert.match(sidepanelCss, /\.sp-setting-switch::after[\s\S]*inset-inline-start:\s*2px/,
+        'switch thumb must start from the locale inline-start');
+    assert.match(sidepanelCss, /\[dir="rtl"\][\s\S]*--sp-switch-travel:\s*-14px/,
+        'RTL checked switches must travel in the reverse direction');
+    assert.doesNotMatch(sidepanelCss,
+        /(?:^|\n)\s*(?:left|right|margin-left|margin-right|padding-left|padding-right)\s*:/,
+        'side dashboard CSS must not reintroduce physical horizontal properties');
+});
+
+test('rendered smoke covers Arabic 200% reflow in sidepanel and Firefox sidebar shells', () => {
+    assert.match(a11ySmoke, /name:\s*'sidepanel'[\s\S]*rtlLocales:\s*Object\.freeze\(\['ar'\]\)/,
+        'sidepanel surface must opt into Arabic RTL smoke');
+    assert.match(a11ySmoke, /name:\s*'sidebar'[\s\S]*page:\s*'sidebar-a11y\.html'[\s\S]*rtlLocales:\s*Object\.freeze\(\['ar'\]\)/,
+        'Firefox sidebar shell must opt into the same Arabic RTL smoke');
+    assert.match(a11ySmoke, /auditRtlLayout\(client,\s*surface,\s*locale\)/,
+        'RTL smoke must assert control geometry, not only set dir=rtl');
+    assert.match(a11ySmoke, /checkedTravel < 0/,
+        'RTL smoke must prove checked switch travel reverses');
 });
