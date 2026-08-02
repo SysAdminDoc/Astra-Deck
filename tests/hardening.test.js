@@ -4776,6 +4776,28 @@ test('extensionRequestWithRetry honors server Retry-After header', () => {
         'must cap honored Retry-After to a finite ceiling');
 });
 
+test('extensionRequestWithRetry stops on AbortSignal without cloning it into EXT_FETCH', () => {
+    const retryIdx = ytkitSource.indexOf('async function extensionRequestWithRetry');
+    assert.ok(retryIdx > -1, 'extensionRequestWithRetry must exist');
+    const retryBlock = ytkitSource.slice(retryIdx, retryIdx + 3500);
+    assert.match(retryBlock, /const signal = details\?\.signal/,
+        'retry loop must read the caller signal locally');
+    assert.match(retryBlock, /_throwIfRequestAborted\(signal\)/,
+        'retry loop must check for cancellation before attempts and retries');
+    assert.match(retryBlock, /_waitForRequestRetry\([^\n]*signal\)/,
+        'retry backoff must be cancellable');
+    assert.match(retryBlock, /if \(e\?\.name === 'AbortError'\) throw e/,
+        'abort errors must not be retried');
+
+    const bridgeIdx = ytkitSource.indexOf('const bridgeDetails = {');
+    const bridgeEnd = ytkitSource.indexOf('\n        };', bridgeIdx);
+    assert.ok(bridgeIdx > -1 && bridgeEnd > bridgeIdx, 'EXT_FETCH bridge details must be extractable');
+    assert.doesNotMatch(ytkitSource.slice(bridgeIdx, bridgeEnd), /signal/,
+        'AbortSignal must stay local and never enter the structured-clone message');
+    assert.match(ytkitSource, /signal\?\.addEventListener\?\.\('abort'/,
+        'the request promise must reject promptly when the caller aborts');
+});
+
 test('ytkit.js handles YTKIT_SETTINGS_REPLACED bulk import message', () => {
     // The popup's import flow now broadcasts one YTKIT_SETTINGS_REPLACED per
     // tab instead of N YTKIT_SETTING_CHANGED messages. Receiver must route
