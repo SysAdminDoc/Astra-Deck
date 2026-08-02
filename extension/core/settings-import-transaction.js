@@ -44,14 +44,10 @@
                 };
             };
             const rollback = (error) => {
-                try {
-                    operation.restore(snapshot);
-                    checkpoint = null;
-                    return { ok: false, phase: 'apply', rolledBack: true, error };
-                } catch (rollbackError) {
-                    // Retain a retryable checkpoint when immediate rollback
-                    // fails. A later Undo attempt can still restore the exact
-                    // pre-import snapshot instead of losing the recovery path.
+                // Retain a retryable checkpoint when rollback fails. A later
+                // Undo attempt can still restore the exact pre-import snapshot
+                // instead of losing the recovery path.
+                const keepCheckpoint = (rollbackError) => {
                     checkpoint = {
                         snapshot,
                         summary: operation.summary || null,
@@ -66,7 +62,24 @@
                         rollbackError,
                         canUndo: true
                     };
+                };
+                const settle = () => {
+                    checkpoint = null;
+                    return { ok: false, phase: 'apply', rolledBack: true, error };
+                };
+                let restored;
+                try {
+                    restored = operation.restore(snapshot);
+                } catch (rollbackError) {
+                    return keepCheckpoint(rollbackError);
                 }
+                // restore() may surface its persistence promise. Reporting
+                // rolledBack on the synchronous return would claim recovery
+                // from the very storage failure that forced the rollback.
+                if (restored && typeof restored.then === 'function') {
+                    return Promise.resolve(restored).then(settle, keepCheckpoint);
+                }
+                return settle();
             };
             try {
                 const value = operation.apply(snapshot);
@@ -84,16 +97,30 @@
 
         function undo() {
             if (!checkpoint) return { ok: false, phase: 'undo', message: 'No import undo is available.' };
-            try {
-                checkpoint.restore(checkpoint.snapshot);
-                const restored = checkpoint.snapshot;
-                const summary = checkpoint.summary;
-                const createdAt = checkpoint.createdAt;
+            const active = checkpoint;
+            // The checkpoint is only cleared once the restore writes confirm;
+            // a failed undo must stay retryable.
+            const settle = () => {
                 checkpoint = null;
-                return { ok: true, phase: 'undone', restored, summary, createdAt };
+                return {
+                    ok: true,
+                    phase: 'undone',
+                    restored: active.snapshot,
+                    summary: active.summary,
+                    createdAt: active.createdAt
+                };
+            };
+            const fail = (error) => ({ ok: false, phase: 'undo', error, canRetry: true });
+            let restored;
+            try {
+                restored = active.restore(active.snapshot);
             } catch (error) {
-                return { ok: false, phase: 'undo', error, canRetry: true };
+                return fail(error);
             }
+            if (restored && typeof restored.then === 'function') {
+                return Promise.resolve(restored).then(settle, fail);
+            }
+            return settle();
         }
 
         return Object.freeze({

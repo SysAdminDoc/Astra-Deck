@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — Await the settings-import rollback/undo restore writes
-  Why: restore fires 7 setSync calls and reports rolledBack/ok on the synchronous return — the exact storage-failure class that triggered the rollback can silently fail it (apply() was fixed in v4.49.6; restore was not).
-  Where: extension/core/settings-import-transaction.js:46-97, ytkit.js:4072-4080
 - [ ] P3 — Theater Split: recompute player width when collapsed-state resize precedes fullscreen exit
   Why: fullscreen exit re-fixes the player at a stale snapshot px width; the resize observer is disconnected while collapsed so a window resize never corrects it until the next expand.
   Where: extension/features/sticky-video/index.js (_fullscreenHandler restore arm) + twin

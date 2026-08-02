@@ -4107,13 +4107,28 @@ return response;
                     duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
                 };
                 const restore = (snapshot) => {
-                    StorageManager.setSync(STORAGE_KEYS.settings, snapshot.settings);
-                    StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, snapshot.legacySidebarOrder);
-                    StorageManager.setSync(STORAGE_KEYS.hiddenVideos, snapshot.hiddenVideos);
-                    StorageManager.setSync(STORAGE_KEYS.allowedVideos, snapshot.allowedVideos);
-                    StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels);
-                    StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks);
-                    StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries);
+                    // Aggregate the restore writes exactly like apply() does:
+                    // setSync resolves { ok, error } without rejecting, so a
+                    // synchronous return reported a completed rollback/undo even
+                    // when the storage failure that caused the rollback also
+                    // rejected the restore.
+                    const writes = [
+                        StorageManager.setSync(STORAGE_KEYS.settings, snapshot.settings),
+                        StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, snapshot.legacySidebarOrder),
+                        StorageManager.setSync(STORAGE_KEYS.hiddenVideos, snapshot.hiddenVideos),
+                        StorageManager.setSync(STORAGE_KEYS.allowedVideos, snapshot.allowedVideos),
+                        StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels),
+                        StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks),
+                        StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries)
+                    ];
+                    return Promise.all(writes).then((results) => {
+                        const failed = results.find((result) => result && result.ok === false);
+                        if (failed) {
+                            throw failed.error instanceof Error
+                                ? failed.error
+                                : new Error('Extension storage rejected the restored data.');
+                        }
+                    });
                 };
                 const transaction = this._getSettingsImportTransaction();
                 if (!transaction) throw new Error('Settings import transaction service unavailable');
@@ -4162,8 +4177,8 @@ return response;
         async importAllSettings(jsonString) {
             return (await this.importAllSettingsDetailed(jsonString)).ok;
         },
-        undoLastSettingsImport() {
-            const outcome = this._getSettingsImportTransaction()?.undo();
+        async undoLastSettingsImport() {
+            const outcome = await this._getSettingsImportTransaction()?.undo();
             if (!outcome?.ok) return { ok: false, message: outcome?.message || 'Import undo failed.' };
             return {
                 ok: true,
@@ -43767,8 +43782,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             duration: 8,
                             action: {
                                 text: 'Undo',
-                                onClick: () => {
-                                    const undo = settingsManager.undoLastSettingsImport();
+                                onClick: async () => {
+                                    const undo = await settingsManager.undoLastSettingsImport();
                                     if (undo?.ok) {
                                         handleExternalStorageChanges({
                                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },

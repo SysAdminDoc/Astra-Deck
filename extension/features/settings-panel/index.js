@@ -2779,8 +2779,8 @@ function attachUIEventListeners() {
                             duration: 8,
                             action: {
                                 text: t('toastActionUndo', 'Undo'),
-                                onClick: () => {
-                                    const undo = settingsManager.undoLastSettingsImport();
+                                onClick: async () => {
+                                    const undo = await settingsManager.undoLastSettingsImport();
                                     if (undo?.ok) {
                                         handleExternalStorageChanges({
                                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
