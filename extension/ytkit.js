@@ -23552,6 +23552,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('transcriptViewer', () => {
                     this._panel?.remove(); this._panel = null;
+                    this._translatedCues = null;
+                    this._showingTranslation = false;
                     this._scheduleCreate(2000);
                 });
                 this._scheduleCreate(2000);

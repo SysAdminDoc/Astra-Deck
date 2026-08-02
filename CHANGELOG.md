@@ -48,6 +48,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Stateless user regex filters.** Comment and video filters now ignore
   global/sticky flags that would otherwise make repeated `.test()` calls skip
   matches.
+- **Transcript navigation reset.** Moving to a new video now clears the prior
+  translation state so the first Translate action applies to the new transcript.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
