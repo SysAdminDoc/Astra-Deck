@@ -363,7 +363,7 @@ function buildSettingsPanel() {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls...');
+        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls…');
         searchInput.id = 'ytkit-search';
         searchInput.name = 'settingsSearch';
         searchInput.autocomplete = 'off';

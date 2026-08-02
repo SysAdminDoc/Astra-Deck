@@ -528,7 +528,7 @@
     "message": "Open a YouTube tab to build the report."
   },
   "externalHealthCopyPending": {
-    "message": "Building report..."
+    "message": "Building report…"
   },
   "externalHealthDetailEmpty": {
     "message": "No requests observed in this tab yet."
@@ -576,7 +576,7 @@
     "message": "Hide more actions button below videos"
   },
   "feature_abHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "More Actions (…)"
   },
   "feature_abHide_save_desc": {
     "message": "Hide save button below videos"
@@ -864,7 +864,7 @@
     "message": "Hide the chat overflow menu"
   },
   "feature_chatHide_menu_name": {
-    "message": "Chat Menu (...)"
+    "message": "Chat Menu (…)"
   },
   "feature_chatHide_polls_desc": {
     "message": "Hide polls in live chat"
@@ -2859,7 +2859,7 @@
     "message": "Hide more actions menu button"
   },
   "feature_wpHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "More Actions (…)"
   },
   "feature_wpHide_podcastSection_desc": {
     "message": "Hide podcast/course section in description"
@@ -2895,7 +2895,7 @@
     "message": "Filter quick toggles"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter controls..."
+    "message": "Filter controls…"
   },
   "groupQuickControls": {
     "message": "Quick Controls"
@@ -3033,7 +3033,7 @@
     "message": "Search by name, page, category, control type, or description."
   },
   "panelSearchPlaceholder": {
-    "message": "Search settings, pages, controls..."
+    "message": "Search settings, pages, controls…"
   },
   "panelSearchStateBadge": {
     "message": "Search"
@@ -3345,10 +3345,10 @@
     "message": "Import History"
   },
   "sidebarDocTitle": {
-    "message": "Astra Deck - Firefox Sidebar"
+    "message": "Astra Deck — Firefox Sidebar"
   },
   "sidepanelDocTitle": {
-    "message": "Astra Deck - Dashboard"
+    "message": "Astra Deck — Dashboard"
   },
   "spAgeNever": {
     "message": "never"
@@ -3729,7 +3729,7 @@
     "message": "Refresh failed — try again"
   },
   "spStatusRefreshing": {
-    "message": "Refreshing..."
+    "message": "Refreshing…"
   },
   "spStatusSaveFailed": {
     "message": "Could not save setting"
@@ -3840,10 +3840,10 @@
     "message": "Preview: {preview}."
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Import aborted — could not stage an undo snapshot. Export a backup first."
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "Undo Import is no longer available — the browser session snapshot expired."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -4086,7 +4086,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Skip — configure manually"
   },
   "welcomeProfileGroupAria": {
     "message": "Pick a starting profile"
@@ -5305,5 +5305,17 @@
   },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "spOverviewEnabledLabel": {
+    "message": "Enabled"
+  },
+  "spSettingsClearBtn": {
+    "message": "Clear"
+  },
+  "spRefreshStatusReady": {
+    "message": "Ready"
+  },
+  "subscriptionDigestMarkAllReadEmpty": {
+    "message": "Nothing new since your last visit"
   }
 }

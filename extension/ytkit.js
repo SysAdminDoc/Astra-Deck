@@ -41351,7 +41351,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls...');
+        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls…');
         searchInput.id = 'ytkit-search';
         searchInput.name = 'settingsSearch';
         searchInput.autocomplete = 'off';

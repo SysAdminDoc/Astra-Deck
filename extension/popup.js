@@ -2376,7 +2376,7 @@ async function copyExternalApiHealthReport() {
     const setStatus = (msg) => { if (externalHealthCopyStatus) externalHealthCopyStatus.textContent = msg; };
     _externalHealthCopyInFlight = true;
     externalHealthCopyBtn.disabled = true;
-    setStatus(t('externalHealthCopyPending', 'Building report...'));
+    setStatus(t('externalHealthCopyPending', 'Building report…'));
     try {
         const snapshot = await requestExternalApiHealthSnapshot();
         if (!snapshot) {

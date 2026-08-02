@@ -188,7 +188,7 @@ test('extension Takeout import keeps large-file and undo recovery parity', () =>
 
 test('settings panel search copy matches the expanded filter behavior', () => {
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
-    assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, controls...');
+    assert.equal(en.panelSearchPlaceholder.message, 'Search settings, pages, controls…');
     assert.equal(en.panelSearchAria.message, 'Search settings by name, page, category, or control type');
     assert.equal(en.panelSearchHint.message, 'Search by name, page, category, control type, or description.');
     for (const source of [settingsPanelModuleSource, ytkitSource, userscriptSource]) {

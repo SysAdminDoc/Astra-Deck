@@ -894,7 +894,7 @@ if (ext?.storage?.onChanged) {
 
 async function refresh() {
     setBusy(true);
-    setRefreshStatus(t('spStatusRefreshing', 'Refreshing...'), 'busy');
+    setRefreshStatus(t('spStatusRefreshing', 'Refreshing…'), 'busy');
     try {
         const tab = await getActiveYouTubeTab();
         document.body.dataset.context = tab ? 'ready' : 'local';

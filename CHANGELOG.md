@@ -64,6 +64,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   configured capacity and stall permanently on a task that never settled.
 
 ### Changed
+- **Microcopy pass.** One ellipsis and one dash convention across the interface,
+  side-panel labels no longer borrow wording from unrelated surfaces, the
+  disabled "Mark all read" control explains that nothing is new, and the
+  companion's maintenance copy now describes what it actually does — yt-dlp is
+  checked at most every twelve hours (at start and when the queue goes idle),
+  and a refreshed ffmpeg replaces the installed copy only after it verifies.
 - **Importing subscription groups merges instead of replacing.** An import used
   to delete every group missing from the file, recoverable only through a
   six-second toast. Imports now merge — existing groups and their channels
