@@ -11942,7 +11942,6 @@ test('v4.49.7 popup residual i18n — AI credential section is data-i18n localiz
         'statusImportPreviewApplyTpl',
         'statusImportPreviewSummaryTpl',
         'statusResetDoneUndo',
-        'statusResetDoneNoUndo',
         'statusUpdateYtdlpNoTab',
     ]) {
         assert.ok(enMessages[k] && enMessages[k].message,

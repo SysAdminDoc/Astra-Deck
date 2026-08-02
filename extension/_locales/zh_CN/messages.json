@@ -3800,9 +3800,6 @@
   "statusBackupImported": {
     "message": "备份已导入。"
   },
-  "statusBackupImportedNoUndo": {
-    "message": "Backup imported. Undo is unavailable on this browser."
-  },
   "statusBackupImportedNoTranscript": {
     "message": "扩展数据已导入，并可撤销。由于没有响应的 YouTube 标签页，转录索引保持不变。"
   },
@@ -3862,9 +3859,6 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "无法加载快捷控件。请重新打开弹窗。"
-  },
-  "statusResetDoneNoUndo": {
-    "message": "已清除便携数据;已保留存储的 AI 凭据。此浏览器不支持撤销。"
   },
   "statusResetDoneNoTranscript": {
     "message": "扩展数据已清除，并可撤销。由于没有响应的 YouTube 标签页，转录数据保持不变。已保留存储的 AI 凭据。"

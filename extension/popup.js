@@ -4069,7 +4069,6 @@ async function importSettings(file) {
                 'error', 6000);
             return;
         }
-        const undoAvailable = true;
         try {
             const importedSettingsToApply = writes[STORAGE_KEYS.settings];
             const nonSettingWrites = { ...writes };
@@ -4106,11 +4105,8 @@ async function importSettings(file) {
         const importedStatus = transcriptSkipped
             ? t('statusBackupImportedNoTranscript',
                 'Extension data imported with Undo available. The transcript index was left unchanged because no responsive YouTube tab was available.')
-            : (undoAvailable
-            ? t('statusBackupImportedUndo',
-                'Backup imported. Click Undo Import to restore the previous state until you close the browser.')
-            : t('statusBackupImportedNoUndo',
-                'Backup imported. Undo is unavailable on this browser.'));
+            : t('statusBackupImportedUndo',
+                'Backup imported. Click Undo Import to restore the previous state until you close the browser.');
         const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
             .replace('{preview}', previewText);
         showStatus(`${importedStatus} ${previewSummary}`,
@@ -4774,7 +4770,6 @@ async function resetAllData() {
                 'error', 6000);
             return;
         }
-        const undoAvailable = true;
         try {
             await storageClear();
             // Re-stamp the first-run / what's-new sentinels that storageClear()
@@ -4799,11 +4794,8 @@ async function resetAllData() {
         showStatus(!snapshot.pageSnapshotId
             ? t('statusResetDoneNoTranscript',
                 'Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained.')
-            : (undoAvailable
-            ? t('statusResetDoneUndo',
-                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.')
-            : t('statusResetDoneNoUndo',
-                'Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser.')),
+            : t('statusResetDoneUndo',
+                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.'),
         'success', 6000);
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);
