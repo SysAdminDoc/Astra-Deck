@@ -58,14 +58,27 @@
                 StorageManager.set(this._capDismissKey, value);
             },
 
-            _todayCache: null,
+            // Seconds this tab has counted but not yet merged into the shared
+            // total. Two tabs each writing an absolute total meant the last
+            // writer won and the daily cap undercounted every parallel session.
+            _pendingSeconds: 0,
+            _persistedToday() {
+                const raw = appState.settings.dwWatchTimeToday || { date: '', seconds: 0 };
+                const today = this._todayKey();
+                if (raw.date !== today) return { date: today, seconds: 0 };
+                return { date: today, seconds: raw.seconds || 0 };
+            },
             _loadToday() {
-                // Prefer in-memory cache (updated every tick) over storage (flushed every 30s)
-                const raw = this._todayCache || appState.settings.dwWatchTimeToday || { date: '', seconds: 0 };
-                if (raw.date !== this._todayKey()) {
-                    return { date: this._todayKey(), seconds: 0 };
-                }
-                return { date: raw.date, seconds: raw.seconds || 0 };
+                const persisted = this._persistedToday();
+                return { date: persisted.date, seconds: persisted.seconds + this._pendingSeconds };
+            },
+            _flushToday() {
+                if (!this._pendingSeconds) return;
+                // Re-read before writing: another tab's flush may have landed
+                // since this tab last looked, and its seconds must survive.
+                const merged = this._loadToday();
+                this._pendingSeconds = 0;
+                this._saveToday(merged);
             },
 
             _saveToday(state) {
@@ -193,17 +206,13 @@
                     DebugManager.log('DigitalWellbeing',
                         `Day rolled over (${this._lastTodayKey} -> ${currentTodayKey}); resetting session baseline.`);
                     this._sessionStart = 0;
-                    this._todayCache = null;
+                    this._pendingSeconds = 0;
                 }
                 this._lastTodayKey = currentTodayKey;
+                this._pendingSeconds += 1;
                 const today = this._loadToday();
-                today.seconds = (today.seconds || 0) + 1;
-                // Always advance the in-memory cache; batch storage writes to
-                // every 30s. (Updating the cache only on the else-branch froze
-                // the accumulator at 30s forever because _loadToday prefers the
-                // stale cache over the freshly-saved settings value.)
-                this._todayCache = today;
-                if (today.seconds % 30 === 0) this._saveToday(today);
+                // Batch storage writes to every 30 counted seconds.
+                if (this._pendingSeconds >= 30) this._flushToday();
                 // NF34: use `??` so today.seconds === 0 (first tick of a
                 // new day) correctly initializes _sessionStart instead of
                 // letting the OR fall through to the next tick.
@@ -383,14 +392,27 @@
                     }
                 `, this.id, true);
                 this._timer = setInterval(() => this._tick(), 1000);
+                // A closed or backgrounded tab used to drop up to 29 counted
+                // seconds. pagehide is the last reliable moment to merge them.
+                this._flushHandler = () => this._flushToday();
+                this._visibilityHandler = () => {
+                    if (document.visibilityState === 'hidden') this._flushToday();
+                };
+                window.addEventListener('pagehide', this._flushHandler);
+                document.addEventListener('visibilitychange', this._visibilityHandler);
             },
             destroy() {
                 if (this._timer) clearInterval(this._timer);
                 this._timer = null;
-                // Flush any cached but unsaved watch time
-                if (this._todayCache) {
-                    this._saveToday(this._todayCache);
-                    this._todayCache = null;
+                // Flush any counted but unsaved watch time
+                this._flushToday();
+                if (this._flushHandler) {
+                    window.removeEventListener('pagehide', this._flushHandler);
+                    this._flushHandler = null;
+                }
+                if (this._visibilityHandler) {
+                    document.removeEventListener('visibilitychange', this._visibilityHandler);
+                    this._visibilityHandler = null;
                 }
                 if (this._overlayKeyHandler) {
                     document.removeEventListener('keydown', this._overlayKeyHandler, true);
@@ -399,6 +421,7 @@
                 this._overlay?.remove(); this._overlay = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._sessionStart = 0;
+                this._pendingSeconds = 0;
                 this._lastTodayKey = null;
             }
         };

@@ -54,6 +54,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection that stops being valid falls back to Best and says so.
 
 ### Fixed
+- **Watch-time limits count every tab.** Each tab wrote its own absolute daily
+  total, so two tabs playing at once overwrote each other and break reminders
+  and the daily cap arrived late. Tabs now merge their own counted seconds into
+  the shared total and flush them when the tab is hidden or closed instead of
+  losing up to half a minute.
 - **Watch Later bulk removal can no longer remove the wrong video.** YouTube
   serves every row menu from one shared dropdown; removal waited a fixed
   fraction of a second and clicked whatever it found, which on a slow rebind

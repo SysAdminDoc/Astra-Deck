@@ -10532,8 +10532,8 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
     // of the day.
     //
     // After NF34: _tick captures _todayKey() before calling _loadToday;
-    // when the key changes between ticks, _sessionStart is reset to 0
-    // and _todayCache is cleared. The next iteration anchors the session
+    // when the key changes between ticks, _sessionStart is reset to 0 and this
+    // tab's unflushed seconds are dropped. The next iteration anchors the session
     // baseline to the new day's accumulator.
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
@@ -10556,8 +10556,8 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
         '_tick must detect a day-key flip across ticks');
     assert.match(slice, /Day rolled over \(\$\{this\._lastTodayKey\} -> \$\{currentTodayKey\}\)/,
         '_tick must log the day-rollover transition via DebugManager');
-    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._todayCache = null;/,
-        '_tick must reset _sessionStart AND clear _todayCache on day flip');
+    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._pendingSeconds = 0;/,
+        '_tick must reset _sessionStart AND drop this tab\'s unflushed seconds on day flip');
     // The last-seen key must be updated regardless of whether a flip
     // occurred, otherwise the next tick can't tell.
     assert.match(slice, /this\._lastTodayKey = currentTodayKey;/,
@@ -10570,8 +10570,8 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
 
     // 4. destroy() resets _lastTodayKey alongside _sessionStart so the
     // next init() starts fresh.
-    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._lastTodayKey = null;/,
-        'destroy() must reset both _sessionStart and _lastTodayKey for symmetry');
+    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._pendingSeconds = 0;\s*\n\s*this\._lastTodayKey = null;/,
+        'destroy() must reset _sessionStart, the unflushed seconds, and _lastTodayKey for symmetry');
 });
 
 test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age title', () => {
@@ -11972,5 +11972,30 @@ test('section Reset/Undo follows settingKey and refreshes every control type', (
             assert.ok(helpers.includes(control),
                 `${label} control refresh must cover ${control}* controls`);
         }
+    }
+});
+
+test('digitalWellbeing merges per-tab watch time instead of overwriting it', () => {
+    // Every tab accumulated an absolute daily total and wrote it every 30s, so
+    // two playing tabs overwrote each other (last save wins) and the daily cap
+    // undercounted. A closed tab also dropped up to 29 counted seconds.
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'
+    );
+    const dwIdx = ytkitSource.indexOf("id: 'digitalWellbeing'");
+    const fallback = ytkitSource.slice(dwIdx, dwIdx + 24000);
+    for (const [label, source] of [['module', moduleSource], ['ytkit.js fallback', fallback]]) {
+        assert.match(source, /_pendingSeconds: 0/,
+            `${label} must track only this tab's unflushed seconds`);
+        assert.match(source, /return \{ date: persisted\.date, seconds: persisted\.seconds \+ this\._pendingSeconds \}/,
+            `${label} must report the shared total plus this tab's pending seconds`);
+        assert.match(source, /_flushToday\(\) \{[\s\S]{0,320}const merged = this\._loadToday\(\);[\s\S]{0,120}this\._pendingSeconds = 0;/,
+            `${label} must re-read the shared total before each flush`);
+        assert.match(source, /window\.addEventListener\('pagehide', this\._flushHandler\)/,
+            `${label} must flush counted seconds when the tab goes away`);
+        assert.match(source, /document\.visibilityState === 'hidden'/,
+            `${label} must flush when the tab is hidden`);
+        assert.doesNotMatch(source, /_todayCache/,
+            `${label} must not keep the old absolute-total cache`);
     }
 });

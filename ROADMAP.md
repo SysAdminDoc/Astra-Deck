@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — digital-wellbeing: reconcile per-tab watch-time accumulators
-  Why: two playing tabs clobber each other's daily total (last save wins), undercounting the daily cap; tab close also drops up to 29s (no pagehide flush).
-  Where: extension/features/digital-wellbeing/index.js:62-69, 206
 - [ ] P3 — Locale-independent selectors for live-chat popout / subscribe tooltip and home-subs hideCreateButton
   Why: aria-label/text matches are English-only, so these toggles silently no-op on the 10 non-EN locales.
   Where: extension/features/live-chat/index.js:20,163-166, features/home-subs-css/index.js:19
