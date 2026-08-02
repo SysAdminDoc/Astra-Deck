@@ -227,6 +227,9 @@
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
   },
+  "subscriptionImportTitle": {
+    "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
+  },
   "dlPopupFormatsAdjusted": {
     "message": "switched to Best"
   },

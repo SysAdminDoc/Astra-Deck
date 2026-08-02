@@ -443,7 +443,7 @@
                 return opml;
             },
 
-            _importGroups(json) {
+            _importGroups(json, options = {}) {
                 try {
                     const data = JSON.parse(json);
                     if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
@@ -506,20 +506,20 @@
                         skippedChannels,
                         duplicateChannels,
                         importedChannels
-                    });
+                    }, options);
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
 
-            _importGroupsOpml(opmlText) {
+            _importGroupsOpml(opmlText, options = {}) {
                 try {
                     const parsed = this._parseGroupsOpml(opmlText);
                     return this._commitImportedGroups(parsed.groups, 'OPML', {
                         duplicateChannels: parsed.duplicateChannels,
                         importedChannels: parsed.importedChannels
-                    });
+                    }, options);
                 } catch (e) {
                     const message = `OPML import failed: ${e.message}`;
                     if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
@@ -1706,7 +1706,14 @@
                 importBtn.type = 'button';
                 importBtn.textContent = t('commonImport', 'Import');
                 importBtn.setAttribute('aria-label', t('subscriptionImportAria', 'Import subscription groups'));
-                importBtn.addEventListener('click', () => {
+                importBtn.title = t(
+                    'subscriptionImportTitle',
+                    'Import subscription groups (merges with your groups; Shift+click replaces them)'
+                );
+                importBtn.addEventListener('click', (event) => {
+                    // Import merges by default. Replacing every group is the
+                    // destructive path, so it takes a deliberate Shift+click.
+                    const mode = event.shiftKey ? 'replace' : 'merge';
                     const inp = document.createElement('input');
                     inp.type = 'file';
                     inp.accept = 'application/json,.json,.opml,.xml,application/xml,text/xml,text/x-opml';
@@ -1716,9 +1723,9 @@
                         file.text().then(text => {
                             const name = String(file.name || '').toLowerCase();
                             if (name.endsWith('.opml') || name.endsWith('.xml') || /^\s*<\?xml|^\s*<opml/i.test(text)) {
-                                this._importGroupsOpml(text);
+                                this._importGroupsOpml(text, { mode });
                             } else {
-                                this._importGroups(text);
+                                this._importGroups(text, { mode });
                             }
                         });
                     });
@@ -2232,8 +2239,45 @@
                 return result;
             },
 
-            _commitImportedGroups(groups, label, meta = {}) {
+            // Merge imported groups into the existing set. Replacing was the
+            // old behavior: importing any file deleted every group missing from
+            // it, recoverable only through a six second toast.
+            _mergeImportedGroups(previous, incoming) {
+                const GROUP_LIMIT = 500;
+                const CHANNEL_LIMIT = 1000;
+                const merged = {};
+                for (const [id, group] of Object.entries(previous)) {
+                    merged[id] = { ...group, channelIds: [...(group.channelIds || [])] };
+                }
+                for (const [id, group] of Object.entries(incoming)) {
+                    const existing = merged[id];
+                    if (!existing) {
+                        if (Object.keys(merged).length >= GROUP_LIMIT) continue;
+                        merged[id] = { ...group, channelIds: [...(group.channelIds || [])] };
+                        continue;
+                    }
+                    // The imported record wins on presentation, but a channel
+                    // already in the group is never dropped by an import.
+                    const channelIds = [...existing.channelIds];
+                    const seen = new Set(channelIds);
+                    for (const channelId of (group.channelIds || [])) {
+                        if (seen.has(channelId) || channelIds.length >= CHANNEL_LIMIT) continue;
+                        seen.add(channelId);
+                        channelIds.push(channelId);
+                    }
+                    merged[id] = {
+                        ...existing,
+                        ...group,
+                        channelIds,
+                        updatedAt: Date.now()
+                    };
+                }
+                return merged;
+            },
+            _commitImportedGroups(groups, label, meta = {}, options = {}) {
                 const previous = this._readGroups();
+                const replace = options.mode === 'replace';
+                groups = replace ? groups : this._mergeImportedGroups(previous, groups);
                 this._writeGroups(groups);
                 const ids = Object.keys(groups);
                 const previousIds = Object.keys(previous);
@@ -2262,7 +2306,8 @@
                 if (skippedGroups) skipParts.push(`${skippedGroups} skipped group${skippedGroups === 1 ? '' : 's'}`);
                 if (skippedChannels) skipParts.push(`${skippedChannels} skipped channel${skippedChannels === 1 ? '' : 's'}`);
                 if (duplicateChannels) skipParts.push(`skipped ${duplicateChannels} duplicate channel${duplicateChannels === 1 ? '' : 's'}`);
-                const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
+                const mergeNote = replace ? ' Replaced all groups.' : '';
+                const message = `Imported ${count} subscription group${count === 1 ? '' : 's'} from ${label} (${detailParts.join(', ')}).${mergeNote}${skipParts.length ? ` ${skipParts.join(', ')}.` : ''}`;
                 if (typeof showToast === 'function') {
                     showToast(message, '#22c55e', {
                         duration: 6,

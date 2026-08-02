@@ -53,6 +53,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   looked like it worked while yt-dlp quietly downloaded something else. A
   selection that stops being valid falls back to Best and says so.
 
+### Changed
+- **Importing subscription groups merges instead of replacing.** An import used
+  to delete every group missing from the file, recoverable only through a
+  six-second toast. Imports now merge — existing groups and their channels
+  survive, imported records win on name and color — and the destructive
+  replace-everything path takes a deliberate Shift+click on Import.
+
 ### Fixed
 - **Three toggles now work outside English.** Hide Create button, the live-chat
   popout entry, and the live-chat subscribe-privacy tooltip were matched by

@@ -1220,3 +1220,53 @@ test('videoNotes monolith prefers the module runtime factory before inline fallb
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
 });
+
+test('subscriptionGroups import merges by default and only replaces on request', () => {
+    // Importing any file used to delete every group missing from it, with a
+    // six second toast Undo as the only recovery.
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const makeFeature = () => {
+        const appState = {
+            settings: {
+                subscriptionGroupData: {
+                    keep: { name: 'Keep', color: '#7c3aed', channelIds: ['UCkeep1111111111111111'], parentId: '', sortMode: 'default', updatedAt: 1 },
+                    news: { name: 'Old News', color: '#7c3aed', channelIds: ['UCexisting111111111111'], parentId: '', sortMode: 'default', updatedAt: 1 },
+                },
+            },
+        };
+        const feature = mod.createSubscriptionGroupsFeature({
+            appState,
+            settingsManager: { save() {} },
+            showToast() {},
+        });
+        feature._renderToolbar = () => {};
+        feature._applyGroupFilter = () => {};
+        feature._renderDeadChannelMarkers = () => {};
+        return { feature, appState };
+    };
+    const payload = JSON.stringify({
+        groups: {
+            news: { name: 'News', color: '#123456', channelIds: ['UCimported11111111111'], sortMode: 'default' },
+        },
+    });
+
+    const merge = makeFeature();
+    const mergeResult = merge.feature._importGroups(payload);
+    const mergedGroups = merge.appState.settings.subscriptionGroupData;
+    assert.equal(mergeResult.ok, true);
+    assert.ok(mergedGroups.keep, 'a group missing from the file must survive an import');
+    assert.equal(mergedGroups.news.name, 'News', 'the imported record wins on presentation');
+    assert.deepEqual(mergedGroups.news.channelIds, ['UCexisting111111111111', 'UCimported11111111111'],
+        'existing channels are kept and imported ones appended');
+    assert.equal(mergeResult.removedGroups, 0, 'merging never reports removals');
+
+    const replace = makeFeature();
+    const replaceResult = replace.feature._importGroups(payload, { mode: 'replace' });
+    const replacedGroups = replace.appState.settings.subscriptionGroupData;
+    assert.equal(replaceResult.ok, true);
+    assert.deepEqual(Object.keys(replacedGroups), ['news'], 'explicit replace still wipes the rest');
+    assert.equal(replaceResult.removedGroups, 1);
+});
