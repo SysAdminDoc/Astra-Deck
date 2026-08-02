@@ -196,6 +196,36 @@ test('downloadCobaltFallback tracks its navigate-rule timer and gates on _hooked
     assert.match(destroyBlock, /clearTimeout\(this\._navTimer\)/, 'destroy must clear the nav timer');
 });
 
+test('player-control features remove stale controls on navigation and destroy', () => {
+    const controls = [
+        { id: 'abLoop', nav: "addNavigateRule('abLoop'", ref: '_btn', selector: '.ytkit-ab-btn' },
+        { id: 'fineSpeedControl', nav: "addNavigateRule('fineSpeed'", ref: '_badge', selector: '.ytkit-speed-badge' },
+        { id: 'popOutPlayer', nav: "addNavigateRule('popOut'", ref: '_btn', selector: '.ytkit-popout-btn' },
+        { id: 'videoLoopButton', nav: "addNavigateRule('loopBtn'", ref: '_btn', selector: '.ytkit-loop-btn' },
+        { id: 'subtitleDownload', nav: 'this._navRule = () => {', ref: '_btn', selector: '.ytkit-subdl-btn' },
+        { id: 'videoVisualFilters', nav: 'this._navRule = () => {', ref: '_btn', selector: '.ytkit-vvf-btn' },
+        { id: 'copyChapterMarkdown', nav: 'this._navRule = () => {', ref: '_btn', selector: '.ytkit-chaps-btn' }
+    ];
+
+    for (const { id, nav, ref, selector } of controls) {
+        const block = featureBlock(id, 16000);
+        const navStart = block.indexOf(nav);
+        assert.ok(navStart > -1, `${id} must register a navigation cleanup`);
+        const navBlock = block.slice(navStart, navStart + 500);
+        assert.match(
+            navBlock,
+            new RegExp(`this\\.${ref}\\?\\.remove\\(\\)[\\s\\S]*this\\.${ref}\\s*=\\s*null`),
+            `${id} must remove its DOM control before clearing ${ref} on navigation`
+        );
+
+        const destroyBlock = methodSlice(block, 'destroy() {', 1800);
+        assert.ok(
+            destroyBlock.includes(`document.querySelectorAll('${selector}').forEach(el => el.remove());`),
+            `${id} destroy must sweep orphaned ${selector} controls`
+        );
+    }
+});
+
 // ── item 4: stream links panel must not serve a stale player response ──
 
 test('downloadStreamLinksPanel validates player-response videoId and closes the panel on navigation', () => {
