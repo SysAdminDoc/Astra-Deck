@@ -20376,6 +20376,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _storageKey: 'ytkit-channel-speeds',
             _observer: null,
             _applied: false,
+            _activeChannelId: null,
 
             _getChannelId() {
                 return document.querySelector('ytd-watch-metadata ytd-channel-name a, #owner a, ytd-video-owner-renderer a')?.href?.match(/@[\w-]+|channel\/[\w-]+/)?.[0] || null;
@@ -20387,6 +20388,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._applied) return;
                 const channelId = this._getChannelId();
                 if (!channelId) return;
+                this._activeChannelId = channelId;
                 const speeds = this._getSpeeds();
                 const savedSpeed = speeds[channelId];
                 if (!savedSpeed) return;
@@ -20397,13 +20399,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 DebugManager.log('ChannelSpeed', `Applied ${savedSpeed}x for ${channelId}`);
             },
 
-            _saveCurrentSpeed() {
-                const channelId = this._getChannelId();
+            _saveCurrentSpeed(channelId = this._activeChannelId || this._getChannelId()) {
                 if (!channelId) return;
                 const video = getMainVideoElement();
-                if (!video || video.playbackRate === 1) return;
+                if (!video) return;
                 const speeds = this._getSpeeds();
-                speeds[channelId] = video.playbackRate;
+                if (video.playbackRate === 1) {
+                    if (!Object.prototype.hasOwnProperty.call(speeds, channelId)) return;
+                    delete speeds[channelId];
+                } else {
+                    speeds[channelId] = video.playbackRate;
+                }
                 // Prune to 500 channels max (delete oldest 50 when over limit)
                 const keys = Object.keys(speeds);
                 if (keys.length > 500) {
@@ -20413,9 +20419,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                this._activeChannelId = this._getChannelId();
                 this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
                 addNavigateRule('channelSpeed', () => {
-                    this._saveCurrentSpeed();
+                    this._saveCurrentSpeed(this._activeChannelId);
+                    this._activeChannelId = null;
                     this._applied = false;
                     clearTimeout(this._applyTimer);
                     this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
@@ -20426,6 +20434,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 this._saveCurrentSpeed();
+                this._activeChannelId = null;
                 clearTimeout(this._applyTimer);
                 this._applyTimer = null;
                 removeNavigateRule('channelSpeed');
