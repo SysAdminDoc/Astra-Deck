@@ -31994,19 +31994,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'storageQuotaLRU',
             name: 'Storage Quota Management',
-            description: 'LRU-cap growing settings and stores (hiddenVideos, hiddenChannels, videoNotesData, ytkit-bookmarks, ytkit-watch-progress, ytkit-watch-time, da_branding_cache, sb_segments_cache) to prevent quota exhaustion',
+            description: 'LRU-cap growing settings and stores (ytkit-hidden-videos, ytkit-blocked-channels, videoNotesData, ytkit-bookmarks, ytkit-watch-progress, ytkit-watch-time, da_branding_cache, sb_segments_cache) to prevent quota exhaustion',
             group: 'Advanced',
             icon: 'database',
             _timer: null,
             _countMapEntries(value) {
-                return value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).length : 0;
+                if (Array.isArray(value)) return value.length;
+                return value && typeof value === 'object' ? Object.keys(value).length : 0;
             },
             _hasChanged(left, right) {
                 try { return JSON.stringify(left) !== JSON.stringify(right); }
                 catch (_) { return true; }
             },
-            _pruneTopLevelStore(key, sanitizer, label) {
-                const current = StorageManager.get(key, {});
+            _pruneTopLevelStore(key, sanitizer, label, fallback = {}) {
+                const current = StorageManager.get(key, fallback);
                 const capped = sanitizer(current);
                 if (!this._hasChanged(current, capped)) return 0;
                 StorageManager.setSync(key, capped);
@@ -32017,16 +32018,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _prune() {
                 try {
-                    // Caps inside appState.settings. The DeArrow branding cache
-                    // is NOT in settings — it's a separate top-level storage key
-                    // (`da_branding_cache`) written via storageWriteJSON.
-                    // Previously this list contained a stale `deArrowCache` key
-                    // that never matched anything in settings — dead code.
-                    const caps = [
-                        ['hiddenVideos', 5000],
-                        ['hiddenChannels', 2000],
-                        ['_errors', 500],
-                    ];
+                    // Only _errors is nested in appState.settings. The Video
+                    // Hider lists are top-level stores, not settings keys.
+                    const caps = [['_errors', 500]];
                     let pruned = 0;
                     for (const [key, cap] of caps) {
                         const cur = appState.settings[key];
@@ -32055,6 +32049,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         settingsManager.save(appState.settings);
                         DiagnosticLog?.record('storageQuotaLRU', `pruned ${pruned} entries`);
                     }
+
+                    // Retain the newest entries, matching the write-time caps
+                    // used by Video Hider when it appends to these lists.
+                    this._pruneTopLevelStore(
+                        STORAGE_KEYS.hiddenVideos,
+                        value => sanitizeImportedVideoIdList(
+                            Array.isArray(value) ? value.slice(-IMPORT_LIMITS.hiddenVideos) : value,
+                            IMPORT_LIMITS.hiddenVideos
+                        ),
+                        'ytkit-hidden-videos',
+                        []
+                    );
+                    this._pruneTopLevelStore(
+                        STORAGE_KEYS.blockedChannels,
+                        value => sanitizeImportedBlockedChannels(
+                            Array.isArray(value) ? value.slice(-IMPORT_LIMITS.blockedChannels) : value
+                        ),
+                        'ytkit-blocked-channels',
+                        []
+                    );
 
                     const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
                     if (typeof summarySanitizer === 'function') {

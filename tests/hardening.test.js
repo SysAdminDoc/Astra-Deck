@@ -1621,6 +1621,21 @@ test('storageQuotaLRU._prune no longer references the dead deArrowCache key', ()
         /entries\.slice\(0,\s*500\)/,
         'SponsorBlock segment cache pruning must cap storage at 500 entries'
     );
+    assert.match(
+        pruneBlock,
+        /_pruneTopLevelStore\(\s*STORAGE_KEYS\.hiddenVideos[\s\S]*sanitizeImportedVideoIdList/,
+        'Video Hider hidden videos must be pruned from their real top-level store'
+    );
+    assert.match(
+        pruneBlock,
+        /_pruneTopLevelStore\(\s*STORAGE_KEYS\.blockedChannels[\s\S]*sanitizeImportedBlockedChannels/,
+        'Video Hider blocked channels must be pruned from their real top-level store'
+    );
+    assert.doesNotMatch(
+        pruneBlock,
+        /\[['"]hiddenVideos['"],|\[['"]hiddenChannels['"],/,
+        'Video Hider top-level stores must not be read as settings keys'
+    );
 });
 
 test('storageQuotaLRU description names every top-level cache it prunes', () => {
@@ -1633,6 +1648,10 @@ test('storageQuotaLRU description names every top-level cache it prunes', () => 
         'Description must name the real da_branding_cache top-level key so users can audit what the sweep actually touches');
     assert.match(pruneBlock, /description:\s*['"][^'"]*sb_segments_cache/,
         'Description must name the SponsorBlock segment cache key so users can audit quota pruning');
+    assert.match(pruneBlock, /description:\s*['"][^'"]*ytkit-hidden-videos/,
+        'Description must name the real hidden-video storage key');
+    assert.match(pruneBlock, /description:\s*['"][^'"]*ytkit-blocked-channels/,
+        'Description must name the real blocked-channel storage key');
 });
 
 test('storageQuotaLRU sweeps real note/bookmark/watch stores, not the timestampBookmarks toggle', () => {
