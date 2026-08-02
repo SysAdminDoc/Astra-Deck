@@ -10414,6 +10414,22 @@ test('v4.47.0 NF16 — predicate ctx exposes likes (from RYD cache) + subsCount 
 
 });
 
+test('transcriptAiHandoff tracks and clears its delayed navigation injection', () => {
+    const start = ytkitSource.indexOf("id: 'transcriptAiHandoff'");
+    assert.ok(start > -1, 'transcriptAiHandoff feature must exist');
+    const end = ytkitSource.indexOf("id: '", start + 1);
+    const block = ytkitSource.slice(start, end > start ? end : start + 5000);
+
+    assert.match(block, /_injectTimer: null/,
+        'transcriptAiHandoff must own the delayed injection timer');
+    assert.match(block, /this\._injectTimer = setTimeout\(\(\) => \{[\s\S]*?this\._injectTimer = null;[\s\S]*?this\._injectButton\(\)/,
+        'navigation must clear the timer handle when the callback runs');
+    assert.match(block, /destroy\(\) \{[\s\S]*?clearTimeout\(this\._injectTimer\);[\s\S]*?this\._injectTimer = null;/,
+        'destroy must cancel the pending delayed injection');
+    assert.doesNotMatch(block, /_navRule = \(\) => setTimeout\(\(\) => this\._injectButton\(\), 1800\)/,
+        'transcriptAiHandoff must not leave an untracked navigation timeout');
+});
+
 test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', () => {
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'

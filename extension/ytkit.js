@@ -33688,6 +33688,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingKey: 'transcriptAiTarget',
             _btn: null,
             _navRule: null,
+            _injectTimer: null,
             _styleEl: null,
             _targetUrl(target) {
                 // Most of these don't accept a real pre-filled prompt via
@@ -33776,11 +33777,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 const css = `.ytkit-ai-handoff{width:36px;height:36px;opacity:.85}.ytkit-ai-handoff:hover{opacity:1}.ytkit-ai-handoff svg{width:22px;height:22px}`;
                 this._styleEl = injectStyle(css, this.id, true);
-                this._navRule = () => setTimeout(() => this._injectButton(), 1800);
+                this._navRule = () => {
+                    clearTimeout(this._injectTimer);
+                    this._injectTimer = setTimeout(() => {
+                        this._injectTimer = null;
+                        this._injectButton();
+                    }, 1800);
+                };
                 addNavigateRule('transcriptAiHandoff', this._navRule);
                 this._navRule();
             },
             destroy() {
+                clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('transcriptAiHandoff');
                 this._btn?.remove(); this._btn = null;
                 this._styleEl?.remove(); this._styleEl = null;

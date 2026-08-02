@@ -20,6 +20,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Video Hider locale parsing.** View and subscriber counts now parse
   localized labels, compact suffixes, grouping separators, and non-Latin
   digits so low-view filters and subscriber predicates work across locales.
+- **Transcript AI handoff teardown.** Delayed button injection timers now
+  cancel on navigation rescheduling and feature teardown, preventing an
+  orphaned handoff control after the feature is disabled.
 - **Live-chat gate coverage.** The dedicated live-chat loader now receives the
   same ESLint and no-eval enforcement as the other shipped top-level scripts,
   with inventory tests preventing future manifest drift.
