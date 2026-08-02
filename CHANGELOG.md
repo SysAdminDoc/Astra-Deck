@@ -7,6 +7,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Companion translation freshness.** Release builds now fail closed when an
+  unavailable Qt compiler would leave a stale `.qm` catalogue.
 - **Firefox native messaging bootstrap.** Astra Downloader now recognizes
   Firefox's registered-host manifest path plus Gecko extension ID argv shape,
   validates it against the installed manifest, and enters the stdio token

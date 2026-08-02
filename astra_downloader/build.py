@@ -354,6 +354,23 @@ def prepare_translations():
         raise SystemExit(
             "Missing companion translation catalogues: " + ", ".join(missing)
         )
+    if not compiler:
+        stale = [
+            locale
+            for locale in expected
+            if (TRANSLATIONS_DIR / f"astra_downloader_{locale}.qm").stat().st_mtime_ns
+            < (TRANSLATIONS_DIR / f"astra_downloader_{locale}.ts").stat().st_mtime_ns
+        ]
+        if stale:
+            raise SystemExit(
+                "Qt translation compiler unavailable (tried pyside6-lrelease, "
+                "lrelease, lrelease-qt6); stale .qm catalogues for: "
+                + ", ".join(stale)
+            )
+        print(
+            "WARNING: Qt translation compiler unavailable (tried "
+            "pyside6-lrelease, lrelease, lrelease-qt6); using existing .qm catalogues."
+        )
 
 
 def build():
