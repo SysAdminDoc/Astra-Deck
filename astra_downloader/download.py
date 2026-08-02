@@ -816,10 +816,13 @@ class DownloadManagerCore:
                 continue
             audio_only = self._dependencies['coerce_bool'](item.get('audioOnly'), False)
             if audio_only:
-                fmt = item.get('format') if item.get('format') in self.ALLOWED_AUDIO_FMT else 'mp3'
+                raw_format = item.get('format')
+                fmt = raw_format if isinstance(raw_format, str) and raw_format in self.ALLOWED_AUDIO_FMT else 'mp3'
             else:
-                fmt = item.get('format') if item.get('format') in self.ALLOWED_VIDEO_FMT else 'mp4'
-            quality = item.get('quality') if item.get('quality') in self.ALLOWED_QUALITY else 'best'
+                raw_format = item.get('format')
+                fmt = raw_format if isinstance(raw_format, str) and raw_format in self.ALLOWED_VIDEO_FMT else 'mp4'
+            raw_quality = item.get('quality')
+            quality = raw_quality if isinstance(raw_quality, str) and raw_quality in self.ALLOWED_QUALITY else 'best'
             section, section_error = self._dependencies['normalize_download_section'](
                 item.get('section')
             )
@@ -1129,10 +1132,10 @@ class DownloadManagerCore:
 
         # Sanitize format/quality
         if audio_only:
-            fmt = fmt if fmt in self.ALLOWED_AUDIO_FMT else 'mp3'
+            fmt = fmt if isinstance(fmt, str) and fmt in self.ALLOWED_AUDIO_FMT else 'mp3'
         else:
-            fmt = fmt if fmt in self.ALLOWED_VIDEO_FMT else 'mp4'
-        quality = quality if quality in self.ALLOWED_QUALITY else 'best'
+            fmt = fmt if isinstance(fmt, str) and fmt in self.ALLOWED_VIDEO_FMT else 'mp4'
+        quality = quality if isinstance(quality, str) and quality in self.ALLOWED_QUALITY else 'best'
 
         # Output directory — path-confined to the server's configured roots.
         # A compromised extension or malicious content script would otherwise
