@@ -54,6 +54,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection that stops being valid falls back to Best and says so.
 
 ### Fixed
+- **Watch Later bulk removal can no longer remove the wrong video.** YouTube
+  serves every row menu from one shared dropdown; removal waited a fixed
+  fraction of a second and clicked whatever it found, which on a slow rebind
+  was still the previous row's entry. It now waits for the row's own menu and
+  aborts if the menu names a different video.
 - **The play queue stays consistent across tabs.** Queue rows now act on the
   video they were rendered for instead of a row position, so an edit made in
   another tab can no longer cause Remove to delete the wrong entry; the pill

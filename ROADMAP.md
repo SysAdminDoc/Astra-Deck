@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — WL workbench _removeRow should verify the menu item belongs to the row
-  Why: the shared iron-dropdown retains the previous row's endpoints during slow rebinds; a fixed 120ms wait can click the stale entry and miscount.
-  Where: extension/ytkit.js (_removeRow)
 - [ ] P3 — digital-wellbeing: reconcile per-tab watch-time accumulators
   Why: two playing tabs clobber each other's daily total (last save wins), undercounting the daily cap; tab close also drops up to 29s (no pagehide flush).
   Where: extension/features/digital-wellbeing/index.js:62-69, 206
