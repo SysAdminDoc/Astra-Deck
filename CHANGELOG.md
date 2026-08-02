@@ -17,6 +17,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Video Hider type detection.** Live and upcoming checks now inspect only
   badge and metadata rows, so ordinary titles containing those words remain
   visible while genuine live/upcoming cards are still filtered.
+- **Video Hider locale parsing.** View and subscriber counts now parse
+  localized labels, compact suffixes, grouping separators, and non-Latin
+  digits so low-view filters and subscriber predicates work across locales.
 - **Live-chat gate coverage.** The dedicated live-chat loader now receives the
   same ESLint and no-eval enforcement as the other shipped top-level scripts,
   with inventory tests preventing future manifest drift.

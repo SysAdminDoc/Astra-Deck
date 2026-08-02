@@ -35,6 +35,26 @@ test('parseCompactCount handles K/M/B suffixes and sentinels', () => {
     assert.equal(parseCompactCount('No views'), 0);
 });
 
+test('parseCompactCount handles localized labels, suffixes, and digits', () => {
+    const { parseCompactCount } = loadCore();
+    assert.equal(parseCompactCount('1,2 Mio. Aufrufe'), 1_200_000);
+    assert.equal(parseCompactCount('987 Aufrufe'), 987);
+    assert.equal(parseCompactCount('12.3万 回視聴'), 123_000);
+    assert.equal(parseCompactCount('١٬٢٣٤ مشاهدة'), 1234);
+    assert.equal(parseCompactCount('Streamed 3 years ago', null, { allowBare: true }), null);
+});
+
+test('parseCompactCount accepts a caller-supplied label set for subscriber metadata', () => {
+    const { parseCompactCount } = loadCore();
+    const labels = /(?:subscribers?|abonnenten?|登録者)/i;
+    const zeroPattern = /(?:no\s+subscribers?|登録者\s*なし)/i;
+    assert.equal(parseCompactCount('1,2 Mio. Abonnenten', null, { labels, zeroPattern }), 1_200_000);
+    assert.equal(parseCompactCount('12.3万 登録者', null, { labels, zeroPattern }), 123_000);
+    assert.equal(parseCompactCount('title 42 subscribers', null, { labels, zeroPattern }), 42);
+    assert.equal(parseCompactCount('No subscribers', null, { labels, zeroPattern }), 0);
+    assert.equal(parseCompactCount('Subscribe to channel', null, { labels, zeroPattern }), null);
+});
+
 test('parseCompactCount returns the caller-chosen missingValue when there is no count', () => {
     const { parseCompactCount } = loadCore();
     assert.equal(parseCompactCount('Streamed 3 years ago', null), null);

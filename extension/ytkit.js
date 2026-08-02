@@ -17036,11 +17036,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
             },
 
-            _parseCompactCount(text) {
+            _parseCompactCount(text, options = {}) {
                 // Canonical implementation lives in core/text-metrics.js - keep
                 // exactly one copy so the grouping-aware logic can't diverge.
                 const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
-                return fn ? fn(text, null) : null;
+                return fn ? fn(text, null, options) : null;
             },
 
             _extractViewCount(element) {
@@ -17049,7 +17049,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 ];
                 for (const candidate of candidates) {
                     const text = `${candidate.textContent || ''} ${candidate.getAttribute('aria-label') || ''}`;
-                    const count = this._parseCompactCount(text);
+                    const count = this._parseCompactCount(text, { allowBare: true });
                     if (count !== null) return count;
                 }
                 return this._parseCompactCount(element.textContent || '');
@@ -17368,14 +17368,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // such metadata is rendered so predicates can distinguish
             // "no data" from "0 subscribers".
             _extractSubsCount(metadataText) {
-                if (!metadataText) return null;
-                const m = metadataText.match(/(\d+(?:\.\d+)?)\s*([kmb])?\s*subscriber/i);
-                if (!m) return null;
-                const num = parseFloat(m[1]);
-                if (!Number.isFinite(num)) return null;
-                const suffix = (m[2] || '').toLowerCase();
-                const mult = suffix === 'b' ? 1e9 : suffix === 'm' ? 1e6 : suffix === 'k' ? 1e3 : 1;
-                return Math.round(num * mult);
+                return this._parseCompactCount(metadataText, {
+                    labels: /(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i,
+                    zeroPattern: /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i
+                });
             },
 
             // v4.47.0 NF16: like-count lookup from the RYD cache. Cached

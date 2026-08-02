@@ -21,6 +21,9 @@
         return svg;
     }
 
+    const SUBSCRIBER_COUNT_LABELS = /(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
+    const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
+
     function createHideVideosFromHomeFeature(deps = {}) {
         const {
             Z = { BANNER: 10000, HIDE_BTN: 10000 },
@@ -944,27 +947,9 @@
                 return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
             },
 
-            _parseCompactCount(text) {
-                const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
-                if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
-                const match = raw.match(/(\d[\d,.]*)\s*([kmb])?\s*(?:views?|watching)/i);
-                if (!match) return null;
-                const suffix = match[2]?.toLowerCase();
-                let numeric = match[1];
-                if (suffix) {
-                    // Suffixed counts ("1.2M", "1,2M") carry a single decimal separator.
-                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
-                    else numeric = numeric.replace(/,/g, '');
-                } else {
-                    // Plain integers ("1,234", "12,345,678") are comma-grouped \u2014 strip the grouping.
-                    numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
-                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
-                    else numeric = numeric.replace(/,/g, '');
-                }
-                const number = parseFloat(numeric);
-                if (!Number.isFinite(number)) return null;
-                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[suffix] || 1;
-                return Math.round(number * scale);
+            _parseCompactCount(text, options = {}) {
+                const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
+                return fn ? fn(text, null, options) : null;
             },
 
             _extractViewCount(element) {
@@ -973,7 +958,7 @@
                 ];
                 for (const candidate of candidates) {
                     const text = `${candidate.textContent || ''} ${candidate.getAttribute('aria-label') || ''}`;
-                    const count = this._parseCompactCount(text);
+                    const count = this._parseCompactCount(text, { allowBare: true });
                     if (count !== null) return count;
                 }
                 return this._parseCompactCount(element.textContent || '');
@@ -1292,14 +1277,10 @@
             // such metadata is rendered so predicates can distinguish
             // "no data" from "0 subscribers".
             _extractSubsCount(metadataText) {
-                if (!metadataText) return null;
-                const m = metadataText.match(/(\d+(?:\.\d+)?)\s*([kmb])?\s*subscriber/i);
-                if (!m) return null;
-                const num = parseFloat(m[1]);
-                if (!Number.isFinite(num)) return null;
-                const suffix = (m[2] || '').toLowerCase();
-                const mult = suffix === 'b' ? 1e9 : suffix === 'm' ? 1e6 : suffix === 'k' ? 1e3 : 1;
-                return Math.round(num * mult);
+                return this._parseCompactCount(metadataText, {
+                    labels: SUBSCRIBER_COUNT_LABELS,
+                    zeroPattern: NO_SUBSCRIBERS_PATTERN
+                });
             },
 
             // v4.47.0 NF16: like-count lookup from the RYD cache. Cached
