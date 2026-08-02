@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-28 (verified, unfixed)
 
-- [ ] P3 — Bound custom output-template field expansions
-  Why: built-in templates bound fields (`%(title).200B`); a custom `%(uploader)s/%(title)s.%(ext)s` passes validation unbounded, so a 200+-char title under a deep DownloadPath exceeds MAX_PATH and fails with an opaque file error. Rewrite `%(field)s` → bounded forms on save, or document the limit in the field hint.
-  Where: astra_downloader/config.py (normalize_output_template), astra_downloader/download.py (template selection)
 - [ ] P3 — Sync remaining monolith fallback copies with module fixes (DeArrow _routeToken/lazy-img guard, SponsorBlock observer self-disarm, RYD _rydGeneration/pagehide flush)
   Why: the 9a9fe31 module fixes never reached the ytkit.js `|| {…}` fallbacks (only reachable when a module content script fails to load); the RYD cache-clobber guard was ported 2026-07-28, the rest still drift.
   Where: extension/ytkit.js (ReturnDislike/DeArrow/SponsorBlock fallback objects) vs extension/features/{return-dislike,dearrow,sponsorblock}/index.js

@@ -44,6 +44,7 @@ __all__ = (
 _OWNED_EXPORTS = {
     "clean_text", "clean_path_text", "coerce_bool", "clamp_int",
     "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
+    "bound_output_template_fields",
     "normalize_output_template",
     "normalize_url", "normalize_download_section", "normalize_playlist_items",
     "validate_download_request_body",
@@ -202,6 +203,54 @@ _SAFE_OUTPUT_FIELDS = frozenset({
     "duration_string", "season_number", "episode_number", "view_count", "like_count",
 })
 _OUTPUT_FIELD_RE = re.compile(r"%\((\w+)")
+# Free-text fields whose expansion is attacker/uploader controlled in length.
+# Everything else in the allowlist expands to a short id, number, or date.
+_LONG_TEXT_OUTPUT_FIELDS = frozenset({
+    "title", "uploader", "uploader_id", "channel", "channel_id",
+    "playlist_title", "playlist",
+})
+_OUTPUT_TOKEN_RE = re.compile(r"%\((\w+)\)(0?\d+)?(?:\.(\d+))?([sdBjlqDSU])")
+# Total bytes the free-text parts of a rendered template may consume. Windows
+# MAX_PATH is 260, so a template must leave room for the download root, the
+# separators, and the extension.
+_OUTPUT_TEXT_BUDGET = 200
+_OUTPUT_TEXT_FLOOR = 40
+
+
+def bound_output_template_fields(template):
+    """Cap every free-text expansion in an already-validated template.
+
+    The built-in templates bound their fields (`%(title).200B`); a custom
+    `%(uploader)s/%(title)s.%(ext)s` did not, so a 200+ character title under a
+    deep DownloadPath rendered past MAX_PATH and failed with an opaque file
+    error. Unbounded text fields gain a byte bound and over-generous explicit
+    bounds are clamped, with the budget split across the fields the template
+    actually uses. Idempotent: re-normalizing a saved template is a no-op.
+    """
+    # `%%` is a literal percent, so `%%(title)s` is literal text and must not
+    # be rewritten. Split it out and rewrite only real expansion segments.
+    segments = template.split("%%")
+    tokens = [
+        match
+        for segment in segments
+        for match in _OUTPUT_TOKEN_RE.finditer(segment)
+        if match.group(1) in _LONG_TEXT_OUTPUT_FIELDS
+    ]
+    if not tokens:
+        return template
+    budget = max(_OUTPUT_TEXT_FLOOR, _OUTPUT_TEXT_BUDGET // len(tokens))
+
+    def rewrite(match):
+        field, pad, precision, conversion = match.groups()
+        if field not in _LONG_TEXT_OUTPUT_FIELDS or conversion not in ("s", "B"):
+            return match.group(0)
+        limit = min(int(precision), budget) if precision else budget
+        # An unbounded `%(field)s` becomes the byte-bounded form the built-in
+        # templates use; an explicit `.Ns` keeps character semantics.
+        conversion = "B" if precision is None else conversion
+        return f"%({field}){pad or ''}.{limit}{conversion}"
+
+    return "%%".join(_OUTPUT_TOKEN_RE.sub(rewrite, segment) for segment in segments)
 
 
 def normalize_output_template(value):
@@ -231,7 +280,7 @@ def normalize_output_template(value):
     stripped = re.sub(r"%\(\w+\)(?:0?\d+)?(?:\.\d+)?[sdBjlqDSU]", "", norm.replace("%%", ""))
     if "%" in stripped:
         return ""
-    return norm
+    return bound_output_template_fields(norm)
 
 
 def normalize_url(value):
