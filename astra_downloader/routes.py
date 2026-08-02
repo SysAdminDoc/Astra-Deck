@@ -853,13 +853,23 @@ def create_api(config, dl_manager, history, *, dependencies):
             return cors_response({"error": body_error, "code": "invalid-request-body"}, 400)
         initial = clean_text(body.get('initial'), '', 1024)
         response_q = queue.Queue(maxsize=1)
+        cancellation = threading.Event()
+        pick_request = {
+            'initial': initial,
+            'response': response_q,
+            'cancelled': cancellation,
+        }
         try:
-            _folder_pick_q.put_nowait({'initial': initial, 'response': response_q})
+            _folder_pick_q.put_nowait(pick_request)
         except queue.Full:
             return cors_response({"error": "A folder picker is already open. Close it before requesting another."}, 409)
         try:
             result = response_q.get(timeout=120)
         except queue.Empty:
+            # The GUI thread may still be busy with an earlier native dialog.
+            # Mark this queued request so its eventual dequeue is discarded
+            # instead of opening a ghost dialog after this HTTP call ended.
+            cancellation.set()
             return cors_response({"error": "Folder picker timed out — was the dialog left open?"}, 504)
         if isinstance(result, dict) and result.get('path'):
             roots = allowed_output_roots(config)

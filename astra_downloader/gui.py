@@ -411,9 +411,30 @@ class FolderPickerService(QObject):
             request = self._request_queue.get_nowait()
         except queue.Empty:
             return
+        cancellation = request.get('cancelled')
+        if cancellation is not None:
+            is_cancelled = (
+                cancellation.is_set()
+                if hasattr(cancellation, 'is_set')
+                else bool(cancellation)
+            )
+            if is_cancelled:
+                # The Flask caller can time out while an earlier dialog is
+                # open.  Do not turn that orphaned request into a new native
+                # dialog when the first one finally closes.
+                return
         response_queue = request['response']
         self._dialog_open = True
         try:
+            cancellation = request.get('cancelled')
+            if cancellation is not None:
+                is_cancelled = (
+                    cancellation.is_set()
+                    if hasattr(cancellation, 'is_set')
+                    else bool(cancellation)
+                )
+                if is_cancelled:
+                    return
             initial = request.get('initial') or str(Path.home() / "Videos")
             dialog_class = self._dialog_types()
             dialog = self._dialog_factory(None, "Choose download folder", initial)
