@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — subscription-groups import should merge (or offer merge) instead of replace-all
-  Why: importing any file deletes every group not present in it with only a 6s toast Undo as recovery.
-  Where: extension/features/subscription-groups/index.js:2193-2204
 - [ ] P3 — subscription-view order mode is silently dead when the groups toolbar exists
   Why: applyOrder() early-returns when .ytkit-sub-toolbar is present and nothing reimplements ordering — the persisted setting is ignored with no hint.
   Where: extension/features/subscription-view/index.js:197,257
