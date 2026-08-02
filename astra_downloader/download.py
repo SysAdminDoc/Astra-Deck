@@ -1716,6 +1716,19 @@ class DownloadManagerCore:
                             env=env,
                         )
                         dl.process = proc
+                        with self._lock:
+                            cancelled_pre_spawn = dl.status == 'cancelled'
+                        if cancelled_pre_spawn:
+                            # cancel() can land after the first process exits
+                            # but before this cookie-less retry is spawned. It
+                            # saw the exited process and therefore armed no
+                            # terminate thread; kill the retry tree here before
+                            # it can download or write output.
+                            try:
+                                self._dependencies['terminate_process_tree'](proc)
+                            except Exception:
+                                # reason: best-effort kill; process may already be gone
+                                pass
 
                         def _retry_watchdog(ev=stop_watchdog, watched_proc=proc):
                             while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
