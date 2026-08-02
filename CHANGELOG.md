@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.51.0] - 2026-08-02 (companion v1.6.0)
+
 ### Added
 - **Native companion localization scaffold.** The Qt GUI now resolves system
   or user-selected language preferences across the same 11 locale IDs as the

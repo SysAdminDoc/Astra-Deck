@@ -4545,12 +4545,13 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_6(self):
-        # v1.5.6 audit session: session-port persistence leak closed, racy
-        # download-initiated updater trigger removed, /formats concurrency
-        # cap, output-template validation feedback + printf-syntax checks,
-        # minimized-window completion toasts, async SABR pill, palette sync.
-        self.assertEqual(ad.APP_VERSION, "1.5.6")
+    def test_app_version_bumped_to_1_6_0(self):
+        # v1.6.0 roadmap drain: Qt localization across the shipped locale set,
+        # update checks pinned to the published Release, PO-token provider
+        # advice on failures that need one, bounded custom filename templates,
+        # a shared yt-dlp output parser for the cookie-less live retry, and a
+        # session-fallback port explained on the Settings page.
+        self.assertEqual(ad.APP_VERSION, "1.6.0")
 
 
 class EndToEndDownloadTests(unittest.TestCase):
