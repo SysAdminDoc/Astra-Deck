@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — Settings section Reset/Undo must cover settingKey-keyed values and refresh non-checkbox controls
-  Why: ~23 features store under settingKey ≠ id (uiStyle, colorTheme, customCssCode…) — section reset/undo skips them entirely and selects/ranges/colors keep stale UI after an id-keyed reset.
-  Where: extension/features/settings-panel/index.js:1817-1869 + ytkit.js twin
 - [ ] P3 — Settings search un-dims inert sub-features of disabled parents
   Why: matching sub-feature cards look enabled during search but ignore clicks (inert + disabled stay set while opacity is cleared).
   Where: extension/features/settings-panel/index.js:2878-2881 + twin

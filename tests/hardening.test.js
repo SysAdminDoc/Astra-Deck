@@ -11940,3 +11940,37 @@ test('settings focus trap includes actionable Undo toasts without timing them ou
             'Settings recovery toast must not auto-dismiss before keyboard access');
     }
 });
+
+test('section Reset/Undo follows settingKey and refreshes every control type', () => {
+    // The handler keyed backup/restore on `f.id`, so the ~23 features that
+    // store under a different `settingKey` (uiStyle, colorTheme, customCssCode…)
+    // were skipped entirely — Reset appeared to work and changed nothing. It
+    // also only refreshed checkboxes, leaving selects/ranges/colors/textareas
+    // showing the pre-reset value until the panel was rebuilt.
+    for (const [label, source] of [
+        ['settings-panel module', settingsPanelSource],
+        ['ytkit.js fallback', ytkitSource],
+    ]) {
+        const start = source.indexOf('resetBtn.onclick');
+        assert.ok(start > -1, `${label} must define the group reset handler`);
+        const helpers = source.slice(Math.max(0, start - 3000), start);
+        const block = source.slice(start, start + 2600);
+        assert.match(helpers, /const settingKeyOf = \(feature\) => feature\.settingKey \|\| feature\.id;/,
+            `${label} must resolve the stored key, not the feature id`);
+        assert.match(block, /backup\[settingKeyOf\(f\)\] = appState\.settings\[settingKeyOf\(f\)\]/,
+            `${label} must snapshot by stored key or Undo restores nothing`);
+        assert.match(block, /settingsManager\.defaults\[settingKeyOf\(f\)\]/,
+            `${label} must read defaults by stored key`);
+        assert.doesNotMatch(block, /backup\[f\.id\]/,
+            `${label} must not fall back to id-keyed snapshots`);
+        // Both the reset and the Undo path refresh the controls.
+        assert.equal((block.match(/categoryFeatures\.forEach\(syncFeatureControl\)/g) || []).length, 2,
+            `${label} must refresh controls after reset AND after undo`);
+        for (const control of [
+            'ytkit-toggle-', 'ytkit-select-', 'ytkit-range-', 'ytkit-color-', 'ytkit-input-',
+        ]) {
+            assert.ok(helpers.includes(control),
+                `${label} control refresh must cover ${control}* controls`);
+        }
+    }
+});

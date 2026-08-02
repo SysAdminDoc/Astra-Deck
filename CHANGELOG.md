@@ -54,6 +54,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection that stops being valid falls back to Best and says so.
 
 ### Fixed
+- **Section Reset and its Undo now cover every setting in the section.** Both
+  keyed on the feature id, so features that store under a different key —
+  playback speed, theme, custom CSS and about twenty more — were skipped
+  entirely, and only checkboxes were refreshed, leaving dropdowns, sliders and
+  color pickers displaying the value that had just been reset away.
 - **Settings explains a session-only port fallback.** When the configured port
   is taken at startup the companion binds a fallback for that session; the
   Settings page now says so next to the port control instead of silently
