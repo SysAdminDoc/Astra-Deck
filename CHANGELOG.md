@@ -7,6 +7,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Userscript version integrity.** Release checks now validate the visible
+  `YTKit.user.js` `@name` version suffix alongside `@version`.
 - **Schema generator safety.** The legacy schema command now delegates to the
   canonical parity check and cannot overwrite the hand-maintained schema.
 - **Companion translation freshness.** Release builds now fail closed when an

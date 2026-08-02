@@ -181,6 +181,19 @@ test('check-versions still validates a matching explicit tag', () => {
         'a correct --tag vX.Y.Z must still pass: ' + String(result.stderr));
 });
 
+test('check-versions reads the visible userscript @name version suffix', () => {
+    const { readUserscriptNameVersion } = require('../scripts/check-versions');
+    assert.deepEqual(
+        readUserscriptNameVersion('// @name        YTKit v4.51.0\n'),
+        { source: 'YTKit.user.js (@name version)', value: '4.51.0' }
+    );
+    assert.equal(
+        readUserscriptNameVersion('// @name        YTKit\n').value,
+        '',
+        'a name without the version suffix must fail the aggregate gate'
+    );
+});
+
 test('legacy schema command validates without regenerating the canonical schema', () => {
     const script = path.join(REPO_ROOT, 'scripts', '_gen-schema.js');
     const schema = path.join(REPO_ROOT, 'extension', 'core', 'settings-schema.js');
