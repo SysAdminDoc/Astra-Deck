@@ -57,6 +57,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   the channel that owned the departing video.
 - **Focused Mode page scope.** Focused Mode now activates only on watch pages,
   so its masthead and guide rules cannot hide navigation site-wide.
+- **Bulk card action teardown.** Interrupted recommendation scrubs now stop
+  cleanly and retain a partial local session record; Bulk Hide owns a fallback
+  hidden-card rule when Video Hider storage is unavailable.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

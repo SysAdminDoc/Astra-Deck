@@ -391,6 +391,61 @@ test('focusedMode is limited to watch pages before injecting global shell CSS', 
         'focusedMode should retain its watch-page shell treatment');
 });
 
+test('bulkCardActions logs a partial scrub after teardown and hides without Video Hider', async () => {
+    const objectLiteral = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'bulkCardActions'"
+    );
+    assert.ok(objectLiteral, 'bulkCardActions object must be extractable');
+    const feature = Function(
+        'PageTypes',
+        'getFeatureById',
+        'showToast',
+        't',
+        '"use strict"; return (' + objectLiteral + ');'
+    )(
+        { HOME: 'home', SUBSCRIPTIONS: 'subscriptions', SEARCH: 'search', CHANNEL: 'channel', WATCH: 'watch' },
+        () => null,
+        () => {},
+        (_key, fallback) => fallback
+    );
+
+    let releaseNativeAction;
+    const card = {
+        isConnected: true,
+        dataset: {},
+        classList: { add() {}, remove() {} }
+    };
+    feature._selected = new Map([['video-1', card]]);
+    feature._applyNativeCardAction = () => new Promise(resolve => { releaseNativeAction = resolve; });
+    const sessions = [];
+    feature._appendScrubSession = session => sessions.push(session);
+    const run = feature._runScrubSession('not-interested');
+    await Promise.resolve();
+    assert.equal(typeof releaseNativeAction, 'function', 'the scrub should reach its async native action');
+    feature._lifecycleToken += 1;
+    feature._scrubRunning = false;
+    feature._selected = null;
+    releaseNativeAction(true);
+    await run;
+    assert.equal(sessions.length, 1, 'teardown must still append the interrupted session');
+    assert.equal(sessions[0].partial, true, 'the interrupted session must be marked partial');
+    assert.deepEqual(sessions[0].videoIds, [], 'a destroyed feature must not claim local hides it could not finalize');
+
+    const hiddenCard = {
+        dataset: {},
+        classList: {
+            hidden: false,
+            add() { this.hidden = true; },
+            remove() {}
+        }
+    };
+    feature._selected = new Map([['video-2', hiddenCard]]);
+    feature._bulkHide();
+    assert.equal(hiddenCard.classList.hidden, true,
+        'bulk Hide must still hide the selected card when Video Hider is unavailable');
+});
+
 // ── item 4: stream links panel must not serve a stale player response ──
 
 test('downloadStreamLinksPanel validates player-response videoId and closes the panel on navigation', () => {

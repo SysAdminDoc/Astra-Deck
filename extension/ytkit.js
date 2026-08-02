@@ -34178,6 +34178,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _SCRUB_LOG_KEY: 'ytkit-scrub-sessions',
             _SCRUB_LOG_MAX: 20,
             _scrubRunning: false,
+            _lifecycleToken: 0,
 
             _injectStyles() {
                 if (this._styleElement) return;
@@ -34196,6 +34197,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer:hover,
                     body[data-ytkit-bulk-select="1"] ytd-video-renderer:hover{outline-color:#a78bfa;}
                     body[data-ytkit-bulk-select="1"] [data-ytkit-bulk-selected="1"]{outline-color:#7c3aed!important;background:rgba(124,58,237,.12);}
+                    ytd-rich-item-renderer.ytkit-video-hidden,
+                    ytd-video-renderer.ytkit-video-hidden,
+                    ytd-grid-video-renderer.ytkit-video-hidden,
+                    ytd-compact-video-renderer.ytkit-video-hidden{display:none!important;}
                 `, 'bulk-card-actions', true);
             },
 
@@ -34304,9 +34309,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _bulkHide() {
                 if (!this._selected?.size) return;
                 const vh = getFeatureById('hideVideosFromHome');
-                if (!vh?._addHiddenVideos) return;
                 const ids = Array.from(this._selected.keys());
-                vh._addHiddenVideos(ids);
+                vh?._addHiddenVideos?.(ids);
                 for (const [, card] of this._selected) {
                     delete card.dataset.ytkitBulkSelected;
                     card.classList.add('ytkit-video-hidden');
@@ -34316,7 +34320,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (typeof showToast === 'function') {
                     showToast(t('bulkHiddenTpl', 'Hidden {count} videos').replace('{count}', String(ids.length)), '#22c55e');
                 }
-                vh._processAllVideos?.();
+                vh?._processAllVideos?.();
             },
 
             _bulkAllow() {
@@ -34426,22 +34430,40 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const iconTypes = kind === 'dont-recommend' ? ['REMOVE'] : ['NOT_INTERESTED'];
                 const picked = Array.from(this._selected.entries()).slice(0, this._SCRUB_CAP);
                 const skipped = this._selected.size - picked.length;
+                const sessionToken = this._lifecycleToken;
                 this._scrubRunning = true;
                 const results = [];
                 try {
                     for (const [videoId, card] of picked) {
+                        if (this._lifecycleToken !== sessionToken) break;
                         if (!card.isConnected) {
                             results.push({ videoId, applied: false, reason: 'card-gone' });
                             continue;
                         }
                         const applied = await this._applyNativeCardAction(card, matchTexts, iconTypes);
                         results.push({ videoId, applied });
+                        if (this._lifecycleToken !== sessionToken) break;
                         // Pace native feedback clicks so a session doesn't look
                         // like scripted burst traffic to YouTube's heuristics.
                         await new Promise(resolve => setTimeout(resolve, 400));
                     }
                 } finally {
-                    this._scrubRunning = false;
+                    if (this._lifecycleToken === sessionToken) this._scrubRunning = false;
+                }
+
+                const destroyed = this._lifecycleToken !== sessionToken;
+                const appliedCount = results.filter(entry => entry.applied).length;
+                if (destroyed) {
+                    this._appendScrubSession({
+                        ts: Date.now(),
+                        kind,
+                        requested: picked.length,
+                        nativeApplied: appliedCount,
+                        skippedOverCap: skipped,
+                        videoIds: [],
+                        partial: true
+                    });
+                    return;
                 }
 
                 // Local hide is the recoverable half: it applies regardless of
@@ -34452,11 +34474,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     vh._addHiddenVideos(hiddenIds);
                     vh._processAllVideos?.();
                 }
+                const hiddenIdSet = new Set(hiddenIds);
                 for (const [, card] of picked) delete card.dataset.ytkitBulkSelected;
-                for (const [id] of picked) this._selected.delete(id);
+                for (const [id, card] of picked) {
+                    if (hiddenIdSet.has(id)) card.classList.add('ytkit-video-hidden');
+                    this._selected?.delete(id);
+                }
                 this._renderActionBar();
 
-                const appliedCount = results.filter(entry => entry.applied).length;
                 this._appendScrubSession({
                     ts: Date.now(),
                     kind,
@@ -34487,6 +34512,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             text: t('bulkUndoHides', 'Undo hides'),
                             onClick: () => {
                                 vh?._removeHiddenVideos?.(hiddenIds);
+                                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(card => {
+                                    if (hiddenIdSet.has(this._extractVideoIdFromCard(card))) card.classList.remove('ytkit-video-hidden');
+                                });
                                 vh?._processAllVideos?.();
                                 if (typeof showToast === 'function') {
                                     showToast(t('bulkRestoredTpl', 'Restored {count} local hides (native feedback stays applied)')
@@ -34536,6 +34564,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                this._lifecycleToken += 1;
+                this._scrubRunning = false;
                 this._injectStyles();
                 this._selected = new Map();
                 this._toggleBtn = document.createElement('button');
@@ -34558,6 +34588,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             destroy() {
+                this._lifecycleToken += 1;
+                this._scrubRunning = false;
                 this._exitSelectMode();
                 if (this._clickHandler) document.removeEventListener('click', this._clickHandler, true);
                 this._clickHandler = null;
