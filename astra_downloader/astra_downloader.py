@@ -234,7 +234,11 @@ DENO_ZIP_URL = "https://github.com/denoland/deno/releases/latest/download/deno-x
 DENO_SHA256_URL = DENO_ZIP_URL + ".sha256sum"
 DENO_SHA256_ASSET = Path(urlparse(DENO_ZIP_URL).path).name
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
-COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
+# The published Release is the only thing an update can actually install, so it
+# is also what decides whether one is available. Reading `main` meant a version
+# bump with no published release drove the update logic (branch trust).
+COMPANION_UPDATE_RELEASE_API_URL = "https://api.github.com/repos/SysAdminDoc/Astra-Deck/releases/latest"
+COMPANION_UPDATE_VERSION_URL_TEMPLATE = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/{tag}/astra_downloader/astra_downloader.py"
 COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe"
 COMPANION_UPDATE_SHA256_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256"
 COMPANION_UPDATE_TIMEOUT_SECONDS = 120
@@ -1497,10 +1501,47 @@ def parse_companion_version_source(source_text):
     return m.group(1).strip() if m else ''
 
 
+def parse_companion_release_tag(payload):
+    """Return the release tag from a GitHub release payload, or ''.
+
+    The tag is pasted into a raw.githubusercontent URL, so it is validated
+    against the repository's own tag shape rather than trusted verbatim.
+    """
+    if not isinstance(payload, dict):
+        return ''
+    tag = str(payload.get('tag_name') or '').strip()
+    if payload.get('draft') or payload.get('prerelease'):
+        return ''
+    return tag if re.fullmatch(r'v\d+\.\d+\.\d+', tag) else ''
+
+
+def fetch_latest_companion_release_tag(timeout=15):
+    """Resolve the newest published Release tag for this repository."""
+    response = http_requests.get(
+        COMPANION_UPDATE_RELEASE_API_URL,
+        timeout=timeout,
+        headers={'Accept': 'application/vnd.github+json'},
+    )
+    response.raise_for_status()
+    try:
+        payload = response.json()
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError('Could not read the latest Astra Downloader release.') from exc
+    tag = parse_companion_release_tag(payload)
+    if not tag:
+        raise RuntimeError('No published Astra Downloader release is available.')
+    return tag
+
+
 def fetch_latest_companion_version(timeout=15):
-    """Read the latest companion APP_VERSION from the canonical repo source."""
+    """Read the companion APP_VERSION from the newest published Release.
+
+    Sourced from the release tag, never from a branch: the update installs a
+    Release asset, so a bump that has not been released must not advertise one.
+    """
+    tag = fetch_latest_companion_release_tag(timeout=timeout)
     with http_requests.get(
-        COMPANION_UPDATE_VERSION_URL, stream=True, timeout=timeout,
+        COMPANION_UPDATE_VERSION_URL_TEMPLATE.format(tag=tag), stream=True, timeout=timeout,
     ) as response:
         response.raise_for_status()
         try:

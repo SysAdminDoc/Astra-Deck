@@ -72,13 +72,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-sc
   Acceptance: a subscribed channel auto-enqueues only genuinely new uploads on its schedule; already-downloaded items are not re-fetched across restarts; subscriptions and archive state survive a companion update.
   Complexity: XL
 
-- [ ] P3 — Pin the companion self-update version manifest to the tagged Release
-  Why: the self-update reads `APP_VERSION` from `main` HEAD raw source; the binary is Release-sourced + digest-pinned + guarded, but keying the version check on branch HEAD leaves a branch-trust edge (a premature/bad main commit drives update logic).
-  Evidence: RESEARCH.md §Architecture; `astra_downloader/astra_downloader.py:~225` (companion update version URL).
-  Touches: `astra_downloader/astra_downloader.py` (read version from the latest tagged Release/manifest, not `main` raw source).
-  Acceptance: the update version comparison is sourced from the tagged Release/its digest manifest; a version bump on `main` without a published Release does not trigger update logic.
-  Complexity: M
-
 ## Research-Driven Additions — 2026-07-29
 
 Source evidence and rejected alternatives: `RESEARCH.md` (2026-07-29). No P0: JavaScript and resolved Python advisory scans are clean; existing policy/operator blockers remain in `Roadmap_Blocked.md`.
