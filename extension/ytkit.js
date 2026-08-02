@@ -49515,6 +49515,22 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             color: #ff9a7e;
         }
 
+        /* A rung the companion's format probe says this video cannot honor.
+           Struck through rather than hidden so the ladder stays stable. */
+        .ytkit-dl-popup__chip.is-unavailable,
+        .ytkit-dl-popup__chip:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .ytkit-dl-popup__chip.is-unavailable:hover,
+        .ytkit-dl-popup__chip:disabled:hover {
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.58);
+            border-color: rgba(255,255,255,0.07);
+        }
+
         .ytkit-dl-popup__dir-wrap {
             display: flex;
             align-items: center;

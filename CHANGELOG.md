@@ -45,6 +45,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   rules behind per-feature circuits, reset on SPA navigation or explicit retry,
   and surface degraded feature IDs in selector-health diagnostics.
 
+### Added
+- **The download dialog can ask what this video actually has.** A "Check
+  available" control in the quality row calls the companion's format endpoint
+  and strikes out every resolution the video cannot honor — asking for 4K on a
+  720p upload, or 480p on a video whose lowest stream is 1080p, previously
+  looked like it worked while yt-dlp quietly downloaded something else. A
+  selection that stops being valid falls back to Best and says so.
+
 ### Fixed
 - **Settings explains a session-only port fallback.** When the configured port
   is taken at startup the companion binds a fallback for that session; the

@@ -2,12 +2,6 @@
 
 Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
-## Deep-audit backlog — 2026-07-28 (verified, unfixed)
-
-- [ ] P3 — Wire the extension format picker to POST /formats
-  Why: the endpoint (auth + rate-limit + busy-cap) ships since v1.5.5 with no extension consumer; the download options UI still offers the static quality list.
-  Where: extension/features/download-ui (options dialog), astra_downloader/routes.py (/formats)
-
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
 - [ ] P3 — Settings section Reset/Undo must cover settingKey-keyed values and refresh non-checkbox controls

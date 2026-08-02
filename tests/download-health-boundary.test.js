@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
     createDownloadUIFeature,
     normalizeDownloadHealthSnapshot,
+    summarizeFormatProbe,
     DOWNLOAD_HEALTH_SCHEMA_VERSION,
 } = require('../extension/features/download-ui');
 const { waitForCondition } = require('./helpers/async');
@@ -190,4 +191,55 @@ test('initiating a download auto-starts a stopped companion via mediadl://start'
     assert.deepEqual(protocolCalls, ['mediadl://start'], 'must launch the companion via its registered protocol');
     assert.equal(result.ok, true, 'must adopt the server once it responds');
     assert.equal(result.port, 9751);
+});
+
+test('quality ladder rungs the companion cannot honor are rejected', () => {
+    // The static ladder promised 4K on a 720p upload and 480p on a video whose
+    // lowest stream is 1080p. yt-dlp's cascade silently downloads something
+    // else in both cases, so the picker looked like it worked.
+    const probe = {
+        formats: [
+            { format_id: '137', has_video: true, has_audio: false, height: 1080 },
+            { format_id: '136', has_video: true, has_audio: false, height: 720 },
+            { format_id: '140', has_video: false, has_audio: true, height: 0 },
+        ],
+    };
+    const summary = summarizeFormatProbe(probe);
+    assert.deepEqual(summary.heights, [1080, 720]);
+    assert.equal(summary.maxHeight, 1080);
+    assert.equal(summary.minHeight, 720);
+    assert.equal(summary.formatCount, 3, 'audio-only entries still count as formats');
+    assert.equal(summary.canHonor('best'), true, 'Best is always honorable');
+    assert.equal(summary.canHonor('1080'), true);
+    assert.equal(summary.canHonor('720'), true);
+    assert.equal(summary.canHonor('2160'), false, 'nothing at or above 4K exists');
+    assert.equal(summary.canHonor('1440'), false);
+    assert.equal(summary.canHonor('480'), false, 'no stream is at or below 480p');
+});
+
+test('a probe with no video streams honors nothing but Best', () => {
+    const summary = summarizeFormatProbe({ formats: [{ has_video: false, has_audio: true, height: 0 }] });
+    assert.deepEqual(summary.heights, []);
+    assert.equal(summary.maxHeight, 0);
+    assert.equal(summary.canHonor('best'), true);
+    assert.equal(summary.canHonor('1080'), false);
+    // Malformed payloads must not throw on the way to the status line.
+    assert.equal(summarizeFormatProbe(null).formatCount, 0);
+    assert.equal(summarizeFormatProbe({ formats: 'nope' }).formatCount, 0);
+});
+
+test('the quality row probes the companion /formats endpoint', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
+    const start = source.indexOf('const applyFormatProbe');
+    assert.ok(start > -1, 'the popup must apply a format probe');
+    const block = source.slice(start, start + 4000);
+    assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/formats'/,
+        'the probe must call the companion endpoint that already ships');
+    assert.match(block, /'X-Auth-Token': status\.token/,
+        'the probe must authenticate like every other companion call');
+    assert.match(block, /summarizeFormatProbe\(probe\)/,
+        'availability must come from the shared, tested helper');
 });

@@ -227,6 +227,33 @@
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
   },
+  "dlPopupFormatsAdjusted": {
+    "message": "switched to Best"
+  },
+  "dlPopupFormatsHint": {
+    "message": "Ask the companion which resolutions this video actually has."
+  },
+  "dlPopupFormatsLoading": {
+    "message": "Checking…"
+  },
+  "dlPopupFormatsNone": {
+    "message": "The companion reported no video streams for this URL."
+  },
+  "dlPopupFormatsProbe": {
+    "message": "Check available"
+  },
+  "dlPopupFormatsRecheck": {
+    "message": "Check again"
+  },
+  "dlPopupFormatsRungUnavailableTpl": {
+    "message": "Not available — this video tops out at {max}p"
+  },
+  "dlPopupFormatsSummaryTpl": {
+    "message": "{count} formats · {min}p to {max}p available"
+  },
+  "dlPopupFormatsUnavailable": {
+    "message": "Format list unavailable."
+  },
   "dlPopupPlaylistClear": {
     "message": "Löschen"
   },
