@@ -7074,6 +7074,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/navigation.js',
         'extension/core/player.js',
         'extension/core/resource-unlock.js',
+        'extension/core/text-metrics.js',
         'extension/core/date-time.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
@@ -7126,6 +7127,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'core/toast.js':                        'function inferToastTone(color)',
         'core/toast-dom.js':                    'function createToastSystem(deps',
         'core/navigation.js':                   'function runBudgetedElementBatch(items',
+        'core/text-metrics.js':                 'function parseCompactCount(text',
         'core/runtime-flags.js':                'core.runtimeFlags = flags;',
         'core/capability-probe.js':             'core.capabilityProbe = surface;',
         'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
@@ -7192,6 +7194,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/navigation.js',
         'extension/core/player.js',
         'extension/core/resource-unlock.js',
+        'extension/core/text-metrics.js',
         'extension/core/date-time.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
@@ -10373,12 +10376,18 @@ test('v4.47.0 NF16 — predicate ctx exposes likes (from RYD cache) + subsCount 
     assert.match(ytkitSrc, /_readRydLikes\(videoId\)/,
         'videoHider must declare _readRydLikes(videoId) helper');
 
-    // _extractSubsCount parses "1.2M subscribers" / "950K subscribers" /
-    // "42 subscribers" / "5B subscribers" forms case-insensitively.
-    const subsRegexLine = ytkitSrc.match(/_extractSubsCount\([^)]*\) \{[\s\S]*?return Math\.round\(num \* mult\);\s*\}/);
-    assert.ok(subsRegexLine, '_extractSubsCount body must be extractable');
-    assert.match(subsRegexLine[0], /\(\\d\+\(\?:\\\.\\d\+\)\?\)\\s\*\(\[kmb\]\)\?\\s\*subscriber/,
-        '_extractSubsCount regex must match optional decimal + K/M/B suffix before "subscriber"');
+    // _extractSubsCount delegates to the shared structural parser with a
+    // localized subscriber-label set instead of embedding an English-only
+    // decimal regex in the monolith.
+    const subsStart = ytkitSrc.indexOf('_extractSubsCount(metadataText)');
+    assert.ok(subsStart > -1, '_extractSubsCount body must be extractable');
+    const subsBlock = ytkitSrc.slice(subsStart, subsStart + 1400);
+    assert.match(subsBlock, /this\._parseCompactCount\(metadataText, \{/,
+        '_extractSubsCount must delegate to _parseCompactCount');
+    assert.match(subsBlock, /labels: \/\(\?:subscribers\?\|abonnenten\?/,
+        '_extractSubsCount must include localized subscriber labels');
+    assert.match(subsBlock, /zeroPattern:/,
+        '_extractSubsCount must preserve an explicit zero-subscriber sentinel');
 
     // _readRydLikes consults the cached `ytkit-ryd-cache` key with a
     // 5s in-memory refresh so predicate evaluation doesn't thrash
@@ -10403,33 +10412,6 @@ test('v4.47.0 NF16 — predicate ctx exposes likes (from RYD cache) + subsCount 
     assert.match(ytkitSrc, /v4\.47\.0 NF16: BlockTube\/PocketTube parity additions/,
         'predicate ctx must carry the NF16 parity comment');
 
-    // Sandbox-eval the subs-count parser to lock in the parsing
-    // contract end-to-end.
-    const vm = require('node:vm');
-    const sandbox = {};
-    vm.createContext(sandbox);
-    vm.runInContext(`
-        function extract(metadataText) {
-            if (!metadataText) return null;
-            const m = metadataText.match(/(\\d+(?:\\.\\d+)?)\\s*([kmb])?\\s*subscriber/i);
-            if (!m) return null;
-            const num = parseFloat(m[1]);
-            if (!Number.isFinite(num)) return null;
-            const suffix = (m[2] || '').toLowerCase();
-            const mult = suffix === 'b' ? 1e9 : suffix === 'm' ? 1e6 : suffix === 'k' ? 1e3 : 1;
-            return Math.round(num * mult);
-        }
-        globalThis.extract = extract;
-    `, sandbox);
-    const extract = sandbox.extract;
-
-    assert.equal(extract('1.2M subscribers'), 1_200_000, '"1.2M subscribers" parses to 1.2M');
-    assert.equal(extract('950K subscribers'), 950_000, '"950K subscribers" parses to 950K');
-    assert.equal(extract('42 subscribers'), 42, '"42 subscribers" (no suffix) parses to 42');
-    assert.equal(extract('3.5B subscribers'), 3_500_000_000, '"3.5B subscribers" parses to 3.5B');
-    assert.equal(extract('Subscribe to channel'), null, 'no number prefix returns null');
-    assert.equal(extract(''), null, 'empty string returns null');
-    assert.equal(extract(null), null, 'null input returns null');
 });
 
 test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', () => {

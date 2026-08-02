@@ -12,6 +12,8 @@ const MODULE_SOURCE = fs.readFileSync(
     'utf8'
 );
 
+require('../../extension/core/text-metrics.js');
+
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
     delete require.cache[require.resolve(MODULE_PATH)];
@@ -265,6 +267,30 @@ test('_parseCompactCount preserves comma-grouped view counts (no decimal corrupt
     // Sentinels.
     assert.equal(feature._parseCompactCount('No views'), 0);
     assert.equal(feature._parseCompactCount('Streamed 3 years ago'), null);
+});
+
+test('Video Hider parses localized view and subscriber counts structurally', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState: {
+            settings: {
+                hideVideosLowViewFilter: true,
+                hideVideosLowViewThreshold: 1000
+            }
+        }
+    });
+
+    assert.equal(feature._parseCompactCount('987 Aufrufe'), 987);
+    assert.equal(feature._parseCompactCount('12.3万 回視聴'), 123000);
+    assert.equal(feature._extractSubsCount('1,2 Mio. Abonnenten'), 1_200_000);
+    assert.equal(feature._extractSubsCount('12.3万 登録者'), 123000);
+
+    const germanCard = fakeVideoCard('Lokales Video', '987 Aufrufe');
+    assert.equal(feature._extractViewCount(germanCard), 987);
+    assert.deepEqual(feature._matchesMetadataFilters(germanCard), {
+        hide: true,
+        reason: 'low-view'
+    });
 });
 
 test('_extractViewCount reads grouped counts from a card element (popular video not misread)', () => {

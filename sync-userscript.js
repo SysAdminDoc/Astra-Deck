@@ -70,6 +70,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/navigation.js',
     'extension/core/player.js',
     'extension/core/resource-unlock.js',
+    'extension/core/text-metrics.js',
     'extension/core/date-time.js',
     'extension/core/runtime-flags.js',
     'extension/core/capability-probe.js',
