@@ -53,6 +53,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   looked like it worked while yt-dlp quietly downloaded something else. A
   selection that stops being valid falls back to Best and says so.
 
+### Removed
+- **The unused API limiter no longer loads on every page.** It had no consumers
+  since it shipped, and its queue could serialize work regardless of the
+  configured capacity and stall permanently on a task that never settled.
+
 ### Changed
 - **Importing subscription groups merges instead of replacing.** An import used
   to delete every group missing from the file, recoverable only through a

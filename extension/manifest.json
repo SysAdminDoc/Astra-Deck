@@ -161,7 +161,6 @@
         "core/settings-import-transaction.js",
         "core/storage-manager.js",
         "core/icons.js",
-        "core/api-limiter.js",
         "core/url.js",
         "core/text-metrics.js",
         "core/date-time.js",
