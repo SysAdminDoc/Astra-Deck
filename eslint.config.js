@@ -78,6 +78,7 @@ module.exports = [
             'extension/core/*.js',
             'extension/core/selector-packs/*.js',
             'extension/features/**/*.js',
+            'extension/live-chat.js',
             'extension/sidepanel.js',
             'extension/sidebar.js',
             'extension/ytkit.js',

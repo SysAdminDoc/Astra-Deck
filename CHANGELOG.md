@@ -17,6 +17,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Video Hider type detection.** Live and upcoming checks now inspect only
   badge and metadata rows, so ordinary titles containing those words remain
   visible while genuine live/upcoming cards are still filtered.
+- **Live-chat gate coverage.** The dedicated live-chat loader now receives the
+  same ESLint and no-eval enforcement as the other shipped top-level scripts,
+  with inventory tests preventing future manifest drift.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

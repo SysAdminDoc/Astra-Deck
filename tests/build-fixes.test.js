@@ -47,6 +47,42 @@ test('ISOLATED content_scripts blocks keep normal pages and live chat isolated',
         'live-chat script count must remain materially below the normal-page entry');
 });
 
+test('lint and no-eval inventories cover every shipped top-level content script', () => {
+    const packageJson = JSON.parse(fs.readFileSync(
+        path.join(REPO_ROOT, 'package.json'), 'utf8'
+    ));
+    const lintArgs = packageJson.scripts.lint.trim().split(/\s+/);
+    assert.equal(lintArgs.shift(), 'eslint', 'lint script must invoke ESLint directly');
+
+    const directLintFiles = lintArgs.filter((arg) => !/[?*\[\]]/.test(arg));
+    const eslintConfig = require('../eslint.config.js');
+    const configuredFiles = new Set(eslintConfig.flatMap((entry) => entry.files || []));
+    for (const file of directLintFiles) {
+        assert.ok(configuredFiles.has(file),
+            `${file} must appear literally in an eslint.config.js files array`);
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(REPO_ROOT, 'extension', 'manifest.json'), 'utf8'
+    ));
+    const shippedTopLevelScripts = [...new Set((manifest.content_scripts || [])
+        .flatMap((block) => block.js || [])
+        .filter((file) => path.posix.basename(file) === file && file.endsWith('.js')))];
+    const noEvalSource = fs.readFileSync(
+        path.join(REPO_ROOT, 'scripts', 'check-no-eval.js'), 'utf8'
+    );
+    const scanStart = noEvalSource.indexOf('const SCAN_FILES = [');
+    const scanEnd = noEvalSource.indexOf('];', scanStart);
+    assert.ok(scanStart > -1 && scanEnd > scanStart,
+        'check-no-eval.js must expose a parseable SCAN_FILES declaration');
+    const scanBlock = noEvalSource.slice(scanStart, scanEnd);
+    for (const file of shippedTopLevelScripts) {
+        const escaped = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        assert.match(scanBlock, new RegExp(`['"]extension/${escaped}['"]`),
+            `check-no-eval.js SCAN_FILES must include extension/${file}`);
+    }
+});
+
 test('build-extension shouldStageEntry refuses key, token, and log files', () => {
     const { shouldStageEntry } = require('../build-extension.js');
     for (const name of [
