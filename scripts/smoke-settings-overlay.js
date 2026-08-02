@@ -737,6 +737,64 @@ async function main() {
                     );
                 }
             }
+            if (state.name === 'desktop-dark') {
+                // A sub-feature of a disabled parent must stay visibly and
+                // functionally disabled while it matches a search — search used
+                // to clear only the opacity, leaving an enabled-looking card
+                // that ignored every click.
+                const searchProof = await client.evaluate(`(() => {
+                    const search = document.getElementById('ytkit-search');
+                    if (!search) return { ok: false, reason: 'search input missing' };
+                    const groups = Array.from(document.querySelectorAll('.ytkit-sub-features[data-parent-id]'));
+                    let target = groups.find((node) => node.hasAttribute('inert'));
+                    let toggled = null;
+                    if (!target) {
+                        // Nothing is disabled in the default profile — turn a
+                        // parent off so the disabled state actually exists.
+                        for (const group of groups) {
+                            const parentToggle = document.getElementById('ytkit-toggle-' + group.dataset.parentId);
+                            if (!parentToggle || !parentToggle.checked) continue;
+                            parentToggle.click();
+                            if (group.hasAttribute('inert')) { target = group; toggled = parentToggle; break; }
+                            if (parentToggle.checked !== true) parentToggle.click();
+                        }
+                    }
+                    if (!target) return { ok: false, reason: 'no disabled sub-feature group could be staged' };
+                    const label = target.querySelector('.ytkit-feature-name')?.textContent?.trim() || '';
+                    if (!label) return { ok: false, reason: 'sub-feature has no searchable label' };
+                    search.value = label.slice(0, 6);
+                    search.dispatchEvent(new Event('input', { bubbles: true }));
+                    // The panel debounces search by 150ms, so the rendered
+                    // state has to be read after it settles.
+                    window.__ytkitSearchProof = { ok: true, label, parentId: target.dataset.parentId, toggledId: toggled?.id || '' };
+                    return { ok: true, label };
+                })()`);
+                if (searchProof?.ok) {
+                    await sleep(400);
+                    Object.assign(searchProof, await client.evaluate(`(() => {
+                        const proof = window.__ytkitSearchProof || {};
+                        const target = document.querySelector('.ytkit-sub-features[data-parent-id=' + JSON.stringify(proof.parentId) + ']');
+                        const observed = {
+                            inert: target?.hasAttribute('inert') || false,
+                            ariaDisabled: target?.getAttribute('aria-disabled') || '',
+                            opacity: target?.style.opacity || '',
+                        };
+                        const search = document.getElementById('ytkit-search');
+                        if (search) { search.value = ''; search.dispatchEvent(new Event('input', { bubbles: true })); }
+                        const toggled = proof.toggledId ? document.getElementById(proof.toggledId) : null;
+                        if (toggled) toggled.click();
+                        return observed;
+                    })()`));
+                    await sleep(300);
+                }
+                if (!searchProof?.ok) {
+                    failuresByState[state.name].push(`search dimming proof: ${searchProof?.reason || 'unavailable'}`);
+                } else if (searchProof.inert && !searchProof.opacity) {
+                    failuresByState[state.name].push(
+                        `search un-dimmed the inert sub-features of "${searchProof.label}" — it looks enabled but ignores clicks`
+                    );
+                }
+            }
             if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
                 const featureReady = await client.evaluate(`(() => {
                     const toggle = document.getElementById('ytkit-toggle-blueLightFilter');

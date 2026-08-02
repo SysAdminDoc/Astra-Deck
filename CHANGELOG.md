@@ -54,6 +54,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection that stops being valid falls back to Best and says so.
 
 ### Fixed
+- **Settings search no longer makes unavailable sub-settings look available.**
+  Searching cleared the dimming on sub-settings whose parent is off while
+  leaving them inert, so a matching card looked enabled and ignored every
+  click. They now stay dimmed and labelled unavailable while they match.
 - **Section Reset and its Undo now cover every setting in the section.** Both
   keyed on the feature id, so features that store under a different key —
   playback speed, theme, custom CSS and about twenty more — were skipped
