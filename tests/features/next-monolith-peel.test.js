@@ -942,6 +942,78 @@ test('digitalWellbeing factory returns the timer and overlay runtime surface', (
     }
 });
 
+test('digitalWellbeing Resume Video resumes only playback paused by the reminder', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/digital-wellbeing/index.js',
+        'digitalWellbeing'
+    );
+    const created = [];
+    const makeNode = (tagName) => {
+        const node = {
+            tagName,
+            children: [],
+            listeners: {},
+            dataset: {},
+            append(...children) { this.children.push(...children); },
+            appendChild(child) { this.children.push(child); return child; },
+            addEventListener(type, callback) { this.listeners[type] = callback; },
+            removeEventListener() {},
+            remove() {},
+            setAttribute() {},
+            focus() {}
+        };
+        created.push(node);
+        return node;
+    };
+    const video = {
+        paused: false,
+        pauseCalls: 0,
+        playCalls: 0,
+        pause() { this.pauseCalls += 1; this.paused = true; },
+        play() { this.playCalls += 1; this.paused = false; return Promise.resolve(); }
+    };
+    const documentRef = {
+        body: makeNode('body'),
+        querySelector(selector) { return selector === 'video' ? video : null; },
+        createElement: makeNode,
+        addEventListener() {},
+        removeEventListener() {}
+    };
+    const priorDocument = global.document;
+    const priorAnimationFrame = global.requestAnimationFrame;
+    global.document = documentRef;
+    global.requestAnimationFrame = callback => callback();
+    try {
+        const feature = mod.createDigitalWellbeingFeature({ DebugManager: { log() {} } });
+        feature._showOverlay('break');
+        const resumeButton = created.find(node => node.tagName === 'button');
+        assert.equal(video.pauseCalls, 1, 'break reminder must pause active playback');
+        resumeButton.listeners.click();
+        assert.equal(video.playCalls, 1, 'Resume Video must resume playback it paused');
+
+        video.paused = true;
+        feature._showOverlay('break');
+        const pausedButton = created.filter(node => node.tagName === 'button').at(-1);
+        pausedButton.listeners.click();
+        assert.equal(video.playCalls, 1,
+            'Resume Video must not start a video that was already paused');
+    } finally {
+        if (priorDocument === undefined) delete global.document;
+        else global.document = priorDocument;
+        if (priorAnimationFrame === undefined) delete global.requestAnimationFrame;
+        else global.requestAnimationFrame = priorAnimationFrame;
+    }
+
+    const dwIdx = sources.ytkit.indexOf("id: 'digitalWellbeing'");
+    const fallback = sources.ytkit.slice(dwIdx, dwIdx + 24000);
+    for (const [label, source] of [['module', fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8')], ['ytkit.js fallback', fallback]]) {
+        assert.match(source, /resumeAfterDismiss = kind === 'break'/,
+            `${label} must record whether the break paused active playback`);
+        assert.match(source, /resumeAfterDismiss && video && video\.paused/,
+            `${label} must guard Resume Video with the recorded playback state`);
+    }
+});
+
 test('digitalWellbeing module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];

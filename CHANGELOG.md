@@ -50,6 +50,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   matches.
 - **Transcript navigation reset.** Moving to a new video now clears the prior
   translation state so the first Translate action applies to the new transcript.
+- **Digital Wellbeing resume.** The break reminder now resumes playback when it
+  was the thing that paused an active video, while respecting an already-paused video.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
