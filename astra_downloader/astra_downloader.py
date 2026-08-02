@@ -3170,13 +3170,40 @@ def run_native_messaging_host(token, stdin=None, stdout=None):
 def argv_requests_native_host(argv):
     """True when the browser launched us as a native-messaging host.
 
-    Chrome/Firefox pass the calling extension's origin as a positional argv
-    (chrome-extension://<id>/ or moz-extension://<uuid>/). Normal launches and
-    the test suite never carry such an argument, so this gate cannot misfire.
+    Chrome passes the calling extension's origin as a positional argv
+    (chrome-extension://<id>/). Firefox instead passes the registered host
+    manifest path followed by the configured Gecko extension ID. The Firefox
+    form is accepted only for the exact manifest we registered and only when
+    that manifest explicitly allows the supplied ID, so an arbitrary path or
+    normal application argument cannot enter the stdio-only path.
     """
-    return any(
+    args = list(argv or [])
+    if any(
         isinstance(a, str) and (a.startswith("chrome-extension://") or a.startswith("moz-extension://"))
-        for a in (argv or [])
+        for a in args
+    ):
+        return True
+
+    if len(args) < 2 or not isinstance(args[0], str) or not isinstance(args[1], str):
+        return False
+    manifest_path = Path(args[0])
+    extension_id = args[1].strip()
+    expected_path = Path(NATIVE_HOST_DIR) / f"{NATIVE_HOST_NAME}.firefox.json"
+    if not extension_id or manifest_path.suffix.lower() != ".json" or manifest_path.name != expected_path.name:
+        return False
+    try:
+        if manifest_path.resolve(strict=True) != expected_path.resolve(strict=True):
+            return False
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError, RuntimeError):
+        return False
+    allowed_extensions = manifest.get("allowed_extensions") if isinstance(manifest, dict) else None
+    return (
+        isinstance(manifest, dict)
+        and manifest.get("name") == NATIVE_HOST_NAME
+        and manifest.get("type") == "stdio"
+        and isinstance(allowed_extensions, list)
+        and extension_id in allowed_extensions
     )
 
 

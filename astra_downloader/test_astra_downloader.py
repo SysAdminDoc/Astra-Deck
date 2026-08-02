@@ -6946,11 +6946,55 @@ class NativeMessagingBootstrapTests(unittest.TestCase):
         reply = ad.read_native_message(out)
         self.assertEqual(reply["token"], "tok-xyz")
 
-    def test_argv_gate_matches_only_extension_origins(self):
+    def test_argv_gate_matches_chrome_origins_and_registered_firefox_manifest(self):
         self.assertTrue(ad.argv_requests_native_host(["chrome-extension://abc/", "--parent-window=9"]))
-        self.assertTrue(ad.argv_requests_native_host(["moz-extension://uuid/"]))
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ad, "NATIVE_HOST_DIR", Path(tmp)):
+            manifest = Path(tmp) / f"{ad.NATIVE_HOST_NAME}.firefox.json"
+            manifest.write_text(
+                json.dumps(ad.build_native_host_manifest(
+                    "C:/AstraDownloader.exe",
+                    ["ytkit@sysadmindoc.github.io"],
+                    browser="firefox",
+                )),
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                ad.argv_requests_native_host([
+                    str(manifest),
+                    "ytkit@sysadmindoc.github.io",
+                ])
+            )
+            self.assertFalse(ad.argv_requests_native_host([str(manifest), "other@example.test"]))
+
         for normal in (["-Background"], ["--uninstall"], [], ["start"]):
             self.assertFalse(ad.argv_requests_native_host(normal))
+
+    def test_main_handles_firefox_shape_before_gui_or_single_instance(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ad, "NATIVE_HOST_DIR", Path(tmp)):
+            manifest = Path(tmp) / f"{ad.NATIVE_HOST_NAME}.firefox.json"
+            manifest.write_text(
+                json.dumps(ad.build_native_host_manifest(
+                    "C:/AstraDownloader.exe",
+                    ["ytkit@sysadmindoc.github.io"],
+                    browser="firefox",
+                )),
+                encoding="utf-8",
+            )
+            with mock.patch.object(ad.sys, "argv", [
+                "AstraDownloader.exe",
+                str(manifest),
+                "ytkit@sysadmindoc.github.io",
+            ]), \
+                 mock.patch.object(ad, "Config", return_value=FakeConfig({"ServerToken": "tok"})), \
+                 mock.patch.object(ad, "run_native_messaging_host") as run_host, \
+                 mock.patch.object(ad, "QApplication") as application, \
+                 mock.patch.object(ad, "check_single_instance") as single_instance:
+                ad.main()
+
+            run_host.assert_called_once_with("tok")
+            application.assert_not_called()
+            single_instance.assert_not_called()
 
     def test_parse_native_extension_ids_dedupes_comma_semicolon_and_lines(self):
         self.assertEqual(

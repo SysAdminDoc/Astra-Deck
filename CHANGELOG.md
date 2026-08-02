@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- **Firefox native messaging bootstrap.** Astra Downloader now recognizes
+  Firefox's registered-host manifest path plus Gecko extension ID argv shape,
+  validates it against the installed manifest, and enters the stdio token
+  handshake before GUI or single-instance startup.
+
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
 ### Added
