@@ -7,6 +7,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Native companion localization scaffold.** The Qt GUI now resolves system
+  or user-selected language preferences across the same 11 locale IDs as the
+  extension, routes shared labels and controls through Qt translation
+  catalogues, and packages compiled `.qm` resources in the Windows executable.
+  A deterministic German dashboard render pins the non-English build path.
 - **Opt-in clipboard link staging.** Astra Downloader can watch clipboard
   changes for strict YouTube URLs, stage each unique match in Quick download,
   and prompt for review without ever starting a download automatically.

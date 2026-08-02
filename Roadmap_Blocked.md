@@ -2,6 +2,14 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+- [ ] P3 — aria2c external-downloader option
+  Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
+  Evidence: `astra_downloader/test_astra_downloader.py` (`Aria2cExternalDownloaderBanTests`); `CHANGELOG.md` (CVE-2026-50574 external-downloader ban).
+  Touches: `astra_downloader/download.py`, provisioning, `config.py`, `health.py`.
+  Acceptance: reconsider only after an upstream design demonstrably removes the manifest-download arbitrary-code-execution condition and the repository can replace its source-level ban with a verified safe contract.
+  Complexity: L
+  Blocker: As of 2026-07-29, the companion deliberately rejects all aria2c and `--external-downloader` integration because CVE-2026-50574 allowed arbitrary code execution through manifest downloads. Implementing this roadmap item would remove an explicit, test-pinned security boundary.
+
 - [ ] P1 — Native-messaging download-command transport as a Chrome-LNA fallback
   Why: Chrome 142 (Oct 2025) enforces Local Network Access, which can gate/block the extension's `127.0.0.1` fetch to the companion; the token path already rides native messaging but the *download command* path is HTTP-only, so downloads can fail while auth still works. Native messaging is the LNA-immune bridge (browserpass/KeePassXC/1Password pattern).
   Evidence: RESEARCH.md 2026-07-27 §Security/Reliability + Open Questions; `astra_downloader/astra_downloader.py` (`handle_native_bootstrap_request` serves only ping/get-token); https://developer.chrome.com/blog/local-network-access

@@ -336,6 +336,49 @@ class PersistenceTests(unittest.TestCase):
 
 
 class CompanionGuiPolicyTests(unittest.TestCase):
+    def test_companion_qt_catalogues_match_extension_locales_and_load_german(self):
+        import i18n as i18n_module
+        from PyQt6.QtCore import QTranslator
+
+        extension_locales = {
+            path.name
+            for path in (Path(ad.__file__).parents[1] / "extension" / "_locales").iterdir()
+            if path.is_dir()
+        }
+        self.assertEqual(set(i18n_module.SUPPORTED_LOCALES), extension_locales)
+        self.assertEqual(i18n_module.normalize_companion_locale("de-DE"), "de")
+        self.assertEqual(i18n_module.normalize_companion_locale("pt-BR"), "pt_BR")
+        self.assertEqual(i18n_module.normalize_companion_locale("xx-YY"), "en")
+
+        translator = QTranslator()
+        catalog = (
+            i18n_module.companion_translations_dir()
+            / "astra_downloader_de.qm"
+        )
+        self.assertTrue(translator.load(str(catalog)))
+        self.assertEqual(
+            translator.translate("AstraDownloader", "Dashboard"),
+            "Übersicht",
+        )
+
+    def test_companion_build_packages_qm_catalogues_and_gui_uses_translation(self):
+        root = Path(ad.__file__).parents[1]
+        build_source = (root / "astra_downloader" / "build.py").read_text(
+            encoding="utf-8"
+        )
+        gui_source = (root / "astra_downloader" / "gui.py").read_text(
+            encoding="utf-8"
+        )
+        renderer_source = (
+            root / "scripts" / "render-companion-gui.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("prepare_translations()", build_source)
+        self.assertIn('str(TRANSLATIONS_DIR / "*.qm")', build_source)
+        self.assertIn('"--hidden-import", "i18n"', build_source)
+        self.assertIn('QCoreApplication.translate("AstraDownloader"', gui_source)
+        self.assertIn("QLabel(tr(text))", gui_source)
+        self.assertIn('"dashboard-german"', renderer_source)
+
     def test_companion_settings_flows_do_not_use_blocking_message_boxes(self):
         src = (
             Path(ad.__file__).read_text(encoding='utf-8')
@@ -5792,6 +5835,12 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
             _config.sanitize_config({"ClipboardLinkGrabber": "invalid"})[
                 "ClipboardLinkGrabber"
             ]
+        )
+        self.assertEqual(_config.DEFAULT_CONFIG["Language"], "system")
+        self.assertEqual(_config.sanitize_config({"Language": "de"})["Language"], "de")
+        self.assertEqual(
+            _config.sanitize_config({"Language": "xx-YY"})["Language"],
+            "system",
         )
 
     def test_normalize_output_template_allows_safe_and_rejects_unsafe(self):

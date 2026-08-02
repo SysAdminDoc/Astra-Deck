@@ -103,6 +103,10 @@ try:
         probe_javascript_execution as _owned_probe_javascript_execution,
         ytdlp_needs_external_runtime,
     )
+    from .i18n import (
+        SUPPORTED_LOCALES, install_companion_translator,
+        normalize_companion_locale,
+    )
     from .gui import (
         FolderPickerService as _OwnedFolderPickerService,
         MainWindowCore,
@@ -161,6 +165,10 @@ except ImportError:  # Direct script / flat source-path compatibility.
         parse_ytdlp_version_output,
         probe_javascript_execution as _owned_probe_javascript_execution,
         ytdlp_needs_external_runtime,
+    )
+    from i18n import (
+        SUPPORTED_LOCALES, install_companion_translator,
+        normalize_companion_locale,
     )
     from gui import (
         FolderPickerService as _OwnedFolderPickerService,
@@ -3531,6 +3539,11 @@ def main():
 
     # Init
     config = Config()
+    # Retain the translator for the QApplication lifetime. Qt removes a
+    # translator when its QObject wrapper is garbage-collected.
+    app._astra_translator = install_companion_translator(
+        app, config.get("Language", "system")
+    )
     history = History()
     dl_manager = DownloadManager(config, history, queue_path=DOWNLOAD_QUEUE_PATH)
 

@@ -16,6 +16,7 @@ CAPTURE_NAMES = (
     "dashboard-starting",
     "dashboard-online",
     "dashboard-error-degraded",
+    "dashboard-german",
     "downloads-active-pending",
     "downloads-clipboard-staged",
     "downloads-recovery-terminal",
@@ -74,6 +75,8 @@ def main():
         app.setQuitOnLastWindowClosed(False)
         app.setApplicationName(app_module.APP_NAME)
         app.setApplicationVersion(app_module.APP_VERSION)
+        if scenario == "dashboard-german":
+            app._astra_translator = app_module.install_companion_translator(app, "de")
         for font_name in ("segoeui.ttf", "seguisb.ttf", "segoeuib.ttf"):
             font_path = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / font_name
             if font_path.exists():
@@ -275,7 +278,16 @@ def main():
 
         def capture_dashboard_state(window):
             select_page(window, "Dashboard")
-            if scenario == "dashboard-starting":
+            if scenario == "dashboard-german":
+                assert_visible_text(window, {"Übersicht"})
+                nav_text = [button.text() for button in window.nav_buttons]
+                if nav_text != [
+                    "Übersicht", "Downloads", "Verlauf", "Einstellungen",
+                ]:
+                    raise RuntimeError(
+                        f"German navigation catalogue did not render: {nav_text}"
+                    )
+            elif scenario == "dashboard-starting":
                 window.status_label.setText("Starting")
                 window.status_label.setProperty("tone", "warning")
                 window.status_dot.setProperty("tone", "warning")

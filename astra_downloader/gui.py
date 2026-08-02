@@ -12,8 +12,8 @@ from datetime import datetime
 from pathlib import Path
 
 from PyQt6.QtCore import (
-    QEasingCurve, QObject, QPropertyAnimation, QSize, QThread, QTimer, Qt,
-    pyqtSignal,
+    QCoreApplication, QEasingCurve, QObject, QPropertyAnimation, QSize,
+    QThread, QTimer, Qt, pyqtSignal,
 )
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap, QTextCursor
 from PyQt6.QtWidgets import (
@@ -90,8 +90,13 @@ def repolish(widget):
     widget.update()
 
 
+def tr(text):
+    """Translate a static companion UI string through the installed catalogue."""
+    return QCoreApplication.translate("AstraDownloader", str(text))
+
+
 def make_label(text, class_name=None, word_wrap=False):
-    label = QLabel(text)
+    label = QLabel(tr(text))
     if class_name:
         label.setProperty("class", class_name)
     label.setWordWrap(word_wrap)
@@ -121,20 +126,22 @@ def make_card(class_name="card"):
 
 
 def make_status_badge(text, tone="neutral"):
-    badge = QLabel(text)
+    translated = tr(text)
+    badge = QLabel(translated)
     badge.setProperty("class", "badge")
     badge.setProperty("tone", tone)
     badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
     badge.setMinimumHeight(22)
-    badge.setAccessibleName(f"Status: {text}")
+    badge.setAccessibleName(f"{tr('Status')}: {translated}")
     return badge
 
 
 def make_state_label(text, tone="neutral"):
-    label = QLabel(f"\u25cf  {text}")
+    translated = tr(text)
+    label = QLabel(f"\u25cf  {translated}")
     label.setProperty("class", "stateLabel")
     label.setProperty("tone", tone)
-    label.setAccessibleName(f"Status: {text}")
+    label.setAccessibleName(f"{tr('Status')}: {translated}")
     return label
 
 
@@ -301,9 +308,10 @@ def make_empty_state(title, body, action_text=None, action=None):
     empty_body.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(empty_body)
     if action_text and callable(action):
-        button = QPushButton(action_text)
+        translated_action = tr(action_text)
+        button = QPushButton(translated_action)
         button.setProperty("class", "secondary")
-        button.setAccessibleName(action_text)
+        button.setAccessibleName(translated_action)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.clicked.connect(action)
         layout.addSpacing(8)
@@ -878,15 +886,16 @@ class MainWindowCore(QMainWindow):
         # Nav buttons
         self.nav_buttons = []
         for name in ["Dashboard", "Downloads", "History", "Settings"]:
-            btn = QPushButton(name)
+            translated_name = tr(name)
+            btn = QPushButton(translated_name)
             btn.setProperty("class", "nav")
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
-            btn.setAccessibleName(f"{name} page")
+            btn.setAccessibleName(f"{translated_name} {tr('page')}")
             btn.setIcon(make_line_icon(name))
             btn.setIconSize(QSize(18, 18))
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.setToolTip(f"Open {name.lower()}")
+            btn.setToolTip(f"{tr('Open')} {translated_name}")
             btn.clicked.connect(lambda checked, n=name: self._nav_click(n))
             sidebar_layout.addWidget(btn)
             self.nav_buttons.append(btn)
@@ -1006,12 +1015,13 @@ class MainWindowCore(QMainWindow):
         return group, content
 
     def _make_tool_button(self, text, class_name="secondary"):
-        btn = QPushButton(text)
+        translated = tr(text)
+        btn = QPushButton(translated)
         btn.setProperty("class", class_name)
         btn.setIcon(make_line_icon(text))
         btn.setIconSize(QSize(15, 15))
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn.setAccessibleName(text)
+        btn.setAccessibleName(translated)
         return btn
 
     def _make_readiness_row(self, key, label_text, value_text="Checking"):
@@ -1278,7 +1288,7 @@ class MainWindowCore(QMainWindow):
         url_row = QHBoxLayout()
         self.quick_download_url = QLineEdit()
         self.quick_download_url.setAccessibleName("YouTube URL")
-        self.quick_download_url.setPlaceholderText("Paste a YouTube video or playlist URL")
+        self.quick_download_url.setPlaceholderText(tr("Paste a YouTube video or playlist URL"))
         self.quick_download_url.returnPressed.connect(self._start_quick_download)
         self.quick_download_url.textEdited.connect(self._quick_download_url_edited)
         url_row.addWidget(self.quick_download_url, 1)
@@ -1291,8 +1301,8 @@ class MainWindowCore(QMainWindow):
         options_row.setSpacing(8)
         self.quick_download_type = QComboBox()
         self.quick_download_type.setAccessibleName("Download type")
-        self.quick_download_type.addItem("Video", False)
-        self.quick_download_type.addItem("Audio", True)
+        self.quick_download_type.addItem(tr("Video"), False)
+        self.quick_download_type.addItem(tr("Audio"), True)
         self.quick_download_type.currentIndexChanged.connect(
             self._sync_quick_download_options
         )
@@ -1303,7 +1313,7 @@ class MainWindowCore(QMainWindow):
         self.quick_download_quality = QComboBox()
         self.quick_download_quality.setAccessibleName("Download quality")
         for label, value in (
-            ("Best", "best"), ("2160p", "2160"), ("1440p", "1440"),
+            (tr("Best"), "best"), ("2160p", "2160"), ("1440p", "1440"),
             ("1080p", "1080"), ("720p", "720"), ("480p", "480"),
         ):
             self.quick_download_quality.addItem(label, value)
@@ -1448,19 +1458,19 @@ class MainWindowCore(QMainWindow):
         filters.addWidget(self.history_search, 2)
         self.history_status = QComboBox()
         self.history_status.setAccessibleName("History status")
-        self.history_status.addItem("All statuses", "")
-        self.history_status.addItem("Complete", "complete")
+        self.history_status.addItem(tr("All statuses"), "")
+        self.history_status.addItem(tr("Complete"), "complete")
         filters.addWidget(self.history_status)
         self.history_format = QComboBox()
         self.history_format.setAccessibleName("History format")
-        self.history_format.addItem("All formats", "")
+        self.history_format.addItem(tr("All formats"), "")
         for fmt in ("mp4", "mkv", "webm", "mp3", "m4a", "opus", "flac", "wav"):
             self.history_format.addItem(fmt.upper(), fmt)
         filters.addWidget(self.history_format)
         self.history_sort = QComboBox()
         self.history_sort.setAccessibleName("History sort order")
-        self.history_sort.addItem("Newest first", "newest")
-        self.history_sort.addItem("Oldest first", "oldest")
+        self.history_sort.addItem(tr("Newest first"), "newest")
+        self.history_sort.addItem(tr("Oldest first"), "oldest")
         filters.addWidget(self.history_sort)
         layout.addLayout(filters)
 
@@ -1619,13 +1629,13 @@ class MainWindowCore(QMainWindow):
 
         # Post-processing
         pp_card, pp_l = self._make_settings_group("Post-processing")
-        self.cfg_metadata = QCheckBox("Embed metadata")
+        self.cfg_metadata = QCheckBox(tr("Embed metadata"))
         self.cfg_metadata.setChecked(self.config.get("EmbedMetadata", True))
-        self.cfg_thumbnail = QCheckBox("Embed thumbnail")
+        self.cfg_thumbnail = QCheckBox(tr("Embed thumbnail"))
         self.cfg_thumbnail.setChecked(self.config.get("EmbedThumbnail", True))
-        self.cfg_chapters = QCheckBox("Embed chapters")
+        self.cfg_chapters = QCheckBox(tr("Embed chapters"))
         self.cfg_chapters.setChecked(self.config.get("EmbedChapters", True))
-        self.cfg_subs = QCheckBox("Embed subtitles")
+        self.cfg_subs = QCheckBox(tr("Embed subtitles"))
         self.cfg_subs.setChecked(self.config.get("EmbedSubs", False))
         for w in [self.cfg_metadata, self.cfg_thumbnail, self.cfg_chapters, self.cfg_subs]:
             pp_l.addWidget(w)
@@ -1641,7 +1651,7 @@ class MainWindowCore(QMainWindow):
         sub_row.addStretch()
         pp_l.addLayout(sub_row)
         pp_l.addWidget(make_divider())
-        self.cfg_sponsorblock = QCheckBox("Use SponsorBlock segments")
+        self.cfg_sponsorblock = QCheckBox(tr("Use SponsorBlock segments"))
         self.cfg_sponsorblock.setChecked(self.config.get("SponsorBlock", False))
         pp_l.addWidget(self.cfg_sponsorblock)
         sb_row = QHBoxLayout()
@@ -1650,8 +1660,8 @@ class MainWindowCore(QMainWindow):
         sb_row.addWidget(make_label("Action", "fieldHint"))
         self.cfg_sb_action = QComboBox()
         self.cfg_sb_action.setAccessibleName("SponsorBlock action")
-        self.cfg_sb_action.addItem("Remove segments", "remove")
-        self.cfg_sb_action.addItem("Mark segments", "mark")
+        self.cfg_sb_action.addItem(tr("Remove segments"), "remove")
+        self.cfg_sb_action.addItem(tr("Mark segments"), "mark")
         current_action = self.config.get("SponsorBlockAction", "remove")
         self.cfg_sb_action.setCurrentIndex(1 if current_action == "mark" else 0)
         self.cfg_sb_action.setEnabled(self.cfg_sponsorblock.isChecked())
@@ -1743,7 +1753,7 @@ class MainWindowCore(QMainWindow):
         runtime_row.addLayout(runtime_copy, 1)
         self.cfg_js_runtime = QComboBox()
         self.cfg_js_runtime.setAccessibleName("JavaScript runtime")
-        self.cfg_js_runtime.addItem("Auto", "auto")
+        self.cfg_js_runtime.addItem(tr("Auto"), "auto")
         self.cfg_js_runtime.addItem("Deno", "deno")
         self.cfg_js_runtime.addItem("Node 22+", "node")
         selected_runtime = self.config.get("JavaScriptRuntime", "auto")
@@ -1762,8 +1772,8 @@ class MainWindowCore(QMainWindow):
         channel_row.addLayout(channel_copy, 1)
         self.cfg_ytdlp_channel = QComboBox()
         self.cfg_ytdlp_channel.setAccessibleName("yt-dlp update channel")
-        self.cfg_ytdlp_channel.addItem("Nightly (recommended)", "nightly")
-        self.cfg_ytdlp_channel.addItem("Stable", "stable")
+        self.cfg_ytdlp_channel.addItem(tr("Nightly (recommended)"), "nightly")
+        self.cfg_ytdlp_channel.addItem(tr("Stable"), "stable")
         selected_channel = self.config.get("YtDlpUpdateChannel", "nightly")
         self.cfg_ytdlp_channel.setCurrentIndex(max(0, self.cfg_ytdlp_channel.findData(selected_channel)))
         channel_row.addWidget(self.cfg_ytdlp_channel)
@@ -1772,15 +1782,44 @@ class MainWindowCore(QMainWindow):
 
         # Behavior
         beh_card, beh_l = self._make_settings_group("Tray behavior")
-        self.cfg_autoupdate = QCheckBox("Update yt-dlp on server start")
+        language_row = QHBoxLayout()
+        language_row.addWidget(make_label("Language", "fieldLabel"))
+        language_row.addStretch()
+        self.cfg_language = QComboBox()
+        self.cfg_language.setAccessibleName(tr("Companion language"))
+        for label, value in (
+            ("System default", "system"),
+            ("العربية", "ar"),
+            ("Deutsch", "de"),
+            ("English", "en"),
+            ("Español", "es"),
+            ("Français", "fr"),
+            ("Italiano", "it"),
+            ("日本語", "ja"),
+            ("한국어", "ko"),
+            ("Português (Brasil)", "pt_BR"),
+            ("Русский", "ru"),
+            ("简体中文", "zh_CN"),
+        ):
+            self.cfg_language.addItem(label, value)
+        selected_language = self.config.get("Language", "system")
+        self.cfg_language.setCurrentIndex(
+            max(0, self.cfg_language.findData(selected_language))
+        )
+        self.cfg_language.setToolTip(
+            tr("Language changes apply the next time Astra Downloader starts.")
+        )
+        language_row.addWidget(self.cfg_language)
+        beh_l.addLayout(language_row)
+        self.cfg_autoupdate = QCheckBox(tr("Update yt-dlp on server start"))
         self.cfg_autoupdate.setChecked(self.config.get("AutoUpdateYtDlp", True))
-        self.cfg_closetotray = QCheckBox("Close to the system tray")
+        self.cfg_closetotray = QCheckBox(tr("Close to the system tray"))
         self.cfg_closetotray.setChecked(self.config.get("CloseToTray", True))
-        self.cfg_startmin = QCheckBox("Start minimized to the tray")
+        self.cfg_startmin = QCheckBox(tr("Start minimized to the tray"))
         self.cfg_startmin.setChecked(self.config.get("StartMinimized", False))
-        self.cfg_notify = QCheckBox("Notify when a download finishes (while minimized)")
+        self.cfg_notify = QCheckBox(tr("Notify when a download finishes (while minimized)"))
         self.cfg_notify.setChecked(self.config.get("NotifyOnComplete", True))
-        self.cfg_clipboard = QCheckBox("Stage copied YouTube links for review")
+        self.cfg_clipboard = QCheckBox(tr("Stage copied YouTube links for review"))
         self.cfg_clipboard.setChecked(self.config.get("ClipboardLinkGrabber", False))
         self.cfg_clipboard.setToolTip(
             "Watch clipboard changes for YouTube links. Matching links fill the "
@@ -1853,6 +1892,7 @@ class MainWindowCore(QMainWindow):
             self.cfg_proxy.textChanged,
             self.cfg_js_runtime.currentIndexChanged,
             self.cfg_ytdlp_channel.currentIndexChanged,
+            self.cfg_language.currentIndexChanged,
             self.cfg_autoupdate.toggled,
             self.cfg_closetotray.toggled,
             self.cfg_startmin.toggled,
@@ -2770,6 +2810,7 @@ class MainWindowCore(QMainWindow):
         old_port = self._dependencies['clamp_int'](persisted_get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
         old_token = self.config.get("ServerToken", "")
         old_clipboard_grabber = self.config.get("ClipboardLinkGrabber", False)
+        old_language = self.config.get("Language", "system")
         new_port = self.cfg_port.value()
         new_token = self.cfg_token.text().strip()
         dl_path = self.cfg_dl_path.text().strip()
@@ -2851,6 +2892,11 @@ class MainWindowCore(QMainWindow):
             "Proxy": proxy,
             "JavaScriptRuntime": self.cfg_js_runtime.currentData(),
             "YtDlpUpdateChannel": self.cfg_ytdlp_channel.currentData(),
+            "Language": (
+                self.cfg_language.currentData()
+                if hasattr(self, "cfg_language")
+                else old_language
+            ),
             "AutoUpdateYtDlp": self.cfg_autoupdate.isChecked(),
             "CloseToTray": self.cfg_closetotray.isChecked(),
             "StartMinimized": self.cfg_startmin.isChecked(),
@@ -2874,11 +2920,20 @@ class MainWindowCore(QMainWindow):
         self._start_readiness_probe()
 
         self._sync_connection_ui()
+        language_changed = (
+            hasattr(self, "cfg_language")
+            and self.cfg_language.currentData() != old_language
+        )
         if restart_now:
             self._append_log("Connection settings changed; restarting local server.")
             self._stop_server()
             self._start_server()
             self._show_settings_status("Settings saved and server restarted.", "success")
+        elif language_changed:
+            self._show_settings_status(
+                "Settings saved. Restart Astra Downloader to apply the language.",
+                "success",
+            )
         else:
             self._show_settings_status("Settings saved.", "success")
         if (
@@ -2889,8 +2944,8 @@ class MainWindowCore(QMainWindow):
             # Enabling is an explicit opt-in, so consider the current
             # clipboard value without making the user copy it again.
             self._handle_clipboard_change()
-        self.btn_save.setText("Saved")
-        QTimer.singleShot(1500, lambda: self.btn_save.setText("Save changes"))
+        self.btn_save.setText(tr("Saved"))
+        QTimer.singleShot(1500, lambda: self.btn_save.setText(tr("Save changes")))
         status_generation = getattr(self, "_settings_status_generation", 0)
         QTimer.singleShot(3200, lambda: self._clear_settings_status_if_current(status_generation))
 

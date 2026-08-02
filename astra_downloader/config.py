@@ -113,6 +113,7 @@ DEFAULT_CONFIG = {
     "YtDlpUpdateChannel": "nightly",
     "RateLimit": "",
     "Proxy": "",
+    "Language": "system",
     "StartMinimized": False,
     "CloseToTray": True,
     "NotifyOnComplete": True,
@@ -456,6 +457,12 @@ def sanitize_config(raw):
     data["YtDlpUpdateChannel"] = channel if channel in {"stable", "nightly"} else "nightly"
     data["RateLimit"] = normalize_rate_limit(data.get("RateLimit"))
     data["Proxy"] = normalize_proxy(data.get("Proxy"))
+    language = clean_text(data.get("Language"), "system", 16).replace("-", "_")
+    allowed_languages = {
+        "system", "ar", "de", "en", "es", "fr", "it", "ja", "ko",
+        "pt_BR", "ru", "zh_CN",
+    }
+    data["Language"] = language if language in allowed_languages else "system"
     data["LastYtDlpUpdateCheck"] = clean_text(data.get("LastYtDlpUpdateCheck"), "", 40)
     data["LastFfmpegCheck"] = clean_text(data.get("LastFfmpegCheck"), "", 40)
     data["MaxFileSizeMB"] = clamp_int(data.get("MaxFileSizeMB"), 0, 0, 102400)
