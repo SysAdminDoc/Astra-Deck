@@ -21059,6 +21059,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._scheduleInject(2000);
                 addNavigateRule('abLoop', () => {
                     this._clearLoop();
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleInject(2000);
                 });
@@ -21070,6 +21071,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._stopLoop();
                 this._removeMarkers();
                 this._styleEl?.remove(); this._styleEl = null;
+                document.querySelectorAll('.ytkit-ab-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
                 this._pointA = null; this._pointB = null;
             }
@@ -21134,6 +21136,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._rateHandler = () => this._updateBadge();
                 document.addEventListener('ratechange', this._rateHandler, true);
                 addNavigateRule('fineSpeed', () => {
+                    this._badge?.remove();
                     this._badge = null;
                     this._scheduleCreate(2000);
                 });
@@ -21142,6 +21145,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 removeNavigateRule('fineSpeed');
                 document.removeEventListener('ratechange', this._rateHandler, true);
+                document.querySelectorAll('.ytkit-speed-badge').forEach(el => el.remove());
                 this._badge?.remove(); this._badge = null;
             }
         },
@@ -22215,6 +22219,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._scheduleInject(2000);
                 addNavigateRule('popOut', () => {
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleInject(2000);
                 });
@@ -22223,6 +22228,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
                 removeNavigateRule('popOut');
+                document.querySelectorAll('.ytkit-popout-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
                 if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
                 // Close any open PiP window
@@ -22645,6 +22651,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._scheduleInject(2000);
                 addNavigateRule('loopBtn', () => {
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleInject(2000);
                 });
@@ -22655,6 +22662,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('loopBtn');
                 const video = document.querySelector('video.html5-main-video');
                 if (video) video.loop = false;
+                document.querySelectorAll('.ytkit-loop-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
             }
         },
@@ -31300,6 +31308,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._scheduleInject(2000);
                 this._navRule = () => {
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleInject(2000);
                 };
@@ -31309,6 +31318,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
                 removeNavigateRule('subtitleDownload');
+                document.querySelectorAll('.ytkit-subdl-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
             }
         },
@@ -31458,6 +31468,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `, 'vvf-panel-css', true);
                 this._scheduleInject(2000);
                 this._navRule = () => {
+                    this._btn?.remove();
                     this._btn = null;
                     this._apply();
                     this._scheduleInject(2000);
@@ -31477,6 +31488,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.removeEventListener('click', this._docClick, true);
                 this._styleEl?.remove(); this._styleEl = null;
                 this._panelStyleEl?.remove(); this._panelStyleEl = null;
+                document.querySelectorAll('.ytkit-vvf-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
                 this._panel?.remove(); this._panel = null;
             }
@@ -32710,6 +32722,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._scheduleInject(2000);
                 this._navRule = () => {
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleInject(2000);
                 };
@@ -32719,6 +32732,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
                 removeNavigateRule('copyChapterMarkdown');
+                document.querySelectorAll('.ytkit-chaps-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
             }
         },

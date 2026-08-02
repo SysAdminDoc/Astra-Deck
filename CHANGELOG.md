@@ -20,6 +20,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Live-chat gate coverage.** The dedicated live-chat loader now receives the
   same ESLint and no-eval enforcement as the other shipped top-level scripts,
   with inventory tests preventing future manifest drift.
+- **Player-control SPA teardown.** A-B Loop, fine speed, PiP, loop, subtitle,
+  visual-filter, and chapter controls now remove stale DOM elements during
+  navigation and sweep orphaned controls during teardown.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
