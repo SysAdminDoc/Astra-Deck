@@ -60,10 +60,6 @@ function readValidatedCompanionExe(filePath) {
     }
 }
 
-function validateCompanionExe(filePath) {
-    readValidatedCompanionExe(filePath);
-}
-
 function assertBuildDirExists() {
     let stat;
     try {
@@ -132,6 +128,5 @@ if (require.main === module) {
 
 module.exports = {
     readValidatedMetadata,
-    stageCompanionRelease,
-    validateCompanionExe
+    stageCompanionRelease
 };

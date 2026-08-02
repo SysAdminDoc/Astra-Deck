@@ -7,6 +7,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Build-tool cleanup.** Removed unused shell and companion-validator bindings
+  from the local release tooling.
 - **Userscript version integrity.** Release checks now validate the visible
   `YTKit.user.js` `@name` version suffix alongside `@version`.
 - **Schema generator safety.** The legacy schema command now delegates to the
