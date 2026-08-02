@@ -52,6 +52,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   translation state so the first Translate action applies to the new transcript.
 - **Digital Wellbeing resume.** The break reminder now resumes playback when it
   was the thing that paused an active video, while respecting an already-paused video.
+- **Per-channel speed reset.** Returning a channel to the default 1× rate now
+  removes its saved override, and SPA navigation saves the outgoing rate under
+  the channel that owned the departing video.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

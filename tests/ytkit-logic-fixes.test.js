@@ -308,6 +308,81 @@ test('transcriptViewer resets translation state before rebuilding after navigati
     );
 });
 
+test('perChannelSpeed removes 1x overrides and saves navigation against the outgoing channel', () => {
+    const block = featureBlock('perChannelSpeed', 6000);
+    assert.match(block, /_activeChannelId:\s*null/, 'perChannelSpeed should track the active channel explicitly');
+    assert.match(block, /this\._activeChannelId\s*=\s*channelId;/,
+        'speed application should capture the channel before the page can navigate');
+    assert.match(block, /this\._saveCurrentSpeed\(this\._activeChannelId\);/,
+        'navigation should save using the cached outgoing channel');
+    assert.match(block, /delete speeds\[channelId\];/, 'resetting to 1x should delete the channel override');
+
+    const objectLiteral = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'perChannelSpeed'"
+    );
+    assert.ok(objectLiteral, 'perChannelSpeed object must be extractable');
+
+    const owners = [{ href: 'https://www.youtube.com/@alpha' }];
+    const video = { playbackRate: 2 };
+    const store = { 'ytkit-channel-speeds': { '@alpha': 1.5 } };
+    const writes = [];
+    const navRules = {};
+    const document = {
+        querySelector() { return owners[0]; },
+        addEventListener() {},
+        removeEventListener() {}
+    };
+    const StorageManager = {
+        get(key, fallback) {
+            return Object.prototype.hasOwnProperty.call(store, key) ? { ...store[key] } : fallback;
+        },
+        set(key, value) {
+            store[key] = { ...value };
+            writes.push({ key, value: { ...value } });
+        }
+    };
+    const feature = Function(
+        'PageTypes',
+        'document',
+        'getMainVideoElement',
+        'StorageManager',
+        'DebugManager',
+        'addNavigateRule',
+        'removeNavigateRule',
+        'setTimeout',
+        'clearTimeout',
+        '"use strict"; return (' + objectLiteral + ');'
+    )(
+        { WATCH: 'watch' },
+        document,
+        () => video,
+        StorageManager,
+        { log() {} },
+        (id, callback) => { navRules[id] = callback; },
+        () => {},
+        () => 1,
+        () => {}
+    );
+
+    feature.init();
+    owners[0] = { href: 'https://www.youtube.com/@beta' };
+    navRules.channelSpeed();
+    assert.equal(store['ytkit-channel-speeds']['@alpha'], 2,
+        'navigation must attribute the outgoing rate to the cached alpha channel');
+    assert.equal(store['ytkit-channel-speeds']['@beta'], undefined,
+        'navigation must not attribute the outgoing rate to the incoming channel');
+
+    owners[0] = { href: 'https://www.youtube.com/@alpha' };
+    video.playbackRate = 1;
+    feature._activeChannelId = '@alpha';
+    feature._saveCurrentSpeed();
+    assert.equal(store['ytkit-channel-speeds']['@alpha'], undefined,
+        'returning to 1x must remove the saved channel override');
+    assert.equal(writes.at(-1).value['@alpha'], undefined,
+        'the reset write must persist the deleted override');
+});
+
 // ── item 4: stream links panel must not serve a stale player response ──
 
 test('downloadStreamLinksPanel validates player-response videoId and closes the panel on navigation', () => {
