@@ -5846,10 +5846,13 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
     def test_normalize_output_template_allows_safe_and_rejects_unsafe(self):
         import config as _config
         n = _config.normalize_output_template
-        # valid
-        self.assertEqual(n("%(uploader)s/%(title)s.%(ext)s"), "%(uploader)s/%(title)s.%(ext)s")
-        self.assertEqual(n("%(title)s [%(id)s].%(ext)s"), "%(title)s [%(id)s].%(ext)s")
-        self.assertEqual(n("%(title)s.%(ext)s".replace("/", "\\")), "%(title)s.%(ext)s")
+        # valid (free-text fields come back length-bounded)
+        self.assertEqual(
+            n("%(uploader)s/%(title)s.%(ext)s"),
+            "%(uploader).100B/%(title).100B.%(ext)s",
+        )
+        self.assertEqual(n("%(title)s [%(id)s].%(ext)s"), "%(title).200B [%(id)s].%(ext)s")
+        self.assertEqual(n("%(title)s.%(ext)s".replace("/", "\\")), "%(title).200B.%(ext)s")
         # empty -> ""
         self.assertEqual(n(""), "")
         self.assertEqual(n("   "), "")
@@ -5873,8 +5876,35 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(n("%(title)s.%(ext)"), "", "field without conversion must be rejected")
         # yt-dlp precision/padding conversions stay valid.
         self.assertEqual(n("%(title).200B.%(ext)s"), "%(title).200B.%(ext)s")
-        self.assertEqual(n("%%/%(title)s.%(ext)s"), "%%/%(title)s.%(ext)s",
+        self.assertEqual(n("%%/%(title)s.%(ext)s"), "%%/%(title).200B.%(ext)s",
                          "literal %% is valid printf")
+
+    def test_normalize_output_template_bounds_free_text_expansions(self):
+        # A custom template used to expand %(title)s unbounded, so a 200+
+        # character title under a deep DownloadPath rendered past MAX_PATH and
+        # failed with an opaque file error. Built-in templates bound their
+        # fields; custom ones now get the same treatment.
+        import config as _config
+        n = _config.normalize_output_template
+        # Budget is split across the free-text fields the template uses.
+        self.assertEqual(n("%(title)s.%(ext)s"), "%(title).200B.%(ext)s")
+        self.assertEqual(
+            n("%(channel)s/%(playlist_title)s/%(title)s.%(ext)s"),
+            "%(channel).66B/%(playlist_title).66B/%(title).66B.%(ext)s",
+        )
+        # Short/structured fields are left alone.
+        self.assertEqual(
+            n("%(upload_date)s-%(id)s-%(playlist_index)d.%(ext)s"),
+            "%(upload_date)s-%(id)s-%(playlist_index)d.%(ext)s",
+        )
+        # An over-generous explicit bound is clamped; a tighter one is kept.
+        self.assertEqual(n("%(title).500B.%(ext)s"), "%(title).200B.%(ext)s")
+        self.assertEqual(n("%(title).30s.%(ext)s"), "%(title).30s.%(ext)s")
+        # A literal %% must never be treated as the start of an expansion.
+        self.assertEqual(n("%%(title)s-%(id)s.%(ext)s"), "%%(title)s-%(id)s.%(ext)s")
+        # Re-normalizing a saved template must not shrink it further.
+        once = n("%(uploader)s/%(title)s.%(ext)s")
+        self.assertEqual(n(once), once, "normalization must be idempotent")
 
     def test_save_settings_flags_invalid_output_template(self):
         # A rejected template must surface as a field error, never a silent

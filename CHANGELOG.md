@@ -46,6 +46,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Custom filename templates cannot overrun the maximum path length.** Free-text
+  expansions (`%(title)s`, `%(uploader)s`, `%(channel)s`, playlist titles) are
+  now length-bounded when the template is saved, with the byte budget split
+  across the fields a template actually uses and over-generous explicit bounds
+  clamped. Previously only the built-in templates were bounded, so a long title
+  under a deep download folder failed with an opaque file error.
 - **Companion status accessibility.** Sidebar, dashboard, readiness, setup,
   download-progress, settings, and log surfaces now expose descriptive
   accessible names and retain text alongside every color cue. Audited status
