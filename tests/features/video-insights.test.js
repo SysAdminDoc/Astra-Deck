@@ -162,3 +162,25 @@ test('video insights module is loaded before ytkit and registered in data-flow p
     assert.match(source, /aria-labelledby/);
     assert.match(source, /forced-colors:active/);
 });
+
+test('a degraded InnerTube lookup is not rendered as "not published"', () => {
+    // A rate-limited, blocked, or failed lookup rendered exactly like a video
+    // that never published a category or tags.
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'video-insights', 'index.js'), 'utf8');
+    for (const reason of ['rate-limited', 'retry-wait', 'unavailable', 'failed']) {
+        assert.ok(source.includes(`degraded: '${reason}'`),
+            `the ${reason} path must report why the lookup did not run`);
+    }
+    const renderStart = source.indexOf("const degraded = String(result.degraded");
+    assert.ok(renderStart > -1, 'the panel must read the degraded reason');
+    const render = source.slice(renderStart, renderStart + 1400);
+    assert.match(render, /videoInsightsSourceThrottled/,
+        'a paused lookup must say so in the source line');
+    assert.match(render, /videoInsightsSourceDegraded/,
+        'an unavailable lookup must say so in the source line');
+    assert.match(render, /videoInsightsUnchecked/,
+        'fields must read "not checked" rather than "not provided" after a degraded lookup');
+    assert.match(source, /degraded \? 'degraded' : 'unavailable'/,
+        'the panel tone must distinguish degraded from genuinely empty');
+});

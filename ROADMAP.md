@@ -9,9 +9,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 - [ ] P3 — Companion: cover the cookie-less live-retry path with tests and dedupe its ~140 cloned lines
   Why: the retry path duplicates the watchdog/parse loop with zero test coverage (cookie stripping, watchdog rebinding, failure classification unasserted).
   Where: astra_downloader/download.py:1253-1440
-- [ ] P3 — Video Insights: distinguish degraded fetches from "not published"
-  Why: rate-limited/failed InnerTube fetches render "Not provided" identically to genuinely absent data.
-  Where: extension/features/video-insights/index.js:204-268,347-363
 - [ ] P3 — Microcopy normalization pass: "…" vs "...", em-dash vs spaced hyphen, digest empty-state pointing at the + Group control, disabled Mark-read explanation, dedicated sidepanel keys instead of reused toggle/download keys, and truthful companion maintenance copy (12h start/queue-idle yt-dlp cadence; staged ffmpeg replacement rather than delete-first)
   Where: extension/_locales/en/messages.json, extension/sidepanel.html:50,118,126, features/subscription-groups/index.js:1081,1110-1114, astra_downloader/gui.py (_build_settings)
 
