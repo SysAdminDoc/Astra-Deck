@@ -196,6 +196,72 @@ test('downloadCobaltFallback tracks its navigate-rule timer and gates on _hooked
     assert.match(destroyBlock, /clearTimeout\(this\._navTimer\)/, 'destroy must clear the nav timer');
 });
 
+test('watchTimeTracker rebases an external ledger without dropping pending local seconds', () => {
+    const objectLiteral = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'watchTimeTracker'"
+    );
+    assert.ok(objectLiteral, 'watchTimeTracker object must be extractable');
+
+    const storageKey = 'ytkit-watch-time';
+    const today = new Date();
+    const dayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const store = {
+        [storageKey]: { days: { [dayKey]: 100 }, total: 100, imported: {} }
+    };
+    const writes = [];
+    const clone = (value) => JSON.parse(JSON.stringify(value));
+    const StorageManager = {
+        get(key, fallback) {
+            return Object.prototype.hasOwnProperty.call(store, key) ? clone(store[key]) : fallback;
+        },
+        set(key, value) {
+            store[key] = clone(value);
+            writes.push({ key, value: clone(value) });
+        }
+    };
+    const sanitizeWatchTimeStats = (value) => {
+        const stats = value && typeof value === 'object' ? value : {};
+        return {
+            days: { ...(stats.days || {}) },
+            total: Number(stats.total) || 0,
+            imported: { ...(stats.imported || {}) }
+        };
+    };
+    const tracker = Function(
+        'STORAGE_KEYS',
+        'sanitizeWatchTimeStats',
+        'StorageManager',
+        '"use strict"; return (' + objectLiteral + ');'
+    )({ watchTime: storageKey }, sanitizeWatchTimeStats, StorageManager);
+
+    const stats = tracker._getStats();
+    tracker._lastPersist = Date.now();
+    stats.days[dayKey] += 30;
+    stats.total += 30;
+    tracker._recordPendingDelta(dayKey, 30);
+    tracker._writeStats(stats);
+    assert.equal(tracker._dirty, true, 'the throttled local contribution must remain dirty');
+
+    tracker._invalidateStatsCache({ days: { [dayKey]: 200 }, total: 200, imported: {} });
+    const rebased = tracker._getStats();
+    assert.equal(rebased.days[dayKey], 230,
+        'an external write must be merged below the pending local day delta');
+    assert.equal(rebased.total, 230,
+        'an external write must not discard the pending local total delta');
+    assert.equal(tracker._dirty, true, 'the rebased local delta must still be scheduled for persistence');
+
+    tracker._flushStats();
+    assert.equal(writes.at(-1).value.days[dayKey], 230,
+        'the next flush must persist the rebased total');
+    assert.equal(tracker._pendingDelta.total, 0, 'flushing must retire the merged pending delta');
+    assert.match(
+        ytkitSource,
+        /tracker\._invalidateStatsCache\(\s*filteredChanges\[STORAGE_KEYS\.watchTime\]\.newValue,\s*\{ discardPending: isWatchTimeImport \}/,
+        'the storage bridge must pass the incoming ledger and import distinction to the tracker'
+    );
+});
+
 test('player-control features remove stale controls on navigation and destroy', () => {
     const controls = [
         { id: 'abLoop', nav: "addNavigateRule('abLoop'", ref: '_btn', selector: '.ytkit-ab-btn' },

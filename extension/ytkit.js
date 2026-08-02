@@ -5213,7 +5213,13 @@ return response;
 
         if (filteredChanges[STORAGE_KEYS.watchTime]) {
             const tracker = getFeatureById('watchTimeTracker');
-            if (tracker?._invalidateStatsCache) tracker._invalidateStatsCache();
+            if (tracker?._invalidateStatsCache) {
+                const isWatchTimeImport = typeof source === 'string' && source.startsWith('takeout-');
+                tracker._invalidateStatsCache(
+                    filteredChanges[STORAGE_KEYS.watchTime].newValue,
+                    { discardPending: isWatchTimeImport }
+                );
+            }
         }
     }
 
@@ -22258,19 +22264,47 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _lastPersist: 0,
             _dirty: false,
             _flushHandler: null,
+            // Keep only this tab's unflushed contribution separately from the
+            // shared ledger. Another tab may replace the cached ledger while
+            // this tab is still inside its throttle window.
+            _pendingDelta: { days: {}, total: 0 },
+
+            _emptyPendingDelta() {
+                return { days: {}, total: 0 };
+            },
+
+            _applyPendingDelta(stats) {
+                const pending = this._pendingDelta;
+                if (!pending.total) return stats;
+                const merged = {
+                    ...stats,
+                    days: { ...(stats.days || {}) },
+                    total: (Number(stats.total) || 0) + pending.total
+                };
+                for (const [dayKey, seconds] of Object.entries(pending.days)) {
+                    merged.days[dayKey] = (Number(merged.days[dayKey]) || 0) + seconds;
+                }
+                return merged;
+            },
+
+            _recordPendingDelta(dayKey, seconds) {
+                const value = Number(seconds);
+                if (!dayKey || !Number.isFinite(value) || value <= 0) return;
+                this._pendingDelta.days[dayKey] = (Number(this._pendingDelta.days[dayKey]) || 0) + value;
+                this._pendingDelta.total += value;
+            },
 
             _getStats() {
                 if (this._statsCache) return this._statsCache;
                 const sanitized = sanitizeWatchTimeStats(StorageManager.get(this._storageKey, { days: {}, total: 0 }));
-                this._statsCache = sanitized;
-                return sanitized;
+                this._statsCache = this._applyPendingDelta(sanitized);
+                return this._statsCache;
             },
 
             _writeStats(stats) {
                 // Persist without re-sanitizing the imported ledger on every tick.
                 // The ledger was already sanitized when it was loaded (via _getStats)
-                // and only changes during a Takeout import (which invalidates the
-                // cache via storage change listener).
+                // and only changes during a Takeout import or external rebase.
                 this._statsCache = stats;
                 const now = Date.now();
                 if (this._lastPersist && now - this._lastPersist < this._PERSIST_INTERVAL_MS) {
@@ -22280,6 +22314,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 StorageManager.set(this._storageKey, stats);
                 this._lastPersist = now;
                 this._dirty = false;
+                this._pendingDelta = this._emptyPendingDelta();
                 return stats;
             },
 
@@ -22288,15 +22323,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     StorageManager.set(this._storageKey, this._statsCache);
                     this._lastPersist = Date.now();
                     this._dirty = false;
+                    this._pendingDelta = this._emptyPendingDelta();
                 }
             },
 
-            _invalidateStatsCache() {
-                // External storage change (Takeout import) supersedes any
-                // unpersisted in-memory delta — drop it rather than clobber
-                // the freshly imported ledger with stale cache.
-                this._statsCache = null;
-                this._dirty = false;
+            _invalidateStatsCache(externalStats, { discardPending = false } = {}) {
+                if (discardPending) {
+                    // A user-directed Takeout import/undo is authoritative and
+                    // must replace, rather than merge with, this tab's cache.
+                    this._pendingDelta = this._emptyPendingDelta();
+                    this._statsCache = null;
+                    this._dirty = false;
+                    return;
+                }
+                // A normal storage event came from another tab. Rebase the
+                // shared ledger, then put this tab's unflushed contribution
+                // back on top so the next write cannot erase it.
+                const sanitized = sanitizeWatchTimeStats(externalStats || { days: {}, total: 0 });
+                this._statsCache = this._applyPendingDelta(sanitized);
+                this._dirty = this._pendingDelta.total > 0;
             },
 
             _todayKey() {
@@ -22321,6 +22366,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!stats.days[key]) stats.days[key] = 0;
                     stats.days[key] += elapsed;
                     stats.total = (stats.total || 0) + elapsed;
+                    this._recordPendingDelta(key, elapsed);
                     this._writeStats(stats);
                 }
                 this._lastTick = now;

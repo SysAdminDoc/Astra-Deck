@@ -23,6 +23,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Player-control SPA teardown.** A-B Loop, fine speed, PiP, loop, subtitle,
   visual-filter, and chapter controls now remove stale DOM elements during
   navigation and sweep orphaned controls during teardown.
+- **Watch-time multi-tab merging.** Watch Time Tracker now keeps this tab's
+  unflushed seconds as a delta and rebases them over external ledger updates;
+  Takeout import and undo remain authoritative replacements.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
