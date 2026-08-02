@@ -3800,9 +3800,6 @@
   "statusBackupImported": {
     "message": "백업이 가져와졌습니다."
   },
-  "statusBackupImportedNoUndo": {
-    "message": "Backup imported. Undo is unavailable on this browser."
-  },
   "statusBackupImportedNoTranscript": {
     "message": "확장 프로그램 데이터를 가져왔으며 실행 취소할 수 있습니다. 응답하는 YouTube 탭이 없어 대본 색인은 변경하지 않았습니다."
   },
@@ -3862,9 +3859,6 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "빠른 컨트롤을 로드할 수 없습니다. 팝업을 다시 열어보세요."
-  },
-  "statusResetDoneNoUndo": {
-    "message": "이동식 데이터가 삭제되었습니다. 저장된 AI 자격 증명은 유지되었습니다. 이 브라우저에서는 실행 취소를 사용할 수 없습니다."
   },
   "statusResetDoneNoTranscript": {
     "message": "확장 프로그램 데이터를 지웠으며 실행 취소할 수 있습니다. 응답하는 YouTube 탭이 없어 대본 데이터는 변경하지 않았습니다. 저장된 AI 자격 증명은 유지했습니다."

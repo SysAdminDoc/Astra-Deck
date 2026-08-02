@@ -3800,9 +3800,6 @@
   "statusBackupImported": {
     "message": "Sauvegarde importée."
   },
-  "statusBackupImportedNoUndo": {
-    "message": "Backup imported. Undo is unavailable on this browser."
-  },
   "statusBackupImportedNoTranscript": {
     "message": "Données de l’extension importées avec possibilité d’annulation. L’index des transcriptions est resté inchangé, car aucun onglet YouTube réactif n’était disponible."
   },
@@ -3862,9 +3859,6 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Impossible de charger les commandes rapides. Essayez de rouvrir la fenêtre contextuelle."
-  },
-  "statusResetDoneNoUndo": {
-    "message": "Données portables effacées ; les identifiants IA stockés ont été conservés. Annuler n'est pas disponible dans ce navigateur."
   },
   "statusResetDoneNoTranscript": {
     "message": "Données de l’extension effacées avec possibilité d’annulation. Les transcriptions sont restées inchangées, car aucun onglet YouTube réactif n’était disponible. Les identifiants d’IA enregistrés ont été conservés."

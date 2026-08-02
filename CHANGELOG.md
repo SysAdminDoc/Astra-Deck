@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Undo status copy.** Removed unreachable no-undo branches and their
+  obsolete locale catalog entries; recoverable import/reset flows now expose
+  only the statuses they can actually reach.
 - **Build-tool cleanup.** Removed unused shell and companion-validator bindings
   from the local release tooling.
 - **Userscript version integrity.** Release checks now validate the visible

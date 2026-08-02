@@ -3800,9 +3800,6 @@
   "statusBackupImported": {
     "message": "Backup importato."
   },
-  "statusBackupImportedNoUndo": {
-    "message": "Backup imported. Undo is unavailable on this browser."
-  },
   "statusBackupImportedNoTranscript": {
     "message": "Dati dell’estensione importati con Annulla disponibile. L’indice delle trascrizioni è rimasto invariato perché non era disponibile alcuna scheda YouTube reattiva."
   },
@@ -3862,9 +3859,6 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Impossibile caricare i controlli rapidi. Prova a riaprire il popup."
-  },
-  "statusResetDoneNoUndo": {
-    "message": "Dati portabili cancellati; le credenziali IA memorizzate sono state conservate. Annulla non è disponibile in questo browser."
   },
   "statusResetDoneNoTranscript": {
     "message": "Dati dell’estensione cancellati con Annulla disponibile. Le trascrizioni sono rimaste invariate perché non era disponibile alcuna scheda YouTube reattiva. Le credenziali IA memorizzate sono state conservate."

@@ -192,12 +192,27 @@ test('popup import stages a session undo snapshot before applying backup data', 
         'undoImportAria',
         'undoImportBtn',
         'statusBackupImportedUndo',
-        'statusBackupImportedNoUndo',
         'statusImportSnapshotFail',
         'statusImportUndoExpired',
         'statusImportUndoFail',
     ]) {
         assert.ok(enMessages[key]?.message, `EN locale must declare ${key}`);
+    }
+});
+
+test('import and reset keep only reachable undo status copy', () => {
+    assert.doesNotMatch(popupSource, /undoAvailable/,
+        'import and reset must not carry a hardcoded undo availability branch');
+    const removedKeys = new Set(['statusBackupImportedNoUndo', 'statusResetDoneNoUndo']);
+    const localeRoot = path.join(__dirname, '..', 'extension', '_locales');
+    for (const locale of fs.readdirSync(localeRoot)) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localeRoot, locale, 'messages.json'), 'utf8'
+        ));
+        for (const key of removedKeys) {
+            assert.equal(messages[key], undefined,
+                `${locale} must not retain unreachable ${key}`);
+        }
     }
 });
 

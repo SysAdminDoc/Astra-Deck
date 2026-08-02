@@ -3800,9 +3800,6 @@
   "statusBackupImported": {
     "message": "Backup imported."
   },
-  "statusBackupImportedNoUndo": {
-    "message": "Backup imported. Undo is unavailable on this browser."
-  },
   "statusBackupImportedNoTranscript": {
     "message": "Extension data imported with Undo available. The transcript index was left unchanged because no responsive YouTube tab was available."
   },
@@ -3862,9 +3859,6 @@
   },
   "statusQuickCtrlLoadFail": {
     "message": "Quick controls could not be loaded. Try reopening the popup."
-  },
-  "statusResetDoneNoUndo": {
-    "message": "Portable data cleared; stored AI credentials were retained. Undo is unavailable on this browser."
   },
   "statusResetDoneNoTranscript": {
     "message": "Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained."
