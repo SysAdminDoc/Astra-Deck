@@ -1327,6 +1327,59 @@ class DownloadManagerTests(unittest.TestCase):
         self.assertEqual(manager.capacity()['total'], ad.MAX_QUEUED_TOTAL)
 
 
+class PoTokenProviderNudgeTests(unittest.TestCase):
+    """No token-free client covers the whole catalogue, so a failure that a
+    provider would fix has to say so."""
+
+    def _classify(self, text):
+        return ad.classify_download_failure(text, [text])
+
+    def test_age_gate_and_unplayable_statuses_classify_as_sign_in_required(self):
+        # The token-exempt chain surfaces the age gate as a bare playability
+        # status rather than prose, and that used to classify as nothing.
+        for text in (
+            'ERROR: [youtube] abc: Video unavailable. Status: LOGIN_REQUIRED',
+            'ERROR: [youtube] abc: This video is age-restricted',
+            'ERROR: [youtube] abc: Playability status UNPLAYABLE',
+            'ERROR: [youtube] abc: This video is available to members only',
+        ):
+            self.assertEqual(self._classify(text), 'sign-in-required', text)
+
+    def test_advice_names_the_provider_only_when_none_is_running(self):
+        nudge = ad.po_provider_nudge_advice
+        for code in sorted(ad.PO_PROVIDER_NUDGE_CODES):
+            with_provider = nudge('Base advice.', code, True)
+            without = nudge('Base advice.', code, False)
+            self.assertEqual(with_provider, 'Base advice.', code)
+            self.assertIn('bgutil-ytdlp-pot-provider', without, code)
+        # Unrelated failures are left alone even with no provider running.
+        self.assertEqual(nudge('Base advice.', 'ffmpeg-missing-or-stale', False), 'Base advice.')
+        # The nudge is not appended twice on a re-classification.
+        once = nudge('Base advice.', 'sign-in-required', False)
+        self.assertEqual(nudge(once, 'sign-in-required', False), once)
+
+    def test_failure_classification_attaches_the_nudge_to_the_download(self):
+        dl = ad.Download('dl_nudge', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+        ad.apply_download_failure_classification(
+            dl, 'sign-in-required', provider_running=False,
+        )
+        self.assertIn('bgutil-ytdlp-pot-provider', dl.error_advice)
+
+        running = ad.Download('dl_ok', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+        ad.apply_download_failure_classification(
+            running, 'sign-in-required', provider_running=True,
+        )
+        self.assertNotIn('No PO-token provider is running', running.error_advice)
+
+    def test_download_path_reports_the_live_provider_state(self):
+        source = inspect.getsource(ad.DownloadManagerCore._run_download)
+        self.assertIn("po_provider = self._dependencies['probe_po_token_provider']()", source)
+        self.assertEqual(
+            source.count('provider_running=bool(po_provider)'), 4,
+            'every failure classification in the download path must report provider state',
+        )
+
+
 class DownloadFailureClassifierTests(unittest.TestCase):
     def test_classifies_recoverable_youtube_failures(self):
         cases = [

@@ -49,13 +49,6 @@ Source evidence and rejected alternatives: RESEARCH.md (2026-07-21). Validates t
 
 ### P3 — Degradation UX
 
-- [ ] P3 — Nudge to install a PO-token provider when an exempt-chain download degrades or fails
-  Why: no token-free client covers the full catalog at full quality — `tv` fails `LOGIN_REQUIRED` on age-gated/members content, `android_vr` fails kids/age-gated, `web_embedded` only covers embeddable videos; when a download on the exempt chain fails or falls back to a low format, the user has no guidance that a PO-token provider would fix it. The dashboard "PO provider: Fallback" row is passive.
-  Evidence: RESEARCH.md 2026-07-21 §Security/Reliability (inherent coverage gap); yt-dlp issues #15583, #15780; `astra_downloader/download.py` failure-classification path (`classify_download_failure`, `error_advice`).
-  Touches: `astra_downloader/download.py` (map LOGIN_REQUIRED/UNPLAYABLE/format-degraded outcomes to advice), companion download-card `error_advice` surface, popup health banner.
-  Acceptance: when a YouTube download fails with a sign-in/age-gate/UNPLAYABLE class or completes with only a 360p muxed format while no provider is running, the error/advice line explicitly suggests installing a PO-token provider; unchanged when a provider is live.
-  Complexity: M
-
 ## Research-Driven Additions — 2026-07-27 (Astra Downloader companion deep research)
 Source evidence and rejected alternatives: RESEARCH.md (2026-07-27, companion-scoped). No P0 — the companion is well-hardened; these are reliability/capability/UX gaps. Does not duplicate the companion items already in `Roadmap_Blocked.md` (bgutil auto-provision, playlist bounding, /health token echo, unauth /health log leak, license route, release assets, Chrome-LNA validation, cookie-domain tightening, native-host handshake).
 
