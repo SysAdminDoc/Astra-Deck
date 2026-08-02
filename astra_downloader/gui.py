@@ -1822,8 +1822,15 @@ class MainWindowCore(QMainWindow):
         )
         language_row.addWidget(self.cfg_language)
         beh_l.addLayout(language_row)
-        self.cfg_autoupdate = QCheckBox(tr("Update yt-dlp on server start"))
+        self.cfg_autoupdate = QCheckBox(tr("Keep yt-dlp up to date automatically"))
         self.cfg_autoupdate.setChecked(self.config.get("AutoUpdateYtDlp", True))
+        # The real cadence: throttled to once per 12 hours, checked when the
+        # server starts and again whenever the download queue goes idle (the
+        # race-free moment to swap the binary).
+        self.cfg_autoupdate.setToolTip(tr(
+            "Checks at most once every 12 hours - when the server starts and "
+            "when the download queue goes idle."
+        ))
         self.cfg_closetotray = QCheckBox(tr("Close to the system tray"))
         self.cfg_closetotray.setChecked(self.config.get("CloseToTray", True))
         self.cfg_startmin = QCheckBox(tr("Start minimized to the tray"))
@@ -1864,7 +1871,12 @@ class MainWindowCore(QMainWindow):
         btn_reinstall_ffmpeg = self._make_tool_button(
             "Reinstall ffmpeg", "danger",
         )
-        btn_reinstall_ffmpeg.setToolTip("Delete the installed ffmpeg and re-download from source with checksum verification.")
+        # _reinstall_ffmpeg stages and verifies a fresh copy first; nothing is
+        # deleted unless the replacement verifies.
+        btn_reinstall_ffmpeg.setToolTip(
+            "Download a fresh ffmpeg and verify its checksum. The installed copy "
+            "stays in place until the replacement verifies."
+        )
         btn_reinstall_ffmpeg.clicked.connect(self._reinstall_ffmpeg)
         tools_row.addWidget(btn_reinstall_ffmpeg)
         tools_row.addStretch()

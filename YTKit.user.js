@@ -19453,7 +19453,16 @@
                         markRead.type = 'button';
                         markRead.textContent = t('subscriptionDigestMarkAllRead', 'Mark all read');
                         markRead.disabled = newVideos.length === 0;
-                        markRead.setAttribute('aria-label', t('subscriptionDigestMarkAllReadAria', 'Mark every rendered channel as read'));
+                        // A disabled control with no explanation reads as broken.
+                        markRead.title = markRead.disabled
+                            ? t('subscriptionDigestMarkAllReadEmpty', 'Nothing new since your last visit')
+                            : '';
+                        markRead.setAttribute(
+                            'aria-label',
+                            markRead.disabled
+                                ? t('subscriptionDigestMarkAllReadEmpty', 'Nothing new since your last visit')
+                                : t('subscriptionDigestMarkAllReadAria', 'Mark every rendered channel as read')
+                        );
                         markRead.addEventListener('click', () => {
                             this._markGroupDigestRead('');
                             this._renderHealthPanel();
@@ -21616,7 +21625,7 @@
             const searchInput = document.createElement('input');
             searchInput.type = 'search';
             searchInput.className = 'ytkit-search-input';
-            searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls...');
+            searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings, pages, controls…');
             searchInput.id = 'ytkit-search';
             searchInput.name = 'settingsSearch';
             searchInput.autocomplete = 'off';

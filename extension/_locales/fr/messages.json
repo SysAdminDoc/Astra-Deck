@@ -5305,5 +5305,17 @@
   },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "spOverviewEnabledLabel": {
+    "message": "Activé"
+  },
+  "spSettingsClearBtn": {
+    "message": "Effacer"
+  },
+  "spRefreshStatusReady": {
+    "message": "Prêt"
+  },
+  "subscriptionDigestMarkAllReadEmpty": {
+    "message": "Nothing new since your last visit"
   }
 }

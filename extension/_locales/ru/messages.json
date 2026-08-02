@@ -5305,5 +5305,17 @@
   },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "spOverviewEnabledLabel": {
+    "message": "Включено"
+  },
+  "spSettingsClearBtn": {
+    "message": "Очистить"
+  },
+  "spRefreshStatusReady": {
+    "message": "Готово"
+  },
+  "subscriptionDigestMarkAllReadEmpty": {
+    "message": "Nothing new since your last visit"
   }
 }

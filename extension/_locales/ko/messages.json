@@ -5305,5 +5305,17 @@
   },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "spOverviewEnabledLabel": {
+    "message": "활성화됨"
+  },
+  "spSettingsClearBtn": {
+    "message": "지우기"
+  },
+  "spRefreshStatusReady": {
+    "message": "준비"
+  },
+  "subscriptionDigestMarkAllReadEmpty": {
+    "message": "Nothing new since your last visit"
   }
 }
