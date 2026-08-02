@@ -679,13 +679,15 @@ def query_history_entries(entries, *, query="", status="", fmt="",
 class ConfigStore:
     """Transactional config persistence with explicit filesystem dependencies."""
 
-    def __init__(self, *, install_dir, path, sanitizer, loader, writer, logger):
+    def __init__(self, *, install_dir, path, sanitizer, loader, writer, logger,
+                 read_only=False):
         self._install_dir = install_dir
         self._path = path
         self._sanitizer = sanitizer
         self._loader = loader
         self._writer = writer
         self._logger = logger
+        self._read_only = bool(read_only)
         self._lock = threading.RLock()
         # Session-only overrides (e.g. a fallback ServerPort after a bind
         # conflict): visible through get()/data so the running process uses
@@ -694,7 +696,8 @@ class ConfigStore:
         self._resolve(self._install_dir).mkdir(parents=True, exist_ok=True)
         self._data = self._sanitizer(self._loader(self._resolve(self._path), {}))
         self._persisted_data = dict(self._data)
-        self.save()
+        if not self._read_only:
+            self.save()
 
     @staticmethod
     def _resolve(value):
@@ -722,6 +725,8 @@ class ConfigStore:
 
     def update(self, mapping):
         with self._lock:
+            if self._read_only:
+                return False
             candidate = dict(self._data)
             candidate.update(mapping)
             saved = self._save_candidate_unlocked(candidate)
@@ -734,6 +739,8 @@ class ConfigStore:
 
     def save(self):
         with self._lock:
+            if self._read_only:
+                return False
             return self._save_candidate_unlocked(self._data)
 
     def _save_candidate_unlocked(self, candidate):

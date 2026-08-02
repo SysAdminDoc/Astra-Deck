@@ -31,6 +31,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   defaults instead of raising TypeError.
 - **Cookie-less retry cancellation.** Cancelling during the live-stream retry
   spawn window now terminates the newly spawned yt-dlp process immediately.
+- **Native-host config ownership.** Browser bootstrap now reads configuration
+  without rewriting `config.json`, preventing native-host launches from
+  racing GUI settings saves or rotating the active token.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

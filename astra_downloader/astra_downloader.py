@@ -2655,7 +2655,7 @@ QToolTip { background: #11161d; color: #f0eeeb; border: 1px solid #343e4a; paddi
 # CONFIG
 # ══════════════════════════════════════════════════════════════
 class Config(ConfigStore):
-    def __init__(self):
+    def __init__(self, read_only=False):
         super().__init__(
             install_dir=lambda: INSTALL_DIR,
             path=lambda: CONFIG_PATH,
@@ -2663,6 +2663,7 @@ class Config(ConfigStore):
             loader=load_json_file,
             writer=lambda path, data: atomic_write_json(path, data),
             logger=lambda message: write_persistent_log(message),
+            read_only=read_only,
         )
 
 # ══════════════════════════════════════════════════════════════
@@ -3258,7 +3259,7 @@ def main():
     # and exit — before any GUI / single-instance / Flask logic.
     if argv_requests_native_host(sys.argv[1:]):
         try:
-            run_native_messaging_host(Config().get("ServerToken"))
+            run_native_messaging_host(Config(read_only=True).get("ServerToken"))
         except Exception as exc:  # noqa: BLE001 - host must never crash loudly
             write_persistent_log("native messaging host error: %s" % exc)
         return

@@ -173,6 +173,28 @@ class PersistenceTests(unittest.TestCase):
             self.assertEqual(errors, ["Config save failed: disk full"])
             self.assertEqual(Path(config_module.__file__).name, "config.py")
 
+    def test_read_only_config_store_never_writes_on_init_or_explicit_save(self):
+        import importlib
+
+        config_module = importlib.import_module("config")
+        writes = []
+        with tempfile.TemporaryDirectory() as tmp:
+            store = config_module.ConfigStore(
+                install_dir=Path(tmp),
+                path=Path(tmp) / "cfg.json",
+                sanitizer=lambda data: dict(data),
+                loader=lambda _path, _default: {"value": 1},
+                writer=lambda _path, data: writes.append(dict(data)),
+                logger=self.fail,
+                read_only=True,
+            )
+            self.assertEqual(store.get("value"), 1)
+            store.set("value", 2)
+            self.assertFalse(store.save())
+            self.assertFalse(store.update({"value": 3}))
+
+        self.assertEqual(writes, [])
+
     def test_session_override_is_never_persisted_by_later_saves(self):
         # Session-only port fallback regression: a bind conflict overrides
         # ServerPort for the running process, but ANY later full-config save
@@ -7128,6 +7150,33 @@ class NativeMessagingBootstrapTests(unittest.TestCase):
             run_host.assert_called_once_with("tok")
             application.assert_not_called()
             single_instance.assert_not_called()
+
+    def test_main_native_host_reads_config_without_rewriting_it(self):
+        token = "t" * 32
+        with tempfile.TemporaryDirectory() as tmp:
+            install_dir = Path(tmp) / "AstraDownloader"
+            install_dir.mkdir()
+            config_path = install_dir / "config.json"
+            original_bytes = json.dumps(
+                {"ServerToken": token}, separators=(",", ":")
+            ).encode("utf-8")
+            config_path.write_bytes(original_bytes)
+            before = config_path.stat()
+
+            with mock.patch.object(ad, "INSTALL_DIR", install_dir), \
+                 mock.patch.object(ad, "CONFIG_PATH", config_path), \
+                 mock.patch.object(ad.sys, "argv", [
+                     "AstraDownloader.exe", "chrome-extension://abc/",
+                 ]), \
+                 mock.patch.object(ad, "run_native_messaging_host") as run_host:
+                ad.main()
+
+            after = config_path.stat()
+            after_bytes = config_path.read_bytes()
+
+        run_host.assert_called_once_with(token)
+        self.assertEqual(after_bytes, original_bytes)
+        self.assertEqual(after.st_mtime_ns, before.st_mtime_ns)
 
     def test_parse_native_extension_ids_dedupes_comma_semicolon_and_lines(self):
         self.assertEqual(
