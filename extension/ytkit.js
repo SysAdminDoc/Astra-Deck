@@ -328,6 +328,11 @@
     }
 
     function extensionRequest(details) {
+        if (details?.signal?.aborted) {
+            // i18n-static: transport error identifier, not user-facing copy
+            details.onerror?.({ error: 'Operation cancelled', name: 'AbortError' });
+            return;
+        }
         if (!hasExtensionContext()) {
             details.onerror?.({ error: 'Extension context invalidated. Reload the page.' });
             return;
@@ -395,23 +400,52 @@
         });
     }
 
+    function _createRequestAbortError(signal) {
+        if (signal?.reason?.name === 'AbortError') return signal.reason;
+        const error = new Error(signal?.reason?.message || 'Operation cancelled');
+        error.name = 'AbortError';
+        return error;
+    }
+
+    function _throwIfRequestAborted(signal) {
+        if (signal?.aborted) throw _createRequestAbortError(signal);
+    }
+
     function extensionRequestAsync(details) {
+        const signal = details?.signal;
+        _throwIfRequestAborted(signal);
         return new Promise((resolve, reject) => {
-            extensionRequest({
-                ...details,
-                onload: resolve,
-                onerror: (detail) => {
-                    const error = new Error(detail?.error || 'Extension request failed');
-                    error.detail = detail;
-                    reject(error);
-                },
-                ontimeout: (detail) => {
-                    const error = new Error('Extension request timed out');
-                    error.detail = detail;
-                    error.isTimeout = true;
-                    reject(error);
-                }
-            });
+            let settled = false;
+            const cleanup = () => signal?.removeEventListener?.('abort', onAbort);
+            const finish = (handler, value) => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                handler(value);
+            };
+            const onAbort = () => finish(reject, _createRequestAbortError(signal));
+            signal?.addEventListener?.('abort', onAbort, { once: true });
+
+            try {
+                extensionRequest({
+                    ...details,
+                    onload: (value) => finish(resolve, value),
+                    onerror: (detail) => {
+                        const error = new Error(detail?.error || 'Extension request failed');
+                        error.name = detail?.name || 'Error';
+                        error.detail = detail;
+                        finish(reject, error);
+                    },
+                    ontimeout: (detail) => {
+                        const error = new Error('Extension request timed out');
+                        error.detail = detail;
+                        error.isTimeout = true;
+                        finish(reject, error);
+                    }
+                });
+            } catch (error) {
+                finish(reject, error);
+            }
         });
     }
 
@@ -447,11 +481,35 @@
         }
         return null;
     }
+
+    function _waitForRequestRetry(delay, signal) {
+        _throwIfRequestAborted(signal);
+        return new Promise((resolve, reject) => {
+            let timer = setTimeout(() => {
+                timer = null;
+                cleanup();
+                resolve();
+            }, delay);
+            const cleanup = () => signal?.removeEventListener?.('abort', onAbort);
+            const onAbort = () => {
+                if (timer !== null) clearTimeout(timer);
+                timer = null;
+                cleanup();
+                reject(_createRequestAbortError(signal));
+            };
+            signal?.addEventListener?.('abort', onAbort, { once: true });
+        });
+    }
+
     async function extensionRequestWithRetry(details, { retries = 3, baseDelayMs = 1000 } = {}) {
+        const signal = details?.signal;
+        _throwIfRequestAborted(signal);
         let lastErr;
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
+                _throwIfRequestAborted(signal);
                 const resp = await extensionRequestAsync(details);
+                _throwIfRequestAborted(signal);
                 const st = resp?.status;
                 // Retry on 5xx / 429. Return on everything else.
                 if (st && (st === 429 || (st >= 500 && st < 600)) && attempt < retries) {
@@ -462,14 +520,15 @@
                     const serverHint = _findRetryAfter(resp?.responseHeaders);
                     const expDelay = baseDelayMs * Math.pow(2, attempt);
                     const delay = serverHint != null ? Math.max(serverHint, expDelay) : expDelay;
-                    await new Promise(r => setTimeout(r, delay));
+                    await _waitForRequestRetry(delay, signal);
                     continue;
                 }
                 return resp;
             } catch (e) {
                 lastErr = e;
+                if (e?.name === 'AbortError') throw e;
                 if (attempt >= retries) break;
-                await new Promise(r => setTimeout(r, baseDelayMs * Math.pow(2, attempt)));
+                await _waitForRequestRetry(baseDelayMs * Math.pow(2, attempt), signal);
             }
         }
         throw lastErr || new Error('Request failed after retries');
