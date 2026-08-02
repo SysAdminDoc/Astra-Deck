@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-28 (verified, unfixed)
 
-- [ ] P3 — Sync remaining monolith fallback copies with module fixes (DeArrow _routeToken/lazy-img guard, SponsorBlock observer self-disarm, RYD _rydGeneration/pagehide flush)
-  Why: the 9a9fe31 module fixes never reached the ytkit.js `|| {…}` fallbacks (only reachable when a module content script fails to load); the RYD cache-clobber guard was ported 2026-07-28, the rest still drift.
-  Where: extension/ytkit.js (ReturnDislike/DeArrow/SponsorBlock fallback objects) vs extension/features/{return-dislike,dearrow,sponsorblock}/index.js
 - [ ] P3 — Fold the two dead companion STYLESHEET layers
   Why: astra_downloader.py carries two superseded stylesheet blocks ("retained historical source rules") before the active reassignment; auditors keep re-deriving which palette is live, and inline-color drift traces back to the dead layers.
   Where: astra_downloader/astra_downloader.py (first two STYLESHEET assignments)

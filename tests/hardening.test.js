@@ -873,7 +873,9 @@ test('sponsorBlock caches segments before network and serves stale cache on fail
 
     const fetchStart = block.indexOf('async _fetchSegments');
     assert.ok(fetchStart > -1, '_fetchSegments must exist');
-    const fetchBody = block.slice(fetchStart, fetchStart + 2800);
+    // Window widened when the fallback copy absorbed the module's
+    // ExternalApiHealth reporting — this slice is length-sensitive.
+    const fetchBody = block.slice(fetchStart, fetchStart + 4400);
     const cacheReadIdx = fetchBody.indexOf('_getCachedSegments(videoId, cats)');
     const networkIdx = fetchBody.indexOf('extensionFetchJson');
     assert.ok(cacheReadIdx > -1 && networkIdx > cacheReadIdx,
@@ -2789,9 +2791,11 @@ test('DeArrow watch-page title replacement announces via aria-live', () => {
     // Only the watch-page primary title gets announced — grid thumbnails
     // would spam the screen reader. Pin both the announcement and the
     // gating condition.
-    const deArrowStart = ytkitSource.indexOf('Show original title on hover if setting enabled');
+    // Anchored on the replacement-node code, not a comment: the fallback is
+    // kept identical to features/dearrow/index.js, whose prose differs.
+    const deArrowStart = ytkitSource.indexOf("clone.className = 'daCustomTitle '");
     assert.ok(deArrowStart > -1, 'DeArrow primary-title block must exist');
-    const block = ytkitSource.slice(deArrowStart, deArrowStart + 1500);
+    const block = ytkitSource.slice(deArrowStart, deArrowStart + 2400);
     assert.match(block, /announceA11y\(/,
         'DeArrow watch-page replacement must announce via announceA11y');
     assert.match(block, /isWatchPagePath\(\)/,
@@ -3660,6 +3664,31 @@ test('returnDislike enforces a 100 req/min budget, cookieless fetch, and LRU-cap
         'must hit the public RYD votes endpoint');
     assert.match(block, /500/,
         'cache must be LRU-capped (500 entries)');
+});
+
+test('returnDislike fallback matches the module on persistence and teardown', () => {
+    // The ytkit.js fallback (used only when the peeled module fails to load)
+    // had drifted: it wrote the cache on every entry, kept no unload flush,
+    // and let a fetch that resolved after destroy() re-inject a pill.
+    const start = ytkitSource.indexOf("id: 'returnDislike'");
+    // init()/destroy() sit past the 12000-char window the older pins use.
+    const block = ytkitSource.slice(start, start + 20000);
+    assert.match(block, /this\._persistTimer = setTimeout\(/,
+        'cache writes must be debounced, not one storage write per video');
+    assert.match(block, /window\.addEventListener\('pagehide', this\._pagehideFlush\)/,
+        'a tab closed inside the debounce window must still flush the cache');
+    assert.match(block, /this\._generation = \(this\._generation \+ 1\) \| 0/,
+        'destroy must invalidate in-flight renders');
+    assert.match(block, /if \(generation !== this\._generation\) return/,
+        'render must bail when the generation moved while awaiting the fetch');
+
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8'
+    );
+    for (const marker of ['_rydGeneration', "addEventListener('pagehide'", '_persistTimer']) {
+        assert.ok(moduleSource.includes(marker),
+            `module copy must keep ${marker} — the fallback mirrors it`);
+    }
 });
 
 test('returnDislike honors returnDislikeCacheHours TTL with a sane minimum', () => {
@@ -10560,8 +10589,9 @@ test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age t
     );
     const renderIdx = ytkitSrc.indexOf('id: \'returnDislike\'');
     assert.ok(renderIdx > -1, 'returnDislike feature must exist');
-    // Slice the whole feature block (up to next "id:" entry).
-    const slice = ytkitSrc.slice(renderIdx, renderIdx + 10000);
+    // Slice the whole feature block (up to next "id:" entry). Window widened
+    // when the fallback gained the module's persist debounce/pagehide flush.
+    const slice = ytkitSrc.slice(renderIdx, renderIdx + 11500);
 
     // The differentiation logic must check the budget window state.
     assert.match(slice, /const rateLimited = this\._budgetWindow\.count >= this\._BUDGET_PER_MIN/,

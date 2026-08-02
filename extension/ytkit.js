@@ -29100,7 +29100,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const cats = this._getEnabledCategories();
                 if (!cats.length) return [];
                 const cached = this._getCachedSegments(videoId, cats);
-                if (cached) return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
+                if (cached) {
+                    ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                        source: 'cache',
+                        cacheState: 'fresh',
+                        endpoint: 'skipSegments',
+                        ts: cached.ts
+                    });
+                    return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
+                }
                 try {
                     // Privacy-preserving hash-prefix lookup: only send the first
                     // 4 chars of the SHA-256 hash so the server never sees the
@@ -29114,7 +29122,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
                         timeout: 8000,
                     });
-                    if (!Array.isArray(data)) return [];
+                    if (!Array.isArray(data)) {
+                        const payloadError = new Error('invalid SponsorBlock skipSegments payload');
+                        const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                        if (stale) {
+                            ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', payloadError, {
+                                errorClass: 'invalid-payload',
+                                endpoint: 'skipSegments',
+                                cacheState: 'stale',
+                                fallbackState: 'stale-cache'
+                            });
+                            return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                        }
+                        ExternalApiHealth?.recordFailure?.('sponsorBlock', payloadError, {
+                            errorClass: 'invalid-payload',
+                            endpoint: 'skipSegments',
+                            cacheState: 'miss'
+                        });
+                        return [];
+                    }
                     // Filter for exact video ID match from hash-prefix results
                     const match = data.find(entry => entry.videoID === videoId);
                     const segments = match && Array.isArray(match.segments)
@@ -29123,13 +29149,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Don't resurrect the destroy()-nulled cache or arm a persist
                     // timer if the feature was torn down while this was in flight.
                     if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
+                    ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                        source: 'network',
+                        cacheState: 'refreshed',
+                        endpoint: 'skipSegments',
+                        itemCount: segments.length
+                    });
                     return segments;
                 } catch (error) {
                     const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
                     if (stale) {
+                        ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', error, {
+                            endpoint: 'skipSegments',
+                            cacheState: 'stale',
+                            fallbackState: 'stale-cache'
+                        });
                         DiagnosticLog?.record?.('sponsorBlock', `stale cache fallback for ${videoId}: ${error?.message || 'fetch failed'}`);
                         return this._markCachedSegments(stale.segments, stale.ts, 'stale');
                     }
+                    ExternalApiHealth?.recordFailure?.('sponsorBlock', error, {
+                        endpoint: 'skipSegments',
+                        cacheState: 'miss'
+                    });
                     DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
                     return [];
                 }
@@ -29152,6 +29193,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._segments.length) {
                     DebugManager.log('SponsorBlock', `Loaded ${this._segments.length} segments for ${videoId}`);
                     this._renderBarSegments();
+                } else {
+                    // No segments for this video: nothing will ever paint, so
+                    // stop the churn-heavy player observer until the next
+                    // navigation re-arms it.
+                    this._disarmBarObserver();
                 }
             },
 
@@ -29230,8 +29276,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 }
                 if (minDelay === Infinity) return; // No upcoming segments
-                // Fire 100ms early for precision, cap at 2s to stay responsive
-                const delay = Math.max(0, Math.min(minDelay - 100, 2000));
+                // Fire 100ms early for precision, cap at 2s to stay responsive.
+                // Add 50-200ms random jitter so skip timing is not frame-exact
+                // — reduces detection fingerprint (SponsorBlock #2290).
+                const jitter = 50 + Math.floor(Math.random() * 150);
+                const delay = Math.max(0, Math.min(minDelay - 100 + jitter, 2000 + jitter));
                 this._skipTimer = setTimeout(() => {
                     this._checkSkip();
                     // If checkSkip didn't skip (edge of segment), reschedule
@@ -29275,9 +29324,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._barSegments = [];
             },
 
+            _checkAntiAdblock() {
+                const warning = document.querySelector(
+                    'ytd-enforcement-message-view-model, '
+                    + 'tp-yt-paper-dialog.ytd-enforcement-message-view-model, '
+                    + '[class*="enforcement-message"], '
+                    + 'ytd-popup-container [class*="adblock"]'
+                );
+                if (warning && DiagnosticLog) {
+                    // record() coerces the message with String(msg); passing an
+                    // object would log the literal "[object Object]" and lose the
+                    // selector detail this diagnostic exists to capture.
+                    const selector = warning.tagName.toLowerCase()
+                        + (warning.className ? '.' + warning.className.split(/\s+/)[0] : '');
+                    DiagnosticLog.record('sb-anti-adblock', `detected: ${selector}`);
+                }
+            },
+
             init() {
                 const self = this;
                 this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
+                this._antiAdblockTimer = setInterval(() => self._checkAntiAdblock(), 30000);
+                this._checkAntiAdblock();
                 // Event-driven skip scheduling: reschedule on play/seek/rate changes
                 this._playHandler = () => self._scheduleNextSkip();
                 this._seekHandler = () => self._scheduleNextSkip();
@@ -29290,6 +29358,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     self._videoId = null;
                     self._segments = [];
                     self._clearBarSegments();
+                    self._armBarObserver();
                     self._clearSchedule();
                     clearTimeout(self._reloadTimer);
                     self._reloadTimer = setTimeout(() => {
@@ -29303,15 +29372,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (this._segments.length) this._renderBarSegments();
                 };
                 document.addEventListener('durationchange', this._durationHandler, true);
-                // Also watch for video duration becoming available (for bar rendering)
+                // Also watch for video duration becoming available (for bar
+                // rendering). The observer disarms itself once the bars are
+                // painted so it stops reacting to #movie_player's constant
+                // playback churn (progress ticks, buffered ranges, caption
+                // windows); the navigate rule re-arms it for the next video.
                 this._barObserver = new MutationObserver(() => {
                     const video = getMainVideoElement();
-                    if (video?.duration && this._segments.length && !this._barSegments.length) {
+                    const barsLive = this._barSegments.length > 0
+                        && this._barSegments[0]?.isConnected !== false;
+                    if (video?.duration && this._segments.length && !barsLive) {
                         this._renderBarSegments();
                     }
+                    if (this._barSegments.length && this._barSegments[0]?.isConnected !== false) {
+                        this._disarmBarObserver();
+                    }
                 });
+                this._armBarObserver();
+            },
+            _armBarObserver() {
+                if (this._barArmed || !this._barObserver) return;
                 const player = getMoviePlayerElement();
-                if (player) this._barObserver.observe(player, { childList: true, subtree: true });
+                if (!player) return;
+                this._barObserver.observe(player, { childList: true, subtree: true });
+                this._barArmed = true;
+            },
+            _disarmBarObserver() {
+                if (!this._barArmed || !this._barObserver) return;
+                this._barObserver.disconnect();
+                this._barArmed = false;
             },
 
             destroy() {
@@ -29319,6 +29408,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // cannot re-render segments onto the progress bar after the
                 // feature has been disabled.
                 this._generation = (this._generation + 1) | 0;
+                clearInterval(this._antiAdblockTimer);
+                this._antiAdblockTimer = null;
                 clearTimeout(this._reloadTimer);
                 this._reloadTimer = null;
                 this._clearSchedule();
@@ -29330,7 +29421,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._pauseHandler) document.removeEventListener('pause', this._pauseHandler, true);
                 if (this._durationHandler) document.removeEventListener('durationchange', this._durationHandler, true);
                 removeNavigateRule(this._navRuleId);
-                this._barObserver?.disconnect();
+                this._disarmBarObserver();
                 this._clearBarSegments();
                 this._styleEl?.remove();
                 this._flushCachePersist();
@@ -29674,6 +29765,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observing: false,
             _navRuleId: 'deArrowNav',
             _generation: 0,
+            _routeToken: 0,
             _processTimer: null,
             _resetTimer: null,
             _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
@@ -29714,7 +29806,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
-                    self._generation++;
+                    self._routeToken++;
                     clearTimeout(self._processTimer);
                     clearTimeout(self._resetTimer);
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
@@ -29745,8 +29837,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
-                // Connect only off watch pages; the navigate rule re-toggles on
-                // every SPA transition so the observer never fires just to bail.
+                // Previously the observer stayed attached to document.body on
+                // every page including watch pages, where it woke on each
+                // player/comment mutation just to bail in the callback. Now the
+                // navigate rule connects it only off watch pages and disconnects
+                // it on entry; the watch-sidebar rail is still covered by
+                // resetAndProcess's one-shot pass.
                 addNavigateRule(this._navRuleId, resetAndProcess);
                 if (!isWatchPagePath()) this._connectObserver();
             },
@@ -29765,6 +29861,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._cache[videoId]) {
                     const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
                     if (ttl > 0 && (Date.now() - (this._cache[videoId]._ts || 0)) < ttl) {
+                        ExternalApiHealth?.recordSuccess?.('deArrow', {
+                            source: 'cache',
+                            cacheState: 'fresh',
+                            endpoint: 'branding',
+                            ts: this._cache[videoId]._ts || Date.now()
+                        });
                         return this._cache[videoId];
                     } else if (ttl === 0) {
                         // TTL=0 means no cache — evict stale entry
@@ -29792,9 +29894,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         timeout: 8000,
                     }));
                 } catch (error) {
-                    // DeArrow uses 404 for a normal negative lookup and still
-                    // returns an empty branding payload. Cache that result so
-                    // fallback mode does not report or refetch ordinary misses.
+                    // DeArrow uses HTTP 404 for a valid video with no submitted
+                    // title or thumbnail. It still returns an empty branding
+                    // object, so this is a normal negative lookup rather than
+                    // a rejected request or service outage.
                     if (Number(error?.response?.status) === 404) {
                         expectedMiss = true;
                         data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
@@ -29809,9 +29912,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         return null;
                     }
                 }
-                // Feature torn down mid-flight — don't resurrect the cleared
-                // cache or arm a persist timer that writes after destroy().
-                if (gen !== this._generation) return data;
+                // Feature was torn down while this request was in flight —
+                // do not resurrect the freshly-cleared cache or arm a persist
+                // timer that would write after destroy().
+                if (gen !== this._generation) return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
                 if (!data || typeof data !== 'object' || Array.isArray(data)) {
                     const payloadError = new Error('invalid DeArrow branding payload');
                     ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
@@ -29819,9 +29923,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         endpoint: 'branding',
                         cacheState: 'miss'
                     });
+                    DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
                     return null;
                 }
                 data._ts = Date.now();
+                // A slow in-flight response must never clobber a fresher entry
+                // written while it was outstanding.
                 const existing = this._cache[videoId];
                 if (existing && existing._ts && existing._ts > data._ts) return existing;
                 this._cache[videoId] = data;
@@ -29875,13 +29982,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _processPage() {
                 const gen = this._generation;
+                const route = this._routeToken;
                 const replaceTitles = appState.settings.daReplaceTitles;
                 const replaceThumbs = appState.settings.daReplaceThumbs;
                 const format = appState.settings.daTitleFormat || 'sentence';
                 const fallback = appState.settings.daFallbackFormat;
                 const renderers = document.querySelectorAll('ytd-rich-item-renderer:not([data-da-processed]), ytd-video-renderer:not([data-da-processed]), ytd-compact-video-renderer:not([data-da-processed]), ytd-grid-video-renderer:not([data-da-processed])');
                 for (const el of renderers) {
-                    if (gen !== this._generation) return;
+                    if (gen !== this._generation || route !== this._routeToken) return;
                     el.dataset.daProcessed = '1';
                     const link = el.querySelector('a#thumbnail[href*="/watch"], a#video-title-link[href*="/watch"], a[href*="/watch"]');
                     if (!link) continue;
@@ -29898,30 +30006,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         continue;
                     }
                     const branding = await this._fetchBranding(videoId);
-                    if (!branding || gen !== this._generation) continue;
+                    if (!branding || gen !== this._generation || route !== this._routeToken) continue;
                     if (replaceTitles) {
                         const titleEl = el.querySelector('#video-title, #video-title-link');
                         if (titleEl) {
                             const submission = branding.titles?.[0];
+                            const casualMode = appState.settings.deArrowCasualMode;
                             if (submission?.title) {
                                 const formatted = this._formatTitle(submission.title, format);
                                 const clone = titleEl.cloneNode(false);
                                 clone.className = 'daCustomTitle ' + titleEl.className;
                                 clone.removeAttribute('id');
                                 clone.textContent = formatted;
-                                // Show original title on hover if setting enabled
-                                clone.title = appState.settings.daShowOriginalHover ? titleEl.textContent.trim() : formatted;
-                                // Store metadata for voting buttons
-                                clone.setAttribute('data-ytkit-dearrow-original', titleEl.textContent.trim());
+                                const originalTitle = titleEl.textContent.trim();
+                                clone.title = appState.settings.daShowOriginalHover ? originalTitle : formatted;
+                                // Consumed by two other features, both of which
+                                // silently did nothing while these attributes
+                                // were only written by the ytkit.js fallback
+                                // copy: deArrowVoting needs the submission UUID
+                                // to find a votable title, and dearrowPeekButton
+                                // renders data-ytkit-orig-title from CSS.
+                                clone.setAttribute('data-ytkit-dearrow-title', '1');
+                                clone.setAttribute('data-ytkit-orig-title', originalTitle);
                                 if (submission.UUID) clone.setAttribute('data-ytkit-dearrow-uuid', submission.UUID);
                                 titleEl.style.display = 'none';
                                 titleEl.dataset.daProcessed = '1';
                                 titleEl.parentNode.insertBefore(clone, titleEl);
-                                // v3.23.0 (NX5): announce ONLY the watch-page
-                                // primary-title replacement so the screen-reader
-                                // user knows the title they're about to hear has
-                                // been overridden. Grid-thumbnail replacements
-                                // are skipped to avoid spam.
                                 try {
                                     if (isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')) {
                                         announceA11y(`Title replaced by DeArrow: ${formatted}`);
@@ -29929,7 +30039,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 } catch (_) {
                                     // reason: a11y announce is best-effort
                                 }
-                            } else if (fallback) {
+                            } else if (fallback && !casualMode) {
                                 const original = titleEl.textContent.trim();
                                 const formatted = this._formatTitle(original, format);
                                 if (formatted !== original) {
@@ -29938,6 +30048,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     clone.removeAttribute('id');
                                     clone.textContent = formatted;
                                     clone.title = formatted;
+                                    clone.setAttribute('data-ytkit-dearrow-title', '1');
+                                    clone.setAttribute('data-ytkit-orig-title', original);
                                     // v4.47.0 EI-NEW4: mark locally-formatted
                                     // fallbacks distinct from real DeArrow
                                     // submissions; the CSS rule at init time
@@ -29955,7 +30067,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const thumb = branding.thumbnails?.[0];
                         if (thumb?.timestamp !== undefined) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
-                            if (img && !img.classList.contains('da-replaced-thumb')) {
+                            if (img && !img.src) {
+                                // Lazy img not hydrated yet — let the next
+                                // pass replace it once the original src
+                                // exists so error/destroy restores work.
+                                delete el.dataset.daProcessed;
+                            } else if (img && !img.classList.contains('da-replaced-thumb')) {
                                 img.dataset.daOrigSrc = img.src;
                                 img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${videoId}&time=${thumb.timestamp}`;
                                 img.classList.add('da-replaced-thumb');
@@ -34826,6 +34943,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _estimateEl: null,
             _navRule: null,
             _renderTimer: null,
+            _persistTimer: null,
+            _pagehideFlush: null,
+            // Bumped by destroy() so a render awaiting a fetch cannot paint a
+            // pill after teardown. The peeled module calls this _rydGeneration.
+            _generation: 0,
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -34876,7 +34998,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     keys.sort((a, b) => (this._cache[a].ts || 0) - (this._cache[b].ts || 0));
                     for (const k of keys.slice(0, keys.length - 500)) delete this._cache[k];
                 }
-                try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+                // Debounced like the module copy: a watch session writes this
+                // cache on every video, and an unthrottled write per entry is
+                // the storage churn the 2s coalesce exists to avoid.
+                clearTimeout(this._persistTimer);
+                this._persistTimer = setTimeout(() => {
+                    this._persistTimer = null;
+                    try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
+                }, 2000);
             },
 
             _allowFetch() {
@@ -34926,12 +35055,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!isWatchPagePath()) return;
                 const videoId = getVideoId?.();
                 if (!videoId) return;
+                const generation = this._generation;
                 const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
                 if (!dislikeButton) return;
                 const data = await this._fetch(videoId);
-                // Bail if the user navigated during the fetch await, so we don't
-                // append the previous video's dislike count onto the current
-                // video's button (matches dearrow/sponsorblock route guards).
+                // Bail if the feature was torn down or the user navigated during
+                // the fetch await, so we don't append the previous video's
+                // dislike count onto the current video's button (matches
+                // dearrow/sponsorblock route guards).
+                if (generation !== this._generation) return;
                 if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
                 this._pillEl?.remove();
                 this._estimateEl?.remove();
@@ -35008,6 +35140,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._ensureStyles();
+                // A tab closed inside the 2s persist window would otherwise
+                // lose every vote count fetched during the visit.
+                this._pagehideFlush = () => {
+                    if (this._persistTimer && this._cache) {
+                        clearTimeout(this._persistTimer);
+                        this._persistTimer = null;
+                        try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* reason: best-effort unload flush */ }
+                    }
+                };
+                window.addEventListener('pagehide', this._pagehideFlush);
                 this._navRule = () => {
                     // Track the pending timer so destroy() can cancel it and a
                     // navigation right before disable can't fire a zombie
@@ -35020,6 +35162,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             destroy() {
+                this._generation = (this._generation + 1) | 0;
+                if (this._pagehideFlush) {
+                    window.removeEventListener('pagehide', this._pagehideFlush);
+                    this._pagehideFlush = null;
+                }
                 removeNavigateRule(this.id);
                 this._navRule = null;
                 clearTimeout(this._renderTimer);
@@ -35031,6 +35178,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
+                if (this._persistTimer) {
+                    clearTimeout(this._persistTimer);
+                    this._persistTimer = null;
+                    if (this._cache) {
+                        try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* reason: final flush on teardown */ }
+                    }
+                }
                 this._cache = null;
                 this._budgetWindow = { start: 0, count: 0 };
             }
