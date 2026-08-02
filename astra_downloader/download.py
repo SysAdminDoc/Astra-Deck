@@ -561,7 +561,8 @@ class Download:
     def __init__(self, dl_id, url, audio_only=False, fmt=None, quality='best',
                  output_dir=None, title=None, referer=None, cookies_file=None,
                  requires_auth=False, created_at=None, queue_order=0, section=None,
-                 playlist_items=None, clock=None):
+                 playlist_items=None, subscription_id=None, archive_key=None,
+                 clock=None):
         self._clock = clock or time.time
         self.id = dl_id
         self.url = url
@@ -573,6 +574,10 @@ class Download:
         self.referer = referer
         self.section = dict(section) if isinstance(section, dict) else None
         self.playlist_items = list(playlist_items) if playlist_items else None
+        # Subscription linkage is metadata only.  Normal downloads leave both
+        # fields empty, so the regular re-download behavior is unchanged.
+        self.subscription_id = subscription_id
+        self.archive_key = archive_key
         self.cookies_file = cookies_file
         self.requires_auth = bool(requires_auth)
         self._cookies = None
@@ -615,6 +620,8 @@ class Download:
             payload["section"] = dict(self.section)
         if self.playlist_items:
             payload["playlistItems"] = list(self.playlist_items)
+        if self.subscription_id:
+            payload["subscriptionId"] = self.subscription_id
         return payload
 
 
@@ -657,6 +664,10 @@ class DownloadQueueStore:
             **({'section': dict(download.section)} if download.section else {}),
             **({'playlistItems': list(download.playlist_items)}
                if download.playlist_items else {}),
+            **({'subscriptionId': download.subscription_id}
+               if download.subscription_id else {}),
+            **({'archiveKey': download.archive_key}
+               if download.archive_key else {}),
             'createdAt': float(download.start_time),
             'order': int(download.queue_order),
         } for download in unfinished]
@@ -834,6 +845,8 @@ class DownloadManagerCore:
             if playlist_error:
                 playlist_items = None
             referer, _ = self._dependencies['normalize_url'](item.get('referer')) if item.get('referer') else (None, None)
+            subscription_id = self._dependencies['clean_text'](item.get('subscriptionId'), '', 120) or None
+            archive_key = self._dependencies['clean_text'](item.get('archiveKey'), '', 430) or None
             dl_id = self._dependencies['clean_text'](item.get('id'), '', 120)
             if not dl_id or dl_id in seen_ids:
                 self._next_id += 1
@@ -861,6 +874,8 @@ class DownloadManagerCore:
                 queue_order=self._next_order,
                 section=section,
                 playlist_items=playlist_items,
+                subscription_id=subscription_id,
+                archive_key=archive_key,
             )
             dl.status = 'needs-auth' if requires_auth else 'paused'
             dl.error = (
@@ -1094,7 +1109,8 @@ class DownloadManagerCore:
 
     def start_download(self, url, audio_only=False, fmt=None, quality=None,
                        output_dir=None, title=None, referer=None, cookies=None,
-                       section=None, playlist_items=None):
+                       section=None, playlist_items=None, subscription_id=None,
+                       archive_key=None):
         url, err = self._dependencies['normalize_url'](url)
         if err:
             return None, err
@@ -1161,6 +1177,8 @@ class DownloadManagerCore:
             return None, err
         title = self._dependencies['clean_text'](title, None, 500) or None
         referer, _ = self._dependencies['normalize_url'](referer) if referer else (None, None)
+        subscription_id = self._dependencies['clean_text'](subscription_id, '', 120) or None
+        archive_key = self._dependencies['clean_text'](archive_key, '', 430) or None
 
         with self._lock:
             # Re-check capacity under the lock. The first check released the
@@ -1180,7 +1198,7 @@ class DownloadManagerCore:
                 recovery_previous = (
                     dl.audio_only, dl.format, dl.quality, dl.output_dir,
                     dl.title, dl.referer, dl.section, dl.playlist_items,
-                    dl.requires_auth, dl.status,
+                    dl.subscription_id, dl.archive_key, dl.requires_auth, dl.status,
                     dl.error, dl.error_code, dl.error_advice, dl.error_action,
                 )
                 dl.audio_only = audio_only
@@ -1191,6 +1209,8 @@ class DownloadManagerCore:
                 dl.referer = referer
                 dl.section = dict(section) if section else None
                 dl.playlist_items = list(playlist_items) if playlist_items else None
+                dl.subscription_id = subscription_id
+                dl.archive_key = archive_key
                 dl.requires_auth = True
                 dl._cookies = list(cookies)
                 dl.status = 'pending'
@@ -1215,6 +1235,8 @@ class DownloadManagerCore:
                     queue_order=self._next_order,
                     section=section,
                     playlist_items=playlist_items,
+                    subscription_id=subscription_id,
+                    archive_key=archive_key,
                 )
                 dl._cookies = list(cookies) if cookies else None
                 self.downloads[dl_id] = dl
@@ -1225,7 +1247,7 @@ class DownloadManagerCore:
                     (
                         dl.audio_only, dl.format, dl.quality, dl.output_dir,
                         dl.title, dl.referer, dl.section, dl.playlist_items,
-                        dl.requires_auth, dl.status,
+                        dl.subscription_id, dl.archive_key, dl.requires_auth, dl.status,
                         dl.error, dl.error_code, dl.error_advice, dl.error_action,
                     ) = recovery_previous
                 dl._cookies = None

@@ -23,6 +23,7 @@ CAPTURE_NAMES = (
     "history-populated",
     "history-cleared-undo",
     "history-restored",
+    "subscriptions-empty",
     "settings-dirty",
     "settings-fallback-port",
     "settings-invalid",
@@ -55,6 +56,10 @@ def main():
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     os.environ.setdefault("QT_SCALE_FACTOR", "2")
     os.environ["ASTRA_DOWNLOADER_NO_BOOTSTRAP"] = "1"
+    try:
+        hold_seconds = max(0.0, min(30.0, float(os.environ.get("ASTRA_COMPANION_RENDER_HOLD_SECONDS", "0"))))
+    except ValueError:
+        hold_seconds = 0.0
 
     with tempfile.TemporaryDirectory(prefix="astra-companion-render-") as temp_dir:
         os.environ["LOCALAPPDATA"] = temp_dir
@@ -100,6 +105,32 @@ def main():
 
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+        class FixtureSubscriptions:
+            def __init__(self):
+                self._records = [{
+                    "id": "sub-fixture",
+                    "url": "https://www.youtube.com/@astra-channel",
+                    "title": "Astra channel",
+                    "intervalMinutes": 60,
+                    "enabled": True,
+                    "nextScanAt": 1_800_000_000,
+                    "lastError": "",
+                }]
+
+            def snapshot(self):
+                return {
+                    "subscriptions": list(self._records),
+                    "archive": {"total": 12, "complete": 10, "queued": 2},
+                    "schedulerRunning": False,
+                    "scanning": [],
+                }
+
+            def start(self):
+                return True
+
+            def stop(self):
+                return None
+
         def make_context():
             config = app_module.Config()
             config.update({
@@ -110,12 +141,13 @@ def main():
             })
             history = app_module.History()
             manager = app_module.DownloadManager(config, history)
-            return config, history, manager
+            subscriptions = FixtureSubscriptions()
+            return config, history, manager, subscriptions
 
         def make_window(*, large_font=False, minimum_size=False):
             app.setFont(QFont("Segoe UI", 12 if large_font else 9))
-            config, history, manager = make_context()
-            window = app_module.MainWindow(config, manager, history)
+            config, history, manager, subscriptions = make_context()
+            window = app_module.MainWindow(config, manager, history, subscriptions=subscriptions)
             window._animate_page = lambda: None
             window.update_timer.stop()
             window.cleanup_timer.stop()
@@ -128,7 +160,7 @@ def main():
             return window, config, history, manager
 
         def select_page(window, page_name):
-            expected_index = ("Dashboard", "Downloads", "History", "Settings").index(page_name)
+            expected_index = ("Dashboard", "Downloads", "History", "Subscriptions", "Settings").index(page_name)
             window._nav_click(page_name)
             for nav_button in window.nav_buttons:
                 nav_button.clearFocus()
@@ -283,7 +315,7 @@ def main():
                 assert_visible_text(window, {"Übersicht"})
                 nav_text = [button.text() for button in window.nav_buttons]
                 if nav_text != [
-                    "Übersicht", "Downloads", "Verlauf", "Einstellungen",
+                    "Übersicht", "Downloads", "Verlauf", "Subscriptions", "Einstellungen",
                 ]:
                     raise RuntimeError(
                         f"German navigation catalogue did not render: {nav_text}"
@@ -440,6 +472,13 @@ def main():
                 )
             capture_window(window, scenario)
 
+        def capture_subscription_state(window):
+            select_page(window, "Subscriptions")
+            assert_visible_text(window, {"Astra channel"})
+            if not any("Every 60 min" in text for text in visible_text(window)):
+                raise RuntimeError("Subscription fixture did not render its scan interval")
+            capture_window(window, scenario)
+
         def capture_settings_state(window, config):
             select_page(window, "Settings")
             expected = ""
@@ -517,6 +556,8 @@ def main():
                     capture_download_state(window, manager)
                 elif scenario.startswith("history-"):
                     capture_history_state(window, history)
+                elif scenario == "subscriptions-empty":
+                    capture_subscription_state(window)
                 elif scenario.startswith("settings-"):
                     capture_settings_state(window, config)
                 else:
@@ -531,9 +572,13 @@ def main():
                 traceback.print_exc()
             finally:
                 if "window" in locals():
-                    window.hide()
-                    retained_windows.append(window)
-                app.quit()
+                    if hold_seconds <= 0:
+                        window.hide()
+                        retained_windows.append(window)
+                if hold_seconds > 0:
+                    QTimer.singleShot(int(hold_seconds * 1000), app.quit)
+                else:
+                    app.quit()
 
         QTimer.singleShot(0, capture_all)
         exit_code = app.exec()

@@ -642,6 +642,56 @@ test('subscriptionGroups factory returns the group management runtime surface', 
     }
 });
 
+test('subscriptionGroups archives active groups through the extension fetch bridge', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/subscription-groups/index.js',
+        'subscriptionGroups'
+    );
+    const requests = [];
+    const toasts = [];
+    const feature = mod.createSubscriptionGroupsFeature({
+        appState: {
+            settings: {
+                subscriptionGroupData: {
+                    coding: {
+                        name: 'Coding',
+                        channelIds: ['UCalpha', 'UCbeta'],
+                    },
+                },
+            },
+        },
+        showToast: (...args) => toasts.push(args),
+        MediaDLManager: {
+            check: async () => ({ ok: true, token: 'companion-token' }),
+            baseUrl: () => 'http://127.0.0.1:9751',
+            _headers: (extra) => ({ ...extra, 'X-MDL-Client': 'MediaDL' }),
+        },
+        extensionFetchJson: async (details) => {
+            requests.push(details);
+            if (requests.length === 2) {
+                const error = new Error('HTTP 409');
+                error.response = { status: 409 };
+                throw error;
+            }
+            return { response: { status: 201 }, data: { ok: true } };
+        },
+    });
+    feature._activeGroupId = 'coding';
+
+    await feature._archiveActiveGroup();
+
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0].method, 'POST');
+    assert.equal(requests[0].url, 'http://127.0.0.1:9751/subscriptions');
+    assert.equal(requests[0].headers['X-Auth-Token'], 'companion-token');
+    assert.deepEqual(JSON.parse(requests[0].data), {
+        url: 'https://www.youtube.com/channel/UCalpha',
+        intervalMinutes: 60,
+    });
+    assert.match(toasts[0][0], /Scheduled 1/);
+    assert.match(toasts[0][0], /already configured 1/);
+});
+
 test('subscriptionGroups module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];

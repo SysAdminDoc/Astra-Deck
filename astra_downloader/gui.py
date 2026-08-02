@@ -842,6 +842,7 @@ class MainWindowCore(QMainWindow):
         self._history_offset = 0
         self._history_page_size = 50
         self._downloads_signature = None
+        self._subscriptions_signature = None
         self._download_widgets = {}
         self._clipboard_last_seen = ""
         self._clipboard_staged_url = ""
@@ -916,7 +917,8 @@ class MainWindowCore(QMainWindow):
 
         # Nav buttons
         self.nav_buttons = []
-        for name in ["Dashboard", "Downloads", "History", "Settings"]:
+        self._page_names = ["Dashboard", "Downloads", "History", "Subscriptions", "Settings"]
+        for name in self._page_names:
             translated_name = tr(name)
             btn = QPushButton(translated_name)
             btn.setProperty("class", "nav")
@@ -959,6 +961,7 @@ class MainWindowCore(QMainWindow):
         self._build_dashboard()
         self._build_downloads()
         self._build_history()
+        self._build_subscriptions()
         self._build_settings()
 
         self._nav_click("Dashboard")
@@ -1563,6 +1566,181 @@ class MainWindowCore(QMainWindow):
         layout.addWidget(scroll, 1)
         self.tabs.addTab(page, "History")
 
+    def _subscription_manager(self):
+        value = self._dependencies.get('subscription_manager')
+        return value() if callable(value) else value
+
+    def _build_subscriptions(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(38, 26, 38, 24)
+        layout.setSpacing(14)
+        layout.addLayout(self._make_page_header(
+            "Subscriptions",
+            "Watch YouTube channels or playlists on a schedule and queue only new uploads.",
+        ))
+
+        add_card, add_layout = self._make_settings_group("New subscription")
+        url_row = QHBoxLayout()
+        self.subscription_url = QLineEdit()
+        self.subscription_url.setAccessibleName("Subscription channel or playlist URL")
+        self.subscription_url.setPlaceholderText("https://www.youtube.com/@channel or playlist URL")
+        url_row.addWidget(self.subscription_url, 1)
+        interval_label = make_label("Every", "fieldHint")
+        url_row.addWidget(interval_label)
+        self.subscription_interval = QSpinBox()
+        self.subscription_interval.setRange(5, 10080)
+        self.subscription_interval.setValue(60)
+        self.subscription_interval.setSuffix(" min")
+        self.subscription_interval.setAccessibleName("Subscription scan interval in minutes")
+        url_row.addWidget(self.subscription_interval)
+        self.btn_add_subscription = self._make_tool_button("Add subscription", "primary")
+        self.btn_add_subscription.clicked.connect(self._add_subscription)
+        url_row.addWidget(self.btn_add_subscription)
+        add_layout.addLayout(url_row)
+        self.subscription_status = make_label("Subscriptions are ready when the local companion is running.", "toolbarMeta", word_wrap=True)
+        add_layout.addWidget(self.subscription_status)
+        layout.addWidget(add_card)
+
+        self.subscription_scroll = QScrollArea()
+        self.subscription_scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.subscription_container = QVBoxLayout(content)
+        self.subscription_container.setContentsMargins(0, 0, 0, 0)
+        self.subscription_container.setSpacing(10)
+        self.subscription_scroll.setWidget(content)
+        layout.addWidget(self.subscription_scroll, 1)
+        self.tabs.addTab(page, "Subscriptions")
+        self._refresh_subscriptions(force=True)
+
+    def _refresh_subscriptions(self, force=False):
+        manager = self._subscription_manager()
+        if manager is None:
+            records = []
+            payload = {}
+        else:
+            try:
+                payload = manager.snapshot()
+                records = payload.get("subscriptions", []) if isinstance(payload, dict) else []
+            except Exception as error:  # noqa: BLE001
+                payload = {}
+                records = []
+                self.subscription_status.setText(f"Could not read subscriptions: {error}")
+        signature = json.dumps(records, sort_keys=True, default=str)
+        if not force and signature == self._subscriptions_signature:
+            return
+        self._subscriptions_signature = signature
+        self._clear_layout(self.subscription_container)
+        if manager is None:
+            self.subscription_container.addWidget(make_empty_state(
+                "Subscriptions unavailable",
+                "Start the Astra Downloader companion to manage scheduled channel scans.",
+            ))
+            self.subscription_container.addStretch()
+            return
+        archive = payload.get("archive", {}) if isinstance(payload, dict) else {}
+        self.subscription_status.setText(
+            f"{len(records)} configured · {archive.get('complete', 0)} archived · "
+            f"{archive.get('queued', 0)} queued"
+        )
+        if not records:
+            self.subscription_container.addWidget(make_empty_state(
+                "No scheduled subscriptions",
+                "Add a YouTube channel or playlist above. New uploads will be queued on its interval.",
+            ))
+            self.subscription_container.addStretch()
+            return
+        for record in records:
+            row = QFrame()
+            row.setProperty("class", "card")
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(16, 12, 16, 12)
+            row_layout.setSpacing(10)
+            enabled = QCheckBox()
+            enabled.setChecked(bool(record.get("enabled", True)))
+            enabled.setAccessibleName(f"Enable subscription {record.get('title') or record.get('url')}")
+            enabled.toggled.connect(
+                lambda checked, sub_id=record.get("id"): self._set_subscription_enabled(sub_id, checked)
+            )
+            row_layout.addWidget(enabled, 0, Qt.AlignmentFlag.AlignTop)
+            copy_layout = QVBoxLayout()
+            copy_layout.setSpacing(3)
+            title = record.get("title") or record.get("url") or "Subscription"
+            copy_layout.addWidget(make_label(title, "cardTitle"))
+            copy_layout.addWidget(make_label(record.get("url", ""), "muted", word_wrap=True))
+            next_scan = record.get("nextScanAt")
+            if next_scan:
+                try:
+                    next_text = time.strftime("%Y-%m-%d %H:%M", time.localtime(float(next_scan)))
+                except (TypeError, ValueError, OverflowError, OSError):
+                    next_text = "pending"
+            else:
+                next_text = "paused"
+            detail = (
+                f"Every {record.get('intervalMinutes', 60)} min · next scan {next_text}"
+            )
+            if record.get("lastError"):
+                detail += f" · {record['lastError']}"
+            copy_layout.addWidget(make_label(detail, "toolbarMeta", word_wrap=True))
+            row_layout.addLayout(copy_layout, 1)
+            scan = self._make_tool_button("Scan now", "ghost")
+            scan.clicked.connect(lambda checked=False, sub_id=record.get("id"): self._scan_subscription(sub_id))
+            row_layout.addWidget(scan, 0, Qt.AlignmentFlag.AlignTop)
+            remove = self._make_tool_button("Remove", "ghost")
+            remove.clicked.connect(lambda checked=False, sub_id=record.get("id"): self._remove_subscription(sub_id))
+            row_layout.addWidget(remove, 0, Qt.AlignmentFlag.AlignTop)
+            self.subscription_container.addWidget(row)
+        self.subscription_container.addStretch()
+
+    def _add_subscription(self):
+        manager = self._subscription_manager()
+        if manager is None:
+            self.subscription_status.setText("Start the local companion before adding a subscription.")
+            return
+        record, error = manager.add_subscription(
+            self.subscription_url.text(),
+            interval_minutes=self.subscription_interval.value(),
+        )
+        if error:
+            self.subscription_status.setText(error)
+            return
+        self.subscription_url.clear()
+        self.subscription_status.setText(
+            f"Added {record.get('title') or record.get('url')}. The first scan is scheduled now."
+        )
+        self._refresh_subscriptions(force=True)
+
+    def _set_subscription_enabled(self, sub_id, enabled):
+        manager = self._subscription_manager()
+        if manager is None:
+            return
+        _record, error = manager.update_subscription(sub_id, enabled=enabled)
+        if error:
+            self.subscription_status.setText(error)
+        self._refresh_subscriptions(force=True)
+
+    def _scan_subscription(self, sub_id):
+        manager = self._subscription_manager()
+        if manager is None:
+            return
+        result, error = manager.request_scan(sub_id)
+        if error:
+            self.subscription_status.setText(error)
+        else:
+            self.subscription_status.setText("Subscription scan queued. New uploads will appear in Downloads.")
+        self._refresh_subscriptions(force=True)
+
+    def _remove_subscription(self, sub_id):
+        manager = self._subscription_manager()
+        if manager is None:
+            return
+        _removed, error = manager.remove_subscription(sub_id)
+        if error:
+            self.subscription_status.setText(error)
+        else:
+            self.subscription_status.setText("Subscription removed. Downloaded files were not deleted.")
+        self._refresh_subscriptions(force=True)
+
     def _build_settings(self):
         page = QWidget()
         scroll = QScrollArea()
@@ -1959,7 +2137,7 @@ class MainWindowCore(QMainWindow):
 
     # ── Navigation ──
     def _nav_click(self, name):
-        idx = ["Dashboard", "Downloads", "History", "Settings"].index(name)
+        idx = self._page_names.index(name)
         self.tabs.setCurrentIndex(idx)
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == idx)
@@ -1968,6 +2146,8 @@ class MainWindowCore(QMainWindow):
         self._animate_page()
         if name == "History":
             self._refresh_history()
+        elif name == "Subscriptions":
+            self._refresh_subscriptions(force=True)
 
     def _animate_page(self):
         widget = self.tabs.currentWidget()
@@ -2085,6 +2265,9 @@ class MainWindowCore(QMainWindow):
         self.server_thread.start()
         self.server_running = True
         self.server_start_time = time.time()
+        subscription_manager = self._subscription_manager()
+        if subscription_manager is not None:
+            subscription_manager.start()
         self._append_log(
             f"Server started on http://127.0.0.1:{port} "
             f"(backend: {self.server_obj.backend})"
@@ -2100,6 +2283,9 @@ class MainWindowCore(QMainWindow):
         self._dependencies['maybe_auto_update_ytdlp'](self.config, self.dl_manager.active_count)
 
     def _stop_server(self):
+        subscription_manager = self._subscription_manager()
+        if subscription_manager is not None:
+            subscription_manager.stop()
         if self.server_obj:
             try:
                 self.server_obj.stop()
@@ -2446,6 +2632,8 @@ class MainWindowCore(QMainWindow):
         # Stats
         self.stat_active.setText(str(self.dl_manager.active_count()))
         self.stat_completed.setText(str(self.dl_manager.total_completed))
+        if self.tabs.currentIndex() == self._page_names.index("Subscriptions"):
+            self._refresh_subscriptions()
         if self.server_start_time:
             elapsed = time.time() - self.server_start_time
             if elapsed >= 3600:
@@ -3309,6 +3497,10 @@ class MainWindowCore(QMainWindow):
             self._stop_instance_command_listener()
             if self.server_running:
                 self._stop_server()
+            else:
+                subscription_manager = self._subscription_manager()
+                if subscription_manager is not None:
+                    subscription_manager.stop()
             self.dl_manager.cancel_all()
             worker = getattr(self, "setup_worker", None)
             if worker is not None and worker.isRunning():
