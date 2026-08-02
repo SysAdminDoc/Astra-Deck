@@ -46,6 +46,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Added
+- **Power-efficient codec mode.** A new Codec Selector option asks this device
+  which codec it decodes both smoothly and power-efficiently, then prefers only
+  that one. When the browser has no answer, rejects the query, or reports every
+  supported codec as equally efficient, it changes nothing — YouTube's own
+  selection stands.
 - **The download dialog can ask what this video actually has.** A "Check
   available" control in the quality row calls the companion's format endpoint
   and strikes out every resolution the video cannot honor — asking for 4K on a

@@ -74,10 +74,3 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-07-29). No P0: Ja
 ### P2 — Accessibility, regression coverage, and retained-data access
 
 ### P3 — Conservative platform capability
-
-- [ ] P3 — Add a power-efficient automatic codec mode with a no-op fallback
-  Why: Astra can force a codec or disable CPU-heavy features, but cannot use the browser's device-specific smooth/power-efficient decoding signal; this is a low-power improvement only when the API can discriminate.
-  Evidence: `extension/ytkit-main.js` (`MediaCapabilities.decodingInfo`/codec bridge), `extension/ytkit.js` (`codecSelector`, `lowPowerMode`); https://developer.mozilla.org/en-US/docs/Web/API/MediaCapabilities/decodingInfo
-  Touches: `extension/ytkit-main.js`, codec settings schema/defaults/locales, low-power profile, codec bridge tests.
-  Acceptance: the new mode probes candidate codec configurations, prefers only a supported smooth and power-efficient result when candidates differ, caches by device/config for the session, and preserves current `auto` behavior when the API is absent, rejects, or reports indistinguishable results.
-  Complexity: M

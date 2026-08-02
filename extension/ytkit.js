@@ -22728,12 +22728,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'codecSelector',
             name: 'Codec Selector',
-            description: 'Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264.',
+            description: 'Choose which video codec to prefer: Auto, Power-efficient (ask this device), H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264.',
             group: 'Video Player',
             icon: 'cpu',
             type: 'select',
             options: {
                 'auto': 'Auto (YouTube decides)',
+                'efficient': 'Power-efficient (ask this device)',
                 'h264': 'Force H.264 (AVC)',
                 'vp9': 'Force VP9',
                 'av1': 'Force AV1'
