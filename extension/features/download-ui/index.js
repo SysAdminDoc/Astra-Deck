@@ -32,6 +32,38 @@
         return seconds <= 86400 ? Math.round(seconds * 1000) / 1000 : null;
     }
 
+    /**
+     * Reduce a companion `POST /formats` payload to what the quality ladder
+     * needs to know.
+     *
+     * A rung can only be honored when a stream exists at or below it (asking
+     * for 480p on a 1080p-only upload silently returns 1080p) and when it does
+     * not sit above everything on offer (asking for 4K on a 720p upload
+     * silently returns 720p). Both cases used to render as a selectable chip.
+     */
+    function summarizeFormatProbe(probe) {
+        const formats = Array.isArray(probe?.formats) ? probe.formats : [];
+        const heights = Array.from(new Set(
+            formats
+                .filter(format => format && format.has_video && Number(format.height) > 0)
+                .map(format => Number(format.height))
+        )).sort((a, b) => b - a);
+        const maxHeight = heights[0] || 0;
+        const minHeight = heights.length ? heights[heights.length - 1] : 0;
+        return {
+            heights,
+            maxHeight,
+            minHeight,
+            formatCount: formats.length,
+            canHonor(value) {
+                if (value === 'best') return true;
+                const rung = Number(value);
+                if (!Number.isFinite(rung) || rung <= 0 || !heights.length) return false;
+                return rung <= maxHeight && heights.some(height => height <= rung);
+            }
+        };
+    }
+
     function normalizeSectionInput(startValue, endValue) {
         const startRaw = String(startValue ?? '').trim();
         const endRaw = String(endValue ?? '').trim();
@@ -1377,6 +1409,7 @@
                 chips.className = 'ytkit-dl-popup__chips';
                 chips.setAttribute('role', 'group');
                 chips.setAttribute('aria-labelledby', lbl.id);
+                row._chips = chips;
                 items.forEach(item => {
                     const chip = document.createElement('button');
                     chip.type = 'button';
@@ -1406,6 +1439,108 @@
             const audioFormatRow = makeChipRow(t('dlPopupFormat', 'Format'), AUDIO_FORMATS, selectedAudioFormat, v => { selectedAudioFormat = v; });
             audioFormatRow.hidden = true;
             const qualityRow = makeChipRow(t('dlPopupQuality', 'Quality'), QUALITY_OPTIONS, selectedQuality, v => { selectedQuality = v; });
+
+            // ── Real-format probe ──
+            // The ladder above is static, so it promised 4K on a 720p upload
+            // and 480p on a video whose lowest stream is 1080p — in both cases
+            // yt-dlp quietly downloads something else. The companion can
+            // enumerate what YouTube actually serves for this video, so the
+            // rungs it cannot honor are disabled instead of lying.
+            const qualityChips = qualityRow._chips;
+            const qualityActions = document.createElement('div');
+            qualityActions.className = 'ytkit-dl-popup__playlist-actions';
+            const probeBtn = document.createElement('button');
+            probeBtn.type = 'button';
+            probeBtn.className = 'ytkit-dl-popup__dir-btn';
+            probeBtn.textContent = t('dlPopupFormatsProbe', 'Check available');
+            qualityActions.appendChild(probeBtn);
+            qualityRow.appendChild(qualityActions);
+            const qualityStatus = document.createElement('div');
+            qualityStatus.className = 'ytkit-dl-popup__playlist-meta';
+            qualityStatus.setAttribute('role', 'status');
+            qualityStatus.setAttribute('aria-live', 'polite');
+            qualityStatus.textContent = t(
+                'dlPopupFormatsHint',
+                'Ask the companion which resolutions this video actually has.'
+            );
+            qualityRow.appendChild(qualityStatus);
+
+            const chipFor = (value) => qualityChips.querySelector(`.ytkit-dl-popup__chip[data-value="${value}"]`);
+            const applyFormatProbe = (probe) => {
+                const summary = summarizeFormatProbe(probe);
+                if (!summary.heights.length) {
+                    qualityStatus.textContent = t(
+                        'dlPopupFormatsNone',
+                        'The companion reported no video streams for this URL.'
+                    );
+                    return;
+                }
+                const { maxHeight, minHeight } = summary;
+                let adjusted = false;
+                QUALITY_OPTIONS.forEach((option) => {
+                    const chip = chipFor(option.value);
+                    if (!chip || option.value === 'best') return;
+                    const honored = summary.canHonor(option.value);
+                    chip.disabled = !honored;
+                    chip.classList.toggle('is-unavailable', !honored);
+                    chip.setAttribute('aria-disabled', String(!honored));
+                    chip.title = honored
+                        ? ''
+                        : t('dlPopupFormatsRungUnavailableTpl', 'Not available — this video tops out at {max}p')
+                            .replace('{max}', String(maxHeight));
+                    if (!honored && selectedQuality === option.value) {
+                        adjusted = true;
+                        selectedQuality = 'best';
+                    }
+                });
+                if (adjusted) {
+                    qualityChips.querySelectorAll('.ytkit-dl-popup__chip').forEach((chip) => {
+                        const isBest = chip.dataset.value === 'best';
+                        chip.classList.toggle('is-active', isBest);
+                        chip.setAttribute('aria-pressed', String(isBest));
+                    });
+                    syncDownloadCta();
+                }
+                const summaryCopy = t(
+                    'dlPopupFormatsSummaryTpl',
+                    '{count} formats · {min}p to {max}p available'
+                )
+                    .replace('{count}', String(summary.formatCount))
+                    .replace('{min}', String(minHeight))
+                    .replace('{max}', String(maxHeight));
+                qualityStatus.textContent = adjusted
+                    ? `${summaryCopy} · ${t('dlPopupFormatsAdjusted', 'switched to Best')}`
+                    : summaryCopy;
+            };
+
+            probeBtn.addEventListener('click', async () => {
+                probeBtn.disabled = true;
+                probeBtn.textContent = t('dlPopupFormatsLoading', 'Checking…');
+                qualityStatus.textContent = t('dlPopupFormatsLoading', 'Checking…');
+                try {
+                    const status = await MediaDLManager.check();
+                    if (!status.ok) throw new Error(t('dlPopupDownloaderOffline', 'Downloader not running'));
+                    const { response, data } = await extensionFetchJson({
+                        method: 'POST',
+                        url: MediaDLManager.baseUrl() + '/formats',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Auth-Token': status.token,
+                        },
+                        data: JSON.stringify({ url: window.location.href }),
+                        timeout: 65000,
+                    });
+                    if (!response || response.status < 200 || response.status >= 300 || !Array.isArray(data?.formats)) {
+                        throw new Error(data?.error || t('dlPopupFormatsUnavailable', 'Format list unavailable.'));
+                    }
+                    applyFormatProbe(data);
+                } catch (error) {
+                    qualityStatus.textContent = error.message || t('dlPopupFormatsUnavailable', 'Format list unavailable.');
+                } finally {
+                    probeBtn.disabled = false;
+                    probeBtn.textContent = t('dlPopupFormatsRecheck', 'Check again');
+                }
+            });
 
             body.appendChild(videoFormatRow);
             body.appendChild(audioFormatRow);
@@ -2657,6 +2792,7 @@
         module.exports = {
             createDownloadUIFeature,
             normalizeDownloadHealthSnapshot,
+            summarizeFormatProbe,
             DOWNLOAD_HEALTH_SCHEMA_VERSION
         };
     }
