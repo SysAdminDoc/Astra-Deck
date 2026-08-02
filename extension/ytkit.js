@@ -23752,6 +23752,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _restoreTimer: null,
             _positions: null,
             _MAX_ENTRIES: 500,
+            // Position sampling stays at 15s, but storage writes are limited
+            // to once per minute and forced on teardown/pagehide.
+            _PERSIST_INTERVAL_MS: 60000,
+            _lastPersist: 0,
+            _dirty: false,
+            _flushHandler: null,
 
             _scheduleRestore(delay = 2000) {
                 if (this._restoreTimer) clearTimeout(this._restoreTimer);
@@ -23782,10 +23788,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _load() {
                 this._positions = this._toPositionMap(await StorageManager.get('ytkit_resume_positions'));
+                this._lastPersist = 0;
+                this._dirty = false;
             },
 
-            async _save() {
-                if (!this._positions) return;
+            async _save(force = false) {
+                if (!this._positions || (!force && !this._dirty)) return;
+                const now = Date.now();
+                if (!force && this._lastPersist && now - this._lastPersist < this._PERSIST_INTERVAL_MS) return;
                 // Prune oldest entries if over limit
                 if (this._positions.size > this._MAX_ENTRIES) {
                     const sorted = [...this._positions.entries()]
@@ -23794,6 +23804,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     toRemove.forEach(([k]) => this._positions.delete(k));
                 }
                 await StorageManager.set('ytkit_resume_positions', Object.fromEntries(this._positions));
+                this._lastPersist = Date.now();
+                this._dirty = false;
             },
 
             _savePosition() {
@@ -23807,11 +23819,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Video finished or just started — remove saved position
                     if (this._positions.has(vid)) {
                         this._positions.delete(vid);
-                        this._save();
+                        this._dirty = true;
+                        void this._save().catch(error => DebugManager.log('Resume', `Save failed: ${error.message}`));
                     }
                     return;
                 }
                 this._positions.set(vid, { time, ts: Date.now() });
+                this._dirty = true;
+                void this._save().catch(error => DebugManager.log('Resume', `Save failed: ${error.message}`));
             },
 
             async _restore() {
@@ -23850,10 +23865,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Note: _savePosition() is intentionally omitted here.
                     // yt-navigate-finish fires after the URL has already changed to the new video,
                     // so _getVideoId() would return the new video's ID — saving position 0 for it
-                    // would delete a legitimate saved position. The 15s interval and destroy()
-                    // already cover periodic and final saves for the video being left.
+                    // would delete a legitimate saved position. The 15s interval,
+                    // pagehide flush, and destroy() cover periodic and final saves
+                    // for the video being left.
                     this._scheduleRestore(2000);
                 });
+                this._flushHandler = () => {
+                    this._savePosition();
+                    void this._save(true).catch(error => DebugManager.log('Resume', `Save failed: ${error.message}`));
+                };
+                window.addEventListener('pagehide', this._flushHandler);
                 // Save position every 15 seconds.
                 // Clear any existing interval so a rapid re-init (e.g. async load
                 // overlap during a disable/enable toggle) cannot stack loops.
@@ -23863,8 +23884,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
+                if (this._flushHandler) {
+                    window.removeEventListener('pagehide', this._flushHandler);
+                    this._flushHandler = null;
+                }
                 this._savePosition();
-                this._save();
+                void this._save(true).catch(error => DebugManager.log('Resume', `Save failed: ${error.message}`));
                 removeNavigateRule('resumePlayback');
                 if (this._saveInterval) { clearInterval(this._saveInterval); this._saveInterval = null; }
             }

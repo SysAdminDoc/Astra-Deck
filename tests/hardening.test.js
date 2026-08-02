@@ -2213,6 +2213,17 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
             `${label} quick-link labels and delete icons must be built with DOM APIs`);
     }
 
+    assert.match(ytkitSource, /this\._positions\.set\(vid, \{ time, ts: Date\.now\(\) \}\);\s*this\._dirty = true;\s*void this\._save\(\)\.catch/,
+        'extension resume playback must persist a newly sampled mid-video position');
+    assert.match(ytkitSource, /await StorageManager\.set\('ytkit_resume_positions', Object\.fromEntries\(this\._positions\)\)/,
+        'extension resume playback must write sampled positions through StorageManager');
+    assert.match(ytkitSource, /this\._flushHandler = \(\) => \{[\s\S]*?void this\._save\(true\)\.catch/,
+        'extension resume playback must force a final pagehide save');
+    assert.match(ytkitSource, /window\.addEventListener\('pagehide', this\._flushHandler\)/,
+        'extension resume playback must flush when the tab is closed');
+    assert.match(ytkitSource, /window\.removeEventListener\('pagehide', this\._flushHandler\)/,
+        'extension resume playback must remove its pagehide handler on destroy');
+
     assert.doesNotMatch(userscriptSource, /const TrustedHTML = \(\(\) => \{/,
         'YTKit.user.js must not ship a userscript-local markup parser helper');
     assert.doesNotMatch(userscriptSource, /TrustedHTML\.setHTML/,
