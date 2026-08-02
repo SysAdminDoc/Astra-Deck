@@ -221,10 +221,24 @@
                 return left;
             }
             function parseAnd() {
-                let left = parseNot();
+                let left = parseCmp();
                 while (peek()?.type === 'op' && peek().value === '&&') {
                     eat('op', '&&');
-                    left = { kind: 'logical', op: '&&', left, right: parseNot() };
+                    left = { kind: 'logical', op: '&&', left, right: parseCmp() };
+                }
+                return left;
+            }
+            // `!` binds tighter than a comparison, exactly as in JavaScript.
+            // Parsing it above the comparison instead made `!ctx.a === true`
+            // mean `!(ctx.a === true)` — silently the opposite of what a
+            // JavaScript-shaped predicate says.
+            function parseCmp() {
+                const left = parseNot();
+                const t = peek();
+                if (t?.type === 'op' && ['===', '!==', '<', '<=', '>', '>='].includes(t.value)) {
+                    eat('op', t.value);
+                    const right = parseNot();
+                    return { kind: 'cmp', op: t.value, left, right };
                 }
                 return left;
             }
@@ -233,17 +247,7 @@
                     eat('op', '!');
                     return { kind: 'unary', op: '!', operand: parseNot() };
                 }
-                return parseCmp();
-            }
-            function parseCmp() {
-                const left = parseValue();
-                const t = peek();
-                if (t?.type === 'op' && ['===', '!==', '<', '<=', '>', '>='].includes(t.value)) {
-                    eat('op', t.value);
-                    const right = parseValue();
-                    return { kind: 'cmp', op: t.value, left, right };
-                }
-                return left;
+                return parseValue();
             }
             function parseValue() {
                 const t = peek();

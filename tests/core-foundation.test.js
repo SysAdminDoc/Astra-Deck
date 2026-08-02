@@ -913,3 +913,27 @@ test('createPredicateSandbox opens the circuit after consecutive evaluator error
     compiled.evaluator.reset();
     assert.equal(compiled.evaluator({ unknown: 'x' }), true);
 });
+
+test('predicate ! binds tighter than a comparison, exactly as in JavaScript', () => {
+    // `!ctx.a === true` used to parse as `!(ctx.a === true)` — the opposite
+    // result for a predicate that deliberately looks like JavaScript.
+    const core = loadFoundation();
+    const sandbox = core.createPredicateSandbox();
+    const cases = [
+        ['!ctx.a === true', { a: false }],
+        ['!ctx.a === true', { a: true }],
+        ['!ctx.a !== true', { a: true }],
+        ['!!ctx.a === true', { a: 1 }],
+        ['!ctx.a && ctx.b > 1', { a: false, b: 2 }],
+        ['!(ctx.a === true)', { a: false }],
+        ['ctx.b > 1 && !ctx.a', { a: false, b: 2 }],
+    ];
+    for (const [source, ctx] of cases) {
+        const compiled = sandbox.compile(source);
+        assert.equal(compiled.ok, true, `${source} must compile`);
+        // The reference is real JavaScript evaluating the same expression.
+        const expected = !!Function('ctx', `return ${source}`)(ctx);
+        assert.equal(compiled.evaluator(ctx), expected,
+            `${source} with ${JSON.stringify(ctx)} must match JavaScript`);
+    }
+});

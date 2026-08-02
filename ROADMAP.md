@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — predicate-sandbox: align ! precedence with JavaScript (or document it)
-  Why: !ctx.a === true parses as !(ctx.a === true), diverging from JS for user-authored predicates that deliberately look like JS.
-  Where: extension/core/predicate-sandbox.js:231-247
 - [ ] P3 — Theming coherence backlog: light-theme cards for subscription digest/health/members/create-group dialog; a corner-stacking registry for bottom-right fixed UI (queue pill vs reaction launcher vs bulk bar vs shorts chip); accent consolidation onto --ytkit-accent-rgb (orange/purple/blue drift); Roboto for inline-in-YouTube surfaces; cap split-mode dropdown and AI-summary z-index below the settings modal; remaining physical margins → logical (subscription-groups chips/badges, return-dislike, queue thumbnail button).
   Where: extension/features/subscription-groups/index.js, extension/ytkit.js (Z table consumers, aisum panel, queue), features/return-dislike/index.js
 - [ ] P3 — Companion: cover the cookie-less live-retry path with tests and dedupe its ~140 cloned lines
