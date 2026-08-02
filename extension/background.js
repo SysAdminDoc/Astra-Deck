@@ -761,10 +761,14 @@ function sanitizeDownloadFilename(filename) {
     sanitized = baseName + extension;
 
     if (sanitized.length > MAX_DOWNLOAD_FILENAME_LENGTH) {
-        const maxBaseLength = Math.max(1, MAX_DOWNLOAD_FILENAME_LENGTH - extension.length);
+        const maxBaseLength = Math.max(0, MAX_DOWNLOAD_FILENAME_LENGTH - extension.length);
         sanitized = sanitized.slice(0, maxBaseLength) + extension;
-        sanitized = sanitized.replace(/[. ]+$/g, '');
     }
+
+    // A hostile or malformed trailing segment can itself exceed the cap, so
+    // the extension-preserving rebuild above is not sufficient on its own.
+    // Enforce the trust-boundary invariant after reassembly as well.
+    sanitized = sanitized.slice(0, MAX_DOWNLOAD_FILENAME_LENGTH).replace(/[. ]+$/g, '');
 
     return sanitized || undefined;
 }

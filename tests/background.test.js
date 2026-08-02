@@ -633,6 +633,27 @@ test('background DOWNLOAD_FILE sanitizes reserved Windows filenames', async () =
     assert.equal(response.downloadId, 42);
 });
 
+test('background DOWNLOAD_FILE enforces the filename cap with a long trailing segment', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        downloadsDownloadImpl: (options, callback) => {
+            capturedOptions = options;
+            callback(43);
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'DOWNLOAD_FILE',
+        url: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+        filename: `a.${'x'.repeat(300)}`
+    });
+
+    assert.ok(capturedOptions?.filename, 'download should receive a sanitized filename');
+    assert.ok(capturedOptions.filename.length <= 180,
+        'a long extension-like tail must not bypass the 180-character cap');
+    assert.equal(response.downloadId, 43);
+});
+
 test('background EXT_FETCH forwards x-goog-api-key to Gemini API', async () => {
     let capturedHeaders = null;
     const { messageListener } = loadBackground({
