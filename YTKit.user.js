@@ -26740,6 +26740,10 @@
                         return null;
                     }
                     data._ts = Date.now();
+                    // A slow in-flight response must never clobber a fresher entry
+                    // written while it was outstanding.
+                    const existing = this._cache[videoId];
+                    if (existing && existing._ts && existing._ts > data._ts) return existing;
                     this._cache[videoId] = data;
                     this._cacheMeta[videoId] = data._ts;
                     // Evict oldest entries if in-memory cache exceeds 2000
@@ -26827,7 +26831,17 @@
                                     clone.className = 'daCustomTitle ' + titleEl.className;
                                     clone.removeAttribute('id');
                                     clone.textContent = formatted;
-                                    clone.title = appState.settings.daShowOriginalHover ? titleEl.textContent.trim() : formatted;
+                                    const originalTitle = titleEl.textContent.trim();
+                                    clone.title = appState.settings.daShowOriginalHover ? originalTitle : formatted;
+                                    // Consumed by two other features, both of which
+                                    // silently did nothing while these attributes
+                                    // were only written by the ytkit.js fallback
+                                    // copy: deArrowVoting needs the submission UUID
+                                    // to find a votable title, and dearrowPeekButton
+                                    // renders data-ytkit-orig-title from CSS.
+                                    clone.setAttribute('data-ytkit-dearrow-title', '1');
+                                    clone.setAttribute('data-ytkit-orig-title', originalTitle);
+                                    if (submission.UUID) clone.setAttribute('data-ytkit-dearrow-uuid', submission.UUID);
                                     titleEl.style.display = 'none';
                                     titleEl.dataset.daProcessed = '1';
                                     titleEl.parentNode.insertBefore(clone, titleEl);
@@ -26847,6 +26861,8 @@
                                         clone.removeAttribute('id');
                                         clone.textContent = formatted;
                                         clone.title = formatted;
+                                        clone.setAttribute('data-ytkit-dearrow-title', '1');
+                                        clone.setAttribute('data-ytkit-orig-title', original);
                                         // v4.47.0 EI-NEW4: mark locally-formatted
                                         // fallbacks distinct from real DeArrow
                                         // submissions; the CSS rule at init time

@@ -8,9 +8,46 @@
 // keep new DeArrow regressions HERE and old ones THERE rather than
 // duplicating.
 
+const fs = require('fs');
+const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { sources, extractFeatureBlock } = require('../helpers/source');
+
+const dearrowModulePath = path.join(
+    __dirname, '..', '..', 'extension', 'features', 'dearrow', 'index.js'
+);
+const dearrowModuleSource = fs.readFileSync(dearrowModulePath, 'utf8');
+
+// The ytkit.js `|| { … }` object is the fallback used only when the module
+// content script fails to load. It drifted from the module for months (the
+// module never wrote the voting/peek attributes; the fallback never learned
+// the route token or the lazy-image guard), so the two are now kept
+// character-identical and this pin fails the moment they diverge again.
+function extractObjectBody(source, startIndex) {
+    let depth = 0;
+    for (let i = startIndex; i < source.length; i += 1) {
+        const char = source[i];
+        if (char === '{') depth += 1;
+        else if (char === '}') {
+            depth -= 1;
+            if (depth === 0) return source.slice(startIndex, i + 1);
+        }
+    }
+    throw new Error('extractObjectBody: unbalanced braces');
+}
+
+test('DeArrow monolith fallback is character-identical to the peeled module', () => {
+    const moduleStart = dearrowModuleSource.indexOf('return {') + 'return '.length;
+    const moduleBody = extractObjectBody(dearrowModuleSource, moduleStart)
+        .split('\n').map(line => line.replace(/^\s+/, '')).join('\n');
+    const fallbackStart = sources.ytkit.indexOf('|| {', sources.ytkit.indexOf('createDeArrowFeature')) + 3;
+    const fallbackBody = extractObjectBody(sources.ytkit, fallbackStart)
+        .split('\n').map(line => line.replace(/^\s+/, '')).join('\n');
+    assert.equal(fallbackBody, moduleBody,
+        'extension/ytkit.js DeArrow fallback must mirror features/dearrow/index.js — ' +
+        'fix the module, then copy its object body into the fallback');
+});
 
 test('DeArrow feature block is reachable via the shared helper', () => {
     // Sanity: the helper-based extraction works for DeArrow. If this
@@ -27,14 +64,18 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
     // The watch-page-gated aria-live announcement lives in the title-
     // replace path. Pin both the announce call and the page gate so a
     // refactor can't silently regress the assistive-tech surface.
-    const block = sources.ytkit;
-    const start = block.indexOf('Show original title on hover if setting enabled');
-    assert.ok(start > -1, 'DeArrow primary-title path must exist');
-    const region = block.slice(start, start + 1500);
-    assert.match(region, /announceA11y\(/,
-        'DeArrow primary-title replacement must call announceA11y');
-    assert.match(region, /isWatchPagePath\(\)/,
-        'DeArrow announcement must be gated on isWatchPagePath() — grid spam would be unacceptable');
+    // Anchored on the code that builds the replacement title node, not on a
+    // comment: the module and the ytkit.js fallback are kept identical, and a
+    // comment-only anchor made the pin drift with prose.
+    for (const [label, source] of [['ytkit.js', sources.ytkit], ['module', dearrowModuleSource]]) {
+        const start = source.indexOf("clone.className = 'daCustomTitle '");
+        assert.ok(start > -1, `DeArrow primary-title path must exist in ${label}`);
+        const region = source.slice(start, start + 2400);
+        assert.match(region, /announceA11y\(/,
+            `DeArrow primary-title replacement must call announceA11y (${label})`);
+        assert.match(region, /isWatchPagePath\(\)/,
+            `DeArrow announcement must be gated on isWatchPagePath() — grid spam would be unacceptable (${label})`);
+    }
 });
 
 test('DeArrow selectors are resilient to YouTube class-name churn', () => {
@@ -90,17 +131,27 @@ test('DeArrow selectors are resilient to YouTube class-name churn', () => {
 });
 
 test('DeArrow Casual Mode gates fallback formatting on the deArrowCasualMode setting', () => {
-    const fs = require('fs');
-    const path = require('path');
-    const src = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'dearrow', 'index.js'), 'utf8'
-    );
+    const src = dearrowModuleSource;
     assert.match(src, /casualMode/,
         'peeled DeArrow module must reference casualMode');
     assert.match(src, /deArrowCasualMode/,
         'casual mode must read from appState.settings.deArrowCasualMode');
     assert.match(src, /fallback && !casualMode/,
         'fallback formatting path must be gated on !casualMode');
+});
+
+test('DeArrow writes the attributes its voting and peek consumers query', () => {
+    // deArrowVoting selects `[data-ytkit-dearrow-uuid]` and dearrowPeekButton
+    // renders `attr(data-ytkit-orig-title)`. Neither attribute was written by
+    // the module that actually ships, so both features were inert.
+    assert.match(dearrowModuleSource, /data-ytkit-dearrow-uuid/,
+        'the submission UUID must reach the DOM or DeArrow voting finds nothing to vote on');
+    assert.match(dearrowModuleSource, /data-ytkit-orig-title/,
+        'the original title must reach the DOM or the peek overlay renders empty');
+    const voteSelector = sources.ytkit.indexOf('.daCustomTitle[data-ytkit-dearrow-uuid]');
+    assert.ok(voteSelector > -1, 'deArrowVoting must still select on the UUID attribute');
+    assert.match(sources.ytkit, /html\.ytkit-peek \[data-ytkit-dearrow-title\]/,
+        'peek CSS must still key on the marker attribute the replacement writes');
 });
 
 test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision)', () => {

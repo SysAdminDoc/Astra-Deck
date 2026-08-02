@@ -46,6 +46,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **DeArrow voting and the peek overlay work again.** The shipping DeArrow
+  module never wrote the `data-ytkit-dearrow-uuid` / `data-ytkit-orig-title`
+  attributes those two features query, so voting found nothing to vote on and
+  holding Alt revealed an empty overlay.
+- **Monolith fallback copies match their peeled modules.** The DeArrow,
+  SponsorBlock, and Return YouTube Dislike objects in `ytkit.js` — used when a
+  feature content script fails to load — had drifted for months. They now carry
+  the route-token and lazy-image guards, the self-disarming progress-bar
+  observer, anti-adblock detection, skip-timing jitter, API health reporting,
+  and the debounced cache persist with an unload flush and teardown guard.
 - **Custom filename templates cannot overrun the maximum path length.** Free-text
   expansions (`%(title)s`, `%(uploader)s`, `%(channel)s`, playlist titles) are
   now length-bounded when the template is saved, with the byte budget split
