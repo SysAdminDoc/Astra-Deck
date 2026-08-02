@@ -1197,7 +1197,7 @@
     "message": "Формат аудио"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Когда Astra Downloader недоступен, переключиться на настраиваемый экземпляр cobalt.tools. Работает только в GitHub/полном профиле и только когда Astra Downloader оффлайн. Отправляет URL видео на настроенный экземпляр и открывает полученный медиа-URL в новой вкладке."
+    "message": "Если Astra Downloader недоступен, используется Cobalt. Сборки расширения разрешают только api.cobalt.tools; сборки userscript могут использовать пользовательские экземпляры. Работает только в GitHub/полном профиле и когда Astra Downloader офлайн."
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Резервный Cobalt (профиль GitHub)"

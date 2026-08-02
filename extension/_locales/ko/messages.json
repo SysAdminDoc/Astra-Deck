@@ -1197,7 +1197,7 @@
     "message": "오디오 포맷"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Astra Downloader에 연결할 수 없을 때 설정 가능한 Cobalt 인스턴스로 대체합니다. GitHub/전체 프로필에서만 실행되며 Astra Downloader가 오프라인일 때만 작동합니다. 현재 동영상 URL을 설정된 인스턴스에 POST하고 반환된 미디어 URL을 새 탭에서 엽니다."
+    "message": "Astra Downloader에 연결할 수 없을 때 Cobalt로 대체합니다. 확장 프로그램 빌드는 api.cobalt.tools만 허용하며 userscript 빌드는 사용자 지정 인스턴스를 사용할 수 있습니다. GitHub/전체 프로필에서만, Astra Downloader가 오프라인일 때 작동합니다."
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Cobalt 대체 (GitHub 프로필)"

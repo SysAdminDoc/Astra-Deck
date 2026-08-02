@@ -16,6 +16,16 @@
         return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
     }
 
+    const COBALT_ALLOWED_ORIGIN = 'https://api.cobalt.tools';
+
+    function isExtensionCobaltInstanceAllowed(value) {
+        try {
+            return new URL(String(value || '').trim()).origin === COBALT_ALLOWED_ORIGIN;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function parseSectionTimestampInput(value) {
         const raw = String(value ?? '').trim();
         if (!raw) return null;
@@ -2315,7 +2325,7 @@
         const downloadCobaltFallback = {
             id: 'downloadCobaltFallback',
             name: 'Cobalt Fallback (GitHub profile)',
-            description: 'When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab.',
+            description: t('feature_downloadCobaltFallback_desc', 'When Astra Downloader is unreachable, fall back to Cobalt. Extension builds only allow api.cobalt.tools; use the userscript for custom instances.'),
             group: 'Downloads',
             icon: 'download-cloud',
             pages: [PageTypes.WATCH],
@@ -2356,6 +2366,15 @@
                 }
                 const url = location.href;
                 const instance = (appState?.settings?.downloadCobaltInstance || 'https://api.cobalt.tools/api/json').trim();
+                if (!isExtensionCobaltInstanceAllowed(instance)) {
+                    const message = t(
+                        'feature_downloadCobaltFallback_desc',
+                        'This extension only allows Cobalt requests to api.cobalt.tools. Use the userscript for custom endpoints.'
+                    );
+                    DiagnosticLog?.record?.('cobalt-fallback', 'Cobalt fallback blocked: extension origin allowlist only permits api.cobalt.tools.');
+                    if (typeof showToast === 'function') showToast(message, '#f59e0b', { duration: 6 });
+                    return;
+                }
                 try {
                     const { data } = await extensionFetchJson({
                         method: 'POST',

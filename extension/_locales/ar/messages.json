@@ -1197,7 +1197,7 @@
     "message": "صيغة الصوت"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "عند تعذر الوصول إلى Astra Downloader، يتراجع إلى مثيل Cobalt قابل للتكوين. يعمل فقط في ملف GitHub/الكامل وعندما يكون Astra Downloader غير متصل. يرسل عنوان الفيديو الحالي إلى المثيل المكوّن ويفتح عنوان الوسائط المُعاد في تبويبة جديدة."
+    "message": "عند تعذر الوصول إلى Astra Downloader، يستخدم Cobalt كبديل. تسمح إصدارات الامتداد بالاتصال بـ api.cobalt.tools فقط، بينما يمكن لإصدارات userscript استخدام مثيلات مخصصة. يعمل فقط في ملف GitHub/الكامل وعندما يكون Astra Downloader غير متصل."
   },
   "feature_downloadCobaltFallback_name": {
     "message": "بديل Cobalt (ملف GitHub)"

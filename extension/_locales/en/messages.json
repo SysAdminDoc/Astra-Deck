@@ -1197,7 +1197,7 @@
     "message": "Audio Format"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab."
+    "message": "When Astra Downloader is unreachable, fall back to Cobalt. Extension builds only allow api.cobalt.tools; userscript builds can use custom instances. Only runs in the GitHub/full profile and when Astra Downloader is offline."
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Cobalt Fallback (GitHub profile)"

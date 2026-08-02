@@ -1197,7 +1197,7 @@
     "message": "Format audio"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Lorsqu'Astra Downloader est injoignable, se rabattre sur une instance Cobalt configurable. Ne s'exécute que dans le profil GitHub/complet et uniquement quand Astra Downloader est hors ligne. Envoie l'URL vidéo courante à l'instance configurée et ouvre l'URL média retournée dans un nouvel onglet."
+    "message": "Lorsque Astra Downloader est injoignable, utiliser Cobalt. Les builds de l'extension n'autorisent que api.cobalt.tools ; les builds userscript peuvent utiliser des instances personnalisées. Fonctionne uniquement dans le profil GitHub/complet et quand Astra Downloader est hors ligne."
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Repli Cobalt (profil GitHub)"
