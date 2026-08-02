@@ -5872,6 +5872,61 @@ class GuiSmokeTests(unittest.TestCase):
                 svc._timer.stop()
                 svc.deleteLater()
 
+    def test_folder_picker_discards_request_cancelled_after_http_timeout(self):
+        # A second request can remain queued while the first native dialog is
+        # open. The route marks it cancelled when its 120 s wait expires; the
+        # next GUI tick must consume it without opening an orphaned dialog.
+        import queue as queue_mod
+        response_a = queue_mod.Queue(maxsize=1)
+        response_b = queue_mod.Queue(maxsize=1)
+        cancellation_b = threading.Event()
+        ad._folder_pick_q.put({'initial': '', 'response': response_a})
+
+        from PyQt6.QtWidgets import QFileDialog as RealQFileDialog
+        created = []
+
+        def fake_dialog(*_args, **_kwargs):
+            dialog = mock.MagicMock()
+            created.append(dialog)
+
+            def first_exec():
+                # This is the request that timed out while the first dialog
+                # was open; it is still in the bounded queue.
+                ad._folder_pick_q.put({
+                    'initial': '',
+                    'response': response_b,
+                    'cancelled': cancellation_b,
+                })
+                cancellation_b.set()
+                return RealQFileDialog.DialogCode.Rejected
+
+            dialog.exec.side_effect = first_exec
+            dialog.windowFlags.return_value = 0
+            dialog.selectedFiles.return_value = []
+            return dialog
+
+        with mock.patch.object(ad, 'QFileDialog', autospec=False) as FakeFileDialog:
+            FakeFileDialog.side_effect = fake_dialog
+            FakeFileDialog.DialogCode = RealQFileDialog.DialogCode
+            FakeFileDialog.FileMode = RealQFileDialog.FileMode
+            FakeFileDialog.Option = RealQFileDialog.Option
+            svc = ad.FolderPickerService()
+            try:
+                svc._tick()
+                self.assertEqual(len(created), 1)
+                response_a.get(timeout=1.0)
+                svc._tick()
+                self.assertEqual(
+                    len(created),
+                    1,
+                    'a timed-out request must not open a ghost folder dialog',
+                )
+                self.assertTrue(ad._folder_pick_q.empty())
+                self.assertTrue(response_b.empty())
+            finally:
+                svc._timer.stop()
+                svc.deleteLater()
+
     def test_folder_picker_watchdog_fires_when_dialog_blocks_past_threshold(self):
         # Mock time.time so the watchdog believes the dialog blocked
         # for (threshold + 5) seconds. write_persistent_log is

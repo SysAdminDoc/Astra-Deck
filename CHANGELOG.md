@@ -39,6 +39,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Windows update probe timeout.** Detached companion health checks now have
   a 30-second bound and kill hung staged processes so rollback and relaunch can
   proceed.
+- **Folder picker timeout cleanup.** Timed-out folder-picker requests are now
+  cancelled and discarded by the GUI bridge instead of opening a later ghost
+  dialog.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
