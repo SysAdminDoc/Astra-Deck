@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'ytkit.js'),
@@ -3332,6 +3333,37 @@ test('commentFilterManager rejects ReDoS regex inputs at compile time', () => {
         'commentFilterManager must log the ReDoS rejection reason');
     assert.match(block, /\(adjacent \|\| groupInner\)/,
         'commentFilterManager must check both adjacent and group-inner nested quantifiers');
+});
+
+test('commentFilterManager strips stateful regex flags from cached rules', () => {
+    const objectLiteral = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'commentFilterManager'"
+    );
+    assert.ok(objectLiteral, 'commentFilterManager object must be extractable');
+    assert.match(
+        ytkitSource.slice(ytkitSource.indexOf("id: 'commentFilterManager'"),
+            ytkitSource.indexOf("id: 'commentFilterManager'") + 7000),
+        /m\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
+        'commentFilterManager must strip global/sticky flags at compile time'
+    );
+
+    const manager = Function(
+        'appState', 'DebugManager', 'PageTypes',
+        '"use strict"; return (' + objectLiteral + ');'
+    )({ settings: { commentFilterRules: '/spam/gi' } }, { log() {} }, { WATCH: 'watch' });
+    const body = { textContent: 'spam' };
+    const author = { textContent: 'creator' };
+    const thread = {
+        querySelector(selector) {
+            if (selector.includes('#content-text')) return body;
+            if (selector.includes('#author-text')) return author;
+            return null;
+        }
+    };
+    assert.equal(manager._shouldHideThread(thread), true);
+    assert.equal(manager._shouldHideThread(thread), true,
+        'cached regex rules must match consistently on the next thread');
 });
 
 test('commentFilterManager processes mutation addedNodes only, never full-document scans on tick', () => {

@@ -17053,8 +17053,8 @@
                         views: this._extractViewCount(element),
                         watchedRatio: this._extractWatchedRatio(element),
                         isLive: !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, [aria-label*="LIVE"]')
-                            || /\b(live|watching now)\b/.test(metadataText) && !hasDuration,
-                        isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(metadataText),
+                            || /\b(live|watching now)\b/.test(rowsText) && !hasDuration,
+                        isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(rowsText),
                         // Type detection reads ONLY badge/metadata rows — matching
                         // against the title hid videos titled "How to mix audio",
                         // "movie review", or "top 5 videos".
@@ -17274,7 +17274,10 @@
                                     if (hasNestedQuantifiers) {
                                         DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                     } else {
-                                        const regex = new RegExp(regexMatch[1], regexMatch[2]);
+                                        // Filtering is boolean and must not carry lastIndex
+                                        // across title/channel tests or repeated scans.
+                                        const regexFlags = regexMatch[2].replace(/[gy]/g, '');
+                                        const regex = new RegExp(regexMatch[1], regexFlags);
                                         if (regex.test(title) || regex.test(channelName)) return true;
                                     }
                                 }
@@ -32917,7 +32920,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 if (/([+*?]|\{\d+,?\d*\})\s*[+*?]|\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})|\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(regexMatch[1])) {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
-                                    const regex = new RegExp(regexMatch[1], regexMatch[2]);
+                                    // Filtering is boolean and must not carry lastIndex
+                                    // across title/channel tests or repeated scans.
+                                    const regexFlags = regexMatch[2].replace(/[gy]/g, '');
+                                    const regex = new RegExp(regexMatch[1], regexFlags);
                                     if (regex.test(title) || regex.test(channelName)) return true;
                                 }
                             }

@@ -1225,7 +1225,10 @@
                                 if (hasNestedQuantifiers) {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
-                                    const regex = new RegExp(regexMatch[1], regexMatch[2]);
+                                    // Filtering is boolean and must not carry lastIndex
+                                    // across title/channel tests or repeated scans.
+                                    const regexFlags = regexMatch[2].replace(/[gy]/g, '');
+                                    const regex = new RegExp(regexMatch[1], regexFlags);
                                     if (regex.test(title) || regex.test(channelName)) return true;
                                 }
                             }

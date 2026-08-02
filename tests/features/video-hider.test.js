@@ -113,6 +113,23 @@ test('Video Hider live/upcoming regex pins read rows in module and monolith', ()
     }
 });
 
+test('Video Hider strips stateful regex flags before boolean matching', () => {
+    assert.match(MODULE_SOURCE, /regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
+        'Video Hider module must strip global/sticky flags');
+    assert.match(sources.ytkit, /regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
+        'Video Hider monolith fallback must strip global/sticky flags');
+    assert.ok(
+        (sources.userscript.match(/regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/g) || []).length >= 2,
+        'userscript module and fallback must strip global/sticky flags'
+    );
+
+    const stable = new RegExp('spam', 'gi'.replace(/[gy]/g, ''));
+    assert.equal(stable.global, false);
+    assert.equal(stable.sticky, false);
+    assert.equal(stable.test('spam'), true);
+    assert.equal(stable.test('spam'), true);
+});
+
 test('masthead quick actions synchronize without a post-paint delay', () => {
     const { mod } = loadModule();
     const feature = mod.createHideVideosFromHomeFeature();
