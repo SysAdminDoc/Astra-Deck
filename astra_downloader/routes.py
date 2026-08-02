@@ -221,6 +221,7 @@ def create_api(config, dl_manager, history, *, dependencies):
     query_history_entries = dependencies['query_history_entries']
     read_update_recovery_status = dependencies['read_update_recovery_status']
     validate_download_request_body = dependencies['validate_download_request_body']
+    subscription_manager = dependencies.get('subscription_manager')
 
     api = Flask(__name__)
     api.logger.disabled = True
@@ -400,6 +401,17 @@ def create_api(config, dl_manager, history, *, dependencies):
             # bearer token — an unauthenticated local process gets an empty list.
             "recentErrors": get_recent_log_entries() if check_auth() else [],
         }
+        if subscription_manager is not None:
+            try:
+                resp["subscriptions"] = subscription_manager.snapshot()
+            except Exception:
+                # Health must remain available if the optional scheduler is
+                # recovering from a malformed local state file.
+                resp["subscriptions"] = {
+                    "schedulerRunning": False,
+                    "subscriptions": [],
+                    "archive": {},
+                }
         # Legacy token echo is an explicit compatibility path only. Browser
         # extension origins must be configured first; arbitrary installed
         # extensions must not be able to bootstrap the bearer token.
@@ -807,6 +819,112 @@ def create_api(config, dl_manager, history, *, dependencies):
             limit=limit,
         )
         return cors_response(result)
+
+    def _subscription_unavailable():
+        return cors_response({
+            "error": "Scheduled subscriptions are unavailable until Astra Downloader finishes setup.",
+            "code": "subscriptions-unavailable",
+        }, 503)
+
+    def _subscription_manager_or_error():
+        if subscription_manager is None:
+            return None, _subscription_unavailable()
+        return subscription_manager, None
+
+    @api.route('/subscriptions', methods=['GET'])
+    def subscriptions_list():
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        manager, response = _subscription_manager_or_error()
+        if response is not None:
+            return response
+        return cors_response(manager.snapshot())
+
+    @api.route('/subscriptions', methods=['POST'])
+    def subscriptions_create():
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        manager, response = _subscription_manager_or_error()
+        if response is not None:
+            return response
+        body, body_error = request_json_object()
+        if body_error:
+            return cors_response({"error": body_error, "code": "invalid-request-body"}, 400)
+        allowed = {"url", "intervalMinutes", "enabled", "title"}
+        unknown = sorted(set(body) - allowed)
+        if unknown:
+            return cors_response({
+                "error": "Unsupported subscription field(s): " + ", ".join(unknown),
+                "code": "invalid-subscription-field",
+            }, 400)
+        if not isinstance(body.get("url"), str) or not body.get("url", "").strip():
+            return cors_response({"error": "A YouTube channel or playlist URL is required.", "code": "invalid-subscription-url"}, 400)
+        record, error = manager.add_subscription(
+            body["url"],
+            interval_minutes=body.get("intervalMinutes", 60),
+            enabled=body.get("enabled", True),
+            title=body.get("title", ""),
+        )
+        if error:
+            status = 409 if "already configured" in error.lower() else 400
+            return cors_response({"error": error, "code": "subscription-rejected"}, status)
+        return cors_response(record, 201)
+
+    @api.route('/subscriptions/<subscription_id>', methods=['PATCH'])
+    def subscriptions_update(subscription_id):
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        manager, response = _subscription_manager_or_error()
+        if response is not None:
+            return response
+        body, body_error = request_json_object()
+        if body_error:
+            return cors_response({"error": body_error, "code": "invalid-request-body"}, 400)
+        allowed = {"url", "intervalMinutes", "enabled", "title"}
+        unknown = sorted(set(body) - allowed)
+        if unknown or not body:
+            return cors_response({
+                "error": "Provide only url, intervalMinutes, enabled, or title.",
+                "code": "invalid-subscription-field",
+            }, 400)
+        fields = {}
+        if "url" in body:
+            fields["url"] = body["url"]
+        if "intervalMinutes" in body:
+            fields["interval_minutes"] = body["intervalMinutes"]
+        if "enabled" in body:
+            fields["enabled"] = body["enabled"]
+        if "title" in body:
+            fields["title"] = body["title"]
+        record, error = manager.update_subscription(subscription_id, **fields)
+        if error:
+            status = 404 if "no longer exists" in error.lower() else 400
+            return cors_response({"error": error, "code": "subscription-update-rejected"}, status)
+        return cors_response(record)
+
+    @api.route('/subscriptions/<subscription_id>', methods=['DELETE'])
+    def subscriptions_delete(subscription_id):
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        manager, response = _subscription_manager_or_error()
+        if response is not None:
+            return response
+        removed, error = manager.remove_subscription(subscription_id)
+        if error:
+            return cors_response({"error": error, "code": "subscription-delete-rejected"}, 404)
+        return cors_response({"id": subscription_id, "removed": bool(removed)})
+
+    @api.route('/subscriptions/<subscription_id>/scan', methods=['POST'])
+    def subscriptions_scan(subscription_id):
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        manager, response = _subscription_manager_or_error()
+        if response is not None:
+            return response
+        result, error = manager.request_scan(subscription_id)
+        if error:
+            return cors_response({"error": error, "code": "subscription-scan-rejected"}, 404)
+        return cors_response(result, 202)
 
     @api.route('/config', methods=['GET'])
     def get_config():

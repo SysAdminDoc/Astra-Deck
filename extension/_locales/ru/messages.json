@@ -4994,6 +4994,21 @@
   "subscriptionHealthUndoStageAriaTpl": {
     "message": "Undo staged unsubscribe for {channel}"
   },
+  "subscriptionArchiveAdded": {
+    "message": "Scheduled"
+  },
+  "subscriptionArchiveExisting": {
+    "message": "already configured"
+  },
+  "subscriptionArchiveNoChannels": {
+    "message": "Add channels to this group before scheduling downloads."
+  },
+  "subscriptionArchiveStartCompanion": {
+    "message": "Start Astra Downloader before scheduling channel downloads."
+  },
+  "subscriptionArchiveUnavailable": {
+    "message": "The Astra Downloader companion is not available."
+  },
   "subscriptionImportAria": {
     "message": "Import subscription groups"
   },
@@ -5023,6 +5038,15 @@
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
+  },
+  "subscriptionToolbarArchive": {
+    "message": "Auto-download"
+  },
+  "subscriptionToolbarArchiveAriaTpl": {
+    "message": "Schedule new uploads from {group}"
+  },
+  "subscriptionToolbarArchiveTitle": {
+    "message": "Schedule this group in Astra Downloader. Existing uploads are deduplicated by the companion archive."
   },
   "subscriptionToolbarAria": {
     "message": "Subscription group controls"

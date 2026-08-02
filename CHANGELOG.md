@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.51.1] - 2026-08-02 (companion v1.7.0)
+
+### Added
+- **Scheduled subscriptions.** Astra Downloader now stores channel and playlist
+  schedules in a schema-checked `subscriptions.json`, scans on a bounded
+  scheduler, and keeps a durable archive so new uploads are queued once across
+  restarts. The GUI adds a Subscriptions page, authenticated CRUD/scan routes,
+  and Subscription Groups can schedule their channel members from the extension.
+
 ### Fixed
 - **Inline theme coherence.** Subscription cards and dialogs now render cleanly in YouTube light mode, shared accent RGB tokens drive utility surfaces, RTL-sensitive margins use logical properties, and bottom-right overlays stack from measured heights.
 - **Companion naming.** Download progress, format probing, and full-profile

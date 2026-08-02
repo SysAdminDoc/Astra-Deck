@@ -378,6 +378,204 @@ class PersistenceTests(unittest.TestCase):
                 ad.HISTORY_PATH = original
 
 
+class SubscriptionTests(unittest.TestCase):
+    def _store(self, path, clock=lambda: 1000.0):
+        return ad.SubscriptionStore(
+            path=path,
+            reader=ad.load_json_file,
+            writer=ad.atomic_write_json,
+            logger=self.fail,
+            normalize_url=ad.normalize_url,
+            is_youtube_url=ad.is_youtube_url,
+            clean_text=ad.clean_text,
+            clamp_int=ad.clamp_int,
+            coerce_bool=ad.coerce_bool,
+            clock=clock,
+        )
+
+    def test_subscription_and_archive_state_round_trip_across_store_instances(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "subscriptions.json"
+            store = self._store(path)
+            record, error = store.add_subscription(
+                "https://www.youtube.com/@astra-channel",
+                interval_minutes=1,
+                title="Astra channel",
+            )
+            self.assertIsNone(error)
+            self.assertEqual(record["intervalMinutes"], ad.SUBSCRIPTION_MIN_INTERVAL_MINUTES)
+            candidate = {
+                "id": "video-001",
+                "url": "https://www.youtube.com/watch?v=video-001",
+                "title": "First upload",
+            }
+            key = ad.subscription_archive_key(candidate)
+            self.assertTrue(store.reserve_archive(key, candidate, record["id"]))
+            self.assertTrue(store.mark_archive_queued(key, "dl_subscription_1"))
+            self.assertEqual(store.mark_download("dl_subscription_1", "complete"), 1)
+
+            restored = self._store(path)
+            self.assertEqual(restored.list_subscriptions()[0]["url"], record["url"])
+            self.assertEqual(restored.archive_summary()["complete"], 1)
+            self.assertEqual(restored.archive_entries()[key]["status"], "complete")
+
+    def test_scheduler_enqueues_new_uploads_once_and_dedupes_after_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "subscriptions.json"
+            store = self._store(path)
+            record, error = store.add_subscription(
+                "https://www.youtube.com/@astra-channel",
+                interval_minutes=5,
+            )
+            self.assertIsNone(error)
+            calls = []
+            entries = [
+                {"id": "video-001", "url": "video-001", "title": "First upload"},
+                {"id": "video-001", "url": "video-001", "title": "Duplicate listing"},
+                {"id": "video-002", "url": "video-002", "title": "Second upload"},
+            ]
+
+            def enqueue(_subscription, candidate, _archive_key):
+                download_id = f"dl_{candidate['id']}"
+                calls.append(download_id)
+                return download_id, None
+
+            manager = ad.SubscriptionManager(
+                store=store,
+                probe=lambda _url: (entries, None),
+                enqueue=enqueue,
+                status_reader=lambda _download_id: "complete",
+                clock=lambda: 1000.0,
+            )
+            first = manager.scan_subscription(record["id"], now=1000.0)
+            self.assertEqual(first["queued"], 2)
+            self.assertEqual(first["skipped"], 1)
+            self.assertEqual(calls, ["dl_video-001", "dl_video-002"])
+
+            restored_store = self._store(path)
+            restored_calls = []
+            restored_manager = ad.SubscriptionManager(
+                store=restored_store,
+                probe=lambda _url: (entries, None),
+                enqueue=lambda *_args: restored_calls.append("unexpected") or ("dl", None),
+                clock=lambda: 2000.0,
+            )
+            second = restored_manager.scan_subscription(record["id"], now=2000.0)
+            self.assertEqual(second["queued"], 0)
+            self.assertEqual(second["skipped"], 3)
+            self.assertEqual(restored_calls, [])
+
+    def test_interrupted_queue_claim_reconciles_from_download_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "subscriptions.json"
+            store = self._store(path)
+            record, error = store.add_subscription("https://www.youtube.com/@astra-channel")
+            self.assertIsNone(error)
+            candidate = {
+                "id": "video-003",
+                "url": "https://www.youtube.com/watch?v=video-003",
+                "title": "Interrupted upload",
+            }
+            key = ad.subscription_archive_key(candidate)
+            self.assertTrue(store.reserve_archive(key, candidate, record["id"]))
+            download = ad.Download(
+                "dl_subscription_3",
+                candidate["url"],
+                title=candidate["title"],
+                subscription_id=record["id"],
+                archive_key=key,
+            )
+            self.assertTrue(store.reconcile_downloads([download]))
+            entry = store.archive_entries()[key]
+            self.assertEqual(entry["status"], "queued")
+            self.assertEqual(entry["downloadId"], download.id)
+
+    def test_subscription_linkage_survives_download_queue_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / "download-queue.json"
+            config = FakeConfig({"DownloadPath": tmp, "AudioDownloadPath": tmp})
+            manager = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertTrue(manager.pause_intake())
+            download_id, error = manager.start_download(
+                "https://www.youtube.com/watch?v=queueSubscription",
+                title="Queued subscription upload",
+                subscription_id="sub_queue",
+                archive_key="id:queueSubscription",
+            )
+            self.assertIsNone(error)
+            persisted = json.loads(queue_path.read_text(encoding="utf-8"))
+            record = persisted["downloads"][0]
+            self.assertEqual(record["subscriptionId"], "sub_queue")
+            self.assertEqual(record["archiveKey"], "id:queueSubscription")
+
+            restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertEqual(restored.downloads[download_id].subscription_id, "sub_queue")
+            self.assertEqual(restored.downloads[download_id].archive_key, "id:queueSubscription")
+
+    def test_subscription_state_sanitizes_malformed_counters_and_paused_schedule(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "subscriptions.json"
+            path.write_text(json.dumps({
+                "schemaVersion": ad.SUBSCRIPTION_SCHEMA_VERSION,
+                "subscriptions": [{
+                    "id": "sub_malformed",
+                    "url": "https://www.youtube.com/@astra-channel",
+                    "enabled": False,
+                    "nextScanAt": None,
+                    "lastQueued": "not-a-number",
+                    "lastSkipped": "bad",
+                }],
+                "archive": {},
+            }), encoding="utf-8")
+            store = self._store(path)
+            record = store.list_subscriptions()[0]
+            self.assertFalse(record["enabled"])
+            self.assertIsNone(record["nextScanAt"])
+            self.assertEqual(record["lastQueued"], 0)
+            self.assertEqual(record["lastSkipped"], 0)
+
+    def test_subscription_routes_cover_crud_and_auth_boundary(self):
+        token = "s" * 32
+        config = FakeConfig({"ServerToken": token})
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(Path(tmp) / "subscriptions.json")
+            manager = ad.SubscriptionManager(
+                store=store,
+                probe=lambda _url: ([], None),
+                enqueue=lambda *_args: ("dl", None),
+            )
+            api = ad.create_api(
+                config,
+                ad.DownloadManager(config, FakeHistory()),
+                FakeHistory(),
+                subscriptions=manager,
+            )
+            client = api.test_client()
+            headers = {"X-Auth-Token": token, "Host": "127.0.0.1"}
+            denied = client.get("/subscriptions", headers={"Host": "127.0.0.1"})
+            self.assertEqual(denied.status_code, 401)
+            created = client.post(
+                "/subscriptions",
+                json={"url": "https://www.youtube.com/@astra-channel", "intervalMinutes": 30},
+                headers=headers,
+            )
+            self.assertEqual(created.status_code, 201, created.get_json())
+            sub_id = created.get_json()["id"]
+            listed = client.get("/subscriptions", headers=headers)
+            self.assertEqual(listed.status_code, 200)
+            self.assertEqual(listed.get_json()["subscriptions"][0]["id"], sub_id)
+            updated = client.patch(
+                f"/subscriptions/{sub_id}",
+                json={"enabled": False},
+                headers=headers,
+            )
+            self.assertEqual(updated.status_code, 200)
+            self.assertFalse(updated.get_json()["enabled"])
+            removed = client.delete(f"/subscriptions/{sub_id}", headers=headers)
+            self.assertEqual(removed.status_code, 200)
+            self.assertTrue(removed.get_json()["removed"])
+
+
 class CompanionGuiPolicyTests(unittest.TestCase):
     def test_history_csv_cells_escape_spreadsheet_formula_prefixes(self):
         import gui as gui_module
@@ -4797,13 +4995,16 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_6_0(self):
-        # v1.6.0 roadmap drain: Qt localization across the shipped locale set,
+    def test_app_version_bumped_to_1_7_0(self):
+        # v1.7.0 roadmap drain: durable scheduled subscriptions, archive-aware
+        # dedupe, the companion Subscriptions page, and authenticated CRUD/scan
+        # routes.
+        # Prior v1.6.0 work also delivered Qt localization across the shipped locale set,
         # update checks pinned to the published Release, PO-token provider
         # advice on failures that need one, bounded custom filename templates,
         # a shared yt-dlp output parser for the cookie-less live retry, and a
         # session-fallback port explained on the Settings page.
-        self.assertEqual(ad.APP_VERSION, "1.6.0")
+        self.assertEqual(ad.APP_VERSION, "1.7.0")
 
 
 class EndToEndDownloadTests(unittest.TestCase):

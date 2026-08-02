@@ -107,8 +107,13 @@ The native companion opens to a local command center with live queue metrics,
 server actions, and a System Pulse for yt-dlp, FFmpeg, Deno, PO-provider, and
 SABR readiness. Its Settings page can follow the system language or select any
 of the extension's 11 bundled locales; a restart applies language changes.
-Contributors can render the Dashboard, Downloads, History, Settings, and German
-localization views without activating a desktop window by running
+Open **Subscriptions** to add a YouTube channel or playlist, choose a scan
+interval from 5 minutes to 7 days, and let the companion enqueue only uploads
+that are absent from its durable archive. The schedule and archive live in
+`%LOCALAPPDATA%\\AstraDownloader\\subscriptions.json` and survive restarts or
+companion updates; removing a subscription never deletes downloaded files.
+Contributors can render the Dashboard, Downloads, History, Subscriptions,
+Settings, and German localization views without activating a desktop window by running
 `npm run smoke:companion-gui`; captures are written under
 `build/companion-ui-smoke/`.
 

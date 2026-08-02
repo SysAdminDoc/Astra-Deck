@@ -43,6 +43,8 @@
             },
             handleFileExport = () => {},
             isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || '')),
+            MediaDLManager = null,
+            extensionFetchJson = null,
             t = (_key, fallback) => fallback
         } = deps;
 
@@ -1409,6 +1411,62 @@
                 catch (e) { DebugManager.log('SubGroups', `AI tag save failed: ${e.message}`); }
             },
 
+            async _archiveActiveGroup() {
+                const groups = this._readGroups();
+                const group = this._activeGroupId && groups[this._activeGroupId];
+                const channelIds = Array.from(new Set(group?.channelIds || []))
+                    .map(id => String(id || '').trim())
+                    .filter(id => /^[A-Za-z0-9_-]{1,80}$/.test(id))
+                    .slice(0, 100);
+                if (!channelIds.length) {
+                    showToast(t('subscriptionArchiveNoChannels', 'Add channels to this group before scheduling downloads.'), '#f59e0b');
+                    return;
+                }
+                if (!MediaDLManager?.check || !MediaDLManager?.baseUrl || typeof extensionFetchJson !== 'function') {
+                    showToast(t('subscriptionArchiveUnavailable', 'The Astra Downloader companion is not available.'), '#f59e0b');
+                    return;
+                }
+                let status;
+                try {
+                    status = await MediaDLManager.check();
+                } catch (error) {
+                    DebugManager.log('SubGroups', `Companion subscription check failed: ${error.message}`);
+                    showToast(t('subscriptionArchiveUnavailable', 'The Astra Downloader companion is not available.'), '#f59e0b');
+                    return;
+                }
+                if (!status?.ok || !status.token) {
+                    showToast(t('subscriptionArchiveStartCompanion', 'Start Astra Downloader before scheduling channel downloads.'), '#f59e0b');
+                    return;
+                }
+                let added = 0;
+                let existing = 0;
+                for (const channelId of channelIds) {
+                    try {
+                        await extensionFetchJson({
+                            method: 'POST',
+                            url: `${MediaDLManager.baseUrl()}/subscriptions`,
+                            headers: MediaDLManager._headers?.({
+                                'Content-Type': 'application/json',
+                                'X-Auth-Token': status.token,
+                            }) || {
+                                'Content-Type': 'application/json',
+                                'X-Auth-Token': status.token,
+                            },
+                            data: JSON.stringify({
+                                url: `https://www.youtube.com/channel/${channelId}`,
+                                intervalMinutes: 60,
+                            }),
+                        });
+                        added++;
+                    } catch (error) {
+                        if (error?.response?.status === 409) existing++;
+                        else DebugManager.log('SubGroups', `Companion subscription request failed: ${error.message}`);
+                    }
+                }
+                const archiveMessage = `${t('subscriptionArchiveAdded', 'Scheduled')} ${added} · ${t('subscriptionArchiveExisting', 'already configured')} ${existing}`;
+                showToast(archiveMessage, added ? '#22c55e' : '#f59e0b', { duration: 6 });
+            },
+
             async _generateAiTagsForGroup(groupId) {
                 if (!appState?.settings?.subscriptionAiTags) {
                     if (typeof showToast === 'function') showToast('Enable "AI Tags For Subscription Groups" first.', '#f59e0b');
@@ -1655,6 +1713,15 @@
                     playBtn.setAttribute('aria-label', `Play all videos from ${groups[activeGroupId].name || activeGroupId}`);
                     playBtn.addEventListener('click', () => this._playGroupAsQueue(activeGroupId));
                     bar.appendChild(playBtn);
+
+                    const archiveBtn = document.createElement('button');
+                    archiveBtn.type = 'button';
+                    archiveBtn.dataset.action = 'archive-group';
+                    archiveBtn.textContent = t('subscriptionToolbarArchive', 'Auto-download');
+                    archiveBtn.setAttribute('aria-label', t('subscriptionToolbarArchiveAriaTpl', 'Schedule new uploads from {group}').replace('{group}', groups[activeGroupId].name || activeGroupId));
+                    archiveBtn.title = t('subscriptionToolbarArchiveTitle', 'Schedule this group in Astra Downloader. Existing uploads are deduplicated by the companion archive.');
+                    archiveBtn.addEventListener('click', () => this._archiveActiveGroup());
+                    bar.appendChild(archiveBtn);
                 }
 
                 const sortLabel = document.createElement('span');

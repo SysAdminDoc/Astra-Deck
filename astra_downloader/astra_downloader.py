@@ -108,6 +108,15 @@ try:
         SUPPORTED_LOCALES, install_companion_translator,
         normalize_companion_locale,
     )
+    from .subscriptions import (
+        SUBSCRIPTION_MAX_INTERVAL_MINUTES,
+        SUBSCRIPTION_MIN_INTERVAL_MINUTES,
+        SUBSCRIPTION_SCHEMA_VERSION,
+        SubscriptionManager,
+        SubscriptionStore,
+        normalize_subscription_candidate,
+        subscription_archive_key,
+    )
     from .gui import (
         FolderPickerService as _OwnedFolderPickerService,
         MainWindowCore,
@@ -172,6 +181,15 @@ except ImportError:  # Direct script / flat source-path compatibility.
         SUPPORTED_LOCALES, install_companion_translator,
         normalize_companion_locale,
     )
+    from subscriptions import (
+        SUBSCRIPTION_MAX_INTERVAL_MINUTES,
+        SUBSCRIPTION_MIN_INTERVAL_MINUTES,
+        SUBSCRIPTION_SCHEMA_VERSION,
+        SubscriptionManager,
+        SubscriptionStore,
+        normalize_subscription_candidate,
+        subscription_archive_key,
+    )
     from gui import (
         FolderPickerService as _OwnedFolderPickerService,
         MainWindowCore,
@@ -186,7 +204,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.7.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
@@ -215,16 +233,14 @@ INSTALL_DIR = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Loc
 CONFIG_PATH = INSTALL_DIR / 'config.json'
 HISTORY_PATH = INSTALL_DIR / 'history.json'
 DOWNLOAD_QUEUE_PATH = INSTALL_DIR / 'download-queue.json'
-ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
+SUBSCRIPTIONS_PATH = INSTALL_DIR / 'subscriptions.json'
 LOG_PATH = INSTALL_DIR / 'server.log'
 CRASH_LOG_PATH = INSTALL_DIR / 'crash.log'
 YTDLP_PATH = INSTALL_DIR / 'yt-dlp.exe'
 FFMPEG_PATH = INSTALL_DIR / 'ffmpeg.exe'
 ICON_PATH = INSTALL_DIR / 'AstraDownloader.ico'
-# v1.3.0: archive.txt path retained only so first-run on this build can
-# delete the leftover file. The download-archive feature itself has
-# been removed — re-downloads now always run.
-ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
+# Scheduled subscriptions keep their archive in the schema-checked
+# subscriptions.json document. Normal downloads still always re-run.
 
 YTDLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
@@ -267,6 +283,11 @@ RATE_LIMIT_DOWNLOAD_MAX = 30
 RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS = 60
 RATE_LIMIT_PICKFOLDER_MAX = 5
 RATE_LIMIT_PICKFOLDER_WINDOW_SECONDS = 60
+# Scheduled scans only need the newest bounded window. The archive store is
+# the authority for dedupe; this cap keeps one slow channel from monopolizing
+# a waitress worker or filling the local state document.
+SUBSCRIPTION_PROBE_LIMIT = 50
+SUBSCRIPTION_PROBE_TIMEOUT_SECONDS = 60
 # v1.2.0: CORS preflight cache horizon — keeps browsers from re-asking OPTIONS
 # for every POST /download during a multi-video session.
 CORS_MAX_AGE_SECONDS = 600
@@ -375,6 +396,64 @@ def validate_ytdlp_spawn_args(args):
 def spawn_ytdlp(args, **kwargs):
     """Launch yt-dlp only after applying final process-boundary policy."""
     return subprocess.Popen(validate_ytdlp_spawn_args(args), **kwargs)
+
+
+def probe_subscription_uploads(
+    url,
+    timeout=SUBSCRIPTION_PROBE_TIMEOUT_SECONDS,
+    configured_runtime='auto',
+):
+    """Read a bounded flat upload listing without downloading media."""
+    normalized, error = normalize_url(url)
+    if error or not normalized or not is_youtube_url(normalized):
+        return [], "Subscriptions must use a YouTube channel or playlist URL."
+    args = [
+        str(YTDLP_PATH), '--ignore-config', '--no-colors', '--no-warnings',
+        '--flat-playlist', '--dump-single-json', '--skip-download',
+        '--playlist-end', str(SUBSCRIPTION_PROBE_LIMIT),
+    ]
+    args += build_youtube_extractor_args(
+        normalized,
+        po_token_provider=probe_po_token_provider(),
+    )
+    args += build_javascript_runtime_args(
+        probe_javascript_runtime(configured_runtime=configured_runtime)
+    )
+    args.append(normalized)
+    try:
+        proc = spawn_ytdlp(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8',
+            errors='replace',
+            creationflags=CREATE_NO_WINDOW,
+            env=_build_subprocess_env(),
+        )
+    except Exception as exc:  # noqa: BLE001
+        return [], f"Could not start yt-dlp: {exc}"
+    try:
+        output, error_output = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            terminate_process_tree(proc)
+        except Exception:
+            pass
+        return [], "Timed out while scanning the subscription."
+    if proc.returncode != 0:
+        lines = [line.strip() for line in (error_output or '').splitlines() if line.strip()]
+        return [], (lines[-1] if lines else "yt-dlp could not scan the subscription.")[:240]
+    try:
+        info = json.loads(output or '{}')
+    except (TypeError, ValueError):
+        return [], "Could not parse yt-dlp output while scanning the subscription."
+    if not isinstance(info, dict):
+        return [], "yt-dlp returned an invalid subscription listing."
+    entries = info.get('entries')
+    if not isinstance(entries, list):
+        entries = [info] if info.get('id') or info.get('url') else []
+    return entries[:SUBSCRIPTION_PROBE_LIMIT], None
 
 
 def spawn_media_process(args, **kwargs):
@@ -2793,10 +2872,44 @@ class DownloadManager(DownloadManagerCore):
         )
 
 
+def build_subscription_manager(config, dl_manager):
+    """Compose the durable subscription scheduler from application services."""
+    store = SubscriptionStore(
+        path=SUBSCRIPTIONS_PATH,
+        reader=lambda path, fallback: load_json_file(path, fallback),
+        writer=lambda path, data: atomic_write_json(path, data),
+        logger=lambda message: write_persistent_log(message),
+        normalize_url=lambda value: normalize_url(value),
+        is_youtube_url=lambda value: is_youtube_url(value),
+        clean_text=lambda *args, **kwargs: clean_text(*args, **kwargs),
+        clamp_int=lambda *args, **kwargs: clamp_int(*args, **kwargs),
+        coerce_bool=lambda *args, **kwargs: coerce_bool(*args, **kwargs),
+    )
+
+    def enqueue(subscription, candidate, archive_key):
+        return dl_manager.start_download(
+            url=candidate['url'],
+            title=candidate.get('title'),
+            subscription_id=subscription['id'],
+            archive_key=archive_key,
+        )
+
+    return SubscriptionManager(
+        store=store,
+        probe=lambda url: probe_subscription_uploads(
+            url,
+            configured_runtime=config.get('JavaScriptRuntime', 'auto'),
+        ),
+        enqueue=enqueue,
+        status_reader=lambda download_id: dl_manager.status_of(download_id, default='failed'),
+        logger=lambda message: write_persistent_log(message),
+    )
+
+
 # ══════════════════════════════════════════════════════════════
 # HTTP SERVER (Flask in background thread)
 # ══════════════════════════════════════════════════════════════
-def create_api(config, dl_manager, history):
+def create_api(config, dl_manager, history, subscriptions=None):
     return _owned_create_api(config, dl_manager, history, dependencies={
         'APP_NAME': APP_NAME,
         'APP_VERSION': APP_VERSION,
@@ -2836,6 +2949,7 @@ def create_api(config, dl_manager, history):
         'provision_deno': lambda *args, **kwargs: provision_deno(*args, **kwargs),
         'query_history_entries': lambda *args, **kwargs: query_history_entries(*args, **kwargs),
         'read_update_recovery_status': lambda *args, **kwargs: read_update_recovery_status(*args, **kwargs),
+        'subscription_manager': subscriptions,
         'validate_download_request_body': lambda *args, **kwargs: validate_download_request_body(*args, **kwargs),
     })
 
@@ -3016,7 +3130,7 @@ class ReadinessProbe(_OwnedReadinessProbe):
 # MAIN WINDOW
 # ══════════════════════════════════════════════════════════════
 class MainWindow(MainWindowCore):
-    def __init__(self, config, dl_manager, history, start_minimized=False):
+    def __init__(self, config, dl_manager, history, start_minimized=False, subscriptions=None):
         super().__init__(
             config,
             dl_manager,
@@ -3045,7 +3159,12 @@ class MainWindow(MainWindowCore):
                 '_run_ytdlp_self_update': lambda *args, **kwargs: _run_ytdlp_self_update(*args, **kwargs),
                 'build_diagnostics_bundle': lambda *args, **kwargs: build_diagnostics_bundle(*args, **kwargs),
                 'clamp_int': lambda *args, **kwargs: clamp_int(*args, **kwargs),
-                'create_api': lambda *args, **kwargs: create_api(*args, **kwargs),
+                'create_api': lambda config_value, manager_value, history_value: create_api(
+                    config_value,
+                    manager_value,
+                    history_value,
+                    subscriptions=subscriptions,
+                ),
                 'get_ffmpeg_version': lambda *args, **kwargs: get_ffmpeg_version(*args, **kwargs),
                 'get_recent_log_entries': lambda *args, **kwargs: get_recent_log_entries(*args, **kwargs),
                 'get_ytdlp_version': lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
@@ -3062,6 +3181,7 @@ class MainWindow(MainWindowCore):
                 'query_history_entries': lambda *args, **kwargs: query_history_entries(*args, **kwargs),
                 'reset_deno_runtime_cache': lambda *args, **kwargs: reset_deno_runtime_cache(*args, **kwargs),
                 'reset_ffmpeg_capabilities_cache': lambda *args, **kwargs: reset_ffmpeg_capabilities_cache(*args, **kwargs),
+                'subscription_manager': subscriptions,
                 'write_persistent_log': lambda *args, **kwargs: write_persistent_log(*args, **kwargs),
             },
         )
@@ -3325,22 +3445,33 @@ def main():
     )
     history = History()
     dl_manager = DownloadManager(config, history, queue_path=DOWNLOAD_QUEUE_PATH)
+    subscriptions = build_subscription_manager(config, dl_manager)
+    dl_manager.download_completed.connect(subscriptions.handle_download_completed)
+    subscriptions.reconcile_downloads(dl_manager.snapshot())
 
     # v1.2.2: GUI-thread folder picker bridge for /pick-folder requests.
     # Module-scoped reference keeps the QTimer alive for the app lifetime.
     global _folder_picker_service
     _folder_picker_service = FolderPickerService()
 
-    # v1.3.0: archive feature is gone — sweep the leftover archive.txt
-    # so it isn't visible in INSTALL_DIR after the upgrade.
+    # The old global archive file belonged to the removed all-download lock.
+    # Subscription archives now live in subscriptions.json and must survive
+    # companion updates, so only the obsolete legacy file is swept.
     try:
-        if ARCHIVE_PATH.exists():
-            ARCHIVE_PATH.unlink()
+        legacy_archive = INSTALL_DIR / 'archive.txt'
+        if legacy_archive.exists():
+            legacy_archive.unlink()
     except OSError:
         pass
 
     start_min = start_minimized or config.get("StartMinimized", False)
-    window = MainWindow(config, dl_manager, history, start_minimized=start_min)
+    window = MainWindow(
+        config,
+        dl_manager,
+        history,
+        start_minimized=start_min,
+        subscriptions=subscriptions,
+    )
 
     # The visual-smoke path exercises the frozen UI without installing system
     # integrations, starting the local server, or bootstrapping helper tools.
