@@ -17,6 +17,8 @@ const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'backg
 function loadBackground({
     fetchImpl,
     downloadsDownloadImpl,
+    sessionGetImpl,
+    sessionSetImpl,
     optionalHostPermissions = [],
     permissionsContainsImpl,
     permissionsRequestImpl,
@@ -89,8 +91,14 @@ function loadBackground({
                 }
             },
             session: {
-                async get(key) { return { [key]: sessionState[key] }; },
-                async set(entries) { Object.assign(sessionState, entries); },
+                async get(key) {
+                    if (sessionGetImpl) return sessionGetImpl(key, sessionState);
+                    return { [key]: sessionState[key] };
+                },
+                async set(entries) {
+                    if (sessionSetImpl) return sessionSetImpl(entries, sessionState);
+                    Object.assign(sessionState, entries);
+                },
                 async remove(key) { delete sessionState[key]; }
             }
         }
@@ -652,6 +660,40 @@ test('background DOWNLOAD_FILE enforces the filename cap with a long trailing se
     assert.ok(capturedOptions.filename.length <= 180,
         'a long extension-like tail must not bypass the 180-character cap');
     assert.equal(response.downloadId, 43);
+});
+
+test('background DOWNLOAD_FILE waits for pending-reveal hydration before mirroring', async () => {
+    let resolveHydration;
+    let signalHydrationStarted;
+    const hydrationStarted = new Promise((resolve) => { signalHydrationStarted = resolve; });
+    const hydration = new Promise((resolve) => { resolveHydration = resolve; });
+    let mirroredIds = null;
+
+    const { messageListener } = loadBackground({
+        downloadsDownloadImpl: (_options, callback) => callback(44),
+        sessionGetImpl: async (key) => {
+            if (key !== '_pendingReveals') return { [key]: undefined };
+            signalHydrationStarted();
+            await hydration;
+            return { [key]: [5] };
+        },
+        sessionSetImpl: async (entries) => {
+            if (Object.hasOwn(entries, '_pendingReveals')) mirroredIds = entries._pendingReveals;
+        }
+    });
+
+    await hydrationStarted;
+    const responsePromise = dispatchMessage(messageListener, {
+        type: 'DOWNLOAD_FILE',
+        url: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+        showInFolder: true
+    });
+    resolveHydration();
+
+    const response = await responsePromise;
+    assert.equal(response.downloadId, 44);
+    assert.deepEqual([...mirroredIds], [5, 44],
+        'a cold-start download must merge with the hydrated reveal mirror before persisting');
 });
 
 test('background EXT_FETCH forwards x-goog-api-key to Gemini API', async () => {
