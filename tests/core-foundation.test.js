@@ -47,7 +47,6 @@ const coreSources = [
     ...selectorPackFiles,
     'selectors.js',
     'trusted-html.js',
-    'api-limiter.js',
     'diagnostic-log.js',
     'external-api-health.js',
     'predicate-sandbox.js',
@@ -601,72 +600,6 @@ test('trusted-html.js feature-detects Sanitizer API setHTML when available', () 
     assert.match(src, /'formaction', 'data'/,
         'object data attribute must be URL-filtered');
 });
-
-test('api limiter serializes same-bucket work and reports queue state', async () => {
-    const core = loadFoundation();
-    const order = [];
-    const limiter = core.createApiLimiter({
-        capacity: 1,
-        refillMs: 0,
-        jitterMs: 0,
-        setTimeout(callback) {
-            callback();
-            return 0;
-        },
-        clearTimeout() {}
-    });
-
-    const first = limiter.run('youtube', async () => {
-        order.push('first');
-        return 1;
-    });
-    const second = limiter.run('youtube', async () => {
-        order.push('second');
-        return 2;
-    });
-
-    assert.deepEqual(await Promise.all([first, second]), [1, 2]);
-    assert.deepEqual(order, ['first', 'second']);
-    assert.equal(limiter.getState('youtube').queued, 0);
-});
-
-test('api limiter clear() rejects pending tasks instead of dropping them silently', async () => {
-    // Regression: a previous clear() implementation simply forgot the bucket's
-    // queue, leaving every awaited Promise unresolved forever. Awaiters now
-    // get an explicit rejection so feature cleanup paths cannot leak.
-    const core = loadFoundation();
-    let blockResolve;
-    const blockHead = new Promise((resolve) => { blockResolve = resolve; });
-    const limiter = core.createApiLimiter({
-        capacity: 1,
-        refillMs: 0,
-        jitterMs: 0,
-        // Real-clock fake so the queued task only runs after we resolve manually.
-        setTimeout(callback) { return setTimeout(callback, 0); },
-        clearTimeout(id) { clearTimeout(id); }
-    });
-
-    // First task occupies the single token and blocks on `blockHead`.
-    const headPromise = limiter.run('youtube', async () => {
-        await blockHead;
-        return 'head';
-    });
-    // Tail enqueues behind head — it must be rejected by clear().
-    const tailPromise = limiter.run('youtube', async () => 'tail');
-
-    // Yield so head leaves the queue, then clear before tail can run.
-    await new Promise((r) => setTimeout(r, 0));
-    limiter.clear('youtube');
-
-    await assert.rejects(tailPromise, /API limiter cleared/);
-
-    // Unblock the head; it still resolves normally since it had already left
-    // the queue before clear() — clear only affects tasks still queued.
-    blockResolve('head');
-    assert.equal(await headPromise, 'head');
-});
-
-// ── DiagnosticLog factory ──
 
 test('createDiagnosticLog records, counts per-ctx, and respects the diagnosticLog gate', () => {
     const core = loadFoundation();

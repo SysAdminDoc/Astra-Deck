@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — api-limiter: wire consumers or drop it from the manifest bundle
-  Why: shipped dead code loaded on every page; its bucket also wedges permanently on a never-settling task and serializes regardless of capacity.
-  Where: extension/core/api-limiter.js, manifest content_scripts
 - [ ] P3 — predicate-sandbox: align ! precedence with JavaScript (or document it)
   Why: !ctx.a === true parses as !(ctx.a === true), diverging from JS for user-authored predicates that deliberately look like JS.
   Where: extension/core/predicate-sandbox.js:231-247
