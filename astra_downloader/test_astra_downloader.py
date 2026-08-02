@@ -379,6 +379,15 @@ class PersistenceTests(unittest.TestCase):
 
 
 class CompanionGuiPolicyTests(unittest.TestCase):
+    def test_history_csv_cells_escape_spreadsheet_formula_prefixes(self):
+        import gui as gui_module
+
+        for value in ("=SUM(A1:A2)", "+cmd", "-1+1", "@A1", "\t=1", "\r=1"):
+            with self.subTest(value=value):
+                self.assertEqual(gui_module.sanitize_csv_cell(value), "'" + value)
+        self.assertEqual(gui_module.sanitize_csv_cell("safe title"), "safe title")
+        self.assertEqual(gui_module.sanitize_csv_cell(42), 42)
+
     def test_companion_qt_catalogues_match_extension_locales_and_load_german(self):
         import i18n as i18n_module
         from PyQt6.QtCore import QTranslator

@@ -37,6 +37,7 @@ __all__ = (
     "spawn_delayed_install_dir_removal", "check_single_instance", "main",
     "make_status_badge", "download_status_tone", "human_status",
     "format_duration",
+    "sanitize_csv_cell",
     "ReadinessProbe",
     "SetupWorkerCore",
     "MainWindowCore",
@@ -57,6 +58,15 @@ GUI_ACCESSIBILITY_COLORS = {
     "warning": "#edbd76",
     "danger": "#ff8d82",
 }
+
+CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def sanitize_csv_cell(value):
+    """Keep untrusted history text literal when opened by a spreadsheet."""
+    if isinstance(value, str) and value.startswith(CSV_FORMULA_PREFIXES):
+        return "'" + value
+    return value
 
 
 def system_reduced_motion_enabled():
@@ -2513,7 +2523,13 @@ class MainWindowCore(QMainWindow):
                     extrasaction="ignore",
                 )
                 writer.writeheader()
-                writer.writerows(rows)
+                writer.writerows(
+                    {
+                        key: sanitize_csv_cell(value)
+                        for key, value in row.items()
+                    }
+                    for row in rows
+                )
         except OSError as error:
             self._append_log(f"Could not export download history: {error}")
             return
