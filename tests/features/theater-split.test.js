@@ -334,3 +334,24 @@ test('abortDividerDrag exists in the userscript companion (H8)', () => {
     assert.match(source, /abortDividerDrag/,
         'theater-split.user.js must keep the abortDividerDrag helper');
 });
+
+test('fullscreen exit only pins a px player width while the resize observer is attached', () => {
+    // The resize observer is disconnected while the split is collapsed, so a
+    // px width written on fullscreen exit survived every later window resize
+    // until the next expand. Collapsed state must stay fluid.
+    const moduleSource = fs.readFileSync(path.join(__dirname, MODULE_PATH), 'utf8');
+    for (const [label, source] of [
+        ['sticky-video module', moduleSource],
+        ['ytkit.js fallback', sources.ytkit],
+    ]) {
+        const start = source.indexOf('const leftW = this._isSplit');
+        assert.ok(start > -1, `${label} must compute a restore width on fullscreen exit`);
+        const block = source.slice(start, start + 700);
+        assert.match(block, /:\s*0;/,
+            `${label} must not fall back to a window.innerWidth px snapshot when collapsed`);
+        assert.match(block, /width: leftW > 0 \? leftW \+ 'px' : '100%'/,
+            `${label} must restore a fluid width unless the split pane measured one`);
+        assert.doesNotMatch(block, /:\s*window\.innerWidth;/,
+            `${label} collapsed branch must not pin the viewport width in pixels`);
+    }
+});

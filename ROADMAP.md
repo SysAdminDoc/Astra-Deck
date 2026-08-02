@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — Theater Split: recompute player width when collapsed-state resize precedes fullscreen exit
-  Why: fullscreen exit re-fixes the player at a stale snapshot px width; the resize observer is disconnected while collapsed so a window resize never corrects it until the next expand.
-  Where: extension/features/sticky-video/index.js (_fullscreenHandler restore arm) + twin
 - [ ] P3 — persistentQueue cross-tab coherence
   Why: the panel renders only from local writes (stale indexes remove the wrong item after another tab edits the queue) and two tabs ending videos concurrently can shift() the same head.
   Where: extension/ytkit.js (persistentQueue _read/_write/_removeAt)
