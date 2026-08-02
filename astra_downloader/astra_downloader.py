@@ -991,70 +991,75 @@ def probe_deno_runtime(force=False, configured_runtime='auto'):
                 and cache.get('preference') == preference
                 and (now - cache['checked_at']) < _DENO_RUNTIME_CACHE_TTL_SECONDS):
             return cache['value']
-        ytdlp_version = get_ytdlp_version()
-        parsed_ytdlp_version = _parse_ytdlp_release_date(ytdlp_version or '')
-        # A present binary whose version cannot be verified is not evidence of
-        # the pre-runtime line. Treat it as runtime-required; first-run remains
-        # quiet because there is no binary yet.
-        needs_runtime = (
-            ytdlp_needs_external_runtime(ytdlp_version or '')
-            if parsed_ytdlp_version is not None
-            else YTDLP_PATH.exists()
-        )
-        evaluated = [
-            _evaluate_javascript_runtime(runtime, path, source)
-            for runtime, path, source in _javascript_runtime_candidates(preference)
-        ]
-        selected = next((item for item in evaluated if item['ejsReady']), None)
-        if selected is None and evaluated:
-            selected = evaluated[0]
-        if selected is None:
-            selected = {
-                'runtime': preference if preference != 'auto' else None,
-                'version': None,
-                'path': None,
-                'source': None,
-                'supported': False,
-                'ejsReady': False,
-                'minVersion': NODE_MIN_VERSION if preference == 'node' else DENO_MIN_VERSION,
-                'reason': 'runtime-not-installed',
-            }
-
-        installed = selected['path'] is not None
-        ready = selected['supported'] and selected['ejsReady']
-        runtime_label = (selected.get('runtime') or 'JavaScript runtime').title()
-        advice = ''
-        if needs_runtime and selected['reason'] == 'runtime-not-installed':
-            advice = (
-                'No configured JavaScript runtime was found. Select Auto or Deno and click '
-                'Provision Deno, or select Node after installing Node 22 or newer.'
-            )
-        elif needs_runtime and selected['reason'] == 'runtime-version-unsupported':
-            advice = (
-                f"{runtime_label} {selected.get('version') or 'unknown'} is below the required "
-                f"{selected['minVersion']} runtime floor. Update it, then retry."
-            )
-        elif needs_runtime and selected['reason'] in {'runtime-version-unparseable', 'runtime-probe-failed'}:
-            advice = (
-                f"Astra Downloader could not verify the configured {runtime_label} version. "
-                'Repair or replace the runtime, then retry.'
-            )
-        elif needs_runtime and not ready:
-            advice = (
-                f"{runtime_label} reported a supported version but failed the JavaScript "
-                'execution probe required by yt-dlp EJS. Repair or replace it, then retry.'
-            )
-        result = {
-            **selected,
-            'installed': installed,
-            'stale': bool(installed and not ready),
-            'configuredRuntime': preference,
-            'canProvisionDeno': preference in {'auto', 'deno'},
-            'ytdlpNeedsRuntime': needs_runtime,
-            'advice': advice,
+    # Runtime discovery includes yt-dlp and up to two subprocess probes per
+    # candidate. Keep all of that work outside the cache lock so a cold or
+    # stalled runtime cannot serialize health, readiness, and download calls.
+    ytdlp_version = get_ytdlp_version()
+    parsed_ytdlp_version = _parse_ytdlp_release_date(ytdlp_version or '')
+    # A present binary whose version cannot be verified is not evidence of
+    # the pre-runtime line. Treat it as runtime-required; first-run remains
+    # quiet because there is no binary yet.
+    needs_runtime = (
+        ytdlp_needs_external_runtime(ytdlp_version or '')
+        if parsed_ytdlp_version is not None
+        else YTDLP_PATH.exists()
+    )
+    evaluated = [
+        _evaluate_javascript_runtime(runtime, path, source)
+        for runtime, path, source in _javascript_runtime_candidates(preference)
+    ]
+    selected = next((item for item in evaluated if item['ejsReady']), None)
+    if selected is None and evaluated:
+        selected = evaluated[0]
+    if selected is None:
+        selected = {
+            'runtime': preference if preference != 'auto' else None,
+            'version': None,
+            'path': None,
+            'source': None,
+            'supported': False,
+            'ejsReady': False,
+            'minVersion': NODE_MIN_VERSION if preference == 'node' else DENO_MIN_VERSION,
+            'reason': 'runtime-not-installed',
         }
+
+    installed = selected['path'] is not None
+    ready = selected['supported'] and selected['ejsReady']
+    runtime_label = (selected.get('runtime') or 'JavaScript runtime').title()
+    advice = ''
+    if needs_runtime and selected['reason'] == 'runtime-not-installed':
+        advice = (
+            'No configured JavaScript runtime was found. Select Auto or Deno and click '
+            'Provision Deno, or select Node after installing Node 22 or newer.'
+        )
+    elif needs_runtime and selected['reason'] == 'runtime-version-unsupported':
+        advice = (
+            f"{runtime_label} {selected.get('version') or 'unknown'} is below the required "
+            f"{selected['minVersion']} runtime floor. Update it, then retry."
+        )
+    elif needs_runtime and selected['reason'] in {'runtime-version-unparseable', 'runtime-probe-failed'}:
+        advice = (
+            f"Astra Downloader could not verify the configured {runtime_label} version. "
+            'Repair or replace the runtime, then retry.'
+        )
+    elif needs_runtime and not ready:
+        advice = (
+            f"{runtime_label} reported a supported version but failed the JavaScript "
+            'execution probe required by yt-dlp EJS. Repair or replace it, then retry.'
+        )
+    result = {
+        **selected,
+        'installed': installed,
+        'stale': bool(installed and not ready),
+        'configuredRuntime': preference,
+        'canProvisionDeno': preference in {'auto', 'deno'},
+        'ytdlpNeedsRuntime': needs_runtime,
+        'advice': advice,
+    }
+    with _DENO_RUNTIME_CACHE_LOCK:
+        cache = _deno_runtime_cache
         cache['value'] = result
-        cache['checked_at'] = now
+        cache['checked_at'] = time.time()
         cache['preference'] = preference
         return result
 

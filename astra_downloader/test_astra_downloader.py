@@ -2657,6 +2657,55 @@ else:
             self.assertEqual(probe.get(force=True), "1.2.3")
             self.assertEqual(len(calls), 2)
 
+    def test_health_version_probe_does_not_hold_cache_lock_during_runner(self):
+        import health
+
+        with tempfile.TemporaryDirectory() as tmp:
+            executable = Path(tmp) / "tool.exe"
+            executable.touch()
+            first_started = threading.Event()
+            release_first = threading.Event()
+            second_finished = threading.Event()
+            call_lock = threading.Lock()
+            call_count = 0
+
+            def run(_args):
+                nonlocal call_count
+                with call_lock:
+                    call_count += 1
+                    call_number = call_count
+                if call_number == 1:
+                    first_started.set()
+                    release_first.wait(timeout=2)
+                return "tool 1.2.3"
+
+            probe = health.ExecutableVersionProbe(
+                path=executable,
+                args=("--version",),
+                parser=lambda output: output.rsplit(" ", 1)[-1],
+                runner=run,
+                clock=lambda: 100.0,
+                ttl_seconds=60,
+            )
+            first = threading.Thread(target=probe.get, daemon=True)
+            second = threading.Thread(
+                target=lambda: (probe.get(), second_finished.set()),
+                daemon=True,
+            )
+            first.start()
+            self.assertTrue(first_started.wait(timeout=1))
+            second.start()
+            self.assertTrue(
+                second_finished.wait(timeout=1),
+                "a second version probe must not wait on the first subprocess",
+            )
+            release_first.set()
+            first.join(timeout=2)
+            second.join(timeout=2)
+            self.assertFalse(first.is_alive())
+            self.assertFalse(second.is_alive())
+            self.assertGreaterEqual(call_count, 2)
+
     def test_po_token_probe_caches_injected_http_result_and_resets(self):
         import health
 
@@ -2699,6 +2748,51 @@ else:
         first["current"] = True
         self.assertFalse(probe.check()["current"], "cached payload must be defensive")
         self.assertTrue(probe.check(force=True)["current"])
+
+    def test_ffmpeg_capability_probe_does_not_hold_cache_lock_during_version_getter(self):
+        import health
+
+        first_started = threading.Event()
+        release_first = threading.Event()
+        second_finished = threading.Event()
+        call_lock = threading.Lock()
+        call_count = 0
+
+        def version_getter():
+            nonlocal call_count
+            with call_lock:
+                call_count += 1
+                call_number = call_count
+            if call_number == 1:
+                first_started.set()
+                release_first.wait(timeout=2)
+            return "8.1.2"
+
+        probe = health.FfmpegCapabilitiesProbe(
+            version_getter=version_getter,
+            clock=lambda: 100.0,
+            minimum_major=8,
+            minimum_version="8.1.2",
+            ttl_seconds=60,
+        )
+        first = threading.Thread(target=probe.check, daemon=True)
+        second = threading.Thread(
+            target=lambda: (probe.check(), second_finished.set()),
+            daemon=True,
+        )
+        first.start()
+        self.assertTrue(first_started.wait(timeout=1))
+        second.start()
+        self.assertTrue(
+            second_finished.wait(timeout=1),
+            "a second ffmpeg capability check must not wait on version I/O",
+        )
+        release_first.set()
+        first.join(timeout=2)
+        second.join(timeout=2)
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
+        self.assertGreaterEqual(call_count, 2)
 
     def test_ffmpeg_capability_probe_enforces_exact_semver_floor(self):
         import health
@@ -4425,6 +4519,57 @@ class DenoRuntimeProbeTests(unittest.TestCase):
             ad.get_ytdlp_version = original_get_version
         # Auto checks Deno and Node once; subsequent reads use the cache.
         self.assertEqual(call_count['n'], 2)
+
+    def test_probe_deno_runtime_does_not_hold_cache_lock_during_probes(self):
+        first_started = threading.Event()
+        release_first = threading.Event()
+        second_finished = threading.Event()
+        call_lock = threading.Lock()
+        call_count = 0
+
+        def slow_probe(args, timeout=5):
+            nonlocal call_count
+            with call_lock:
+                call_count += 1
+                call_number = call_count
+            if call_number == 1:
+                first_started.set()
+                release_first.wait(timeout=2)
+            if '--version' in args:
+                return 'deno 2.4.1\n'
+            return ad.JS_RUNTIME_CAPABILITY_MARKER
+
+        with mock.patch.object(
+            ad, 'DENO_PATH', Path(tempfile.gettempdir()) / 'astra-missing-deno-probe.exe'
+        ), mock.patch.object(
+            ad.shutil, 'which', side_effect=lambda binary: (
+                '/usr/local/bin/deno' if binary == 'deno' else None
+            )
+        ), mock.patch.object(
+            ad, 'get_ytdlp_version', return_value='2026.07.04'
+        ), mock.patch.object(ad, '_run_captured', side_effect=slow_probe):
+            first = threading.Thread(
+                target=lambda: ad.probe_deno_runtime(force=True), daemon=True
+            )
+            second = threading.Thread(
+                target=lambda: (
+                    ad.probe_deno_runtime(force=True), second_finished.set()
+                ),
+                daemon=True,
+            )
+            first.start()
+            self.assertTrue(first_started.wait(timeout=1))
+            second.start()
+            self.assertTrue(
+                second_finished.wait(timeout=1),
+                "a second runtime probe must not wait on the first subprocess",
+            )
+            release_first.set()
+            first.join(timeout=2)
+            second.join(timeout=2)
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
+        self.assertGreaterEqual(call_count, 2)
 
     def test_configured_node_22_is_recognized_and_emitted_to_ytdlp(self):
         with mock.patch.object(ad, 'DENO_PATH', Path(tempfile.gettempdir()) / 'astra-missing-deno-probe.exe'), \
