@@ -292,6 +292,22 @@ test('player-control features remove stale controls on navigation and destroy', 
     }
 });
 
+test('transcriptViewer resets translation state before rebuilding after navigation', () => {
+    const block = featureBlock('transcriptViewer', 30000);
+    const initBlock = methodSlice(block, 'init() {', 900);
+    assert.match(initBlock, /this\._panel\?\.remove\(\);\s*this\._panel = null;/,
+        'transcriptViewer must remove the previous panel on navigation');
+    assert.match(initBlock, /this\._translatedCues = null;/,
+        'transcriptViewer must discard translated cues on navigation');
+    assert.match(initBlock, /this\._showingTranslation = false;/,
+        'transcriptViewer must reset the translation toggle on navigation');
+    assert.ok(
+        initBlock.indexOf('this._translatedCues = null;')
+            > initBlock.indexOf('this._panel = null;'),
+        'translation state must reset after the previous panel is torn down'
+    );
+});
+
 // ── item 4: stream links panel must not serve a stale player response ──
 
 test('downloadStreamLinksPanel validates player-response videoId and closes the panel on navigation', () => {
