@@ -33248,20 +33248,75 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 storageWriteJSON(this._LOG_KEY, log.slice(-500));
             },
 
+            _openDropdown() {
+                const dropdown = document.querySelector('ytd-popup-container tp-yt-iron-dropdown');
+                if (!dropdown) return null;
+                const hidden = dropdown.getAttribute('aria-hidden') === 'true'
+                    || dropdown.style.display === 'none'
+                    || !dropdown.getClientRects().length;
+                return hidden ? null : dropdown;
+            },
+            async _waitFor(predicate, timeoutMs, stepMs = 40) {
+                const deadline = Date.now() + timeoutMs;
+                for (;;) {
+                    let ok = false;
+                    try { ok = !!predicate(); } catch (_) {
+                        // reason: DOM can be swapped mid-poll; retry until the deadline
+                    }
+                    if (ok) return true;
+                    if (Date.now() >= deadline) return false;
+                    await new Promise(r => setTimeout(r, stepMs));
+                }
+            },
+            // Returns true when the item demonstrably removes THIS row's video,
+            // false when it demonstrably removes another one, and null when the
+            // endpoint is unreadable (the isolated world usually cannot read
+            // Polymer .data, which is why the text fallback exists at all).
+            _menuItemOwnership(node, videoId) {
+                const host = node.matches?.('ytd-menu-service-item-renderer') ? node : node.closest?.('ytd-menu-service-item-renderer');
+                const actions = host?.data?.serviceEndpoint?.playlistEditEndpoint?.actions;
+                if (!Array.isArray(actions)) return null;
+                const removal = actions.find(a => String(a?.action || '').startsWith('ACTION_REMOVE'));
+                if (!removal) return null;
+                const target = removal.removedVideoId || removal.setVideoId || '';
+                if (!target) return null;
+                return target === videoId;
+            },
             async _removeRow(entry) {
                 const menuBtn = entry.row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
                 if (!menuBtn) return false;
+                // One shared dropdown serves every row. Close whatever is open
+                // before asking for this row's menu, then wait for it to
+                // actually appear instead of guessing at a fixed delay.
+                if (this._openDropdown()) {
+                    document.body.click();
+                    await this._waitFor(() => !this._openDropdown(), 800);
+                }
                 menuBtn.click();
-                await new Promise(r => setTimeout(r, 120));
+                const opened = await this._waitFor(
+                    () => this._openDropdown()?.querySelector('ytd-menu-service-item-renderer, tp-yt-paper-item'),
+                    1500
+                );
+                if (!opened) { document.body.click(); return false; }
+                const dropdown = this._openDropdown();
+                const items = [...(dropdown?.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item') || [])];
                 // Prefer the structural playlistEditEndpoint match — the
                 // "Remove from" text test is English-only and made removal a
                 // silent no-op on the 10 non-English locales.
-                const items = [...document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item')];
-                const removeItem = items.find(n => {
+                const owned = items.find(n => this._menuItemOwnership(n, entry.videoId) === true);
+                const structural = owned || items.find(n => {
                     const host = n.matches?.('ytd-menu-service-item-renderer') ? n : n.closest?.('ytd-menu-service-item-renderer');
                     const actions = host?.data?.serviceEndpoint?.playlistEditEndpoint?.actions;
                     return Array.isArray(actions) && actions.some(a => String(a?.action || '').startsWith('ACTION_REMOVE'));
-                }) || items.find(n => /remove from/i.test(n.textContent || ''));
+                });
+                // A readable endpoint that names a different video means the
+                // dropdown still holds the previous row: bail rather than
+                // remove someone else's entry and count it as a success.
+                if (structural && !owned && this._menuItemOwnership(structural, entry.videoId) === false) {
+                    document.body.click();
+                    return false;
+                }
+                const removeItem = structural || items.find(n => /remove from/i.test(n.textContent || ''));
                 if (!removeItem) { document.body.click(); return false; }
                 removeItem.click();
                 await new Promise(r => setTimeout(r, this._PACE_MS));

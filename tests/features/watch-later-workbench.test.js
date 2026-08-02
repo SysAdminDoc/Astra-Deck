@@ -8,7 +8,9 @@ const path = require('path');
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
 
-function featureSlice(id, span = 24000) {
+// Window widened when the removal path gained dropdown-ownership checks —
+// these slices are length-sensitive.
+function featureSlice(id, span = 28000) {
     const start = ytkitSource.indexOf(`id: '${id}'`);
     assert.notEqual(start, -1, `feature ${id} must exist in ytkit.js`);
     return ytkitSource.slice(start, start + span);
@@ -71,4 +73,26 @@ test('watchLaterWorkbench cleans up its UI on destroy', () => {
     const block = featureSlice('watchLaterWorkbench');
     assert.match(block, /removeNavigateRule\('watchLaterWorkbench'\)/);
     assert.match(block, /this\._panel\?\.remove\(\)/);
+});
+
+test('watchLaterWorkbench verifies the open menu belongs to the row it is removing', () => {
+    // YouTube reuses one shared iron-dropdown for every row menu. Opening the
+    // menu and waiting a fixed 120ms could click the previous row's entry
+    // during a slow rebind — removing the wrong video and counting it as a
+    // success.
+    const block = featureSlice('watchLaterWorkbench');
+    assert.match(block, /_openDropdown\(\)/,
+        'removal must find the actually-open dropdown, not any menu markup');
+    assert.match(block, /_waitFor\(\s*\n?\s*\(\) => this\._openDropdown\(\)\?\.querySelector/,
+        'removal must wait for this row\'s menu to open instead of a fixed delay');
+    assert.doesNotMatch(block, /menuBtn\.click\(\);\s*\n\s*await new Promise\(r => setTimeout\(r, 120\)\)/,
+        'the fixed 120ms menu wait must be gone');
+    assert.match(block, /_menuItemOwnership\(node, videoId\)/,
+        'menu items must be checked against the row\'s video id');
+    assert.match(block, /removal\.removedVideoId \|\| removal\.setVideoId/,
+        'ownership must read the removal endpoint\'s target video');
+    assert.match(block, /this\._menuItemOwnership\(structural, entry\.videoId\) === false/,
+        'a menu that names a different video must abort the removal');
+    assert.match(block, /remove from/i,
+        'the locale-independent text fallback must survive for unreadable endpoints');
 });
