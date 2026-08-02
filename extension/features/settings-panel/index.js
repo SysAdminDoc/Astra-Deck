@@ -1866,60 +1866,75 @@ function buildSettingsPanel() {
             resetBtn.className = 'ytkit-reset-group-btn';
             resetBtn.title = t('settingsResetGroupTitle', 'Reset this group to defaults');
             resetBtn.textContent = t('commonReset', 'Reset');
+            // Reset/Undo must follow the key a feature actually stores
+            // under: ~23 features (uiStyle, colorTheme, customCssCode, …) use
+            // a settingKey that differs from their id, and keying on the id
+            // silently skipped every one of them.
+            const settingKeyOf = (feature) => feature.settingKey || feature.id;
+            const syncFeatureControl = (feature) => {
+                const value = appState.settings[settingKeyOf(feature)];
+                const toggle = document.getElementById(`ytkit-toggle-${feature.id}`);
+                if (toggle) {
+                    toggle.checked = Boolean(value);
+                    const switchEl = toggle.closest('.ytkit-switch');
+                    if (switchEl) switchEl.classList.toggle('active', toggle.checked);
+                }
+                const select = document.getElementById(`ytkit-select-${feature.id}`);
+                if (select) select.value = String(value ?? '');
+                const range = document.getElementById(`ytkit-range-${feature.id}`);
+                if (range) {
+                    range.value = value ?? range.min;
+                    const display = range.parentElement?.querySelector('.ytkit-range-value');
+                    if (display) display.textContent = feature.formatValue ? feature.formatValue(range.value) : range.value;
+                }
+                const color = document.getElementById(`ytkit-color-${feature.id}`);
+                if (color) color.value = value || '#3b82f6';
+                const input = document.getElementById(`ytkit-input-${feature.id}`);
+                if (input) input.value = value ?? '';
+                const contextValue = document.querySelector(`.ytkit-pane-context-value[data-feature-id="${feature.id}"]`);
+                if (contextValue) {
+                    const options = normalizeSelectOptions(feature.options);
+                    const current = String(value ?? options[0]?.value ?? '');
+                    const label = options.find((option) => option.value === current)?.label || current;
+                    contextValue.textContent = label;
+                    contextValue.title = label;
+                }
+            };
+            const applyFeatureValue = (feature, value, reason) => {
+                appState.settings[settingKeyOf(feature)] = value;
+                try { destroyFeatureLifecycle(feature, reason); } catch (err) {
+                    DebugManager.log('Reset', `Destroy failed for "${feature.id}": ${err.message}`);
+                }
+                if (value) {
+                    try { initFeatureLifecycle(feature, reason); } catch (err) {
+                        DebugManager.log('Reset', `Init failed for "${feature.id}": ${err.message}`);
+                    }
+                }
+            };
             resetBtn.onclick = () => {
                 const categoryFeatures = featuresByCategory[cat];
                 const backup = {};
-                categoryFeatures.forEach(f => { backup[f.id] = appState.settings[f.id]; });
+                categoryFeatures.forEach(f => { backup[settingKeyOf(f)] = appState.settings[settingKeyOf(f)]; });
                 categoryFeatures.forEach(f => {
-                    const defaultValue = settingsManager.defaults[f.id];
-                    if (defaultValue !== undefined) {
-                        appState.settings[f.id] = defaultValue;
-                        try { destroyFeatureLifecycle(f, 'group-reset'); } catch(err) {
-                            DebugManager.log('Reset', `Destroy failed for "${f.id}": ${err.message}`);
-                        }
-                        if (defaultValue) {
-                            try { initFeatureLifecycle(f, 'group-reset'); } catch(err) {
-                                DebugManager.log('Reset', `Init failed for "${f.id}": ${err.message}`);
-                            }
-                        }
-                    }
+                    const defaultValue = settingsManager.defaults[settingKeyOf(f)];
+                    if (defaultValue !== undefined) applyFeatureValue(f, defaultValue, 'group-reset');
                 });
                 settingsManager.save(appState.settings);
                 updateAllToggleStates();
                 setPanelStatus(t('settingsResetDoneTpl', '{category} reset to defaults. Undo is available in the toast.')
                     .replace('{category}', cat), 'warn');
-                // Update UI
-                categoryFeatures.forEach(f => {
-                    const toggle = document.getElementById(`ytkit-toggle-${f.id}`);
-                    if (toggle) {
-                        toggle.checked = appState.settings[f.id];
-                        const switchEl = toggle.closest('.ytkit-switch');
-                        if (switchEl) switchEl.classList.toggle('active', toggle.checked);
-                    }
-                });
+                categoryFeatures.forEach(syncFeatureControl);
                 showToast(t('settingsResetToastTpl', '“{category}” reset to defaults').replace('{category}', cat), '#f97316', {
                     duration: 5,
                     action: { text: t('toastActionUndo', 'Undo'), onClick: async () => {
                     categoryFeatures.forEach(f => {
-                        if (backup[f.id] !== undefined) {
-                            appState.settings[f.id] = backup[f.id];
-                            try { destroyFeatureLifecycle(f, 'group-reset-undo'); } catch(err) {
-                                DebugManager.log('Reset', `Undo destroy failed for "${f.id}": ${err.message}`);
-                            }
-                            if (backup[f.id]) {
-                                try { initFeatureLifecycle(f, 'group-reset-undo'); } catch(err) {
-                                    DebugManager.log('Reset', `Undo init failed for "${f.id}": ${err.message}`);
-                                }
-                            }
-                        }
+                        const previous = backup[settingKeyOf(f)];
+                        if (previous !== undefined) applyFeatureValue(f, previous, 'group-reset-undo');
                     });
                     settingsManager.save(appState.settings);
                     updateAllToggleStates();
                     setPanelStatus(t('settingsResetRestoredTpl', '{category} restored.').replace('{category}', cat), 'success');
-                    categoryFeatures.forEach(f => {
-                        const t = document.getElementById(`ytkit-toggle-${f.id}`);
-                        if (t) { t.checked = appState.settings[f.id]; const s = t.closest('.ytkit-switch'); if (s) s.classList.toggle('active', t.checked); }
-                    });
+                    categoryFeatures.forEach(syncFeatureControl);
                     showToast(t('settingsResetRestoredToastTpl', '“{category}” restored').replace('{category}', cat), '#22c55e');
                 }}});
             };

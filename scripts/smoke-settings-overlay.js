@@ -702,6 +702,41 @@ async function main() {
                     );
                 }
             }
+            if (state.name === 'desktop-dark') {
+                // Section Reset used to key on the feature id, so the features
+                // that store under a different settingKey were skipped and any
+                // non-checkbox control kept its pre-reset value on screen.
+                // Drive a real reset over a select-backed feature and read the
+                // rendered control back.
+                const resetProof = await client.evaluate(`(() => {
+                    const select = document.querySelector('#ytkit-settings-panel select[id^="ytkit-select-"]');
+                    if (!select) return { ok: false, reason: 'no select control rendered' };
+                    const options = Array.from(select.options).map((option) => option.value);
+                    const other = options.find((value) => value !== select.value);
+                    if (!other) return { ok: false, reason: 'select has no alternative option' };
+                    const before = select.value;
+                    select.value = other;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    const pane = select.closest('.ytkit-pane');
+                    const resetBtn = pane?.querySelector('.ytkit-reset-group-btn');
+                    if (!resetBtn) return { ok: false, reason: 'pane has no reset control' };
+                    resetBtn.click();
+                    return {
+                        ok: true,
+                        id: select.id,
+                        before,
+                        staged: other,
+                        after: select.value,
+                    };
+                })()`);
+                if (!resetProof?.ok) {
+                    failuresByState[state.name].push(`section reset proof: ${resetProof?.reason || 'unavailable'}`);
+                } else if (resetProof.after === resetProof.staged) {
+                    failuresByState[state.name].push(
+                        `section reset left ${resetProof.id} showing the pre-reset value ${resetProof.staged}`
+                    );
+                }
+            }
             if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
                 const featureReady = await client.evaluate(`(() => {
                     const toggle = document.getElementById('ytkit-toggle-blueLightFilter');
