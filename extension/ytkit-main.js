@@ -111,22 +111,95 @@
     var _origDecodingInfo = (typeof MediaCapabilities !== 'undefined' && MediaCapabilities.prototype.decodingInfo)
         ? MediaCapabilities.prototype.decodingInfo : null;
     var _codec = 'auto';
+    // The codec family actually enforced. With the 'efficient' mode this is
+    // resolved asynchronously from MediaCapabilities and can stay 'auto'.
+    var _effective = 'auto';
     var _patched = false;
+    var _efficientProbe = null;
+
+    // Ordered cheapest-decode first: when several candidates come back equally
+    // smooth and power efficient the first one wins.
+    var EFFICIENT_CANDIDATES = [
+        { family: 'h264', contentType: 'video/mp4; codecs="avc1.640028"' },
+        { family: 'vp9', contentType: 'video/webm; codecs="vp09.00.10.08"' },
+        { family: 'av1', contentType: 'video/mp4; codecs="av01.0.08M.08"' }
+    ];
+
+    function probeEfficientCodec() {
+        if (_efficientProbe) return _efficientProbe;
+        var capabilities = (typeof navigator !== 'undefined') ? navigator.mediaCapabilities : null;
+        if (!capabilities || !_origDecodingInfo) {
+            // No API to ask — behave exactly like 'auto'.
+            _efficientProbe = Promise.resolve(null);
+            return _efficientProbe;
+        }
+        _efficientProbe = Promise.all(EFFICIENT_CANDIDATES.map(function(candidate) {
+            var query = {
+                type: 'media-source',
+                video: {
+                    contentType: candidate.contentType,
+                    width: 1920,
+                    height: 1080,
+                    bitrate: 4000000,
+                    framerate: 30
+                }
+            };
+            try {
+                return _origDecodingInfo.call(capabilities, query).then(function(info) {
+                    return {
+                        family: candidate.family,
+                        supported: !!(info && info.supported),
+                        efficient: !!(info && info.supported && info.smooth && info.powerEfficient)
+                    };
+                }, function() {
+                    return { family: candidate.family, supported: false, efficient: false };
+                });
+            } catch (e) {
+                return Promise.resolve({ family: candidate.family, supported: false, efficient: false });
+            }
+        })).then(function(results) {
+            var efficient = results.filter(function(r) { return r.efficient; });
+            var supported = results.filter(function(r) { return r.supported; });
+            // Nothing to choose from, or the device reports every supported
+            // candidate as equally efficient: the answer carries no signal, so
+            // leave YouTube's own selection alone.
+            if (!efficient.length || efficient.length === supported.length) return null;
+            return efficient[0].family;
+        }, function() {
+            return null;
+        });
+        return _efficientProbe;
+    }
 
     function shouldBlock(type) {
-        if (_codec === 'h264' && /vp0?9|av01/i.test(type)) return true;
-        if (_codec === 'vp9') {
+        if (_effective === 'h264' && /vp0?9|av01/i.test(type)) return true;
+        if (_effective === 'vp9') {
             if (/av01/i.test(type)) return true;
             if (/avc1/i.test(type) && !/vp0?9/i.test(type)) return true;
         }
-        if (_codec === 'av1') {
+        if (_effective === 'av1') {
             if ((/vp0?9|avc1/i.test(type)) && !/av01/i.test(type)) return true;
         }
         return false;
     }
 
     function sync() {
-        if (_codec === 'auto') {
+        if (_codec === 'efficient') {
+            // Stay unpatched until the device answers; a rejected or absent
+            // API resolves to null and keeps current behavior.
+            probeEfficientCodec().then(function(family) {
+                if (_codec !== 'efficient') return;
+                _effective = family || 'auto';
+                applyPatch();
+            });
+            return;
+        }
+        _effective = _codec;
+        applyPatch();
+    }
+
+    function applyPatch() {
+        if (_effective === 'auto') {
             if (_patched) {
                 HTMLVideoElement.prototype.canPlayType = _origCanPlay;
                 if (_origIsTypeSupported) MediaSource.isTypeSupported = _origIsTypeSupported;
@@ -166,6 +239,11 @@
             sync();
         }
     });
+
+    // Exposed for the codec-bridge tests; the page never calls these.
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { probeEfficientCodec: probeEfficientCodec, EFFICIENT_CANDIDATES: EFFICIENT_CANDIDATES };
+    }
 
     var initial = document.documentElement.getAttribute('data-ytkit-codec');
     if (initial) { _codec = initial; sync(); }
