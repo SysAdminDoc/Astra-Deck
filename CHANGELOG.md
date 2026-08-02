@@ -36,6 +36,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   racing GUI settings saves or rotating the active token.
 - **History CSV safety.** Exported history cells now neutralize spreadsheet
   formula prefixes so untrusted video titles remain literal when opened.
+- **Windows update probe timeout.** Detached companion health checks now have
+  a 30-second bound and kill hung staged processes so rollback and relaunch can
+  proceed.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
