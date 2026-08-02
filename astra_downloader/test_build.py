@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -77,6 +78,29 @@ class ReleaseConstraintsTests(unittest.TestCase):
     def test_environment_verifier_rejects_installed_version_drift(self):
         with self.assertRaisesRegex(SystemExit, 'Release environment drift'):
             self._verify_fixture(app_version='1.1')
+
+    def test_prepare_translations_fails_on_stale_qm_without_compiler(self):
+        expected = (
+            'ar', 'de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru',
+            'zh_CN',
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            translations = Path(tmp)
+            for locale in expected:
+                ts = translations / f'astra_downloader_{locale}.ts'
+                qm = translations / f'astra_downloader_{locale}.qm'
+                ts.write_text('<TS/>', encoding='utf-8')
+                qm.write_bytes(b'compiled')
+
+            stale_ts = translations / 'astra_downloader_en.ts'
+            stale_qm = translations / 'astra_downloader_en.qm'
+            os.utime(stale_qm, ns=(1_000_000_000, 1_000_000_000))
+            os.utime(stale_ts, ns=(2_000_000_000, 2_000_000_000))
+
+            with mock.patch.object(build, 'TRANSLATIONS_DIR', translations), \
+                 mock.patch.object(build.shutil, 'which', return_value=None):
+                with self.assertRaisesRegex(SystemExit, r'stale \.qm catalogues.*en'):
+                    build.prepare_translations()
 
 
 if __name__ == '__main__':
