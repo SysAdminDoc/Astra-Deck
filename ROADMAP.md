@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — Locale-independent selectors for live-chat popout / subscribe tooltip and home-subs hideCreateButton
-  Why: aria-label/text matches are English-only, so these toggles silently no-op on the 10 non-EN locales.
-  Where: extension/features/live-chat/index.js:20,163-166, features/home-subs-css/index.js:19
 - [ ] P3 — subscription-groups import should merge (or offer merge) instead of replace-all
   Why: importing any file deletes every group not present in it with only a 6s toast Undo as recovery.
   Where: extension/features/subscription-groups/index.js:2193-2204

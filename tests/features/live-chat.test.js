@@ -1,0 +1,34 @@
+'use strict';
+
+// Per-area test bed for the live-chat feature module.
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+
+test('live-chat popout and subscribe-tooltip matches are not English-only', () => {
+    // Both were text/aria-label matches, so the toggles silently no-opped on
+    // the ten non-English locales — and the popout label only ever existed on
+    // the older header layout, where current YouTube puts the entry in the
+    // header's overflow menu instead.
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'live-chat', 'index.js'), 'utf8');
+    const popoutStart = source.indexOf('popout: [');
+    assert.ok(popoutStart > -1, 'the popout selector must list alternatives');
+    const popout = source.slice(popoutStart, popoutStart + 700);
+    assert.match(popout, /button\[aria-label="Popout chat"\]/,
+        'the legacy English label stays as one anchor');
+    assert.match(popout, /ytd-menu-service-item-renderer:has\(path\[d\^="M21,21H3V3h9v1H4v16h16v-8h1V21z"\]\)/,
+        'the current open-in-new glyph must be matched');
+    assert.match(popout, /ytd-menu-service-item-renderer:has\(path\[d\^="M19 19H5V5h7V3H5c-1\.11"\]\)/,
+        'the older open-in-new glyph revision must also be matched');
+
+    const tooltipStart = source.indexOf('const engagementAnchored');
+    assert.ok(tooltipStart > -1, 'the tooltip check must have a structural path');
+    const tooltip = source.slice(tooltipStart - 400, tooltipStart + 700);
+    assert.match(tooltip, /yt-live-chat-viewer-engagement-message-renderer/,
+        'a tooltip anchored to an engagement message must be recognized in any language');
+    assert.match(tooltip, /people will be able to see that you subscribe to this channel/,
+        'the English phrase stays as a fallback for other layouts');
+});

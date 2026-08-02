@@ -17,7 +17,15 @@
     const CHAT_ELEMENT_SELECTORS = Object.freeze({
         header: 'yt-live-chat-header-renderer',
         menu: 'yt-live-chat-header-renderer #overflow',
-        popout: 'yt-live-chat-header-renderer button[aria-label="Popout chat"]',
+        // The English aria-label only exists on the older header layout; current
+        // YouTube moves popout into the header's overflow menu, where the entry
+        // is identified by its "open in new" glyph. Both glyph revisions are
+        // captured in mhtml/LiveChat.mhtml and are language-independent.
+        popout: [
+            'yt-live-chat-header-renderer button[aria-label="Popout chat"]',
+            'tp-yt-iron-dropdown.yt-live-chat-app ytd-menu-service-item-renderer:has(path[d^="M21,21H3V3h9v1H4v16h16v-8h1V21z"])',
+            'tp-yt-iron-dropdown.yt-live-chat-app ytd-menu-service-item-renderer:has(path[d^="M19 19H5V5h7V3H5c-1.11"])'
+        ].join(', '),
         reactions: 'yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model',
         timestamps: '#show-hide-button.ytd-live-chat-frame',
         polls: 'yt-live-chat-poll-renderer, yt-live-chat-banner-manager, yt-live-chat-action-panel-renderer:has(yt-live-chat-poll-renderer)',
@@ -163,7 +171,15 @@
                 const details = tooltip.querySelector?.('#details-text')?.textContent?.trim().toLowerCase() || '';
                 const inChat = tooltip.classList?.contains('yt-live-chat-app')
                     || tooltip.closest?.('.yt-live-chat-app, tp-yt-iron-dropdown.yt-live-chat-app');
-                if (!inChat || !details.includes('people will be able to see that you subscribe to this channel')) return;
+                if (!inChat) return;
+                // The sentence match is English-only, so this hid nothing on the
+                // ten other shipped locales. A tooltip anchored to an engagement
+                // message is engagement chrome in any language; the phrase stays
+                // as a fallback for layouts that render the tooltip elsewhere.
+                const engagementAnchored = !!tooltip.closest?.('yt-live-chat-viewer-engagement-message-renderer')
+                    || !!tooltip.parentElement?.querySelector?.('yt-live-chat-viewer-engagement-message-renderer');
+                if (!engagementAnchored
+                    && !details.includes('people will be able to see that you subscribe to this channel')) return;
                 hideEngagementNode(tooltip);
                 hideEngagementNode(tooltip.closest?.('tp-yt-iron-dropdown'));
             });

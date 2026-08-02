@@ -16,7 +16,15 @@
     //   hideSubscriptionOptions
 
     function buildHideCreateButtonCss() {
-        return 'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])';
+        // The aria-label is English-only, so this toggle silently did nothing on
+        // the ten other shipped locales. The button's leading "+" glyph is the
+        // same markup in every language (captured in mhtml/YouTube.mhtml), and
+        // it is more specific than the masthead button row — which also holds
+        // the Sign in button when signed out.
+        return [
+            'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])',
+            'ytd-masthead #buttons ytd-button-renderer:has(path[d^="M12 3a1 1 0 00-1 1v7H4"])'
+        ].join(', ');
     }
 
     function buildHideVoiceSearchCss() {
