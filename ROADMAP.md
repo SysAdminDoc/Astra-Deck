@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — persistentQueue cross-tab coherence
-  Why: the panel renders only from local writes (stale indexes remove the wrong item after another tab edits the queue) and two tabs ending videos concurrently can shift() the same head.
-  Where: extension/ytkit.js (persistentQueue _read/_write/_removeAt)
 - [ ] P3 — WL workbench _removeRow should verify the menu item belongs to the row
   Why: the shared iron-dropdown retains the previous row's endpoints during slow rebinds; a fixed 120ms wait can click the stale entry and miscount.
   Where: extension/ytkit.js (_removeRow)

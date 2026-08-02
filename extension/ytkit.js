@@ -25336,6 +25336,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _videoRef: null,
             _endedHandler: null,
             _docClickHandler: null,
+            _storageHandler: null,
 
             _read() {
                 const q = storageReadJSON(this._KEY, null);
@@ -25365,23 +25366,48 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 showToast('Added to queue', '#22c55e', { duration: 2 });
                 return true;
             },
-            _removeAt(index) {
+            // Row actions carry the video id they were rendered for. Another
+            // tab can edit the queue between render and click, and a bare index
+            // would then act on whatever slid into that position.
+            _indexOf(queue, index, expectedId) {
+                if (!expectedId) return index;
+                if (queue.items[index]?.id === expectedId) return index;
+                return queue.items.findIndex(item => item.id === expectedId);
+            },
+            _removeAt(index, expectedId) {
                 const queue = this._read();
-                queue.items.splice(index, 1);
+                const at = this._indexOf(queue, index, expectedId);
+                if (at < 0) { this._renderPill(); if (this._panel) this._renderPanelRows(); return; }
+                queue.items.splice(at, 1);
                 this._write(queue);
             },
-            _move(index, delta) {
+            _move(index, delta, expectedId) {
                 const queue = this._read();
-                const target = index + delta;
+                const at = this._indexOf(queue, index, expectedId);
+                if (at < 0) { this._renderPill(); if (this._panel) this._renderPanelRows(); return; }
+                const target = at + delta;
                 if (target < 0 || target >= queue.items.length) return;
-                const [item] = queue.items.splice(index, 1);
+                const [item] = queue.items.splice(at, 1);
                 queue.items.splice(target, 0, item);
                 this._write(queue);
             },
+            _CLAIM_WINDOW_MS: 8000,
             _playNext() {
                 const queue = this._read();
-                const next = queue.items.shift();
-                if (!next) return;
+                // Two tabs ending a video at the same moment both read the same
+                // head. Record the claim so the second tab takes the entry after
+                // it instead of playing the same video twice.
+                const claim = queue.claim;
+                const claimFresh = claim && (Date.now() - (claim.at || 0)) < this._CLAIM_WINDOW_MS;
+                let next = queue.items.shift();
+                if (next && claimFresh && claim.id === next.id) {
+                    next = queue.items.shift();
+                }
+                if (!next) {
+                    if (claimFresh) this._write(queue);
+                    return;
+                }
+                queue.claim = { id: next.id, at: Date.now() };
                 this._write(queue);
                 location.href = `https://www.youtube.com/watch?v=${next.id}`;
             },
@@ -25475,9 +25501,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         b.addEventListener('click', onClick);
                         actions.appendChild(b);
                     };
-                    mk('↑', `Move up: ${it.title}`, () => this._move(i, -1), i === 0);
-                    mk('↓', `Move down: ${it.title}`, () => this._move(i, 1), i === items.length - 1);
-                    mk('✕', `Remove from queue: ${it.title}`, () => this._removeAt(i));
+                    mk('↑', `Move up: ${it.title}`, () => this._move(i, -1, it.id), i === 0);
+                    mk('↓', `Move down: ${it.title}`, () => this._move(i, 1, it.id), i === items.length - 1);
+                    mk('✕', `Remove from queue: ${it.title}`, () => this._removeAt(i, it.id));
                     row.appendChild(title);
                     row.appendChild(actions);
                     list.appendChild(row);
@@ -25592,6 +25618,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._playNext();
                 };
                 this._attachEnded();
+                // Another tab's edits reach this one through the shared storage
+                // bridge; without this the pill and panel showed a queue that no
+                // longer existed.
+                this._storageHandler = (event) => {
+                    if (!event?.detail?.changes || !(this._KEY in event.detail.changes)) return;
+                    this._renderPill();
+                    if (this._panel) this._renderPanelRows();
+                };
+                window.addEventListener('ytkit-storage-changed', this._storageHandler);
                 this._renderPill();
                 this._scheduleAddButtons(1500);
                 addNavigateRule('persistentQueue', () => {
@@ -25610,6 +25645,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._videoRef && this._endedHandler) this._videoRef.removeEventListener('ended', this._endedHandler);
                 this._videoRef = null;
                 this._endedHandler = null;
+                if (this._storageHandler) {
+                    window.removeEventListener('ytkit-storage-changed', this._storageHandler);
+                    this._storageHandler = null;
+                }
                 removeNavigateRule('persistentQueue');
                 removeScopedMutationRule('persistentQueue');
                 this._styleEl?.remove(); this._styleEl = null;
