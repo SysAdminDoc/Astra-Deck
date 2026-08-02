@@ -9061,10 +9061,18 @@
         // validation). Returns `null` otherwise so the monolith can skip the
         // style-tag insertion.
         const ACCENT_HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+        function accentRgbTuple(accent) {
+            const raw = accent.slice(1);
+            const rgbHex = raw.length <= 4
+                ? raw.slice(0, 3).split('').map((digit) => digit + digit).join('')
+                : raw.slice(0, 6);
+            return [0, 2, 4].map((offset) => parseInt(rgbHex.slice(offset, offset + 2), 16)).join(',');
+        }
         function buildAccentColorCss(settings) {
             const accent = settings && settings.themeAccentColor;
             if (!accent || !ACCENT_HEX_RE.test(accent)) return null;
-            return '\n                    :root { --ytkit-accent: ' + accent + ' !important; }\n'
+            const rgb = accentRgbTuple(accent);
+            return '\n                    :root { --ytkit-accent: ' + accent + ' !important; --ytkit-accent-rgb: ' + rgb + ' !important; }\n'
                 + '                    .ytp-swatch-background-color, .ytp-play-progress,\n'
                 + '                    #progress.ytd-thumbnail-overlay-resume-playback-renderer {\n'
                 + '                        background: ' + accent + ' !important;\n'
@@ -12322,7 +12330,7 @@
         function buildSplitCommentsCss() {
             return `
                         html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface {
-                            --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 245, 158, 11);
+                            --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 167, 139, 250);
                             color-scheme: dark !important;
                         }
 
@@ -18738,8 +18746,8 @@
                     if (this._styleElement) return;
                     this._styleElement = injectStyle(`
                         .ytkit-sub-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
-                        .ytkit-sub-toolbar__label{font:600 11px/1 system-ui;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
-                        .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                        .ytkit-sub-toolbar__label{font:600 11px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
+                        .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                         .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
                         .ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible,.ytkit-sub-group-chip:focus-visible,.ytkit-sub-digest-close:focus-visible,.ytkit-sub-digest-row button:focus-visible,.ytkit-sub-group-dialog button:focus-visible,.ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                         .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
@@ -18749,52 +18757,52 @@
                         .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
                         .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
                         .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
-                        .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                        .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                         .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
-                        .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
-                        .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
-                        .ytkit-sub-digest-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                        .ytkit-sub-group-chip[data-depth="1"]{margin-inline-start:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
+                        .ytkit-sub-new-badge{display:inline-block;margin-inline-start:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 Roboto,Arial,sans-serif;letter-spacing:.04em;}
+                        .ytkit-sub-digest-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 Roboto,Arial,sans-serif;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
                         .ytkit-sub-digest-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-                        .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
-                        .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
-                        .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                        .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 Roboto,Arial,sans-serif;}
+                        .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 Roboto,Arial,sans-serif;}
+                        .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                         .ytkit-sub-digest-close:hover,.ytkit-sub-digest-row button:hover{background:rgba(255,255,255,0.08);}
                         .ytkit-sub-group-dialog input{min-height:34px;outline:none;}
                         .ytkit-sub-group-dialog button{min-height:30px;outline:none;touch-action:manipulation;}
                         .ytkit-sub-digest-list{display:flex;flex-direction:column;gap:6px;}
                         .ytkit-sub-digest-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto auto;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
-                        .ytkit-sub-digest-row[data-depth="1"]{margin-left:16px;}
+                        .ytkit-sub-digest-row[data-depth="1"]{margin-inline-start:16px;}
                         .ytkit-sub-digest-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:700;}
                         .ytkit-sub-digest-count{font-variant-numeric:tabular-nums;color:#bae6fd;font-weight:700;}
                         .ytkit-sub-digest-muted{color:rgba(226,232,240,0.58);font-variant-numeric:tabular-nums;}
                         .ytkit-sub-digest-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
                         .ytkit-sub-health-stats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-                        .ytkit-sub-health-stat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:rgba(226,232,240,0.78);font:600 11px/1.4 system-ui;}
+                        .ytkit-sub-health-stat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:rgba(226,232,240,0.78);font:600 11px/1.4 Roboto,Arial,sans-serif;}
                         .ytkit-sub-health-stat b{color:#f8fafc;font-variant-numeric:tabular-nums;}
                         .ytkit-sub-health-stat[data-tone="warn"] b{color:#fde68a;}
                         .ytkit-sub-health-stat[data-tone="staged"] b{color:#bbf7d0;}
-                        .ytkit-sub-health-section{margin:12px 0 6px;color:rgba(226,232,240,0.66);font:700 11px/1.3 system-ui;text-transform:uppercase;letter-spacing:.05em;}
+                        .ytkit-sub-health-section{margin:12px 0 6px;color:rgba(226,232,240,0.66);font:700 11px/1.3 Roboto,Arial,sans-serif;text-transform:uppercase;letter-spacing:.05em;}
                         .ytkit-sub-health-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
-                        .ytkit-sub-health-row button{min-height:26px;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                        .ytkit-sub-health-row button{min-height:26px;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;}
                         .ytkit-sub-health-row button:hover{background:rgba(255,255,255,0.08);}
                         .ytkit-sub-health-row button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                         .ytkit-sub-health-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-                        .ytkit-sub-health-actions button{min-height:28px;padding:5px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                        .ytkit-sub-health-actions button{min-height:28px;padding:5px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;}
                         .ytkit-sub-health-actions button:hover{background:rgba(255,255,255,0.08);}
                         .ytkit-sub-health-actions button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                         .ytkit-sub-health-error{padding:10px;border-radius:6px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#fecaca;}
                         .ytkit-sub-dead-card{outline:1px solid rgba(245,158,11,0.34);outline-offset:-1px;}
                         .ytkit-sub-staged-card{outline:1px solid rgba(34,197,94,0.42);outline-offset:-1px;}
-                        .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                        .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-inline-start:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 Roboto,Arial,sans-serif;letter-spacing:.04em;}
                         .ytkit-sub-dead-badge{background:#f59e0b;color:#1f1300;}
                         .ytkit-sub-staged-badge{background:#22c55e;color:#022c14;}
                         .ytkit-sub-hidden-by-group,.ytkit-sub-hidden-by-type{display:none !important;}
-                        .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 system-ui;}
-                        .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                        .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 Roboto,Arial,sans-serif;}
+                        .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 Roboto,Arial,sans-serif;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
                         .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-                        .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
-                        .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
-                        .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                        .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 Roboto,Arial,sans-serif;}
+                        .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 Roboto,Arial,sans-serif;}
+                        .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                         .ytkit-sub-members-close:hover{background:rgba(255,255,255,0.08);}
                         .ytkit-sub-members-close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                         .ytkit-sub-members-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px;max-height:280px;overflow:auto;}
@@ -18804,7 +18812,14 @@
                         .ytkit-sub-members-row input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                         .ytkit-sub-members-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:600;}
                         .ytkit-sub-members-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
-                        /* YouTube light theme: toolbar + chips ship dark-only colors above. */
+                        .ytkit-sub-group-dialog{position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.55);font-family:Roboto,Arial,sans-serif;}
+                        .ytkit-sub-group-dialog__card{width:min(420px,100%);min-width:min(320px,100%);box-sizing:border-box;padding:18px;border-radius:12px;background:var(--yt-spec-menu-background,#0f0f10);color:var(--yt-spec-text-primary,#e5e7eb);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:13px/1.5 Roboto,Arial,sans-serif;box-shadow:0 22px 48px rgba(0,0,0,.6);}
+                        .ytkit-sub-group-dialog__title{font:600 14px/1.3 Roboto,Arial,sans-serif;color:var(--yt-spec-text-primary,#fafafa);margin-bottom:10px;}
+                        .ytkit-sub-group-dialog__input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#fff);font:13px Roboto,Arial,sans-serif;box-sizing:border-box;}
+                        .ytkit-sub-group-dialog__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+                        .ytkit-sub-group-dialog__button{padding:6px 12px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);cursor:pointer;font:600 12px/1 Roboto,Arial,sans-serif;}
+                        .ytkit-sub-group-dialog__button--primary{border-color:rgba(var(--ytkit-accent-rgb,124,58,237),0.5);background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                        /* YouTube light theme: cards and dialog must not inherit dark-only text. */
                         html:not([dark]) .ytkit-sub-toolbar{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(0,0,0,0.1);}
                         html:not([dark]) .ytkit-sub-toolbar__label{color:var(--yt-spec-text-secondary,#606060);}
                         html:not([dark]) .ytkit-sub-toolbar select,html:not([dark]) .ytkit-sub-toolbar button{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:var(--yt-spec-text-primary,#0f0f0f);}
@@ -18818,6 +18833,23 @@
                         html:not([dark]) .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                         html:not([dark]) .ytkit-sub-group-chip[data-depth="1"]{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.34);color:#1d4ed8;}
                         html:not([dark]) .ytkit-sub-group-empty{background:rgba(245,158,11,0.1);border-color:rgba(180,83,9,0.4);color:#92400e;}
+                        html:not([dark]) .ytkit-sub-digest-panel,html:not([dark]) .ytkit-sub-members-panel,html:not([dark]) .ytkit-sub-group-dialog__card{background:var(--yt-spec-raised-background,#fff);border-color:rgba(15,23,42,0.16);color:var(--yt-spec-text-primary,#0f0f0f);box-shadow:0 14px 32px rgba(15,23,42,0.18);}
+                        html:not([dark]) .ytkit-sub-digest-title,html:not([dark]) .ytkit-sub-members-title{color:var(--yt-spec-text-primary,#0f0f0f);}
+                        html:not([dark]) .ytkit-sub-digest-meta,html:not([dark]) .ytkit-sub-members-meta,html:not([dark]) .ytkit-sub-digest-muted{color:var(--yt-spec-text-secondary,#606060);}
+                        html:not([dark]) .ytkit-sub-digest-close,html:not([dark]) .ytkit-sub-digest-row button,html:not([dark]) .ytkit-sub-health-row button,html:not([dark]) .ytkit-sub-health-actions button,html:not([dark]) .ytkit-sub-members-close,html:not([dark]) .ytkit-sub-group-dialog__button{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(15,23,42,0.16);color:var(--yt-spec-text-primary,#0f0f0f);}
+                        html:not([dark]) .ytkit-sub-digest-close:hover,html:not([dark]) .ytkit-sub-digest-row button:hover,html:not([dark]) .ytkit-sub-health-row button:hover,html:not([dark]) .ytkit-sub-health-actions button:hover,html:not([dark]) .ytkit-sub-members-close:hover,html:not([dark]) .ytkit-sub-group-dialog__button:hover{background:rgba(15,23,42,0.08);}
+                        html:not([dark]) .ytkit-sub-digest-row,html:not([dark]) .ytkit-sub-health-row,html:not([dark]) .ytkit-sub-members-row,html:not([dark]) .ytkit-sub-digest-empty,html:not([dark]) .ytkit-sub-members-empty,html:not([dark]) .ytkit-sub-health-stat{background:rgba(15,23,42,0.035);border-color:rgba(15,23,42,0.1);}
+                        html:not([dark]) .ytkit-sub-digest-name,html:not([dark]) .ytkit-sub-members-name{color:var(--yt-spec-text-primary,#0f0f0f);}
+                        html:not([dark]) .ytkit-sub-digest-count{color:#075985;}
+                        html:not([dark]) .ytkit-sub-digest-empty,html:not([dark]) .ytkit-sub-members-empty{color:var(--yt-spec-text-secondary,#606060);}
+                        html:not([dark]) .ytkit-sub-health-stat{color:var(--yt-spec-text-secondary,#606060);}
+                        html:not([dark]) .ytkit-sub-health-stat b{color:var(--yt-spec-text-primary,#0f0f0f);}
+                        html:not([dark]) .ytkit-sub-health-section{color:var(--yt-spec-text-secondary,#606060);}
+                        html:not([dark]) .ytkit-sub-health-error{background:rgba(220,38,38,0.08);border-color:rgba(185,28,28,0.28);color:#991b1b;}
+                        html:not([dark]) .ytkit-sub-group-dialog{background:rgba(15,23,42,0.28);}
+                        html:not([dark]) .ytkit-sub-group-dialog__input{background:#fff;border-color:rgba(15,23,42,0.2);color:var(--yt-spec-text-primary,#0f0f0f);}
+                        html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                        html:not([dark]) .ytkit-sub-toolbar select:focus-visible,html:not([dark]) .ytkit-sub-toolbar button:focus-visible,html:not([dark]) .ytkit-sub-group-chip:focus-visible,html:not([dark]) .ytkit-sub-digest-close:focus-visible,html:not([dark]) .ytkit-sub-digest-row button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(124,58,237,0.42);}
                     `, 'subscription-groups', true);
                 },
 
@@ -20054,31 +20086,30 @@
                     document.querySelector('.ytkit-sub-group-dialog')?.remove();
                     const overlay = document.createElement('div');
                     overlay.className = 'ytkit-sub-group-dialog';
-                    overlay.style.cssText = 'position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
                     overlay.setAttribute('role', 'dialog');
                     overlay.setAttribute('aria-modal', 'true');
                     overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group');
                     const card = document.createElement('div');
-                    card.style.cssText = 'min-width:320px;max-width:420px;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 22px 48px rgba(0,0,0,.6);';
+                    card.className = 'ytkit-sub-group-dialog__card';
                     const h = document.createElement('div');
-                    h.style.cssText = 'font:600 14px/1.3 system-ui;color:#fafafa;margin-bottom:10px;';
+                    h.className = 'ytkit-sub-group-dialog__title';
                     h.textContent = safeParentId ? `Name a subgroup under ${groups[safeParentId]?.name || safeParentId}` : 'Name this group';
                     const input = document.createElement('input');
+                    input.className = 'ytkit-sub-group-dialog__input';
                     input.type = 'text';
                     input.maxLength = 80;
                     input.placeholder = safeParentId ? 'e.g. Frontend, DevOps, Jazz' : 'e.g. Coding, Music, News';
                     input.setAttribute('aria-label', 'Group name');
-                    input.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;box-sizing:border-box;';
                     const actions = document.createElement('div');
-                    actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:14px;';
+                    actions.className = 'ytkit-sub-group-dialog__actions';
                     const cancel = document.createElement('button');
+                    cancel.className = 'ytkit-sub-group-dialog__button';
                     cancel.type = 'button';
                     cancel.textContent = 'Cancel';
-                    cancel.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#e5e7eb;cursor:pointer;';
                     const create = document.createElement('button');
+                    create.className = 'ytkit-sub-group-dialog__button ytkit-sub-group-dialog__button--primary';
                     create.type = 'button';
                     create.textContent = 'Create';
-                    create.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(124,58,237,0.5);background:#7c3aed;color:#fff;cursor:pointer;font-weight:600;';
                     actions.append(cancel, create);
                     card.append(h, input, actions);
                     overlay.appendChild(card);
@@ -25471,11 +25502,11 @@
             function _ensureStyles() {
                 if (_styleElement) return;
                 _styleElement = injectStyle(`
-                    .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 system-ui;font-variant-numeric:tabular-nums;}
+                    .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 Roboto,Arial,sans-serif;font-variant-numeric:tabular-nums;}
                     .ytkit-ryd-pill[data-tone="cached"]{color:rgba(255,255,255,0.55);}
                     .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
-                    .ytkit-ryd-estimate{margin-left:4px;font:500 10px/1 system-ui;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
-                    .ytkit-ryd-ratio{margin-left:8px;font:500 11px/1 system-ui;color:rgba(255,255,255,0.55);}
+                    .ytkit-ryd-estimate{margin-inline-start:4px;font:500 10px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
+                    .ytkit-ryd-ratio{margin-inline-start:8px;font:500 11px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.55);}
                     html:not([dark]) .ytkit-ryd-pill{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.05));color:var(--yt-spec-text-primary,#0f0f0f);}
                     html:not([dark]) .ytkit-ryd-pill[data-tone="cached"]{color:var(--yt-spec-text-secondary,#606060);}
                     html:not([dark]) .ytkit-ryd-pill[data-tone="offline"]{color:#b45309;}

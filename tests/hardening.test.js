@@ -5152,6 +5152,66 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
         'dialog must dismiss on Esc');
 });
 
+test('subscriptionGroups light theme covers every injected card surface and keeps RTL-safe spacing', () => {
+    for (const source of [subscriptionGroupsSource, ytkitSource]) {
+        for (const selector of [
+            'html:not([dark]) .ytkit-sub-digest-panel',
+            'html:not([dark]) .ytkit-sub-members-panel',
+            'html:not([dark]) .ytkit-sub-group-dialog__card',
+            'ytkit-sub-group-dialog__input'
+        ]) {
+            assert.ok(source.includes(selector), `${selector} must have a themed subscription override`);
+        }
+        assert.match(source, /margin-inline-start:10px/,
+            'nested subscription chips must use logical inline spacing');
+        assert.match(source, /margin-inline-start:6px/,
+            'subscription badges must use logical inline spacing');
+        assert.match(source, /font:12px\/1\.45 Roboto,Arial,sans-serif/,
+            'subscription cards must use the inline YouTube Roboto surface font');
+    }
+    assert.match(subscriptionGroupsSource, /card.className = 'ytkit-sub-group-dialog__card'/,
+        'the create-group dialog must be class-styled so light-theme CSS can override it');
+    assert.doesNotMatch(subscriptionGroupsSource, /card\.style\.cssText/,
+        'the create-group card must not bypass the theme with inline colors');
+});
+
+test('inline utility surfaces use logical margins and the shared accent variable', () => {
+    const returnDislike = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
+    assert.match(returnDislike, /margin-inline-start:6px/,
+        'Return YouTube Dislike pill spacing must mirror in RTL');
+    assert.match(returnDislike, /margin-inline-start:4px/,
+        'Return YouTube Dislike estimate spacing must mirror in RTL');
+    assert.match(returnDislike, /margin-inline-start:8px/,
+        'Return YouTube Dislike ratio spacing must mirror in RTL');
+    assert.match(ytkitSource, /\.ytkit-queue-btn \{ position: absolute; top: 4px; inset-inline-start: 4px;/,
+        'queue thumbnail button must use logical inline-start positioning');
+    for (const token of [
+        'rgba(var(--ytkit-accent-rgb,167,139,250)',
+        'var(--ytkit-accent-light,#c4b5fd)',
+        'var(--ytkit-accent,#a78bfa)'
+    ]) {
+        assert.ok(ytkitSource.includes(token), `utility UI should use ${token}`);
+    }
+});
+
+test('fixed utility surfaces share a measured bottom-right corner stack', () => {
+    assert.match(ytkitSource, /const CORNER_STACK = Object\.freeze\(\{/,
+        'fixed utility surfaces must have a named corner-stack registry');
+    for (const id of ['bulkToggle', 'bulkBar', 'reactionLauncher', 'shortsSpeed', 'queuePill', 'queuePanel']) {
+        assert.match(ytkitSource, new RegExp(`${id}:\\s*\\d+`), `${id} must have a deterministic stack order`);
+        assert.match(ytkitSource, new RegExp(`registerCornerStackElement\\('${id}'`), `${id} must register its live element`);
+    }
+    assert.match(ytkitSource, /getBoundingClientRect\?\.\(\)\.height/,
+        'corner offsets must account for actual rendered surface height');
+    assert.match(ytkitSource, /entry\.element\.hidden/,
+        'hidden bulk controls must not reserve corner space');
+    assert.match(ytkitSource, /AI_SUMMARY:\s*79999/,
+        'AI summary z-index must stay below the settings overlay');
+    assert.match(ytkitSource, /z-index: \$\{Z\.AI_SUMMARY\}/,
+        'AI summary panel must consume the named z-index tier');
+});
+
 test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
     const block = subscriptionGroupsBlock();
     const capIdx = block.indexOf('_capLastVisitMap');
@@ -7343,6 +7403,15 @@ test('v4.21.0 buildAccentColorCss returns null for malformed hex, CSS for any va
             'accent ' + accent + ' must round-trip into the CSS variable');
         assert.ok(css.includes('background: ' + accent + ' !important;'),
             'accent must propagate to the progress-bar background');
+    }
+});
+
+test('themeAccentColor derives the shared RGB token for every accepted hex form', () => {
+    const { buildAccentColorCss } = require('../extension/features/theme-css/index.js');
+    for (const [accent, rgb] of [['#abc', '170,187,204'], ['#abcd', '170,187,204'], ['#aabbcc', '170,187,204'], ['#aabbccdd', '170,187,204']]) {
+        const css = buildAccentColorCss({ themeAccentColor: accent });
+        assert.match(css, new RegExp(`--ytkit-accent-rgb: ${rgb} !important;`),
+            `${accent} must expose its RGB channels through --ytkit-accent-rgb`);
     }
 });
 

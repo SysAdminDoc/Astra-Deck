@@ -8,7 +8,7 @@ const path = require('path');
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
 
-function featureSlice(id, span = 20000) {
+function featureSlice(id, span = 30000) {
     const start = ytkitSource.indexOf(`id: '${id}'`);
     assert.notEqual(start, -1, `feature ${id} must exist in ytkit.js`);
     return ytkitSource.slice(start, start + span);

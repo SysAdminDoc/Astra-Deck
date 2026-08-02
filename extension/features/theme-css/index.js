@@ -61,10 +61,18 @@
     // validation). Returns `null` otherwise so the monolith can skip the
     // style-tag insertion.
     const ACCENT_HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+    function accentRgbTuple(accent) {
+        const raw = accent.slice(1);
+        const rgbHex = raw.length <= 4
+            ? raw.slice(0, 3).split('').map((digit) => digit + digit).join('')
+            : raw.slice(0, 6);
+        return [0, 2, 4].map((offset) => parseInt(rgbHex.slice(offset, offset + 2), 16)).join(',');
+    }
     function buildAccentColorCss(settings) {
         const accent = settings && settings.themeAccentColor;
         if (!accent || !ACCENT_HEX_RE.test(accent)) return null;
-        return '\n                    :root { --ytkit-accent: ' + accent + ' !important; }\n'
+        const rgb = accentRgbTuple(accent);
+        return '\n                    :root { --ytkit-accent: ' + accent + ' !important; --ytkit-accent-rgb: ' + rgb + ' !important; }\n'
             + '                    .ytp-swatch-background-color, .ytp-play-progress,\n'
             + '                    #progress.ytd-thumbnail-overlay-resume-playback-renderer {\n'
             + '                        background: ' + accent + ' !important;\n'
