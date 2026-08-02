@@ -396,6 +396,10 @@ def validate_download_request_body(body):
             "Unsupported /download field(s): {}.".format(", ".join(unknown)),
             "unsupported-download-fields",
         )
+    if "format" in body and not isinstance(body["format"], str):
+        return None, "Download format must be a string.", "invalid-download-format"
+    if "quality" in body and not isinstance(body["quality"], str):
+        return None, "Download quality must be a string.", "invalid-download-quality"
     if "section" in body:
         section, section_error = normalize_download_section(body.get("section"))
         if section_error:

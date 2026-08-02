@@ -1216,6 +1216,44 @@ class DownloadManagerTests(unittest.TestCase):
             self.assertEqual(len(restored.downloads), before_count)
             self.assertNotIn('fresh-cookie', queue_path.read_text(encoding='utf-8'))
 
+    def test_restore_queue_defaults_non_string_format_and_quality(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / 'download-queue.json'
+            queue_path.write_text(json.dumps({
+                'schemaVersion': ad.DOWNLOAD_QUEUE_SCHEMA_VERSION,
+                'intakePaused': True,
+                'downloads': [
+                    {
+                        'id': 'bad-format',
+                        'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                        'outputDir': tmp,
+                        'audioOnly': False,
+                        'format': ['mp4'],
+                        'quality': '1080',
+                    },
+                    {
+                        'id': 'bad-quality',
+                        'url': 'https://www.youtube.com/watch?v=9bZkp7q19f0',
+                        'outputDir': tmp,
+                        'audioOnly': True,
+                        'format': 'm4a',
+                        'quality': {},
+                    },
+                ],
+            }), encoding='utf-8')
+
+            restored = ad.DownloadManager(
+                FakeConfig({'DownloadPath': tmp, 'AudioDownloadPath': tmp}),
+                FakeHistory(),
+                queue_path=queue_path,
+            )
+
+        self.assertTrue(restored.intake_paused)
+        self.assertEqual(restored.downloads['bad-format'].format, 'mp4')
+        self.assertEqual(restored.downloads['bad-format'].quality, '1080')
+        self.assertEqual(restored.downloads['bad-quality'].format, 'm4a')
+        self.assertEqual(restored.downloads['bad-quality'].quality, 'best')
+
     def test_empty_paused_queue_restores_paused_intake(self):
         with tempfile.TemporaryDirectory() as tmp:
             queue_path = Path(tmp) / 'download-queue.json'
@@ -2033,6 +2071,44 @@ class ApiSecurityTests(unittest.TestCase):
         })
         self.assertEqual(code, "unsupported-download-fields")
         self.assertIn("writeInfoJson", err)
+
+    def test_download_request_body_rejects_non_string_format_and_quality(self):
+        for field, value, expected_code in (
+            ("format", ["mp4"], "invalid-download-format"),
+            ("quality", {}, "invalid-download-quality"),
+        ):
+            with self.subTest(field=field):
+                validated, err, code = ad.validate_download_request_body({
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    field: value,
+                })
+                self.assertIsNone(validated)
+                self.assertTrue(err)
+                self.assertEqual(code, expected_code)
+
+    def test_download_endpoint_rejects_non_string_format_and_quality_with_cors(self):
+        token = "j" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        for field, value, expected_code in (
+            ("format", ["mp4"], "invalid-download-format"),
+            ("quality", {}, "invalid-download-quality"),
+        ):
+            with self.subTest(field=field):
+                resp = client.post(
+                    "/download",
+                    json={
+                        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                        field: value,
+                    },
+                    headers={"X-Auth-Token": token},
+                )
+                self.assertEqual(resp.status_code, 400)
+                self.assertEqual(resp.get_json()["code"], expected_code)
+                self.assertIn("POST", resp.headers["Access-Control-Allow-Methods"])
+        self.assertEqual(manager.downloads, {})
 
     def test_download_endpoint_rejects_ytdlp_args_before_queueing(self):
         token = "h" * 32

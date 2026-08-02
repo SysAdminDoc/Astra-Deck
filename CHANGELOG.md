@@ -26,6 +26,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Watch-time multi-tab merging.** Watch Time Tracker now keeps this tab's
   unflushed seconds as a delta and rebases them over external ledger updates;
   Takeout import and undo remain authoritative replacements.
+- **Companion download input hardening.** Non-string format and quality values
+  now return CORS-preserving 400 validation responses or restore to safe queue
+  defaults instead of raising TypeError.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
