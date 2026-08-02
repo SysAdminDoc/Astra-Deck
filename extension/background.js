@@ -1287,7 +1287,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         const opts = { url: downloadUrl, saveAs: false };
         if (filename) opts.filename = filename;
-        callExtensionApi(ext.downloads, 'download', opts).then((downloadId) => {
+        callExtensionApi(ext.downloads, 'download', opts).then(async (downloadId) => {
                 if (msg.showInFolder) {
                     // v3.14.0: switch from setTimeout(900) to downloads.onChanged.
                     // The service worker can be terminated during the 900 ms window on
@@ -1297,6 +1297,9 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     // v3.20.0: mirror to storage.session so a SW cold-start
                     // between add and `state.complete` still honours the reveal.
                     // Audit pass: route through _addPendingReveal so the cap is enforced.
+                    try { await _pendingRevealsReady; } catch (_) {
+                        // reason: hydration already logged; fall through to in-memory add
+                    }
                     _addPendingReveal(downloadId);
                     _persistPendingReveals();
                 }
