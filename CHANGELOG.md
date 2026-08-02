@@ -23,6 +23,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Transcript AI handoff teardown.** Delayed button injection timers now
   cancel on navigation rescheduling and feature teardown, preventing an
   orphaned handoff control after the feature is disabled.
+- **Download filename bounds.** The background filename sanitizer now applies
+  its 180-character cap after rebuilding long extension-like tails.
 - **Live-chat gate coverage.** The dedicated live-chat loader now receives the
   same ESLint and no-eval enforcement as the other shipped top-level scripts,
   with inventory tests preventing future manifest drift.
