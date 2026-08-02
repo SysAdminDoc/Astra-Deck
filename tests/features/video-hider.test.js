@@ -22,6 +22,25 @@ function loadModule() {
     return { mod, exported };
 }
 
+function fakeVideoCard(title, rowText = '') {
+    const titleNode = { textContent: title };
+    const rows = rowText ? [{
+        textContent: rowText,
+        getAttribute: () => null
+    }] : [];
+    return {
+        querySelector(selector) {
+            if (selector.includes('#video-title') || selector.includes('.title')) return titleNode;
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector === 'a[href]') return [];
+            if (selector.includes('#metadata-line')) return rows;
+            return [];
+        }
+    };
+}
+
 test('hideVideosFromHome module exports the Video Hider runtime factory', () => {
     const { mod, exported } = loadModule();
     assert.equal(typeof mod.createHideVideosFromHomeFeature, 'function');
@@ -53,6 +72,44 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
         '_removeHiddenVideosOnPage'
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+});
+
+test('Video Hider ignores live/upcoming words in titles but detects metadata rows', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+
+    const titleOnly = feature._extractVideoMetadata(fakeVideoCard(
+        'The Premiere LIVE at Wembley — Upcoming tech starts in 5 minutes'
+    ));
+    assert.equal(titleOnly.isLive, false);
+    assert.equal(titleOnly.isUpcoming, false);
+
+    const upcomingRow = feature._extractVideoMetadata(fakeVideoCard(
+        'The Premiere', 'UPCOMING · Set reminder'
+    ));
+    assert.equal(upcomingRow.isUpcoming, true);
+
+    const liveRow = feature._extractVideoMetadata(fakeVideoCard(
+        'LIVE at Wembley', 'LIVE · 1,234 watching now'
+    ));
+    assert.equal(liveRow.isLive, true);
+});
+
+test('Video Hider live/upcoming regex pins read rows in module and monolith', () => {
+    for (const [label, source] of [['module', MODULE_SOURCE], ['monolith', sources.ytkit]]) {
+        const start = source.indexOf('_extractVideoMetadata(element) {');
+        assert.ok(start > -1, `${label} must expose video metadata extraction`);
+        const end = source.indexOf('\n            },', start);
+        assert.ok(end > start, `${label} metadata extraction block must be bounded`);
+        const block = source.slice(start, end);
+
+        assert.match(block, /isLive:[\s\S]*?\.test\(rowsText\) && !hasDuration/,
+            `${label} live fallback must inspect metadata rows`);
+        assert.match(block, /isUpcoming: \/\\b\(upcoming\|scheduled for\|premieres\?\|set reminder\|starts in\)\\b\/\.test\(rowsText\)/,
+            `${label} upcoming detection must inspect metadata rows`);
+        assert.doesNotMatch(block, /\.test\(metadataText\)/,
+            `${label} type detection must not scan the title-inclusive metadata text`);
     }
 });
 

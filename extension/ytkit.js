@@ -17074,8 +17074,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     views: this._extractViewCount(element),
                     watchedRatio: this._extractWatchedRatio(element),
                     isLive: !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, [aria-label*="LIVE"]')
-                        || /\b(live|watching now)\b/.test(metadataText) && !hasDuration,
-                    isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(metadataText),
+                        || /\b(live|watching now)\b/.test(rowsText) && !hasDuration,
+                    isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(rowsText),
                     // Type detection reads ONLY badge/metadata rows — matching
                     // against the title hid videos titled "How to mix audio",
                     // "movie review", or "top 5 videos".

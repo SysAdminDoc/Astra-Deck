@@ -14,6 +14,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Resume Playback persistence.** Mid-video samples now queue durable storage
   writes on a bounded cadence and force a final flush on `pagehide` and feature
   teardown, so closing a tab no longer loses the saved position.
+- **Video Hider type detection.** Live and upcoming checks now inspect only
+  badge and metadata rows, so ordinary titles containing those words remain
+  visible while genuine live/upcoming cards are still filtered.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
