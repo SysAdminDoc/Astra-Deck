@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-28 (verified, unfixed)
 
-- [ ] P3 — Fold the two dead companion STYLESHEET layers
-  Why: astra_downloader.py carries two superseded stylesheet blocks ("retained historical source rules") before the active reassignment; auditors keep re-deriving which palette is live, and inline-color drift traces back to the dead layers.
-  Where: astra_downloader/astra_downloader.py (first two STYLESHEET assignments)
 - [ ] P3 — Show the session-fallback port on the Settings page
   Why: during a bind-conflict session the dashboard shows the bound fallback port but the Settings port spinbox shows the configured one with no explanation; a fieldHint ("Currently bound to fallback port NNNN for this session") would close the gap.
   Where: astra_downloader/gui.py (_start_server fallback branch, _build_settings port row)
