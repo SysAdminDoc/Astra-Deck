@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-28 (verified, unfixed)
 
-- [ ] P3 — Show the session-fallback port on the Settings page
-  Why: during a bind-conflict session the dashboard shows the bound fallback port but the Settings port spinbox shows the configured one with no explanation; a fieldHint ("Currently bound to fallback port NNNN for this session") would close the gap.
-  Where: astra_downloader/gui.py (_start_server fallback branch, _build_settings port row)
 - [ ] P3 — Wire the extension format picker to POST /formats
   Why: the endpoint (auth + rate-limit + busy-cap) ships since v1.5.5 with no extension consumer; the download options UI still offers the static quality list.
   Where: extension/features/download-ui (options dialog), astra_downloader/routes.py (/formats)

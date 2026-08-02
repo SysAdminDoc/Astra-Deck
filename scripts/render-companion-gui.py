@@ -24,6 +24,7 @@ CAPTURE_NAMES = (
     "history-cleared-undo",
     "history-restored",
     "settings-dirty",
+    "settings-fallback-port",
     "settings-invalid",
     "settings-save-failed",
     "settings-update-busy",
@@ -445,6 +446,18 @@ def main():
             if scenario == "settings-dirty":
                 window.cfg_dl_path.setText(str(Path(temp_dir) / "Videos" / "Edited"))
                 expected = "Unsaved changes"
+            elif scenario == "settings-fallback-port":
+                # A bind conflict binds a fallback port for the session only.
+                # The dashboard shows it; the spinbox keeps the configured
+                # port, so the page has to explain the difference.
+                config.set_session("ServerPort", 9761)
+                window._sync_connection_ui()
+                if window.cfg_port.value() != 9751:
+                    raise RuntimeError("Session fallback must not move the configured port")
+                expected = (
+                    "Port 9751 was unavailable at startup; bound to fallback "
+                    "port 9761 for this session. Restart to retry 9751."
+                )
             elif scenario == "settings-invalid":
                 window.cfg_outtmpl.setText("../%(title)s")
                 window._save_settings()
@@ -466,7 +479,11 @@ def main():
                     "until the update passes."
                 )
                 window._show_settings_status(expected, "warning")
-            scroll_current_page_to_bottom(window)
+            if scenario == "settings-fallback-port":
+                # The Connection card is the top of the page.
+                scroll_current_page_to_top(window)
+            else:
+                scroll_current_page_to_bottom(window)
             assert_visible_text(window, {expected})
             capture_window(window, scenario)
 

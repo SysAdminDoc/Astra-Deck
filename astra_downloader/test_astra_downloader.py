@@ -222,6 +222,27 @@ class PersistenceTests(unittest.TestCase):
         save_source = inspect.getsource(gui_module.MainWindowCore._save_settings)
         self.assertIn('get_persisted', save_source)
 
+    def test_settings_port_row_explains_a_session_fallback(self):
+        # During a bind-conflict session the dashboard shows the bound fallback
+        # port while the Settings spinbox shows the configured one. Without the
+        # hint the two surfaces silently disagree.
+        import inspect
+
+        gui_module = __import__("gui")
+        build_source = inspect.getsource(gui_module.MainWindowCore._build_settings)
+        self.assertIn("cfg_port_session_hint", build_source)
+        # The spinbox must never echo the session override back at the user;
+        # saving any unrelated setting would then persist the fallback port.
+        self.assertIn("_persisted_get(\"ServerPort\"", build_source)
+        sync_source = inspect.getsource(gui_module.MainWindowCore._sync_connection_ui)
+        self.assertIn("get_persisted", sync_source)
+        self.assertIn("fallback port", sync_source)
+        self.assertIn("setAccessibleDescription", sync_source)
+        smoke_source = (
+            Path(ad.__file__).parents[1] / "scripts" / "render-companion-gui.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("settings-fallback-port", smoke_source)
+
     def test_owned_history_store_enforces_injected_retention_limit(self):
         import importlib
 
