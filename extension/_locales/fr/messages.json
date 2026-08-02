@@ -227,6 +227,15 @@
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
   },
+  "videoInsightsSourceDegraded": {
+    "message": "From this page — YouTube lookup unavailable"
+  },
+  "videoInsightsSourceThrottled": {
+    "message": "From this page — YouTube lookup paused"
+  },
+  "videoInsightsUnchecked": {
+    "message": "Not checked"
+  },
   "subscriptionOrderGroupsHint": {
     "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
   },

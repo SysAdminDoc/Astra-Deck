@@ -66,6 +66,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replace-everything path takes a deliberate Shift+click on Import.
 
 ### Fixed
+- **Video Insights distinguishes "not looked up" from "not published".** A
+  paused, blocked, or failed metadata lookup rendered exactly like a video that
+  published no category or tags. The panel now says the lookup did not run and
+  marks those fields as unchecked.
 - **Custom filter predicates follow JavaScript's `!` precedence.** `!ctx.a ===
   true` was evaluated as `!(ctx.a === true)` — the opposite result for an
   expression written to look like JavaScript. Predicates that relied on the old

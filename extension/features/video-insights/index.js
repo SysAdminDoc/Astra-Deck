@@ -188,12 +188,12 @@
             // retain a runtime gate so imports/profile races can never dial
             // InnerTube from a safe-profile session.
             if (!isGithubFullProfile() || !isGithubFullArtifact()) {
-                return { insights: local, source: 'page', fetched: false };
+                return { insights: local, source: 'page', fetched: false, degraded: 'unavailable' };
             }
 
             const lastAttempt = attempts.get(videoId) || 0;
             if (lastAttempt && now() - lastAttempt < RETRY_AFTER_MS) {
-                return { insights: local, source: 'page', fetched: false };
+                return { insights: local, source: 'page', fetched: false, degraded: 'retry-wait' };
             }
             // Expired entries are useless after RETRY_AFTER_MS; sweep them so
             // long autoplay sessions cannot grow the map without bound.
@@ -207,7 +207,7 @@
                     endpoint: 'youtubei/v1/player',
                     requestBudget: getBudgetSnapshot()
                 });
-                return { insights: local, source: 'page', fetched: false };
+                return { insights: local, source: 'page', fetched: false, degraded: 'rate-limited' };
             }
             attempts.set(videoId, now());
 
@@ -221,7 +221,7 @@
                     endpoint: 'youtubei/v1/player',
                     requestBudget: getBudgetSnapshot()
                 });
-                return { insights: local, source: 'page', fetched: false };
+                return { insights: local, source: 'page', fetched: false, degraded: 'unavailable' };
             }
 
             try {
@@ -264,7 +264,7 @@
                     'video-insights',
                     `InnerTube metadata failed for ${videoId}: ${cleanText(error?.message || 'unknown error', 180)}`
                 );
-                return { insights: local, source: 'page', fetched: false };
+                return { insights: local, source: 'page', fetched: false, degraded: 'failed' };
             }
         }
 
@@ -286,6 +286,7 @@
                 .ytkit-video-insights__tags{display:flex;flex-wrap:wrap;gap:6px;}
                 .ytkit-video-insights__tag{max-width:100%;padding:3px 7px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,.12));border-radius:6px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,.06));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
                 .ytkit-video-insights[data-tone="unavailable"] dd{color:var(--yt-spec-text-secondary,#aaa);}
+                .ytkit-video-insights[data-tone="degraded"] dd{color:var(--yt-spec-text-secondary,#aaa);font-style:italic;}
                 html:not([dark]) .ytkit-video-insights{background:var(--yt-spec-raised-background,#fff);border-color:rgba(0,0,0,.14);color:var(--yt-spec-text-primary,#0f0f0f);}
                 @media (max-width:720px){.ytkit-video-insights__facts{grid-template-columns:1fr 1fr;}.ytkit-video-insights__fact--tags{grid-column:1/-1;}}
                 @media (forced-colors:active){.ytkit-video-insights,.ytkit-video-insights__tag{border-color:CanvasText}.ytkit-video-insights a{color:LinkText}}
@@ -337,14 +338,23 @@
             const source = documentRef.createElement('span');
             source.className = 'ytkit-video-insights__source';
             source.setAttribute('role', 'status');
+            // A lookup that never ran (or failed) is not the same as a video
+            // that published nothing, and both used to render "Not provided".
+            const degraded = String(result.degraded || '');
             source.textContent = result.source === 'network'
                 ? t('videoInsightsSourceNetwork', 'Refreshed from YouTube')
                 : (result.source === 'cache'
                     ? t('videoInsightsSourceCache', 'Cached YouTube details')
-                    : t('videoInsightsSourcePage', 'From this page'));
+                    : (degraded === 'rate-limited' || degraded === 'retry-wait'
+                        ? t('videoInsightsSourceThrottled', 'From this page — YouTube lookup paused')
+                        : (degraded
+                            ? t('videoInsightsSourceDegraded', 'From this page — YouTube lookup unavailable')
+                            : t('videoInsightsSourcePage', 'From this page'))));
             header.append(title, source);
 
-            const unavailable = t('videoInsightsUnavailable', 'Not provided');
+            const unavailable = degraded
+                ? t('videoInsightsUnchecked', 'Not checked')
+                : t('videoInsightsUnavailable', 'Not provided');
             const facts = documentRef.createElement('dl');
             facts.className = 'ytkit-video-insights__facts';
             addFact(facts, t('videoInsightsCategory', 'Category'), insights.category || unavailable);
@@ -359,14 +369,20 @@
             addFact(
                 facts,
                 t('videoInsightsTags', 'Tags'),
-                insights.tags.length ? insights.tags : t('videoInsightsNoTags', 'No tags published'),
+                insights.tags.length
+                    ? insights.tags
+                    : (degraded && !insights.hasTagsField
+                        ? unavailable
+                        : t('videoInsightsNoTags', 'No tags published')),
                 insights.tags.length ? { tags: true } : {}
             );
 
             const hasAnyData = Boolean(
                 insights.category || insights.uploadDate || insights.channelId || insights.hasTagsField
             );
-            panel.dataset.tone = hasAnyData ? 'ready' : 'unavailable';
+            panel.dataset.tone = hasAnyData
+                ? 'ready'
+                : (degraded ? 'degraded' : 'unavailable');
             panel.append(header, facts);
         }
 
