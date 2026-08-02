@@ -45,6 +45,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Non-blocking health probes.** Version, ffmpeg-capability, and
   JavaScript-runtime cache locks no longer cover their subprocess work, keeping
   concurrent health/readiness calls responsive during cold probes.
+- **Stateless user regex filters.** Comment and video filters now ignore
+  global/sticky flags that would otherwise make repeated `.test()` calls skip
+  matches.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

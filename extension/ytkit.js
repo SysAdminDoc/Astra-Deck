@@ -17301,7 +17301,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 if (hasNestedQuantifiers) {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
-                                    const regex = new RegExp(regexMatch[1], regexMatch[2]);
+                                    // Boolean filtering must be stateless. Global and sticky
+                                    // flags advance lastIndex across repeated .test() calls.
+                                    const regexFlags = regexMatch[2].replace(/[gy]/g, '');
+                                    const regex = new RegExp(regexMatch[1], regexFlags);
                                     if (regex.test(title.slice(0, 500)) || regex.test(channelName.slice(0, 200))) return true;
                                 }
                             }
@@ -34001,7 +34004,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             DebugManager.log('CommentFilter', 'Regex rejected: nested quantifiers (ReDoS risk)');
                             continue;
                         }
-                        try { compiled.regexes.push(new RegExp(m[1], m[2])); }
+                        // These regexes are cached and tested across every thread;
+                        // global/sticky flags would leak lastIndex between threads.
+                        const regexFlags = m[2].replace(/[gy]/g, '');
+                        try { compiled.regexes.push(new RegExp(m[1], regexFlags)); }
                         catch (e) { DebugManager.log('CommentFilter', 'Invalid regex', e.message); }
                     } else if (rule.startsWith('!')) {
                         compiled.allow.push(rule.slice(1).toLowerCase());
