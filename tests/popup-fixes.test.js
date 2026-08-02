@@ -216,6 +216,34 @@ test('import and reset keep only reachable undo status copy', () => {
     }
 });
 
+test('companion-facing copy names Astra Downloader consistently', () => {
+    const keys = {
+        dlProgressConnectAudio: 'Connecting to Astra Downloader.',
+        dlProgressConnectVideo: 'Connecting to Astra Downloader.',
+        dlProgressLostTitle: 'Connection to Astra Downloader lost',
+        dlPopupFormatsHint: 'Ask Astra Downloader which resolutions this video actually has.',
+        dlPopupFormatsNone: 'Astra Downloader reported no video streams for this URL.',
+        statusWelcomeProfileFull: 'GitHub-Full profile enabled. Astra Downloader and AI providers are now available.',
+    };
+    const localeRoot = path.join(__dirname, '..', 'extension', '_locales');
+    for (const locale of fs.readdirSync(localeRoot)) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localeRoot, locale, 'messages.json'), 'utf8'
+        ));
+        for (const [key, expected] of Object.entries(keys)) {
+            assert.ok(messages[key]?.message.includes('Astra Downloader'),
+                `${locale}:${key} must name Astra Downloader`);
+            if (locale === 'en') assert.equal(messages[key].message, expected);
+        }
+    }
+    const downloadSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
+    assert.doesNotMatch(downloadSource, /Connecting to the local (?:audio|video) downloader/);
+    assert.doesNotMatch(downloadSource, /Connection to downloader lost/);
+});
+
 test('backup, import, and reset preserve extension recovery when page storage is unavailable', () => {
     assert.match(popupSource,
         /unavailable\.code = 'YTKIT_PERSISTED_DATA_UNAVAILABLE'/,

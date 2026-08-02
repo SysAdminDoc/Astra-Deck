@@ -246,13 +246,13 @@
     "message": "switched to Best"
   },
   "dlPopupFormatsHint": {
-    "message": "Ask the companion which resolutions this video actually has."
+    "message": "询问 Astra Downloader 此视频实际提供哪些分辨率。"
   },
   "dlPopupFormatsLoading": {
     "message": "Checking…"
   },
   "dlPopupFormatsNone": {
-    "message": "The companion reported no video streams for this URL."
+    "message": "Astra Downloader 报告此 URL 没有视频流。"
   },
   "dlPopupFormatsProbe": {
     "message": "Check available"
@@ -381,10 +381,10 @@
     "message": "本地下载器已成功完成。"
   },
   "dlProgressConnectAudio": {
-    "message": "正在连接到本地音频下载器。"
+    "message": "正在连接到 Astra Downloader。"
   },
   "dlProgressConnectVideo": {
-    "message": "正在连接到本地视频下载器。"
+    "message": "正在连接到 Astra Downloader。"
   },
   "dlProgressDismissAria": {
     "message": "关闭下载进度"
@@ -405,7 +405,7 @@
     "message": "Astra Deck 与本地下载器失去联系。请选择「修复下载器」以恢复。"
   },
   "dlProgressLostTitle": {
-    "message": "已失去与下载器的连接"
+    "message": "已失去与 Astra Downloader 的连接"
   },
   "dlProgressLostToast": {
     "message": "已失去与本地下载器的联系。"
@@ -4821,7 +4821,7 @@
     "message": "Could not apply profile"
   },
   "statusWelcomeProfileFull": {
-    "message": "GitHub-Full profile enabled. The download companion and AI providers are now available."
+    "message": "GitHub-Full 配置文件已启用。现在可以使用 Astra Downloader 和 AI 提供商。"
   },
   "statusWelcomeProfileSafe": {
     "message": "Store-safe profile active. Open Full Settings to explore features."

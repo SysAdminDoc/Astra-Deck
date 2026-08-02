@@ -783,8 +783,8 @@
             const statusCopy = document.createElement('span');
             statusCopy.className = 'ytkit-dl-progress__status-copy';
             statusCopy.textContent = audioOnly
-                ? t('dlProgressConnectAudio', 'Connecting to the local audio downloader.')
-                : t('dlProgressConnectVideo', 'Connecting to the local video downloader.');
+                ? t('dlProgressConnectAudio', 'Connecting to Astra Downloader.')
+                : t('dlProgressConnectVideo', 'Connecting to Astra Downloader.');
             statusRow.appendChild(statePill);
             statusRow.appendChild(statusCopy);
 
@@ -830,8 +830,8 @@
                 'pending',
                 t('dlProgressStatePreparing', 'Preparing'),
                 audioOnly
-                    ? t('dlProgressConnectAudio', 'Connecting to the local audio downloader.')
-                    : t('dlProgressConnectVideo', 'Connecting to the local video downloader.')
+                    ? t('dlProgressConnectAudio', 'Connecting to Astra Downloader.')
+                    : t('dlProgressConnectVideo', 'Connecting to Astra Downloader.')
             );
 
             panel.appendChild(header);
@@ -975,7 +975,7 @@
                         stopPolling();
                         fill.classList.remove('is-success');
                         fill.classList.add('is-error');
-                        title.textContent = t('dlProgressLostTitle', 'Connection to downloader lost');
+                        title.textContent = t('dlProgressLostTitle', 'Connection to Astra Downloader lost');
                         pct.textContent = t('dlProgressStateError', 'Error');
                         spd.textContent = '';
                         eta.textContent = '';
@@ -1471,7 +1471,7 @@
             qualityStatus.setAttribute('aria-live', 'polite');
             qualityStatus.textContent = t(
                 'dlPopupFormatsHint',
-                'Ask the companion which resolutions this video actually has.'
+                'Ask Astra Downloader which resolutions this video actually has.'
             );
             qualityRow.appendChild(qualityStatus);
 
@@ -1481,7 +1481,7 @@
                 if (!summary.heights.length) {
                     qualityStatus.textContent = t(
                         'dlPopupFormatsNone',
-                        'The companion reported no video streams for this URL.'
+                        'Astra Downloader reported no video streams for this URL.'
                     );
                     return;
                 }

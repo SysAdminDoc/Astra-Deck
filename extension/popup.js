@@ -3573,7 +3573,7 @@ async function dismissWelcomeCard(reason) {
             'ok', 4200);
     } else if (reason === 'profile-github-full') {
         showStatus(t('statusWelcomeProfileFull',
-            'GitHub-Full profile enabled. The download companion and AI providers are now available.'),
+            'GitHub-Full profile enabled. Astra Downloader and AI providers are now available.'),
             'ok', 4200);
     }
 }

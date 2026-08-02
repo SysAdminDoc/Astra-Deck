@@ -7,6 +7,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Companion naming.** Download progress, format probing, and full-profile
+  welcome copy now consistently identify the helper as Astra Downloader.
 - **Undo status copy.** Removed unreachable no-undo branches and their
   obsolete locale catalog entries; recoverable import/reset flows now expose
   only the statuses they can actually reach.
