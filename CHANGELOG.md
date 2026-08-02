@@ -11,6 +11,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Firefox's registered-host manifest path plus Gecko extension ID argv shape,
   validates it against the installed manifest, and enters the stdio token
   handshake before GUI or single-instance startup.
+- **Resume Playback persistence.** Mid-video samples now queue durable storage
+  writes on a bounded cadence and force a final flush on `pagehide` and feature
+  teardown, so closing a tab no longer loses the saved position.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
