@@ -1758,10 +1758,9 @@
     // extension/core/settings-schema.js
     //
     // v5.0.0 single source of truth for all Astra Deck settings.
-    // Generated from ROADMAP.md "Full Per-Toggle Settings Schema (362 keys)"
-    // and extension/default-settings.json. scripts/check-settings.js enforces
-    // schema <-> default-settings parity on every `npm run check`; build emit
-    // (extension/default-settings.json) is downstream of this module.
+    // scripts/check-settings.js enforces schema <-> default-settings parity on
+    // every `npm run check`; build emit (extension/default-settings.json) is
+    // downstream of this module.
     //
     // Safe to load as a Node CommonJS module (build + tests) and as an
     // ISOLATED-world classic content-script (ytkit.js consumer).

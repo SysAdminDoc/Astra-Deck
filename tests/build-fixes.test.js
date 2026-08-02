@@ -9,6 +9,7 @@
 //   6. check-versions rejects an empty --tag value.
 //   7. Staging skip-lists exclude key material and logs.
 //   8. The live-chat ISOLATED entry remains scope-minimal.
+//   9. The retired schema command validates without rewriting canonical data.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -178,6 +179,22 @@ test('check-versions still validates a matching explicit tag', () => {
     const result = runNodeCommand([script, '--tag', 'v' + pkg.version]);
     assert.equal(result.status, 0,
         'a correct --tag vX.Y.Z must still pass: ' + String(result.stderr));
+});
+
+test('legacy schema command validates without regenerating the canonical schema', () => {
+    const script = path.join(REPO_ROOT, 'scripts', '_gen-schema.js');
+    const schema = path.join(REPO_ROOT, 'extension', 'core', 'settings-schema.js');
+    const before = fs.readFileSync(schema, 'utf8');
+    const result = runNodeCommand([script]);
+    assert.equal(result.status, 0,
+        'the historical contributor command must remain a working parity check: '
+        + String(result.stderr));
+    assert.equal(fs.readFileSync(schema, 'utf8'), before,
+        'the compatibility command must not rewrite the canonical schema');
+    const source = fs.readFileSync(script, 'utf8');
+    assert.match(source, /check-settings\.js/);
+    assert.doesNotMatch(source, /writeFileSync|ROADMAP\.md/,
+        'the retired generator must not regain roadmap parsing or file writes');
 });
 
 test('createZip never shells out to PowerShell Compress-Archive', () => {
