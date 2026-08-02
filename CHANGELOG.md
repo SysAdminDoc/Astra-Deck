@@ -54,6 +54,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection that stops being valid falls back to Best and says so.
 
 ### Fixed
+- **The play queue stays consistent across tabs.** Queue rows now act on the
+  video they were rendered for instead of a row position, so an edit made in
+  another tab can no longer cause Remove to delete the wrong entry; the pill
+  and panel follow other tabs' changes; and two tabs whose videos end together
+  no longer both jump to the same next video.
 - **Theater Split keeps the player full width after leaving fullscreen.**
   Exiting fullscreen with the split collapsed pinned the player to the pixel
   width the window happened to have, and nothing corrected it on a later

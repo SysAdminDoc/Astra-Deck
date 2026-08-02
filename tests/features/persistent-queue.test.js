@@ -60,3 +60,40 @@ test('autoExitFullscreen treats a pending queue entry as up-next', () => {
     assert.match(block, /ytkit-queue/,
         'queue check reads the shared queue storage key');
 });
+
+test('persistentQueue row actions act on the video id, not a stale index', () => {
+    // The panel renders once and its buttons close over a row index. Another
+    // tab editing the queue between render and click made that index point at
+    // a different video, so Remove deleted the wrong entry.
+    const block = featureSlice('persistentQueue');
+    assert.match(block, /_indexOf\(queue, index, expectedId\)/,
+        'mutators must resolve the row by its rendered video id');
+    assert.match(block, /queue\.items\.findIndex\(item => item\.id === expectedId\)/,
+        'a moved entry must be found by id before it is mutated');
+    assert.match(block, /this\._move\(i, -1, it\.id\)/,
+        'move up must pass the row id');
+    assert.match(block, /this\._removeAt\(i, it\.id\)/,
+        'remove must pass the row id');
+    assert.match(block, /if \(at < 0\)/,
+        'an entry another tab already removed must be a no-op, not a blind splice');
+});
+
+test('persistentQueue guards the head against two tabs advancing at once', () => {
+    const block = featureSlice('persistentQueue');
+    assert.match(block, /_CLAIM_WINDOW_MS: \d+/,
+        'the claim must expire so a crashed tab cannot wedge the queue');
+    assert.match(block, /queue\.claim = \{ id: next\.id, at: Date\.now\(\) \}/,
+        'advancing must record which entry this tab claimed');
+    assert.match(block, /claimFresh && claim\.id === next\.id/,
+        'a second tab must skip an entry another tab just claimed');
+});
+
+test('persistentQueue re-renders when another tab edits the queue', () => {
+    const block = featureSlice('persistentQueue');
+    assert.match(block, /window\.addEventListener\('ytkit-storage-changed', this\._storageHandler\)/,
+        'the pill and panel must follow cross-tab storage changes');
+    assert.match(block, /this\._KEY in event\.detail\.changes/,
+        'the handler must filter to the queue key');
+    assert.match(block, /window\.removeEventListener\('ytkit-storage-changed', this\._storageHandler\)/,
+        'destroy must detach the storage listener');
+});
