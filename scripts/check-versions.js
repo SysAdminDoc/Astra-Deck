@@ -10,7 +10,7 @@
 //   1. package.json                  → "version"
 //   2. extension/manifest.json       → "version"
 //   3. extension/ytkit.js            → const YTKIT_VERSION = '...'
-//   4. YTKit.user.js                 → // @version
+//   4. YTKit.user.js                 → // @version and @name suffix
 //   5. package-lock.json             → root + packages[""].version
 //
 // SETTINGS-VERSION sources of truth (v4.47.0 NF25 — must all match):
@@ -66,6 +66,11 @@ function readUserscriptVersion() {
     const src = fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8');
     const m = src.match(/^\/\/ @version\s+(\S+)/m);
     return { source: 'YTKit.user.js (@version)', value: m ? m[1] : '' };
+}
+
+function readUserscriptNameVersion(source = fs.readFileSync(path.join(REPO_ROOT, 'YTKit.user.js'), 'utf8')) {
+    const m = source.match(/^\/\/ @name\s+YTKit v(\S+)/m);
+    return { source: 'YTKit.user.js (@name version)', value: m ? m[1] : '' };
 }
 
 // v4.47.0 NF25 — SETTINGS_VERSION parity sources.
@@ -228,6 +233,7 @@ function main(argv) {
         readManifestVersion(),
         readYtkitVersion(),
         readUserscriptVersion(),
+        readUserscriptNameVersion(),
     ];
 
     const tagOverride = parseTagFlag(argv);
@@ -301,5 +307,6 @@ if (require.main === module) {
 module.exports = {
     compareVersionSegments,
     findStrayProductTags,
-    parseProductTagSegments
+    parseProductTagSegments,
+    readUserscriptNameVersion
 };

@@ -1851,6 +1851,7 @@ test('check-versions.js exists and is wired into npm run check', () => {
     assert.match(scriptSource, /readManifestVersion/, 'must read extension/manifest.json version');
     assert.match(scriptSource, /readYtkitVersion/, 'must read extension/ytkit.js YTKIT_VERSION');
     assert.match(scriptSource, /readUserscriptVersion/, 'must read YTKit.user.js @version');
+    assert.match(scriptSource, /readUserscriptNameVersion/, 'must read the YTKit.user.js @name version suffix');
     assert.match(scriptSource, /checkActiveDocumentationTruth/,
         'must reject stale active docs that mention retired workflow paths or old current-version claims');
     assert.match(scriptSource, /ACTIVE_DOC_TRUTH_FILES/,

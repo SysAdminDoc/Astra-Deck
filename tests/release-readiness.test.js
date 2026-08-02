@@ -38,7 +38,7 @@ function writeFixtureRepo({ companionRequired = false, crxSigningMode = 'externa
     }, null, 2) + '\n');
     fs.writeFileSync(path.join(root, 'extension', 'manifest.json'), JSON.stringify({ version }, null, 2) + '\n');
     fs.writeFileSync(path.join(root, 'extension', 'ytkit.js'), `const YTKIT_VERSION = '${version}';\n`);
-    fs.writeFileSync(path.join(root, 'YTKit.user.js'), `// @version      ${version}\n`);
+    fs.writeFileSync(path.join(root, 'YTKit.user.js'), `// @name        YTKit v${version}\n// @version      ${version}\n`);
 
     for (const name of expectedReleaseNames(version, { requireCompanion: companionRequired })) {
         let content;

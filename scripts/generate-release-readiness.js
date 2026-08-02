@@ -91,6 +91,11 @@ function readVersionSurfaces(repoRoot = REPO_ROOT) {
         name: 'YTKit.user.js @version',
         version: userscriptMatch ? userscriptMatch[1] : null
     });
+    const userscriptNameMatch = userscript.match(/^\s*\/\/\s*@name\s+YTKit v(\S+)/m);
+    surfaces.push({
+        name: 'YTKit.user.js @name version',
+        version: userscriptNameMatch ? userscriptNameMatch[1] : null
+    });
 
     return surfaces;
 }
