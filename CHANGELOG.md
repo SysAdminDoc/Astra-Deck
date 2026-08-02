@@ -7,6 +7,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Schema generator safety.** The legacy schema command now delegates to the
+  canonical parity check and cannot overwrite the hand-maintained schema.
 - **Companion translation freshness.** Release builds now fail closed when an
   unavailable Qt compiler would leave a stale `.qm` catalogue.
 - **Firefox native messaging bootstrap.** Astra Downloader now recognizes
