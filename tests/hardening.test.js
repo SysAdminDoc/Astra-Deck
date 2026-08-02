@@ -3472,6 +3472,23 @@ test('bulkCardActions scrub sessions are bounded, paced, logged locally, and und
     // Recoverable: undo removes the local hides.
     assert.match(block, /_removeHiddenVideos\?\.\(hiddenIds\)/, 'undo must remove the local hides');
     assert.match(block, /native feedback stays applied/, 'undo copy must be honest that native feedback is not reverted');
+    assert.match(block, /_lifecycleToken: 0/, 'scrub sessions must track feature generations across teardown');
+    assert.match(block, /if \(this\._lifecycleToken !== sessionToken\) break;/,
+        'a scrub must stop after the feature is destroyed or reinitialized');
+    assert.match(block, /videoIds: \[\],\s*partial: true/,
+        'a destroyed scrub must retain a partial session record instead of falling through');
+    assert.match(block, /this\._selected\?\.delete\(id\)/,
+        'scrub finalization must tolerate selection teardown');
+    assert.match(block, /ytd-rich-item-renderer\.ytkit-video-hidden/,
+        'bulkCardActions must own a fallback hidden-card rule when Video Hider is disabled');
+
+    const hideStart = block.indexOf('_bulkHide() {');
+    assert.ok(hideStart > -1, '_bulkHide must exist');
+    const hideBlock = block.slice(hideStart, hideStart + 900);
+    assert.doesNotMatch(hideBlock, /if \(!vh\?\._addHiddenVideos\) return/,
+        'bulk Hide must still hide cards when Video Hider storage is unavailable');
+    assert.match(hideBlock, /card\.classList\.add\('ytkit-video-hidden'\)/,
+        'bulk Hide must apply its own visible fallback state');
 });
 
 // ── v3.25.0 P1: Feed Triage profile invariants ──
