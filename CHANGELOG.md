@@ -66,6 +66,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replace-everything path takes a deliberate Shift+click on Import.
 
 ### Fixed
+- **The cookie-less retry for ended live streams shares one parser.** It ran a
+  cloned copy of the progress parser with no test coverage, which had already
+  drifted — a late output line could flip a cancelled download back to
+  "merging". Both attempts now use the same code, covered by tests for cookie
+  stripping, retry progress, and the cancelled guard.
 - **Video Insights distinguishes "not looked up" from "not published".** A
   paused, blocked, or failed metadata lookup rendered exactly like a video that
   published no category or tags. The panel now says the lookup did not run and

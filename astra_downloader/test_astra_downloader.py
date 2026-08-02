@@ -4552,6 +4552,121 @@ class EndToEndDownloadTests(unittest.TestCase):
             time.sleep(0.01)
         return False
 
+    def test_cookieless_live_retry_reruns_the_download_without_cookies(self):
+        # The cookie-less retry for "live event has ended" had zero coverage:
+        # cookie stripping, the second yt-dlp invocation, and its progress
+        # parsing were all unasserted, and its cloned parse loop had already
+        # drifted from the original.
+        attempts = []
+
+        class FakeProc:
+            def __init__(self, lines, rc):
+                self.stdout = iter([line + "\n" for line in lines])
+                self.returncode = rc
+                self._waited = False
+
+            def wait(self):
+                self._waited = True
+                return self.returncode
+
+            def poll(self):
+                return self.returncode if self._waited else None
+
+            def terminate(self):
+                pass
+
+            def kill(self):
+                pass
+
+            def communicate(self, *_args, **_kwargs):
+                self._waited = True
+                return ('', '')
+
+        def popen(args, **_kwargs):
+            # yt-dlp/deno/node --version probes run through the same Popen;
+            # only the real download invocations count as attempts.
+            if '--ignore-config' not in args:
+                return FakeProc([], 0)
+            attempts.append(list(args))
+            if len(attempts) == 1:
+                return FakeProc(['ERROR: This live event has ended.'], 1)
+            return FakeProc([
+                'MDLP_JSON {"downloaded_bytes": 10, "total_bytes": 10}',
+                '[Merger] Merging formats into "archived-stream.mp4"',
+            ], 0)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            cookie_jar = Path(tmpdir) / "cookies.txt"
+            cookie_jar.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+            download = ad.Download(
+                "dl_live_retry",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir=tmpdir,
+            )
+            download.status = "queued"
+            download.cookies_file = str(cookie_jar)
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                manager._run_download(download)
+
+        self.assertEqual(len(attempts), 2, "the ended-live failure must trigger exactly one retry")
+        self.assertIn('--cookies', attempts[0], "the first attempt carries the cookie jar")
+        self.assertNotIn('--cookies', attempts[1], "the retry must strip --cookies")
+        self.assertNotIn(str(cookie_jar), attempts[1], "the retry must strip the jar path too")
+        self.assertEqual(download.status, "complete")
+        self.assertEqual(download.progress, 100)
+        self.assertEqual(download.filename, "archived-stream.mp4",
+                         "the retry must parse progress with the same parser as the first attempt")
+        self.assertEqual(download.error, "")
+
+    def test_shared_output_parser_never_resurrects_a_cancelled_download(self):
+        # The retry's cloned loop lacked the original's cancelled guard, so a
+        # late "[Merger]" line flipped a cancelled item back to "merging" while
+        # the process was still draining. One shared parser keeps the guard.
+        class FakeProc:
+            def __init__(self, lines):
+                self.stdout = iter([line + "\n" for line in lines])
+
+        config = FakeConfig({})
+        manager = ad.DownloadManager(config, FakeHistory())
+        download = ad.Download(
+            "dl_cancel_guard",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        )
+        download.status = "cancelled"
+        activity = {'at': time.monotonic()}
+        last_lines, last_error = manager._consume_ytdlp_output(
+            download,
+            FakeProc([
+                '[Merger] Merging formats into "late.mp4"',
+                '[ExtractAudio] Destination: late.m4a',
+            ]),
+            activity,
+        )
+
+        self.assertEqual(download.status, "cancelled",
+                         "output lines must never revive a cancelled download")
+        self.assertEqual(download.filename, "late.mp4",
+                         "filename detection still runs so the file can be cleaned up")
+        self.assertEqual(len(last_lines), 2)
+        self.assertIsNone(last_error)
+
+    def test_download_output_parser_is_shared_by_both_attempts(self):
+        import download as download_module
+
+        source = inspect.getsource(download_module.DownloadManagerCore._run_download)
+        self.assertEqual(
+            source.count('self._consume_ytdlp_output(dl, proc, activity)'), 2,
+            "both the first attempt and the retry must use the shared parser",
+        )
+        self.assertNotIn(
+            'for line in proc.stdout:', source,
+            "no copy of the parse loop may remain inline",
+        )
+
     def test_full_download_flow_marks_complete_and_writes_history(self):
         # Fake yt-dlp output: structured progress lines that the parsing
         # loop knows how to decode + a Merger line (sets filename) + a

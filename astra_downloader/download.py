@@ -1309,6 +1309,104 @@ class DownloadManagerCore:
                 except Exception:
                     pass
 
+    def _consume_ytdlp_output(self, dl, proc, activity):
+        """Parse one yt-dlp process's stdout into `dl`'s live progress state.
+
+        Both the first attempt and the cookie-less live retry run this parser.
+        The retry used to carry a cloned copy with no test coverage, and it had
+        already drifted from this one — a late output line could resurrect a
+        cancelled download into "merging".
+
+        Returns `(last_lines, last_error)` for failure classification.
+        """
+        last_lines = []
+        last_error = None
+        for line in proc.stdout:
+            activity['at'] = time.monotonic()
+            line = line.strip()
+            if not line:
+                continue
+            last_lines.append(line)
+            if len(last_lines) > 30:
+                last_lines = last_lines[-30:]
+            if 'ERROR' in line.upper():
+                last_error = line
+
+            # Preferred structured progress (JSON - robust to yt-dlp format
+            # changes). Falls through to the legacy MDLP regex only if JSON
+            # parsing fails.
+            if line.startswith('MDLP_JSON '):
+                try:
+                    payload = json.loads(line[len('MDLP_JSON '):])
+                    total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
+                    downloaded_bytes = payload.get('downloaded_bytes') or 0
+                    if isinstance(total, (int, float)) and total > 0:
+                        dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
+                    spd = (payload.get('_speed_str') or '').strip()
+                    eta = (payload.get('_eta_str') or '').strip()
+                    if spd and spd not in ('NA', 'Unknown'):
+                        dl.speed = spd
+                    if eta and eta not in ('NA', 'Unknown'):
+                        dl.eta = eta
+                    self.progress_updated.emit()
+                    continue
+                except Exception:
+                    # reason: yt-dlp occasionally emits a malformed JSON line on
+                    # extractor exit. Fall through to MDLP.
+                    pass
+            if line.startswith('MDLP_FILEPATH '):
+                try:
+                    filepath = json.loads(line[len('MDLP_FILEPATH '):])
+                    if isinstance(filepath, str) and filepath:
+                        dl.filename = filepath
+                        continue
+                except Exception:
+                    # reason: malformed path payload; keep parsing the stream
+                    pass
+
+            # Structured progress (MDLP prefix, legacy fallback)
+            m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
+            if m:
+                dl.progress = float(m.group(1))
+                spd, eta = m.group(2), m.group(3)
+                if spd not in ('NA', 'Unknown'):
+                    dl.speed = spd
+                if eta not in ('NA', 'Unknown'):
+                    dl.eta = eta
+                self.progress_updated.emit()
+                continue
+
+            # Legacy progress
+            m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
+            if m:
+                dl.progress = float(m.group(1))
+                m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
+                if m2:
+                    dl.speed = m2.group(1)
+                    dl.eta = m2.group(2)
+                self.progress_updated.emit()
+                continue
+
+            # Status changes
+            if dl.status == 'cancelled':
+                pass  # never resurrect a cancelled item from output lines
+            elif '[Merger]' in line or 'Merging formats' in line:
+                dl.status = "merging"
+                self.progress_updated.emit()
+            elif '[ExtractAudio]' in line or '[extract]' in line:
+                dl.status = "extracting"
+                self.progress_updated.emit()
+
+            # Filename detection
+            m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
+            if m:
+                dl.filename = m.group(1)
+            else:
+                m = re.search(r'\[download\] Destination: (.+)', line)
+                if m:
+                    dl.filename = m.group(1)
+        return last_lines, last_error
+
     def _run_download(self, dl):
         with self._lock:
             if dl.status != 'queued':
@@ -1480,89 +1578,7 @@ class DownloadManagerCore:
             )
             watchdog_thread.start()
 
-            for line in proc.stdout:
-                activity['at'] = time.monotonic()
-                line = line.strip()
-                if not line:
-                    continue
-                last_lines.append(line)
-                if len(last_lines) > 30:
-                    last_lines = last_lines[-30:]
-                if 'ERROR' in line.upper():
-                    last_error = line
-
-                # Preferred structured progress (JSON — robust to yt-dlp
-                # format changes). Falls through to the legacy MDLP regex
-                # only if JSON parsing fails.
-                if line.startswith('MDLP_JSON '):
-                    try:
-                        payload = json.loads(line[len('MDLP_JSON '):])
-                        total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
-                        downloaded_bytes = payload.get('downloaded_bytes') or 0
-                        if isinstance(total, (int, float)) and total > 0:
-                            dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
-                        spd = (payload.get('_speed_str') or '').strip()
-                        eta = (payload.get('_eta_str') or '').strip()
-                        if spd and spd not in ('NA', 'Unknown'):
-                            dl.speed = spd
-                        if eta and eta not in ('NA', 'Unknown'):
-                            dl.eta = eta
-                        self.progress_updated.emit()
-                        continue
-                    except Exception:
-                        # reason: yt-dlp occasionally emits a malformed JSON
-                        # line on extractor exit. Fall through to MDLP.
-                        pass
-                if line.startswith('MDLP_FILEPATH '):
-                    try:
-                        filepath = json.loads(line[len('MDLP_FILEPATH '):])
-                        if isinstance(filepath, str) and filepath:
-                            dl.filename = filepath
-                            continue
-                    except Exception:
-                        pass
-
-                # Structured progress (MDLP prefix, legacy fallback)
-                m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
-                if m:
-                    dl.progress = float(m.group(1))
-                    spd, eta = m.group(2), m.group(3)
-                    if spd not in ('NA', 'Unknown'):
-                        dl.speed = spd
-                    if eta not in ('NA', 'Unknown'):
-                        dl.eta = eta
-                    self.progress_updated.emit()
-                    continue
-
-                # Legacy progress
-                m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
-                if m:
-                    dl.progress = float(m.group(1))
-                    m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
-                    if m2:
-                        dl.speed = m2.group(1)
-                        dl.eta = m2.group(2)
-                    self.progress_updated.emit()
-                    continue
-
-                # Status changes
-                if dl.status == 'cancelled':
-                    pass  # never resurrect a cancelled item from output lines
-                elif '[Merger]' in line or 'Merging formats' in line:
-                    dl.status = "merging"
-                    self.progress_updated.emit()
-                elif '[ExtractAudio]' in line or '[extract]' in line:
-                    dl.status = "extracting"
-                    self.progress_updated.emit()
-
-                # Filename detection
-                m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
-                if m:
-                    dl.filename = m.group(1)
-                else:
-                    m = re.search(r'\[download\] Destination: (.+)', line)
-                    if m:
-                        dl.filename = m.group(1)
+            last_lines, last_error = self._consume_ytdlp_output(dl, proc, activity)
 
             proc.wait()
 
@@ -1659,8 +1675,6 @@ class DownloadManagerCore:
                             env=env,
                         )
                         dl.process = proc
-                        last_lines = []
-                        last_error = None
 
                         def _retry_watchdog(ev=stop_watchdog, watched_proc=proc):
                             while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
@@ -1686,73 +1700,7 @@ class DownloadManagerCore:
                         )
                         watchdog_thread.start()
 
-                        for line in proc.stdout:
-                            activity['at'] = time.monotonic()
-                            line = line.strip()
-                            if not line:
-                                continue
-                            last_lines.append(line)
-                            if len(last_lines) > 30:
-                                last_lines = last_lines[-30:]
-                            if 'ERROR' in line.upper():
-                                last_error = line
-                            if line.startswith('MDLP_JSON '):
-                                try:
-                                    payload = json.loads(line[len('MDLP_JSON '):])
-                                    total = payload.get('total_bytes') or payload.get('total_bytes_estimate') or 0
-                                    downloaded_bytes = payload.get('downloaded_bytes') or 0
-                                    if isinstance(total, (int, float)) and total > 0:
-                                        dl.progress = max(0.0, min(100.0, (downloaded_bytes / total) * 100.0))
-                                    spd = (payload.get('_speed_str') or '').strip()
-                                    eta = (payload.get('_eta_str') or '').strip()
-                                    if spd and spd not in ('NA', 'Unknown'):
-                                        dl.speed = spd
-                                    if eta and eta not in ('NA', 'Unknown'):
-                                        dl.eta = eta
-                                    self.progress_updated.emit()
-                                    continue
-                                except Exception:
-                                    pass
-                            if line.startswith('MDLP_FILEPATH '):
-                                try:
-                                    filepath = json.loads(line[len('MDLP_FILEPATH '):])
-                                    if isinstance(filepath, str) and filepath:
-                                        dl.filename = filepath
-                                        continue
-                                except Exception:
-                                    pass
-                            m = re.match(r'^MDLP\s+(\d+\.?\d*)%?\s+(\S+)\s+(\S+)', line)
-                            if m:
-                                dl.progress = float(m.group(1))
-                                spd, eta = m.group(2), m.group(3)
-                                if spd not in ('NA', 'Unknown'):
-                                    dl.speed = spd
-                                if eta not in ('NA', 'Unknown'):
-                                    dl.eta = eta
-                                self.progress_updated.emit()
-                                continue
-                            m = re.match(r'\[download\]\s+(\d+\.?\d*)%', line)
-                            if m:
-                                dl.progress = float(m.group(1))
-                                m2 = re.search(r'at\s+(\S+)\s+ETA\s+(\S+)', line)
-                                if m2:
-                                    dl.speed = m2.group(1)
-                                    dl.eta = m2.group(2)
-                                self.progress_updated.emit()
-                                continue
-                            if '[Merger]' in line or 'Merging formats' in line:
-                                dl.status = "merging"
-                                self.progress_updated.emit()
-                            elif '[ExtractAudio]' in line or '[extract]' in line:
-                                dl.status = "extracting"
-                                self.progress_updated.emit()
-                            m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
-                            if m:
-                                dl.filename = m.group(1)
-                            else:
-                                m = re.search(r'\[download\] Destination: (.+)', line)
-                                if m:
-                                    dl.filename = m.group(1)
+                        last_lines, last_error = self._consume_ytdlp_output(dl, proc, activity)
 
                         proc.wait()
                         if dl.status == 'cancelled':
