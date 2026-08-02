@@ -103,6 +103,18 @@ test('build-extension shouldStageEntry refuses key, token, and log files', () =>
     assert.equal(shouldStageEntry('ytkit.js'), true, 'real extension files must still stage');
 });
 
+test('build tooling carries no dead shell or companion-validator bindings', () => {
+    const buildSource = fs.readFileSync(path.join(REPO_ROOT, 'build-extension.js'), 'utf8');
+    assert.doesNotMatch(buildSource, /\{\s*execSync\s*,/,
+        'build-extension.js must retain only the execFileSync API it uses');
+    const stageSource = fs.readFileSync(
+        path.join(REPO_ROOT, 'scripts', 'stage-companion-release.js'),
+        'utf8'
+    );
+    assert.doesNotMatch(stageSource, /validateCompanionExe/,
+        'stage-companion-release.js must not expose an unused validator alias');
+});
+
 test('staging scripts reuse the shared build copier and filter', () => {
     for (const rel of ['scripts/check-firefox-webext.js', 'scripts/smoke-chromium-optional-hosts.js']) {
         const src = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');

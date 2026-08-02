@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
-const { execSync, execFileSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const crx3 = require('crx3');
 const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
 const {
