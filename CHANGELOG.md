@@ -61,6 +61,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replace-everything path takes a deliberate Shift+click on Import.
 
 ### Fixed
+- **The subscriptions feed says who is ordering it.** With Subscription Groups
+  active, the saved feed order stopped applying because the group toolbar's
+  Sort owns ordering — with nothing on screen explaining the change. The view
+  controls now say so.
 - **Three toggles now work outside English.** Hide Create button, the live-chat
   popout entry, and the live-chat subscribe-privacy tooltip were matched by
   English label or sentence text, so they silently did nothing on the other ten

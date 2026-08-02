@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — subscription-view order mode is silently dead when the groups toolbar exists
-  Why: applyOrder() early-returns when .ytkit-sub-toolbar is present and nothing reimplements ordering — the persisted setting is ignored with no hint.
-  Where: extension/features/subscription-view/index.js:197,257
 - [ ] P3 — chat-style-comments: skip fully-processed comments in processAllComments
   Why: every mutation batch re-runs ~30 inline style writes per comment across the whole thread (500 comments re-styled to add 20).
   Where: extension/features/chat-style-comments/index.js:1154-1330

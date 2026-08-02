@@ -147,3 +147,25 @@ test('subscriptions selector pack is backed by the captured modern lockup feed',
     assert.match(source, /ytd-rich-grid-renderer ytd-rich-item-renderer\[lockup\]/);
     assert.match(source, /never replace native card semantics or actions/);
 });
+
+test('subscription order defers to the group toolbar with an on-screen explanation', () => {
+    // applyOrder() early-returned whenever the Subscription Groups toolbar was
+    // mounted, so the saved order preference stopped applying with nothing
+    // saying why.
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-view', 'index.js'), 'utf8');
+    const start = source.indexOf('function applyOrder()');
+    assert.ok(start > -1, 'applyOrder must exist');
+    const block = source.slice(start, start + 1400);
+    assert.match(block, /ytkit-sub-toolbar'\)\) \{/,
+        'the group toolbar must still own ordering');
+    assert.match(block, /subscriptionOrderGroupsHint/,
+        'the deferral must be explained through a localized status line');
+    assert.doesNotMatch(block, /ytkit-sub-toolbar'\)\) return;/,
+        'the silent early return must be gone');
+    // The status element only existed on the branch that renders the order
+    // select, so there was nowhere to put the explanation.
+    const controls = source.slice(source.indexOf('function buildControls'), source.indexOf('function mountControls'));
+    assert.equal((controls.match(/status = hint;/g) || []).length, 2,
+        'both toolbar shapes must expose a status line');
+});
