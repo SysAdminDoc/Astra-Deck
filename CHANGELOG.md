@@ -7,6 +7,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Inline theme coherence.** Subscription cards and dialogs now render cleanly in YouTube light mode, shared accent RGB tokens drive utility surfaces, RTL-sensitive margins use logical properties, and bottom-right overlays stack from measured heights.
 - **Companion naming.** Download progress, format probing, and full-profile
   welcome copy now consistently identify the helper as Astra Downloader.
 - **Undo status copy.** Removed unreachable no-undo branches and their

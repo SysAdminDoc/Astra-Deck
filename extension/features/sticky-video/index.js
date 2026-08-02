@@ -1437,7 +1437,7 @@
     function buildSplitCommentsCss() {
         return `
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface {
-                        --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 245, 158, 11);
+                        --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 167, 139, 250);
                         color-scheme: dark !important;
                     }
 

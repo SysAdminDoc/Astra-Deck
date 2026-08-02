@@ -1453,7 +1453,74 @@ return response;
         SETTINGS_OVERLAY: 80000, // Settings backdrop
         SETTINGS_PANEL: 80001,   // Settings panel (see settings-visual-system.js for the real forced value)
         PANEL_TOAST: 2147483647, // Settings panel toasts
+        CORNER_STACK_BASE: 10000, // Bottom-right utility stack, below modal surfaces
+        AI_SUMMARY: 79999,       // AI summary must sit below the settings backdrop
     };
+
+    // Fixed utility surfaces used to reserve hard-coded, overlapping bottom
+    // offsets. Keep one small registry so the stack follows the actual
+    // rendered heights and remains usable when several features are enabled.
+    const CORNER_STACK = Object.freeze({
+        EDGE_PX: 16,
+        GAP_PX: 8,
+        ORDER: Object.freeze({
+            bulkToggle: 10,
+            bulkBar: 20,
+            reactionLauncher: 30,
+            shortsSpeed: 40,
+            queuePill: 50,
+            queuePanel: 60
+        })
+    });
+    const _cornerStackEntries = new Map();
+
+    function _refreshCornerStack() {
+        const entries = Array.from(_cornerStackEntries.values())
+            .filter((entry) => entry.element?.isConnected && !entry.element.hidden)
+            .sort((a, b) => (a.order - b.order) || a.id.localeCompare(b.id));
+        const live = new Set(entries);
+        for (const entry of _cornerStackEntries.values()) {
+            if (!live.has(entry)) delete entry.element?.dataset.ytkitCornerStack;
+        }
+        let bottom = CORNER_STACK.EDGE_PX;
+        entries.forEach((entry, index) => {
+            const element = entry.element;
+            const measuredHeight = Number(element.getBoundingClientRect?.().height);
+            const height = Number.isFinite(measuredHeight) && measuredHeight > 0
+                ? measuredHeight
+                : entry.fallbackHeight;
+            element.style.setProperty('inset-inline-end', `${CORNER_STACK.EDGE_PX}px`);
+            element.style.setProperty('bottom', `${Math.round(bottom)}px`);
+            element.style.setProperty('z-index', String(Z.CORNER_STACK_BASE + index));
+            element.dataset.ytkitCornerStack = entry.id;
+            bottom += height + CORNER_STACK.GAP_PX;
+        });
+    }
+
+    function registerCornerStackElement(id, element, fallbackHeight = 40) {
+        if (!element) return () => {};
+        const safeId = String(id || 'corner-surface');
+        const order = CORNER_STACK.ORDER[safeId] ?? 100;
+        const prior = _cornerStackEntries.get(safeId);
+        prior?.resizeObserver?.disconnect();
+        const entry = { id: safeId, element, order, fallbackHeight: Math.max(0, Number(fallbackHeight) || 0) };
+        if (typeof ResizeObserver === 'function') {
+            entry.resizeObserver = new ResizeObserver(() => _refreshCornerStack());
+            entry.resizeObserver.observe(element);
+        }
+        _cornerStackEntries.set(safeId, entry);
+        _refreshCornerStack();
+        return () => {
+            if (_cornerStackEntries.get(safeId) !== entry) return;
+            entry.resizeObserver?.disconnect();
+            _cornerStackEntries.delete(safeId);
+            delete element.dataset.ytkitCornerStack;
+            element.style.removeProperty('inset-inline-end');
+            element.style.removeProperty('bottom');
+            element.style.removeProperty('z-index');
+            _refreshCornerStack();
+        };
+    }
 
     // ── Settings Panel Cleanup Registry ──
     let _panelCleanups = [];
@@ -12737,7 +12804,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     && stickyVideoFeatures.buildSplitCommentsCss())
                     || `
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface {
-                        --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 245, 158, 11);
+                        --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 167, 139, 250);
                         color-scheme: dark !important;
                     }
 
@@ -15381,6 +15448,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _intervalEl: null,
             _collapseBtn: null,
             _launcherButton: null,
+            _launcherCornerCleanup: null,
             _observer: null,
             _observerThrottle: null,
             _renderFrame: 0,
@@ -15668,6 +15736,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 button.addEventListener('click', () => this._showPanel());
                 document.body.append(button);
                 this._launcherButton = button;
+                this._launcherCornerCleanup?.();
+                this._launcherCornerCleanup = registerCornerStackElement('reactionLauncher', button, 36);
             },
 
             _showPanel() {
@@ -16044,20 +16114,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #ytkit-reaction-spammer-launcher {
                         position: fixed;
                         inset-inline-end: 12px;
-                        bottom: 74px;
-                        z-index: 2147483646;
+                        bottom: 16px;
+                        z-index: 10002;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
                         min-width: 54px;
                         height: 36px;
                         padding: 0 12px;
-                        border: 1px solid rgba(245,158,11,0.42);
+                        border: 1px solid rgba(var(--ytkit-accent-rgb,167,139,250),0.42);
                         border-radius: 10px;
-                        background: linear-gradient(135deg, #fbbf24, #f59e0b);
-                        color: #14181f;
+                        background: linear-gradient(135deg, var(--ytkit-accent-light, #c4b5fd), var(--ytkit-accent, #a78bfa));
+                        color: var(--ytkit-accent-contrast, #14181f);
                         box-shadow: 0 14px 34px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.28);
-                        font: 700 12px/1 "Roboto", "Arial", sans-serif;
+                        font: 700 12px/1 Roboto,Arial,sans-serif;
                         cursor: pointer;
                     }
                     #ytkit-reaction-spammer-launcher:hover {
@@ -16279,6 +16349,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel = null;
                 this._launcherButton?.remove();
                 this._launcherButton = null;
+                this._launcherCornerCleanup?.();
+                this._launcherCornerCleanup = null;
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._restorePinnedNodes();
@@ -25498,6 +25570,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
             _pill: null,
             _panel: null,
+            _pillCornerCleanup: null,
+            _panelCornerCleanup: null,
             _addButtonsTimer: null,
             _videoRef: null,
             _endedHandler: null,
@@ -25627,6 +25701,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _renderPill() {
                 const count = this._read().items.length;
                 if (!count) {
+                    this._pillCornerCleanup?.();
+                    this._pillCornerCleanup = null;
+                    this._panelCornerCleanup?.();
+                    this._panelCornerCleanup = null;
                     this._pill?.remove(); this._pill = null;
                     if (this._panel) { this._panel.remove(); this._panel = null; }
                     return;
@@ -25638,6 +25716,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._pill.setAttribute('translate', 'no');
                     this._pill.addEventListener('click', () => this._togglePanel());
                     document.body.appendChild(this._pill);
+                    this._pillCornerCleanup?.();
+                    this._pillCornerCleanup = registerCornerStackElement('queuePill', this._pill, 34);
                 }
                 this._pill.textContent = `Queue · ${count}`;
                 this._pill.setAttribute('aria-label', `Open Astra queue (${count} item${count === 1 ? '' : 's'})`);
@@ -25674,10 +25754,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     row.appendChild(actions);
                     list.appendChild(row);
                 });
+                _refreshCornerStack();
             },
 
             _togglePanel() {
-                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                if (this._panel) {
+                    this._panelCornerCleanup?.();
+                    this._panelCornerCleanup = null;
+                    this._panel.remove(); this._panel = null;
+                    return;
+                }
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-queue-panel';
                 panel.setAttribute('role', 'dialog');
@@ -25707,6 +25793,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.appendChild(list);
                 document.body.appendChild(panel);
                 this._panel = panel;
+                this._panelCornerCleanup = registerCornerStackElement('queuePanel', panel, 160);
                 this._renderPanelRows();
             },
 
@@ -25758,12 +25845,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._styleEl = injectStyle(`
-                    .ytkit-queue-btn { position: absolute; top: 4px; left: 4px; z-index: 12; width: 26px; height: 26px; border: none; border-radius: 6px; background: rgba(15, 15, 18, 0.86); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.15s ease; }
+                    .ytkit-queue-btn { position: absolute; top: 4px; inset-inline-start: 4px; z-index: 12; width: 26px; height: 26px; border: none; border-radius: 6px; background: rgba(15, 15, 18, 0.86); color: #fff; font: 600 16px/1 Roboto,Arial,sans-serif; cursor: pointer; opacity: 0; transition: opacity 0.15s ease; }
                     .ytkit-thumb-action-host:hover .ytkit-queue-btn { opacity: 1; }
-                    .ytkit-queue-btn:hover { background: rgba(255, 143, 64, 0.92); }
-                    .ytkit-queue-pill { position: fixed; right: 18px; bottom: 76px; z-index: 9998; padding: 8px 14px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 10px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.94)); color: var(--yt-spec-text-primary, #fff); font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
-                    .ytkit-queue-pill:hover { border-color: rgba(255, 143, 64, 0.7); }
-                    .ytkit-queue-panel { position: fixed; right: 18px; bottom: 122px; z-index: 9999; width: 360px; max-height: 55vh; display: flex; flex-direction: column; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 12px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.97)); color: var(--yt-spec-text-primary, #fff); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+                    .ytkit-queue-btn:hover { background: rgba(var(--ytkit-accent-rgb,167,139,250), 0.92); }
+                    .ytkit-queue-pill { position: fixed; inset-inline-end: 16px; bottom: 16px; z-index: 10000; padding: 8px 14px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 10px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.94)); color: var(--yt-spec-text-primary, #fff); font: 500 13px/1.2 Roboto,Arial,sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+                    .ytkit-queue-pill:hover { border-color: rgba(var(--ytkit-accent-rgb,167,139,250), 0.7); }
+                    .ytkit-queue-panel { position: fixed; inset-inline-end: 16px; bottom: 16px; z-index: 10001; width: min(360px, calc(100vw - 32px)); max-height: 55vh; display: flex; flex-direction: column; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.14)); border-radius: 12px; background: var(--yt-spec-menu-background, rgba(18, 18, 22, 0.97)); color: var(--yt-spec-text-primary, #fff); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; font-family: Roboto,Arial,sans-serif; }
                     .ytkit-queue-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.1)); font-size: 13px; font-weight: 600; }
                     .ytkit-queue-actions { display: flex; gap: 6px; }
                     .ytkit-queue-actions button { border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: transparent; color: var(--yt-spec-text-primary, #fff); font-size: 11px; padding: 4px 8px; cursor: pointer; }
@@ -25818,6 +25905,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('persistentQueue');
                 removeScopedMutationRule('persistentQueue');
                 this._styleEl?.remove(); this._styleEl = null;
+                this._pillCornerCleanup?.();
+                this._pillCornerCleanup = null;
+                this._panelCornerCleanup?.();
+                this._panelCornerCleanup = null;
                 this._pill?.remove(); this._pill = null;
                 this._panel?.remove(); this._panel = null;
                 document.querySelectorAll('.ytkit-queue-btn').forEach(b => b.remove());
@@ -28433,6 +28524,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _SPEEDS: [0.5, 0.75, 1, 1.25, 1.5, 2],
             _speed: null,
             _chip: null,
+            _cornerCleanup: null,
             _styleEl: null,
             _applyTimer: null,
 
@@ -28476,7 +28568,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._apply();
             },
             _renderChip() {
-                if (!location.pathname.startsWith('/shorts/')) { this._chip?.remove(); this._chip = null; return; }
+                if (!location.pathname.startsWith('/shorts/')) {
+                    this._cornerCleanup?.(); this._cornerCleanup = null;
+                    this._chip?.remove(); this._chip = null;
+                    return;
+                }
                 if (!this._chip || !this._chip.isConnected) {
                     this._chip = document.createElement('button');
                     this._chip.type = 'button';
@@ -28484,6 +28580,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._chip.setAttribute('translate', 'no');
                     this._chip.addEventListener('click', () => this._cycle());
                     document.body.appendChild(this._chip);
+                    this._cornerCleanup?.();
+                    this._cornerCleanup = registerCornerStackElement('shortsSpeed', this._chip, 32);
                 }
                 this._chip.textContent = `${this._speed}×`;
                 this._chip.setAttribute('aria-label', `Shorts playback speed ${this._speed}x — click to cycle`);
@@ -28491,8 +28589,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._styleEl = injectStyle(`
-                    .ytkit-shorts-speed-chip { position: fixed; right: 18px; bottom: 130px; z-index: 9998; min-width: 44px; padding: 6px 10px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px; background: rgba(18, 18, 22, 0.92); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
-                    .ytkit-shorts-speed-chip:hover { border-color: rgba(255, 143, 64, 0.7); }
+                    .ytkit-shorts-speed-chip { position: fixed; inset-inline-end: 16px; bottom: 16px; z-index: 10000; min-width: 44px; padding: 6px 10px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px; background: var(--yt-spec-menu-background,rgba(18, 18, 22, 0.92)); color: var(--yt-spec-text-primary,#fff); font: 600 13px/1.2 Roboto,Arial,sans-serif; cursor: pointer; }
+                    .ytkit-shorts-speed-chip:hover { border-color: rgba(var(--ytkit-accent-rgb,167,139,250), 0.7); }
                 `, this.id, true);
                 this._apply();
                 addMutationRule(this.id, () => this._scheduleApply(400));
@@ -28504,6 +28602,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('shortsSpeedControl');
                 const video = this._activeVideo();
                 if (video && this._speed != null && this._speed !== 1) video.playbackRate = 1;
+                this._cornerCleanup?.(); this._cornerCleanup = null;
                 this._chip?.remove(); this._chip = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._speed = null;
@@ -28584,8 +28683,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // buildAccentColorCss.
                     const accent = appState.settings.themeAccentColor;
                     if (!accent || !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(accent)) return;
+                    const rawHex = accent.slice(1);
+                    const rgbHex = rawHex.length <= 4
+                        ? rawHex.slice(0, 3).split('').map((digit) => digit + digit).join('')
+                        : rawHex.slice(0, 6);
+                    const accentRgb = [0, 2, 4].map((offset) => parseInt(rgbHex.slice(offset, offset + 2), 16)).join(',');
                     css = `
-                    :root { --ytkit-accent: ${accent} !important; }
+                    :root { --ytkit-accent: ${accent} !important; --ytkit-accent-rgb: ${accentRgb} !important; }
                     .ytp-swatch-background-color, .ytp-play-progress,
                     #progress.ytd-thumbnail-overlay-resume-playback-renderer {
                         background: ${accent} !important;
@@ -32761,7 +32865,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._styleEl = injectStyle(`
                     .ytkit-aisum-panel {
-                        position: fixed; top: 80px; right: 20px; z-index: 2147483647;
+                        position: fixed; top: 80px; inset-inline-end: 20px; z-index: ${Z.AI_SUMMARY};
                         width: min(520px, calc(100vw - 32px)); max-height: 75vh; overflow: auto; box-sizing: border-box;
                         background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
                         border-radius: 12px; padding: 16px; font: 14px/1.5 Roboto, system-ui;
@@ -32773,7 +32877,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-aisum-content h4{margin:0 0 4px;color:#fff;font-size:15px}.ytkit-aisum-meta{margin:0 0 12px;color:#bac2de;font-size:11px}.ytkit-aisum-overview{margin:0 0 12px}.ytkit-aisum-bullets{display:grid;gap:8px;margin:0 0 12px;padding-left:20px}.ytkit-aisum-bullets li{padding-left:2px}.ytkit-aisum-citations{display:inline-flex;gap:5px;margin-left:7px;vertical-align:baseline}.ytkit-aisum-citation{display:inline-flex;padding:2px 6px;border:1px solid #585b70;border-radius:5px;color:#89b4fa;text-decoration:none;font:700 11px/1.3 system-ui}.ytkit-aisum-tldr{margin:12px 0;padding:10px;border-left:3px solid #cba6f7;background:rgba(203,166,247,.08)}
                     .ytkit-aisum-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.ytkit-aisum-actions button,.ytkit-aisum-library-row button{min-height:36px;padding:7px 10px;border:1px solid #585b70;border-radius:6px;background:#313244;color:#cdd6f4;font-weight:700;cursor:pointer}.ytkit-aisum-actions .ytkit-aisum-delete,.ytkit-aisum-library-row .ytkit-aisum-delete{color:#fecaca;border-color:#7f1d1d}.ytkit-aisum-library{margin-top:12px;border-top:1px solid #45475a;padding-top:10px}.ytkit-aisum-library summary{min-height:36px;cursor:pointer;font-weight:700}.ytkit-aisum-search{box-sizing:border-box;width:100%;min-height:40px;margin:8px 0;padding:8px 10px;border:1px solid #585b70;border-radius:6px;background:#11111b;color:#cdd6f4}.ytkit-aisum-library-results{display:grid;gap:6px}.ytkit-aisum-library-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.ytkit-aisum-library-open{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ytkit-aisum-empty,.ytkit-aisum-status{color:#bac2de}.ytkit-aisum-status--error{color:#fca5a5}
                     .ytkit-aisum-panel :focus-visible{outline:3px solid #89b4fa;outline-offset:2px}html:not([dark]) .ytkit-aisum-panel{background:#fff;color:#1f2937;border-color:#cbd5e1}html:not([dark]) .ytkit-aisum-content h4{color:#111827}html:not([dark]) .ytkit-aisum-meta,html:not([dark]) .ytkit-aisum-empty,html:not([dark]) .ytkit-aisum-status{color:#4b5563}html:not([dark]) .ytkit-aisum-actions button,html:not([dark]) .ytkit-aisum-library-row button,html:not([dark]) .ytkit-aisum-search{background:#f8fafc;color:#1f2937;border-color:#94a3b8}
-                    @media(max-width:600px){.ytkit-aisum-panel{top:64px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 72px)}}@media(forced-colors:active){.ytkit-aisum-panel,.ytkit-aisum-actions button,.ytkit-aisum-library-row button,.ytkit-aisum-search,.ytkit-aisum-citation{border:1px solid CanvasText;color:CanvasText;background:Canvas}}@media(prefers-reduced-motion:reduce){.ytkit-aisum-panel *{transition:none!important;scroll-behavior:auto!important}}
+                    @media(max-width:600px){.ytkit-aisum-panel{top:64px;inset-inline-end:8px;width:calc(100vw - 16px);max-height:calc(100vh - 72px)}}@media(forced-colors:active){.ytkit-aisum-panel,.ytkit-aisum-actions button,.ytkit-aisum-library-row button,.ytkit-aisum-search,.ytkit-aisum-citation{border:1px solid CanvasText;color:CanvasText;background:Canvas}}@media(prefers-reduced-motion:reduce){.ytkit-aisum-panel *{transition:none!important;scroll-behavior:auto!important}}
                 `, this.id, true);
                 this._scheduleInject(2000);
                 this._navRule = () => {
@@ -34247,7 +34351,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _selectMode: false,
             _selected: null,
             _toggleBtn: null,
+            _toggleCornerCleanup: null,
             _actionBar: null,
+            _actionCornerCleanup: null,
             _clickHandler: null,
             // Recommendation scrub sessions: bounded per run so a large
             // selection can't fire an automation-shaped burst of native
@@ -34261,20 +34367,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _injectStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-bulk-toggle{position:fixed;right:16px;bottom:16px;z-index:10000;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:var(--yt-spec-menu-background,#1f1f24);color:var(--yt-spec-text-primary,#f4f4f5);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:600 12px/1 'YouTube Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);}
-                    .ytkit-bulk-toggle[data-active="1"]{background:#7c3aed;border-color:#a78bfa;}
-                    .ytkit-bulk-bar{position:fixed;right:16px;bottom:64px;z-index:10000;display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:420px;padding:10px 12px;border-radius:10px;background:var(--yt-spec-menu-background,#0f0f10);color:var(--yt-spec-text-primary,#f4f4f5);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:600 12px/1 'YouTube Sans',system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+                    .ytkit-bulk-toggle{position:fixed;inset-inline-end:16px;bottom:16px;z-index:10000;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:var(--yt-spec-menu-background,#1f1f24);color:var(--yt-spec-text-primary,#f4f4f5);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:600 12px/1 Roboto,Arial,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+                    .ytkit-bulk-toggle[data-active="1"]{background:rgba(var(--ytkit-accent-rgb,167,139,250),.32);border-color:var(--ytkit-accent-light,#c4b5fd);}
+                    .ytkit-bulk-bar{position:fixed;inset-inline-end:16px;bottom:16px;z-index:10000;display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:420px;padding:10px 12px;border-radius:10px;background:var(--yt-spec-menu-background,#0f0f10);color:var(--yt-spec-text-primary,#f4f4f5);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:600 12px/1 Roboto,Arial,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
                     .ytkit-bulk-bar button{padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);background:var(--yt-spec-badge-chip-background,#1f1f24);color:var(--yt-spec-text-primary,#f4f4f5);cursor:pointer;font:inherit;}
                     .ytkit-bulk-bar button:hover{background:var(--yt-spec-10-percent-layer,#27272a);}
                     .ytkit-bulk-bar button:focus-visible,.ytkit-bulk-toggle:focus-visible{outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px;}
-                    .ytkit-bulk-bar .ytkit-bulk-count{padding:0 6px;color:#a78bfa;}
+                    .ytkit-bulk-bar .ytkit-bulk-count{padding:0 6px;color:var(--ytkit-accent-light,#c4b5fd);}
                     body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer,
                     body[data-ytkit-bulk-select="1"] ytd-video-renderer,
                     body[data-ytkit-bulk-select="1"] ytd-grid-video-renderer,
                     body[data-ytkit-bulk-select="1"] ytd-compact-video-renderer{outline:2px dashed transparent;outline-offset:-4px;cursor:pointer;}
                     body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer:hover,
-                    body[data-ytkit-bulk-select="1"] ytd-video-renderer:hover{outline-color:#a78bfa;}
-                    body[data-ytkit-bulk-select="1"] [data-ytkit-bulk-selected="1"]{outline-color:#7c3aed!important;background:rgba(124,58,237,.12);}
+                    body[data-ytkit-bulk-select="1"] ytd-video-renderer:hover{outline-color:var(--ytkit-accent-light,#c4b5fd);}
+                    body[data-ytkit-bulk-select="1"] [data-ytkit-bulk-selected="1"]{outline-color:var(--ytkit-accent,#a78bfa)!important;background:rgba(var(--ytkit-accent-rgb,167,139,250),.12);}
                     ytd-rich-item-renderer.ytkit-video-hidden,
                     ytd-video-renderer.ytkit-video-hidden,
                     ytd-grid-video-renderer.ytkit-video-hidden,
@@ -34343,18 +34449,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._actionBar.append(count, hideBtn, allowBtn, copyBtn, scrubNiBtn, scrubDrBtn, exportBtn, clearBtn);
                 document.body.appendChild(this._actionBar);
                 this._actionBar.hidden = true;
+                this._actionCornerCleanup?.();
+                this._actionCornerCleanup = registerCornerStackElement('bulkBar', this._actionBar, 58);
                 return this._actionBar;
             },
 
             _renderActionBar() {
                 if (!this._actionBar?.isConnected) return;
                 this._actionBar.hidden = !this._selectMode;
-                if (!this._selectMode) return;
+                if (!this._selectMode) {
+                    _refreshCornerStack();
+                    return;
+                }
                 const count = this._actionBar.querySelector('[data-role="count"]');
                 if (count) {
                     count.textContent = t('bulkSelectedTpl', '{count} selected')
                         .replace('{count}', String(this._selected?.size || 0));
                 }
+                _refreshCornerStack();
             },
 
             _findCard(target) {
@@ -34653,6 +34765,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._toggleBtn.textContent = t('bulkSelect', 'Bulk Select');
                 this._toggleBtn.addEventListener('click', () => this._toggleSelectMode());
                 document.body.appendChild(this._toggleBtn);
+                this._toggleCornerCleanup?.();
+                this._toggleCornerCleanup = registerCornerStackElement('bulkToggle', this._toggleBtn, 38);
 
                 this._clickHandler = (e) => {
                     if (!this._selectMode) return;
@@ -34671,6 +34785,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._exitSelectMode();
                 if (this._clickHandler) document.removeEventListener('click', this._clickHandler, true);
                 this._clickHandler = null;
+                this._toggleCornerCleanup?.();
+                this._toggleCornerCleanup = null;
+                this._actionCornerCleanup?.();
+                this._actionCornerCleanup = null;
                 this._toggleBtn?.remove();
                 this._toggleBtn = null;
                 this._actionBar?.remove();
@@ -35329,11 +35447,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 system-ui;font-variant-numeric:tabular-nums;}
+                    .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 Roboto,Arial,sans-serif;font-variant-numeric:tabular-nums;}
                     .ytkit-ryd-pill[data-tone="cached"]{color:rgba(255,255,255,0.55);}
                     .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
-                    .ytkit-ryd-estimate{margin-left:4px;font:500 10px/1 system-ui;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
-                    .ytkit-ryd-ratio{margin-left:8px;font:500 11px/1 system-ui;color:rgba(255,255,255,0.55);}
+                    .ytkit-ryd-estimate{margin-inline-start:4px;font:500 10px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
+                    .ytkit-ryd-ratio{margin-inline-start:8px;font:500 11px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.55);}
                     /* YouTube light theme: the white-on-translucent defaults are unreadable. */
                     html:not([dark]) .ytkit-ryd-pill{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.05));color:var(--yt-spec-text-primary,#0f0f0f);}
                     html:not([dark]) .ytkit-ryd-pill[data-tone="cached"]{color:var(--yt-spec-text-secondary,#606060);}
@@ -36164,8 +36282,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
                     .ytkit-sub-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
-                    .ytkit-sub-toolbar__label{font:600 11px/1 system-ui;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
-                    .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-toolbar__label{font:600 11px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
+                    .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible,.ytkit-sub-group-chip:focus-visible,.ytkit-sub-digest-close:focus-visible,.ytkit-sub-digest-row button:focus-visible,.ytkit-sub-group-dialog button:focus-visible,.ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
@@ -36175,52 +36293,52 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
                     .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
                     .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
-                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
-                    .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
-                    .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
-                    .ytkit-sub-digest-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                    .ytkit-sub-group-chip[data-depth="1"]{margin-inline-start:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
+                    .ytkit-sub-new-badge{display:inline-block;margin-inline-start:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 Roboto,Arial,sans-serif;letter-spacing:.04em;}
+                    .ytkit-sub-digest-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 Roboto,Arial,sans-serif;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
                     .ytkit-sub-digest-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-                    .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
-                    .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
-                    .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-digest-close:hover,.ytkit-sub-digest-row button:hover{background:rgba(255,255,255,0.08);}
                     .ytkit-sub-group-dialog input{min-height:34px;outline:none;}
                     .ytkit-sub-group-dialog button{min-height:30px;outline:none;touch-action:manipulation;}
                     .ytkit-sub-digest-list{display:flex;flex-direction:column;gap:6px;}
                     .ytkit-sub-digest-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto auto;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
-                    .ytkit-sub-digest-row[data-depth="1"]{margin-left:16px;}
+                    .ytkit-sub-digest-row[data-depth="1"]{margin-inline-start:16px;}
                     .ytkit-sub-digest-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:700;}
                     .ytkit-sub-digest-count{font-variant-numeric:tabular-nums;color:#bae6fd;font-weight:700;}
                     .ytkit-sub-digest-muted{color:rgba(226,232,240,0.58);font-variant-numeric:tabular-nums;}
                     .ytkit-sub-digest-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
                     .ytkit-sub-health-stats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-                    .ytkit-sub-health-stat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:rgba(226,232,240,0.78);font:600 11px/1.4 system-ui;}
+                    .ytkit-sub-health-stat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:rgba(226,232,240,0.78);font:600 11px/1.4 Roboto,Arial,sans-serif;}
                     .ytkit-sub-health-stat b{color:#f8fafc;font-variant-numeric:tabular-nums;}
                     .ytkit-sub-health-stat[data-tone="warn"] b{color:#fde68a;}
                     .ytkit-sub-health-stat[data-tone="staged"] b{color:#bbf7d0;}
-                    .ytkit-sub-health-section{margin:12px 0 6px;color:rgba(226,232,240,0.66);font:700 11px/1.3 system-ui;text-transform:uppercase;letter-spacing:.05em;}
+                    .ytkit-sub-health-section{margin:12px 0 6px;color:rgba(226,232,240,0.66);font:700 11px/1.3 Roboto,Arial,sans-serif;text-transform:uppercase;letter-spacing:.05em;}
                     .ytkit-sub-health-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
-                    .ytkit-sub-health-row button{min-height:26px;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                    .ytkit-sub-health-row button{min-height:26px;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;}
                     .ytkit-sub-health-row button:hover{background:rgba(255,255,255,0.08);}
                     .ytkit-sub-health-row button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                     .ytkit-sub-health-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-                    .ytkit-sub-health-actions button{min-height:28px;padding:5px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                    .ytkit-sub-health-actions button{min-height:28px;padding:5px 10px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;}
                     .ytkit-sub-health-actions button:hover{background:rgba(255,255,255,0.08);}
                     .ytkit-sub-health-actions button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                     .ytkit-sub-health-error{padding:10px;border-radius:6px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#fecaca;}
                     .ytkit-sub-dead-card{outline:1px solid rgba(245,158,11,0.34);outline-offset:-1px;}
                     .ytkit-sub-staged-card{outline:1px solid rgba(34,197,94,0.42);outline-offset:-1px;}
-                    .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-inline-start:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 Roboto,Arial,sans-serif;letter-spacing:.04em;}
                     .ytkit-sub-dead-badge{background:#f59e0b;color:#1f1300;}
                     .ytkit-sub-staged-badge{background:#22c55e;color:#022c14;}
                     .ytkit-sub-hidden-by-group,.ytkit-sub-hidden-by-type{display:none !important;}
-                    .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 system-ui;}
-                    .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                    .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 Roboto,Arial,sans-serif;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
                     .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
-                    .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
-                    .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
-                    .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-members-close:hover{background:rgba(255,255,255,0.08);}
                     .ytkit-sub-members-close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                     .ytkit-sub-members-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px;max-height:280px;overflow:auto;}
@@ -36230,7 +36348,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-members-row input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-sub-members-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:600;}
                     .ytkit-sub-members-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
-                    /* YouTube light theme: toolbar + chips ship dark-only colors above. */
+                    .ytkit-sub-group-dialog{position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.55);font-family:Roboto,Arial,sans-serif;}
+                    .ytkit-sub-group-dialog__card{width:min(420px,100%);min-width:min(320px,100%);box-sizing:border-box;padding:18px;border-radius:12px;background:var(--yt-spec-menu-background,#0f0f10);color:var(--yt-spec-text-primary,#e5e7eb);border:1px solid var(--yt-spec-10-percent-layer,#3f3f46);font:13px/1.5 Roboto,Arial,sans-serif;box-shadow:0 22px 48px rgba(0,0,0,.6);}
+                    .ytkit-sub-group-dialog__title{font:600 14px/1.3 Roboto,Arial,sans-serif;color:var(--yt-spec-text-primary,#fafafa);margin-bottom:10px;}
+                    .ytkit-sub-group-dialog__input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#fff);font:13px Roboto,Arial,sans-serif;box-sizing:border-box;}
+                    .ytkit-sub-group-dialog__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+                    .ytkit-sub-group-dialog__button{padding:6px 12px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);cursor:pointer;font:600 12px/1 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-group-dialog__button--primary{border-color:rgba(var(--ytkit-accent-rgb,124,58,237),0.5);background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                    /* YouTube light theme: cards and dialog must not inherit dark-only text. */
                     html:not([dark]) .ytkit-sub-toolbar{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(0,0,0,0.1);}
                     html:not([dark]) .ytkit-sub-toolbar__label{color:var(--yt-spec-text-secondary,#606060);}
                     html:not([dark]) .ytkit-sub-toolbar select,html:not([dark]) .ytkit-sub-toolbar button{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:var(--yt-spec-text-primary,#0f0f0f);}
@@ -36244,6 +36369,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:not([dark]) .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                     html:not([dark]) .ytkit-sub-group-chip[data-depth="1"]{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.34);color:#1d4ed8;}
                     html:not([dark]) .ytkit-sub-group-empty{background:rgba(245,158,11,0.1);border-color:rgba(180,83,9,0.4);color:#92400e;}
+                    html:not([dark]) .ytkit-sub-digest-panel,html:not([dark]) .ytkit-sub-members-panel,html:not([dark]) .ytkit-sub-group-dialog__card{background:var(--yt-spec-raised-background,#fff);border-color:rgba(15,23,42,0.16);color:var(--yt-spec-text-primary,#0f0f0f);box-shadow:0 14px 32px rgba(15,23,42,0.18);}
+                    html:not([dark]) .ytkit-sub-digest-title,html:not([dark]) .ytkit-sub-members-title{color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-digest-meta,html:not([dark]) .ytkit-sub-members-meta,html:not([dark]) .ytkit-sub-digest-muted{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-digest-close,html:not([dark]) .ytkit-sub-digest-row button,html:not([dark]) .ytkit-sub-health-row button,html:not([dark]) .ytkit-sub-health-actions button,html:not([dark]) .ytkit-sub-members-close,html:not([dark]) .ytkit-sub-group-dialog__button{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(15,23,42,0.16);color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-digest-close:hover,html:not([dark]) .ytkit-sub-digest-row button:hover,html:not([dark]) .ytkit-sub-health-row button:hover,html:not([dark]) .ytkit-sub-health-actions button:hover,html:not([dark]) .ytkit-sub-members-close:hover,html:not([dark]) .ytkit-sub-group-dialog__button:hover{background:rgba(15,23,42,0.08);}
+                    html:not([dark]) .ytkit-sub-digest-row,html:not([dark]) .ytkit-sub-health-row,html:not([dark]) .ytkit-sub-members-row,html:not([dark]) .ytkit-sub-digest-empty,html:not([dark]) .ytkit-sub-members-empty,html:not([dark]) .ytkit-sub-health-stat{background:rgba(15,23,42,0.035);border-color:rgba(15,23,42,0.1);}
+                    html:not([dark]) .ytkit-sub-digest-name,html:not([dark]) .ytkit-sub-members-name{color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-digest-count{color:#075985;}
+                    html:not([dark]) .ytkit-sub-digest-empty,html:not([dark]) .ytkit-sub-members-empty{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-health-stat{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-health-stat b{color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-health-section{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-health-error{background:rgba(220,38,38,0.08);border-color:rgba(185,28,28,0.28);color:#991b1b;}
+                    html:not([dark]) .ytkit-sub-group-dialog{background:rgba(15,23,42,0.28);}
+                    html:not([dark]) .ytkit-sub-group-dialog__input{background:#fff;border-color:rgba(15,23,42,0.2);color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                    html:not([dark]) .ytkit-sub-toolbar select:focus-visible,html:not([dark]) .ytkit-sub-toolbar button:focus-visible,html:not([dark]) .ytkit-sub-group-chip:focus-visible,html:not([dark]) .ytkit-sub-digest-close:focus-visible,html:not([dark]) .ytkit-sub-digest-row button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(124,58,237,0.42);}
                 `, 'subscription-groups');
             },
 
@@ -37422,31 +37564,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 const overlay = document.createElement('div');
                 overlay.className = 'ytkit-sub-group-dialog';
-                overlay.style.cssText = 'position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
                 overlay.setAttribute('role', 'dialog');
                 overlay.setAttribute('aria-modal', 'true');
                 overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group');
                 const card = document.createElement('div');
-                card.style.cssText = 'min-width:320px;max-width:420px;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 22px 48px rgba(0,0,0,.6);';
+                card.className = 'ytkit-sub-group-dialog__card';
                 const h = document.createElement('div');
-                h.style.cssText = 'font:600 14px/1.3 system-ui;color:#fafafa;margin-bottom:10px;';
+                h.className = 'ytkit-sub-group-dialog__title';
                 h.textContent = safeParentId ? `Name a subgroup under ${groups[safeParentId]?.name || safeParentId}` : 'Name this group';
                 const input = document.createElement('input');
+                input.className = 'ytkit-sub-group-dialog__input';
                 input.type = 'text';
                 input.maxLength = 80;
                 input.placeholder = safeParentId ? 'e.g. Frontend, DevOps, Jazz' : 'e.g. Coding, Music, News';
                 input.setAttribute('aria-label', 'Group name');
-                input.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;box-sizing:border-box;';
                 const actions = document.createElement('div');
-                actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:14px;';
+                actions.className = 'ytkit-sub-group-dialog__actions';
                 const cancel = document.createElement('button');
+                cancel.className = 'ytkit-sub-group-dialog__button';
                 cancel.type = 'button';
                 cancel.textContent = 'Cancel';
-                cancel.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#e5e7eb;cursor:pointer;';
                 const create = document.createElement('button');
+                create.className = 'ytkit-sub-group-dialog__button ytkit-sub-group-dialog__button--primary';
                 create.type = 'button';
                 create.textContent = 'Create';
-                create.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(124,58,237,0.5);background:#7c3aed;color:#fff;cursor:pointer;font-weight:600;';
                 actions.append(cancel, create);
                 card.append(h, input, actions);
                 overlay.appendChild(card);
