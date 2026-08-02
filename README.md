@@ -105,8 +105,10 @@ companion update from a running service.
 
 The native companion opens to a local command center with live queue metrics,
 server actions, and a System Pulse for yt-dlp, FFmpeg, Deno, PO-provider, and
-SABR readiness. Contributors can render the Dashboard, Downloads, History, and
-Settings views without activating a desktop window by running
+SABR readiness. Its Settings page can follow the system language or select any
+of the extension's 11 bundled locales; a restart applies language changes.
+Contributors can render the Dashboard, Downloads, History, Settings, and German
+localization views without activating a desktop window by running
 `npm run smoke:companion-gui`; captures are written under
 `build/companion-ui-smoke/`.
 

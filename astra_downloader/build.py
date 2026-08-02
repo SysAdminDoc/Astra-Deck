@@ -8,6 +8,7 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import json
+import os
 import platform
 import re
 import shutil
@@ -30,6 +31,8 @@ ROOT = HERE.parent
 SCRIPT = HERE / "astra_downloader.py"
 ICON = ROOT / "AstraDownloader.ico"
 OUT_EXE = ROOT / "AstraDownloader.exe"
+TRANSLATIONS_DIR = HERE / "translations"
+TRANSLATION_BUILD_SCRIPT = ROOT / "scripts" / "build-companion-translations.py"
 
 BUILD_DIR = HERE / "build"
 DIST_DIR = HERE / "dist"
@@ -325,8 +328,37 @@ def preflight():
     verify_release_environment()
 
 
+def prepare_translations():
+    """Refresh Qt catalogues when tooling exists, then fail closed on gaps."""
+    compiler = next(
+        (
+            shutil.which(name)
+            for name in ("pyside6-lrelease", "lrelease", "lrelease-qt6")
+            if shutil.which(name)
+        ),
+        None,
+    )
+    if compiler:
+        subprocess.check_call([sys.executable, str(TRANSLATION_BUILD_SCRIPT)])
+    expected = (
+        "ar", "de", "en", "es", "fr", "it", "ja", "ko", "pt_BR", "ru",
+        "zh_CN",
+    )
+    missing = [
+        locale
+        for locale in expected
+        if not (TRANSLATIONS_DIR / f"astra_downloader_{locale}.ts").exists()
+        or not (TRANSLATIONS_DIR / f"astra_downloader_{locale}.qm").exists()
+    ]
+    if missing:
+        raise SystemExit(
+            "Missing companion translation catalogues: " + ", ".join(missing)
+        )
+
+
 def build():
     preflight()
+    prepare_translations()
     clean()
     SPEC_DIR.mkdir(parents=True, exist_ok=True)
     args = [
@@ -337,6 +369,11 @@ def build():
         "--windowed",
         "--name", "AstraDownloader",
         "--icon", str(ICON),
+        "--add-data", (
+            str(TRANSLATIONS_DIR / "*.qm")
+            + os.pathsep
+            + "translations"
+        ),
         "--specpath", str(SPEC_DIR),
         # Required hidden imports
         "--hidden-import", "PyQt6.QtCore",
@@ -352,6 +389,7 @@ def build():
         "--hidden-import", "config",
         "--hidden-import", "download",
         "--hidden-import", "health",
+        "--hidden-import", "i18n",
         "--hidden-import", "routes",
         "--hidden-import", "gui",
         # Exclude unused stdlib to shrink size

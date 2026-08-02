@@ -1,86 +1,129 @@
 # Research — Astra Deck
-Date: 2026-07-21 — replaces all prior research (supersedes 2026-07-20).
+Date: 2026-07-29 — replaces all prior research.
 
 ## Executive Summary
 
-[Verified] Astra Deck (YTKit) is an exceptionally mature, local-first YouTube enhancement suite: a Chromium/Firefox MV3 extension (`extension/ytkit.js`, ~51.8K lines + 25 feature modules, 415 schema-backed settings, 11 locales), a generated userscript, and a Windows Python/PyQt6/yt-dlp companion. Since 2026-07-20 the active roadmap has been fully drained: the token-exempt client fallback and the exact FFmpeg 8.1.2 security floor shipped, and the three "viewer gap" items were found already implemented under different setting names (`videoContextMenu` copy-timestamp, `preciseViewCounts`, `volumeWheelMode`). 40 items remain in `Roadmap_Blocked.md` (store/AMO submission, companion release, DVR force, playlist bounding, capability ceiling, subtitle/AI/comment packs) — a comprehensive tracked backlog, not re-proposed here.
+[Verified] Astra Deck is an unusually broad, local-first YouTube toolkit: a 247-feature, 11-locale Chromium/Firefox MV3 extension, a bundled userscript, and an authenticated Windows yt-dlp companion with durable queue recovery, staged updates, diagnostics, and release-integrity gates. Its strongest shape is not feature count but the safety systems around that breadth. The highest-value direction is therefore to make existing promises truthful and contain YouTube-DOM regressions before adding more surface area.
 
-This delta pass has one high-value finding: **the token-exempt fallback chain shipped on 2026-07-21 (`tv,android_vr,web`) is sub-optimal and should be corrected to `tv,web_embedded,android_vr`.** Bare `web` is not token-exempt — without a GVS PO token it returns only SABR-protocol formats, which yt-dlp still cannot download (the native SABR downloader, PR #13515, is unmerged as of 2026-07-13), so `web` as a last fallback is dead weight that yt-dlp skips or 403s. `android_vr` has confirmed 2026 reliability regressions (intermittent format-18-only 360p drops, `UNPLAYABLE` on "made for kids", no adaptive URLs) and should be demoted to last, not second. This corrects production behavior with strong upstream evidence.
-
-Top opportunities, priority order:
-
-1. [Verified] Correct the token-exempt fallback chain to `tv,web_embedded,android_vr` (drop dead-weight `web`, demote erratic `android_vr`).
-2. [Verified] Nudge the user to install a PO-token provider when an exempt-chain download degrades or fails (no token-free client covers age-gated/members/kids/full-quality).
-3. [Tracked, blocked] Everything else of value is already in `Roadmap_Blocked.md`.
+Top opportunities, in priority order:
+1. Remove synchronous yt-dlp/ffmpeg probes from companion construction so the Dashboard paints before any subprocess timeout.
+2. Make the existing Preferred Audio Track Language control functional through the reviewed MAIN/ISOLATED player bridge, and support descriptive-audio preference.
+3. Add per-rule time/invocation budgets to the shared mutation runtime so one self-triggering feature cannot churn every page.
+4. Finish localization of the named in-page, downloader, transcript, Settings, and popup maintenance surfaces already covered by the active i18n backlog.
+5. Make the side dashboard genuinely RTL-safe and add an Arabic rendered regression state.
+6. Expand companion visual QA from polished empty shells to operational, error, dirty, and high-DPI states.
+7. Expose the retained 500-entry download history with filtering, sorting, pagination, and export instead of silently showing only 50.
+8. Add a conservative power-efficient codec mode that changes behavior only when `MediaCapabilities.decodingInfo()` returns a discriminating result.
 
 ## Product Map
 
-- **Core workflows:** schema-driven customization of playback, layout, feeds, comments, live chat, privacy, focus, accessibility; local retention of notes, bookmarks, watch state, download queue, transcript full-text search, filters, subscription groups; optional SponsorBlock/DeArrow/Return-YouTube-Dislike/Reddit/BYO-AI enrichment; authenticated loopback download companion.
-- **Personas:** power viewers, privacy-conscious users, students/researchers, distraction-reduction users, Windows media archivists.
-- **Platforms/distribution:** Chrome-family + Firefox MV3 in store-safe and GitHub-full profiles; generated userscript; Windows 10+ PyQt6/PyInstaller companion; Node 22+ tooling floor.
-- **Data flows:** content scripts (youtube.com/youtu.be only — no `<all_urls>`/`file://`/self-injection) ↔ MV3 worker; per-capability optional host grants; settings/artifacts in extension storage/localStorage/IndexedDB; companion accepts loopback requests, auto-provisions Deno, consumes an optional bgutil PO-token provider (falls back to token-exempt clients when absent), and delegates to yt-dlp/FFmpeg; AI/metadata calls transit the background fetch boundary with header-based keys.
-- **Hard constraints:** MIT repo license (companion redistribution posture is a blocked P0 legal decision); Chrome/Firefox MV3 lifecycles; YouTube SABR/PO-token + SPA/DOM churn; store policy profiles; local-first/no-account; Windows-only companion.
+- **Core workflows:** customize YouTube playback/layout/discovery; filter and organize feeds/comments/subscriptions; capture transcripts, notes, clips, and media; diagnose selectors/APIs/storage; download through the local companion.
+- **User personas:** YouTube power users, focus/privacy users, researchers and note-takers, multilingual/accessibility users, and Windows media archivists.
+- **Platforms and distribution:** Chrome/Edge/Brave and Firefox MV3 packages, Tampermonkey/Violentmonkey userscript, and an unsigned Windows 10+ x64 PyInstaller companion. Mobile browsers are explicitly unsupported.
+- **Key integrations and data flows:** YouTube DOM/player and InnerTube; SponsorBlock, DeArrow, Return YouTube Dislike, Reddit, optional AI providers, and Cobalt; extension-to-companion requests use authenticated loopback HTTP with native-messaging token bootstrap; companion work flows through yt-dlp, ffmpeg, and optional JS/PO-token runtimes.
 
 ## Competitive Landscape
 
-The 2026-07-20 sweep established that Astra has already absorbed most competitor breadth; this pass adds only deltas.
-
-- **yt-dlp core (the real competitor is YouTube):** [Verified] SABR + PO-token enforcement keeps expanding — `web` lost `adaptiveFormats` playback URLs (SABR-only), and SABR is forced even with Premium cookies + PO token in some cases. The native SABR downloader (PR #13515) is not yet merged, so SABR-only clients remain undownloadable. This is exactly why the companion must lead with non-SABR exempt clients (`tv`), and why bare `web` in the fallback is useless. Learn: keep tracking the exempt-client set and PR #13515; it will change the calculus when merged.
-- **SponsorBlock / DeArrow:** [Verified] The AI-content category is still unshipped — #2357 (2025-10-10) closed with no PR, duplicate #2499 (2026-06-03) open, #1963 (2024-02-01) open. There is no public AI-content segment DB to consume; any Astra AI-content feature would need on-device heuristics, not a SponsorBlock-style API. Track, do not build.
-- **Control Panel for YouTube / Enhancer / ImprovedTube / Iridium / BlockTube / Parabolic / Stacher / MeTube:** [Verified] Unchanged from 2026-07-20 — no new distinctive feature surfaced, and no new 2026-launched YouTube-enhancement extension emerged to differentiate against. The incumbents are stable-to-declining (Enhancer chronic breakage).
+- **ImprovedTube / Enhancer for YouTube:** broad, discoverable playback and layout controls validate Astra Deck's all-in-one positioning. Learn from their compact option taxonomy and strong per-control explanations; avoid duplicating their recurring original-audio, list-view, and YouTube-selector regressions without shared runtime guardrails.
+- **FreeTube / NewPipe / LibreTube:** independent front ends excel at subscriptions, queues, profile separation, and recommendation escape. Learn from durable portable data and explicit degraded states; avoid replacing YouTube's authenticated web experience or expanding Astra Deck into a second client application.
+- **SponsorBlock / DeArrow / Return YouTube Dislike:** focused community-data tools set the standard for transparent categories, per-video overrides, caching, and graceful API failure. Reuse their narrow-purpose clarity; avoid allowing network features to fail indistinguishably from absent data.
+- **BlockTube / Unhook:** simple filtering and distraction removal remain table stakes, while issue traffic shows selectors, localization, sync, and Shorts/comments are the maintenance cost. Learn from rule discoverability; avoid a second overlapping rule language.
+- **Parabolic / Seal / MeTube:** format discovery, presets, accurate ffmpeg re-cutting, and downloader state visibility are the strongest companion lessons. Avoid multi-site expansion and unbounded command passthrough, which conflict with Astra Downloader's YouTube-only SSRF boundary.
+- **JDownloader:** LinkGrabber, queue inspection, retry controls, and searchable history make long-running download state understandable. Learn from staged capture and data access; avoid clipboard surveillance by default and heavyweight remote-control scope.
+- **TubeArchivist / ytdl-sub:** durable archive state, scheduled channel ingestion, metadata, and media-server exports define the archiver ceiling. Learn from restart-safe state and explicit retention; avoid importing Docker/server/multi-user weight into the desktop companion.
+- **PocketTube / 4K Video Downloader:** grouping, sync, scheduled subscriptions, and bulk operations are the capabilities users pay for. Learn from coherent workflows and progressive disclosure; avoid gating data portability or recovery behind a paid/cloud account.
 
 ## Security, Privacy, and Reliability
 
-- [Verified] **Fallback-chain correctness (shipped 2026-07-21):** `astra_downloader/health.py` `build_youtube_extractor_args` emits `youtube:player_client=tv,android_vr,web` when the PO-token provider is absent. `web` is not a token-exempt client (SABR-only without a GVS token → yt-dlp skip/403), and `android_vr` is erratic in 2026 (format-18-only drops; `UNPLAYABLE` on kids content). Correct to `tv,web_embedded,android_vr`. This is a reliability defect in just-shipped code, not a stylistic preference.
-- [Verified] **Coverage gap is inherent:** no token-free client covers the full catalog at full quality — `tv` fails `LOGIN_REQUIRED` on age-gated/members content, `android_vr` fails kids/age-gated, `web_embedded` only covers embeddable videos. Robust unattended coverage of those classes still requires a PO-token provider; the companion should surface that when a download actually degrades/fails, not just passively on the dashboard "PO provider: Fallback" row.
-- [Verified, N/A] **Firefox 149-153 platform changes do NOT apply:** FF 152 removed content-script injection into `moz-extension://` documents and FF 153 makes `file://`/`<all_urls>` access opt-in with re-authorization. Astra's `content_scripts` match only `*.youtube.com`/`youtu.be`/`live_chat`, declare no `file://` host permission, and never self-inject — verified in `extension/manifest.json`. No action; recorded so this is not re-investigated.
-- [Verified, tracked] yt-dlp `==2026.7.4` (CVE-2026-55404 `--write-link` fix, `--exec` restricted to safe conversions, curl cookie-leak fix) is already pinned in `astra_downloader/constraints-release.txt`. The exact FFmpeg 8.1.2 floor now flags stale PATH ffmpeg. No dependency action.
-- [Tracked, blocked] `/health` token echo and unauth log-line leak, playlist unbounded downloads, `.google.com` cookie breadth, native-host single-message handshake, and the capability-ceiling immutability are all already in `Roadmap_Blocked.md`.
+- [Verified] `npm audit --audit-level=low` and `py -3.12 -m pip_audit -r astra_downloader/constraints-release.txt` reported no known vulnerabilities on 2026-07-29. The repo is already on the patched `brace-expansion` 5.0.8 and yt-dlp 2026.7.4 floors for GHSA-mh99-v99m-4gvg and CVE-2026-55404.
+- [Verified] The companion's strongest guardrails are already present: loopback bind, Host/Origin checks, constant-time token auth, server-side YouTube URL allowlisting, bounded requests/responses/queue, redacted diagnostics, secret-free atomic queue persistence, and staged rollback updates (`astra_downloader/routes.py`, `download.py`, `astra_downloader.py`).
+- [Verified] `audioTrackLanguage` is intentionally inert while presenting as a selectable feature, and `antiTranslateAudioTrack` reads `window.movie_player` from the ISOLATED content-script world (`extension/ytkit.js`). This is a correctness boundary: player calls must use the existing MAIN-world bridge or a DOM player element, with timeouts and no menu clicking.
+- [Verified] The shared mutation dispatcher catches thrown errors but has no per-rule duration, frequency, or route circuit breaker (`extension/core/navigation.js`). A self-mutating rule can therefore degrade the entire YouTube tab without incrementing the feature crash counter.
+- [Verified] Crash recovery and migration foundations are strong: the companion restores unfinished work as explicit `paused`/`needs-auth` states without secrets (`astra_downloader/download.py`), and extension persisted domains are schema-versioned. The remaining settings rollback write bug is already tracked in `ROADMAP.md`; do not create another migration item.
+- [Verified] Browser-account sync, companion redistribution/license closure, Chrome LNA validation, and live store/browser verification remain operator- or policy-gated in `Roadmap_Blocked.md`; no duplicate active item is justified.
 
 ## Architecture Assessment
 
-- [Verified] `extension/ytkit.js` (~51.8K lines, down from 55K on 2026-07-14) and the companion's `astra_downloader.py` (~3.2K lines) continue their one-feature-at-a-time extraction; the canonical-implementation-per-feature and stale-userscript-bundle items are already tracked in `Roadmap_Blocked.md`. No new refactor item warranted.
-- [Verified] Testing/observability remain strong: 275 companion tests + 1188 extension tests, `smoke-headless-a11y.js` (WCAG 2.2), contrast/overlay/i18n gates, MV3-lifecycle smoke, redacted companion diagnostics. The one genuine coverage gap — live-YouTube-DOM behavioral verification of the feature modules — is tracked in `Roadmap_Blocked.md` (needs a real browser).
-- [Under consideration] Chrome 148 `browser` namespace + structured-clone messaging and `userScripts.execute()` (Chrome 135) could simplify the dual-target wrapper and on-demand page-world injection, but the baseline Chrome floor is well below 148 and the existing wrapper works; revisit when the floor rises. Not roadmap-ready.
+- [Verified] Canonical boundaries are still incomplete: `astra_downloader/_compat.py::make_legacy_resolver` reaches back into the composition root, while `extension/ytkit.js` and `YTKit.user.js` retain large fallback/vehicle copies. Existing roadmap items already own fallback drift; future feature work should land in extracted modules first.
+- [Verified] Companion construction calls `_tools_status_text()` while building Settings; its version getters can each wait five seconds, despite `_refresh_tools_status()` already providing the correct worker boundary (`astra_downloader/gui.py`, `astra_downloader/astra_downloader.py`).
+- [Verified] `extension/core/navigation.js` already centralizes mutation batching, scoped selectors, record caps, hidden-tab draining, and bounded element batches. It is the lowest-cost enforcement point for rule health budgets and route-scoped suspension.
+- [Verified] Sidepanel JS sets `dir=rtl`, but CSS still uses physical left/right alignment and switch travel; the only rendered sidepanel smoke is dark LTR (`extension/sidepanel.css`, `scripts/smoke-headless-a11y.js`, `tests/sidepanel-i18n.test.js`).
+- [Verified] Companion screenshot QA seeds empty collections only and manually repaints the navigation rail. Active, paused, auth-required, failed, dirty, invalid, update-busy, server-error, minimum-size, high-DPI, and large-font states are not rendered (`scripts/render-companion-gui.py`).
+- [Verified] History persists 500 entries but the GUI and in-page panel each expose 50, with no total, search, filter, pagination, or export (`astra_downloader/config.py`, `gui.py`, `extension/features/download-ui/index.js`).
+- [Verified] Documentation facts have drifted: `docs/architecture.md` understates line/settings counts and still forbids a light theme; `README.md` and `docs/native-messaging-token-bootstrap.md` still claim no current release carries the companion asset pair; `docs/predicate-sandbox-investigation.md` says the shipped sandbox is disabled. The tracked generated-doc contract is the right root fix.
 
 ## Rejected Ideas
 
-- **AI-generated-content detect/skip category** — SponsorBlock #2357/#2499/#1963: no public segment DB and no maintainer commitment; a viewer extension would need on-device heuristic detection (unreliable, high false-positive, maintenance-heavy) with no community-data leverage. Distinct from the tracked "Hide AI surfaces pack" (which hides YouTube's own AI UI, not creator content).
-- **Firefox 152/153 self-injection & file-access hardening** — Mozilla add-on blog: verified not applicable (no self-injection, no `file://`); nothing to harden.
-- **Chrome `browser`-namespace / userScripts / structured-clone migration now** — Chrome extensions "what's new": bleeding-edge (Chrome 148) vs the extension's support floor; the working cross-browser wrapper makes this churn, not value, today.
-- **Bundle the native SABR downloader path** — yt-dlp PR #13515: unmerged upstream; nothing to integrate until it lands.
-- **Full alternative client, hosted multi-user backend, creator SEO suite, cloud AI proxy, mobile/Safari ports, always-on channel archiving, arbitrary yt-dlp arg text, custom-JS filters** — carried forward from prior research; unchanged rationale.
+- **Mobile-browser port:** [Rejected] README explicitly excludes Android/iOS browsers, and NewPipe/LibreTube/SmartTube already serve the native-client use case better.
+- **Cloud accounts or multi-user companion:** [Rejected] TubeArchivist needs users because it is a shared server; Astra Downloader is an authenticated single-user loopback process. This would add identity, tenancy, and remote-attack surface without a local workflow.
+- **Arbitrary JavaScript plugins via `chrome.userScripts`:** [Rejected] the API requires a new permission and a user-mode toggle, is Chromium-specific, and would undercut CSP/no-eval and store-risk boundaries. Keep shareable behavior declarative through settings profiles.
+- **Generic hosted CI:** [Rejected] `.github/workflows` is intentionally absent under `docs/repo-settings.md`; local release/readiness scripts are the stated operational model.
+- **Multi-site downloader:** [Rejected] Parabolic/Seal/MeTube breadth is attractive but conflicts with `is_youtube_url` and the companion's deliberate SSRF boundary.
+- **Remote telemetry/crash collection:** [Rejected] privacy docs promise no analytics or automatic diagnostic upload. Bounded local diagnostics and user-reviewed bundles are sufficient.
+- **Automatic LoAF script attribution:** [Rejected] Chrome documents that isolated-world extension code lacks Long Animation Frame script attribution. Directly timing Astra's own shared rule dispatcher is more accurate and portable.
+- **GitHub-based extension self-updater:** [Rejected] store builds already update through their stores; adding GitHub host access for unpacked installs is disproportionate to a manual release-link workflow.
 
 ## Sources
 
-### yt-dlp / YouTube extraction (client validation)
-- https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
-- https://github.com/yt-dlp/yt-dlp/issues/12482
-- https://github.com/yt-dlp/yt-dlp/issues/14390
-- https://github.com/yt-dlp/yt-dlp/issues/15689
-- https://github.com/yt-dlp/yt-dlp/issues/16150
-- https://github.com/yt-dlp/yt-dlp/issues/15780
-- https://github.com/yt-dlp/yt-dlp/issues/15583
-- https://github.com/yt-dlp/yt-dlp/pull/13515
-- https://github.com/yt-dlp/yt-dlp/releases/tag/2026.07.04
-- https://github.com/yt-dlp/yt-dlp/releases/tag/2026.06.09
-- https://raw.githubusercontent.com/yt-dlp/yt-dlp/master/Changelog.md
+### Direct and adjacent OSS
+- https://github.com/code-charity/youtube
+- https://github.com/YouTube-Enhancer/extension
+- https://github.com/amitbl/blocktube
+- https://github.com/ajayyy/SponsorBlock
+- https://github.com/ajayyy/DeArrow
+- https://github.com/Anarios/return-youtube-dislike
+- https://github.com/FreeTubeApp/FreeTube
+- https://github.com/TeamNewPipe/NewPipe
+- https://github.com/libre-tube/LibreTube
+- https://github.com/yuliskov/SmartTube
+- https://github.com/NickvisionApps/Parabolic
+- https://github.com/JunkFood02/Seal
+- https://github.com/alexta69/metube
+- https://github.com/tubearchivist/tubearchivist
+- https://github.com/jmbannon/ytdl-sub
+- https://github.com/yt-dlp/yt-dlp
 
-### AI-content filtering (ecosystem signal)
-- https://github.com/ajayyy/SponsorBlock/issues/2357
-- https://github.com/ajayyy/SponsorBlock/issues/1963
-- https://github.com/ajayyy/SponsorBlock/issues
+### Commercial products and documentation
+- https://www.mrfdev.com/enhancer-for-youtube
+- https://unhookextension.com/
+- https://pockettube.io/pricing.html
+- https://www.4kdownload.com/products/videodownloader
+- https://jdownloader.org/home/features
+- https://docs.tubearchivist.com/downloads/
+- https://docs.tubearchivist.com/settings/application/
 
-### Browser platform (verified applicability)
-- https://developer.chrome.com/docs/extensions/whats-new
+### Platforms, standards, dependencies, and security
 - https://developer.chrome.com/docs/extensions/reference/api/userScripts
-- https://blog.mozilla.org/addons/2026/04/23/webextensions-api-changes-firefox-149-152/
+- https://developer.chrome.com/docs/extensions/reference/api/sidePanel
+- https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3
+- https://developer.chrome.com/docs/ai/built-in-apis
+- https://developer.chrome.com/docs/web-platform/long-animation-frames
+- https://developer.mozilla.org/en-US/docs/Web/API/MediaCapabilities/decodingInfo
+- https://w3c.github.io/webextensions/specification/
+- https://support.google.com/youtube/answer/13339776?hl=en
+- https://support.google.com/youtube/answer/15569972?hl=en-EN
+- https://support.google.com/youtube/answer/16166822?hl=en-GB
+- https://doc.qt.io/qt-6/accessible.html
+- https://github.com/advisories/GHSA-mh99-v99m-4gvg
+- https://nvd.nist.gov/vuln/detail/CVE-2026-55404
+- https://github.blog/security/vulnerability-research/attacking-browser-extensions/
 
-### Competitive (delta check)
-- https://www.unscart.com/blog/best-extensions-for-youtube-2026
-- https://unifab.ai/resource/enhancer-for-youtube
+### Community and research
+- https://news.ycombinator.com/item?id=44265411
+- https://news.ycombinator.com/item?id=40643856
+- https://stackoverflow.com/questions/61732313/content-script-running-mutationobserver-conflicting-with-youtube
+- https://www.reddit.com/r/youtubedl/comments/1lgnk2k
+- https://support.mozilla.org/en-US/kb/diagnose-firefox-issues-using-troubleshoot-mode
+- https://arxiv.org/abs/2307.14551
+- https://arxiv.org/abs/2507.13926
+- https://arxiv.org/abs/2406.12710
+- https://assets.mofoprod.net/network/documents/Mozilla-Report-YouTube-User-Controls.pdf
+
+### Discovery lists
+- https://github.com/awesome-soft/awesome-chrome-extensions
+- https://project-awesome.org/r/Awesome-WebExtensions
+- https://github.com/awesome-selfhosted/awesome-selfhosted
 
 ## Open Questions
 
-- [Needs live validation] `web_embedded` only covers embeddable videos; for uploader-disabled-embedding videos it fails. Is the residual coverage after `tv` large enough to justify `web_embedded` as the second client, or is `tv,android_vr` (android_vr last) simpler with comparable coverage? Resolve by testing the chain against an age-gated, a members-only, a "made for kids", and an embedding-disabled video.
-- [Needs product decision, carried] Should the bgutil PO-token provider be bundled/auto-provisioned by default (footprint + a second loopback listener minting tokens) or stay opt-in with only the exempt-client fallback shipped by default? (Tracked as the blocked P2.)
+- None. The remaining live-browser, store, legal, and product-scope decisions are already recorded in `Roadmap_Blocked.md`.
