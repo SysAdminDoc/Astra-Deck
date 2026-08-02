@@ -29,6 +29,7 @@ __all__ = (
     "DOWNLOAD_STALL_TIMEOUT_SECONDS", "DOWNLOAD_WATCHDOG_POLL_SECONDS",
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
+    "po_provider_nudge_advice", "PO_PROVIDER_NUDGE_CODES", "PO_PROVIDER_NUDGE",
     "summarize_ytdlp_formats", "summarize_ytdlp_playlist",
     "ALLOWED_COOKIE_DOMAINS", "build_subprocess_env",
     "DownloadQueueStore", "DOWNLOAD_QUEUE_SCHEMA_VERSION",
@@ -491,7 +492,13 @@ def _classify_failure_text(text):
         'sign in to confirm', 'please sign in', 'login required', 'not logged in',
         'confirm you are not a bot', 'cookies are required', 'use cookies',
         'authentication required',
+        # The token-exempt client chain surfaces the age gate as a bare
+        # LOGIN_REQUIRED/UNPLAYABLE playability status rather than prose.
+        'login_required', 'age-restricted', 'age restricted',
+        'inappropriate for some users', 'members-only', 'members only',
     )):
+        return 'sign-in-required'
+    if 'unplayable' in text:
         return 'sign-in-required'
     if 'ffmpeg' in text and any(marker in text for marker in (
         'not found', 'not installed', 'no such file', 'exited with code',
@@ -514,12 +521,38 @@ def _classify_failure_text(text):
     return None
 
 
-def apply_download_failure_classification(download, error_code, error=None, advice=None):
+# Failures a PO-token provider plausibly fixes. The token-exempt client chain
+# is a fallback, not full coverage, so these are exactly the cases where the
+# advice line should mention the provider.
+PO_PROVIDER_NUDGE_CODES = frozenset({
+    'sign-in-required', 'sabr-limited', 'po-token-required', 'po-provider-stale',
+})
+PO_PROVIDER_NUDGE = (
+    'No PO-token provider is running; installing bgutil-ytdlp-pot-provider '
+    'restores age-gated, members-only, and full-quality formats.'
+)
+
+
+def po_provider_nudge_advice(advice, error_code, provider_running):
+    """Append the provider nudge when it is the missing piece."""
+    if provider_running or error_code not in PO_PROVIDER_NUDGE_CODES:
+        return advice
+    advice = str(advice or '').strip()
+    if 'pot-provider' in advice.lower() and 'no po-token provider is running' in advice.lower():
+        return advice
+    return f'{advice} {PO_PROVIDER_NUDGE}'.strip()
+
+
+def apply_download_failure_classification(
+    download, error_code, error=None, advice=None, provider_running=None,
+):
     if not error_code:
         return
     payload = download_error_payload(error_code, error=error, advice=advice)
     download.error_code = payload['error_code']
-    download.error_advice = payload['advice']
+    download.error_advice = po_provider_nudge_advice(
+        payload['advice'], payload['error_code'], provider_running,
+    ) if provider_running is not None else payload['advice']
     download.error_action = payload['next_action']
     download.error = payload['error']
 
@@ -1503,9 +1536,13 @@ class DownloadManagerCore:
         # back to the token-exempt tv/web_embedded/android_vr clients so extraction degrades
         # instead of failing (the user-facing surface for that state is the
         # popup health banner and the dashboard "PO provider: Fallback" row).
+        # Remembered for failure advice: the token-exempt client chain does not
+        # cover age-gated, members-only, or full-quality formats, so a failure
+        # with no provider running has one obvious fix worth naming.
+        po_provider = self._dependencies['probe_po_token_provider']()
         args += self._dependencies['build_youtube_extractor_args'](
             dl.url,
-            po_token_provider=self._dependencies['probe_po_token_provider'](),
+            po_token_provider=po_provider,
         )
         runtime = self._dependencies['probe_javascript_runtime'](
             configured_runtime=self.config.get('JavaScriptRuntime', 'auto')
@@ -1633,7 +1670,8 @@ class DownloadManagerCore:
                     )
                     if _failure_code:
                         apply_download_failure_classification(
-                            dl, _failure_code, error=dl.error
+                            dl, _failure_code, error=dl.error,
+                            provider_running=bool(po_provider),
                         )
                     combined = " ".join(last_lines).lower()
                     if 'live event has ended' in combined and dl.cookies_file:
@@ -1726,6 +1764,7 @@ class DownloadManagerCore:
                             apply_download_failure_classification(
                                 dl,
                                 classify_download_failure(dl.error, last_lines),
+                                provider_running=bool(po_provider),
                             )
                     elif 'live event has ended' in combined:
                         dl.error = (
@@ -1735,11 +1774,14 @@ class DownloadManagerCore:
                         )
                     elif ('sabr' in combined or 'no video formats' in combined
                             or 'requested format is not available' in combined):
-                        apply_download_failure_classification(dl, 'sabr-limited')
+                        apply_download_failure_classification(
+                            dl, 'sabr-limited', provider_running=bool(po_provider),
+                        )
                     else:
                         apply_download_failure_classification(
                             dl,
                             classify_download_failure(dl.error, last_lines),
+                            provider_running=bool(po_provider),
                         )
             if dl.status == "complete" and dl.section:
                 if stop_watchdog is not None:
@@ -2288,6 +2330,7 @@ _OWNED_EXPORTS = {
     "Download", "build_video_format_args", "is_playlist_url",
     "download_error_payload", "classify_download_failure",
     "apply_download_failure_classification", "DOWNLOAD_FAILURE_RECOVERY",
+    "po_provider_nudge_advice", "PO_PROVIDER_NUDGE_CODES", "PO_PROVIDER_NUDGE",
     "summarize_ytdlp_formats", "summarize_ytdlp_playlist",
     "DOWNLOAD_ACTIVE_STATES", "DOWNLOAD_RUNNING_STATES",
     "DOWNLOAD_PENDING_STATES", "DOWNLOAD_TERMINAL_STATES",

@@ -74,6 +74,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   a URL, and no release means no update.
 
 ### Fixed
+- **Failures a PO-token provider would fix now say so.** No token-free client
+  covers the whole catalogue, so age-gated, members-only, and SABR-limited
+  downloads fail with advice that never mentioned the one thing that fixes
+  them. Those failures now name the provider when none is running — and stay
+  quiet when one is. Bare `LOGIN_REQUIRED` / `UNPLAYABLE` playability statuses,
+  previously unclassified, are recognised as sign-in failures.
 - **The cookie-less retry for ended live streams shares one parser.** It ran a
   cloned copy of the progress parser with no test coverage, which had already
   drifted — a late output line could flip a cancelled download back to
