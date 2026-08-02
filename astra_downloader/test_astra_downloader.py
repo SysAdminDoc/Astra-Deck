@@ -4752,6 +4752,63 @@ class EndToEndDownloadTests(unittest.TestCase):
                          "the retry must parse progress with the same parser as the first attempt")
         self.assertEqual(download.error, "")
 
+    def test_cancel_during_cookieless_retry_spawn_terminates_retry_process(self):
+        attempts = []
+        retry_processes = []
+
+        class FakeProc:
+            def __init__(self, lines, rc):
+                self.stdout = iter([line + "\n" for line in lines])
+                self.returncode = rc
+                self._waited = False
+
+            def wait(self):
+                self._waited = True
+                return self.returncode
+
+            def poll(self):
+                return self.returncode if self._waited else None
+
+            def communicate(self, *_args, **_kwargs):
+                self._waited = True
+                return ('', '')
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            cookie_jar = Path(tmpdir) / "cookies.txt"
+            cookie_jar.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+            download = ad.Download(
+                "dl_cancel_retry",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                output_dir=tmpdir,
+            )
+            download.status = "queued"
+            download.cookies_file = str(cookie_jar)
+
+            def popen(args, **_kwargs):
+                if '--ignore-config' not in args:
+                    return FakeProc([], 0)
+                attempts.append(list(args))
+                if len(attempts) == 1:
+                    return FakeProc(['ERROR: This live event has ended.'], 1)
+                download.status = 'cancelled'
+                retry_process = FakeProc([], 1)
+                retry_processes.append(retry_process)
+                return retry_process
+
+            terminated = []
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None), \
+                 mock.patch.object(ad, 'terminate_process_tree', side_effect=terminated.append):
+                manager._run_download(download)
+
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(terminated, retry_processes,
+                         "a retry spawned after cancellation must be terminated immediately")
+        self.assertEqual(download.status, 'cancelled')
+
     def test_shared_output_parser_never_resurrects_a_cancelled_download(self):
         # The retry's cloned loop lacked the original's cancelled guard, so a
         # late "[Merger]" line flipped a cancelled item back to "merging" while

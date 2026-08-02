@@ -29,6 +29,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Companion download input hardening.** Non-string format and quality values
   now return CORS-preserving 400 validation responses or restore to safe queue
   defaults instead of raising TypeError.
+- **Cookie-less retry cancellation.** Cancelling during the live-stream retry
+  spawn window now terminates the newly spawned yt-dlp process immediately.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
