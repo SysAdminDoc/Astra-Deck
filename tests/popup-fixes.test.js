@@ -166,6 +166,8 @@ test('popup import stages a session undo snapshot before applying backup data', 
         'importSettings must stage the undo snapshot before writing imported data');
     assert.match(importBlock, /restoreCoordinatedSnapshot\(snapshot\)/,
         'failed import apply must restore the coordinated extension/page snapshot');
+    assert.match(importBlock, /finally\s*\{[\s\S]*?await refreshUndoImportVisibility\(\)/,
+        'import cleanup must refresh Undo Import visibility even when rollback throws');
     assert.match(importBlock, /statusBackupImportedUndo/,
         'successful import must tell users the Undo Import recovery is available');
 

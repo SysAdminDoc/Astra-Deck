@@ -4087,7 +4087,6 @@ async function importSettings(file) {
             await restoreCoordinatedSnapshot(snapshot);
             await clearImportSnapshot();
             await discardCoordinatedSnapshot(snapshot);
-            await refreshUndoImportVisibility();
             showStatus(t('statusSettingsImportFailed',
                 'Import failed while applying data; previous state was restored.'),
                 'error', 6000);
@@ -4103,7 +4102,6 @@ async function importSettings(file) {
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
-        await refreshUndoImportVisibility();
         const transcriptSkipped = hasTranscriptDomain && !snapshot.pageSnapshotId;
         const importedStatus = transcriptSkipped
             ? t('statusBackupImportedNoTranscript',
@@ -4123,6 +4121,12 @@ async function importSettings(file) {
         importFileInput.value = '';
         importButton.removeAttribute('aria-busy');
         importButton.disabled = false;
+        // Reconcile the recovery affordance after every exit path. Rollback
+        // itself may throw when the owning YouTube tab disappears, but a
+        // staged session snapshot must still surface Undo Import.
+        try { await refreshUndoImportVisibility(); } catch (_) {
+            // reason: popup teardown or storage failure must not mask import status
+        }
     }
 }
 

@@ -33,6 +33,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Cobalt endpoint honesty.** The extension now rejects self-hosted Cobalt
   origins before the fetch bridge and explains that custom endpoints require
   the userscript vehicle.
+- **Import recovery visibility.** Undo Import now reconciles its visibility
+  from the finalizer even when coordinated rollback fails.
 - **Live-chat gate coverage.** The dedicated live-chat loader now receives the
   same ESLint and no-eval enforcement as the other shipped top-level scripts,
   with inventory tests preventing future manifest drift.
