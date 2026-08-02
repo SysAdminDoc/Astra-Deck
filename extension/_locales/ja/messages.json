@@ -227,6 +227,9 @@
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
   },
+  "subscriptionOrderGroupsHint": {
+    "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
+  },
   "subscriptionImportTitle": {
     "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
   },

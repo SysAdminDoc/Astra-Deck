@@ -193,7 +193,19 @@
 
         function applyOrder() {
             if (sorting || destroyed || !isSubscriptionsPage()) return;
-            if (documentRef?.querySelector?.('.ytkit-sub-toolbar')) return;
+            if (documentRef?.querySelector?.('.ytkit-sub-toolbar')) {
+                // Subscription Groups owns card ordering while its toolbar is
+                // mounted. The saved order preference was simply ignored here,
+                // with nothing on screen explaining why it stopped applying.
+                if (status) {
+                    const deferred = t(
+                        'subscriptionOrderGroupsHint',
+                        'Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off.'
+                    );
+                    if (status.textContent !== deferred) status.textContent = deferred;
+                }
+                return;
+            }
             sorting = true;
             let count = 0;
             const mode = normalizeOrderMode(appState?.settings?.subscriptionOrderMode);
@@ -281,6 +293,15 @@
                 hint.setAttribute('role', 'status');
                 hint.setAttribute('aria-live', 'polite');
                 wrapper.append(orderLabel, select, hint);
+                status = hint;
+            } else {
+                // No order control while the group toolbar is present, but the
+                // status line still has to explain who is ordering the feed.
+                const hint = documentRef.createElement('span');
+                hint.className = 'ytkit-sub-view-hint';
+                hint.setAttribute('role', 'status');
+                hint.setAttribute('aria-live', 'polite');
+                wrapper.appendChild(hint);
                 status = hint;
             }
             return wrapper;
