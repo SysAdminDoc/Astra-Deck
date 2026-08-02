@@ -6915,6 +6915,10 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertIn("Write-RecoveryState 'rolled-back'", helper_source)
         self.assertIn("'--update-health-check'", helper_source)
         self.assertIn('-WindowStyle Hidden', helper_source)
+        self.assertIn('Wait-Process -Id $probe.Id -Timeout 30', helper_source)
+        self.assertIn('$probeFinished = $probe.HasExited', helper_source)
+        self.assertIn('Stop-Process -Id $probe.Id -Force', helper_source)
+        self.assertNotIn('-Wait -PassThru', helper_source)
         self.assertIn('-BackupPath', helper_args)
 
     def test_update_recovery_health_state_omits_paths_and_digests(self):

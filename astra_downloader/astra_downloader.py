@@ -1718,7 +1718,19 @@ function Copy-Verified([string] $Source, [string] $Destination) {
 }
 
 function Test-Companion([string] $Path, [string] $Version) {
-    $probe = Start-Process -FilePath $Path -ArgumentList @('--update-health-check', $Version) -WindowStyle Hidden -Wait -PassThru
+    $probe = Start-Process -FilePath $Path -ArgumentList @('--update-health-check', $Version) -WindowStyle Hidden -PassThru
+    $probeFinished = $false
+    try {
+        Wait-Process -Id $probe.Id -Timeout 30 -ErrorAction Stop | Out-Null
+        $probe.Refresh()
+        $probeFinished = $probe.HasExited
+    } catch {
+        $probeFinished = $false
+    }
+    if (-not $probeFinished) {
+        try { Stop-Process -Id $probe.Id -Force -ErrorAction SilentlyContinue } catch {}
+        return $false
+    }
     return $probe.ExitCode -eq 0
 }
 
