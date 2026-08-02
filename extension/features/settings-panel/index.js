@@ -2951,9 +2951,13 @@ function attachUIEventListeners() {
                 pane.classList.add('ytkit-search-active');
                 pane.setAttribute('aria-hidden', 'false');
             });
+            // Search must not fake availability: clearing only the opacity and
+            // pointer-events left `inert`, `aria-disabled` and the per-control
+            // disabled flags in place, so a matching sub-feature of a disabled
+            // parent looked enabled and ignored every click. Re-assert the real
+            // parent state instead.
             doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
-                sub.style.opacity = '';
-                sub.style.pointerEvents = '';
+                setSubFeatureAvailability(sub, !!appState.settings[sub.dataset.parentId]);
             });
 
             // Helper to highlight text matches

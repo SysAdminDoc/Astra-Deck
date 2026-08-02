@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — Settings search un-dims inert sub-features of disabled parents
-  Why: matching sub-feature cards look enabled during search but ignore clicks (inert + disabled stay set while opacity is cleared).
-  Where: extension/features/settings-panel/index.js:2878-2881 + twin
 - [ ] P3 — Await the settings-import rollback/undo restore writes
   Why: restore fires 7 setSync calls and reports rolledBack/ok on the synchronous return — the exact storage-failure class that triggered the rollback can silently fail it (apply() was fixed in v4.49.6; restore was not).
   Where: extension/core/settings-import-transaction.js:46-97, ytkit.js:4072-4080
