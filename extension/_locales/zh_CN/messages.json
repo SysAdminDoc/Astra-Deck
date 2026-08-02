@@ -1197,7 +1197,7 @@
     "message": "音频格式"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "当 Astra Downloader 不可达时，回退到可配置的 Cobalt 实例。仅在 GitHub/完整配置文件中运行，且仅在 Astra Downloader 离线时。将当前视频 URL POST 到配置的实例并在新标签页中打开返回的媒体 URL。"
+    "message": "当 Astra Downloader 不可达时，使用 Cobalt 作为备用。扩展版本仅允许连接 api.cobalt.tools；用户脚本版本可以使用自定义实例。仅在 GitHub/完整配置文件中运行，且仅在 Astra Downloader 离线时。"
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Cobalt 回退（GitHub 配置文件）"

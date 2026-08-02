@@ -1197,7 +1197,7 @@
     "message": "音声フォーマット"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Astra Downloader に到達できない場合、設定可能な Cobalt インスタンスにフォールバック。GitHub/フルプロファイルかつ Astra Downloader がオフラインの場合のみ動作。"
+    "message": "Astra Downloader に到達できない場合は Cobalt にフォールバックします。拡張機能ビルドで利用できる接続先は api.cobalt.tools のみです。ユーザースクリプトビルドではカスタムインスタンスを使用できます。GitHub/フルプロファイルかつ Astra Downloader がオフラインの場合のみ動作します。"
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Cobalt フォールバック (GitHub プロファイル)"

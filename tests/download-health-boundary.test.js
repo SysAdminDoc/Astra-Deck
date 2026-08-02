@@ -129,6 +129,43 @@ test('download health polling and navigation teardown use a deterministic lifecy
     }
 });
 
+test('Cobalt fallback rejects extension-hosted custom instances before EXT_FETCH', async () => {
+    const previousLocation = globalThis.location;
+    const toasts = [];
+    const diagnostics = [];
+    const requests = [];
+    globalThis.location = { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
+
+    try {
+        const feature = createDownloadUIFeature({
+            appState: {
+                settings: {
+                    githubFullProfile: true,
+                    downloadCobaltInstance: 'https://self-hosted.example/api/json'
+                }
+            },
+            getProfileExportMode: () => 'github-full',
+            extensionFetchJson: async (details) => {
+                requests.push(details);
+                return { data: { status: 'error', text: 'must not be called' } };
+            },
+            showToast: (...args) => toasts.push(args),
+            DiagnosticLog: { record: (...args) => diagnostics.push(args) }
+        });
+        feature.MediaDLManager.check = async () => ({ ok: false });
+
+        await feature.downloadCobaltFallback._trigger();
+
+        assert.equal(requests.length, 0, 'a custom origin must be rejected before the extension bridge');
+        assert.match(toasts[0]?.[0] || '', /api\.cobalt\.tools/);
+        assert.match(toasts[0]?.[0] || '', /userscript/);
+        assert.match(diagnostics[0]?.[1] || '', /origin allowlist/);
+    } finally {
+        if (previousLocation === undefined) delete globalThis.location;
+        else globalThis.location = previousLocation;
+    }
+});
+
 // Regression: a stale/legacy downloader (e.g. an old YTYT-Downloader) can
 // answer /health on 9751 — the companion's primary port — without being Astra
 // Downloader. The extension must reject it by service identity, keep probing,

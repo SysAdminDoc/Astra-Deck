@@ -22,8 +22,8 @@
       "digest": "beac0f6b3078a6c27186bf870efdb047eb62db2d260143a5092eb45521281a2a"
     },
     "extension/features/download-ui/index.js": {
-      "count": 31,
-      "digest": "6e1637d43b7fb1126c608514883b39d0a111e64ae06aef9fb7b0f25ccd56ba64"
+      "count": 30,
+      "digest": "8cc04d09e98a472302b358614d7c1bc6edd16dba182bc2e18034e6de6bb09779"
     },
     "extension/features/player-dock/index.js": {
       "count": 3,

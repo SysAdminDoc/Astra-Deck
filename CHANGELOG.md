@@ -30,6 +30,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   runtime message boundary.
 - **Cold-start reveal persistence.** Completed downloads now wait for the
   session reveal mirror to hydrate before adding a new pending folder reveal.
+- **Cobalt endpoint honesty.** The extension now rejects self-hosted Cobalt
+  origins before the fetch bridge and explains that custom endpoints require
+  the userscript vehicle.
 - **Live-chat gate coverage.** The dedicated live-chat loader now receives the
   same ESLint and no-eval enforcement as the other shipped top-level scripts,
   with inventory tests preventing future manifest drift.

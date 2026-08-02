@@ -1197,7 +1197,7 @@
     "message": "Formato de Áudio"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Quando o Astra Downloader estiver inacessível, usar como alternativa uma instância configurável do cobalt.tools. Funciona apenas no perfil GitHub/completo e somente quando o Astra Downloader estiver offline. Envia a URL do vídeo atual para a instância configurada e abre a URL de mídia retornada em uma nova aba."
+    "message": "Quando o Astra Downloader estiver inacessível, usar o Cobalt como alternativa. Builds da extensão permitem apenas api.cobalt.tools; builds userscript podem usar instâncias personalizadas. Funciona apenas no perfil GitHub/completo e quando o Astra Downloader estiver offline."
   },
   "feature_downloadCobaltFallback_name": {
     "message": "Alternativa Cobalt (perfil GitHub)"
