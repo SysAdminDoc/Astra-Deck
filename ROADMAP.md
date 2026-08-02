@@ -4,9 +4,6 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ## Deep-audit backlog — 2026-07-23 (verified, unfixed)
 
-- [ ] P3 — chat-style-comments: skip fully-processed comments in processAllComments
-  Why: every mutation batch re-runs ~30 inline style writes per comment across the whole thread (500 comments re-styled to add 20).
-  Where: extension/features/chat-style-comments/index.js:1154-1330
 - [ ] P3 — api-limiter: wire consumers or drop it from the manifest bundle
   Why: shipped dead code loaded on every page; its bucket also wedges permanently on a never-settling task and serializes regardless of capacity.
   Where: extension/core/api-limiter.js, manifest content_scripts

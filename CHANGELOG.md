@@ -61,6 +61,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replace-everything path takes a deliberate Shift+click on Import.
 
 ### Fixed
+- **Chat-style comments stop restyling the whole thread on every change.** Each
+  batch of new comments re-applied roughly thirty inline styles to every
+  comment already on the page; comments that are still styled are now skipped,
+  and one whose markup YouTube replaced is detected and restyled.
 - **The subscriptions feed says who is ordering it.** With Subscription Groups
   active, the saved feed order stopped applying because the group toolbar's
   Sort owns ordering — with nothing on screen explaining the change. The view

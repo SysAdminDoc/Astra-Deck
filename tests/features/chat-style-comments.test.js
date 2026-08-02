@@ -184,3 +184,67 @@ test('hearted flag requires is-hearted, not merely a visible heart button', () =
     assert.ok(!moduleSource.includes("#creator-heart-button[is-hearted], #creator-heart-button:not([hidden])"),
         'over-broad visible-button alternative must be gone');
 });
+
+test('processComment skips restyling a comment that is already normalized', () => {
+    // Every mutation batch re-ran ~30 inline style writes per comment across
+    // the whole thread, so adding 20 comments restyled all 500.
+    const { mod } = loadModule();
+
+    class FakeStyle {
+        constructor(owner) { this._values = new Map(); this._owner = owner; }
+        setProperty(key, value) { this._owner.writes += 1; this._values.set(key, value); }
+        getPropertyValue(key) { return this._values.get(key) || ''; }
+        removeProperty(key) { this._values.delete(key); }
+    }
+    class FakeNode {
+        constructor(counter, selectors = {}) {
+            this.counter = counter;
+            this.dataset = {};
+            this.selectors = selectors;
+            this.style = new FakeStyle(counter);
+        }
+        get writes() { return this.counter.writes; }
+        removeAttribute() {}
+        matches() { return false; }
+        closest() { return null; }
+        _match(selector) {
+            // Selector groups are passed as one string; match any mapped key
+            // that appears in the group.
+            for (const [key, node] of Object.entries(this.selectors)) {
+                if (selector === key || selector.split(',').some(part => part.trim() === key)) return node;
+            }
+            return null;
+        }
+        querySelector(selector) { return this._match(selector); }
+        querySelectorAll(selector) { const node = this._match(selector); return node ? [node] : []; }
+    }
+    const counter = { writes: 0 };
+    const main = new FakeNode(counter);
+    const content = new FakeNode(counter);
+    const comment = new FakeNode(counter, {
+        ':scope > #body > #main': main,
+        '#content-text': content,
+    });
+    const originalElement = globalThis.Element;
+    globalThis.Element = FakeNode;
+    try {
+        mod.processComment(comment);
+        const afterFirst = counter.writes;
+        assert.ok(afterFirst > 0, 'the first pass must normalize the comment');
+        assert.equal(comment.dataset.ytkitChat, '1');
+
+        mod.processComment(comment);
+        assert.equal(counter.writes, afterFirst,
+            'a second pass over an unchanged comment must write no styles');
+
+        // Polymer re-renders replace children while keeping the host, so a
+        // host-only marker is not enough — a stripped child must re-normalize.
+        main.style.removeProperty('display');
+        mod.processComment(comment);
+        assert.ok(counter.writes > afterFirst,
+            'a comment whose subtree lost its stamps must be normalized again');
+    } finally {
+        if (originalElement === undefined) delete globalThis.Element;
+        else globalThis.Element = originalElement;
+    }
+});
