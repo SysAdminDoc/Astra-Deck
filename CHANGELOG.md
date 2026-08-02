@@ -55,6 +55,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Per-channel speed reset.** Returning a channel to the default 1× rate now
   removes its saved override, and SPA navigation saves the outgoing rate under
   the channel that owned the departing video.
+- **Focused Mode page scope.** Focused Mode now activates only on watch pages,
+  so its masthead and guide rules cannot hide navigation site-wide.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

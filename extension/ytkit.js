@@ -25134,6 +25134,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Hides everything except the video player and comments for a distraction-free experience',
             group: 'Watch Page',
             icon: 'eye',
+            pages: [PageTypes.WATCH],
             _styleEl: null,
 
             init() {

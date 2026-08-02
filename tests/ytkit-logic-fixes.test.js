@@ -383,6 +383,14 @@ test('perChannelSpeed removes 1x overrides and saves navigation against the outg
         'the reset write must persist the deleted override');
 });
 
+test('focusedMode is limited to watch pages before injecting global shell CSS', () => {
+    const block = featureBlock('focusedMode', 5000);
+    assert.match(block, /pages:\s*\[PageTypes\.WATCH\]/,
+        'focusedMode must be activated only on watch pages');
+    assert.match(block, /#masthead-container\s*\{\s*display:\s*none\s*!important;/,
+        'focusedMode should retain its watch-page shell treatment');
+});
+
 // ── item 4: stream links panel must not serve a stale player response ──
 
 test('downloadStreamLinksPanel validates player-response videoId and closes the panel on navigation', () => {
