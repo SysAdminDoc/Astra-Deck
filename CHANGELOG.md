@@ -60,6 +60,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Bulk card action teardown.** Interrupted recommendation scrubs now stop
   cleanly and retain a partial local session record; Bulk Hide owns a fallback
   hidden-card rule when Video Hider storage is unavailable.
+- **Video Hider quota sweep.** The five-minute quota guard now prunes the real
+  top-level hidden-video and blocked-channel stores instead of dead settings
+  keys, retaining their newest bounded entries.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 
