@@ -246,13 +246,13 @@
     "message": "switched to Best"
   },
   "dlPopupFormatsHint": {
-    "message": "Ask the companion which resolutions this video actually has."
+    "message": "이 동영상에서 사용 가능한 해상도를 Astra Downloader에 문의하세요."
   },
   "dlPopupFormatsLoading": {
     "message": "Checking…"
   },
   "dlPopupFormatsNone": {
-    "message": "The companion reported no video streams for this URL."
+    "message": "Astra Downloader가 이 URL에 동영상 스트림이 없다고 보고했습니다."
   },
   "dlPopupFormatsProbe": {
     "message": "Check available"
@@ -381,10 +381,10 @@
     "message": "Astra Downloader가 성공적으로 완료되었습니다."
   },
   "dlProgressConnectAudio": {
-    "message": "로컬 오디오 다운로더에 연결 중."
+    "message": "Astra Downloader에 연결 중."
   },
   "dlProgressConnectVideo": {
-    "message": "로컬 비디오 다운로더에 연결 중."
+    "message": "Astra Downloader에 연결 중."
   },
   "dlProgressDismissAria": {
     "message": "다운로드 진행률 닫기"
@@ -405,7 +405,7 @@
     "message": "Astra Deck이 Astra Downloader와의 연결을 잃었습니다. 복구하려면 다운로더 복구를 선택하세요."
   },
   "dlProgressLostTitle": {
-    "message": "다운로더와의 연결이 끊어졌습니다"
+    "message": "Astra Downloader와의 연결이 끊어졌습니다"
   },
   "dlProgressLostToast": {
     "message": "Astra Downloader와의 연결이 끊어졌습니다."
@@ -4821,7 +4821,7 @@
     "message": "Could not apply profile"
   },
   "statusWelcomeProfileFull": {
-    "message": "GitHub-Full profile enabled. The download companion and AI providers are now available."
+    "message": "GitHub-Full 프로필이 활성화되었습니다. Astra Downloader와 AI 제공업체를 이제 사용할 수 있습니다."
   },
   "statusWelcomeProfileSafe": {
     "message": "Store-safe profile active. Open Full Settings to explore features."

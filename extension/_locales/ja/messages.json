@@ -246,13 +246,13 @@
     "message": "switched to Best"
   },
   "dlPopupFormatsHint": {
-    "message": "Ask the companion which resolutions this video actually has."
+    "message": "この動画で利用できる解像度を Astra Downloader に確認します。"
   },
   "dlPopupFormatsLoading": {
     "message": "Checking…"
   },
   "dlPopupFormatsNone": {
-    "message": "The companion reported no video streams for this URL."
+    "message": "Astra Downloader はこの URL に動画ストリームがないと報告しました。"
   },
   "dlPopupFormatsProbe": {
     "message": "Check available"
@@ -381,10 +381,10 @@
     "message": "Astra Downloader が正常に完了しました。"
   },
   "dlProgressConnectAudio": {
-    "message": "ローカル音声ダウンローダーに接続中。"
+    "message": "Astra Downloader に接続中。"
   },
   "dlProgressConnectVideo": {
-    "message": "ローカル動画ダウンローダーに接続中。"
+    "message": "Astra Downloader に接続中。"
   },
   "dlProgressDismissAria": {
     "message": "ダウンロード進捗を閉じる"
@@ -405,7 +405,7 @@
     "message": "Astra Deck が Astra Downloader との接続を失いました。「ダウンローダーを修復」を選択して復旧してください。"
   },
   "dlProgressLostTitle": {
-    "message": "ダウンローダーへの接続喪失"
+    "message": "Astra Downloader への接続が失われました"
   },
   "dlProgressLostToast": {
     "message": "Astra Downloader との接続が切れました。"
@@ -4821,7 +4821,7 @@
     "message": "Could not apply profile"
   },
   "statusWelcomeProfileFull": {
-    "message": "GitHub-Full profile enabled. The download companion and AI providers are now available."
+    "message": "GitHub-Full プロファイルを有効にしました。Astra Downloader と AI プロバイダーを利用できます。"
   },
   "statusWelcomeProfileSafe": {
     "message": "Store-safe profile active. Open Full Settings to explore features."

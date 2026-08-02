@@ -246,13 +246,13 @@
     "message": "switched to Best"
   },
   "dlPopupFormatsHint": {
-    "message": "Ask the companion which resolutions this video actually has."
+    "message": "Pregunta a Astra Downloader qué resoluciones tiene este vídeo."
   },
   "dlPopupFormatsLoading": {
     "message": "Checking…"
   },
   "dlPopupFormatsNone": {
-    "message": "The companion reported no video streams for this URL."
+    "message": "Astra Downloader no encontró transmisiones de vídeo para esta URL."
   },
   "dlPopupFormatsProbe": {
     "message": "Check available"
@@ -381,10 +381,10 @@
     "message": "Astra Downloader finalizó correctamente."
   },
   "dlProgressConnectAudio": {
-    "message": "Conectando con el descargador local de audio."
+    "message": "Conectando con Astra Downloader."
   },
   "dlProgressConnectVideo": {
-    "message": "Conectando con el descargador local de video."
+    "message": "Conectando con Astra Downloader."
   },
   "dlProgressDismissAria": {
     "message": "Descartar progreso de descarga"
@@ -405,7 +405,7 @@
     "message": "Astra Deck perdió contacto con Astra Downloader. Elige Reparar descargador para recuperar."
   },
   "dlProgressLostTitle": {
-    "message": "Conexión con el descargador perdida"
+    "message": "Conexión con Astra Downloader perdida"
   },
   "dlProgressLostToast": {
     "message": "Se perdió el contacto con Astra Downloader."
@@ -4821,7 +4821,7 @@
     "message": "Could not apply profile"
   },
   "statusWelcomeProfileFull": {
-    "message": "GitHub-Full profile enabled. The download companion and AI providers are now available."
+    "message": "Perfil GitHub-Full activado. Astra Downloader y los proveedores de IA ya están disponibles."
   },
   "statusWelcomeProfileSafe": {
     "message": "Store-safe profile active. Open Full Settings to explore features."
