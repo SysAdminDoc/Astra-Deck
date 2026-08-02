@@ -42,6 +42,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Folder picker timeout cleanup.** Timed-out folder-picker requests are now
   cancelled and discarded by the GUI bridge instead of opening a later ghost
   dialog.
+- **Non-blocking health probes.** Version, ffmpeg-capability, and
+  JavaScript-runtime cache locks no longer cover their subprocess work, keeping
+  concurrent health/readiness calls responsive during cold probes.
 
 ## [4.51.0] - 2026-08-02 (companion v1.6.0)
 

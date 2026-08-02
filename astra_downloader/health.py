@@ -307,8 +307,13 @@ class ExecutableVersionProbe:
                 and (now - self._checked_at) < self._ttl_seconds
             ):
                 return self._value
-            self._value = self._parser(self._runner([str(path), *self._args]))
-            self._checked_at = now
+        # The executable probe can take several seconds on a cold cache.
+        # Keep the cache lock out of the subprocess so another caller can
+        # take the fast path or refresh independently while this one waits.
+        value = self._parser(self._runner([str(path), *self._args]))
+        with self._lock:
+            self._value = value
+            self._checked_at = self._clock()
             return self._value
 
     def reset(self):
@@ -422,7 +427,12 @@ class FfmpegCapabilitiesProbe:
                 and (now - self._checked_at) < self._ttl_seconds
             ):
                 return dict(self._value)
-            raw = self._version_getter()
+        # The version getter can invoke an executable probe. Keep that I/O
+        # outside the capabilities-cache lock so concurrent health calls do
+        # not wait for a cold ffmpeg subprocess.
+        raw = self._version_getter()
+        with self._lock:
+            now = self._clock()
             major = parse_ffmpeg_major(raw)
             if major is None:
                 result = {
