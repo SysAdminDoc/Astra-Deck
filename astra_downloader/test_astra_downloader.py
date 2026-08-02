@@ -6288,6 +6288,59 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         api = ad.create_api(config, manager, FakeHistory())
         return api.test_client()
 
+    class _ReleaseResponse:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self._payload
+
+    def _release_and_source(self, source_response, tag='v9.9.9'):
+        """Return a fake http get that answers the release API then the source."""
+        calls = []
+
+        def get(url, *_args, **_kwargs):
+            calls.append(url)
+            if url == ad.COMPANION_UPDATE_RELEASE_API_URL:
+                return self._ReleaseResponse({'tag_name': tag})
+            return source_response
+        return get, calls
+
+    def test_parse_companion_release_tag_rejects_anything_but_a_release_tag(self):
+        self.assertEqual(ad.parse_companion_release_tag({'tag_name': 'v4.50.7'}), 'v4.50.7')
+        # Draft/prerelease builds are not installable updates.
+        self.assertEqual(ad.parse_companion_release_tag({'tag_name': 'v1.0.0', 'draft': True}), '')
+        self.assertEqual(ad.parse_companion_release_tag({'tag_name': 'v1.0.0', 'prerelease': True}), '')
+        # The tag is interpolated into a URL, so its shape is enforced.
+        for tag in ('main', '../../etc', 'v1.2', 'v1.2.3-rc1', ''):
+            self.assertEqual(ad.parse_companion_release_tag({'tag_name': tag}), '', tag)
+        self.assertEqual(ad.parse_companion_release_tag(None), '')
+
+    def test_version_check_reads_the_tagged_release_not_a_branch(self):
+        # A version bump on main with no published release must not advertise
+        # an update: the binary can only come from a Release asset.
+        response = self._VersionSourceResponse([b'APP_VERSION = "9.9.9"\n'])
+        get, calls = self._release_and_source(response, tag='v9.9.9')
+        with mock.patch.object(ad.http_requests, 'get', side_effect=get):
+            self.assertEqual(ad.fetch_latest_companion_version(), '9.9.9')
+        self.assertEqual(calls[0], ad.COMPANION_UPDATE_RELEASE_API_URL)
+        self.assertEqual(
+            calls[1],
+            ad.COMPANION_UPDATE_VERSION_URL_TEMPLATE.format(tag='v9.9.9'),
+        )
+        self.assertNotIn('/main/', calls[1])
+
+    def test_version_check_fails_closed_when_no_release_is_published(self):
+        def get(url, *_args, **_kwargs):
+            self.assertEqual(url, ad.COMPANION_UPDATE_RELEASE_API_URL)
+            return self._ReleaseResponse({'tag_name': 'v1.0.0', 'draft': True})
+        with mock.patch.object(ad.http_requests, 'get', side_effect=get):
+            with self.assertRaisesRegex(RuntimeError, 'No published'):
+                ad.fetch_latest_companion_version()
+
     def test_parse_companion_version_source_extracts_app_version(self):
         self.assertEqual(
             ad.parse_companion_version_source('APP_VERSION = "1.2.3"\n'),
@@ -6316,14 +6369,16 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         response = self._VersionSourceResponse([
             b'header\nAPP_VER', b'SION = "9.9.9"\n',
         ])
-        with mock.patch.object(ad.http_requests, 'get', return_value=response) as get:
+        get, _calls = self._release_and_source(response)
+        with mock.patch.object(ad.http_requests, 'get', side_effect=get) as patched:
             self.assertEqual(ad.fetch_latest_companion_version(), '9.9.9')
-        self.assertTrue(get.call_args.kwargs['stream'])
+        self.assertTrue(patched.call_args.kwargs['stream'])
 
         oversized = self._VersionSourceResponse([
             b'x' * (ad.COMPANION_VERSION_SOURCE_MAX_BYTES + 1),
         ])
-        with mock.patch.object(ad.http_requests, 'get', return_value=oversized):
+        get, _calls = self._release_and_source(oversized)
+        with mock.patch.object(ad.http_requests, 'get', side_effect=get):
             with self.assertRaisesRegex(RuntimeError, 'size limit'):
                 ad.fetch_latest_companion_version()
 
@@ -6334,7 +6389,8 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
                 'content-length': str(ad.COMPANION_VERSION_SOURCE_MAX_BYTES + 1),
             },
         )
-        with mock.patch.object(ad.http_requests, 'get', return_value=response):
+        get, _calls = self._release_and_source(response)
+        with mock.patch.object(ad.http_requests, 'get', side_effect=get):
             with self.assertRaisesRegex(RuntimeError, 'size limit'):
                 ad.fetch_latest_companion_version()
 

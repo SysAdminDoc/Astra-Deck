@@ -65,6 +65,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   survive, imported records win on name and color — and the destructive
   replace-everything path takes a deliberate Shift+click on Import.
 
+### Security
+- **The companion update check follows the published Release, not a branch.**
+  Whether an update exists was decided by reading the version from `main`, so a
+  premature or bad commit could drive update logic before any release existed.
+  The version now comes from the newest published Release tag — draft and
+  pre-release entries are ignored, the tag shape is validated before it reaches
+  a URL, and no release means no update.
+
 ### Fixed
 - **The cookie-less retry for ended live streams shares one parser.** It ran a
   cloned copy of the progress parser with no test coverage, which had already
