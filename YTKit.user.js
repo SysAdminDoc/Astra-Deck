@@ -20923,6 +20923,7 @@
                         this._overlayKeyHandler = null;
                     }
                     const video = document.querySelector('video');
+                    const resumeAfterDismiss = kind === 'break' && video && !video.paused;
                     if (video && !video.paused) video.pause();
                     const titleText = options.title || (kind === 'break' ? 'Take a Break' : 'Daily Limit Reached');
                     const messageText = options.message || '';
@@ -20993,6 +20994,16 @@
                         }
                         o.remove();
                         if (this._overlay === o) this._overlay = null;
+                        if (resumeAfterDismiss && video && video.paused) {
+                            try {
+                                const playPromise = video.play();
+                                playPromise?.catch((error) => {
+                                    DebugManager.log('DigitalWellbeing', `Resume failed: ${error?.message || 'playback was blocked'}`);
+                                });
+                            } catch (error) {
+                                DebugManager.log('DigitalWellbeing', `Resume failed: ${error?.message || 'playback was blocked'}`);
+                            }
+                        }
                         options.onDismiss?.();
                     };
 
