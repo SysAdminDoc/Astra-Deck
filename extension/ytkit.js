@@ -7876,12 +7876,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     });
                 };
 
+                // The normalization below writes ~30 inline styles across a
+                // comment's subtree, and every mutation batch re-ran it for the
+                // whole thread. A host-only marker is not enough evidence —
+                // Polymer re-renders replace children while keeping the host —
+                // so sample a child stamp too.
+                const isCommentSurfaceNormalized = (comment) => {
+                    if (comment.style.getPropertyValue('--ytd-comment-thumb-dimension') !== '24px') return false;
+                    const main = comment.querySelector(':scope > #body > #main');
+                    if (main && main.style.getPropertyValue('display') !== 'block') return false;
+                    const content = comment.querySelector('#content-text');
+                    if (content && content.style.getPropertyValue('pointer-events') !== 'auto') return false;
+                    return true;
+                };
+
                 const processComment = (comment) => {
+                    const wasStyled = comment.dataset.ytkitChat === '1';
                     comment.dataset.ytkitChat = '1';
                     setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
                     setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
                     setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
                     comment.querySelector('.ytkit-vote-badge')?.remove();
+                    if (wasStyled && isCommentSurfaceNormalized(comment)) return;
                     normalizeCommentLayoutSurface(comment);
                     normalizeCommentInteractionSurface(comment);
                 };
