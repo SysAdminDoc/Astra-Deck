@@ -54,6 +54,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   selection that stops being valid falls back to Best and says so.
 
 ### Fixed
+- **A failed settings-import rollback no longer reports success.** Rollback and
+  Undo waited for nothing, so the same storage failure that forced the rollback
+  could silently fail the restore while the UI said the previous state was
+  back. Both now confirm their writes, and a rejected restore keeps the undo
+  checkpoint so recovery can be retried.
 - **Settings search no longer makes unavailable sub-settings look available.**
   Searching cleared the dimming on sub-settings whose parent is off while
   leaving them inert, so a matching card looked enabled and ignored every

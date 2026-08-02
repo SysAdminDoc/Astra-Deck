@@ -146,3 +146,92 @@ test('failed rollback keeps a retryable checkpoint until undo succeeds', () => {
     assert.equal(transaction.undo().ok, true);
     assert.deepEqual(state, { settings: { compactLayout: true } });
 });
+
+test('async restore rejection keeps the rollback retryable instead of claiming recovery', async () => {
+    // restore() fires the same setSync writes as apply(), which resolve
+    // { ok, error } without rejecting. Reporting rolledBack on the synchronous
+    // return meant the exact storage failure that forced the rollback could
+    // silently fail the rollback too.
+    const original = { settings: { compactLayout: true } };
+    let state = clone(original);
+    let restoreAttempts = 0;
+    const transaction = createSettingsImportTransaction({ now: () => 1720972800000 });
+    const failure = new Error('quota exceeded');
+
+    const result = await transaction.run({
+        snapshot: () => clone(state),
+        apply: () => {
+            state.settings.compactLayout = false;
+            return Promise.reject(failure);
+        },
+        restore: (snapshot) => {
+            restoreAttempts += 1;
+            if (restoreAttempts === 1) return Promise.reject(new Error('quota still exceeded'));
+            state = clone(snapshot);
+            return Promise.resolve();
+        }
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.phase, 'rollback', 'a rejected restore is not a completed rollback');
+    assert.equal(result.rolledBack, false);
+    assert.equal(result.canUndo, true);
+    assert.equal(transaction.hasUndo(), true, 'the recovery path must survive');
+
+    const undone = await transaction.undo();
+    assert.equal(undone.ok, true);
+    assert.deepEqual(state, original);
+    assert.equal(transaction.hasUndo(), false);
+});
+
+test('async restore commits the rollback only once the writes resolve', async () => {
+    const original = { settings: { compactLayout: true } };
+    let state = clone(original);
+    let restored = false;
+    const transaction = createSettingsImportTransaction({ now: () => 1720972800000 });
+
+    const result = await transaction.run({
+        snapshot: () => clone(state),
+        apply: () => {
+            state.settings.compactLayout = false;
+            return Promise.reject(new Error('write failed'));
+        },
+        restore: (snapshot) => Promise.resolve().then(() => {
+            state = clone(snapshot);
+            restored = true;
+        })
+    });
+
+    assert.equal(result.rolledBack, true);
+    assert.equal(restored, true, 'rolledBack must not be reported before the restore lands');
+    assert.deepEqual(state, original);
+    assert.equal(transaction.hasUndo(), false);
+});
+
+test('undo keeps its checkpoint when the restore writes reject', async () => {
+    const original = { settings: { compactLayout: true } };
+    let state = clone(original);
+    let attempts = 0;
+    const transaction = createSettingsImportTransaction({ now: () => 1720972800000 });
+
+    await transaction.run({
+        snapshot: () => clone(state),
+        apply: () => { state.settings.compactLayout = false; return Promise.resolve(); },
+        restore: (snapshot) => {
+            attempts += 1;
+            if (attempts === 1) return Promise.reject(new Error('storage offline'));
+            state = clone(snapshot);
+            return Promise.resolve();
+        }
+    });
+
+    const firstUndo = await transaction.undo();
+    assert.equal(firstUndo.ok, false);
+    assert.equal(firstUndo.canRetry, true);
+    assert.equal(transaction.hasUndo(), true, 'a failed undo must stay retryable');
+    assert.deepEqual(state.settings, { compactLayout: false }, 'nothing was restored yet');
+
+    const secondUndo = await transaction.undo();
+    assert.equal(secondUndo.ok, true);
+    assert.deepEqual(state, original);
+});
