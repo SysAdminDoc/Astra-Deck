@@ -4535,12 +4535,16 @@
                         // Re-fix player in place
                         const player = this._getPlayer();
                         if (player) {
+                            // Collapsed state has no resize observer attached, so a
+                            // px snapshot taken here would survive every later window
+                            // resize until the next expand. Only the split state —
+                            // where the observer keeps the width in sync — gets px.
                             const leftW = this._isSplit
-                                ? (wrapper.querySelector('#ytkit-split-left')?.getBoundingClientRect().width || window.innerWidth)
-                                : window.innerWidth;
+                                ? (wrapper.querySelector('#ytkit-split-left')?.getBoundingClientRect().width || 0)
+                                : 0;
                             this._setStyles(player, {
                                 position: 'fixed', top: '0', left: '0',
-                                width: leftW + 'px', height: '100vh',
+                                width: leftW > 0 ? leftW + 'px' : '100%', height: '100vh',
                                 'z-index': '9998', background: '#000',
                                 'min-height': '0', margin: '0', padding: '0',
                                 'max-width': 'none', overflow: 'hidden'
