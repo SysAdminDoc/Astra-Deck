@@ -46,6 +46,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and surface degraded feature IDs in selector-health diagnostics.
 
 ### Fixed
+- **Settings explains a session-only port fallback.** When the configured port
+  is taken at startup the companion binds a fallback for that session; the
+  Settings page now says so next to the port control instead of silently
+  disagreeing with the dashboard, and the control itself always shows the
+  configured port rather than echoing the fallback back into the saved config.
 - **DeArrow voting and the peek overlay work again.** The shipping DeArrow
   module never wrote the `data-ytkit-dearrow-uuid` / `data-ytkit-orig-title`
   attributes those two features query, so voting found nothing to vote on and

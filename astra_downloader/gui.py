@@ -1552,11 +1552,20 @@ class MainWindowCore(QMainWindow):
         port_copy.setSpacing(2)
         port_copy.addWidget(make_label("Local API port", "fieldLabel"))
         port_copy.addWidget(make_label("Default 9751. Change only for custom clients.", "fieldHint", word_wrap=True))
+        # The dashboard shows the port actually bound, which during a bind
+        # conflict is a session-only fallback. Without this line the spinbox
+        # silently disagreed with it.
+        self.cfg_port_session_hint = make_label("", "fieldHint", word_wrap=True)
+        self.cfg_port_session_hint.setVisible(False)
+        port_copy.addWidget(self.cfg_port_session_hint)
         port_row.addLayout(port_copy, 1)
         self.cfg_port = QSpinBox()
         self.cfg_port.setAccessibleName("Local API port")
         self.cfg_port.setRange(1024, 65535)
-        self.cfg_port.setValue(self._dependencies['clamp_int'](self.config.get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535))
+        # Read the PERSISTED port: a session fallback must never be echoed back
+        # into the spinbox, or the next save would write it to disk.
+        _persisted_get = getattr(self.config, 'get_persisted', self.config.get)
+        self.cfg_port.setValue(self._dependencies['clamp_int'](_persisted_get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535))
         self.cfg_port.setFixedWidth(100)
         port_row.addWidget(self.cfg_port)
         conn_l.addLayout(port_row)
@@ -2676,9 +2685,28 @@ class MainWindowCore(QMainWindow):
         self.btn_save.setText("Save changes")
 
     def _sync_connection_ui(self):
-        port = self._dependencies['clamp_int'](self.config.get("ServerPort", self._value('SERVER_PORT')), self._value('SERVER_PORT'), 1024, 65535)
+        clamp_int = self._dependencies['clamp_int']
+        default_port = self._value('SERVER_PORT')
+        port = clamp_int(self.config.get("ServerPort", default_port), default_port, 1024, 65535)
         self.dash_endpoint.setText(f"http://127.0.0.1:{port}")
         self.stat_port.setText(str(port))
+        persisted_get = getattr(self.config, 'get_persisted', self.config.get)
+        configured = clamp_int(persisted_get("ServerPort", default_port), default_port, 1024, 65535)
+        hint = getattr(self, 'cfg_port_session_hint', None)
+        if hint is None:
+            return
+        if port != configured:
+            message = (
+                f"Port {configured} was unavailable at startup; bound to "
+                f"fallback port {port} for this session. Restart to retry {configured}."
+            )
+            hint.setText(message)
+            hint.setVisible(True)
+            self.cfg_port.setAccessibleDescription(message)
+        else:
+            hint.setText("")
+            hint.setVisible(False)
+            self.cfg_port.setAccessibleDescription("")
 
     # ── Tools: yt-dlp / ffmpeg maintenance (v1.2.0) ──
     def _tools_status_text(self):
