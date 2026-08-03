@@ -974,6 +974,27 @@
                 return match ? Math.max(0, Math.min(100, Number(match[1]) || 0)) : 0;
             },
 
+            _extractPredicateAgeDays(text) {
+                const raw = String(text || '').replace(/\u00a0/g, ' ').trim();
+                if (!raw) return null;
+                const parsed = globalThis.YTKitCore?.parseRelativeYouTubeAge?.(raw);
+                if (parsed?.date instanceof Date && !Number.isNaN(parsed.date.getTime())) {
+                    return Math.max(0, Math.round((Date.now() - parsed.date.getTime()) / (24 * 60 * 60 * 1000)));
+                }
+                const match = raw.match(/\b(\d+(?:[,.]\d+)?)\s*(minute|hour|day|week|month|year)s?\s+ago\b/i);
+                if (!match) return null;
+                const value = Number.parseFloat(match[1].replace(',', '.'));
+                const unitDays = {
+                    minute: 1 / 1440,
+                    hour: 1 / 24,
+                    day: 1,
+                    week: 7,
+                    month: 30,
+                    year: 365
+                }[match[2].toLowerCase()];
+                return Number.isFinite(value) && unitDays ? Math.max(0, Math.round(value * unitDays)) : null;
+            },
+
             _extractVideoMetadata(element) {
                 const title = this._extractTitle(element);
                 const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
@@ -982,12 +1003,15 @@
                 const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                 const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
                 const hasDuration = this._extractDuration(element) > 0;
+                const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
+                const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
                 return {
                     title,
                     metadataText,
                     hrefText,
                     views: this._extractViewCount(element),
                     watchedRatio: this._extractWatchedRatio(element),
+                    ageDays: this._extractPredicateAgeDays(rowsText),
                     isLive: !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, [aria-label*="LIVE"]')
                         || /\b(live|watching now)\b/.test(rowsText) && !hasDuration,
                     isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(rowsText),
@@ -998,7 +1022,9 @@
                     isPlaylist: !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer')
                         || /\bplaylist\b|\b\d+\s+videos?\b/.test(rowsText),
                     isMovie: /\b(movie|free with ads|buy or rent|rent or buy)\b/.test(rowsText),
-                    isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(rowsText)
+                    isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(rowsText),
+                    isShort,
+                    isMembersOnly
                 };
             },
 
@@ -1334,12 +1360,12 @@
                     // semantics of the existing comparison operators.
                     likes: this._readRydLikes(videoId),
                     subsCount: this._extractSubsCount(metadata?.metadataText),
-                    ageDays: 0,
+                    ageDays: metadata?.ageDays ?? null,
                     isLive: !!metadata?.isLive,
                     isUpcoming: !!metadata?.isUpcoming,
-                    isShort: false,
+                    isShort: metadata?.isShort ?? null,
                     isMix: !!metadata?.isMix,
-                    isMembersOnly: false,
+                    isMembersOnly: metadata?.isMembersOnly ?? null,
                     isAutoDubbed: !!metadata?.isAutoDubbed,
                     page
                 };

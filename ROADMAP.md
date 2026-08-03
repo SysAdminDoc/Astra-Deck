@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P1 — Correctness, security, and broken promises
 
-- [ ] P1 — Populate the three inert predicate-sandbox fields
-  Why: `docs/predicate-sandbox-investigation.md:137-142` documents `ageDays`, `isShort` and `isMembersOnly` as usable predicate variables, but both implementation copies hardcode them to `0` / `false`. A user rule such as `ageDays > 365` silently never matches, with no error and no diagnostic — the documented contract is false. The detection logic already exists: `_extractCardAgeDays` at `extension/ytkit.js:37291` powers the stale-channel scanner, Shorts detection exists in the Shorts features, and members-only detection exists at `extension/ytkit.js:8352`.
-  Evidence: `extension/features/video-hider/index.js:1337,1340,1342`; `extension/ytkit.js:17559`; `docs/predicate-sandbox-investigation.md:137-142`.
-  Touches: `extension/features/video-hider/index.js` (predicate context builder), `extension/ytkit.js` fallback twin, `tests/features/video-hider.test.js`.
-  Acceptance: each of the three fields is derived from card DOM; a regression test pins a non-zero `ageDays` and a true `isShort` / `isMembersOnly` for fixtures that have them, and a predicate using each field matches. Fields that genuinely cannot be resolved for a card report `null` (matching the existing `likes` / `subsCount` convention) rather than a misleading `0` / `false`.
-  Complexity: M
-
 - [ ] P1 — Internationalize Video Hider card-type detection
   Why: `isLive`, `isUpcoming`, `isMix` and `isPlaylist` are English-only regexes over lowercased localized metadata, so on any non-English YouTube UI those predicates are permanently false and the corresponding hide-type filters silently do nothing. Localized *count* parsing shipped 2026-08-02 (`fix(video-hider): parse localized counts`) but type detection was not included, leaving the feature half-localized in a product that ships 11 locales.
   Evidence: `extension/ytkit.js:17214-17221`; the internationalized precedent is `_NOTIFY_RE` / `_SCHEDULED_RE` at `extension/ytkit.js:33979,33990`, which already carry ES/DE/FR/IT/RU/JA/KO/ZH/AR alternations.
