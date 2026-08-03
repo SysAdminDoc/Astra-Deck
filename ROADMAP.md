@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P1 — Correctness, security, and broken promises
 
-- [ ] P1 — Close the i18n copy-gate holes on hardcoded user-visible strings
-  Why: `npm run i18n:copy:gate` passes while several user-visible strings — including two screen-reader `aria-label`s — are hardcoded English. The gate is fingerprint/baseline-based rather than exhaustive, so it cannot catch a newly added literal, which means this recurs every time a feature adds UI.
-  Evidence: `extension/ytkit.js:33359` (`'Remove Watched'` button text plus `aria-label` `'Remove all watched videos from Watch Later'`), `:25511` (`showToast('Open More actions on this card to save it manually.')`), `:24796` (`Scheduled for ${exactDate}` / `Published on ${exactDate}`, also copied into `aria-label` at `:24798`).
-  Touches: `extension/ytkit.js`, `extension/_locales/en/messages.json` + `scripts/generate-locales.js` + manual `ar` / `zh_CN` backfill, `scripts/check-localizable-ui-copy.js`, `docs/i18n-coverage.md`.
-  Acceptance: each listed string resolves through `t()`; the copy gate is extended to fail on any string literal assigned to `textContent`, `aria-label` or `title`, or passed as the first argument to `showToast`, that is not a `t()` call — with an explicit allowlist for brand and format names.
-  Complexity: M
-
 - [ ] P1 — Re-triage the eight items blocked only by a stale session constraint
   Why: eight of the 28 items in `Roadmap_Blocked.md` cite "this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`" as their blocker. That is a self-imposed constraint from a prior pass, not a property of the work — every one of them is a normal localized-feature change this repo makes routinely. Leaving them filed as blocked hides real, ready work behind a false gate.
   Evidence: `Roadmap_Blocked.md` — dual-language subtitles, allowlist hiding mode, audio auto-gain + high-pass, enforced Shorts daily limit, hide-AI-surfaces pack, notification menu controls, comment intelligence pack, playlist power pack (`grep -c "forbids staging" Roadmap_Blocked.md` = 8).

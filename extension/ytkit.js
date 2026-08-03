@@ -24827,8 +24827,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 badge.setAttribute('translate', 'no');
                 const exactDate = this._formatExactDate(publishDate);
                 badge.title = tone === 'future'
-                    ? `Scheduled for ${exactDate}`
-                    : `Published on ${exactDate}`;
+                    ? t('channelAgeScheduledForTpl', 'Scheduled for {date}').replace('{date}', exactDate)
+                    : t('channelAgePublishedOnTpl', 'Published on {date}').replace('{date}', exactDate);
                 badge.setAttribute('aria-label', badge.title);
                 dateEl.parentElement?.appendChild(badge);
                 this._el = badge;
@@ -25542,7 +25542,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const menuBtn = item.querySelector('ytd-menu-renderer yt-icon-button, #menu button, ytd-menu-renderer button');
                         if (!menuBtn) {
                             this._setButtonState(btn, 'error');
-                            showToast('Open More actions on this card to save it manually.', '#f59e0b', {
+                            showToast(t('watchLaterSaveManually', 'Open More actions on this card to save it manually.'), '#f59e0b', {
                                 duration: 4,
                                 tone: 'warning'
                             });
@@ -33390,15 +33390,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.id = 'ytkit-wl-cleanup';
                 btn.type = 'button';
                 btn.className = 'ytkit-wl-cleanup';
-                btn.textContent = 'Remove Watched';
-                btn.setAttribute('aria-label', 'Remove all watched videos from Watch Later');
+                btn.textContent = t('watchLaterRemoveWatched', 'Remove Watched');
+                btn.setAttribute('aria-label', t('watchLaterRemoveWatchedAria', 'Remove all watched videos from Watch Later'));
                 btn.addEventListener('click', () => this._removeWatched(btn));
                 host.appendChild(btn);
                 this._btn = btn;
             },
             async _removeWatched(btn) {
                 btn.disabled = true;
-                btn.textContent = 'Scanning…';
+                btn.textContent = t('watchLaterScanning', 'Scanning…');
                 // Threshold: treat ≥90% watched as "watched" for cleanup.
                 const THRESHOLD = 0.9;
                 const targets = [];
@@ -33410,13 +33410,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (Number.isFinite(pct) && pct >= THRESHOLD) targets.push(row);
                 });
                 if (!targets.length) {
-                    btn.textContent = 'Nothing to remove';
-                    setTimeout(() => { btn.textContent = 'Remove Watched'; btn.disabled = false; }, 2500);
+                    btn.textContent = t('watchLaterNothingToRemove', 'Nothing to remove');
+                    setTimeout(() => { btn.textContent = t('watchLaterRemoveWatched', 'Remove Watched'); btn.disabled = false; }, 2500);
                     return;
                 }
                 let removed = 0;
                 for (let i = 0; i < targets.length; i++) {
-                    btn.textContent = `Removing ${i + 1} / ${targets.length}…`;
+                    btn.textContent = t('watchLaterRemovingProgress', 'Removing {current} / {total}…')
+                        .replace('{current}', String(i + 1))
+                        .replace('{total}', String(targets.length));
                     const row = targets[i];
                     const menuBtn = row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
                     if (!menuBtn) continue;
@@ -33446,12 +33448,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     await new Promise(r => setTimeout(r, 350));
                 }
                 btn.textContent = removed === targets.length
-                    ? `Removed ${removed} ✓`
-                    : `Removed ${removed} of ${targets.length}`;
+                    ? t('watchLaterRemovedAll', 'Removed {count} ✓').replace('{count}', String(removed))
+                    : t('watchLaterRemovedPartial', 'Removed {removed} of {total}')
+                        .replace('{removed}', String(removed))
+                        .replace('{total}', String(targets.length));
                 if (removed < targets.length && typeof showToast === 'function') {
-                    showToast(`Couldn't remove ${targets.length - removed} video(s) — YouTube's menu item wasn't found.`, '#f59e0b', { duration: 5 });
+                    showToast(t('watchLaterRemoveFailed', `Couldn't remove {count} video(s) — YouTube's menu item wasn't found.`)
+                        .replace('{count}', String(targets.length - removed)), '#f59e0b', { duration: 5 });
                 }
-                setTimeout(() => { btn.textContent = 'Remove Watched'; btn.disabled = false; }, 3000);
+                setTimeout(() => { btn.textContent = t('watchLaterRemoveWatched', 'Remove Watched'); btn.disabled = false; }, 3000);
             },
             init() {
                 const css = `.ytkit-wl-cleanup{margin-inline-start:8px;padding:8px 14px;background:#7f1d1d;color:#fecaca;border:1px solid #991b1b;border-radius:6px;font:600 13px/1 Roboto,Arial,sans-serif;cursor:pointer}.ytkit-wl-cleanup:hover{background:#991b1b;color:#fff}.ytkit-wl-cleanup:disabled{opacity:.7;cursor:progress}.ytkit-wl-cleanup:focus-visible{outline:2px solid var(--yt-spec-call-to-action,#3ea6ff);outline-offset:2px}html:not([dark]) .ytkit-wl-cleanup{background:#fee2e2;color:#991b1b;border-color:rgba(153,27,27,0.4)}html:not([dark]) .ytkit-wl-cleanup:hover{background:#fecaca;color:#7f1d1d}`;

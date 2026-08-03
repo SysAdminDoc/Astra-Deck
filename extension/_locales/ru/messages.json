@@ -4131,7 +4131,7 @@
     "message": "Удалено видео: {count}{remaining}. Список для восстановления — в журнале удалений."
   },
   "wlwbRemovingTpl": {
-    "message": "Удаление {current} / {total}…"
+    "message": "Удаление: {current} / {total}…"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel} (просмотрено {percent}%)"
@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Опубликовано: {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Запланировано на {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Нечего удалять"
+  },
+  "watchLaterRemovedAll": {
+    "message": "Удалено: {count} ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "Удалено {removed} из {total}"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "Не удалось удалить {count} видео — пункт меню YouTube не найден."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Удалить просмотренные"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Удалить все просмотренные видео из «Посмотреть позже»"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "Удаление: {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Откройте «Другие действия» на этой карточке, чтобы сохранить её вручную."
+  },
+  "watchLaterScanning": {
+    "message": "Сканирование…"
   }
 }

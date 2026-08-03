@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "{date} 发布"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "{date} 预定"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "没有可移除的内容"
+  },
+  "watchLaterRemovedAll": {
+    "message": "已移除 {count} 个 ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "已移除 {removed} / {total} 个"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "无法移除 {count} 个视频 — 找不到 YouTube 菜单项。"
+  },
+  "watchLaterRemoveWatched": {
+    "message": "移除已观看"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "从“稍后观看”中移除所有已观看的视频"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "正在移除 {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "打开此卡片上的“更多操作”以手动保存。"
+  },
+  "watchLaterScanning": {
+    "message": "正在扫描…"
   }
 }

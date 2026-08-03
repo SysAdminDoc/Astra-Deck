@@ -4131,7 +4131,7 @@
     "message": "{count} Video(s) entfernt{remaining}. Die Wiederherstellungsliste steht im Entfernungsprotokoll."
   },
   "wlwbRemovingTpl": {
-    "message": "Entferne {current} / {total} …"
+    "message": "{current} / {total} werden entfernt…"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel} ({percent} % gesehen)"
@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Veröffentlicht am {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Geplant für {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Nichts zu entfernen"
+  },
+  "watchLaterRemovedAll": {
+    "message": "{count} entfernt ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "{removed} von {total} entfernt"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "{count} Video(s) konnten nicht entfernt werden – der YouTube-Menüeintrag wurde nicht gefunden."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Angesehene entfernen"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Alle angesehenen Videos aus „Später ansehen“ entfernen"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "{current} / {total} werden entfernt…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Öffne „Weitere Aktionen“ auf dieser Karte, um sie manuell zu speichern."
+  },
+  "watchLaterScanning": {
+    "message": "Wird gescannt…"
   }
 }

@@ -4131,7 +4131,7 @@
     "message": "{count} 件の動画を削除しました{remaining}。復元リストは削除ログにあります。"
   },
   "wlwbRemovingTpl": {
-    "message": "{current} / {total} を削除中…"
+    "message": "{current} / {total} 件を削除中…"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel}（{percent}% 視聴済み）"
@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "{date} に公開"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "{date} に予定"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "削除するものはありません"
+  },
+  "watchLaterRemovedAll": {
+    "message": "{count} 件を削除 ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "{removed} / {total} 件を削除"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "{count} 本の動画を削除できませんでした — YouTube のメニュー項目が見つかりません。"
+  },
+  "watchLaterRemoveWatched": {
+    "message": "視聴済みを削除"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "「後で見る」から視聴済みの動画をすべて削除"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "{current} / {total} 件を削除中…"
+  },
+  "watchLaterSaveManually": {
+    "message": "このカードの「その他の操作」を開いて手動で保存してください。"
+  },
+  "watchLaterScanning": {
+    "message": "スキャン中…"
   }
 }

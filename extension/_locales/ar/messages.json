@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "تم النشر في {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "مجدول في {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "لا شيء لإزالته"
+  },
+  "watchLaterRemovedAll": {
+    "message": "تمت إزالة {count} ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "تمت إزالة {removed} من أصل {total}"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "تعذّر إزالة {count} من الفيديوهات — تعذّر العثور على عنصر قائمة YouTube."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "إزالة المشاهَد"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "إزالة جميع الفيديوهات المشاهَدة من المشاهدة لاحقًا"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "جارٍ إزالة {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "افتح «المزيد من الإجراءات» على هذه البطاقة لحفظها يدويًا."
+  },
+  "watchLaterScanning": {
+    "message": "جارٍ الفحص…"
   }
 }

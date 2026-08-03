@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+- **UI-copy localization gate.** Watch Later cleanup labels, save guidance,
+  channel-age tooltips, and their accessible names now resolve through locale
+  keys; the copy gate also fingerprints new direct literals at text, title,
+  aria-label, and toast sinks with reviewed brand/format exceptions.
+
 ## [4.51.1] - 2026-08-02 (companion v1.7.0)
 
 ### Added

@@ -1790,6 +1790,114 @@ const AUDIO_TRACK_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(AUDIO_TRACK_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const WATCH_LATER_TRANSLATIONS = {
+  de: {
+    'Published on {date}': 'Veröffentlicht am {date}',
+    'Scheduled for {date}': 'Geplant für {date}',
+    'Nothing to remove': 'Nichts zu entfernen',
+    'Removed {count} ✓': '{count} entfernt ✓',
+    'Removed {removed} of {total}': '{removed} von {total} entfernt',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": '{count} Video(s) konnten nicht entfernt werden – der YouTube-Menüeintrag wurde nicht gefunden.',
+    'Remove Watched': 'Angesehene entfernen',
+    'Remove all watched videos from Watch Later': 'Alle angesehenen Videos aus „Später ansehen“ entfernen',
+    'Removing {current} / {total}…': '{current} / {total} werden entfernt…',
+    'Open More actions on this card to save it manually.': 'Öffne „Weitere Aktionen“ auf dieser Karte, um sie manuell zu speichern.',
+    'Scanning…': 'Wird gescannt…'
+  },
+  es: {
+    'Published on {date}': 'Publicado el {date}',
+    'Scheduled for {date}': 'Programado para {date}',
+    'Nothing to remove': 'Nada que quitar',
+    'Removed {count} ✓': 'Se quitaron {count} ✓',
+    'Removed {removed} of {total}': 'Se quitaron {removed} de {total}',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": 'No se pudieron quitar {count} video(s) — no se encontró el elemento del menú de YouTube.',
+    'Remove Watched': 'Quitar vistos',
+    'Remove all watched videos from Watch Later': 'Quitar todos los videos vistos de Ver más tarde',
+    'Removing {current} / {total}…': 'Quitando {current} / {total}…',
+    'Open More actions on this card to save it manually.': 'Abre «Más acciones» en esta tarjeta para guardarla manualmente.',
+    'Scanning…': 'Analizando…'
+  },
+  fr: {
+    'Published on {date}': 'Publié le {date}',
+    'Scheduled for {date}': 'Programmé pour le {date}',
+    'Nothing to remove': 'Rien à supprimer',
+    'Removed {count} ✓': '{count} supprimé(s) ✓',
+    'Removed {removed} of {total}': '{removed} sur {total} supprimé(s)',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": 'Impossible de supprimer {count} vidéo(s) — l’élément de menu YouTube est introuvable.',
+    'Remove Watched': 'Supprimer les vidéos regardées',
+    'Remove all watched videos from Watch Later': 'Supprimer toutes les vidéos regardées de À regarder plus tard',
+    'Removing {current} / {total}…': 'Suppression de {current} / {total}…',
+    'Open More actions on this card to save it manually.': 'Ouvrez « Plus d’actions » sur cette carte pour l’enregistrer manuellement.',
+    'Scanning…': 'Analyse…'
+  },
+  it: {
+    'Published on {date}': 'Pubblicato il {date}',
+    'Scheduled for {date}': 'Programmato per {date}',
+    'Nothing to remove': 'Niente da rimuovere',
+    'Removed {count} ✓': 'Rimossi {count} ✓',
+    'Removed {removed} of {total}': 'Rimossi {removed} su {total}',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": 'Impossibile rimuovere {count} video: la voce di menu di YouTube non è stata trovata.',
+    'Remove Watched': 'Rimuovi i video guardati',
+    'Remove all watched videos from Watch Later': 'Rimuovi tutti i video guardati da Guarda più tardi',
+    'Removing {current} / {total}…': 'Rimozione di {current} / {total}…',
+    'Open More actions on this card to save it manually.': 'Apri «Altre azioni» su questa scheda per salvarla manualmente.',
+    'Scanning…': 'Scansione…'
+  },
+  pt_BR: {
+    'Published on {date}': 'Publicado em {date}',
+    'Scheduled for {date}': 'Agendado para {date}',
+    'Nothing to remove': 'Nada para remover',
+    'Removed {count} ✓': '{count} removido(s) ✓',
+    'Removed {removed} of {total}': '{removed} de {total} removido(s)',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": 'Não foi possível remover {count} vídeo(s) — o item do menu do YouTube não foi encontrado.',
+    'Remove Watched': 'Remover assistidos',
+    'Remove all watched videos from Watch Later': 'Remover todos os vídeos assistidos de Assistir mais tarde',
+    'Removing {current} / {total}…': 'Removendo {current} / {total}…',
+    'Open More actions on this card to save it manually.': 'Abra Mais ações neste cartão para salvá-lo manualmente.',
+    'Scanning…': 'Verificando…'
+  },
+  ru: {
+    'Published on {date}': 'Опубликовано: {date}',
+    'Scheduled for {date}': 'Запланировано на {date}',
+    'Nothing to remove': 'Нечего удалять',
+    'Removed {count} ✓': 'Удалено: {count} ✓',
+    'Removed {removed} of {total}': 'Удалено {removed} из {total}',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": 'Не удалось удалить {count} видео — пункт меню YouTube не найден.',
+    'Remove Watched': 'Удалить просмотренные',
+    'Remove all watched videos from Watch Later': 'Удалить все просмотренные видео из «Посмотреть позже»',
+    'Removing {current} / {total}…': 'Удаление: {current} / {total}…',
+    'Open More actions on this card to save it manually.': 'Откройте «Другие действия» на этой карточке, чтобы сохранить её вручную.',
+    'Scanning…': 'Сканирование…'
+  },
+  ja: {
+    'Published on {date}': '{date} に公開',
+    'Scheduled for {date}': '{date} に予定',
+    'Nothing to remove': '削除するものはありません',
+    'Removed {count} ✓': '{count} 件を削除 ✓',
+    'Removed {removed} of {total}': '{removed} / {total} 件を削除',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": '{count} 本の動画を削除できませんでした — YouTube のメニュー項目が見つかりません。',
+    'Remove Watched': '視聴済みを削除',
+    'Remove all watched videos from Watch Later': '「後で見る」から視聴済みの動画をすべて削除',
+    'Removing {current} / {total}…': '{current} / {total} 件を削除中…',
+    'Open More actions on this card to save it manually.': 'このカードの「その他の操作」を開いて手動で保存してください。',
+    'Scanning…': 'スキャン中…'
+  },
+  ko: {
+    'Published on {date}': '{date}에 게시됨',
+    'Scheduled for {date}': '{date}에 예약됨',
+    'Nothing to remove': '삭제할 항목 없음',
+    'Removed {count} ✓': '{count}개 삭제됨 ✓',
+    'Removed {removed} of {total}': '{removed} / {total}개 삭제됨',
+    "Couldn't remove {count} video(s) — YouTube's menu item wasn't found.": '{count}개 동영상을 삭제하지 못했습니다 — YouTube 메뉴 항목을 찾을 수 없습니다.',
+    'Remove Watched': '시청한 동영상 삭제',
+    'Remove all watched videos from Watch Later': '나중에 볼 동영상에서 시청한 동영상 모두 삭제',
+    'Removing {current} / {total}…': '{current} / {total}개 삭제 중…',
+    'Open More actions on this card to save it manually.': '이 카드에서 ‘더보기’를 열어 수동으로 저장하세요.',
+    'Scanning…': '검색 중…'
+  }
+};
+for (const [locale, messages] of Object.entries(WATCH_LATER_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {
