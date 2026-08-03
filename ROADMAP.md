@@ -16,14 +16,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P0 — Delivery
 
-- [ ] P0 — Tag and publish the v4.51.1 release
-  Why: `CHANGELOG.md` declares `[4.51.1] - 2026-08-02` and all version sources agree, but the newest git tag and GitHub release is v4.50.7 (2026-07-28). Two versions of shipped work — durable scheduled subscriptions, the Firefox native-messaging bootstrap fix, resume-playback persistence, the download filename cap and ~33 further fixes — are undelivered on a hand-install channel with no auto-update.
-  Evidence: `git tag --sort=-v:refname` tops out at v4.50.7; `gh release list` newest is v4.50.7; `package.json` / `extension/manifest.json` / `docs/architecture.md` all state 4.51.1. RESEARCH.md 2026-08-02 §Security, Privacy, and Reliability.
-  Touches: `npm run release:prepare`, `scripts/generate-release-readiness.js`, `scripts/generate-release-manifest.js`, `scripts/stage-companion-release.js`, git tag, GitHub Release assets.
-  Acceptance: a `v4.51.1` tag exists on the release commit and a GitHub Release carries the full artifact set per the repo release policy (store-safe + GitHub-full Chrome ZIP/CRX and Firefox ZIP/XPI, userscript, SBOM, `release-manifest.json`, `SHA256SUMS`); `npm run release:verify-digests -- --tag v4.51.1` passes.
-  Complexity: S
-  Note: the CRX half needs the external maintainer key — `%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` is absent and `ASTRA_CRX_KEY_PATH` is unset on this machine. If the key cannot be located, move this item to `Roadmap_Blocked.md` rather than publishing a ZIP-only release.
-
 ### P1 — Correctness, security, and broken promises
 
 - [ ] P1 — Populate the three inert predicate-sandbox fields
