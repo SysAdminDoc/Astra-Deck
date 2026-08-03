@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "findings": [
+    "extension/features/subscription-groups/index.js|[aria-label*=\"LIVE\"]",
+    "extension/features/subscription-groups/index.js|[aria-label*=\"ago\"]",
+    "extension/features/subscription-groups/index.js|[aria-label*=\"view\"]",
+    "extension/features/video-hider/index.js|[aria-label*=\":\"]",
+    "extension/features/video-hider/index.js|[aria-label*=\"LIVE\" i]",
+    "extension/features/video-hider/index.js|[aria-label*=\"members only\" i]",
+    "extension/features/video-hider/index.js|[aria-label*=\"view\"]",
+    "extension/features/video-hider/index.js|[aria-label*=\"watching\"]",
+    "extension/ytkit.js|[aria-label*=\":\"]",
+    "extension/ytkit.js|[aria-label*=\"Action menu\"]",
+    "extension/ytkit.js|[aria-label*=\"Edit\"]",
+    "extension/ytkit.js|[aria-label*=\"Jump ahead\" i]",
+    "extension/ytkit.js|[aria-label*=\"LIVE\" i]",
+    "extension/ytkit.js|[aria-label*=\"LIVE\"]",
+    "extension/ytkit.js|[aria-label*=\"Remove videos\"]",
+    "extension/ytkit.js|[aria-label*=\"Sort comments\"]",
+    "extension/ytkit.js|[aria-label*=\"ago\"]",
+    "extension/ytkit.js|[aria-label*=\"commonly skipped section\" i]",
+    "extension/ytkit.js|[aria-label*=\"dislike\" i]",
+    "extension/ytkit.js|[aria-label*=\"like\" i]",
+    "extension/ytkit.js|[aria-label*=\"members only\" i]",
+    "extension/ytkit.js|[aria-label*=\"transcript\" i]",
+    "extension/ytkit.js|[aria-label*=\"view\"]",
+    "extension/ytkit.js|[aria-label*=\"watching\"]",
+    "extension/ytkit.js|[aria-label=\"Edit launcher links\"]"
+  ]
+}

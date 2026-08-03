@@ -5735,7 +5735,7 @@ return response;
         // path.
         cssFeature('hideCreateButton', 'Hide Create Button', 'Remove the "Create" button from the header toolbar', 'Home / Subscriptions', 'plus-circle',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideCreateButtonCss && globalThis.YTKitFeatures.homeSubsCss.buildHideCreateButtonCss())
-            || 'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])'),
+            || 'ytd-masthead #buttons ytd-button-renderer:has(path[d^="M12 3a1 1 0 00-1 1v7H4"])'),
         cssFeature('hideVoiceSearch', 'Hide Voice Search', 'Remove the microphone icon from the search bar', 'Home / Subscriptions', 'mic-off',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideVoiceSearchCss && globalThis.YTKitFeatures.homeSubsCss.buildHideVoiceSearchCss())
             || '#voice-search-button'),
@@ -8438,22 +8438,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 transcriptSection: 'ytd-video-description-transcript-section-renderer',
                 channelInfoCards: 'ytd-video-description-infocards-section-renderer'
             },
-            // Button aria-labels for JS-based hiding (find parent yt-button-view-model)
-            _buttonAriaLabels: {
-                askButton: 'Ask',
-                saveButton: 'Save to playlist',
-                moreActions: 'More actions'
+            // Hook names are resolved by the watch selector pack. The pack
+            // keeps any English label as a final compatibility fallback and
+            // selector health records misses before that fallback is tried.
+            _buttonHooks: {
+                askButton: 'element.askButton',
+                saveButton: 'element.saveButton',
+                moreActions: 'element.moreActions'
             },
             _hideButtons() {
                 const hidden = appState.settings.hiddenWatchElements || [];
                 const metadata = document.querySelector('ytd-watch-metadata');
                 if (!metadata) return;
 
-                // Hide buttons by finding them via aria-label
-                Object.entries(this._buttonAriaLabels).forEach(([key, ariaLabel]) => {
+                // Hide buttons through structural hooks first; the selector
+                // pack owns the locale-sensitive fallback chain.
+                Object.entries(this._buttonHooks).forEach(([key, hook]) => {
                     if (hidden.includes(key)) {
                         try {
-                            const btn = metadata.querySelector(`button[aria-label="${ariaLabel}"]`);
+                            const btn = globalThis.YTKitCore?.findSurfaceHookElements?.(
+                                'watch', hook, { root: metadata }
+                            )?.[0];
                             if (btn) {
                                 const parent = btn.closest('yt-button-view-model') || btn.closest('yt-button-shape');
                                 // Validate parent is a real DOM element (YouTube's Polymer can return Symbol/Proxy objects)
@@ -8480,8 +8485,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._styleElement = injectStyle(cssSelectors.join(', '), this.id);
                 }
 
-                // Use mutation observer for button hiding (aria-label based)
-                const hasButtonsToHide = hidden.some(key => this._buttonAriaLabels[key]);
+                // Use mutation observer to catch dynamically loaded content.
+                const hasButtonsToHide = hidden.some(key => this._buttonHooks[key]);
                 if (hasButtonsToHide) {
                     // Initial hide attempt
                     this._hideButtons();
@@ -14134,10 +14139,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('hideAiSummary', 'Hide AI Summary', 'Remove AI-generated summaries and Ask AI buttons', 'Watch Page', 'bot-off',
             `ytd-engagement-panel-section-list-renderer[target-id*="ai"],
                     ytd-engagement-panel-section-list-renderer[target-id*="summary"],
-                    tp-yt-paper-button[aria-label*="AI"], tp-yt-paper-button[aria-label*="Ask"],
                     ytd-info-panel-content-renderer:has([icon="info_outline"]),
                     [class*="ai-summary"], [class*="aiSummary"],
-                    ytd-reel-shelf-renderer:has([is-ask-ai]) { display: none !important; }`),
+                    ytd-reel-shelf-renderer:has([is-ask-ai]),
+                    conversational-ui-watch-metadata-button-view-model,
+                    [is-ask-ai] { display: none !important; }`),
         cssFeature('hideDescriptionExtras', 'Hide Description Extras', 'Remove extra elements in the description area', 'Watch Page', 'file-x',
             'ytd-video-description-transcript-section-renderer, ytd-structured-description-content-renderer > *:not(ytd-text-inline-expander)'),
         cssFeature('hideHashtags', 'Hide Hashtags', 'Remove hashtag links above video titles', 'Watch Page', 'hash',
@@ -14230,8 +14236,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-engagement-bar #dislike-button,
                     #comments ytd-comment-action-buttons-renderer dislike-button-view-model,
                     #comments ytd-comment-view-model #dislike-button,
-                    #comments ytd-comment-renderer #dislike-button,
-                    #comments button[aria-label*="dislike this comment" i] { display: none !important; }`),
+                    #comments ytd-comment-renderer #dislike-button { display: none !important; }`),
         cssFeature('hideCommentActionMenu', 'Hide Comment Actions', 'Remove action menu from individual comments', 'Watch Page', 'more-horizontal',
             '#action-menu.ytd-comment-view-model, #action-menu.ytd-comment-renderer'),
         cssFeature('condenseComments', 'Condense Comments', 'Reduce spacing between comments for a tighter layout', 'Watch Page', 'minimize-2',
@@ -15202,7 +15207,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('hidePaidPromotionWatch', 'Hide Paid Promotion', 'Remove "paid promotion" labels on watch pages', 'Watch Page', 'dollar-sign',
             '.ytp-paid-content-overlay'),
         cssFeature('hideChannelJoinButton', 'Hide Channel Join Button', 'Remove the Join/membership button on channel pages', 'Watch Page', 'dollar-sign',
-            '.ytFlexibleActionsViewModelAction:has(button[aria-label="Join this channel"])'),
+            '.ytFlexibleActionsViewModelAction:has(#sponsor-button), #sponsor-button'),
         {
             id: 'hideVideoEndContent',
             name: 'Hide Video End Content',
@@ -15385,7 +15390,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         cssFeature('hideFundraiser', 'Hide Fundraisers', 'Remove fundraiser and donation badges', 'Watch Page', 'heart-off',
             `ytd-donation-shelf-renderer,
-                    ytd-button-renderer[button-next]:has([aria-label*="Donate"]),
                     .ytp-donation-shelf { display: none !important; }`),
         {
             id: 'hiddenChatElementsManager',
@@ -16381,19 +16385,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'eye-off',
             isParent: true,
             _styleElement: null,
-            _selectors: {
-                like: 'ytd-segmented-like-dislike-button-renderer like-button-view-model, #segmented-like-button',
-                share: 'ytd-watch-metadata button-view-model:has(button[aria-label="Share"]), #top-level-buttons-computed ytd-button-renderer:has(button[aria-label="Share"])',
-                ask: '#flexible-item-buttons yt-button-view-model:has(button[aria-label="Ask"]), ytd-watch-metadata button-view-model:has(button[aria-label*="AI"]), ytd-watch-metadata button-view-model:has(button[aria-label="Ask"]), conversational-ui-watch-metadata-button-view-model',
-                clip: 'ytd-watch-metadata button-view-model:has(button[aria-label="Clip"]), #top-level-buttons-computed ytd-button-renderer:has(button[aria-label="Clip"])',
-                thanks: 'ytd-watch-metadata button-view-model:has(button[aria-label="Thanks"]), #top-level-buttons-computed ytd-button-renderer:has(button[aria-label="Thanks"])',
-                save: 'ytd-watch-metadata button-view-model:has(button[aria-label="Save to playlist"]), #top-level-buttons-computed ytd-button-renderer:has(button[aria-label="Save"])',
-                sponsor: '#sponsor-button',
-                moreActions: '#actions-inner #button-shape > button[aria-label="More actions"]'
-            },
             init() {
                 const hidden = appState.settings.hiddenActionButtons || [];
-                const selectors = hidden.map(key => this._selectors[key]).filter(Boolean).join(', ');
+                const selectors = hidden.flatMap((key) => {
+                    const hook = `action.${key}`;
+                    const chain = globalThis.YTKitCore?.getSurfaceHookSelectorChain?.('watch', hook) || [];
+                    if (chain.length) {
+                        // Resolve once so structural misses and any final
+                        // label fallback are visible in selector health.
+                        globalThis.YTKitCore?.findSurfaceHookElements?.('watch', hook, { root: document });
+                    }
+                    return chain;
+                }).join(', ');
                 if (selectors) {
                     this._styleElement = injectStyle(selectors, this.id);
                 }
@@ -19464,7 +19467,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
 
             _dismiss() {
-                const btn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"], .yt-confirm-dialog-renderer #confirm-button, [aria-label="Yes, keep playing"], .ytd-popup-container tp-yt-paper-button#button');
+                const btn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"], .yt-confirm-dialog-renderer #confirm-button, .ytd-popup-container tp-yt-paper-button#button');
                 if (btn) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
                 const video = getMainVideoElement();
                 if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
@@ -26951,19 +26954,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _dismiss() {
                 // Cookie consent / GDPR
-                const consentBtn = document.querySelector('button[aria-label*="Accept"], button[aria-label*="Reject all"], tp-yt-paper-dialog #dismiss-button, .consent-bump-v2-lightbox button[aria-label*="Accept"]');
+                const consentBtn = document.querySelector('tp-yt-paper-dialog #accept-button, tp-yt-paper-dialog #reject-button, tp-yt-paper-dialog #dismiss-button, .consent-bump-v2-lightbox button');
                 if (consentBtn && consentBtn.offsetParent !== null) consentBtn.click();
 
                 // "No thanks" on various prompts
-                const noThanksBtn = document.querySelector('yt-button-renderer#dismiss-button button, tp-yt-paper-dialog button[aria-label*="No thanks"], tp-yt-paper-dialog button[aria-label*="Dismiss"]');
+                const noThanksBtn = document.querySelector('yt-button-renderer#dismiss-button button, tp-yt-paper-dialog #dismiss-button button, tp-yt-paper-dialog #cancel-button');
                 if (noThanksBtn && noThanksBtn.offsetParent !== null) noThanksBtn.click();
 
                 // Survey/feedback overlay
-                const surveyDismiss = document.querySelector('.ytd-popup-container button[aria-label="Close"], .ytd-enforcement-message-view-model button, ytd-survey-renderer #dismiss-button button');
+                const surveyDismiss = document.querySelector('.ytd-enforcement-message-view-model button, ytd-survey-renderer #dismiss-button button');
                 if (surveyDismiss && surveyDismiss.offsetParent !== null) surveyDismiss.click();
 
                 // "YouTube Premium" popup
-                const premiumDismiss = document.querySelector('ytd-mealbar-promo-renderer #dismiss-button button, tp-yt-paper-dialog[id*="mealbar"] button[aria-label*="Dismiss"], tp-yt-paper-dialog[id*="mealbar"] #dismiss-button button');
+                const premiumDismiss = document.querySelector('ytd-mealbar-promo-renderer #dismiss-button button, tp-yt-paper-dialog[id*="mealbar"] #dismiss-button button');
                 if (premiumDismiss && premiumDismiss.offsetParent !== null) premiumDismiss.click();
             },
 
@@ -26987,7 +26990,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
 
             _dismiss() {
-                const btn = document.querySelector('yt-player-error-message-renderer #button button[aria-label="I understand and wish to proceed"]');
+                const btn = document.querySelector('yt-player-error-message-renderer #button button');
                 if (btn && btn.offsetParent !== null) {
                     btn.click();
                     DebugManager.log('ContentWarning', 'Auto-dismissed content warning');
@@ -28680,7 +28683,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._endedHandler = () => {
-                    const nextBtn = document.querySelector('#navigation-button-down button, [aria-label="Next video"]');
+                    const nextBtn = document.querySelector('#navigation-button-down button, #navigation-button-down');
                     if (nextBtn) nextBtn.click();
                 };
                 this._attach();
@@ -33123,9 +33126,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             'Remove the "Add to queue" overlay button that appears on thumbnail hover',
             'Home / Subscriptions',
             'list-x',
-            'ytd-thumbnail-overlay-toggle-button-renderer[aria-label="Add to queue"], ' +
-            'ytd-thumbnail-overlay-toggle-button-renderer:has(button[aria-label="Add to queue"]), ' +
-            'yt-icon-button.ytd-thumbnail:has(yt-button-shape button[aria-label="Add to queue"])'
+            'ytd-thumbnail-overlay-toggle-button-renderer, ' +
+            'yt-icon-button.ytd-thumbnail:has(ytd-thumbnail-overlay-toggle-button-renderer)'
         ),
         cssFeature(
             'fullTitles',

@@ -38,8 +38,8 @@ test('hideCreateButton does not depend on the English aria-label alone', () => {
     const start = modSrc.indexOf('function buildHideCreateButtonCss');
     assert.ok(start > -1, 'the create-button rule builder must exist');
     const css = modSrc.slice(start, start + 900);
-    assert.match(css, /button\[aria-label="Create"\]/,
-        'the English label stays as one anchor');
+    assert.doesNotMatch(css, /button\[aria-label="Create"\]/,
+        'the module must not depend on the English label');
     assert.match(css, /ytd-masthead #buttons ytd-button-renderer:has\(path\[d\^="M12 3a1 1 0 00-1 1v7H4"\]\)/,
         'a language-independent glyph anchor must exist');
 });

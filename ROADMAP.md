@@ -27,13 +27,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Replace English exact-match `aria-label` selectors with structural hooks, and gate against new ones
-  Why: roughly 60 shipped selectors match English `aria-label` text exactly, so the features behind them are dead on every non-English YouTube UI. The watch-action button map alone silently disables nine element-manager toggles for non-English users. Without a gate the count grows with every feature.
-  Evidence: `extension/ytkit.js:16381-16387` (Share/Ask/Clip/Thanks/Save/More actions map), `:8437-8441` (`_buttonAriaLabels`), `:15347-15360` (14 "Jump ahead" selectors), `:26915-26951` (consent dialogs), `:33087-33610` (Watch Later workbench), `:19428`, `:22580`, `:28644`; `extension/features/home-subs-css/index.js:25`; `extension/features/subscription-groups/index.js:595,643,644,1382`. The live-chat "Popout chat" case is already tracked in `Roadmap_Blocked.md` — exclude it.
-  Touches: `extension/core/selector-packs/*`, `extension/ytkit.js`, the listed feature modules, `scripts/check-i18n.js` or a new gate, `tests/selector-regression.test.js`.
-  Acceptance: selectors resolve through `core/selectors.js` packs using renderer tags, `data-*` attributes or DOM position, with English text only as a last-resort fallback that records a selector-health miss; a check gate fails on a new `[aria-label="..."]` / `[aria-label*="..."]` literal in shipped feature code outside the pack layer.
-  Complexity: L
-
 - [ ] P2 — Audio sync offset on the existing MAIN-world audio graph
   Why: the most-requested open enhancement on Enhancer for YouTube, and Astra already owns every prerequisite — a single shared `AudioContext` with `createMediaElementSource`, gain, compressor and stereo-panner nodes, plus a WeakMap-cached reconnect path across SPA navigation. Adding audio delay is one `createDelay` node in a graph that is already built, tested and reconnect-safe.
   Evidence: `extension/ytkit-main.js:499-594` (graph construction; no `createDelay`); Enhancer for YouTube open enhancement "Audio Sync Adjustment" (2026-06-09), https://github.com/YouTube-Enhancer/extension/issues.
