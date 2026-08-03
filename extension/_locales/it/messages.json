@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Pubblicato il {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Programmato per {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Niente da rimuovere"
+  },
+  "watchLaterRemovedAll": {
+    "message": "Rimossi {count} ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "Rimossi {removed} su {total}"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "Impossibile rimuovere {count} video: la voce di menu di YouTube non è stata trovata."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Rimuovi i video guardati"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Rimuovi tutti i video guardati da Guarda più tardi"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "Rimozione di {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Apri «Altre azioni» su questa scheda per salvarla manualmente."
+  },
+  "watchLaterScanning": {
+    "message": "Scansione…"
   }
 }

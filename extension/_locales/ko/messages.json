@@ -4131,7 +4131,7 @@
     "message": "동영상 {count}개를 제거했습니다{remaining}. 복구 목록은 제거 기록에 있습니다."
   },
   "wlwbRemovingTpl": {
-    "message": "{current} / {total} 제거 중…"
+    "message": "{current} / {total}개 삭제 중…"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel}({percent}% 시청함)"
@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "{date}에 게시됨"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "{date}에 예약됨"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "삭제할 항목 없음"
+  },
+  "watchLaterRemovedAll": {
+    "message": "{count}개 삭제됨 ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "{removed} / {total}개 삭제됨"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "{count}개 동영상을 삭제하지 못했습니다 — YouTube 메뉴 항목을 찾을 수 없습니다."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "시청한 동영상 삭제"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "나중에 볼 동영상에서 시청한 동영상 모두 삭제"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "{current} / {total}개 삭제 중…"
+  },
+  "watchLaterSaveManually": {
+    "message": "이 카드에서 ‘더보기’를 열어 수동으로 저장하세요."
+  },
+  "watchLaterScanning": {
+    "message": "검색 중…"
   }
 }

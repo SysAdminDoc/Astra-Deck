@@ -9,7 +9,8 @@ const {
     buildUiCopyBaseline,
     checkUiCopyBaseline,
     collectHtmlLiterals,
-    collectJsLiterals
+    collectJsLiterals,
+    collectStrictJsLiterals
 } = require('../scripts/check-localizable-ui-copy');
 const { generatePseudolocale, pseudolocalizeMessage } = require('../scripts/generate-pseudolocale');
 
@@ -46,6 +47,39 @@ test('localized, reviewed-static, and annotated technical strings do not grow UI
         { sink: 'html-text:button', value: 'New action' },
         { sink: 'html-attr:aria-label', value: 'New action' }
     ]);
+});
+
+test('strict UI-copy sinks reject direct literals while allowing t() and reviewed names', () => {
+    const findings = collectStrictJsLiterals([
+        "button.textContent = 'Needs localization';",
+        "button.title = `Tooltip copy`;",
+        "button.setAttribute('aria-label', 'Accessible copy');",
+        "showToast('Toast copy');",
+        "button.textContent = t('buttonLabel', 'Localized');",
+        "button.textContent = 'Astra Deck';",
+        "button.textContent = 'JSON';",
+        "button.textContent = statusText;"
+    ].join('\n'));
+    assert.deepEqual(findings, [
+        { sink: 'assignment:textContent', value: 'Needs localization' },
+        { sink: 'assignment:title', value: 'Tooltip copy' },
+        { sink: 'feedback:showToast', value: 'Toast copy' },
+        { sink: 'attribute:aria-label', value: 'Accessible copy' }
+    ]);
+});
+
+test('strict UI-copy sink changes identify a new direct literal separately from the legacy ratchet', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-i18n-strict-'));
+    const extensionDir = path.join(root, 'extension');
+    fs.mkdirSync(extensionDir, { recursive: true });
+    const filePath = path.join(extensionDir, 'panel.js');
+    fs.writeFileSync(filePath, "status.textContent = 'Existing copy';\n", 'utf8');
+    const baseline = buildUiCopyBaseline(extensionDir);
+
+    fs.appendFileSync(filePath, "showToast('New visible feedback');\n", 'utf8');
+    const changed = buildUiCopyBaseline(extensionDir);
+    const failures = checkUiCopyBaseline(changed, baseline);
+    assert.ok(failures.some((failure) => /strict UI-copy sink changed/.test(failure)));
 });
 
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {

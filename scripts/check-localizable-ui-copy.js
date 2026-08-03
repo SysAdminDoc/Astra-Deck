@@ -9,7 +9,10 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { isIntentionallyIdenticalMessage } = require('./i18n-policy');
+const {
+    isIntentionallyIdenticalMessage,
+    REVIEWED_EXACT_MESSAGES
+} = require('./i18n-policy');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const EXTENSION_DIR = path.join(REPO_ROOT, 'extension');
@@ -19,6 +22,26 @@ const JS_SINKS = Object.freeze([
     { name: 'property', re: /(?:^|[,{]\s*)(name|description|label|copy|emptyText|buttonLabel|placeholder|title)\s*:\s*/gm },
     { name: 'feedback', re: /\b(showToast|showStatus|setStatus|alert|confirm|prompt)\s*\(\s*/g },
     { name: 'attribute', re: /\.setAttribute\(\s*(['"])(aria-label|aria-description|title|placeholder)\1\s*,\s*/g }
+]);
+// New UI copy must not bypass the locale helper at the highest-impact sinks.
+// The legacy fingerprint above remains for the existing migration backlog;
+// this narrower detector gives new textContent/title/aria-label/toast changes
+// a sink-specific failure instead of relying only on a whole-file hash.
+const STRICT_UI_COPY_ALLOWLIST = new Set([
+    ...REVIEWED_EXACT_MESSAGES,
+    'API',
+    'AV1',
+    'CSV',
+    'CSS',
+    'HTML',
+    'JSON',
+    'OPML',
+    'URL'
+]);
+const STRICT_JS_SINKS = Object.freeze([
+    { name: 'assignment', re: /\b(textContent|title|ariaLabel)\s*=\s*/g },
+    { name: 'feedback', re: /\bshowToast\s*\(\s*/g },
+    { name: 'attribute', re: /\.setAttribute\(\s*(['"])(aria-label|title)\1\s*,\s*/g }
 ]);
 
 function toPosix(filePath) {
@@ -60,6 +83,11 @@ function isCandidateText(raw) {
     return text.length > 0 && /\p{L}/u.test(text) && !isIntentionallyIdenticalMessage(text);
 }
 
+function isStrictCandidateText(raw) {
+    const text = String(raw || '').trim();
+    return text.length > 0 && /\p{L}/u.test(text) && !STRICT_UI_COPY_ALLOWLIST.has(text);
+}
+
 function isSuppressed(source, literalStart) {
     const lineStart = source.lastIndexOf('\n', literalStart - 1) + 1;
     const previousLineStart = source.lastIndexOf('\n', Math.max(0, lineStart - 2)) + 1;
@@ -79,6 +107,29 @@ function collectJsLiterals(source) {
         }
     }
     return findings;
+}
+
+function collectStrictJsLiterals(source) {
+    const findings = [];
+    for (const sink of STRICT_JS_SINKS) {
+        sink.re.lastIndex = 0;
+        let match;
+        while ((match = sink.re.exec(source)) !== null) {
+            const literal = readLiteralAt(source, sink.re.lastIndex);
+            if (!literal || !isStrictCandidateText(literal.raw) || isSuppressed(source, literal.start)) continue;
+            const sinkName = sink.name === 'attribute' ? match[2] : match[1];
+            findings.push({ sink: `${sink.name}:${sinkName || 'showToast'}`, value: literal.raw });
+        }
+    }
+    return findings;
+}
+
+function digestFindings(findings) {
+    const canonical = findings
+        .map(({ sink, value }) => `${sink}\0${value}`)
+        .sort()
+        .join('\n');
+    return crypto.createHash('sha256').update(canonical).digest('hex');
 }
 
 function collectHtmlLiterals(source) {
@@ -113,15 +164,18 @@ function buildUiCopyBaseline(extensionDir = EXTENSION_DIR) {
         const findings = path.extname(filePath) === '.html'
             ? collectHtmlLiterals(source)
             : collectJsLiterals(source);
+        const strictFindings = path.extname(filePath) === '.js'
+            ? collectStrictJsLiterals(source)
+            : [];
         if (!findings.length) continue;
         const rel = toPosix(path.relative(REPO_ROOT, filePath));
-        const canonical = findings
-            .map(({ sink, value }) => `${sink}\0${value}`)
-            .sort()
-            .join('\n');
         entries[rel] = {
             count: findings.length,
-            digest: crypto.createHash('sha256').update(canonical).digest('hex')
+            digest: digestFindings(findings),
+            ...(strictFindings.length ? {
+                strictCount: strictFindings.length,
+                strictDigest: digestFindings(strictFindings)
+            } : {})
         };
     }
     return { schemaVersion: 1, entries };
@@ -140,6 +194,15 @@ function checkUiCopyBaseline(current, baseline) {
         else if (!actual) failures.push(`${file}: hardcoded UI copy was removed; ratchet the baseline`);
         else if (expected.count !== actual.count || expected.digest !== actual.digest) {
             failures.push(`${file}: UI-copy fingerprint changed (${expected.count} -> ${actual.count}); route new copy through locale keys or ratchet after removals`);
+        }
+        if (expected && actual) {
+            const expectedStrictCount = expected.strictCount || 0;
+            const actualStrictCount = actual.strictCount || 0;
+            const expectedStrictDigest = expected.strictDigest || null;
+            const actualStrictDigest = actual.strictDigest || null;
+            if (expectedStrictCount !== actualStrictCount || expectedStrictDigest !== actualStrictDigest) {
+                failures.push(`${file}: strict UI-copy sink changed (${expectedStrictCount} -> ${actualStrictCount}); route textContent/title/aria-label/showToast copy through t()`);
+            }
         }
     }
     return failures;
@@ -198,6 +261,7 @@ module.exports = {
     checkUiCopyBaseline,
     collectHtmlLiterals,
     collectJsLiterals,
+    collectStrictJsLiterals,
     parseArgs,
     readLiteralAt
 };

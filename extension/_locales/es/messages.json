@@ -4131,7 +4131,7 @@
     "message": "Se eliminaron {count} video(s){remaining}. La lista de recuperación está en el registro de eliminaciones."
   },
   "wlwbRemovingTpl": {
-    "message": "Eliminando {current} / {total}…"
+    "message": "Quitando {current} / {total}…"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel} ({percent} % visto)"
@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Publicado el {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Programado para {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Nada que quitar"
+  },
+  "watchLaterRemovedAll": {
+    "message": "Se quitaron {count} ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "Se quitaron {removed} de {total}"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "No se pudieron quitar {count} video(s) — no se encontró el elemento del menú de YouTube."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Quitar vistos"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Quitar todos los videos vistos de Ver más tarde"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "Quitando {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Abre «Más acciones» en esta tarjeta para guardarla manualmente."
+  },
+  "watchLaterScanning": {
+    "message": "Analizando…"
   }
 }

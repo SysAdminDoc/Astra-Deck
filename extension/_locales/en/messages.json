@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Published on {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Scheduled for {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Nothing to remove"
+  },
+  "watchLaterRemovedAll": {
+    "message": "Removed {count} ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "Removed {removed} of {total}"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "Couldn't remove {count} video(s) — YouTube's menu item wasn't found."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Remove Watched"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Remove all watched videos from Watch Later"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "Removing {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Open More actions on this card to save it manually."
+  },
+  "watchLaterScanning": {
+    "message": "Scanning…"
   }
 }

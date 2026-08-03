@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Publié le {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Programmé pour le {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Rien à supprimer"
+  },
+  "watchLaterRemovedAll": {
+    "message": "{count} supprimé(s) ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "{removed} sur {total} supprimé(s)"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "Impossible de supprimer {count} vidéo(s) — l’élément de menu YouTube est introuvable."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Supprimer les vidéos regardées"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Supprimer toutes les vidéos regardées de À regarder plus tard"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "Suppression de {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Ouvrez « Plus d’actions » sur cette carte pour l’enregistrer manuellement."
+  },
+  "watchLaterScanning": {
+    "message": "Analyse…"
   }
 }

@@ -245,6 +245,12 @@ function renderMarkdown(report, options = {}) {
         lines.push(`Run \`node scripts/i18n-coverage.js --warn-feature-identical-above ${DEFAULT_FEATURE_WARNING_BASELINE}\` to warn when a locale exceeds the current unresolved feature-copy baseline.`);
     }
     lines.push('');
+    lines.push('## UI-Copy Gate');
+    lines.push('');
+    lines.push('Run `npm run i18n:copy:gate` to check both the legacy UI-copy ratchet and the strict sink guard. New literal copy assigned to `textContent`, `title`, or `aria-label`, or passed as the first argument to `showToast`, must resolve through `t()`; reviewed brand and format names are the only explicit static exceptions.');
+    lines.push('');
+    lines.push('The existing fingerprint baseline records pre-i18n migration debt so it can be retired incrementally. A strict sink fingerprint is stored alongside it and reports the exact high-impact sink class when a direct literal is introduced or changed.');
+    lines.push('');
     lines.push('## Reading the Columns');
     lines.push('');
     lines.push('- **Translated** - keys whose value is different from the EN message.');

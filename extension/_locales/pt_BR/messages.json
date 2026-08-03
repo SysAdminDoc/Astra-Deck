@@ -5335,5 +5335,38 @@
   },
   "subscriptionDigestMarkAllReadEmpty": {
     "message": "Nothing new since your last visit"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Publicado em {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Agendado para {date}"
+  },
+  "watchLaterNothingToRemove": {
+    "message": "Nada para remover"
+  },
+  "watchLaterRemovedAll": {
+    "message": "{count} removido(s) ✓"
+  },
+  "watchLaterRemovedPartial": {
+    "message": "{removed} de {total} removido(s)"
+  },
+  "watchLaterRemoveFailed": {
+    "message": "Não foi possível remover {count} vídeo(s) — o item do menu do YouTube não foi encontrado."
+  },
+  "watchLaterRemoveWatched": {
+    "message": "Remover assistidos"
+  },
+  "watchLaterRemoveWatchedAria": {
+    "message": "Remover todos os vídeos assistidos de Assistir mais tarde"
+  },
+  "watchLaterRemovingProgress": {
+    "message": "Removendo {current} / {total}…"
+  },
+  "watchLaterSaveManually": {
+    "message": "Abra Mais ações neste cartão para salvá-lo manualmente."
+  },
+  "watchLaterScanning": {
+    "message": "Verificando…"
   }
 }
