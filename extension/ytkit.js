@@ -5,6 +5,11 @@
 (async function() {
     'use strict';
 
+    // Keep the legacy settings-panel fallback aligned with the peeled
+    // Download UI module: a cold companion start needs the full 12-second
+    // poll window (8 x 1.5 seconds).
+    const AUTO_START_RETRY_BUDGET = 8;
+
     const {
         addMutationRule,
         addNavigateRule,
@@ -43383,7 +43388,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             banner.dataset.state = 'checking';
                             text.textContent = 'Trying to start the Astra Downloader service…';
                             MediaDLManager.resetAutoStart();
-                            const r = await MediaDLManager.tryAutoStart(5);
+                            const r = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
                                 text.textContent = `Running${r.version ? ' (v' + r.version + ')' : ''} \u2014 yt-dlp server ready`;

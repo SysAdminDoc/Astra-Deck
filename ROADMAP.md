@@ -25,13 +25,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
   Acceptance: each of the eight is either moved back to `ROADMAP.md` at its original priority, or its `Blocker:` line is rewritten to state a real, current blocker. No item retains the Markdown-staging justification.
   Complexity: S
 
-- [ ] P1 — Raise companion auto-start retry budgets above the documented cold-start time
-  Why: `CLAUDE.md` records that a cold 40 MB one-file companion start takes ~12 s. The main download path was bumped to `tryAutoStart(8)` (~12 s), but the default is still `4` (~6 s) and every user-facing recovery path passes `5` (~7.5 s) — so the "try starting the server again" button gives up before a cold start can finish and reports failure on a companion that was about to come up.
-  Evidence: `extension/features/download-ui/index.js:428` (default `4`), `:639`, `:696`, `:1184` (recovery paths passing `5`), `:1154` (main path `8`); `extension/ytkit.js:43347`.
-  Touches: `extension/features/download-ui/index.js`, `extension/ytkit.js` fallback twin, `tests/download-health-boundary.test.js`.
-  Acceptance: a single named constant expresses the cold-start budget and every recovery call site uses it; the `likelyNeverInstalled ? 2 : 8` fast path is preserved; a test pins that no recovery call site polls for less than the cold-start budget.
-  Complexity: S
-
 ### P2 — Locale fidelity, capability, and maintainability
 
 - [ ] P2 — Replace English exact-match `aria-label` selectors with structural hooks, and gate against new ones
