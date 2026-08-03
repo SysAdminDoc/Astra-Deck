@@ -13,6 +13,8 @@ const MODULE_SOURCE = fs.readFileSync(
 );
 
 require('../../extension/core/text-metrics.js');
+require('../../extension/core/date-time.js');
+require('../../extension/core/predicate-sandbox.js');
 
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -38,6 +40,32 @@ function fakeVideoCard(title, rowText = '') {
         querySelectorAll(selector) {
             if (selector === 'a[href]') return [];
             if (selector.includes('#metadata-line')) return rows;
+            return [];
+        }
+    };
+}
+
+function predicateVideoCard({ title = 'Example video', rowText = '', short = false, membersOnly = false } = {}) {
+    const titleNode = { textContent: title };
+    const row = { textContent: rowText, getAttribute: () => null };
+    const shortLink = {
+        href: '/shorts/abc12345678',
+        getAttribute: name => name === 'href' ? '/shorts/abc12345678' : null
+    };
+    const membersBadge = {
+        textContent: 'Members only',
+        getAttribute: name => name === 'aria-label' ? 'Members only' : null
+    };
+    return {
+        querySelector(selector) {
+            if (selector.includes('#video-title') || selector.includes('.title')) return titleNode;
+            if (short && selector.includes('/shorts/')) return shortLink;
+            if (membersOnly && selector.includes('members only')) return membersBadge;
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector === 'a[href]') return short ? [shortLink] : [];
+            if (selector.includes('#metadata-line')) return rowText ? [row] : [];
             return [];
         }
     };
@@ -112,6 +140,45 @@ test('Video Hider live/upcoming regex pins read rows in module and monolith', ()
             `${label} upcoming detection must inspect metadata rows`);
         assert.doesNotMatch(block, /\.test\(metadataText\)/,
             `${label} type detection must not scan the title-inclusive metadata text`);
+    }
+});
+
+test('Video Hider predicate context derives age, Shorts, and members-only fields', () => {
+    const { mod } = loadModule();
+    const originalWindow = globalThis.window;
+    globalThis.window = { location: { pathname: '/' } };
+    try {
+        const markedCard = predicateVideoCard({ rowText: '2 days ago', short: true, membersOnly: true });
+        const baseCtx = mod.createHideVideosFromHomeFeature({
+            PredicateSandbox: globalThis.YTKitCore.createPredicateSandbox()
+        })._buildPredicateCtx(markedCard, 'abc12345678', {
+            id: 'UC123',
+            handle: '@example',
+            name: 'Example channel'
+        });
+
+        assert.equal(baseCtx.ageDays, 2);
+        assert.equal(baseCtx.isShort, true);
+        assert.equal(baseCtx.isMembersOnly, true);
+
+        for (const code of ['ctx.ageDays > 1', 'ctx.isShort', 'ctx.isMembersOnly']) {
+            const feature = mod.createHideVideosFromHomeFeature({
+                appState: { settings: { advancedLocalPredicateCode: code } },
+                PredicateSandbox: globalThis.YTKitCore.createPredicateSandbox()
+            });
+            assert.equal(feature._getPredicateEvaluator()(baseCtx), true, `predicate should match ${code}`);
+        }
+
+        const unknownCtx = mod.createHideVideosFromHomeFeature()._buildPredicateCtx(
+            predicateVideoCard({ rowText: '1,234 views' }),
+            'abc12345678',
+            null
+        );
+        assert.equal(unknownCtx.ageDays, null);
+        assert.equal(unknownCtx.isShort, null);
+        assert.equal(unknownCtx.isMembersOnly, null);
+    } finally {
+        globalThis.window = originalWindow;
     }
 });
 
