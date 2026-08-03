@@ -17220,11 +17220,16 @@
                     const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
                         .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
                         .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+                    const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '');
                     const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                     const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
                     const hasDuration = this._extractDuration(element) > 0;
                     const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
                     const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
+                    const hasLiveMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, yt-icon-badge-shape[overlay-style="LIVE"], [aria-label*="LIVE" i]');
+                    const hasUpcomingMarker = !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"], [overlay-style="UPCOMING"], [data-upcoming], [is-upcoming]');
+                    const hasMixMarker = !!element.querySelector('[is-mix], ytd-radio-renderer, [data-list-type="RD"], a[href*="start_radio=1"], a[href*="list=RD"]');
+                    const hasPlaylistMarker = !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer, ytd-playlist-video-renderer, [is-playlist], [data-list-type="playlist"]');
                     return {
                         title,
                         metadataText,
@@ -17232,15 +17237,18 @@
                         views: this._extractViewCount(element),
                         watchedRatio: this._extractWatchedRatio(element),
                         ageDays: this._extractPredicateAgeDays(rowsText),
-                        isLive: !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, [aria-label*="LIVE"]')
-                            || /\b(live|watching now)\b/.test(rowsText) && !hasDuration,
-                        isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(rowsText),
+                        isLive: hasLiveMarker
+                            || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
+                        isUpcoming: hasUpcomingMarker
+                            || /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i.test(normalizedRowsText),
                         // Type detection reads ONLY badge/metadata rows — matching
                         // against the title hid videos titled "How to mix audio",
                         // "movie review", or "top 5 videos".
-                        isMix: /\b(youtube\s+mix|mix)\b/.test(rowsText) || /(?:start_radio=1|list=rd)/i.test(hrefText),
-                        isPlaylist: !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer')
-                            || /\bplaylist\b|\b\d+\s+videos?\b/.test(rowsText),
+                        isMix: hasMixMarker
+                            || /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
+                            || /(?:start_radio=1|list=rd)/i.test(hrefText),
+                        isPlaylist: hasPlaylistMarker
+                            || /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
                         isMovie: /\b(movie|free with ads|buy or rent|rent or buy)\b/.test(rowsText),
                         isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(rowsText),
                         isShort,
