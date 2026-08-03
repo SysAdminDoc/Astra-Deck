@@ -2,6 +2,7 @@
 
 import getpass
 import json
+import logging
 import math
 import os
 import re
@@ -13,6 +14,9 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
+
+
+_LOGGER = logging.getLogger(__name__)
 
 try:
     from ._compat import make_legacy_resolver
@@ -177,6 +181,19 @@ def _is_allowed_cookie_domain(domain):
     )
 
 
+def _log_warning(logger, message):
+    """Report a recoverable companion failure without masking the original path."""
+    text = f"WARNING: {message}"
+    try:
+        if logger:
+            logger(text)
+        else:
+            _LOGGER.warning(text)
+    except Exception:
+        # reason: diagnostic logging must never turn best-effort cleanup into a failure
+        _LOGGER.warning(text)
+
+
 def _windows_cookie_identity():
     user = os.environ.get('USERNAME') or getpass.getuser()
     domain = os.environ.get('USERDOMAIN')
@@ -294,11 +311,13 @@ def write_cookies_netscape(cookies, target_path, *, logger=None):
             try:
                 os.close(descriptor)
             except OSError:
+                # reason: the descriptor is already unusable while unwinding a failed jar write
                 pass
         try:
             if temporary.exists():
                 temporary.unlink()
         except OSError:
+            # reason: the temporary jar may already have been removed by the failed operation
             pass
         return None
 
@@ -312,8 +331,10 @@ def cleanup_stale_cookie_jars(install_dir, older_than_seconds=300, *, clock=time
                 if now - entry.stat().st_mtime > older_than_seconds:
                     entry.unlink()
             except OSError:
+                # reason: a concurrent cleanup or antivirus scan may own the stale file
                 pass
     except OSError:
+        # reason: a missing or inaccessible install directory has no stale jars to sweep
         pass
 
 
@@ -346,35 +367,34 @@ def terminate_process_tree(proc, timeout=3, *, platform=None, runner=None,
             )
             try:
                 proc.wait(timeout=timeout)
-            except Exception:
-                pass
+            except Exception as error:
+                _log_warning(logger, f"taskkill completed but process wait failed: {error}")
             return
         except Exception as error:
-            if logger:
-                logger(f"Process tree termination warning: {error}")
+            _log_warning(logger, f"Windows taskkill failed: {error}")
         try:
             proc.terminate()
             proc.wait(timeout=timeout)
             return
-        except Exception:
-            pass
+        except Exception as error:
+            _log_warning(logger, f"process terminate fallback failed: {error}")
         try:
             proc.kill()
-        except Exception:
-            pass
+        except Exception as error:
+            _log_warning(logger, f"process kill fallback failed: {error}")
         return
     try:
         proc.terminate()
         proc.wait(timeout=timeout)
         return
     except timeout_error:
-        pass
-    except Exception:
-        pass
+        _log_warning(logger, "process terminate timed out; trying kill fallback")
+    except Exception as error:
+        _log_warning(logger, f"process terminate failed: {error}")
     try:
         proc.kill()
-    except Exception:
-        pass
+    except Exception as error:
+        _log_warning(logger, f"process kill fallback failed: {error}")
 
 
 def is_playlist_url(url):
@@ -1062,6 +1082,7 @@ class DownloadManagerCore:
                             try:
                                 Path(jar).unlink(missing_ok=True)
                             except Exception:
+                                # reason: cancellation cleanup races with the jar writer and is idempotent
                                 pass
                         continue
                 if not dl.cookies_file:
@@ -1092,6 +1113,7 @@ class DownloadManagerCore:
                         try:
                             Path(dl.cookies_file).unlink(missing_ok=True)
                         except Exception:
+                            # reason: the worker failed before cleanup and the jar may already be gone
                             pass
                         dl.cookies_file = None
                     self._persist_locked()
@@ -1433,12 +1455,15 @@ class DownloadManagerCore:
             try:
                 temporary.unlink(missing_ok=True)
             except OSError:
+                # reason: section scratch cleanup is best-effort after ffmpeg exits
                 pass
             if proc is not None and proc.poll() is None:
                 try:
                     self._dependencies['terminate_process_tree'](proc)
-                except Exception:
-                    pass
+                except Exception as error:
+                    self._dependencies['write_persistent_log'](
+                        f"WARNING: section ffmpeg termination failed: {error}"
+                    )
 
     def _consume_ytdlp_output(self, dl, proc, activity):
         """Parse one yt-dlp process's stdout into `dl`'s live progress state.
@@ -1671,9 +1696,11 @@ class DownloadManagerCore:
                 # we just spawned ourselves.
                 try:
                     self._dependencies['terminate_process_tree'](proc)
-                except Exception:
+                except Exception as error:
                     # reason: best-effort kill; process may already be gone
-                    pass
+                    self._dependencies['write_persistent_log'](
+                        f"WARNING: pre-spawn process termination failed: {error}"
+                    )
             last_lines = []
             last_error = None
 
@@ -1695,17 +1722,21 @@ class DownloadManagerCore:
                             watchdog_killed['value'] = 'cancelled'
                             try:
                                 self._dependencies['terminate_process_tree'](watched_proc)
-                            except Exception:
+                            except Exception as error:
                                 # reason: best-effort kill; process may already be gone
-                                pass
+                                self._dependencies['write_persistent_log'](
+                                    f"WARNING: cancelled-download watchdog termination failed: {error}"
+                                )
                         return
                     if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
                         watchdog_killed['value'] = 'stall'
                         try:
                             self._dependencies['terminate_process_tree'](watched_proc)
-                        except Exception:
+                        except Exception as error:
                             # reason: best-effort kill; process may already be gone
-                            pass
+                            self._dependencies['write_persistent_log'](
+                                f"WARNING: stalled-download watchdog termination failed: {error}"
+                            )
                         return
 
             watchdog_thread = threading.Thread(
@@ -1821,9 +1852,11 @@ class DownloadManagerCore:
                             # it can download or write output.
                             try:
                                 self._dependencies['terminate_process_tree'](proc)
-                            except Exception:
+                            except Exception as error:
                                 # reason: best-effort kill; process may already be gone
-                                pass
+                                self._dependencies['write_persistent_log'](
+                                    f"WARNING: cancelled retry termination failed: {error}"
+                                )
 
                         def _retry_watchdog(ev=stop_watchdog, watched_proc=proc):
                             while not ev.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
@@ -1832,16 +1865,20 @@ class DownloadManagerCore:
                                         watchdog_killed['value'] = 'cancelled'
                                         try:
                                             self._dependencies['terminate_process_tree'](watched_proc)
-                                        except Exception:
+                                        except Exception as error:
                                             # reason: best-effort kill; process may already be gone
-                                            pass
+                                            self._dependencies['write_persistent_log'](
+                                                f"WARNING: retry watchdog cancellation termination failed: {error}"
+                                            )
                                     return
                                 if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
                                     watchdog_killed['value'] = 'stall'
                                     try:
                                         self._dependencies['terminate_process_tree'](watched_proc)
-                                    except Exception:
-                                        pass
+                                    except Exception as error:
+                                        self._dependencies['write_persistent_log'](
+                                            f"WARNING: retry watchdog stall termination failed: {error}"
+                                        )
                                     return
 
                         watchdog_thread = threading.Thread(
@@ -1901,6 +1938,7 @@ class DownloadManagerCore:
                     if getattr(proc, 'stdout', None) is not None:
                         proc.stdout.close()
                 except Exception:
+                    # reason: test doubles and already-closed streams are safe to ignore during teardown
                     pass
                 if self._recut_section(dl, env):
                     dl.status = "complete"
@@ -1937,9 +1975,11 @@ class DownloadManagerCore:
             if orphan is not None and orphan.poll() is None:
                 try:
                     self._dependencies['terminate_process_tree'](orphan)
-                except Exception:
+                except Exception as error:
                     # reason: best-effort kill; never mask the original error
-                    pass
+                    self._dependencies['write_persistent_log'](
+                        f"WARNING: orphaned process termination failed: {error}"
+                    )
             # Popen does not close PIPE-backed TextIOWrapper objects merely
             # because wait() reached EOF. Explicit closure prevents descriptor
             # leaks in the long-running GUI after each completed, failed, or
@@ -1959,6 +1999,7 @@ class DownloadManagerCore:
                 try:
                     Path(dl.cookies_file).unlink(missing_ok=True)
                 except Exception:
+                    # reason: cookie cleanup is idempotent after worker failure or cancellation
                     pass
                 dl.cookies_file = None
 
@@ -2190,6 +2231,7 @@ class DownloadManagerCore:
                 try:
                     Path(dl.cookies_file).unlink(missing_ok=True)
                 except Exception:
+                    # reason: cancellation cleanup races with worker teardown and is idempotent
                     pass
                 dl.cookies_file = None
             dl.mark_terminal()
@@ -2198,7 +2240,12 @@ class DownloadManagerCore:
             self._persist_locked()
         if proc and proc.poll() is None:
             def terminate():
-                self._dependencies['terminate_process_tree'](proc)
+                try:
+                    self._dependencies['terminate_process_tree'](proc)
+                except Exception as error:
+                    self._dependencies['write_persistent_log'](
+                        f"WARNING: cancelled-download termination failed: {error}"
+                    )
             threading.Thread(target=terminate, daemon=True).start()
         self.progress_updated.emit()
         if not was_running:
@@ -2222,7 +2269,9 @@ class DownloadManagerCore:
                 try:
                     self._dependencies['terminate_process_tree'](proc)
                 except Exception as e:
-                    self._dependencies['write_persistent_log'](f"cancel_all termination warning: {e}")
+                    self._dependencies['write_persistent_log'](
+                        f"WARNING: cancel_all termination failed: {e}"
+                    )
 
     def active_count(self):
         with self._lock:
@@ -2299,9 +2348,11 @@ class DownloadManagerCore:
         except subprocess.TimeoutExpired:
             try:
                 self._dependencies['terminate_process_tree'](proc)
-            except Exception:
+            except Exception as error:
                 # reason: best-effort kill; process may already be gone
-                pass
+                self._dependencies['write_persistent_log'](
+                    f"WARNING: format-probe termination failed: {error}"
+                )
             return None, 'Timed out while listing formats.'
         if proc.returncode != 0:
             tail = [ln.strip() for ln in (errout or '').splitlines() if ln.strip()]
@@ -2360,8 +2411,10 @@ class DownloadManagerCore:
         except subprocess.TimeoutExpired:
             try:
                 self._dependencies['terminate_process_tree'](proc)
-            except Exception:
-                pass
+            except Exception as error:
+                self._dependencies['write_persistent_log'](
+                    f"WARNING: playlist-probe termination failed: {error}"
+                )
             return None, 'Timed out while previewing the playlist.'
         if proc.returncode != 0:
             tail = [line.strip() for line in (errout or '').splitlines() if line.strip()]

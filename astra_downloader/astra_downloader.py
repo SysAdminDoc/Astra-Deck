@@ -438,8 +438,10 @@ def probe_subscription_uploads(
     except subprocess.TimeoutExpired:
         try:
             terminate_process_tree(proc)
-        except Exception:
-            pass
+        except Exception as error:
+            write_persistent_log(
+                f"WARNING: subscription probe termination failed: {error}"
+            )
         return [], "Timed out while scanning the subscription."
     if proc.returncode != 0:
         lines = [line.strip() for line in (error_output or '').splitlines() if line.strip()]
@@ -480,11 +482,13 @@ def write_persistent_log(message, path=None):
                         backup.unlink()
                     path.replace(backup)
                 except Exception:
+                    # reason: log rotation is optional and the active log remains usable
                     pass
             with open(path, 'a', encoding='utf-8') as f:
                 f.write(f"{ts} {message}\n")
             _log_ring.append({'ts': ts, 'msg': message[:MAX_TEXT_FIELD]})
     except Exception:
+        # reason: persistent diagnostics are best-effort and must never mask application work
         pass
 
 
@@ -567,6 +571,7 @@ def log_crash(context="Unhandled exception"):
     try:
         write_persistent_log(f"{context}\n{traceback.format_exc()}", CRASH_LOG_PATH)
     except Exception:
+        # reason: crash logging must not replace the original unhandled exception
         pass
 
 
@@ -598,6 +603,7 @@ def atomic_copy_verified(source, destination):
         try:
             tmp.unlink(missing_ok=True)
         except Exception:
+            # reason: atomic-copy scratch cleanup is best-effort after replacement or failure
             pass
 
 
@@ -659,6 +665,7 @@ def download_file_atomic(url, path, timeout=60, chunk_size=65536, progress_cb=No
                 try:
                     progress_cb(downloaded, total)
                 except Exception:
+                    # reason: the final progress notification is advisory after bytes are durable
                     pass
         if tmp.stat().st_size <= 0:
             raise RuntimeError("Downloaded file was empty")
@@ -668,6 +675,7 @@ def download_file_atomic(url, path, timeout=60, chunk_size=65536, progress_cb=No
             if tmp.exists():
                 tmp.unlink()
         except Exception:
+            # reason: atomic-download scratch cleanup is best-effort after replacement or failure
             pass
 
 
@@ -739,6 +747,7 @@ def extract_archive_executable_atomic(archive_path, destination, executable_name
         try:
             tmp.unlink(missing_ok=True)
         except OSError:
+            # reason: archive scratch cleanup is best-effort after replacement or failure
             pass
 
 
@@ -1018,6 +1027,7 @@ def provision_deno():
             try:
                 tmp_zip.unlink(missing_ok=True)
             except OSError:
+                # reason: failed archive cleanup may race with antivirus or another recovery pass
                 pass
             raise DenoProvisionError('deno-sha256-verification-failed', str(e))
         extract_archive_executable_atomic(
@@ -1028,6 +1038,7 @@ def provision_deno():
             try:
                 DENO_PATH.unlink(missing_ok=True)
             except OSError:
+                # reason: invalid provisioned runtime cleanup is best-effort before reporting failure
                 pass
             raise DenoProvisionError(
                 'deno-runtime-unsupported',
@@ -1050,6 +1061,7 @@ def provision_deno():
         try:
             tmp_zip.unlink(missing_ok=True)
         except OSError:
+            # reason: temporary runtime archive cleanup is best-effort during every exit path
             pass
 
 
@@ -1519,6 +1531,7 @@ def _run_ytdlp_self_update(config, source_tag):
         try:
             stage_path.unlink(missing_ok=True)
         except Exception:
+            # reason: update staging cleanup is best-effort after activation or rollback
             pass
         _YTDLP_UPDATE_LOCK.release()
 
@@ -1974,10 +1987,12 @@ finally:
     try:
         os.remove(source)
     except OSError:
+        # reason: the source may already be removed after the replacement handoff
         pass
     try:
         os.remove(__file__)
     except OSError:
+        # reason: self-delete is best-effort after the updater process has detached
         pass
 ''', encoding='utf-8')
         subprocess.Popen([
@@ -2092,6 +2107,7 @@ def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
             try:
                 update_path.unlink(missing_ok=True)
             except Exception:
+                # reason: failed update cleanup may already have been completed by recovery
                 pass
             return {
                 'ok': False,
@@ -2107,6 +2123,7 @@ def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
             try:
                 update_path.unlink(missing_ok=True)
             except Exception:
+                # reason: failed hash cleanup is best-effort before returning the verification error
                 pass
             return {
                 'ok': False,
@@ -2119,6 +2136,7 @@ def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
             try:
                 update_path.unlink(missing_ok=True)
             except Exception:
+                # reason: staged health-check cleanup is best-effort before returning the failure
                 pass
             return {
                 'ok': False,
@@ -2140,11 +2158,13 @@ def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
             try:
                 same_as_running = _compute_sha256(current_executable_path()) == downloaded_digest
             except Exception:
+                # reason: a missing or changing running binary simply cannot prove digest equality
                 same_as_running = False
         if same_as_running or downloaded_digest == read_last_installed_update_sha256():
             try:
                 update_path.unlink(missing_ok=True)
             except Exception:
+                # reason: duplicate-release cleanup is best-effort after the digest comparison
                 pass
             write_persistent_log(
                 f"Companion update skipped: releases/latest asset (sha256 "
@@ -2168,6 +2188,7 @@ def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
                 try:
                     update_path.unlink(missing_ok=True)
                 except Exception:
+                    # reason: in-flight update cleanup is best-effort before returning the guard error
                     pass
                 write_persistent_log(
                     f"Companion update aborted: {in_flight} download(s) started "
@@ -2215,6 +2236,7 @@ def _run_companion_self_update_unlocked(restart=True, dl_manager=None):
         try:
             update_path.unlink(missing_ok=True)
         except Exception:
+            # reason: failed update cleanup is best-effort after the primary error is recorded
             pass
         return {
             'ok': False,
@@ -2303,6 +2325,7 @@ def ensure_installed_executable():
         if current == target.resolve():
             return target
     except Exception:
+        # reason: an unavailable target path only disables the same-file fast path
         pass
 
     try:
@@ -2318,6 +2341,7 @@ def ensure_installed_executable():
             if 'tmp' in locals() and tmp.exists():
                 tmp.unlink()
         except Exception:
+            # reason: failed executable cleanup is best-effort after the install error is logged
             pass
         return current
 
@@ -3024,20 +3048,25 @@ def run_uninstall():
             try:
                 winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path + '\\shell\\open\\command')
             except Exception:
+                # reason: each uninstall key may already be absent on a partial or older install
                 pass
             try:
                 winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path + '\\shell\\open')
             except Exception:
+                # reason: each uninstall key may already be absent on a partial or older install
                 pass
             try:
                 winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path + '\\shell')
             except Exception:
+                # reason: each uninstall key may already be absent on a partial or older install
                 pass
             try:
                 winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path)
             except Exception:
+                # reason: each uninstall key may already be absent on a partial or older install
                 pass
     except Exception:
+        # reason: uninstall continues even when registry cleanup is unavailable
         pass
 
     if NATIVE_HOST_DIR.exists():
@@ -3226,6 +3255,7 @@ def check_single_instance(startup_command=''):
         try:
             s.close()
         except Exception:
+            # reason: a failed bind may leave no closable socket to release
             pass
         if send_instance_command(startup_command or 'show', attempts=1):
             return INSTANCE_ALREADY_RUNNING
@@ -3462,6 +3492,7 @@ def main():
         if legacy_archive.exists():
             legacy_archive.unlink()
     except OSError:
+        # reason: the obsolete archive is optional and may already be removed
         pass
 
     start_min = start_minimized or config.get("StartMinimized", False)

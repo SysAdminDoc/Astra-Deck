@@ -554,6 +554,7 @@ class SetupWorkerCore(QThread):
             try:
                 Path(path).unlink(missing_ok=True)
             except Exception:
+                # reason: an absent or locked failed download is already unusable
                 pass
             raise RuntimeError(message)
         try:
@@ -564,6 +565,7 @@ class SetupWorkerCore(QThread):
             try:
                 Path(path).unlink(missing_ok=True)
             except Exception:
+                # reason: checksum recovery cleanup is best-effort before the retry
                 pass
             raise
         self.log.emit(f"  {label} checksum OK")
@@ -660,6 +662,7 @@ class SetupWorkerCore(QThread):
                         if tmp_zip.exists():
                             tmp_zip.unlink()
                     except Exception:
+                        # reason: helper archive cleanup is best-effort after verification or failure
                         pass
             else:
                 self.log.emit("ffmpeg already installed")
@@ -2208,6 +2211,7 @@ class MainWindowCore(QMainWindow):
                 try:
                     probe.close()
                 except OSError:
+                    # reason: a failed bind may leave no closable probe socket
                     pass
 
         if chosen_port is None:
@@ -3385,6 +3389,7 @@ class MainWindowCore(QMainWindow):
                     6000,
                 )
         except Exception:
+            # reason: server error reporting must not mask the startup failure
             pass
 
     def _start_instance_command_listener(self):
@@ -3438,6 +3443,7 @@ class MainWindowCore(QMainWindow):
             with socket.create_connection((self._value('INSTANCE_CONTROL_HOST'), self._value('INSTANCE_CONTROL_PORT')), timeout=0.2):
                 pass
         except OSError:
+            # reason: the listener may already be stopped when the wake-up connection fails
             pass
         if self._instance_command_thread.is_alive():
             self._instance_command_thread.join(timeout=1)
