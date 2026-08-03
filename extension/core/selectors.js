@@ -4,10 +4,24 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.findSurfaceElement && core.SurfaceSelectorMap) return;
 
+    function freezeHookMap(hooks) {
+        return Object.freeze(Object.fromEntries(
+            Object.entries(hooks || {}).map(([hook, value]) => [
+                hook,
+                Object.freeze({
+                    stable: Object.freeze(normalizeSelectorList(value?.stable)),
+                    fallback: Object.freeze(normalizeSelectorList(value?.fallback)),
+                    notes: value?.notes || ''
+                })
+            ])
+        ));
+    }
+
     function freezeEntry(entry) {
         return Object.freeze({
             stable: Object.freeze([...(entry.stable || [])]),
             fallback: Object.freeze([...(entry.fallback || [])]),
+            hooks: freezeHookMap(entry.hooks),
             // v4.31.0: capture provenance + last-verified date promoted to
             // public entry shape so the popup health surface (and any
             // future selector-pack inspector) can show "verified
@@ -99,6 +113,10 @@
             }
         } else if (Array.isArray(surfaceOrSelectors) && selectorsOrOptions && !Array.isArray(selectorsOrOptions)) {
             options = selectorsOrOptions;
+        }
+
+        if (typeof options?.surface === 'string' && options.surface.trim()) {
+            surface = options.surface.trim();
         }
 
         return {
@@ -539,6 +557,15 @@
             stable: [...entry.stable],
             fallback: [...entry.fallback],
             selectors: [...SurfaceSelectors[surface]],
+            hooks: Object.fromEntries(Object.entries(entry.hooks || {}).map(([hook, hookEntry]) => [
+                hook,
+                {
+                    stable: [...hookEntry.stable],
+                    fallback: [...hookEntry.fallback],
+                    selectors: [...hookEntry.stable, ...hookEntry.fallback],
+                    notes: hookEntry.notes
+                }
+            ])),
             captureEvidence: [...(entry.captureEvidence || [])],
             lastVerified: entry.lastVerified,
             highChurn: entry.highChurn,
@@ -551,71 +578,114 @@
         return SurfaceSelectors[surface] ? [...SurfaceSelectors[surface]] : [];
     }
 
-    function getSelectorHealthSnapshot() {
-        return Object.entries(SurfaceSelectorMap).map(([surface, entry]) => {
-            const selectors = SurfaceSelectors[surface] || [];
-            const selectorEntries = selectors.map((selector) => {
-                // Read-only snapshot: never fall back to getSelectorStat (a
-                // writer that .sets + _enforceMapCap). Synthesize a zero-stat
-                // mirroring getSelectorStat's initializer field-for-field so a
-                // diagnostics read can't create/evict telemetry.
-                const stat = selectorStats.get(`${surface}:${selector}`) || {
-                    surface,
-                    selector,
-                    attempts: 0,
-                    hits: 0,
-                    misses: 0,
-                    errors: 0,
-                    firstMissAt: null,
-                    lastMissAt: null,
-                    lastHitAt: null,
-                    lastError: null,
-                    lastOutcome: 'untested',
-                    firstShape: null,
-                    lastShape: null,
-                    shapeDrifts: 0,
-                    lastShapeAt: null,
-                    firstShapeAt: null
-                };
-                return {
-                    selector,
-                    stable: entry.stable.includes(selector),
-                    attempts: stat.attempts,
-                    hits: stat.hits,
-                    misses: stat.misses,
-                    errors: stat.errors,
-                    firstMissAt: stat.firstMissAt,
-                    lastMissAt: stat.lastMissAt,
-                    lastHitAt: stat.lastHitAt,
-                    lastError: stat.lastError,
-                    lastOutcome: stat.lastOutcome,
-                    // v4.5+ shape-drift fields.
-                    // hasShapeSample disambiguates "shapeDrifts:0 because the
-                    // shape has been stable since first observation" from
-                    // "shapeDrifts:0 because no live caller has invoked
-                    // recordSelectorShape yet" — the L3 audit flagged that
-                    // a poller could otherwise misread "no data" as "healthy".
-                    hasShapeSample: stat.firstShape != null,
-                    firstShape: stat.firstShape,
-                    lastShape: stat.lastShape,
-                    shapeDrifts: stat.shapeDrifts,
-                    firstShapeAt: stat.firstShapeAt,
-                    lastShapeAt: stat.lastShapeAt
-                };
-            });
-            return {
+    function getSurfaceHookSelectorEntry(surface, hook) {
+        const entry = SurfaceSelectorMap[surface]?.hooks?.[hook];
+        if (!entry) return null;
+        return {
+            surface,
+            hook,
+            stable: [...entry.stable],
+            fallback: [...entry.fallback],
+            selectors: [...entry.stable, ...entry.fallback],
+            notes: entry.notes
+        };
+    }
+
+    function getSurfaceHookSelectorChain(surface, hook) {
+        const entry = getSurfaceHookSelectorEntry(surface, hook);
+        return entry ? entry.selectors : [];
+    }
+
+    function findSurfaceHookElements(surface, hook, options = {}) {
+        const selectors = getSurfaceHookSelectorChain(surface, hook);
+        if (!selectors.length) return [];
+        return findSurfaceElements(selectors, {
+            ...options,
+            surface: `${surface}.${hook}`
+        });
+    }
+
+    function selectorHealthRow(surface, entry, selectors, stableSelectors) {
+        const stable = new Set(stableSelectors || []);
+        const selectorEntries = selectors.map((selector) => {
+            // Read-only snapshot: never fall back to getSelectorStat (a
+            // writer that .sets + _enforceMapCap). Synthesize a zero-stat
+            // mirroring getSelectorStat's initializer field-for-field so a
+            // diagnostics read can't create/evict telemetry.
+            const stat = selectorStats.get(`${surface}:${selector}`) || {
                 surface,
-                highChurn: entry.highChurn,
-                needsFreshCapture: entry.needsFreshCapture,
-                stableSelectorCount: entry.stable.length,
-                fallbackSelectorCount: entry.fallback.length,
-                selectorCount: selectors.length,
-                hitCount: selectorEntries.reduce((sum, item) => sum + item.hits, 0),
-                missCount: selectorEntries.reduce((sum, item) => sum + item.misses, 0),
-                errorCount: selectorEntries.reduce((sum, item) => sum + item.errors, 0),
-                selectors: selectorEntries
+                selector,
+                attempts: 0,
+                hits: 0,
+                misses: 0,
+                errors: 0,
+                firstMissAt: null,
+                lastMissAt: null,
+                lastHitAt: null,
+                lastError: null,
+                lastOutcome: 'untested',
+                firstShape: null,
+                lastShape: null,
+                shapeDrifts: 0,
+                lastShapeAt: null,
+                firstShapeAt: null
+            };
+            return {
+                selector,
+                stable: stable.has(selector),
+                attempts: stat.attempts,
+                hits: stat.hits,
+                misses: stat.misses,
+                errors: stat.errors,
+                firstMissAt: stat.firstMissAt,
+                lastMissAt: stat.lastMissAt,
+                lastHitAt: stat.lastHitAt,
+                lastError: stat.lastError,
+                lastOutcome: stat.lastOutcome,
+                // v4.5+ shape-drift fields.
+                hasShapeSample: stat.firstShape != null,
+                firstShape: stat.firstShape,
+                lastShape: stat.lastShape,
+                shapeDrifts: stat.shapeDrifts,
+                firstShapeAt: stat.firstShapeAt,
+                lastShapeAt: stat.lastShapeAt
             };
         });
+        return {
+            surface,
+            highChurn: !!entry.highChurn,
+            needsFreshCapture: !!entry.needsFreshCapture,
+            stableSelectorCount: stableSelectors.length,
+            fallbackSelectorCount: selectors.length - stableSelectors.length,
+            selectorCount: selectors.length,
+            hitCount: selectorEntries.reduce((sum, item) => sum + item.hits, 0),
+            missCount: selectorEntries.reduce((sum, item) => sum + item.misses, 0),
+            errorCount: selectorEntries.reduce((sum, item) => sum + item.errors, 0),
+            selectors: selectorEntries
+        };
+    }
+
+    function getSelectorHealthSnapshot() {
+        const snapshots = [];
+        for (const [surface, entry] of Object.entries(SurfaceSelectorMap)) {
+            snapshots.push(selectorHealthRow(
+                surface,
+                entry,
+                SurfaceSelectors[surface] || [],
+                entry.stable
+            ));
+            for (const [hook, hookEntry] of Object.entries(entry.hooks || {})) {
+                const hookSurface = `${surface}.${hook}`;
+                const hookSelectors = [...hookEntry.stable, ...hookEntry.fallback];
+                snapshots.push(selectorHealthRow(
+                    hookSurface,
+                    entry,
+                    hookSelectors,
+                    hookEntry.stable
+                ));
+            }
+        }
+        return snapshots;
     }
 
     function exportSelectorHealth() {
@@ -636,8 +706,11 @@
         findSurfaceElement,
         findSurfaceElements,
         getSelectorHealthSnapshot,
+        findSurfaceHookElements,
         getSurfaceSelectorChain,
         getSurfaceSelectorEntry,
+        getSurfaceHookSelectorChain,
+        getSurfaceHookSelectorEntry,
         normalizeSelectorList,
         recordSelectorShape,
         waitForSurfaceElement

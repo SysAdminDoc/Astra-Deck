@@ -8770,7 +8770,7 @@ test('v4.43.0 home-subs-css helpers return CSS that the monolith inline fallback
     const mod = loadHomeSubsCssModule();
     const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
     const cases = [
-        ['buildHideCreateButtonCss', 'button[aria-label="Create"]'],
+        ['buildHideCreateButtonCss', 'path[d^="M12 3a1 1 0 00-1 1v7H4"]'],
         ['buildHideVoiceSearchCss', '#voice-search-button'],
         ['buildWidenSearchBarCss', 'margin-left: -180px'],
         ['buildDisablePlayOnHoverCss', 'ytd-moving-thumbnail-renderer'],

@@ -21,6 +21,17 @@
         'Worldwide Societal Collapse... - YouTube.mhtml',
         'mhtml/SearchResults.mhtml'
     ]);
+    const hooks = Object.freeze({
+        createButton: Object.freeze({
+            stable: Object.freeze([
+                'ytd-masthead #buttons ytd-button-renderer:has(path[d^="M12 3a1 1 0 00-1 1v7H4"])',
+                'ytd-masthead #buttons ytd-button-renderer:has(svg path[d^="M12 3a1 1 0 00-1 1v7H4"])'
+            ]),
+            fallback: Object.freeze([
+                'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])'
+            ])
+        })
+    });
 
     registry.set('nav', Object.freeze({
         surface: 'nav',
@@ -30,6 +41,7 @@
         lastVerified: '2026-06-05',
         highChurn: false,
         needsFreshCapture: false,
+        hooks,
         notes: 'Top navigation and masthead actions.'
     }));
 
@@ -41,6 +53,7 @@
         lastVerified: '2026-06-05',
         highChurn: false,
         needsFreshCapture: false,
+        hooks,
         notes: 'Alias for nav so feature code can use either term.'
     }));
 })();
