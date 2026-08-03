@@ -1,6 +1,6 @@
 # yt-dlp Cookie Threat Model
 
-Last reviewed: 2026-06-04.
+Last reviewed: 2026-08-03.
 
 This document covers how Astra Deck moves YouTube cookies from the browser
 extension into the local Astra Downloader companion for authenticated yt-dlp
@@ -25,10 +25,15 @@ downloads. It is the store-review and maintainer-facing explanation for the
    payload and normalizes session-cookie expiry to `0`.
 3. The companion `/download` handler accepts only reviewed request fields,
    caps the body at 1 MB, and truncates the `cookies` array to 200 entries.
-4. `write_cookies_netscape()` writes a per-download `.cookies.{id}.txt` file in
+4. `write_cookies_netscape()` creates a per-download `.cookies.{id}.txt` file in
    Netscape cookies.txt format for yt-dlp's `--cookies` flag. It strips control
-   characters, rejects malformed entries, writes atomically, and best-effort
-   chmods the jar to `0600`.
+   characters, rejects malformed entries, creates an empty temporary file,
+   applies an owner-only ACL before writing any cookie bytes, verifies that
+   inherited ACEs are gone, and then atomically renames the protected file into
+   place. On Windows the ACL is applied and verified with `icacls
+   /inheritance:r /grant:r <current-user>:F`; POSIX platforms use and verify
+   mode `0600`. If the protection step fails, the temporary file is deleted and
+   the download stops with the classified `cookie-jar-failed` error.
 5. `DownloadManager._run_download()` passes the jar with `--cookies <path>`.
    It does not accept client-supplied yt-dlp argv, `--add-header Cookie:`, or
    `--load-info-json`.
@@ -49,7 +54,7 @@ baseline for CVE-2023-35934.
 | A compromised extension context sends a huge cookie payload. | `/download` enforces the 1 MB request cap and truncates cookie lists to 200 entries before writing a jar. |
 | Cookie jar persists after a successful or failed download. | The jar is per-download and deleted in the download `finally` block. |
 | Cookie jar persists after a crash or taskkill. | `cleanup_stale_cookie_jars()` removes `.cookies.*.txt` files older than 300 seconds on server start. |
-| Cookie jar is readable by other local users. | `write_cookies_netscape()` best-effort chmods the file to `0600`; Windows ACL inheritance still depends on the user's profile directory. |
+| Cookie jar is readable by other local users. | The writer creates an empty file, removes inherited Windows ACEs with `icacls /inheritance:r`, grants full control only to the current account, verifies the resulting ACL has no inherited entries, and only then writes cookie bytes. POSIX platforms require verified mode `0600`; ACL failure aborts the download. |
 | YouTube cookies leak to third-party APIs. | Background fetch policy sends credentials only to YouTube/nocookie and local companion origins; SponsorBlock, DeArrow, RYD, Reddit, AI providers, and Cobalt use credentialless requests. |
 | DNS rebinding or localhost aliasing reaches another local service. | Extension and companion use literal `127.0.0.1` loopback ports, not `localhost`; the companion also validates Host headers. |
 

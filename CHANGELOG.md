@@ -16,6 +16,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and Subscription Groups can schedule their channel members from the extension.
 
 ### Fixed
+- **Cookie-jar permissions.** Companion YouTube cookie jars now receive and
+  verify an owner-only ACL before any cookie bytes are written; ACL failures
+  abort the download with a retryable classified error.
 - **Inline theme coherence.** Subscription cards and dialogs now render cleanly in YouTube light mode, shared accent RGB tokens drive utility surfaces, RTL-sensitive margins use logical properties, and bottom-right overlays stack from measured heights.
 - **Companion naming.** Download progress, format probing, and full-profile
   welcome copy now consistently identify the helper as Astra Downloader.
