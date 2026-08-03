@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P1 — Correctness, security, and broken promises
 
-- [ ] P1 — Internationalize Video Hider card-type detection
-  Why: `isLive`, `isUpcoming`, `isMix` and `isPlaylist` are English-only regexes over lowercased localized metadata, so on any non-English YouTube UI those predicates are permanently false and the corresponding hide-type filters silently do nothing. Localized *count* parsing shipped 2026-08-02 (`fix(video-hider): parse localized counts`) but type detection was not included, leaving the feature half-localized in a product that ships 11 locales.
-  Evidence: `extension/ytkit.js:17214-17221`; the internationalized precedent is `_NOTIFY_RE` / `_SCHEDULED_RE` at `extension/ytkit.js:33979,33990`, which already carry ES/DE/FR/IT/RU/JA/KO/ZH/AR alternations.
-  Touches: `extension/ytkit.js` (`_extractVideoMetadata`), `extension/features/video-hider/index.js`, `extension/features/subscription-groups/index.js:595,643`, `tests/features/video-hider.test.js`.
-  Acceptance: type detection uses structural hooks (badge renderers, overlay styles, `href` shape) first and multi-locale alternations only as fallback; a regression test asserts correct `isLive` / `isUpcoming` / `isMix` on fixture markup for at least three non-English locales including one CJK and one RTL.
-  Complexity: M
-
 - [ ] P1 — Make the companion cookie-jar permission hardening real and observable
   Why: `download.py` writes the Netscape jar containing live YouTube `SAPISID` / `SID` cookies, then calls `os.chmod(target_path, 0o600)` inside a bare `except OSError: pass`. On Windows — the companion's only supported platform — `os.chmod` can only toggle the read-only bit and cannot express POSIX 0600, so the confidentiality control named in `docs/yt-dlp-cookie-threat-model.md` does not exist in practice, and any failure is unobservable. A window also exists between `os.replace` and the `chmod` where the file carries default inherited permissions.
   Evidence: `astra_downloader/download.py:212-217`; `docs/yt-dlp-cookie-threat-model.md`; https://docs.python.org/3/library/os.html#os.chmod (Windows caveat).

@@ -43,6 +43,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Video Hider locale parsing.** View and subscriber counts now parse
   localized labels, compact suffixes, grouping separators, and non-Latin
   digits so low-view filters and subscriber predicates work across locales.
+- **Video Hider localized card types.** Live, upcoming, Mix, and playlist
+  predicates now prefer structural card markers and recognize localized
+  metadata across Latin, CJK, Cyrillic, and RTL labels.
 - **Video Hider predicate metadata.** Advanced local predicates now receive
   card-derived upload age, Shorts, and members-only values, using `null` when
   YouTube does not expose enough card evidence instead of false zeroes.

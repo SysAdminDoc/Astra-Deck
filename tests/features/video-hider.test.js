@@ -134,12 +134,51 @@ test('Video Hider live/upcoming regex pins read rows in module and monolith', ()
         assert.ok(end > start, `${label} metadata extraction block must be bounded`);
         const block = source.slice(start, end);
 
-        assert.match(block, /isLive:[\s\S]*?\.test\(rowsText\) && !hasDuration/,
+        assert.match(block, /isLive:[\s\S]*?\.test\(normalizedRowsText\) && !hasDuration/,
             `${label} live fallback must inspect metadata rows`);
-        assert.match(block, /isUpcoming: \/\\b\(upcoming\|scheduled for\|premieres\?\|set reminder\|starts in\)\\b\/\.test\(rowsText\)/,
+        assert.match(block, /isUpcoming:[\s\S]*?\.test\(normalizedRowsText\)/,
             `${label} upcoming detection must inspect metadata rows`);
         assert.doesNotMatch(block, /\.test\(metadataText\)/,
             `${label} type detection must not scan the title-inclusive metadata text`);
+    }
+});
+
+test('Video Hider type predicates recognize localized metadata rows', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const fixtures = [
+        {
+            locale: 'Spanish',
+            live: 'EN DIRECTO · 1,2 mil espectadores',
+            upcoming: 'Programado para mañana · Establecer recordatorio',
+            mix: 'Mezcla',
+            playlist: 'Lista de reproducción'
+        },
+        {
+            locale: 'Japanese',
+            live: 'ライブ · 視聴中',
+            upcoming: '配信予定 · リマインダーを設定',
+            mix: 'ミックス',
+            playlist: '再生リスト'
+        },
+        {
+            locale: 'Arabic',
+            live: 'بث مباشر · يشاهد الآن',
+            upcoming: 'مجدول · تعيين تذكير',
+            mix: 'ميكس',
+            playlist: 'قائمة تشغيل'
+        }
+    ];
+
+    for (const fixture of fixtures) {
+        assert.equal(feature._extractVideoMetadata(fakeVideoCard('Neutral title', fixture.live)).isLive, true,
+            `${fixture.locale} live metadata should match`);
+        assert.equal(feature._extractVideoMetadata(fakeVideoCard('Neutral title', fixture.upcoming)).isUpcoming, true,
+            `${fixture.locale} upcoming metadata should match`);
+        assert.equal(feature._extractVideoMetadata(fakeVideoCard('Neutral title', fixture.mix)).isMix, true,
+            `${fixture.locale} mix metadata should match`);
+        assert.equal(feature._extractVideoMetadata(fakeVideoCard('Neutral title', fixture.playlist)).isPlaylist, true,
+            `${fixture.locale} playlist metadata should match`);
     }
 });
 
