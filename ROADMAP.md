@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P1 — Correctness, security, and broken promises
 
-- [ ] P1 — Make the companion cookie-jar permission hardening real and observable
-  Why: `download.py` writes the Netscape jar containing live YouTube `SAPISID` / `SID` cookies, then calls `os.chmod(target_path, 0o600)` inside a bare `except OSError: pass`. On Windows — the companion's only supported platform — `os.chmod` can only toggle the read-only bit and cannot express POSIX 0600, so the confidentiality control named in `docs/yt-dlp-cookie-threat-model.md` does not exist in practice, and any failure is unobservable. A window also exists between `os.replace` and the `chmod` where the file carries default inherited permissions.
-  Evidence: `astra_downloader/download.py:212-217`; `docs/yt-dlp-cookie-threat-model.md`; https://docs.python.org/3/library/os.html#os.chmod (Windows caveat).
-  Touches: `astra_downloader/download.py` (jar writer plus the four unlink sites at `:988`, `:1021`, `:1888`, `:2119`), `docs/yt-dlp-cookie-threat-model.md`, `astra_downloader/test_astra_downloader.py`.
-  Acceptance: the jar is created with an owner-only Windows ACL before any cookie bytes are written (not chmod-ed afterwards); failure to apply it aborts the download with a classified error instead of proceeding; a test asserts the ACL on a real temp file and asserts the abort path; the threat-model doc states the actual mechanism.
-  Complexity: M
-
 - [ ] P1 — Add a Python swallowed-exception gate matching the JavaScript one
   Why: ESLint's `local/require-catch-reason` forces a `// reason:` comment on all 159 empty JS catches and reports zero issues, but the companion has ~28 bare `except: pass` with no equivalent enforcement. Beyond the cookie sites above, these hide watchdog and process-kill failures, so a stall watchdog that fails to kill a hung yt-dlp reports nothing at all.
   Evidence: `astra_downloader/download.py:216,225,238,240,273,283,287,294,296,300,1362,1367,1770,1830,2290`; `astra_downloader/config.py:553`; `astra_downloader/subscriptions.py:237`; `astra_downloader/astra_downloader.py:441,482,487`; `astra_downloader/gui.py:556,566,662,2210,3387,3440`; `eslint.config.js` + `scripts/eslint-rules/require-catch-reason.js`.

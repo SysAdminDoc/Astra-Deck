@@ -1,8 +1,9 @@
 """Import-safe download domain model and policy boundary."""
 
-import os
+import getpass
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -50,6 +51,7 @@ DOWNLOAD_RETRYABLE_ERROR_CODES = {
     'network-unreachable',
     'po-provider-stale',
     'po-token-required',
+    'cookie-jar-failed',
     'worker-start-failed',
 }
 
@@ -132,6 +134,11 @@ DOWNLOAD_FAILURE_RECOVERY = {
         'advice': 'Check the network, VPN, firewall, and provider process, then retry.',
         'next_action': 'check-network-and-retry',
     },
+    'cookie-jar-failed': {
+        'error': 'Astra Downloader could not create a protected YouTube cookie jar.',
+        'advice': 'Retry from Astra Deck so fresh cookies can be supplied.',
+        'next_action': 'sign-in-and-retry',
+    },
 }
 
 ALLOWED_COOKIE_DOMAINS = frozenset({
@@ -170,8 +177,64 @@ def _is_allowed_cookie_domain(domain):
     )
 
 
+def _windows_cookie_identity():
+    user = os.environ.get('USERNAME') or getpass.getuser()
+    domain = os.environ.get('USERDOMAIN')
+    if domain and user and '\\' not in user:
+        return f'{domain}\\{user}'
+    return user
+
+
+def _apply_cookie_jar_acl(target_path):
+    """Apply a fail-closed owner-only ACL before cookie bytes are written."""
+    target_path = Path(target_path)
+    if os.name != 'nt':
+        os.chmod(target_path, 0o600)
+        if target_path.stat().st_mode & 0o077:
+            raise PermissionError('cookie jar is not owner-only')
+        return
+
+    identity = _windows_cookie_identity()
+    if not identity:
+        raise PermissionError('Windows account identity is unavailable')
+    try:
+        result = subprocess.run(
+            [
+                'icacls', str(target_path),
+                '/inheritance:r',
+                '/grant:r', f'{identity}:F',
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise PermissionError(f'icacls could not protect cookie jar: {error}') from error
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or '').strip()
+        raise PermissionError(f'icacls rejected cookie jar ACL: {detail or result.returncode}')
+
+    # /inheritance:r must remove every inherited ACE. A second readback keeps
+    # the security guarantee observable and prevents silently proceeding when
+    # a policy or localized account lookup leaves a broad inherited grant.
+    try:
+        verify = subprocess.run(
+            ['icacls', str(target_path)],
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise PermissionError(f'icacls ACL verification failed: {error}') from error
+    acl_text = f'{verify.stdout or ""}\n{verify.stderr or ""}'
+    if verify.returncode != 0 or '(I)' in acl_text:
+        raise PermissionError('cookie jar ACL still contains inherited permissions')
+
+
 def write_cookies_netscape(cookies, target_path, *, logger=None):
-    """Persist allowlisted browser cookies as an atomic Netscape cookie jar."""
+    """Persist allowlisted browser cookies as an atomic protected jar."""
     if not isinstance(cookies, list) or not cookies:
         return None
     target_path = Path(target_path)
@@ -205,20 +268,33 @@ def write_cookies_netscape(cookies, target_path, *, logger=None):
         return None
 
     temporary = target_path.with_name(f".{target_path.name}.{uuid.uuid4().hex}.tmp")
+    descriptor = None
     try:
+        # Create an empty file with restrictive mode first. Windows ignores
+        # POSIX mode bits for ACL enforcement, so icacls runs before the first
+        # cookie byte is written and the ACL travels with the atomic rename.
+        descriptor = os.open(
+            temporary,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o600,
+        )
+        os.close(descriptor)
+        descriptor = None
+        _apply_cookie_jar_acl(temporary)
         with open(temporary, "w", encoding="utf-8", newline="\n") as handle:
             handle.write("\n".join(lines) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, target_path)
-        try:
-            os.chmod(target_path, 0o600)
-        except OSError:
-            pass
         return str(target_path)
     except Exception as error:
         if logger:
             logger(f"Cookie jar write failed: {error}")
+        if descriptor is not None:
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
         try:
             if temporary.exists():
                 temporary.unlink()
@@ -992,10 +1068,7 @@ class DownloadManagerCore:
                     with self._lock:
                         self._running_ids.discard(dl.id)
                         dl.status = 'failed'
-                        dl.error = 'Could not prepare a protected YouTube cookie jar. Retry from Astra Deck.'
-                        dl.error_code = 'cookie-jar-failed'
-                        dl.error_advice = 'Retry from Astra Deck so fresh cookies can be supplied.'
-                        dl.error_action = 'sign-in-and-retry'
+                        apply_download_failure_classification(dl, 'cookie-jar-failed')
                         dl.mark_terminal()
                         self._persist_locked()
                     self.progress_updated.emit()

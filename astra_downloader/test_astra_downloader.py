@@ -3160,6 +3160,49 @@ class CookieJarTests(unittest.TestCase):
             self.assertIn("#HttpOnly_.youtube.com\tTRUE\t/\tTRUE\t1700000000\tSID\tabc", body)
             self.assertIn("youtube.com\tFALSE\t/\tFALSE\t0\tPREF\ttz=UTC", body)
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows ACLs are only available on Windows')
+    def test_cookie_jar_has_no_inherited_broad_acl(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "cookies.txt"
+            result = ad.write_cookies_netscape([{
+                "domain": ".youtube.com", "name": "SID", "value": "secret",
+            }], target)
+            self.assertEqual(result, str(target))
+
+            acl = subprocess.run(
+                ["icacls", str(target)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(acl.returncode, 0, acl.stderr)
+            acl_text = f"{acl.stdout}\n{acl.stderr}"
+            self.assertNotIn("(I)", acl_text,
+                             "cookie jar must not retain inherited ACEs")
+            self.assertNotRegex(
+                acl_text,
+                r"(?i)(everyone|authenticated users|builtin\\users)",
+                "cookie jar must not grant broad local-user access",
+            )
+
+    def test_acl_failure_writes_no_cookie_bytes(self):
+        import importlib
+
+        logs = []
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "cookies.txt"
+            download_module = importlib.import_module("download")
+            with mock.patch.object(download_module, "_apply_cookie_jar_acl",
+                                   side_effect=PermissionError("ACL denied")):
+                result = download_module.write_cookies_netscape(
+                    [{"domain": ".youtube.com", "name": "SID", "value": "secret"}],
+                    target,
+                    logger=logs.append,
+                )
+            self.assertIsNone(result)
+            self.assertFalse(target.exists())
+            self.assertTrue(any("ACL denied" in line for line in logs))
+
     def test_non_finite_expiry_degrades_to_session_cookie(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "cookies.txt"
@@ -5587,8 +5630,9 @@ class EndToEndDownloadTests(unittest.TestCase):
             history = FakeHistory()
             with mock.patch.object(ad, 'INSTALL_DIR', Path(tmpdir)):
                 manager = ad.DownloadManager(config, history)
-                with mock.patch.object(ad.subprocess, 'Popen', return_value=fake_proc), \
+                with mock.patch.object(ad, 'spawn_ytdlp', return_value=fake_proc), \
                      mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                     mock.patch.object(ad, 'probe_javascript_runtime', return_value={}), \
                      mock.patch.object(ad, 'write_persistent_log', return_value=None), \
                      mock.patch.object(ad, 'terminate_process_tree') as terminate:
                     dl_id, err = manager.start_download(
@@ -7775,6 +7819,34 @@ class DownloadWorkerRaceGuardTests(unittest.TestCase):
         self.assertIsNone(dl.cookies_file)
         self.assertNotIn(dl.id, manager._running_ids)
         self.assertEqual(dl.status, 'cancelled')
+
+    def test_launch_workers_aborts_with_classified_cookie_jar_failure(self):
+        import importlib
+        download_module = importlib.import_module("download")
+        manager = self._manager()
+        dl_id, err = manager.start_download(
+            "https://www.youtube.com/watch?v=cookieacl1",
+            cookies=[{"name": "SID", "value": "secret", "domain": ".youtube.com"}],
+        )
+        self.assertIsNone(err)
+        dl = manager.downloads[dl_id]
+        with manager._lock:
+            dl.status = 'queued'
+            manager._running_ids.add(dl_id)
+
+        started = threading.Event()
+        manager._worker_entry = lambda _dl: started.set()
+        with mock.patch.object(download_module, 'write_cookies_netscape', return_value=None):
+            manager._launch_workers([dl])
+
+        self.assertFalse(started.wait(0.2),
+                         "yt-dlp must not start without a protected cookie jar")
+        self.assertEqual(dl.status, 'failed')
+        self.assertEqual(dl.error_code, 'cookie-jar-failed')
+        self.assertEqual(dl.error_action, 'sign-in-and-retry')
+        self.assertIn('protected YouTube cookie jar', dl.error)
+        self.assertTrue(dl.to_dict()['retryable'])
+        self.assertNotIn(dl.id, manager._running_ids)
 
     def test_retry_is_rejected_while_worker_is_finalizing(self):
         manager = self._manager()
