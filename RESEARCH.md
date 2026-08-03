@@ -1,129 +1,130 @@
 # Research — Astra Deck
-Date: 2026-07-29 — replaces all prior research.
+Date: 2026-08-02 — replaces all prior research (previous pass: 2026-07-29).
 
 ## Executive Summary
 
-[Verified] Astra Deck is an unusually broad, local-first YouTube toolkit: a 247-feature, 11-locale Chromium/Firefox MV3 extension, a bundled userscript, and an authenticated Windows yt-dlp companion with durable queue recovery, staged updates, diagnostics, and release-integrity gates. Its strongest shape is not feature count but the safety systems around that breadth. The highest-value direction is therefore to make existing promises truthful and contain YouTube-DOM regressions before adding more surface area.
+[Verified] Astra Deck at v4.51.1 is a 417-setting, 11-locale MV3 extension (`extension/`, 52,883-line `ytkit.js` monolith + 25 extracted feature modules + 42 core modules + 33 selector packs), a generated Tampermonkey userscript, and a Windows PyQt6/Flask yt-dlp companion. Baseline on 2026-08-02 is fully green: **1272 JS tests pass**, **356 Python tests + 131 subtests pass**, `npm audit` reports zero advisories at every severity, ESLint clean, `ROADMAP.md` drained to zero open items. The prior pass's eight opportunities have all shipped or been fixed (companion sync probes, `audioTrackLanguage` bridge, history 500-entry exposure, `docs/architecture.md` drift).
+
+The project's engineering quality is no longer the constraint — **delivery and locale fidelity are**. The two structural findings this pass are that shipped work is not reaching users, and that an extension which localizes its own UI into 11 languages still reads YouTube almost entirely in English.
 
 Top opportunities, in priority order:
-1. Remove synchronous yt-dlp/ffmpeg probes from companion construction so the Dashboard paints before any subprocess timeout.
-2. Make the existing Preferred Audio Track Language control functional through the reviewed MAIN/ISOLATED player bridge, and support descriptive-audio preference.
-3. Add per-rule time/invocation budgets to the shared mutation runtime so one self-triggering feature cannot churn every page.
-4. Finish localization of the named in-page, downloader, transcript, Settings, and popup maintenance surfaces already covered by the active i18n backlog.
-5. Make the side dashboard genuinely RTL-safe and add an Arabic rendered regression state.
-6. Expand companion visual QA from polished empty shells to operational, error, dirty, and high-DPI states.
-7. Expose the retained 500-entry download history with filtering, sorting, pagination, and export instead of silently showing only 50.
-8. Add a conservative power-efficient codec mode that changes behavior only when `MediaCapabilities.decodingInfo()` returns a discriminating result.
+
+1. **Ship what is already built.** CHANGELOG declares `[4.51.1] - 2026-08-02`; the newest git tag and GitHub release is **v4.50.7 (2026-07-28)**. Two versions — including durable scheduled subscriptions and ~36 hardening fixes — are undelivered on a hand-install channel with no auto-update.
+2. **Video Hider type detection is English-only.** `isLive` / `isUpcoming` / `isMix` / `isPlaylist` are English regexes; localized *count* parsing shipped 2026-08-02 but type detection did not.
+3. **Three documented predicate-DSL fields are permanently inert** (`ageDays`, `isShort`, `isMembersOnly` hardcoded to `0`/`false`).
+4. **The companion's cookie-jar permission hardening does not work on Windows**, and its failure is swallowed.
+5. **~60 English exact-match `aria-label` selectors** across shipped features, with no gate preventing more.
+6. **Eight blocked items are blocked by a stale session constraint**, not by a real blocker.
+7. **SponsorBlock integration is read-only** — Astra consumes the segment commons without a submission or voting path.
+8. **Python has no swallowed-exception gate** where JavaScript has an enforced one (~28 bare `except: pass`, two security-relevant).
+9. **Audio sync and EQ are one node each** on an audio graph Astra already owns and already routes through.
+10. **Untranslated user-visible strings escape the i18n copy gate** — button text, `aria-label`s, toasts, and tooltip templates.
 
 ## Product Map
 
-- **Core workflows:** customize YouTube playback/layout/discovery; filter and organize feeds/comments/subscriptions; capture transcripts, notes, clips, and media; diagnose selectors/APIs/storage; download through the local companion.
-- **User personas:** YouTube power users, focus/privacy users, researchers and note-takers, multilingual/accessibility users, and Windows media archivists.
-- **Platforms and distribution:** Chrome/Edge/Brave and Firefox MV3 packages, Tampermonkey/Violentmonkey userscript, and an unsigned Windows 10+ x64 PyInstaller companion. Mobile browsers are explicitly unsupported.
-- **Key integrations and data flows:** YouTube DOM/player and InnerTube; SponsorBlock, DeArrow, Return YouTube Dislike, Reddit, optional AI providers, and Cobalt; extension-to-companion requests use authenticated loopback HTTP with native-messaging token bootstrap; companion work flows through yt-dlp, ffmpeg, and optional JS/PO-token runtimes.
+- **Core workflows:** customise YouTube playback/layout/discovery; filter feeds, comments and subscriptions; capture transcripts, notes, bookmarks and media; diagnose selector/API/storage health; download through the local companion.
+- **User personas:** YouTube power users, focus/privacy users, researchers and note-takers, multilingual and accessibility users, Windows media archivists.
+- **Platforms and distribution:** Chrome/Edge/Brave and Firefox 142+ MV3 packages in store-safe and GitHub-full profiles, a Tampermonkey/Violentmonkey userscript, and an unsigned Windows 10+ x64 PyInstaller companion. Distribution is GitHub Releases only — no store listing, no auto-update. Mobile browsers, YouTube Music, Studio and embeds are explicitly out of scope.
+- **Key integrations and data flows:** YouTube DOM/player and InnerTube; SponsorBlock, DeArrow, Return YouTube Dislike, Reddit, Cobalt, BYO AI providers, Ollama. Extension→companion traffic is authenticated loopback HTTP on `127.0.0.1:9751` plus five fallback ports, bootstrapped native-messaging-first, **and — verified — routed entirely through the background service worker's `EXT_FETCH` bridge** (`extension/ytkit.js:376`), not from the content script. Companion work flows through yt-dlp 2026.7.4, ffmpeg, Deno/Node EJS and an optional bgutil PO-token provider.
 
 ## Competitive Landscape
 
-- **ImprovedTube / Enhancer for YouTube:** broad, discoverable playback and layout controls validate Astra Deck's all-in-one positioning. Learn from their compact option taxonomy and strong per-control explanations; avoid duplicating their recurring original-audio, list-view, and YouTube-selector regressions without shared runtime guardrails.
-- **FreeTube / NewPipe / LibreTube:** independent front ends excel at subscriptions, queues, profile separation, and recommendation escape. Learn from durable portable data and explicit degraded states; avoid replacing YouTube's authenticated web experience or expanding Astra Deck into a second client application.
-- **SponsorBlock / DeArrow / Return YouTube Dislike:** focused community-data tools set the standard for transparent categories, per-video overrides, caching, and graceful API failure. Reuse their narrow-purpose clarity; avoid allowing network features to fail indistinguishably from absent data.
-- **BlockTube / Unhook:** simple filtering and distraction removal remain table stakes, while issue traffic shows selectors, localization, sync, and Shorts/comments are the maintenance cost. Learn from rule discoverability; avoid a second overlapping rule language.
-- **Parabolic / Seal / MeTube:** format discovery, presets, accurate ffmpeg re-cutting, and downloader state visibility are the strongest companion lessons. Avoid multi-site expansion and unbounded command passthrough, which conflict with Astra Downloader's YouTube-only SSRF boundary.
-- **JDownloader:** LinkGrabber, queue inspection, retry controls, and searchable history make long-running download state understandable. Learn from staged capture and data access; avoid clipboard surveillance by default and heavyweight remote-control scope.
-- **TubeArchivist / ytdl-sub:** durable archive state, scheduled channel ingestion, metadata, and media-server exports define the archiver ceiling. Learn from restart-safe state and explicit retention; avoid importing Docker/server/multi-user weight into the desktop companion.
-- **PocketTube / 4K Video Downloader:** grouping, sync, scheduled subscriptions, and bulk operations are the capabilities users pay for. Learn from coherent workflows and progressive disclosure; avoid gating data portability or recovery behind a paid/cloud account.
+- **BlockTube** (`github.com/amitbl/blocktube`) — the clearest migration target. Effectively stalled: last push 2026-02-07, 484 open issues, including a MV3 defect where filter listeners are registered inside an async callback and die after service-worker suspension, plus Firefox 151 breakage. **Learn:** rule discoverability and the `@handle`/multi-uploader blocking gaps its users keep filing. **Avoid:** a second rule language — Astra's predicate DSL plus keyword rules already cover it.
+- **Iridium** (`github.com/ParticleCore/Iridium`) — archived 2026-01-31 with ~1.3K stars and both store listings; users are being redirected to Enhancer, Unhook and Zenith. **Learn:** the migration window is open now. **Avoid:** inheriting its old-UI-restoration feature class (see below).
+- **Enhancer for YouTube** — abandoned Firefox/AMO in Aug 2025 over review latency, and is mid-rewrite with five open refactor RFCs filed 2026-06/07, so feature velocity is parked. **Learn:** its most-requested open enhancement is audio sync, which Astra can add as one `DelayNode`. **Avoid:** its recurring original-audio and selector regressions.
+- **ImprovedTube** (`github.com/code-charity/youtube`) — the live issue tracker is the best public demand signal: list/compact feed view (#3593, 19 👍), persistent newest-comment sort (#3658/#3668), force original audio track (#2716), buffer/preload control (#581), channel RSS (#4089), time and low-view filters (#4126/#4145). **Learn:** demand ranking. **Avoid:** its option sprawl without per-control explanations.
+- **SponsorBlock / DeArrow** — set the standard for transparent categories, per-video overrides and graceful API failure, and are the commons Astra reads from. Astra ships `deArrowVoting` and `casualMode` but SponsorBlock is `skipSegments` GET only (`extension/features/sponsorblock/index.js:257`). **Learn:** contribute back. **Avoid:** submission without abuse controls — writes carry reputation and account risk that reads never did.
+- **Control Panel for YouTube** — ships old-player-UI restoration toggles that were **already reported broken 2026-07-27**, with the author warning the toggle dies when YouTube deletes the legacy path. **Learn:** nothing to copy. **Avoid:** the entire old-UI-restoration feature class — it is unmaintainable by construction.
+- **PocketTube** (250K+ users, v18.7.1 2026-07-06) — subscription grouping plus bulk unsubscribe-by-inactivity and client-side watched-marking. **Learn:** both fit Astra's existing bounded-session + Undo `bulkCardActions` pattern and its stale-channel staging. **Avoid:** its Google-Drive sync coupling.
+- **Return YouTube Dislike** — a cautionary tale, not a competitor: it injected premium-upsell ads into YouTube in Oct 2025 and lost user trust outright. **Learn:** Astra's no-telemetry, credential-scrub, SBOM posture is the differentiator users now explicitly shop for. **Avoid:** any post-install behaviour change that was not disclosed at install.
 
 ## Security, Privacy, and Reliability
 
-- [Verified] `npm audit --audit-level=low` and `py -3.12 -m pip_audit -r astra_downloader/constraints-release.txt` reported no known vulnerabilities on 2026-07-29. The repo is already on the patched `brace-expansion` 5.0.8 and yt-dlp 2026.7.4 floors for GHSA-mh99-v99m-4gvg and CVE-2026-55404.
-- [Verified] The companion's strongest guardrails are already present: loopback bind, Host/Origin checks, constant-time token auth, server-side YouTube URL allowlisting, bounded requests/responses/queue, redacted diagnostics, secret-free atomic queue persistence, and staged rollback updates (`astra_downloader/routes.py`, `download.py`, `astra_downloader.py`).
-- [Verified] `audioTrackLanguage` is intentionally inert while presenting as a selectable feature, and `antiTranslateAudioTrack` reads `window.movie_player` from the ISOLATED content-script world (`extension/ytkit.js`). This is a correctness boundary: player calls must use the existing MAIN-world bridge or a DOM player element, with timeouts and no menu clicking.
-- [Verified] The shared mutation dispatcher catches thrown errors but has no per-rule duration, frequency, or route circuit breaker (`extension/core/navigation.js`). A self-mutating rule can therefore degrade the entire YouTube tab without incrementing the feature crash counter.
-- [Verified] Crash recovery and migration foundations are strong: the companion restores unfinished work as explicit `paused`/`needs-auth` states without secrets (`astra_downloader/download.py`), and extension persisted domains are schema-versioned. The remaining settings rollback write bug is already tracked in `ROADMAP.md`; do not create another migration item.
-- [Verified] Browser-account sync, companion redistribution/license closure, Chrome LNA validation, and live store/browser verification remain operator- or policy-gated in `Roadmap_Blocked.md`; no duplicate active item is justified.
+- **[Verified] The companion's cookie-jar permission hardening is ineffective on its only supported platform, and fails silently.** `astra_downloader/download.py:214-217` writes the Netscape jar containing live YouTube `SAPISID`/`SID` cookies, then calls `os.chmod(target_path, 0o600)` inside `try: … except OSError: pass`. On Windows `os.chmod` only toggles the read-only bit — it cannot express POSIX 0600 — so the confidentiality control named in `docs/yt-dlp-cookie-threat-model.md` does not exist in practice, and any failure is unobservable. There is also a window between `os.replace` (`:212`) and the `chmod` where the file is at default inherited permissions.
+- **[Verified] Python has no equivalent of the JavaScript `require-catch-reason` gate.** ESLint enforces a `// reason:` comment on all 159 empty JS catches and reports zero issues; the companion has ~28 bare `except: pass` with no comment. Two are security-relevant beyond the chmod above: cookie-jar unlink failures at `download.py:988`, `:1021`, `:1888`, `:2119` leave a jar with session cookies on disk with no record. Others hide watchdog and process-kill failures (`download.py:1770`, `:283`, `:287`, `:300`).
+- **[Verified] Chrome Local Network Access is already mitigated architecturally.** Chrome 142 shipped LNA and Chrome 145 split it into `local-network` + `loopback-network`. Content-script-initiated loopback fetches are gated; extension requests with matching `host_permissions` are not. Astra's companion probe calls `extensionFetchJson` (`extension/features/download-ui/index.js:277`), which posts `EXT_FETCH` to the service worker (`extension/ytkit.js:375-378`), and `manifest.json` declares all six loopback origins. **No new work is warranted here** — the residual risk is live-browser confirmation, already tracked in `Roadmap_Blocked.md`.
+- **[Verified] No dependency advisories.** `npm audit` reports `{critical:0, high:0, moderate:0, low:0, info:0}` on 2026-08-02. `requirements.txt` already pins above every 2025-2026 advisory floor: `curl_cffi==0.15.0` (CVE-2026-2431 redirect SSRF), `werkzeug>=3.1.6` (GHSA-29vq-49wr-vm6x), `flask>=3.1.3`, `requests>=2.33.0`, `yt-dlp==2026.7.4` (CVE-2026-55404). Overrides already carry `brace-expansion 5.0.8`, `shell-quote ^1.10.0`, `adm-zip ^0.6.0`. `ws` is pinned at 8.21.0, above the 8.20.1 fix for GHSA-58qx-3vcg-4xpx.
+- **[Verified] Firefox data-collection consent is already handled** — `scripts/manifest-patch.js:32` emits `data_collection_permissions` under `browser_specific_settings.gecko`, which AMO has required for new submissions since 2025-11-03. No work needed.
+- **[Verified] Distribution is the largest reliability risk to users.** `package.json`, `extension/manifest.json` and `docs/architecture.md` all state v4.51.1 and `CHANGELOG.md` dates it 2026-08-02, but `git tag` and `gh release list` both top out at v4.50.7. Users on a manual-install channel cannot receive scheduled subscriptions, the Firefox native-messaging bootstrap fix, the resume-playback persistence fix, or the download filename cap. The maintainer CRX key is absent from this machine (`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` not present, `ASTRA_CRX_KEY_PATH` unset), and repo policy forbids releasing ZIPs without CRX/XPI — so the CRX half is key-gated while tagging, building and XPI/userscript/SBOM staging are not.
+- **[Verified] Working-tree corruption was found and repaired during this pass** (240 tracked source files truncated to 0 bytes with `.bak` sidecars byte-identical to `HEAD`). `git restore` recovered all of them and the full suite went green afterwards. Not a repo defect — recorded so a future reader does not treat the `.bak` files as meaningful.
 
 ## Architecture Assessment
 
-- [Verified] Canonical boundaries are still incomplete: `astra_downloader/_compat.py::make_legacy_resolver` reaches back into the composition root, while `extension/ytkit.js` and `YTKit.user.js` retain large fallback/vehicle copies. Existing roadmap items already own fallback drift; future feature work should land in extracted modules first.
-- [Verified] Companion construction calls `_tools_status_text()` while building Settings; its version getters can each wait five seconds, despite `_refresh_tools_status()` already providing the correct worker boundary (`astra_downloader/gui.py`, `astra_downloader/astra_downloader.py`).
-- [Verified] `extension/core/navigation.js` already centralizes mutation batching, scoped selectors, record caps, hidden-tab draining, and bounded element batches. It is the lowest-cost enforcement point for rule health budgets and route-scoped suspension.
-- [Verified] Sidepanel JS sets `dir=rtl`, but CSS still uses physical left/right alignment and switch travel; the only rendered sidepanel smoke is dark LTR (`extension/sidepanel.css`, `scripts/smoke-headless-a11y.js`, `tests/sidepanel-i18n.test.js`).
-- [Verified] Companion screenshot QA seeds empty collections only and manually repaints the navigation rail. Active, paused, auth-required, failed, dirty, invalid, update-busy, server-error, minimum-size, high-DPI, and large-font states are not rendered (`scripts/render-companion-gui.py`).
-- [Verified] History persists 500 entries but the GUI and in-page panel each expose 50, with no total, search, filter, pagination, or export (`astra_downloader/config.py`, `gui.py`, `extension/features/download-ui/index.js`).
-- [Verified] Documentation facts have drifted: `docs/architecture.md` understates line/settings counts and still forbids a light theme; `README.md` and `docs/native-messaging-token-bootstrap.md` still claim no current release carries the companion asset pair; `docs/predicate-sandbox-investigation.md` says the shipped sandbox is disabled. The tracked generated-doc contract is the right root fix.
+- **[Verified] Three documented predicate-sandbox fields are permanently inert.** `docs/predicate-sandbox-investigation.md:137-142` documents `ageDays`, `isShort` and `isMembersOnly` as usable, but both implementation copies hardcode them (`extension/features/video-hider/index.js:1337,1340,1342` and `extension/ytkit.js:17559`). A user rule of `ageDays > 365` silently never matches. The detection logic already exists nearby — `_extractCardAgeDays` at `extension/ytkit.js:37291` powers the stale-channel scanner.
+- **[Verified] YouTube-facing detection is English-only while the product ships 11 locales.** `extension/ytkit.js:17214-17221` derives `isLive`, `isUpcoming`, `isMix` and `isPlaylist` from English regexes over lowercased localized metadata, so on a non-English UI those predicates are permanently false. Only `hidePlannedLivestreams` was internationalized (`_NOTIFY_RE`/`_SCHEDULED_RE` at `extension/ytkit.js:33979,33990` carry ES/DE/FR/IT/RU/JA/KO/ZH/AR alternations) — which proves the pattern is understood and simply was not applied elsewhere. Roughly 60 further sites use English exact-match `aria-label` selectors, concentrated in `extension/ytkit.js:16381-16387` (the whole watch-action button map), `:15347-15360`, `:26915-26951` (consent dialogs) and `:33087-33610` (Watch Later workbench).
+- **[Verified] The i18n copy gate has holes.** `npm run i18n:copy:gate` passes while these user-visible strings are hardcoded English: `extension/ytkit.js:33359` button text `'Remove Watched'` and its `aria-label`, `:25511` a `showToast` string that also names an English YouTube button, and `:24796` the `Scheduled for ${exactDate}` / `Published on ${exactDate}` tooltip that is also copied into `aria-label`. The gate is fingerprint/baseline-based rather than exhaustive.
+- **[Verified] The companion port list is duplicated four ways** — `astra_downloader/astra_downloader.py:222`, `astra_downloader/config.py:91`, `extension/manifest.json` (host_permissions and CSP `connect-src`), and `build-extension.js:89-95`. Adding a fallback port requires four coordinated edits with no gate tying them together.
+- **[Verified] Companion auto-start retry budgets are below the documented cold-start time.** `CLAUDE.md` records that a cold 40 MB one-file start needs ~12 s; `tryAutoStart(retries = 4)` defaults to ~6 s (`extension/features/download-ui/index.js:428`). The main download path was bumped to `8` (`:1154`) but every recovery path still passes `5` (`:639`, `:696`, `:1184`, `extension/ytkit.js:43347`), so the user-facing "try starting again" button gives up before a cold start finishes.
+- **[Verified] The dual-artifact tax is the dominant maintenance cost.** `extension/ytkit.js` (52,883 lines) and `YTKit.user.js` (44,262) change together — 133 and 81 touches respectively across the last 300 commits — policed by `scripts/check-userscript-drift.js` rather than eliminated. The 11-locale fan-out adds ~14 files per copy change. `Roadmap_Blocked.md` already owns the canonicalisation work; do not open a second item.
+- **[Verified] Eight of 28 items in `Roadmap_Blocked.md` are blocked by a stale session constraint**, not a real one — each cites "this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`", a self-imposed rule from a prior pass. They include dual subtitles, allowlist hiding mode, the audio auto-gain/high-pass chain, enforced Shorts limits, the hide-AI-surfaces pack, comment intelligence, playlist power pack and notification controls. No such constraint applies now.
+- **[Verified] Test coverage is strong in aggregate but thin per module.** 89 test files / 1272 tests cover `core/predicate-sandbox` and `core/navigation` indirectly (`tests/core-foundation.test.js`, `tests/long-session.test.js`, `tests/hardening.test.js`), so "no dedicated file" is mostly a naming artefact. The real gaps are `extension/features/download-ui/index.js` (2,818 lines, the entire download path, covered only by the adjacent `tests/download-health-boundary.test.js`) and `extension/features/subscription-groups/index.js` (2,453 lines).
+- **[Likely] Startup cost is unmeasured.** `manifest.json` content-script entry 3 injects ~96 files into every YouTube page at `document_idle`. No budget, benchmark or regression gate exists for injection or first-feature-paint time, and competitor CPU complaints are a recurring review theme.
 
 ## Rejected Ideas
 
-- **Mobile-browser port:** [Rejected] README explicitly excludes Android/iOS browsers, and NewPipe/LibreTube/SmartTube already serve the native-client use case better.
-- **Cloud accounts or multi-user companion:** [Rejected] TubeArchivist needs users because it is a shared server; Astra Downloader is an authenticated single-user loopback process. This would add identity, tenancy, and remote-attack surface without a local workflow.
-- **Arbitrary JavaScript plugins via `chrome.userScripts`:** [Rejected] the API requires a new permission and a user-mode toggle, is Chromium-specific, and would undercut CSP/no-eval and store-risk boundaries. Keep shareable behavior declarative through settings profiles.
-- **Generic hosted CI:** [Rejected] `.github/workflows` is intentionally absent under `docs/repo-settings.md`; local release/readiness scripts are the stated operational model.
-- **Multi-site downloader:** [Rejected] Parabolic/Seal/MeTube breadth is attractive but conflicts with `is_youtube_url` and the companion's deliberate SSRF boundary.
-- **Remote telemetry/crash collection:** [Rejected] privacy docs promise no analytics or automatic diagnostic upload. Bounded local diagnostics and user-reviewed bundles are sufficient.
-- **Automatic LoAF script attribution:** [Rejected] Chrome documents that isolated-world extension code lacks Long Animation Frame script attribution. Directly timing Astra's own shared rule dispatcher is more accurate and portable.
-- **GitHub-based extension self-updater:** [Rejected] store builds already update through their stores; adding GitHub host access for unpacked installs is disproportionate to a manual release-link workflow.
+- **Old-player-UI restoration toggles** — [Rejected] Control Panel for YouTube's equivalent was already reported broken 2026-07-27 and its author warns it dies outright when YouTube removes the legacy path. Unmaintainable by construction.
+- **Route loopback traffic through the service worker for Chrome LNA** — [Rejected] already the shipped architecture; verified at `extension/ytkit.js:375-378`. The generic advice does not apply here.
+- **Mobile-browser port** — [Rejected] README excludes it; NewPipe/LibreTube/SmartTube serve that use case natively.
+- **Cloud accounts, multi-user companion, or Google-Drive settings sync** — [Rejected] adds identity, tenancy and remote attack surface to a single-user loopback process. Opt-in `storage.sync` is already tracked in `Roadmap_Blocked.md`.
+- **Multi-site downloader (SoundCloud/PeerTube/Bandcamp)** — [Rejected] conflicts with `is_youtube_url` and the companion's deliberate SSRF boundary.
+- **`chrome.userScripts`-based arbitrary JS plugins** — [Rejected] since Chrome 138 it needs a per-extension user toggle that defaults off, is Chromium-only, and undercuts the no-eval/CSP boundary.
+- **Bundling a local SponsorBlock segment database for offline skipping** — [Rejected] segment accuracy is inherently server-fresh; a stale bundled DB would mis-skip and read as a defect. Contribute upstream instead.
+- **aria2c / `--external-downloader`** — [Rejected] already banned in source over CVE-2026-50574, and yt-dlp 2026.06.09 removed aria2c HLS/DASH support anyway.
+- **`.mailmap` to collapse author-name variants** — [Rejected] cosmetic; all variants are the same human with the same address, and no AI identity is present.
+- **Remote telemetry or crash upload** — [Rejected] contradicts the published privacy policy; bounded local diagnostics already exist.
+- **Enterprise `storage.managed` policy provisioning** — [Rejected for now] sourced only from a single BlockTube feature request with no evidence of demand among Astra's users; revisit if an actual deployment asks.
 
 ## Sources
 
-### Direct and adjacent OSS
-- https://github.com/code-charity/youtube
-- https://github.com/YouTube-Enhancer/extension
-- https://github.com/amitbl/blocktube
-- https://github.com/ajayyy/SponsorBlock
-- https://github.com/ajayyy/DeArrow
-- https://github.com/Anarios/return-youtube-dislike
-- https://github.com/FreeTubeApp/FreeTube
-- https://github.com/TeamNewPipe/NewPipe
-- https://github.com/libre-tube/LibreTube
-- https://github.com/yuliskov/SmartTube
-- https://github.com/NickvisionApps/Parabolic
-- https://github.com/JunkFood02/Seal
-- https://github.com/alexta69/metube
-- https://github.com/tubearchivist/tubearchivist
-- https://github.com/jmbannon/ytdl-sub
-- https://github.com/yt-dlp/yt-dlp
+### OSS competitors and adjacent projects
+- https://github.com/amitbl/blocktube/issues
+- https://github.com/ParticleCore/Iridium
+- https://github.com/code-charity/youtube/issues
+- https://github.com/YouTube-Enhancer/extension/issues
+- https://github.com/ajayyy/SponsorBlock/issues
+- https://dearrow.ajay.app/casual/
+- https://github.com/Anarios/return-youtube-dislike/issues
+- https://github.com/insin/control-panel-for-youtube/issues
+- https://pockettube.io/
+- https://github.com/CaptainYouz/FocusTube
+- https://alternativeto.net/software/iridium-by-particlecore/
 
-### Commercial products and documentation
-- https://www.mrfdev.com/enhancer-for-youtube
-- https://unhookextension.com/
-- https://pockettube.io/pricing.html
-- https://www.4kdownload.com/products/videodownloader
-- https://jdownloader.org/home/features
-- https://docs.tubearchivist.com/downloads/
-- https://docs.tubearchivist.com/settings/application/
-
-### Platforms, standards, dependencies, and security
-- https://developer.chrome.com/docs/extensions/reference/api/userScripts
-- https://developer.chrome.com/docs/extensions/reference/api/sidePanel
-- https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3
+### Platform, standards and store policy
+- https://developer.chrome.com/docs/extensions/whats-new
+- https://developer.chrome.com/blog/local-network-access
+- https://chromestatus.com/feature/5068298146414592
+- https://groups.google.com/a/chromium.org/g/chromium-extensions/c/pUDh8RiTjJk
+- https://developer.chrome.com/blog/cws-policy-updates-2026
+- https://developer.chrome.com/blog/chrome-userscript
 - https://developer.chrome.com/docs/ai/built-in-apis
-- https://developer.chrome.com/docs/web-platform/long-animation-frames
-- https://developer.mozilla.org/en-US/docs/Web/API/MediaCapabilities/decodingInfo
-- https://w3c.github.io/webextensions/specification/
-- https://support.google.com/youtube/answer/13339776?hl=en
-- https://support.google.com/youtube/answer/15569972?hl=en-EN
-- https://support.google.com/youtube/answer/16166822?hl=en-GB
-- https://doc.qt.io/qt-6/accessible.html
-- https://github.com/advisories/GHSA-mh99-v99m-4gvg
-- https://nvd.nist.gov/vuln/detail/CVE-2026-55404
-- https://github.blog/security/vulnerability-research/attacking-browser-extensions/
+- https://blog.mozilla.org/addons/2025/10/23/data-collection-consent-changes-for-new-firefox-extensions/
+- https://blog.mozilla.org/addons/2026/04/23/webextensions-api-changes-firefox-149-152/
+- https://blog.mozilla.org/addons/2026/07/23/firefox-153-webextensions-api-updates/
+- https://webstatus.dev
+- https://w3c.github.io/webextensions/specification/index.html
 
-### Community and research
-- https://news.ycombinator.com/item?id=44265411
-- https://news.ycombinator.com/item?id=40643856
-- https://stackoverflow.com/questions/61732313/content-script-running-mutationobserver-conflicting-with-youtube
-- https://www.reddit.com/r/youtubedl/comments/1lgnk2k
-- https://support.mozilla.org/en-US/kb/diagnose-firefox-issues-using-troubleshoot-mode
-- https://arxiv.org/abs/2307.14551
-- https://arxiv.org/abs/2507.13926
-- https://arxiv.org/abs/2406.12710
-- https://assets.mofoprod.net/network/documents/Mozilla-Report-YouTube-User-Controls.pdf
+### Dependencies and security
+- https://github.com/yt-dlp/yt-dlp/releases
+- https://github.com/yt-dlp/yt-dlp/security/advisories
+- https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
+- https://github.com/yt-dlp/yt-dlp/issues/15012
+- https://github.com/Brainicism/bgutil-ytdlp-pot-provider
+- https://osv.dev
+- https://docs.python.org/3/library/os.html#os.chmod
 
-### Discovery lists
-- https://github.com/awesome-soft/awesome-chrome-extensions
-- https://project-awesome.org/r/Awesome-WebExtensions
-- https://github.com/awesome-selfhosted/awesome-selfhosted
+### Community signal and incidents
+- https://iter.ca/post/yt-adblock/
+- https://piunikaweb.com/2025/10/14/youtube-new-desktop-ui-rollout-complaints/
+- https://www.ghacks.net/2025/08/18/enhancer-for-youtube-add-on-for-firefox-possibly-discontinued-due-to-problems-with-mozillas-review-process/
+- https://www.ghacks.net/2026/01/10/youtube-adds-a-search-filter-to-hide-shorts-from-results/
+- https://news.ycombinator.com/item?id=45696329
+- https://www.island.io/blog/badblocker-11-million-users-one-server-call-away-from-compromise
+- https://blog.sekoia.io/targeted-supply-chain-attack-against-chrome-browser-extensions/
+- https://9to5google.com/2026/09/16/youtube-lower-view-counts-ad-blockers/
+- https://noahkarsky.com/2026/04/11/obsidian-youtube-clipper-breakdown.html
+- https://sponsorblock.instatus.com/history/1
 
 ## Open Questions
 
-- None. The remaining live-browser, store, legal, and product-scope decisions are already recorded in `Roadmap_Blocked.md`.
+- **SponsorBlock submission identity and abuse posture.** Adding `postSkipSegments`/`voteOnSponsorTime` requires generating and persisting a private `userID`, which is a new durable identifier and a new outbound write path. Whether Astra should carry submission at all — versus voting only, versus neither — is a maintainer product/liability call that changes the design, not something inspectable in the repo or resolvable from public sources.
+- **Whether the maintainer CRX key (`ytkit.pem`) can be made available on this machine.** It determines whether the v4.51.1 release is an actionable roadmap item or belongs in `Roadmap_Blocked.md` alongside the other key-gated release work.
