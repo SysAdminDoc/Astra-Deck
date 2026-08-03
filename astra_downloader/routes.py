@@ -97,7 +97,7 @@ class _ServerAdapter:
                 self._server.shutdown()
                 self._server.server_close()
         except Exception:
-            # Server teardown is best-effort from the GUI thread.
+            # reason: server teardown is best-effort from the GUI thread
             pass
 
 

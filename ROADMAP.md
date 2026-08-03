@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P1 — Correctness, security, and broken promises
 
-- [ ] P1 — Add a Python swallowed-exception gate matching the JavaScript one
-  Why: ESLint's `local/require-catch-reason` forces a `// reason:` comment on all 159 empty JS catches and reports zero issues, but the companion has ~28 bare `except: pass` with no equivalent enforcement. Beyond the cookie sites above, these hide watchdog and process-kill failures, so a stall watchdog that fails to kill a hung yt-dlp reports nothing at all.
-  Evidence: `astra_downloader/download.py:216,225,238,240,273,283,287,294,296,300,1362,1367,1770,1830,2290`; `astra_downloader/config.py:553`; `astra_downloader/subscriptions.py:237`; `astra_downloader/astra_downloader.py:441,482,487`; `astra_downloader/gui.py:556,566,662,2210,3387,3440`; `eslint.config.js` + `scripts/eslint-rules/require-catch-reason.js`.
-  Touches: new check script wired into `npm run check` (alongside `scripts/audit-python-deps.js`), the listed companion modules.
-  Acceptance: `npm run check` fails on a `pass`-only `except` body in `astra_downloader/**` that lacks a `# reason:` comment; every existing site either gains a reason comment or is converted to log-and-continue; the process-kill and watchdog sites log at warning level.
-  Complexity: M
-
 - [ ] P1 — Close the i18n copy-gate holes on hardcoded user-visible strings
   Why: `npm run i18n:copy:gate` passes while several user-visible strings — including two screen-reader `aria-label`s — are hardcoded English. The gate is fingerprint/baseline-based rather than exhaustive, so it cannot catch a newly added literal, which means this recurs every time a feature adds UI.
   Evidence: `extension/ytkit.js:33359` (`'Remove Watched'` button text plus `aria-label` `'Remove all watched videos from Watch Later'`), `:25511` (`showToast('Open More actions on this card to save it manually.')`), `:24796` (`Scheduled for ${exactDate}` / `Published on ${exactDate}`, also copied into `aria-label` at `:24798`).

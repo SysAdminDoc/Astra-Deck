@@ -16,6 +16,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and Subscription Groups can schedule their channel members from the extension.
 
 ### Fixed
+- **Companion exception observability.** The release check now rejects
+  pass-only Python exception handlers without an explicit reason, and process
+  termination/watchdog failures are recorded at warning level.
 - **Cookie-jar permissions.** Companion YouTube cookie jars now receive and
   verify an owner-only ACL before any cookie bytes are written; ACL failures
   abort the download with a retryable classified error.

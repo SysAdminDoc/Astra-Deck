@@ -551,6 +551,7 @@ def atomic_write_json(path, data):
             if temporary.exists():
                 temporary.unlink()
         except OSError:
+            # reason: JSON scratch cleanup is best-effort after replacement or failure
             pass
 
 

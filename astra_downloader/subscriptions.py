@@ -235,6 +235,7 @@ class SubscriptionStore:
             try:
                 temporary.unlink(missing_ok=True)
             except OSError:
+                # reason: subscription scratch cleanup is best-effort after replacement or failure
                 pass
 
     def _clean(self, value, default="", max_len=_TEXT_LIMIT):

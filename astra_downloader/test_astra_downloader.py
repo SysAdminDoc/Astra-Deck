@@ -3251,6 +3251,39 @@ class CookieJarTests(unittest.TestCase):
             self.assertIn("\t100\tC\tc", body)
 
 
+class ProcessTerminationTests(unittest.TestCase):
+    def test_process_kill_fallbacks_emit_warning_level_diagnostics(self):
+        import importlib
+
+        download_module = importlib.import_module("download")
+        logs = []
+
+        class FailingProcess:
+            pid = 123
+
+            def poll(self):
+                return None
+
+            def terminate(self):
+                raise OSError("terminate denied")
+
+            def kill(self):
+                raise OSError("kill denied")
+
+        def fail_taskkill(*_args, **_kwargs):
+            raise OSError("taskkill denied")
+
+        download_module.terminate_process_tree(
+            FailingProcess(),
+            platform="win32",
+            runner=fail_taskkill,
+            logger=logs.append,
+        )
+
+        self.assertGreaterEqual(len(logs), 3)
+        self.assertTrue(all(message.startswith("WARNING:") for message in logs))
+
+
 class PathConfinementTests(unittest.TestCase):
     """v1.2.0 S1 — outputDir allowlist.
 
