@@ -9,6 +9,7 @@ const {
     normalizeDownloadHealthSnapshot,
     summarizeFormatProbe,
     DOWNLOAD_HEALTH_SCHEMA_VERSION,
+    AUTO_START_RETRY_BUDGET,
 } = require('../extension/features/download-ui');
 const { waitForCondition } = require('./helpers/async');
 
@@ -224,10 +225,31 @@ test('initiating a download auto-starts a stopped companion via mediadl://start'
             throw new Error('ECONNREFUSED');
         },
     });
-    const result = await feature.MediaDLManager.tryAutoStart(4);
+    const result = await feature.MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
     assert.deepEqual(protocolCalls, ['mediadl://start'], 'must launch the companion via its registered protocol');
     assert.equal(result.ok, true, 'must adopt the server once it responds');
     assert.equal(result.port, 9751);
+});
+
+test('all normal and recovery auto-start paths use the documented cold-start budget', () => {
+    assert.equal(AUTO_START_RETRY_BUDGET, 8);
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
+    const monolithSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'),
+        'utf8'
+    );
+    assert.match(moduleSource, /tryAutoStart\(retries = AUTO_START_RETRY_BUDGET\)/);
+    const callArgs = [...moduleSource.matchAll(/(?:this|MediaDLManager)\.tryAutoStart\(([^)\n]+)\)/g)]
+        .map((match) => match[1].trim());
+    assert.ok(callArgs.length >= 4, 'module should cover the initial, recovery, and UI retry paths');
+    assert.ok(callArgs.every((arg) => arg === 'AUTO_START_RETRY_BUDGET'
+        || arg === 'likelyNeverInstalled ? 2 : AUTO_START_RETRY_BUDGET'));
+    assert.match(monolithSource, /const AUTO_START_RETRY_BUDGET = 8;/);
+    assert.match(monolithSource, /MediaDLManager\.tryAutoStart\(AUTO_START_RETRY_BUDGET\)/);
+    assert.doesNotMatch(`${moduleSource}\n${monolithSource}`, /tryAutoStart\(\s*[45]\s*\)/);
 });
 
 test('quality ladder rungs the companion cannot honor are rejected', () => {

@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Companion cold-start recovery.** Every normal and user-facing retry path
+  now shares the documented 12-second auto-start poll budget, while the
+  fast-fail path for a never-installed companion remains short.
 - **UI-copy localization gate.** Watch Later cleanup labels, save guidance,
   channel-age tooltips, and their accessible names now resolve through locale
   keys; the copy gate also fingerprints new direct literals at text, title,

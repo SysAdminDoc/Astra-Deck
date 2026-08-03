@@ -10,6 +10,10 @@
     // dependencies; this file is the extension's canonical implementation.
 
     const DOWNLOAD_HEALTH_SCHEMA_VERSION = 2;
+    // A cold 40 MB one-file companion start can take roughly 12 seconds.
+    // Eight 1.5-second polls gives the normal and recovery paths the same
+    // documented window to finish unpacking, initialize Qt, and bind HTTP.
+    const AUTO_START_RETRY_BUDGET = 8;
 
     function normalizeCookieExpiry(value) {
         const normalized = Number(value);
@@ -425,7 +429,7 @@
             },
 
             // Try to auto-start the server via mediadl:// protocol and wait for it.
-            async tryAutoStart(retries = 4) {
+            async tryAutoStart(retries = AUTO_START_RETRY_BUDGET) {
                 const current = await this.check(true);
                 if (current.ok || current.nativeChannelRequired) return current;
                 if (this._autoStartAttempted) {
@@ -636,7 +640,7 @@
                         retryBtn.disabled = true;
                         retryBtn.setAttribute('aria-busy', 'true');
                         this.resetAutoStart();
-                        const result = await this.tryAutoStart(5);
+                        const result = await this.tryAutoStart(AUTO_START_RETRY_BUDGET);
                         if (result.ok) {
                             showToast(t('toastDlRunning', 'Astra Downloader is running!'), '#22c55e', { duration: 3 });
                             prompt.remove();
@@ -693,7 +697,7 @@
                     recheckBtn.disabled = true;
                     recheckBtn.setAttribute('aria-busy', 'true');
                     this.resetAutoStart();
-                    const result = await this.tryAutoStart(5);
+                    const result = await this.tryAutoStart(AUTO_START_RETRY_BUDGET);
                     if (result.ok) {
                         showToast(t('toastDlReady', 'Astra Downloader is ready.'), '#22c55e', { duration: 4 });
                         prompt.remove();
@@ -1151,7 +1155,7 @@
                 // installed — the mediadl:// launch is a silent no-op then, so
                 // don't hold the user under a false "Starting…" toast for 12s.
                 likelyNeverInstalled = !!MediaDLManager._nativeTokenError && !MediaDLManager._foreignServer;
-                mdl = await MediaDLManager.tryAutoStart(likelyNeverInstalled ? 2 : 8);
+                mdl = await MediaDLManager.tryAutoStart(likelyNeverInstalled ? 2 : AUTO_START_RETRY_BUDGET);
             }
             if (!mdl.ok) {
                 if (mdl.nativeChannelRequired) {
@@ -1181,7 +1185,7 @@
                     DebugManager.log('Download', 'Local downloader request failed; attempting one server restart');
                     showToast(t('toastDlStopped', 'Astra Downloader stopped. Starting it again…'), '#3b82f6', { duration: 4 });
                     MediaDLManager.resetAutoStart();
-                    const restarted = await MediaDLManager.tryAutoStart(5);
+                    const restarted = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
                     if (restarted.ok) {
                         try {
                             await _mediaDLSendDownload(videoUrl, audioOnly, restarted.token, opts);
@@ -2812,7 +2816,8 @@
             createDownloadUIFeature,
             normalizeDownloadHealthSnapshot,
             summarizeFormatProbe,
-            DOWNLOAD_HEALTH_SCHEMA_VERSION
+            DOWNLOAD_HEALTH_SCHEMA_VERSION,
+            AUTO_START_RETRY_BUDGET
         };
     }
 })();
