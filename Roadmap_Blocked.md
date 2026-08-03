@@ -2,6 +2,16 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+## P0 — Delivery
+
+- [ ] P0 — Tag and publish the v4.51.1 release
+  Why: `CHANGELOG.md` declares `[4.51.1] - 2026-08-02` and all version sources agree, but the newest git tag and GitHub release is v4.50.7 (2026-07-28). Two versions of shipped work — durable scheduled subscriptions, the Firefox native-messaging bootstrap fix, resume-playback persistence, the download filename cap and ~33 further fixes — are undelivered on a hand-install channel with no auto-update.
+  Evidence: `git tag --sort=-v:refname` tops out at v4.50.7; `gh release list` newest is v4.50.7; `package.json` / `extension/manifest.json` / `docs/architecture.md` all state 4.51.1. The v4.50.7 release carries the ZIP/XPI/userscript/SBOM/companion assets but no CRX artifacts.
+  Touches: `npm run release:prepare`, `scripts/generate-release-readiness.js`, `scripts/generate-release-manifest.js`, `scripts/stage-companion-release.js`, git tag, GitHub Release assets.
+  Acceptance: a `v4.51.1` tag exists on the release commit and a GitHub Release carries the full artifact set per the repo release policy (store-safe + GitHub-full Chrome ZIP/CRX and Firefox ZIP/XPI, userscript, SBOM, `release-manifest.json`, `SHA256SUMS`); `npm run release:verify-digests -- --tag v4.51.1` passes.
+  Complexity: S
+  Blocker: The external maintainer CRX key is absent (`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` does not exist and `ASTRA_CRX_KEY_PATH` is unset). This run's AGENTS contract also forbids signing software, so publishing the required CRX artifact set cannot be completed without a permitted signing-key decision and external key material.
+
 - [ ] P3 — aria2c external-downloader option
   Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
   Evidence: `astra_downloader/test_astra_downloader.py` (`Aria2cExternalDownloaderBanTests`); `CHANGELOG.md` (CVE-2026-50574 external-downloader ban).
