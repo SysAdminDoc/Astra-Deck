@@ -90,6 +90,62 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
   Acceptance: settings panel, toasts and the download-options popup render as popovers, with a non-popover fallback retained for the userscript vehicle; the rendered overlay smoke passes in all existing states plus a stacking state that previously required the maximum z-index; `CloseWatcher` handles Esc where available with the current key handler as fallback.
   Complexity: L
 
+- [ ] P2 — Dual-language subtitles
+  Why: A second independently selected caption track is valuable for language learners but must be explicitly enabled and configured.
+  Evidence: YtDLS (CY Fung), Youtube dual subtitle (0xjax), vanadis bilingual persist.
+  Touches: timedtext track fetch, subtitle renderer/styling pipeline, settings schema/locales.
+  Acceptance: An opt-in second caption track renders below native captions with an independent language picker and clean unavailable-track fallback.
+  Complexity: M
+
+- [ ] P2 — Allowlist hiding mode
+  Why: Inverse channel filtering needs a deliberate mode control and an empty-list safety guard to avoid hiding all of YouTube accidentally.
+  Evidence: BlockTube issue #133; FocusTube HN subscriptions-only demand.
+  Touches: `extension/features/video-hider/`, settings schema/locales, blocked/allowed channel storage.
+  Acceptance: An explicitly labelled mode toggle switches home/search/related filtering to allowlist semantics; card and settings management remain recoverable.
+  Complexity: M
+
+- [ ] P2 — Audio chain completion: auto-gain + high-pass
+  Why: Astra already implements compressor-backed `audioNormalization`; the remaining independently selectable nodes are auto-gain and high-pass filtering.
+  Evidence: Tweaks for YouTube feature set; `extension/ytkit-main.js` audio graph and `audioNormalization` setting.
+  Touches: MAIN-world audio graph, isolated-world bridge, settings schema/locales.
+  Acceptance: Auto-gain and high-pass nodes toggle independently with sane defaults, live-apply, and never double-connect across SPA navigation.
+  Complexity: M
+
+- [ ] P2 — Enforced Shorts daily limit
+  Why: A Shorts-specific budget and hard-block/snooze policy are distinct from the existing all-video `dwDailyCapMin` setting.
+  Evidence: TechCrunch 2025-10-22 Shorts timer coverage; Shorts Addiction Helper scripts; `extension/features/digital-wellbeing/`.
+  Touches: digitalWellbeing runtime, Shorts route detection, settings schema/locales.
+  Acceptance: Users configure daily Shorts minutes and hard-block versus five-minute snooze; usage resets at local midnight and the block is accessible.
+  Complexity: M
+
+- [ ] P2 — Hide AI surfaces pack
+  Why: Independent controls are needed because Ask, Gemini, AI summaries, and context panels are separate surfaces with different user value.
+  Evidence: Control Panel for YouTube; Remove YouTube Gemini buttons; Youtube without fact checking.
+  Touches: `extension/early.css`, CSS feature registrations, selector packs, settings schema/locales.
+  Acceptance: Independent toggles hide each verified surface with capture-backed selector canaries.
+  Complexity: S
+
+- [ ] P2 — Notification menu controls: cap count + hide read
+  Why: Count and read-state filtering are user-selected policies, not safe unconditional behavior under chronological sorting.
+  Evidence: competitor notification options; `chronologicalNotifications` in `extension/ytkit.js`.
+  Touches: chronologicalNotifications runtime, settings schema/locales.
+  Acceptance: Independent options cap rendered notifications and hide read entries without observer/re-render loops.
+  Complexity: S
+
+- [ ] P2 — Comment intelligence pack
+  Why: Language selection and duplicate expansion need discoverable controls; the existing `commentFilterRules` textarea already persists `@author` block rules but its localized contract does not cover language or duplicate behavior.
+  Evidence: YouTube Comment Language Filter (GF 558814), Similar Comments Hider (hjk789), user-block scripts; `commentFilterManager` in `extension/ytkit.js`.
+  Touches: comment filter runtime, settings-panel controls, settings schema/locales.
+  Acceptance: A localized language allowlist hides other-language comments without network access; near duplicates collapse under an accessible expander; author blocks persist and remain manageable.
+  Complexity: M
+
+- [ ] P2 — Playlist power pack
+  Why: Duration sorting, per-playlist resume, and auto-skip-watched are user-selected actions/policies that need clear accessible controls in the existing Playlist Enhancer toolbar.
+  Evidence: Sort Youtube Playlist by Duration (KohGeek), playlists playback tracker (andrybak), Playlist Auto Skip Watched (neverlandeverland).
+  Touches: playlistEnhancer runtime, resume storage, settings/localized UI copy.
+  Acceptance: The playlist panel offers duration sort and last-video resume; an explicit persisted option auto-skips entries watched at least 90%.
+  Complexity: M
+
 ### P3 — Under consideration
 
 - [ ] P3 — Parametric EQ on the audio graph
