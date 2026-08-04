@@ -1,5 +1,5 @@
 {
-  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 8.",
+  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 9.",
   "profiles": [
     {
       "schemaVersion": 1,
@@ -144,6 +144,22 @@
         "safeUnknownKey": "custom-v7"
       },
       "absent": ["aiSummaryApiKey"]
+    },
+    {
+      "schemaVersion": 8,
+      "settings": {
+        "_settingsVersion": 8,
+        "hideAiSummary": false,
+        "safeUnknownKey": "custom-v8"
+      },
+      "expected": {
+        "hideAiSummary": false,
+        "hideAskAi": false,
+        "hideGeminiButtons": false,
+        "hideAiContextPanels": false,
+        "safeUnknownKey": "custom-v8"
+      },
+      "absent": []
     }
   ]
 }

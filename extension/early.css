@@ -43,6 +43,44 @@ body.ytkit-hideRelatedVideos ytd-watch-next-secondary-results-renderer {
     display: none !important;
 }
 
+/* AI surfaces — each policy has its own body class so users can keep
+ * summaries, Ask, Gemini, or context panels independently. The structural
+ * tokens mirror the capture-backed selector packs. */
+body.ytkit-hideAskAi ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model,
+body.ytkit-hideAskAi ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai]),
+body.ytkit-hideAskAi ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([data-action="ask"]),
+body.ytkit-hideAskAi ytd-video-description-youchat-section-view-model,
+body.ytkit-hideAskAi ytd-reel-shelf-renderer:has([is-ask-ai]) {
+    display: none !important;
+}
+
+body.ytkit-hideGeminiButtons ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([data-action="gemini"]),
+body.ytkit-hideGeminiButtons ytd-watch-metadata #flexible-item-buttons > button-view-model:has([data-action="gemini"]),
+body.ytkit-hideGeminiButtons ytd-engagement-panel-section-list-renderer[target-id*="gemini" i],
+body.ytkit-hideGeminiButtons ytd-engagement-panel-section-list-renderer[panel-target-id*="gemini" i],
+body.ytkit-hideGeminiButtons [data-gemini],
+body.ytkit-hideGeminiButtons [data-ai-type="gemini"] {
+    display: none !important;
+}
+
+body.ytkit-hideAiSummary ytd-engagement-panel-section-list-renderer[target-id*="ai-summary" i],
+body.ytkit-hideAiSummary ytd-engagement-panel-section-list-renderer[target-id*="summary" i],
+body.ytkit-hideAiSummary ytd-engagement-panel-section-list-renderer[panel-target-id*="summary" i],
+body.ytkit-hideAiSummary ytd-ai-summary-renderer,
+body.ytkit-hideAiSummary [class*="ai-summary" i],
+body.ytkit-hideAiSummary [class*="aiSummary"] {
+    display: none !important;
+}
+
+body.ytkit-hideAiContextPanels ytd-info-panel-content-renderer:has([icon="info_outline"]),
+body.ytkit-hideAiContextPanels ytd-factoid-renderer,
+body.ytkit-hideAiContextPanels ytd-engagement-panel-section-list-renderer[target-id*="context" i],
+body.ytkit-hideAiContextPanels ytd-engagement-panel-section-list-renderer[panel-target-id*="context" i],
+body.ytkit-hideAiContextPanels [data-panel-type="context"],
+body.ytkit-hideAiContextPanels [data-ai-surface="context"] {
+    display: none !important;
+}
+
 /* hideVoiceSearch */
 body.ytkit-hideVoiceSearch #voice-search-button { display: none !important; }
 

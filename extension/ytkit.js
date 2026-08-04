@@ -3213,6 +3213,9 @@ return response;
             autoMaxResolution: true,
             hideMerchShelf: true,
             hideAiSummary: true,
+            hideAskAi: true,
+            hideGeminiButtons: true,
+            hideAiContextPanels: true,
 
             hideDescriptionExtras: true,
             hideHashtags: true,
@@ -3708,7 +3711,7 @@ return response;
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 8,
+        SETTINGS_VERSION: 9,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -3773,6 +3776,18 @@ return response;
                 // its credential vault before this ordinary settings bag is
                 // persisted. Imports and stale tabs must never reintroduce it.
                 delete s.aiSummaryApiKey;
+                return s;
+            },
+            9: (s) => {
+                // v4.51.1: split the combined AI-surface hide into independent
+                // controls. Preserve an explicit legacy opt-out while leaving
+                // missing keys to the enabled defaults for legacy opt-ins and
+                // fresh installs.
+                if (s.hideAiSummary === false) {
+                    if (s.hideAskAi === undefined) s.hideAskAi = false;
+                    if (s.hideGeminiButtons === undefined) s.hideGeminiButtons = false;
+                    if (s.hideAiContextPanels === undefined) s.hideAiContextPanels = false;
+                }
                 return s;
             },
         },
@@ -14341,14 +14356,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ─── Clutter ───
         cssFeature('hideMerchShelf', 'Hide Merch Shelf', 'Remove merchandise promotions below videos', 'Watch Page', 'shopping-bag',
             'ytd-merch-shelf-renderer'),
-        cssFeature('hideAiSummary', 'Hide AI Summary', 'Remove AI-generated summaries and Ask AI buttons', 'Watch Page', 'bot-off',
-            `ytd-engagement-panel-section-list-renderer[target-id*="ai"],
-                    ytd-engagement-panel-section-list-renderer[target-id*="summary"],
-                    ytd-info-panel-content-renderer:has([icon="info_outline"]),
-                    [class*="ai-summary"], [class*="aiSummary"],
-                    ytd-reel-shelf-renderer:has([is-ask-ai]),
-                    conversational-ui-watch-metadata-button-view-model,
-                    [is-ask-ai] { display: none !important; }`),
+        cssFeature('hideAskAi', t('feature_hideAskAi_name', 'Hide Ask AI'), t('feature_hideAskAi_desc', 'Remove Ask AI buttons and conversational sections'), 'Watch Page', 'bot-off',
+            `ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model,
+                    ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai]),
+                    ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([data-action="ask"]),
+                    ytd-video-description-youchat-section-view-model,
+                    ytd-reel-shelf-renderer:has([is-ask-ai]) { display: none !important; }`),
+        cssFeature('hideGeminiButtons', t('feature_hideGeminiButtons_name', 'Hide Gemini Buttons'), t('feature_hideGeminiButtons_desc', 'Remove Gemini-branded actions without hiding other AI surfaces'), 'Watch Page', 'sparkles-off',
+            `ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([data-action="gemini"]),
+                    ytd-watch-metadata #flexible-item-buttons > button-view-model:has([data-action="gemini"]),
+                    ytd-engagement-panel-section-list-renderer[target-id*="gemini" i],
+                    ytd-engagement-panel-section-list-renderer[panel-target-id*="gemini" i],
+                    [data-gemini],
+                    [data-ai-type="gemini"] { display: none !important; }`),
+        cssFeature('hideAiSummary', t('feature_hideAiSummary_name', 'Hide AI Summary'), t('feature_hideAiSummary_desc', 'Remove AI-generated summary panels only'), 'Watch Page', 'bot-off',
+            `ytd-engagement-panel-section-list-renderer[target-id*="ai-summary" i],
+                    ytd-engagement-panel-section-list-renderer[target-id*="summary" i],
+                    ytd-engagement-panel-section-list-renderer[panel-target-id*="summary" i],
+                    ytd-ai-summary-renderer,
+                    [class*="ai-summary" i],
+                    [class*="aiSummary"] { display: none !important; }`),
+        cssFeature('hideAiContextPanels', t('feature_hideAiContextPanels_name', 'Hide AI Context Panels'), t('feature_hideAiContextPanels_desc', 'Remove fact-checking and contextual information panels'), 'Watch Page', 'info-off',
+            `ytd-info-panel-content-renderer:has([icon="info_outline"]),
+                    ytd-factoid-renderer,
+                    ytd-engagement-panel-section-list-renderer[target-id*="context" i],
+                    ytd-engagement-panel-section-list-renderer[panel-target-id*="context" i],
+                    [data-panel-type="context"],
+                    [data-ai-surface="context"] { display: none !important; }`),
         cssFeature('hideDescriptionExtras', 'Hide Description Extras', 'Remove extra elements in the description area', 'Watch Page', 'file-x',
             'ytd-video-description-transcript-section-renderer, ytd-structured-description-content-renderer > *:not(ytd-text-inline-expander)'),
         cssFeature('hideHashtags', 'Hide Hashtags', 'Remove hashtag links above video titles', 'Watch Page', 'hash',

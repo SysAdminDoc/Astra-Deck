@@ -3195,11 +3195,11 @@ test('reactionSpammer defaults to false in both ytkit.js source and the generate
     );
 });
 
-test('SETTINGS_VERSION is 8 and migration 7 force-resets reactionSpammer to false', () => {
+test('SETTINGS_VERSION is 9 and migrations 7/9 preserve safe AI defaults', () => {
     assert.match(
         ytkitSource,
-        /SETTINGS_VERSION:\s*8,/,
-        'ytkit.js settingsManager must declare SETTINGS_VERSION: 8',
+        /SETTINGS_VERSION:\s*9,/,
+        'ytkit.js settingsManager must declare SETTINGS_VERSION: 9',
     );
     // The v7 migration must reset reactionSpammer to false and reset the
     // ack flag so the warning toast re-fires on the next opt-in.
@@ -3210,6 +3210,18 @@ test('SETTINGS_VERSION is 8 and migration 7 force-resets reactionSpammer to fals
         'migration 7 must explicitly reset reactionSpammer to false');
     assert.match(migrationBlock, /s\._reactionSpammerAck\s*=\s*false/,
         'migration 7 must reset _reactionSpammerAck to false');
+
+    const aiMigrationStart = ytkitSource.indexOf('9: (s) =>');
+    assert.ok(aiMigrationStart > -1, 'migration 9 must exist');
+    const aiMigrationBlock = ytkitSource.slice(aiMigrationStart, aiMigrationStart + 900);
+    assert.match(aiMigrationBlock, /s\.hideAiSummary\s*===\s*false/,
+        'migration 9 must detect the explicit legacy AI opt-out');
+    assert.match(aiMigrationBlock, /s\.hideAskAi\s*===\s*undefined/,
+        'migration 9 must seed Ask AI only when it was not already chosen');
+    assert.match(aiMigrationBlock, /s\.hideGeminiButtons\s*=\s*false/,
+        'migration 9 must preserve the legacy opt-out for Gemini controls');
+    assert.match(aiMigrationBlock, /s\.hideAiContextPanels\s*=\s*false/,
+        'migration 9 must preserve the legacy opt-out for context panels');
 });
 
 test('reaction spammer panel interval is clamped to a 500 ms minimum floor', () => {
@@ -5394,11 +5406,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Channel allowlist mode adds one feed preference (421 → 422).
     // Audio auto-gain and high-pass add two extension-only preferences
     // (422 → 424). The Shorts budget adds a limit, mode, and local ledger
-    // (424 → 427).
+    // (424 → 427). Independent AI surface controls add three preferences
+    // (427 → 430).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 427,
-        'SETTINGS_SCHEMA must cover all 427 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 430,
+        'SETTINGS_SCHEMA must cover all 430 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

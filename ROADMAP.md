@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Hide AI surfaces pack
-  Why: Independent controls are needed because Ask, Gemini, AI summaries, and context panels are separate surfaces with different user value.
-  Evidence: Control Panel for YouTube; Remove YouTube Gemini buttons; Youtube without fact checking.
-  Touches: `extension/early.css`, CSS feature registrations, selector packs, settings schema/locales.
-  Acceptance: Independent toggles hide each verified surface with capture-backed selector canaries.
-  Complexity: S
-
 - [ ] P2 — Notification menu controls: cap count + hide read
   Why: Count and read-state filtering are user-selected policies, not safe unconditional behavior under chronological sorting.
   Evidence: competitor notification options; `chronologicalNotifications` in `extension/ytkit.js`.

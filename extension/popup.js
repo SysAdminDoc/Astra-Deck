@@ -337,7 +337,7 @@ const RETIRED_SETTING_KEYS = new Set([
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate
 // enforces parity across all three sources; bump in lockstep.
-const SETTINGS_VERSION_FALLBACK = 8;
+const SETTINGS_VERSION_FALLBACK = 9;
 const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     2(settings) {
         return settings;
@@ -366,6 +366,14 @@ const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     },
     8(settings) {
         delete settings.aiSummaryApiKey;
+        return settings;
+    },
+    9(settings) {
+        if (settings.hideAiSummary === false) {
+            if (settings.hideAskAi === undefined) settings.hideAskAi = false;
+            if (settings.hideGeminiButtons === undefined) settings.hideGeminiButtons = false;
+            if (settings.hideAiContextPanels === undefined) settings.hideAiContextPanels = false;
+        }
         return settings;
     },
 });

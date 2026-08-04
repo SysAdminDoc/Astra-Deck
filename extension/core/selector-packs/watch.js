@@ -104,6 +104,17 @@
                 'ytd-watch-metadata button[aria-label="Ask"]'
             ])
         }),
+        'element.askAiSurface': Object.freeze({
+            stable: Object.freeze([
+                'ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model',
+                'ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai])',
+                'ytd-reel-shelf-renderer:has([is-ask-ai])'
+            ]),
+            fallback: Object.freeze([
+                'ytd-video-description-youchat-section-view-model',
+                '[data-ai-surface="ask"]'
+            ])
+        }),
         'element.saveButton': Object.freeze({
             stable: Object.freeze([
                 'ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has(path[d^="M19 2H5"]) button',
