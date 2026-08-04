@@ -16,15 +16,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P0 — Delivery
 
-### P1 — Correctness, security, and broken promises
-
-- [ ] P1 — Re-triage the eight items blocked only by a stale session constraint
-  Why: eight of the 28 items in `Roadmap_Blocked.md` cite "this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`" as their blocker. That is a self-imposed constraint from a prior pass, not a property of the work — every one of them is a normal localized-feature change this repo makes routinely. Leaving them filed as blocked hides real, ready work behind a false gate.
-  Evidence: `Roadmap_Blocked.md` — dual-language subtitles, allowlist hiding mode, audio auto-gain + high-pass, enforced Shorts daily limit, hide-AI-surfaces pack, notification menu controls, comment intelligence pack, playlist power pack (`grep -c "forbids staging" Roadmap_Blocked.md` = 8).
-  Touches: `Roadmap_Blocked.md`, `ROADMAP.md`.
-  Acceptance: each of the eight is either moved back to `ROADMAP.md` at its original priority, or its `Blocker:` line is rewritten to state a real, current blocker. No item retains the Markdown-staging justification.
-  Complexity: S
-
 ### P2 — Locale fidelity, capability, and maintainability
 
 - [ ] P2 — Dedicated behavioural tests for the download and subscription-groups modules
