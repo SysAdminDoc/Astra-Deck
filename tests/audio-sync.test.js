@@ -104,6 +104,7 @@ function bootstrapAudioBridge() {
             node.type = 'lowpass';
             node.frequency = { value: 350 };
             node.Q = { value: 1 };
+            node.gain = { value: 0 };
             this.filters.push(node);
             return node;
         }
@@ -169,12 +170,21 @@ function bootstrapAudioBridge() {
                 ATTRS: {
                     syncOffset: 'data-ytkit-audio-sync-offset',
                     autoGain: 'data-ytkit-audio-auto-gain',
-                    highPass: 'data-ytkit-audio-high-pass'
+                    highPass: 'data-ytkit-audio-high-pass',
+                    equalizer: 'data-ytkit-audio-eq',
+                    eqLow: 'data-ytkit-audio-eq-low',
+                    eqMid: 'data-ytkit-audio-eq-mid',
+                    eqHigh: 'data-ytkit-audio-eq-high'
                 },
                 normalizeAudioSyncOffset(value) {
                     const number = Number(value);
                     if (!Number.isFinite(number)) return 0;
                     return Math.max(-500, Math.min(500, Math.round(number)));
+                },
+                normalizeAudioEqGain(value) {
+                    const number = Number(value);
+                    if (!Number.isFinite(number)) return 0;
+                    return Math.max(-12, Math.min(12, Math.round(number)));
                 }
             }
         },
@@ -250,6 +260,13 @@ function bootstrapAudioBridge() {
             if (enabled) documentElement.setAttribute('data-ytkit-audio-high-pass', '1');
             else documentElement.removeAttribute('data-ytkit-audio-high-pass');
         },
+        setEq(enabled) {
+            if (enabled) documentElement.setAttribute('data-ytkit-audio-eq', '1');
+            else documentElement.removeAttribute('data-ytkit-audio-eq');
+        },
+        setEqBand(band, value) {
+            documentElement.setAttribute(`data-ytkit-audio-eq-${band}`, String(value));
+        },
         tickAutoGain() {
             for (const callback of intervalCallbacks.values()) callback();
         },
@@ -312,7 +329,7 @@ test('auto-gain and high-pass apply independently and remain reconnect-safe', ()
     const audioContext = bridge.audioContexts[0];
     assert.equal(audioContext.gains.length, 3,
         'the shared graph should expose mono, auto-gain, and boost gain nodes');
-    assert.equal(audioContext.filters.length, 1);
+    assert.equal(audioContext.filters.length, 4);
     assert.equal(audioContext.filters[0].frequency.value, 10,
         'high-pass stays near-transparent while disabled');
     bridge.tickAutoGain();
@@ -336,12 +353,52 @@ test('auto-gain and high-pass apply independently and remain reconnect-safe', ()
         classList: { contains: (name) => name === 'html5-main-video' }
     });
     assert.equal(audioContext.sources.length, 2);
-    assert.equal(audioContext.filters.length, 2,
-        'navigation should create one filter per new processing chain');
+    assert.equal(audioContext.filters.length, 8,
+        'navigation should create one high-pass plus three EQ filters per processing chain');
     assert.equal(audioContext.sources[1].connections.length, 1,
         'the current source must have one processed branch');
 
     bridge.setHighPass(false);
     assert.equal(audioContext.sources[1].connections[0], audioContext.destination,
         'disabling the last audio node must restore source passthrough');
+});
+
+test('parametric EQ inserts three bands, updates live, and bypasses them when disabled', () => {
+    const bridge = bootstrapAudioBridge();
+
+    bridge.setHighPass(true);
+    bridge.setEq(true);
+    const audioContext = bridge.audioContexts[0];
+    assert.equal(audioContext.filters.length, 4,
+        'the shared graph should contain the high-pass node plus three EQ bands');
+    const [highPass, low, mid, high] = audioContext.filters;
+    assert.equal(low.type, 'lowshelf');
+    assert.equal(mid.type, 'peaking');
+    assert.equal(high.type, 'highshelf');
+    assert.equal(low.frequency.value, 120);
+    assert.equal(mid.frequency.value, 1000);
+    assert.equal(high.frequency.value, 8000);
+    assert.equal(highPass.connections[0], low,
+        'enabled EQ must be in the live processing path');
+
+    bridge.setEqBand('low', 20);
+    bridge.setEqBand('mid', -20);
+    bridge.setEqBand('high', 4.4);
+    assert.equal(low.gain.value, 12);
+    assert.equal(mid.gain.value, -12);
+    assert.equal(high.gain.value, 4);
+
+    bridge.setEq(false);
+    assert.equal(low.connections.length, 0,
+        'disabled EQ bands must be disconnected, not left as flat filters');
+    assert.equal(mid.connections.length, 0);
+    assert.equal(high.connections.length, 0);
+    assert.equal(highPass.connections[0].kind, 'analyser',
+        'the graph must route around the EQ bands when disabled');
+
+    bridge.setEq(true);
+    assert.equal(audioContext.sources.length, 1,
+        'live EQ toggles must not recreate the media source');
+    assert.equal(highPass.connections[0], low,
+        're-enabling EQ must restore the three-band route');
 });

@@ -500,7 +500,7 @@
     // volume boost, audio normalization, auto-gain, high-pass, and sync offset). createMediaElementSource is
     // one-shot per element — multiple AudioContexts competing for the
     // same <video> would throw InvalidStateError. The shared graph is:
-    //   source → monoMerge → compressor → highPass → analyser → autoGain → pan → boostGain → delay → destination
+    //   source → monoMerge → compressor → highPass → [3-band EQ] → analyser → autoGain → pan → boostGain → delay → destination
     // Each node passes through when its feature is disabled.
 (function() {
     'use strict';
@@ -513,6 +513,10 @@
     var _normalizeEnabled = false;
     var _autoGainEnabled = false;
     var _highPassEnabled = false;
+    var _audioEqEnabled = false;
+    var _audioEqLowDb = 0;
+    var _audioEqMidDb = 0;
+    var _audioEqHighDb = 0;
     var _panValue = 0;
     var _audioSyncOffsetMs = 0;
     var _delayNode = null;
@@ -525,9 +529,18 @@
     var HIGH_PASS_CUTOFF_HZ = 80;
     var HIGH_PASS_BYPASS_HZ = 10;
     var HIGH_PASS_Q = 0.707;
+    var EQ_LOW_FREQUENCY_HZ = 120;
+    var EQ_MID_FREQUENCY_HZ = 1000;
+    var EQ_HIGH_FREQUENCY_HZ = 8000;
+    var EQ_Q = 1;
+    var AUDIO_EQ_GAIN_LIMIT_DB = 12;
     var _audioSyncAttr = 'data-ytkit-audio-sync-offset';
     var _audioAutoGainAttr = 'data-ytkit-audio-auto-gain';
     var _audioHighPassAttr = 'data-ytkit-audio-high-pass';
+    var _audioEqAttr = 'data-ytkit-audio-eq';
+    var _audioEqLowAttr = 'data-ytkit-audio-eq-low';
+    var _audioEqMidAttr = 'data-ytkit-audio-eq-mid';
+    var _audioEqHighAttr = 'data-ytkit-audio-eq-high';
     var _audioTrackSelection = globalThis.YTKitCore && globalThis.YTKitCore.audioTrackSelection;
     if (_audioTrackSelection && _audioTrackSelection.ATTRS
         && _audioTrackSelection.ATTRS.syncOffset) {
@@ -541,6 +554,22 @@
         && _audioTrackSelection.ATTRS.highPass) {
         _audioHighPassAttr = _audioTrackSelection.ATTRS.highPass;
     }
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.equalizer) {
+        _audioEqAttr = _audioTrackSelection.ATTRS.equalizer;
+    }
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.eqLow) {
+        _audioEqLowAttr = _audioTrackSelection.ATTRS.eqLow;
+    }
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.eqMid) {
+        _audioEqMidAttr = _audioTrackSelection.ATTRS.eqMid;
+    }
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.eqHigh) {
+        _audioEqHighAttr = _audioTrackSelection.ATTRS.eqHigh;
+    }
     var _normalizeAudioSyncOffset = _audioTrackSelection
         && typeof _audioTrackSelection.normalizeAudioSyncOffset === 'function'
         ? _audioTrackSelection.normalizeAudioSyncOffset
@@ -548,6 +577,14 @@
             var parsed = Number(value);
             if (!isFinite(parsed)) return 0;
             return Math.max(-500, Math.min(500, Math.round(parsed)));
+        };
+    var _normalizeAudioEqGain = _audioTrackSelection
+        && typeof _audioTrackSelection.normalizeAudioEqGain === 'function'
+        ? _audioTrackSelection.normalizeAudioEqGain
+        : function(value) {
+            var parsed = Number(value);
+            if (!isFinite(parsed)) return 0;
+            return Math.max(-AUDIO_EQ_GAIN_LIMIT_DB, Math.min(AUDIO_EQ_GAIN_LIMIT_DB, Math.round(parsed)));
         };
     // Chrome permanently binds a MediaElement to its first
     // MediaElementAudioSourceNode. Closing the AudioContext and recreating
@@ -559,6 +596,9 @@
     var _monoMerge = null;
     var _compressor = null;
     var _highPassNode = null;
+    var _eqLowNode = null;
+    var _eqMidNode = null;
+    var _eqHighNode = null;
     var _autoGainAnalyser = null;
     var _autoGainNode = null;
     var _panNode = null;
@@ -572,6 +612,7 @@
     function isActive() {
         return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled
             || _autoGainEnabled || _highPassEnabled
+            || _audioEqEnabled
             || Math.abs(_panValue) > 0.001 || _audioSyncOffsetMs > 0;
     }
 
@@ -635,6 +676,15 @@
             _highPassNode = typeof ctx.createBiquadFilter === 'function'
                 ? ctx.createBiquadFilter()
                 : null;
+            _eqLowNode = typeof ctx.createBiquadFilter === 'function'
+                ? ctx.createBiquadFilter()
+                : null;
+            _eqMidNode = typeof ctx.createBiquadFilter === 'function'
+                ? ctx.createBiquadFilter()
+                : null;
+            _eqHighNode = typeof ctx.createBiquadFilter === 'function'
+                ? ctx.createBiquadFilter()
+                : null;
             _autoGainAnalyser = typeof ctx.createAnalyser === 'function'
                 ? ctx.createAnalyser()
                 : null;
@@ -649,36 +699,67 @@
             _gainNode = ctx.createGain();
             _source.connect(_monoMerge);
             _monoMerge.connect(_compressor);
-            var tail = _compressor;
-            if (_highPassNode) {
-                tail.connect(_highPassNode);
-                tail = _highPassNode;
-            }
-            if (_autoGainAnalyser) {
-                tail.connect(_autoGainAnalyser);
-                tail = _autoGainAnalyser;
-            }
-            tail.connect(_autoGainNode);
-            tail = _autoGainNode;
-            if (_panNode) {
-                tail.connect(_panNode);
-                _panNode.connect(_gainNode);
-            } else {
-                tail.connect(_gainNode);
-            }
             _delayNode = typeof ctx.createDelay === 'function'
                 ? ctx.createDelay(0.5)
                 : null;
-            if (_delayNode) {
-                _gainNode.connect(_delayNode);
-                _delayNode.connect(ctx.destination);
-            } else {
-                _gainNode.connect(ctx.destination);
-            }
             syncGraph();
             _connectedVideo = video;
         } catch (e) {
             disconnectProcessing();
+        }
+    }
+
+    function disconnectNode(node) {
+        if (!node) return;
+        try { node.disconnect(); } catch (e) { /* reason: node may already be disconnected */ }
+    }
+
+    function routeGraph() {
+        if (!_compressor || !_autoGainNode || !_gainNode) return;
+
+        // Rebuild only the in-context connections. The media source and
+        // AudioContext stay cached, so live toggles cannot create duplicate
+        // branches or trigger the one-source-per-element restriction.
+        disconnectNode(_compressor);
+        disconnectNode(_highPassNode);
+        disconnectNode(_eqLowNode);
+        disconnectNode(_eqMidNode);
+        disconnectNode(_eqHighNode);
+        disconnectNode(_autoGainAnalyser);
+        disconnectNode(_autoGainNode);
+        disconnectNode(_panNode);
+        disconnectNode(_gainNode);
+        disconnectNode(_delayNode);
+
+        var tail = _compressor;
+        if (_highPassNode) {
+            tail.connect(_highPassNode);
+            tail = _highPassNode;
+        }
+        var eqAvailable = _eqLowNode && _eqMidNode && _eqHighNode;
+        if (_audioEqEnabled && eqAvailable) {
+            tail.connect(_eqLowNode);
+            _eqLowNode.connect(_eqMidNode);
+            _eqMidNode.connect(_eqHighNode);
+            tail = _eqHighNode;
+        }
+        if (_autoGainAnalyser) {
+            tail.connect(_autoGainAnalyser);
+            tail = _autoGainAnalyser;
+        }
+        tail.connect(_autoGainNode);
+        tail = _autoGainNode;
+        if (_panNode) {
+            tail.connect(_panNode);
+            _panNode.connect(_gainNode);
+        } else {
+            tail.connect(_gainNode);
+        }
+        if (_delayNode && _ctx) {
+            _gainNode.connect(_delayNode);
+            _delayNode.connect(_ctx.destination);
+        } else if (_ctx) {
+            _gainNode.connect(_ctx.destination);
         }
     }
 
@@ -703,6 +784,22 @@
                 : HIGH_PASS_BYPASS_HZ;
             if (_highPassNode.Q) _highPassNode.Q.value = HIGH_PASS_Q;
         }
+        if (_eqLowNode) {
+            _eqLowNode.type = 'lowshelf';
+            _eqLowNode.frequency.value = EQ_LOW_FREQUENCY_HZ;
+            _eqLowNode.gain.value = _audioEqLowDb;
+        }
+        if (_eqMidNode) {
+            _eqMidNode.type = 'peaking';
+            _eqMidNode.frequency.value = EQ_MID_FREQUENCY_HZ;
+            _eqMidNode.gain.value = _audioEqMidDb;
+            if (_eqMidNode.Q) _eqMidNode.Q.value = EQ_Q;
+        }
+        if (_eqHighNode) {
+            _eqHighNode.type = 'highshelf';
+            _eqHighNode.frequency.value = EQ_HIGH_FREQUENCY_HZ;
+            _eqHighNode.gain.value = _audioEqHighDb;
+        }
         if (_autoGainNode && !_autoGainEnabled) _autoGainNode.gain.value = 1;
         if (_delayNode && _delayNode.delayTime) {
             // Web Audio is causal: positive values delay the audio path. A
@@ -719,6 +816,7 @@
                 _compressor.ratio.value = 1;
             }
         }
+        routeGraph();
         syncAutoGainMeter();
     }
 
@@ -778,6 +876,9 @@
         if (_monoMerge) { try { _monoMerge.disconnect(); } catch (e) { /* reason: already disconnected */ } _monoMerge = null; }
         if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
         if (_highPassNode) { try { _highPassNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _highPassNode = null; }
+        if (_eqLowNode) { try { _eqLowNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _eqLowNode = null; }
+        if (_eqMidNode) { try { _eqMidNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _eqMidNode = null; }
+        if (_eqHighNode) { try { _eqHighNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _eqHighNode = null; }
         if (_autoGainAnalyser) { try { _autoGainAnalyser.disconnect(); } catch (e) { /* reason: already disconnected */ } _autoGainAnalyser = null; }
         if (_autoGainNode) { try { _autoGainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _autoGainNode = null; }
         if (_panNode) { try { _panNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _panNode = null; }
@@ -825,6 +926,37 @@
     _obsRegister([_audioHighPassAttr], function() {
         var val = document.documentElement.getAttribute(_audioHighPassAttr);
         _highPassEnabled = val === '1';
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioEqAttr], function() {
+        var val = document.documentElement.getAttribute(_audioEqAttr);
+        _audioEqEnabled = val === '1';
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioEqLowAttr], function() {
+        _audioEqLowDb = _normalizeAudioEqGain(
+            document.documentElement.getAttribute(_audioEqLowAttr)
+        );
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioEqMidAttr], function() {
+        _audioEqMidDb = _normalizeAudioEqGain(
+            document.documentElement.getAttribute(_audioEqMidAttr)
+        );
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioEqHighAttr], function() {
+        _audioEqHighDb = _normalizeAudioEqGain(
+            document.documentElement.getAttribute(_audioEqHighAttr)
+        );
         if (isActive()) connect();
         else disconnectProcessing();
     });

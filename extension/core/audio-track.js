@@ -11,9 +11,14 @@
         status: 'data-ytkit-audio-track-status',
         syncOffset: 'data-ytkit-audio-sync-offset',
         autoGain: 'data-ytkit-audio-auto-gain',
-        highPass: 'data-ytkit-audio-high-pass'
+        highPass: 'data-ytkit-audio-high-pass',
+        equalizer: 'data-ytkit-audio-eq',
+        eqLow: 'data-ytkit-audio-eq-low',
+        eqMid: 'data-ytkit-audio-eq-mid',
+        eqHigh: 'data-ytkit-audio-eq-high'
     });
     const AUDIO_SYNC_OFFSET_LIMIT_MS = 500;
+    const AUDIO_EQ_GAIN_LIMIT_DB = 12;
     const TASK_ID = 'ytkit-main:audioTrack';
     const RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
     const TASK_EVENTS = Object.freeze([
@@ -37,6 +42,15 @@
         return Math.max(
             -AUDIO_SYNC_OFFSET_LIMIT_MS,
             Math.min(AUDIO_SYNC_OFFSET_LIMIT_MS, Math.round(parsed))
+        );
+    }
+
+    function normalizeAudioEqGain(value) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return 0;
+        return Math.max(
+            -AUDIO_EQ_GAIN_LIMIT_DB,
+            Math.min(AUDIO_EQ_GAIN_LIMIT_DB, Math.round(parsed))
         );
     }
 
@@ -253,9 +267,11 @@
     const audioTrackSelection = Object.freeze({
         ATTRS,
         AUDIO_SYNC_OFFSET_LIMIT_MS,
+        AUDIO_EQ_GAIN_LIMIT_DB,
         TASK_ID,
         normalizeLanguageTag,
         normalizeAudioSyncOffset,
+        normalizeAudioEqGain,
         getTrackLabel,
         getTrackLanguage,
         isDescriptiveTrack,

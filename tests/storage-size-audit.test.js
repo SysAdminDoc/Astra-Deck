@@ -90,7 +90,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Notification count and read-state controls add 54 bytes. Comment
     // language and duplicate policies add another 63 bytes.
     // Playlist auto-skip adds 32 bytes for its persisted preference.
-    assert.equal(assessment.totalBytes, 184580);
+    // Parametric EQ adds four bounded preferences for 90 bytes.
+    assert.equal(assessment.totalBytes, 184670);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

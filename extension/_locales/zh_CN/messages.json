@@ -5779,5 +5779,29 @@
   },
   "playlistVideoCountTpl": {
     "message": "{count} videos"
+  },
+  "feature_audioEqHighGainDb_desc": {
+    "message": "High-shelf gain centered at 8 kHz, from -12 dB to +12 dB."
+  },
+  "feature_audioEqHighGainDb_name": {
+    "message": "EQ High Band"
+  },
+  "feature_audioEqLowGainDb_desc": {
+    "message": "Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB."
+  },
+  "feature_audioEqLowGainDb_name": {
+    "message": "EQ Low Band"
+  },
+  "feature_audioEqMidGainDb_desc": {
+    "message": "Peaking gain centered at 1 kHz, from -12 dB to +12 dB."
+  },
+  "feature_audioEqMidGainDb_name": {
+    "message": "EQ Mid Band"
+  },
+  "feature_audioParametricEq_desc": {
+    "message": "Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB."
+  },
+  "feature_audioParametricEq_name": {
+    "message": "Parametric EQ"
   }
 }
