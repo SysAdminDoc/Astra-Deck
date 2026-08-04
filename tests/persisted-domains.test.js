@@ -13,7 +13,7 @@ function fixture(version) {
 test('durable-domain registry explicitly classifies every known storage boundary', () => {
     const ids = new Set(persisted.DURABLE_DOMAIN_REGISTRY.map((entry) => entry.id));
     for (const required of [
-        'settings', 'hiddenVideos', 'allowedVideos', 'blockedChannels', 'bookmarks',
+        'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'bookmarks',
         'watchProgress', 'watchTime', 'channelSpeeds', 'resumePositions',
         'persistentQueue', 'reactionSpammerState', 'watchLaterRemovalLog',
         'recommendationScrubSessions', 'localeOverride', 'debugPreference',
@@ -142,6 +142,25 @@ test('current backup payload represents every included domain and scrubs credent
     const sanitized = persisted.sanitizeMigratedDomains(migrated, (settings) => persisted.sanitizeDomainValue('settings', settings));
     assert.deepEqual(persisted.domainsToExtensionWrites(sanitized.domains)['ytkit-hidden-videos'], ['abcdefghijk']);
     assert.equal(sanitized.domains.settings.aiSummaryApiKey, undefined);
+});
+
+test('marked-watched domain keeps the newest valid IDs and migrates legacy exports', () => {
+    const ids = Array.from({ length: 5002 }, (_, index) => String(index).padStart(11, '0'));
+    const payload = persisted.buildIncludedDomainPayload({
+        'ytkit-marked-watched-videos': ['not-a-video-id', ...ids]
+    });
+
+    assert.equal(payload.markedWatchedVideos.length, 5000);
+    assert.equal(payload.markedWatchedVideos[0], ids[2]);
+    assert.equal(payload.markedWatchedVideos.at(-1), ids.at(-1));
+
+    const migrated = persisted.sanitizeMigratedDomains(persisted.migrateBackup({
+        exportVersion: 4,
+        backupSchemaVersion: 1,
+        settings: {},
+        markedWatchedVideos: [ids[0], ids[1]]
+    }));
+    assert.deepEqual(migrated.domains.markedWatchedVideos, [ids[0], ids[1]]);
 });
 
 test('portable domain scrubbing rejects common credential-key variants at any depth', () => {

@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Client-side "mark as watched"
-  Why: users want to clear a card from feeds without playing it; YouTube offers no such control, and the existing Hide Watched Videos feature can only read YouTube's own progress overlay. This is a recurring feed-hygiene request and fits the existing hidden/allowed-video storage and Undo pattern exactly.
-  Evidence: Enhancer for YouTube feature request 2026-03-09, https://github.com/YouTube-Enhancer/extension/issues; PocketTube ships watched-marking, https://pockettube.io/.
-  Touches: `extension/features/video-hider/index.js` (card overlay + storage), `extension/core/persisted-domains.js` (new durable domain with LRU cap), `extension/core/settings-schema.js`, `extension/_locales/*`.
-  Acceptance: an off-by-default toggle adds a per-card mark-watched control; marked videos dim or hide per the existing Hide Watched Videos mode setting; the store is capped and LRU-evicted like the other video stores, is included in export/import, and every mark is undoable through the existing toast.
-  Complexity: M
-
 - [ ] P2 — Bulk unsubscribe from inactive channels
   Why: Astra already stages stale channels — `_extractCardAgeDays`, `subscriptionUnsubscribeStagingData` with a 30-day `undoUntil`, and Scan/Stage/Undo actions — but stops short of performing the unsubscribe, so the workflow dead-ends. PocketTube's equivalent is a headline differentiator at 250K+ users.
   Evidence: `extension/ytkit.js:37291-37298` (staging), `extension/ytkit.js:3456` (`subscriptionUnsubscribeStagingData` shape); PocketTube v18.7.1, https://pockettube.io/.

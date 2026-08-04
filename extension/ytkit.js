@@ -970,6 +970,7 @@ return response;
         aiSummaries: 'ytkit-ai-summaries',
         hiddenVideos: 'ytkit-hidden-videos',
         allowedVideos: 'ytkit-video-hider-allowed-videos',
+        markedWatchedVideos: 'ytkit-marked-watched-videos',
         blockedChannels: 'ytkit-blocked-channels',
         bookmarks: 'ytkit-bookmarks',
         watchProgress: 'ytkit-watch-progress',
@@ -983,6 +984,7 @@ return response;
     const IMPORT_LIMITS = Object.freeze({
         hiddenVideos: 5000,
         allowedVideos: 5000,
+        markedWatchedVideos: 5000,
         blockedChannels: 2000,
         bookmarkVideos: 400,
         bookmarksPerVideo: 100,
@@ -1062,6 +1064,11 @@ return response;
 
     function sanitizeImportedHiddenVideos(value) {
         return sanitizeImportedVideoIdList(value, IMPORT_LIMITS.hiddenVideos);
+    }
+
+    function sanitizeImportedMarkedWatchedVideos(value) {
+        const limit = IMPORT_LIMITS.markedWatchedVideos;
+        return sanitizeImportedVideoIdList(Array.isArray(value) ? value.slice(-limit) : value, limit);
     }
 
     function getImportedFilteredVideoPosts(data) {
@@ -3159,6 +3166,7 @@ return response;
             hideVideosSubsLoadHiddenRatio: 0.8,
             hideVideosRemoveHiddenCards: false,
             hideVideosShowQuickHideButton: true,
+            markWatchedVideos: false,
             hideVideosAllowChannelBlock: true,
             hideVideosRememberRestoredVideos: true,
             hideVideosScopeHome: true,
@@ -3395,6 +3403,7 @@ return response;
                 'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
                 'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
                 'hideVideosRemoveHiddenCards', 'hideVideosShowQuickHideButton',
+                'markWatchedVideos',
                 'hideVideosAllowChannelBlock', 'hideVideosRememberRestoredVideos',
                 'hideVideosScopeHome', 'hideVideosScopeSubscriptions', 'hideVideosScopeSearch',
                 'hideVideosScopeWatch', 'hideVideosScopeChannels', 'hideVideosScopeOther',
@@ -4072,6 +4081,7 @@ return response;
             if (summary.settingsUpdated) parts.push(`${summary.settingsUpdated} setting${summary.settingsUpdated === 1 ? '' : 's'} updated`);
             if (summary.hiddenVideos) parts.push(`${summary.hiddenVideos} hidden video${summary.hiddenVideos === 1 ? '' : 's'}`);
             if (summary.allowedVideos) parts.push(`${summary.allowedVideos} allowed video${summary.allowedVideos === 1 ? '' : 's'}`);
+            if (summary.markedWatchedVideos) parts.push(`${summary.markedWatchedVideos} marked-watched video${summary.markedWatchedVideos === 1 ? '' : 's'}`);
             if (summary.blockedChannels) parts.push(`${summary.blockedChannels} blocked channel${summary.blockedChannels === 1 ? '' : 's'}`);
             if (summary.bookmarkVideos) parts.push(`${summary.bookmarkVideos} bookmark video${summary.bookmarkVideos === 1 ? '' : 's'}`);
             if (summary.aiSummaries) parts.push(`${summary.aiSummaries} AI summar${summary.aiSummaries === 1 ? 'y' : 'ies'}`);
@@ -4086,12 +4096,14 @@ return response;
             // Include Video Hider lists, blocked channels, and bookmarks in export
             let hiddenVideos = [];
             let allowedVideos = [];
+            let markedWatchedVideos = [];
             let blockedChannels = [];
             let bookmarks = {};
             let aiSummaries = {};
             try {
                 hiddenVideos = StorageManager.get(STORAGE_KEYS.hiddenVideos, []);
                 allowedVideos = StorageManager.get(STORAGE_KEYS.allowedVideos, []);
+                markedWatchedVideos = StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []);
                 blockedChannels = StorageManager.get(STORAGE_KEYS.blockedChannels, []);
                 bookmarks = StorageManager.get(STORAGE_KEYS.bookmarks, {});
                 const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
@@ -4103,12 +4115,14 @@ return response;
             }
             const hiddenVideosForExport = sanitizeImportedHiddenVideos(hiddenVideos);
             const allowedVideosForExport = sanitizeImportedVideoIdList(allowedVideos, IMPORT_LIMITS.allowedVideos);
+            const markedWatchedVideosForExport = sanitizeImportedMarkedWatchedVideos(markedWatchedVideos);
             const exportData = {
                 astraDeckBackup: true,
                 settings: exportSettings.settings,
                 hiddenVideos: hiddenVideosForExport,
                 filteredVideoPosts: hiddenVideosForExport,
                 allowedVideos: allowedVideosForExport,
+                markedWatchedVideos: markedWatchedVideosForExport,
                 blockedChannels: sanitizeImportedBlockedChannels(blockedChannels),
                 bookmarks: sanitizeImportedBookmarks(bookmarks),
                 aiSummaries,
@@ -4129,9 +4143,10 @@ return response;
                 if (!isPlainObject(importedData)) return { ok: false, message: 'Invalid file format.' };
 
                 // Handle different export versions
-                let settings, hiddenVideos, allowedVideos, blockedChannels, bookmarks;
+                let settings, hiddenVideos, allowedVideos, markedWatchedVideos, blockedChannels, bookmarks;
                 let rawHiddenVideos = null;
                 let rawAllowedVideos = null;
+                let rawMarkedWatchedVideos = null;
                 let rawBlockedChannels = null;
                 let rawBookmarks = null;
                 // AI summaries: new backups carry a top-level aiSummaries
@@ -4157,10 +4172,12 @@ return response;
                     settings = this._sanitize(importedData.settings || {});
                     rawHiddenVideos = getImportedFilteredVideoPosts(importedData);
                     rawAllowedVideos = importedData.allowedVideos;
+                    rawMarkedWatchedVideos = importedData.markedWatchedVideos;
                     rawBlockedChannels = importedData.blockedChannels;
                     rawBookmarks = importedData.bookmarks;
                     hiddenVideos = sanitizeImportedHiddenVideos(rawHiddenVideos);
                     allowedVideos = sanitizeImportedVideoIdList(rawAllowedVideos, IMPORT_LIMITS.allowedVideos);
+                    markedWatchedVideos = sanitizeImportedMarkedWatchedVideos(rawMarkedWatchedVideos);
                     blockedChannels = sanitizeImportedBlockedChannels(rawBlockedChannels);
                     bookmarks = sanitizeImportedBookmarks(rawBookmarks);
                 } else if (importedData.exportVersion >= 2) {
@@ -4169,12 +4186,14 @@ return response;
                     rawBlockedChannels = importedData.blockedChannels;
                     hiddenVideos = sanitizeImportedHiddenVideos(rawHiddenVideos);
                     allowedVideos = null;
+                    markedWatchedVideos = null;
                     blockedChannels = sanitizeImportedBlockedChannels(rawBlockedChannels);
                     bookmarks = null;
                 } else {
                     settings = this._sanitize(importedData);
                     hiddenVideos = null;
                     allowedVideos = null;
+                    markedWatchedVideos = null;
                     blockedChannels = null;
                     bookmarks = null;
                 }
@@ -4186,6 +4205,7 @@ return response;
                 const hasImportedData = Object.keys(settings).length > 0
                     || (hiddenVideos !== null && hiddenVideos.length > 0)
                     || (allowedVideos !== null && allowedVideos.length > 0)
+                    || (markedWatchedVideos !== null && markedWatchedVideos.length > 0)
                     || (blockedChannels !== null && blockedChannels.length > 0)
                     || (bookmarks !== null && Object.keys(bookmarks).length > 0)
                     || (aiSummaries !== null && Object.keys(aiSummaries).length > 0);
@@ -4198,6 +4218,7 @@ return response;
                     legacySidebarOrder: StorageManager.get(LEGACY_STORAGE_KEYS.sidebarOrder, null),
                     hiddenVideos: StorageManager.get(STORAGE_KEYS.hiddenVideos, []),
                     allowedVideos: StorageManager.get(STORAGE_KEYS.allowedVideos, []),
+                    markedWatchedVideos: StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []),
                     blockedChannels: StorageManager.get(STORAGE_KEYS.blockedChannels, []),
                     bookmarks: StorageManager.get(STORAGE_KEYS.bookmarks, {}),
                     aiSummaries: StorageManager.get(STORAGE_KEYS.aiSummaries, {}),
@@ -4210,6 +4231,7 @@ return response;
                     [STORAGE_KEYS.settings]: newSettings,
                     ...(hiddenVideos !== null ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
                     ...(allowedVideos !== null ? { [STORAGE_KEYS.allowedVideos]: allowedVideos } : {}),
+                    ...(markedWatchedVideos !== null ? { [STORAGE_KEYS.markedWatchedVideos]: markedWatchedVideos } : {}),
                     ...(blockedChannels !== null ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
                     ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {}),
                     ...(aiSummaries !== null ? { [STORAGE_KEYS.aiSummaries]: aiSummaries } : {})
@@ -4219,6 +4241,7 @@ return response;
                 }
                 const hiddenSummary = this._summarizeVideoIdImport(rawHiddenVideos, hiddenVideos, IMPORT_LIMITS.hiddenVideos);
                 const allowedSummary = this._summarizeVideoIdImport(rawAllowedVideos, allowedVideos, IMPORT_LIMITS.allowedVideos);
+                const markedWatchedSummary = this._summarizeVideoIdImport(rawMarkedWatchedVideos, markedWatchedVideos, IMPORT_LIMITS.markedWatchedVideos);
                 const blockedSummary = Array.isArray(rawBlockedChannels)
                     ? {
                         imported: blockedChannels?.length || 0,
@@ -4232,11 +4255,12 @@ return response;
                     settingsUpdated: this._countChangedSettings(backup.settings, newSettings),
                     hiddenVideos: hiddenSummary.imported,
                     allowedVideos: allowedSummary.imported,
+                    markedWatchedVideos: markedWatchedSummary.imported,
                     blockedChannels: blockedSummary.imported,
                     bookmarkVideos: bookmarkSummary.imported,
                     aiSummaries: aiSummarySummary.imported,
-                    skipped: hiddenSummary.skipped + allowedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
-                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
+                    skipped: hiddenSummary.skipped + allowedSummary.skipped + markedWatchedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
+                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + markedWatchedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
                 };
                 const restore = (snapshot) => {
                     // Aggregate the restore writes exactly like apply() does:
@@ -4249,6 +4273,7 @@ return response;
                         StorageManager.setSync(LEGACY_STORAGE_KEYS.sidebarOrder, snapshot.legacySidebarOrder),
                         StorageManager.setSync(STORAGE_KEYS.hiddenVideos, snapshot.hiddenVideos),
                         StorageManager.setSync(STORAGE_KEYS.allowedVideos, snapshot.allowedVideos),
+                        StorageManager.setSync(STORAGE_KEYS.markedWatchedVideos, snapshot.markedWatchedVideos),
                         StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels),
                         StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks),
                         StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries)
@@ -4279,6 +4304,7 @@ return response;
                         ];
                         if (hiddenVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.hiddenVideos, hiddenVideos));
                         if (allowedVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos));
+                        if (markedWatchedVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.markedWatchedVideos, markedWatchedVideos));
                         if (blockedChannels !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels));
                         if (bookmarks !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks));
                         if (aiSummaries !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.aiSummaries, aiSummaries));
@@ -5305,7 +5331,7 @@ return response;
             updateAllToggleStates();
         }
 
-        if (filteredChanges[STORAGE_KEYS.hiddenVideos] || filteredChanges[STORAGE_KEYS.allowedVideos] || filteredChanges[STORAGE_KEYS.blockedChannels]) {
+        if (filteredChanges[STORAGE_KEYS.hiddenVideos] || filteredChanges[STORAGE_KEYS.allowedVideos] || filteredChanges[STORAGE_KEYS.markedWatchedVideos] || filteredChanges[STORAGE_KEYS.blockedChannels]) {
             const videoHider = getFeatureById('hideVideosFromHome');
             if (videoHider) {
                 if (filteredChanges[STORAGE_KEYS.hiddenVideos]) {
@@ -5317,6 +5343,11 @@ return response;
                     const allowedVideos = filteredChanges[STORAGE_KEYS.allowedVideos].newValue || [];
                     videoHider._allowedList = allowedVideos;
                     videoHider._allowedSet = new Set(allowedVideos);
+                }
+                if (filteredChanges[STORAGE_KEYS.markedWatchedVideos]) {
+                    const markedWatchedVideos = sanitizeImportedMarkedWatchedVideos(filteredChanges[STORAGE_KEYS.markedWatchedVideos].newValue || []);
+                    videoHider._markedWatchedList = markedWatchedVideos;
+                    videoHider._markedWatchedSet = new Set(markedWatchedVideos);
                 }
                 if (filteredChanges[STORAGE_KEYS.blockedChannels]) {
                     const channels = videoHider._normalizeBlockedChannels?.(filteredChanges[STORAGE_KEYS.blockedChannels].newValue || [])
@@ -32297,6 +32328,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         []
                     );
                     this._pruneTopLevelStore(
+                        STORAGE_KEYS.markedWatchedVideos,
+                        value => sanitizeImportedMarkedWatchedVideos(value),
+                        'ytkit-marked-watched-videos',
+                        []
+                    );
+                    this._pruneTopLevelStore(
                         STORAGE_KEYS.blockedChannels,
                         value => sanitizeImportedBlockedChannels(
                             Array.isArray(value) ? value.slice(-IMPORT_LIMITS.blockedChannels) : value
@@ -42157,6 +42194,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || (appState.settings.hideVideosSubsLoadThreshold || 3) !== 3
                     || appState.settings.hideVideosRemoveHiddenCards === true
                     || appState.settings.hideVideosShowQuickHideButton === false
+                    || appState.settings.markWatchedVideos === true
                     || appState.settings.hideVideosAllowChannelBlock === false
                     || appState.settings.hideVideosRememberRestoredVideos === false
                     || appState.settings.hideVideosLowViewFilter === true
@@ -42863,6 +42901,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         key: 'hideVideosShowQuickHideButton',
                         title: 'Show thumbnail hide button',
                         description: 'Display the X button on supported video thumbnails for one-click hiding.'
+                    }));
+                    controlsSection.appendChild(createVideoHiderToggle({
+                        key: 'markWatchedVideos',
+                        title: t('videoHiderMarkWatchedToggle', 'Show mark-as-watched button'),
+                        description: t('videoHiderMarkWatchedToggleDesc', 'Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled.'),
+                        defaultChecked: false
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosAllowChannelBlock',
@@ -44360,6 +44404,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
                             [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
                             [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
+                            [STORAGE_KEYS.markedWatchedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []) },
                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                         }, 'import', { forceApplyLocal: true });
@@ -44374,6 +44419,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                             [STORAGE_KEYS.settings]: { newValue: StorageManager.get(STORAGE_KEYS.settings, settingsManager.defaults) },
                                             [STORAGE_KEYS.hiddenVideos]: { newValue: StorageManager.get(STORAGE_KEYS.hiddenVideos, []) },
                                             [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
+                                            [STORAGE_KEYS.markedWatchedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []) },
                                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
                                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                                         }, 'import-undo', { forceApplyLocal: true });

@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+- **Client-side mark as watched.** Video Hider now offers an opt-in per-card
+  control with capped LRU storage, export/import support, dim-or-remove feed
+  behavior, and Undo toasts for both marking and unmarking.
+
 ### Fixed
 - **Audio sync offset.** The shared MAIN-world audio graph now exposes a
   bounded, off-by-default -500 ms to +500 ms control, applies positive delay

@@ -374,6 +374,7 @@ const STORAGE_KEYS = {
     settings: 'ytSuiteSettings',
     hiddenVideos: 'ytkit-hidden-videos',
     allowedVideos: 'ytkit-video-hider-allowed-videos',
+    markedWatchedVideos: 'ytkit-marked-watched-videos',
     blockedChannels: 'ytkit-blocked-channels',
     bookmarks: 'ytkit-bookmarks',
     watchProgress: 'ytkit-watch-progress',
@@ -3846,6 +3847,8 @@ function buildExportData(allStorage, transcriptRecords) {
     const hiddenVideos = Array.isArray(rawHidden) ? rawHidden.filter(v => typeof v === 'string' && v.trim()) : [];
     const rawAllowed = allStorage[STORAGE_KEYS.allowedVideos];
     const allowedVideos = Array.isArray(rawAllowed) ? rawAllowed.filter(v => typeof v === 'string' && v.trim()) : [];
+    const rawMarkedWatched = allStorage[STORAGE_KEYS.markedWatchedVideos];
+    const markedWatchedVideos = Array.isArray(rawMarkedWatched) ? rawMarkedWatched.filter(v => typeof v === 'string' && v.trim()) : [];
     const rawBlocked = allStorage[STORAGE_KEYS.blockedChannels];
     const blockedChannels = Array.isArray(rawBlocked) ? rawBlocked.filter(v => v && typeof v === 'object') : [];
     const rawBookmarks = allStorage[STORAGE_KEYS.bookmarks];
@@ -3857,6 +3860,7 @@ function buildExportData(allStorage, transcriptRecords) {
         settings: exportSettings.settings,
         hiddenVideos,
         allowedVideos,
+        markedWatchedVideos,
         blockedChannels,
         bookmarks
     };
@@ -3870,6 +3874,7 @@ function buildExportData(allStorage, transcriptRecords) {
         hiddenVideos: domains.hiddenVideos || hiddenVideos,
         filteredVideoPosts: domains.hiddenVideos || hiddenVideos,
         allowedVideos: domains.allowedVideos || allowedVideos,
+        markedWatchedVideos: domains.markedWatchedVideos || markedWatchedVideos,
         blockedChannels: domains.blockedChannels || blockedChannels,
         bookmarks: domains.bookmarks || bookmarks,
         domains,

@@ -5374,5 +5374,23 @@
   },
   "watchLaterScanning": {
     "message": "Scanning…"
+  },
+  "videoHiderMarkWatched": {
+    "message": "Mark as watched"
+  },
+  "videoHiderUnmarkWatched": {
+    "message": "Unmark as watched"
+  },
+  "videoHiderMarkedWatched": {
+    "message": "Marked as watched"
+  },
+  "videoHiderUnmarkedWatched": {
+    "message": "Mark removed"
+  },
+  "videoHiderMarkWatchedToggle": {
+    "message": "Show mark-as-watched button"
+  },
+  "videoHiderMarkWatchedToggleDesc": {
+    "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
   }
 }

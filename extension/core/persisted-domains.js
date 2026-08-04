@@ -38,6 +38,7 @@
         { id: 'settings', location: 'extension-local', key: 'ytSuiteSettings', backup: 'include', strategy: 'merge-defaults-then-replace', credentialScrub: 'schema-and-sensitive-keys', migration: 'settings-schema' },
         { id: 'hiddenVideos', location: 'extension-local', key: 'ytkit-hidden-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list' },
         { id: 'allowedVideos', location: 'extension-local', key: 'ytkit-video-hider-allowed-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list' },
+        { id: 'markedWatchedVideos', location: 'extension-local', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
         { id: 'blockedChannels', location: 'extension-local', key: 'ytkit-blocked-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'blocked-channel-list' },
         { id: 'bookmarks', location: 'extension-local', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
         { id: 'watchProgress', location: 'extension-local', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
@@ -287,6 +288,7 @@
         switch (id) {
         case 'hiddenVideos': return sanitizeVideoIds(value, 5000);
         case 'allowedVideos': return sanitizeVideoIds(value, 5000);
+        case 'markedWatchedVideos': return sanitizeVideoIds(Array.isArray(value) ? value.slice(-5000) : value, 5000);
         case 'blockedChannels': return sanitizeBlockedChannels(value);
         case 'bookmarks': return sanitizeBookmarks(value);
         case 'watchProgress': return sanitizeWatchProgress(value);
@@ -324,7 +326,7 @@
     }
 
     function defaultDomainValue(id) {
-        if (['hiddenVideos', 'allowedVideos', 'blockedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'transcriptIndex'].includes(id)) return [];
+        if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'transcriptIndex'].includes(id)) return [];
         if (id === 'persistentQueue') return { v: 1, items: [] };
         if (id === 'reactionSpammerState') return sanitizeReactionState({});
         if (id === 'localeOverride' || id === 'digitalWellbeingDismissal') return '';
@@ -394,6 +396,7 @@
             const hidden = Array.isArray(raw.hiddenVideos) ? raw.hiddenVideos : raw.filteredVideoPosts;
             if (Array.isArray(hidden)) domains.hiddenVideos = hidden;
             if (version >= 3 && Array.isArray(raw.allowedVideos)) domains.allowedVideos = raw.allowedVideos;
+            if (version >= 3 && Array.isArray(raw.markedWatchedVideos)) domains.markedWatchedVideos = raw.markedWatchedVideos;
             if (version >= 2 && Array.isArray(raw.blockedChannels)) domains.blockedChannels = raw.blockedChannels;
             if (version >= 3 && isPlainObject(raw.bookmarks)) domains.bookmarks = raw.bookmarks;
             // v4 backups: new-style top-level store, or the legacy in-settings
