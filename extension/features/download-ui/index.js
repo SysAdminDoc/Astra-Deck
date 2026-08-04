@@ -15,6 +15,26 @@
     // documented window to finish unpacking, initialize Qt, and bind HTTP.
     const AUTO_START_RETRY_BUDGET = 8;
 
+    function getCompanionPortCatalogue() {
+        const catalogue = globalThis.YTKitCore?.companionPorts;
+        if (catalogue?.ports?.length) return catalogue;
+        if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
+            try {
+                return require('../../core/companion-ports');
+            } catch (_) {
+                // reason: direct Node tests do not execute the manifest bootstrap.
+            }
+        }
+        return null;
+    }
+
+    const COMPANION_PORT_CATALOGUE = getCompanionPortCatalogue();
+    const COMPANION_PORTS = Object.freeze(
+        Array.isArray(COMPANION_PORT_CATALOGUE?.ports)
+            ? COMPANION_PORT_CATALOGUE.ports.slice()
+            : []
+    );
+
     function normalizeCookieExpiry(value) {
         const normalized = Number(value);
         return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
@@ -214,10 +234,11 @@
             INSTALLER_COMMAND: `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri '${ASTRA_DOWNLOADER_RELEASE_EXE_URL}' -OutFile $out; Start-Process $out"`,
             INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
 
-            // Ports the server may have bound to — must match AstraDownloader.PORT_FALLBACKS.
-            // The server prefers 9751 but falls back when Windows (e.g. Hyper-V) blocks it.
-            _PORT_CANDIDATES: [9751, 9761, 9771, 9781, 9791, 9851],
-            _port: 9751,
+            // Ports the server may have bound to. The shared catalogue is
+            // loaded before this module in the extension manifest and in the
+            // userscript bundle.
+            _PORT_CANDIDATES: COMPANION_PORTS,
+            _port: COMPANION_PORT_CATALOGUE?.primaryPort || null,
             _SERVICE_ID: 'astra-downloader',
 
             // Base URL for server calls. Always reflects the currently discovered port.

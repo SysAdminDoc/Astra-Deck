@@ -64,6 +64,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/userscript-ai-summary.js',
     'extension/core/external-api-health.js',
     'extension/core/selector-health.js',
+    'extension/core/companion-ports.js',
     'extension/core/data-flow.js',
     'extension/core/toast.js',
     'extension/core/toast-dom.js',

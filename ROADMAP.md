@@ -27,13 +27,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Single-source the companion port list
-  Why: the six loopback ports are declared independently in four places, so adding or changing a fallback port requires four coordinated edits with no gate connecting them. A partial edit produces a companion listening on a port the extension has no host permission for — a silent, hard-to-diagnose total download failure.
-  Evidence: `astra_downloader/astra_downloader.py:222` (`PORT_FALLBACKS`), `astra_downloader/config.py:91,493`, `extension/manifest.json` host_permissions + CSP `connect-src`, `build-extension.js:89-95`.
-  Touches: `scripts/catalog-utils.js` or a new shared catalogue, `build-extension.js`, `extension/manifest.json` generation, `astra_downloader/config.py`, `tests/hardening.test.js`.
-  Acceptance: one declaration drives the manifest host_permissions, the CSP `connect-src`, the build-profile catalogue and the extension-side probe list; a test fails if the companion's Python port list and the generated manifest disagree.
-  Complexity: M
-
 - [ ] P2 — Dedicated behavioural tests for the download and subscription-groups modules
   Why: `extension/features/download-ui/index.js` (2,818 lines) is the entire download path — port probing, foreign-server detection, auto-start, format selection, recovery classification — and is covered only by the adjacent `tests/download-health-boundary.test.js`. `extension/features/subscription-groups/index.js` (2,453 lines) has no dedicated file. Commit history shows the companion and download path are the most fix-prone areas in the repo.
   Evidence: `tests/` contains 89 files / 1272 tests with no `download-ui` or `subscription-groups` suite; `git log` over the last 400 commits shows `companion` as the highest-frequency `fix(...)` scope.

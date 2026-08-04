@@ -61,7 +61,7 @@ try:
     from .config import (
         DEFAULT_CONFIG, ConfigStore, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
-        HistoryStore,
+        HistoryStore, PORT_FALLBACKS, SERVER_PORT,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
         clean_path_text, clean_text, coerce_bool, load_json_file,
         normalize_download_section, normalize_playlist_items, normalize_output_dir,
@@ -134,7 +134,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
     from config import (
         DEFAULT_CONFIG, ConfigStore, DOWNLOAD_REQUEST_ALLOWED_FIELDS,
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
-        HistoryStore,
+        HistoryStore, PORT_FALLBACKS, SERVER_PORT,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
         clean_path_text, clean_text, coerce_bool, load_json_file,
         normalize_download_section, normalize_playlist_items, normalize_output_dir,
@@ -213,13 +213,9 @@ SERVICE_ID = "astra-downloader"
 # requires on YouTube extractions. Older clients ignore unknown keys, so
 # the major version stays at 2 (additive, backward-compatible).
 SERVICE_API_VERSION = 2
-SERVER_PORT = 9751
 INSTANCE_CONTROL_HOST = '127.0.0.1'
 INSTANCE_CONTROL_PORT = 9752
 INSTANCE_LOCK_PORT = 9753
-# Ordered fallback ports the server tries when the configured port is unavailable.
-# The browser extension probes the same list to discover the running port.
-PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
 DIAGNOSTIC_LOG_ENTRY_LIMIT = 30
 DIAGNOSTIC_TEXT_LIMIT = 600
 # Stall watchdog for the download subprocess. `for line in proc.stdout` blocks

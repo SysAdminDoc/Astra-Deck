@@ -19,6 +19,11 @@ try:
 except ImportError:  # Flat source-path compatibility.
     from _compat import make_legacy_resolver
 
+try:
+    from .companion_ports import PORT_FALLBACKS, SERVER_PORT
+except ImportError:  # Flat source-path compatibility.
+    from companion_ports import PORT_FALLBACKS, SERVER_PORT
+
 
 __all__ = (
     "APP_NAME", "APP_VERSION", "SERVICE_ID", "SERVICE_API_VERSION",
@@ -88,7 +93,7 @@ def _env_bool(name, default=False):
 DEFAULT_CONFIG = {
     "DownloadPath": str(Path.home() / "Videos"),
     "AudioDownloadPath": "",
-    "ServerPort": 9751,
+    "ServerPort": SERVER_PORT,
     "ServerToken": "",
     "LegacyHealthTokenEcho": _env_bool("ASTRA_LEGACY_HEALTH_TOKEN_ECHO", False),
     "LegacyHealthTokenOrigins": os.environ.get("ASTRA_LEGACY_HEALTH_TOKEN_ORIGINS", ""),
@@ -490,7 +495,7 @@ def sanitize_config(raw):
     }
     data["DownloadPath"] = clean_path_text(data.get("DownloadPath")) or DEFAULT_CONFIG["DownloadPath"]
     data["AudioDownloadPath"] = clean_path_text(data.get("AudioDownloadPath"))
-    data["ServerPort"] = clamp_int(data.get("ServerPort"), 9751, 1024, 65535)
+    data["ServerPort"] = clamp_int(data.get("ServerPort"), SERVER_PORT, 1024, 65535)
     token = clean_text(data.get("ServerToken"), "", 128)
     data["ServerToken"] = token if re.fullmatch(r"[A-Za-z0-9_\-]{16,128}", token) else uuid.uuid4().hex
     for key in (

@@ -15,12 +15,12 @@ const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf
 const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
 
 test('userscript MediaDLManager probes fallback ports and gates on the Astra identity', () => {
-    assert.ok(/_PORT_CANDIDATES:\s*Object\.freeze\(\[9751/.test(userscript),
-        'must carry the fallback port list (was single-port 9751)');
+    assert.ok(/_PORT_CANDIDATES:\s*Object\.freeze\(USERSCRIPT_COMPANION_PORT_CATALOGUE\?\.ports/.test(userscript),
+        'must consume the shared companion fallback port catalogue');
     assert.ok(/_isAstraDownloaderHealth\(data\)/.test(userscript),
         'must validate the Astra Downloader health identity, not trust any localhost {token}');
-    assert.ok(/baseUrl\(\)\s*\{\s*return 'http:\/\/127\.0\.0\.1:' \+ this\._port/.test(userscript),
-        'must expose baseUrl() reflecting the discovered port');
+    assert.ok(/baseUrl\(\)\s*\{\s*return 'http:\/\/' \+ \(USERSCRIPT_COMPANION_PORT_CATALOGUE/.test(userscript),
+        'must expose baseUrl() reflecting the shared host and discovered port');
     assert.ok(/MediaDLManager\.baseUrl\(\) \+ '\/status\//.test(userscript),
         'status poll must use the discovered port');
     assert.ok(/MediaDLManager\.baseUrl\(\) \+ '\/download'/.test(userscript),
