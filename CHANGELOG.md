@@ -26,6 +26,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Python fallback constants, extension probe lists, background allowlists,
   build-profile permissions/CSP, and manifest parity checks.
 
+### Changed
+- **Behavioral coverage.** Dedicated download-manager and subscription-group
+  suites now pin companion fallback probing, repair guidance, cold-start retries,
+  recovery-code copy, group editing, sorting, and import counters.
+
 ## [4.51.1] - 2026-08-02 (companion v1.7.0)
 
 ### Added
