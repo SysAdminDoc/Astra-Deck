@@ -10905,7 +10905,7 @@ test('v4.47.0 EI-NEW5 — hideVideosFromHome precomputes blocked channel identit
     const isBlockedBlock = block.slice(isBlockedStart, isBlockedStart + 900);
     assert.match(isBlockedBlock, /const blockedKeys = this\._getBlockedChannelKeys\(\)/,
         '_isChannelBlocked must read the precomputed blocked-channel key Set');
-    assert.match(isBlockedBlock, /return keys\.some\(key => blockedKeys\.has\(key\)\)/,
+    assert.match(isBlockedBlock, /\.some\(key => blockedKeys\.has\(key\)\)/,
         '_isChannelBlocked must use Set membership for per-card channel checks');
     assert.doesNotMatch(isBlockedBlock, /_getBlockedChannels\(\)\.some\(channel/,
         '_isChannelBlocked must not scan every blocked-channel record per card');

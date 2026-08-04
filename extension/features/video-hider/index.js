@@ -573,11 +573,16 @@
                 return this._getChannelIdentityKeys(right).some(key => leftKeys.has(key));
             },
             _isChannelBlocked(channelInfo) {
+                if (Array.isArray(channelInfo)) {
+                    if (!channelInfo.length) return false;
+                    const blockedKeys = this._getBlockedChannelKeys();
+                    return channelInfo.some(info => this._getChannelIdentityKeys(info)
+                        .some(key => blockedKeys.has(key)));
+                }
                 if (!channelInfo) return false;
-                const keys = this._getChannelIdentityKeys(channelInfo);
-                if (keys.length === 0) return false;
                 const blockedKeys = this._getBlockedChannelKeys();
-                return keys.some(key => blockedKeys.has(key));
+                return this._getChannelIdentityKeys(channelInfo)
+                    .some(key => blockedKeys.has(key));
             },
             _addBlockedChannel(channelInfo) {
                 const record = normalizeBlockedChannelRecord({
@@ -635,11 +640,16 @@
                 return this._allowedChannelKeyCache || new Set();
             },
             _isChannelAllowed(channelInfo) {
+                if (Array.isArray(channelInfo)) {
+                    if (!channelInfo.length) return false;
+                    const allowedKeys = this._getAllowedChannelKeys();
+                    return channelInfo.some(info => this._getChannelIdentityKeys(info)
+                        .some(key => allowedKeys.has(key)));
+                }
                 if (!channelInfo) return false;
-                const keys = this._getChannelIdentityKeys(channelInfo);
-                if (keys.length === 0) return false;
                 const allowedKeys = this._getAllowedChannelKeys();
-                return keys.some(key => allowedKeys.has(key));
+                return this._getChannelIdentityKeys(channelInfo)
+                    .some(key => allowedKeys.has(key));
             },
             _normalizeChannelInput(value) {
                 const raw = typeof value === 'string' ? value.trim() : '';
@@ -1055,19 +1065,41 @@
                 return null;
             },
 
+            _extractChannelInfos(element) {
+                if (!element) return [];
+                const selector = 'a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]';
+                const links = Array.from(element.querySelectorAll?.(selector) || []);
+                if (!links.length) {
+                    const first = element.querySelector?.(selector);
+                    if (first) links.push(first);
+                }
+                const fallbackName = element.querySelector?.('#channel-name a, .ytd-channel-name a, [id="text"] a')?.textContent?.trim() ||
+                    element.querySelector?.('#channel-name, .ytd-channel-name')?.textContent?.trim() || '';
+                const seenKeys = new Set();
+                const records = [];
+                for (const link of links) {
+                    const href = String(link?.href || link?.getAttribute?.('href') || '').trim();
+                    if (!href) continue;
+                    const channelName = String(link?.textContent || link?.getAttribute?.('aria-label') || '').trim()
+                        || fallbackName || href;
+                    const record = normalizeBlockedChannelRecord({
+                        id: href,
+                        url: href,
+                        name: channelName,
+                        source: 'dom'
+                    });
+                    if (!record) continue;
+                    const keys = this._getChannelIdentityKeys(record);
+                    const dedupeKeys = keys.length ? keys : [href.toLowerCase()];
+                    if (dedupeKeys.some(key => seenKeys.has(key))) continue;
+                    dedupeKeys.forEach(key => seenKeys.add(key));
+                    records.push({ ...record, name: channelName || record.name });
+                }
+                return records;
+            },
+
             _extractChannelInfo(element) {
-                const channelLink = element.querySelector('a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]');
-                if (!channelLink) return null;
-                const href = channelLink.href || channelLink.getAttribute('href') || '';
-                const channelName = element.querySelector('#channel-name a, .ytd-channel-name a, [id="text"] a')?.textContent?.trim() ||
-                                   element.querySelector('#channel-name, .ytd-channel-name')?.textContent?.trim() || href;
-                const record = normalizeBlockedChannelRecord({
-                    id: href,
-                    url: href,
-                    name: channelName,
-                    source: 'dom'
-                });
-                return record ? { ...record, name: channelName || record.name } : null;
+                return this._extractChannelInfos(element)[0] || null;
             },
 
             _extractDuration(element) {
@@ -1393,8 +1425,10 @@
 
             _hideChannelVideos(channelInfo) {
                 document.querySelectorAll(this._VIDEO_SELECTORS).forEach(el => {
-                    const info = this._extractChannelInfo(el);
-                    if (info && this._isSameChannel(info, channelInfo)) this._applyVideoHiddenState(el, this._shouldHide(el));
+                    const infos = this._extractChannelInfos(el);
+                    if (infos.some(info => this._isSameChannel(info, channelInfo))) {
+                        this._applyVideoHiddenState(el, this._shouldHide(el));
+                    }
                 });
             },
 
@@ -1461,22 +1495,23 @@
                     element.dataset.ytkitFilterReason = 'marked-watched';
                     return true;
                 }
-                const channelInfo = this._extractChannelInfo(element);
+                const channelInfos = this._extractChannelInfos(element);
+                const channelInfo = channelInfos[0] || null;
                 if (this._isChannelAllowlistMode()) {
                     // Empty or unresolved allowlists are fail-open: an empty
                     // list must never hide every feed card, and cards whose
                     // channel cannot be identified must remain recoverable.
-                    if (channelInfo
+                    if (channelInfos.length
                         && this._getAllowedChannelKeys().size > 0
-                        && !this._isChannelAllowed(channelInfo)) return true;
-                } else if (this._isChannelBlocked(channelInfo)) {
+                        && !this._isChannelAllowed(channelInfos)) return true;
+                } else if (this._isChannelBlocked(channelInfos)) {
                     return true;
                 }
 
                 const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
                 if (filterStr) {
                     const title = this._extractTitle(element);
-                    const channelName = channelInfo?.name?.toLowerCase() || '';
+                    const channelName = channelInfos.map(info => info?.name || '').filter(Boolean).join(' ').toLowerCase();
                     const searchText = (title + ' ' + channelName).toLowerCase();
 
                     if (filterStr.startsWith('/')) {

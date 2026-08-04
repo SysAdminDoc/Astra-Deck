@@ -16,6 +16,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **List feed layout.** Home, Subscriptions, and Search can now opt into
   thumbnail-left rows with metadata on the right, including modern lockup
   cards, responsive sizing, and mutual exclusion with Videos Per Row.
+- **Multi-uploader filtering.** Video Hider now extracts every credited
+  channel from collaboration cards and applies the existing blocked-channel
+  key cache and allowlist semantics across the full participant set.
 - **Playlist power pack.** Playlist panels now offer duration sorting with
   original-order restoration, bounded per-playlist last-video resume, and an
   explicit persisted auto-skip toggle for entries at least 90% watched.
