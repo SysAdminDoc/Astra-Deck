@@ -5416,11 +5416,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (424 → 427). Independent AI surface controls add three preferences
     // (427 → 430). Notification count and read-state controls add two
     // preferences (430 → 432). Comment language and duplicate policies add
-    // two more preferences (432 → 434).
+    // two more preferences (432 → 434). Playlist auto-skip adds one more
+    // preference (434 → 435).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 434,
-        'SETTINGS_SCHEMA must cover all 434 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 435,
+        'SETTINGS_SCHEMA must cover all 435 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

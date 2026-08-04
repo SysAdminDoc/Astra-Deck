@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Playlist power pack
-  Why: Duration sorting, per-playlist resume, and auto-skip-watched are user-selected actions/policies that need clear accessible controls in the existing Playlist Enhancer toolbar.
-  Evidence: Sort Youtube Playlist by Duration (KohGeek), playlists playback tracker (andrybak), Playlist Auto Skip Watched (neverlandeverland).
-  Touches: playlistEnhancer runtime, resume storage, settings/localized UI copy.
-  Acceptance: The playlist panel offers duration sort and last-video resume; an explicit persisted option auto-skips entries watched at least 90%.
-  Complexity: M
-
 ### P3 — Under consideration
 
 - [ ] P3 — Parametric EQ on the audio graph

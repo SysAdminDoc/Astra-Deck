@@ -89,7 +89,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Independent AI surface controls add 69 bytes for three booleans.
     // Notification count and read-state controls add 54 bytes. Comment
     // language and duplicate policies add another 63 bytes.
-    assert.equal(assessment.totalBytes, 184548);
+    // Playlist auto-skip adds 32 bytes for its persisted preference.
+    assert.equal(assessment.totalBytes, 184580);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

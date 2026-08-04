@@ -14,7 +14,7 @@ test('durable-domain registry explicitly classifies every known storage boundary
     const ids = new Set(persisted.DURABLE_DOMAIN_REGISTRY.map((entry) => entry.id));
     for (const required of [
         'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'bookmarks',
-        'watchProgress', 'watchTime', 'channelSpeeds', 'resumePositions',
+        'watchProgress', 'watchTime', 'channelSpeeds', 'resumePositions', 'playlistResume',
         'persistentQueue', 'reactionSpammerState', 'watchLaterRemovalLog',
         'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'localeOverride', 'debugPreference',
         'playerControlDismissals', 'theaterSplitRatio', 'transcriptIndex', 'credentialVault',
