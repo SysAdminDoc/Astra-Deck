@@ -4,9 +4,9 @@
     // extension/features/digital-wellbeing/index.js
     //
     // Monolith peel for Digital Wellbeing. The module owns the active
-    // playback timer, break-reminder overlay, daily-cap overlay, and local
-    // day rollover handling; ytkit.js keeps the inline object as a
-    // compatibility fallback.
+    // playback timer, break-reminder overlay, daily-cap overlay, Shorts
+    // budget overlay, and local day rollover handling; ytkit.js keeps the
+    // legacy inline object as a compatibility fallback for the base timer.
 
     function createDigitalWellbeingFeature(deps = {}) {
         const {
@@ -15,7 +15,8 @@
             settingsManager = { save() {} },
             DebugManager = { log() {} },
             injectStyle = () => ({ remove() {} }),
-            trapFocusWithin = () => {}
+            trapFocusWithin = () => {},
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
@@ -50,6 +51,10 @@
                 return new Intl.NumberFormat().format(Math.max(0, Math.floor(value)));
             },
 
+            _isShortsRoute() {
+                return /^\/shorts(?:\/|$)/.test(String(globalThis.location?.pathname || ''));
+            },
+
             _getCapDismissDate() {
                 return StorageManager.get(this._capDismissKey, '') || '';
             },
@@ -81,8 +86,93 @@
                 this._saveToday(merged);
             },
 
-            _saveToday(state) {
-                appState.settings.dwWatchTimeToday = state;
+            // Shorts watch time is tracked separately from the all-video
+            // ledger so a user can budget the high-churn Shorts route without
+            // changing the existing daily cap semantics.
+            _pendingShortsSeconds: 0,
+            _persistedShortsToday() {
+                const raw = appState.settings.shortsWatchTimeToday || {};
+                const today = this._todayKey();
+                if (raw.date !== today) return { date: today, seconds: 0, snoozeUntil: 0 };
+                const normalize = (value) => Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+                return {
+                    date: today,
+                    seconds: normalize(Number(raw.seconds)),
+                    snoozeUntil: normalize(Number(raw.snoozeUntil))
+                };
+            },
+            _loadShortsToday() {
+                const persisted = this._persistedShortsToday();
+                return { ...persisted, seconds: persisted.seconds + this._pendingShortsSeconds };
+            },
+            _flushShortsToday() {
+                if (!this._pendingShortsSeconds) return;
+                const merged = this._loadShortsToday();
+                this._pendingShortsSeconds = 0;
+                this._saveShortsToday(merged);
+            },
+
+            _saveShortsToday(state) {
+                this._saveToday(state, 'shortsWatchTimeToday');
+            },
+
+            _setShortsSnooze(until = 0) {
+                const merged = this._loadShortsToday();
+                this._pendingShortsSeconds = 0;
+                const snoozeValue = Number(until);
+                this._saveShortsToday({
+                    ...merged,
+                    snoozeUntil: Number.isFinite(snoozeValue) ? Math.max(0, snoozeValue) : 0
+                });
+            },
+
+            _clearOverlay() {
+                if (this._overlayKeyHandler) {
+                    document.removeEventListener('keydown', this._overlayKeyHandler, true);
+                    this._overlayKeyHandler = null;
+                }
+                this._overlay?.remove();
+                this._overlay = null;
+            },
+
+            _showShortsLimitOverlay(shortsToday, shortsLimit) {
+                if (!shortsToday || shortsLimit <= 0 || shortsToday.seconds < shortsLimit
+                    || shortsToday.snoozeUntil > Date.now() || this._overlay) return false;
+                const snoozable = appState.settings.shortsDailyLimitMode === 'snooze';
+                const minutes = this._formatMinutes(shortsToday.seconds / 60);
+                const limitMinutes = this._formatMinutes(shortsLimit / 60);
+                const leaveShorts = () => {
+                    const target = globalThis.location;
+                    if (!target || typeof target.assign !== 'function') return false;
+                    try {
+                        target.assign('/');
+                        return true;
+                    } catch (_) { return false; }
+                };
+                this._showOverlay('shorts-limit', {
+                    title: t('dwShortsLimitTitle', 'Shorts Limit Reached'),
+                    eyebrow: t('dwShortsLimitEyebrow', 'Shorts Guard'),
+                    badge: `${minutes} Min Shorts`,
+                    locked: !snoozable,
+                    message: snoozable
+                        ? t('dwShortsSnoozeMessage', 'You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes.').replace('{minutes}', minutes)
+                        : t('dwShortsHardBlockMessage', 'You have reached your {limit}-minute Shorts budget for today. Leave Shorts to continue watching other YouTube videos.').replace('{limit}', limitMinutes),
+                    hint: snoozable
+                        ? t('dwShortsLimitResetHint', 'The Shorts budget resets at your next local midnight.')
+                        : t('dwShortsHardBlockHint', 'This hard block resets at your next local midnight.'),
+                    buttonText: snoozable
+                        ? t('dwShortsSnoozeButton', 'Snooze 5 Minutes')
+                        : t('dwShortsLeaveButton', 'Leave Shorts'),
+                    resumeAfterDismiss: snoozable,
+                    onAction: snoozable
+                        ? () => this._setShortsSnooze(Date.now() + 5 * 60 * 1000)
+                        : leaveShorts
+                });
+                return true;
+            },
+
+            _saveToday(state, key = 'dwWatchTimeToday') {
+                appState.settings[key] = state;
                 if (typeof settingsManager !== 'undefined' && settingsManager.save) {
                     try { settingsManager.save(appState.settings); } catch (e) {
                         DebugManager.log('DigitalWellbeing', `save failed: ${e.message}`);
@@ -91,16 +181,11 @@
             },
 
             _showOverlay(kind, options = {}) {
-                if (this._overlay) {
-                    this._overlay.remove();
-                    this._overlay = null;
-                }
-                if (this._overlayKeyHandler) {
-                    document.removeEventListener('keydown', this._overlayKeyHandler, true);
-                    this._overlayKeyHandler = null;
-                }
+                this._clearOverlay();
                 const video = document.querySelector('video');
-                const resumeAfterDismiss = kind === 'break' && video && !video.paused;
+                const locked = options.locked === true;
+                const resumeAfterDismiss = kind === 'break' && video && !video.paused
+                    || (options.resumeAfterDismiss === true && video && !video.paused);
                 if (video && !video.paused) video.pause();
                 const titleText = options.title || (kind === 'break' ? 'Take a Break' : 'Daily Limit Reached');
                 const messageText = options.message || '';
@@ -113,6 +198,7 @@
                 const o = document.createElement('div');
                 o.className = 'ytkit-wellbeing-overlay';
                 o.dataset.kind = kind;
+                o.dataset.locked = locked ? 'true' : 'false';
                 o.setAttribute('role', 'dialog');
                 o.setAttribute('aria-modal', 'true');
 
@@ -165,12 +251,7 @@
                 this._overlay = o;
 
                 const dismissOverlay = () => {
-                    if (this._overlayKeyHandler) {
-                        document.removeEventListener('keydown', this._overlayKeyHandler, true);
-                        this._overlayKeyHandler = null;
-                    }
-                    o.remove();
-                    if (this._overlay === o) this._overlay = null;
+                    this._clearOverlay();
                     if (resumeAfterDismiss && video && video.paused) {
                         try {
                             const playPromise = video.play();
@@ -184,27 +265,43 @@
                     options.onDismiss?.();
                 };
 
+                const runAction = () => {
+                    const result = typeof options.onAction === 'function' ? options.onAction() : undefined;
+                    if (result !== false) dismissOverlay();
+                };
+
                 this._overlayKeyHandler = (event) => {
+                    if (event.key === 'Tab') {
+                        event.preventDefault();
+                        trapFocusWithin(o, event);
+                        return;
+                    }
+                    if (locked) {
+                        event.preventDefault();
+                        event.stopPropagation?.();
+                        return;
+                    }
                     if (event.key === 'Escape') {
                         event.preventDefault();
                         dismissOverlay();
-                        return;
-                    }
-                    if (event.key === 'Tab') {
-                        trapFocusWithin(o, event);
                     }
                 };
                 document.addEventListener('keydown', this._overlayKeyHandler, true);
-                button.addEventListener('click', dismissOverlay);
+                button.addEventListener('click', runAction);
                 o.addEventListener('click', (event) => {
-                    if (event.target === o) dismissOverlay();
+                    if (!locked && event.target === o) dismissOverlay();
                 });
                 requestAnimationFrame(() => button.focus({ preventScroll: true }));
             },
 
             _tick() {
+                const shortsActive = this._isShortsRoute();
+                if (!shortsActive) {
+                    this._flushShortsToday();
+                    if (this._overlay?.dataset?.kind === 'shorts-limit') this._clearOverlay();
+                }
                 const video = document.querySelector('video');
-                if (!video || video.paused || document.hidden) return;
+                if (!video || document.hidden) return;
                 // v4.47.0 NF34: midnight / DST boundary detection. When
                 // the local day key changes between two ticks we must
                 // reset _sessionStart so the next break-reminder window
@@ -218,12 +315,28 @@
                         `Day rolled over (${this._lastTodayKey} -> ${currentTodayKey}); resetting session baseline.`);
                     this._sessionStart = 0;
                     this._pendingSeconds = 0;
+                    this._pendingShortsSeconds = 0;
+                    if (this._overlay?.dataset?.kind === 'shorts-limit') this._clearOverlay();
                 }
                 this._lastTodayKey = currentTodayKey;
+                if (shortsActive
+                    && this._overlay?.dataset?.kind === 'shorts-limit'
+                    && this._overlay.dataset.locked === 'true') {
+                    if (!video.paused) video.pause();
+                    return;
+                }
+                const shortsLimit = (parseInt(appState.settings.shortsDailyLimitMin) || 0) * 60;
+                if (video.paused) {
+                    if (shortsActive && this._showShortsLimitOverlay(this._loadShortsToday(), shortsLimit)) return;
+                    return;
+                }
                 this._pendingSeconds += 1;
+                if (shortsActive) this._pendingShortsSeconds += 1;
                 const today = this._loadToday();
+                const shortsToday = shortsActive ? this._loadShortsToday() : null;
                 // Batch storage writes to every 30 counted seconds.
                 if (this._pendingSeconds >= 30) this._flushToday();
+                if (this._pendingShortsSeconds >= 30) this._flushShortsToday();
                 // NF34: use `??` so today.seconds === 0 (first tick of a
                 // new day) correctly initializes _sessionStart instead of
                 // letting the OR fall through to the next tick.
@@ -246,6 +359,7 @@
                         return;
                     }
                 }
+                if (shortsActive && this._showShortsLimitOverlay(shortsToday, shortsLimit)) return;
                 if (breakEvery > 0 && sessionElapsed >= breakEvery && !this._overlay) {
                     this._sessionStart = today.seconds;
                     this._showOverlay('break', {
@@ -289,6 +403,12 @@
                         background:
                             radial-gradient(circle at top right, rgba(251,191,36,0.16), transparent 38%),
                             linear-gradient(180deg, rgba(30,24,16,0.98), rgba(15,11,8,0.98));
+                    }
+                    .ytkit-wellbeing-card[data-kind="shorts-limit"] {
+                        border-color: rgba(167,139,250,0.3);
+                        background:
+                            radial-gradient(circle at top right, rgba(167,139,250,0.18), transparent 38%),
+                            linear-gradient(180deg, rgba(27,22,45,0.98), rgba(12,10,23,0.98));
                     }
                     .ytkit-wellbeing-topline {
                         display: flex;
@@ -405,9 +525,12 @@
                 this._timer = setInterval(() => this._tick(), 1000);
                 // A closed or backgrounded tab used to drop up to 29 counted
                 // seconds. pagehide is the last reliable moment to merge them.
-                this._flushHandler = () => this._flushToday();
+                this._flushHandler = () => {
+                    this._flushToday();
+                    this._flushShortsToday();
+                };
                 this._visibilityHandler = () => {
-                    if (document.visibilityState === 'hidden') this._flushToday();
+                    if (document.visibilityState === 'hidden') this._flushHandler();
                 };
                 window.addEventListener('pagehide', this._flushHandler);
                 document.addEventListener('visibilitychange', this._visibilityHandler);
@@ -417,6 +540,7 @@
                 this._timer = null;
                 // Flush any counted but unsaved watch time
                 this._flushToday();
+                this._flushShortsToday();
                 if (this._flushHandler) {
                     window.removeEventListener('pagehide', this._flushHandler);
                     this._flushHandler = null;
@@ -433,6 +557,7 @@
                 this._styleEl?.remove(); this._styleEl = null;
                 this._sessionStart = 0;
                 this._pendingSeconds = 0;
+                this._pendingShortsSeconds = 0;
                 this._lastTodayKey = null;
             }
         };

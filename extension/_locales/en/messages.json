@@ -5584,5 +5584,47 @@
   },
   "feature_audioHighPass_name": {
     "message": "Audio High-Pass Filter"
+  },
+  "feature_shortsDailyLimitMin_desc": {
+    "message": "Maximum minutes of Shorts playback per local day. Set to 0 to disable."
+  },
+  "feature_shortsDailyLimitMin_name": {
+    "message": "Shorts Daily Limit"
+  },
+  "feature_shortsDailyLimitMode_desc": {
+    "message": "Choose whether reaching the limit blocks Shorts or offers five-minute snoozes."
+  },
+  "feature_shortsDailyLimitMode_name": {
+    "message": "Shorts Limit Action"
+  },
+  "shortsDailyLimitMode_hard": {
+    "message": "Hard block"
+  },
+  "shortsDailyLimitMode_snooze": {
+    "message": "Snooze 5 minutes"
+  },
+  "dwShortsHardBlockHint": {
+    "message": "This hard block resets at your next local midnight."
+  },
+  "dwShortsHardBlockMessage": {
+    "message": "You have reached your {limit}-minute Shorts budget for today. Leave Shorts to continue watching other YouTube videos."
+  },
+  "dwShortsLeaveButton": {
+    "message": "Leave Shorts"
+  },
+  "dwShortsLimitEyebrow": {
+    "message": "Shorts Guard"
+  },
+  "dwShortsLimitResetHint": {
+    "message": "The Shorts budget resets at your next local midnight."
+  },
+  "dwShortsLimitTitle": {
+    "message": "Shorts Limit Reached"
+  },
+  "dwShortsSnoozeButton": {
+    "message": "Snooze 5 Minutes"
+  },
+  "dwShortsSnoozeMessage": {
+    "message": "You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes."
   }
 }

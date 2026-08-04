@@ -85,7 +85,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Channel allowlist mode adds 64 bytes to the local settings payload.
     // The separate allowed-channel list adds a bounded 80-channel local
     // fixture alongside the existing blocklist.
-    assert.equal(assessment.totalBytes, 184245);
+    // The Shorts daily limit adds 117 bytes for its limit, action, and ledger.
+    assert.equal(assessment.totalBytes, 184362);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -115,6 +116,6 @@ test('storage audit report records the sync decision', () => {
 
     assert.match(report, /Safe-store profile sync candidate: viable \(5\.\d KB/);
     assert.match(report, /Full UI preferences payload: not viable for sync \(13\.\d KB/);
-    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(17[0-9]\.\d KB/);
+    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(18[0-9]\.\d KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });

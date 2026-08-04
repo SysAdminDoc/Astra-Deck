@@ -322,6 +322,13 @@
     "date": "",
     "seconds": 0
   },
+  "shortsDailyLimitMin": 0,
+  "shortsDailyLimitMode": "hard",
+  "shortsWatchTimeToday": {
+    "date": "",
+    "seconds": 0,
+    "snoozeUntil": 0
+  },
   "_profiles": {},
   "_activeProfile": "default",
   "privacyDataFlowPanel": false,

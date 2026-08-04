@@ -1064,6 +1064,154 @@ test('digitalWellbeing Resume Video resumes only playback paused by the reminder
     }
 });
 
+test('digitalWellbeing enforces a Shorts budget with an inaccessible hard block and a five-minute snooze', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/digital-wellbeing/index.js',
+        'digitalWellbeing'
+    );
+    const pad = (value) => String(value).padStart(2, '0');
+    const now = new Date();
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const previousLocation = global.location;
+    const previousDocument = global.document;
+    const previousAnimationFrame = global.requestAnimationFrame;
+
+    const makeHarness = (mode) => {
+        const created = [];
+        const documentListeners = {};
+        const locationRef = {
+            pathname: '/shorts/example',
+            assigned: '',
+            assign(path) { this.assigned = path; }
+        };
+        const makeNode = (tagName) => {
+            const node = {
+                tagName,
+                children: [],
+                listeners: {},
+                dataset: {},
+                append(...children) { this.children.push(...children); },
+                appendChild(child) { this.children.push(child); return child; },
+                addEventListener(type, callback) { this.listeners[type] = callback; },
+                removeEventListener() {},
+                remove() { this.removed = true; },
+                setAttribute() {},
+                focus() {}
+            };
+            created.push(node);
+            return node;
+        };
+        const video = {
+            paused: false,
+            pauseCalls: 0,
+            playCalls: 0,
+            pause() { this.pauseCalls += 1; this.paused = true; },
+            play() { this.playCalls += 1; this.paused = false; return Promise.resolve(); }
+        };
+        const documentRef = {
+            body: makeNode('body'),
+            hidden: false,
+            visibilityState: 'visible',
+            querySelector(selector) { return selector === 'video' ? video : null; },
+            createElement: makeNode,
+            addEventListener(type, callback) { documentListeners[type] = callback; },
+            removeEventListener(type) {
+                delete documentListeners[type];
+            }
+        };
+        const settings = {
+            dwDailyCapMin: 0,
+            dwBreakIntervalMin: 0,
+            shortsDailyLimitMin: 1,
+            shortsDailyLimitMode: mode,
+            dwWatchTimeToday: { date: today, seconds: 0 },
+            shortsWatchTimeToday: { date: today, seconds: 60, snoozeUntil: 0 }
+        };
+        return { created, documentListeners, documentRef, locationRef, settings, video };
+    };
+
+    try {
+        global.requestAnimationFrame = callback => callback();
+
+        const hard = makeHarness('hard');
+        global.location = hard.locationRef;
+        global.document = hard.documentRef;
+        const hardFeature = mod.createDigitalWellbeingFeature({
+            appState: { settings: hard.settings },
+            DebugManager: { log() {} }
+        });
+        hardFeature._tick();
+        assert.equal(hardFeature._isShortsRoute(), true);
+        assert.equal(hardFeature._overlay?.dataset.kind, 'shorts-limit');
+        assert.equal(hardFeature._overlay?.dataset.locked, 'true');
+        assert.equal(hard.video.pauseCalls, 1, 'hard block must pause active Shorts playback');
+        hard.documentListeners.keydown({
+            key: 'Escape',
+            preventDefault() {},
+            stopPropagation() {}
+        });
+        assert.ok(hardFeature._overlay, 'Escape must not dismiss a hard Shorts block');
+        hardFeature._overlay.listeners.click({ target: hardFeature._overlay });
+        assert.ok(hardFeature._overlay, 'backdrop click must not dismiss a hard Shorts block');
+        const leaveButton = hard.created.find((node) => node.tagName === 'button');
+        leaveButton.listeners.click();
+        assert.equal(hard.locationRef.assigned, '/', 'hard block must offer an accessible route out of Shorts');
+        assert.equal(hardFeature._overlay, null);
+
+        const paused = makeHarness('hard');
+        paused.video.paused = true;
+        global.location = paused.locationRef;
+        global.document = paused.documentRef;
+        const pausedFeature = mod.createDigitalWellbeingFeature({
+            appState: { settings: paused.settings },
+            DebugManager: { log() {} }
+        });
+        pausedFeature._tick();
+        assert.equal(pausedFeature._overlay?.dataset.kind, 'shorts-limit',
+            'a Shorts route at the limit must remain blocked when autoplay is paused');
+        assert.equal(paused.video.playCalls, 0, 'an already-paused video must not be started by the block');
+
+        const snooze = makeHarness('snooze');
+        global.location = snooze.locationRef;
+        global.document = snooze.documentRef;
+        const snoozeFeature = mod.createDigitalWellbeingFeature({
+            appState: { settings: snooze.settings },
+            DebugManager: { log() {} }
+        });
+        snoozeFeature._tick();
+        assert.equal(snoozeFeature._overlay?.dataset.kind, 'shorts-limit');
+        assert.equal(snoozeFeature._overlay?.dataset.locked, 'false');
+        const snoozeButton = snooze.created.find((node) => node.tagName === 'button');
+        snoozeButton.listeners.click();
+        assert.ok(snooze.settings.shortsWatchTimeToday.snoozeUntil > Date.now(),
+            'snooze mode must persist a five-minute local deadline');
+        assert.equal(snooze.video.playCalls, 1, 'snooze must resume the playback it paused');
+        assert.equal(snoozeFeature._overlay, null);
+
+        snooze.settings.shortsWatchTimeToday = {
+            date: '2000-01-01', seconds: 999, snoozeUntil: Date.now() + 600000
+        };
+        assert.equal(snoozeFeature._loadShortsToday().seconds, 0,
+            'a stale Shorts ledger must reset at the local day boundary');
+
+        const source = fs.readFileSync(
+            path.join(__dirname, '..', '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8');
+        assert.match(source, /shortsDailyLimitMin/, 'module must wire the Shorts daily limit setting');
+        assert.match(source, /shortsDailyLimitMode/, 'module must wire the Shorts block policy setting');
+        assert.match(source, /shortsWatchTimeToday/, 'module must persist a separate Shorts daily ledger');
+        assert.match(source, /_pendingShortsSeconds/, 'module must batch Shorts watch-time writes');
+        assert.match(source, /locked: !snoozable/, 'module must provide an explicit hard-block overlay');
+        assert.match(source, /Snooze 5 Minutes/, 'module must provide the five-minute snooze action');
+    } finally {
+        if (previousLocation === undefined) delete global.location;
+        else global.location = previousLocation;
+        if (previousDocument === undefined) delete global.document;
+        else global.document = previousDocument;
+        if (previousAnimationFrame === undefined) delete global.requestAnimationFrame;
+        else global.requestAnimationFrame = previousAnimationFrame;
+    }
+});
+
 test('digitalWellbeing module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];
@@ -1092,7 +1240,8 @@ test('digitalWellbeing monolith prefers the module runtime factory before inline
         'settingsManager',
         'DebugManager',
         'injectStyle',
-        'trapFocusWithin'
+        'trapFocusWithin',
+        't'
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }

@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Enforced Shorts daily limit
-  Why: A Shorts-specific budget and hard-block/snooze policy are distinct from the existing all-video `dwDailyCapMin` setting.
-  Evidence: TechCrunch 2025-10-22 Shorts timer coverage; Shorts Addiction Helper scripts; `extension/features/digital-wellbeing/`.
-  Touches: digitalWellbeing runtime, Shorts route detection, settings schema/locales.
-  Acceptance: Users configure daily Shorts minutes and hard-block versus five-minute snooze; usage resets at local midnight and the block is accessible.
-  Complexity: M
-
 - [ ] P2 — Hide AI surfaces pack
   Why: Independent controls are needed because Ask, Gemini, AI summaries, and context panels are separate surfaces with different user value.
   Evidence: Control Panel for YouTube; Remove YouTube Gemini buttons; Youtube without fact checking.

@@ -5393,11 +5393,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (419 → 421).
     // Channel allowlist mode adds one feed preference (421 → 422).
     // Audio auto-gain and high-pass add two extension-only preferences
-    // (422 → 424).
+    // (422 → 424). The Shorts budget adds a limit, mode, and local ledger
+    // (424 → 427).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 424,
-        'SETTINGS_SCHEMA must cover all 424 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 427,
+        'SETTINGS_SCHEMA must cover all 427 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -10904,7 +10905,7 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
     );
     const dwIdx = ytkitSrc.indexOf("id: 'digitalWellbeing'");
     assert.ok(dwIdx > -1, 'digitalWellbeing feature must exist');
-    const slice = ytkitSrc.slice(dwIdx, dwIdx + 22000);
+    const slice = ytkitSrc.slice(dwIdx, dwIdx + 34000);
 
     // 1. _lastTodayKey field is declared on the feature object so the
     // boundary check has somewhere to remember the last seen key.
@@ -10934,8 +10935,8 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
 
     // 4. destroy() resets _lastTodayKey alongside _sessionStart so the
     // next init() starts fresh.
-    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._pendingSeconds = 0;\s*\n\s*this\._lastTodayKey = null;/,
-        'destroy() must reset _sessionStart, the unflushed seconds, and _lastTodayKey for symmetry');
+    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._pendingSeconds = 0;\s*(?:\n\s*this\._pendingShortsSeconds = 0;\s*)?\n\s*this\._lastTodayKey = null;/,
+        'destroy() must reset both unflushed ledgers, _sessionStart, and _lastTodayKey for symmetry');
 });
 
 test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age title', () => {
@@ -12346,7 +12347,7 @@ test('digitalWellbeing merges per-tab watch time instead of overwriting it', () 
         path.join(__dirname, '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'
     );
     const dwIdx = ytkitSource.indexOf("id: 'digitalWellbeing'");
-    const fallback = ytkitSource.slice(dwIdx, dwIdx + 24000);
+    const fallback = ytkitSource.slice(dwIdx, dwIdx + 34000);
     for (const [label, source] of [['module', moduleSource], ['ytkit.js fallback', fallback]]) {
         assert.match(source, /_pendingSeconds: 0/,
             `${label} must track only this tab's unflushed seconds`);

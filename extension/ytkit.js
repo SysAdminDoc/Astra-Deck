@@ -3499,6 +3499,9 @@ return response;
             dwBreakIntervalMin: 30,          // 0 = off
             dwDailyCapMin: 0,                // 0 = off
             dwWatchTimeToday: { date: '', seconds: 0 },
+            shortsDailyLimitMin: 0,           // 0 = off
+            shortsDailyLimitMode: 'hard',     // hard | snooze
+            shortsWatchTimeToday: { date: '', seconds: 0, snoozeUntil: 0 },
             _profiles: {},                   // { profileName: { settingKey: value, ... } }
             _activeProfile: 'default',
             privacyDataFlowPanel: false,
@@ -31470,7 +31473,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingsManager,
             DebugManager,
             injectStyle,
-            trapFocusWithin
+            trapFocusWithin,
+            t
         }) || {
             id: 'digitalWellbeing',
             name: 'Digital Wellbeing',
@@ -31889,6 +31893,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._lastTodayKey = null;
             }
         }),
+        {
+            id: 'shortsDailyLimitMin',
+            name: t('feature_shortsDailyLimitMin_name', 'Shorts Daily Limit'),
+            description: t('feature_shortsDailyLimitMin_desc', 'Maximum minutes of Shorts playback per local day. Set to 0 to disable.'),
+            group: 'Advanced',
+            icon: 'timer',
+            isSubFeature: true,
+            parentId: 'digitalWellbeing',
+            type: 'range',
+            min: 0,
+            max: 1440,
+            step: 5,
+            formatValue: (value) => Number(value) > 0 ? `${value} min` : 'Off',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'shortsDailyLimitMode',
+            name: t('feature_shortsDailyLimitMode_name', 'Shorts Limit Action'),
+            description: t('feature_shortsDailyLimitMode_desc', 'Choose whether reaching the limit blocks Shorts or offers five-minute snoozes.'),
+            group: 'Advanced',
+            icon: 'shield',
+            isSubFeature: true,
+            parentId: 'digitalWellbeing',
+            type: 'select',
+            options: [
+                { value: 'hard', label: t('shortsDailyLimitMode_hard', 'Hard block') },
+                { value: 'snooze', label: t('shortsDailyLimitMode_snooze', 'Snooze 5 minutes') }
+            ],
+            init() {},
+            destroy() {}
+        },
 
         // ═══════════════════════════════════════════════════════════════════
         // v3.9.0 — New Feature Wave
