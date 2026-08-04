@@ -5572,5 +5572,17 @@
   },
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
+  },
+  "feature_audioAutoGain_desc": {
+    "message": "Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage."
+  },
+  "feature_audioAutoGain_name": {
+    "message": "Audio Auto-Gain"
+  },
+  "feature_audioHighPass_desc": {
+    "message": "Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph."
+  },
+  "feature_audioHighPass_name": {
+    "message": "Audio High-Pass Filter"
   }
 }

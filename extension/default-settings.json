@@ -310,6 +310,8 @@
   "volumeBoost": false,
   "volumeBoostLevel": 2,
   "audioNormalization": false,
+  "audioAutoGain": false,
+  "audioHighPass": false,
   "audioPan": 0,
   "audioSyncOffsetMs": 0,
   "frameByFrameButtons": false,

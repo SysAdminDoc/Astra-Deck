@@ -5392,10 +5392,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Dual-language subtitles add the master toggle and language selector
     // (419 → 421).
     // Channel allowlist mode adds one feed preference (421 → 422).
+    // Audio auto-gain and high-pass add two extension-only preferences
+    // (422 → 424).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 422,
-        'SETTINGS_SCHEMA must cover all 422 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 424,
+        'SETTINGS_SCHEMA must cover all 424 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

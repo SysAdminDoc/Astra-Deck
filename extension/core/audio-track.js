@@ -9,7 +9,9 @@
         descriptive: 'data-ytkit-audio-description',
         original: 'data-ytkit-audio-original',
         status: 'data-ytkit-audio-track-status',
-        syncOffset: 'data-ytkit-audio-sync-offset'
+        syncOffset: 'data-ytkit-audio-sync-offset',
+        autoGain: 'data-ytkit-audio-auto-gain',
+        highPass: 'data-ytkit-audio-high-pass'
     });
     const AUDIO_SYNC_OFFSET_LIMIT_MS = 500;
     const TASK_ID = 'ytkit-main:audioTrack';

@@ -61,6 +61,9 @@ function bootstrapAudioBridge() {
             this.destination = makeNode('destination');
             this.sources = [];
             this.delays = [];
+            this.gains = [];
+            this.filters = [];
+            this.analysers = [];
             audioContexts.push(this);
         }
 
@@ -76,6 +79,7 @@ function bootstrapAudioBridge() {
         createGain() {
             const node = makeNode('gain');
             node.gain = { value: 1 };
+            this.gains.push(node);
             return node;
         }
 
@@ -92,6 +96,26 @@ function bootstrapAudioBridge() {
         createStereoPanner() {
             const node = makeNode('panner');
             node.pan = { value: 0 };
+            return node;
+        }
+
+        createBiquadFilter() {
+            const node = makeNode('highpass');
+            node.type = 'lowpass';
+            node.frequency = { value: 350 };
+            node.Q = { value: 1 };
+            this.filters.push(node);
+            return node;
+        }
+
+        createAnalyser() {
+            const node = makeNode('analyser');
+            node.fftSize = 2048;
+            node.smoothingTimeConstant = 0;
+            node.getFloatTimeDomainData = (buffer) => {
+                for (let index = 0; index < buffer.length; index++) buffer[index] = 0.05;
+            };
+            this.analysers.push(node);
             return node;
         }
 
@@ -142,7 +166,11 @@ function bootstrapAudioBridge() {
         MediaSource: { isTypeSupported: () => true },
         YTKitCore: {
             audioTrackSelection: {
-                ATTRS: { syncOffset: 'data-ytkit-audio-sync-offset' },
+                ATTRS: {
+                    syncOffset: 'data-ytkit-audio-sync-offset',
+                    autoGain: 'data-ytkit-audio-auto-gain',
+                    highPass: 'data-ytkit-audio-high-pass'
+                },
                 normalizeAudioSyncOffset(value) {
                     const number = Number(value);
                     if (!Number.isFinite(number)) return 0;
@@ -171,6 +199,7 @@ function bootstrapAudioBridge() {
         Promise,
         Math,
         Number,
+        Float32Array,
         Set,
         Map,
         WeakMap,
@@ -182,6 +211,16 @@ function bootstrapAudioBridge() {
             return pendingTimers.length;
         },
         clearTimeout() {}
+    };
+    let nextIntervalId = 1;
+    const intervalCallbacks = new Map();
+    context.setInterval = (callback) => {
+        const id = nextIntervalId++;
+        intervalCallbacks.set(id, callback);
+        return id;
+    };
+    context.clearInterval = (id) => {
+        intervalCallbacks.delete(id);
     };
     context.HTMLVideoElement.prototype = { canPlayType() { return 'probably'; } };
     context.addEventListener = (type, callback) => addListener(windowListeners, type, callback);
@@ -202,6 +241,17 @@ function bootstrapAudioBridge() {
         audioContexts,
         setOffset(value) {
             documentElement.setAttribute('data-ytkit-audio-sync-offset', String(value));
+        },
+        setAutoGain(enabled) {
+            if (enabled) documentElement.setAttribute('data-ytkit-audio-auto-gain', '1');
+            else documentElement.removeAttribute('data-ytkit-audio-auto-gain');
+        },
+        setHighPass(enabled) {
+            if (enabled) documentElement.setAttribute('data-ytkit-audio-high-pass', '1');
+            else documentElement.removeAttribute('data-ytkit-audio-high-pass');
+        },
+        tickAutoGain() {
+            for (const callback of intervalCallbacks.values()) callback();
         },
         navigateTo(video) {
             currentVideo = video;
@@ -253,4 +303,45 @@ test('negative audio sync requests remain bounded at zero Web Audio delay', () =
 
     assert.equal(bridge.audioContexts.length, 0,
         'a negative lead request must not introduce an unnecessary processing graph');
+});
+
+test('auto-gain and high-pass apply independently and remain reconnect-safe', () => {
+    const bridge = bootstrapAudioBridge();
+
+    bridge.setAutoGain(true);
+    const audioContext = bridge.audioContexts[0];
+    assert.equal(audioContext.gains.length, 3,
+        'the shared graph should expose mono, auto-gain, and boost gain nodes');
+    assert.equal(audioContext.filters.length, 1);
+    assert.equal(audioContext.filters[0].frequency.value, 10,
+        'high-pass stays near-transparent while disabled');
+    bridge.tickAutoGain();
+    assert.ok(audioContext.gains[1].gain.value > 1,
+        'quiet input should receive bounded adaptive makeup gain');
+
+    bridge.setHighPass(true);
+    assert.equal(audioContext.filters[0].type, 'highpass');
+    assert.equal(audioContext.filters[0].frequency.value, 80);
+    assert.equal(audioContext.gains[1].gain.value > 1, true,
+        'enabling high-pass must not disable auto-gain');
+
+    bridge.setAutoGain(false);
+    assert.equal(audioContext.gains[1].gain.value, 1,
+        'disabling auto-gain must restore unity gain');
+    assert.equal(audioContext.filters[0].frequency.value, 80,
+        'high-pass must remain active when auto-gain is disabled');
+
+    bridge.navigateTo({
+        id: 'video-2',
+        classList: { contains: (name) => name === 'html5-main-video' }
+    });
+    assert.equal(audioContext.sources.length, 2);
+    assert.equal(audioContext.filters.length, 2,
+        'navigation should create one filter per new processing chain');
+    assert.equal(audioContext.sources[1].connections.length, 1,
+        'the current source must have one processed branch');
+
+    bridge.setHighPass(false);
+    assert.equal(audioContext.sources[1].connections[0], audioContext.destination,
+        'disabling the last audio node must restore source passthrough');
 });
