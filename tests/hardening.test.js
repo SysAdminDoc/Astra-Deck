@@ -3373,17 +3373,15 @@ test('commentFilterManager strips stateful regex flags from cached rules', () =>
         "\n        {\n            id: 'commentFilterManager'"
     );
     assert.ok(objectLiteral, 'commentFilterManager object must be extractable');
-    assert.match(
-        ytkitSource.slice(ytkitSource.indexOf("id: 'commentFilterManager'"),
-            ytkitSource.indexOf("id: 'commentFilterManager'") + 7000),
-        /m\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
+    assert.match(objectLiteral, /m\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
         'commentFilterManager must strip global/sticky flags at compile time'
     );
 
     const manager = Function(
-        'appState', 'DebugManager', 'PageTypes',
+        'appState', 'DebugManager', 'PageTypes', 't',
         '"use strict"; return (' + objectLiteral + ');'
-    )({ settings: { commentFilterRules: '/spam/gi' } }, { log() {} }, { WATCH: 'watch' });
+    )({ settings: { commentFilterRules: '/spam/gi' } }, { log() {} }, { WATCH: 'watch' },
+        (_key, fallback) => fallback);
     const body = { textContent: 'spam' };
     const author = { textContent: 'creator' };
     const thread = {
@@ -3399,22 +3397,28 @@ test('commentFilterManager strips stateful regex flags from cached rules', () =>
 });
 
 test('commentFilterManager processes mutation addedNodes only, never full-document scans on tick', () => {
-    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
-    const block = ytkitSource.slice(start, start + 9000);
+    const block = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'commentFilterManager'"
+    );
+    assert.ok(block, 'commentFilterManager object must be extractable');
     // The mutation rule callback must loop addedNodes only — not call
     // querySelectorAll on document.
     assert.match(block, /addMutationRule\(this\.id/,
         'commentFilterManager must register a mutation rule');
-    const mutBlock = block.slice(block.indexOf('addMutationRule'));
-    assert.ok(!/document\.querySelectorAll/.test(mutBlock.slice(0, 800)),
+    const mutBlock = block.slice(block.indexOf('addMutationRule'), block.indexOf('addNavigateRule'));
+    assert.ok(!/document\.querySelectorAll/.test(mutBlock),
         'commentFilterManager mutation rule must not call document.querySelectorAll on every tick');
     assert.match(mutBlock, /m\.addedNodes/,
         'commentFilterManager mutation rule must process addedNodes only');
 });
 
 test('commentFilterManager destroy() restores hidden threads and clears compiled rule cache', () => {
-    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
-    const block = ytkitSource.slice(start, start + 9000);
+    const block = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'commentFilterManager'"
+    );
+    assert.ok(block, 'commentFilterManager object must be extractable');
     const destroyIdx = block.indexOf('destroy()');
     assert.ok(destroyIdx > -1, 'commentFilterManager must define destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
@@ -5284,8 +5288,11 @@ test('selector stats and emittedMisses are bounded', () => {
 });
 
 test('commentFilterManager rules hash is a short digest, not the raw rule text', () => {
-    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
-    const block = ytkitSource.slice(start, start + 9000);
+    const block = findBalancedObjectLiteral(
+        ytkitSource,
+        "\n        {\n            id: 'commentFilterManager'"
+    );
+    assert.ok(block, 'commentFilterManager object must be extractable');
     assert.match(block, /_shortHash/,
         'commentFilterManager must declare _shortHash()');
     // The hash must be at most 16 chars and feed _lastRulesHash so the
@@ -5408,11 +5415,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (422 → 424). The Shorts budget adds a limit, mode, and local ledger
     // (424 → 427). Independent AI surface controls add three preferences
     // (427 → 430). Notification count and read-state controls add two
-    // preferences (430 → 432).
+    // preferences (430 → 432). Comment language and duplicate policies add
+    // two more preferences (432 → 434).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 432,
-        'SETTINGS_SCHEMA must cover all 432 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 434,
+        'SETTINGS_SCHEMA must cover all 434 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

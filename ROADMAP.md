@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Comment intelligence pack
-  Why: Language selection and duplicate expansion need discoverable controls; the existing `commentFilterRules` textarea already persists `@author` block rules but its localized contract does not cover language or duplicate behavior.
-  Evidence: YouTube Comment Language Filter (GF 558814), Similar Comments Hider (hjk789), user-block scripts; `commentFilterManager` in `extension/ytkit.js`.
-  Touches: comment filter runtime, settings-panel controls, settings schema/locales.
-  Acceptance: A localized language allowlist hides other-language comments without network access; near duplicates collapse under an accessible expander; author blocks persist and remain manageable.
-  Complexity: M
-
 - [ ] P2 — Playlist power pack
   Why: Duration sorting, per-playlist resume, and auto-skip-watched are user-selected actions/policies that need clear accessible controls in the existing Playlist Enhancer toolbar.
   Evidence: Sort Youtube Playlist by Duration (KohGeek), playlists playback tracker (andrybak), Playlist Auto Skip Watched (neverlandeverland).

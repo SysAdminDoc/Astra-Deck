@@ -3544,6 +3544,8 @@ return response;
             // v3.25.0 — Content filtering superset (Phase 2 completion)
             commentFilterManager: false,
             commentFilterRules: '',
+            commentLanguageAllowlist: '',
+            commentDuplicateCollapse: false,
             bulkCardActions: false,
             feedTriageProfile: false,
             // v3.26.0 — Player control superset
@@ -34979,8 +34981,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         {
             id: 'commentFilterManager',
-            name: 'Comment Filter',
-            description: 'Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded).',
+            name: t('feature_commentFilterManager_name', 'Comment Filter'),
+            description: t('feature_commentFilterManager_desc', 'Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded).'),
             group: 'Comments',
             icon: 'filter',
             pages: [PageTypes.WATCH],
@@ -34990,6 +34992,86 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _compiledRules: null,
             _compiledRulesSource: '',
             _lastRulesHash: '',
+            _scanTimer: null,
+            _navigateTimer: null,
+            _settingsHandler: null,
+            _duplicateGroupCounter: 0,
+            _duplicateGroups: [],
+
+            _selectorChain(hook, fallback) {
+                const chain = globalThis.YTKitCore?.getSurfaceHookSelectorChain?.('comments', hook);
+                return Array.isArray(chain) && chain.length ? chain : fallback;
+            },
+
+            _findCommentRoot() {
+                for (const selector of this._selectorChain('root', ['ytd-comments#comments', 'ytd-comments', '#comments'])) {
+                    try {
+                        const root = document.querySelector(selector);
+                        if (root) return root;
+                    } catch (_) {
+                        // reason: a stale comments selector must not disable filtering
+                    }
+                }
+                return null;
+            },
+
+            _findCommentThreads(root) {
+                const threads = [];
+                const seen = new Set();
+                for (const selector of this._selectorChain('thread', [
+                    'ytd-comment-thread-renderer',
+                    'ytd-comment-view-model',
+                    'ytd-comment-renderer'
+                ])) {
+                    try {
+                        if (root.matches?.(selector) && !seen.has(root)) {
+                            seen.add(root);
+                            threads.push(root);
+                        }
+                        root.querySelectorAll(selector).forEach((thread) => {
+                            if (!seen.has(thread)) {
+                                seen.add(thread);
+                                threads.push(thread);
+                            }
+                        });
+                    } catch (_) {
+                        // reason: a stale comments selector must not disable filtering
+                    }
+                }
+                return threads.filter((thread) => !thread.parentElement?.closest?.(
+                    'ytd-comment-thread-renderer, ytd-comment-view-model'
+                ));
+            },
+
+            _queryCommentPart(thread, hook, fallback) {
+                for (const selector of this._selectorChain(hook, fallback)) {
+                    try {
+                        const part = thread.querySelector(selector);
+                        if (part) return part;
+                    } catch (_) {
+                        // reason: a stale comments selector must not disable filtering
+                    }
+                }
+                return null;
+            },
+
+            _getCommentText(thread) {
+                return (this._queryCommentPart(thread, 'body', [
+                    '#content-text',
+                    'yt-attributed-string#content-text',
+                    'yt-formatted-string#content-text',
+                    '[id="content-text"]'
+                ])?.textContent || '').trim();
+            },
+
+            _getCommentAuthor(thread) {
+                return (this._queryCommentPart(thread, 'author', [
+                    '#author-text',
+                    'a#author-text',
+                    '#header-author #author-text',
+                    '[id="author-text"]'
+                ])?.textContent || '').trim();
+            },
 
             _compileRules() {
                 const raw = (appState.settings.commentFilterRules || '').trim();
@@ -35034,8 +35116,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _shouldHideThread(thread) {
                 const rules = this._compileRules();
                 if (!rules.plain.length && !rules.deny.length && !rules.regexes.length) return false;
-                const author = (thread.querySelector('#author-text, a#author-text, #header-author #author-text')?.textContent || '').trim().toLowerCase();
-                const body = (thread.querySelector('#content-text, ytd-expander #content-text')?.textContent || '').trim().toLowerCase();
+                const author = this._getCommentAuthor(thread).toLowerCase();
+                const body = this._getCommentText(thread).toLowerCase();
                 if (rules.allow.length && rules.allow.some(a => body.includes(a) || author.includes(a))) return false;
                 for (const deny of rules.deny) {
                     if (deny.kind === 'author' && author.includes(deny.value)) return true;
@@ -35050,24 +35132,126 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return false;
             },
 
+            _setVisibilityReason(thread, reason, shouldHide) {
+                const marker = `data-ytkit-comment-${reason}-hidden`;
+                const displayMarker = `data-ytkit-comment-${reason}-display`;
+                const otherReason = reason === 'filter' ? 'language' : 'filter';
+                const otherMarker = `data-ytkit-comment-${otherReason}-hidden`;
+                if (shouldHide) {
+                    if (!thread.hasAttribute(marker)) {
+                        if (!thread.hasAttribute('data-ytkit-comment-filter-hidden')
+                            && !thread.hasAttribute('data-ytkit-comment-language-hidden')) {
+                            thread.setAttribute(displayMarker, thread.style.display || '');
+                        }
+                        thread.setAttribute(marker, '1');
+                    }
+                    thread.style.display = 'none';
+                    return;
+                }
+                if (!thread.hasAttribute(marker)) return;
+                thread.removeAttribute(marker);
+                if (!thread.hasAttribute(otherMarker)) {
+                    const originalDisplay = thread.getAttribute('data-ytkit-comment-filter-display')
+                        ?? thread.getAttribute('data-ytkit-comment-language-display')
+                        ?? '';
+                    thread.style.display = originalDisplay;
+                    thread.removeAttribute('data-ytkit-comment-filter-display');
+                    thread.removeAttribute('data-ytkit-comment-language-display');
+                }
+            },
+
+            _normaliseLanguageCode(value) {
+                const code = String(value || '').trim().replace(/_/g, '-').toLowerCase();
+                if (!/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/.test(code)) return '';
+                if (code === 'auto' || code === 'und') return '';
+                return code;
+            },
+
+            _parseLanguageAllowlist() {
+                const values = String(appState.settings.commentLanguageAllowlist || '')
+                    .split(/[\s,;]+/)
+                    .map((value) => this._normaliseLanguageCode(value))
+                    .filter(Boolean);
+                return new Set(values);
+            },
+
+            _languageMatches(code, allowlist) {
+                if (!code || !allowlist?.size) return true;
+                const primary = code.split('-')[0];
+                return Array.from(allowlist).some((allowed) => (
+                    allowed === code
+                    || allowed.split('-')[0] === primary
+                ));
+            },
+
+            _languageFromScript(text) {
+                if (/\p{Script=Hangul}/u.test(text)) return 'ko';
+                if (/[\u3040-\u30ff]/u.test(text)) return 'ja';
+                if (/[\u3400-\u9fff]/u.test(text)) return 'zh';
+                if (/\p{Script=Arabic}/u.test(text)) return 'ar';
+                if (/\p{Script=Hebrew}/u.test(text)) return 'he';
+                if (/\p{Script=Greek}/u.test(text)) return 'el';
+                if (/\p{Script=Devanagari}/u.test(text)) return 'hi';
+                if (/\p{Script=Thai}/u.test(text)) return 'th';
+                if (/\p{Script=Cyrillic}/u.test(text)) {
+                    if (/[іїєґ]/i.test(text)) return 'uk';
+                    return /[ыэъё]/i.test(text) ? 'ru' : 'ru';
+                }
+                return '';
+            },
+
+            _languageFromWords(text) {
+                const words = String(text || '').toLowerCase().match(/[a-zà-ÿ]+/g) || [];
+                if (words.length < 2) return '';
+                const profiles = {
+                    en: new Set(['the', 'and', 'this', 'that', 'with', 'you', 'for', 'not', 'are', 'is', 'to', 'of', 'in']),
+                    es: new Set(['el', 'la', 'los', 'las', 'que', 'para', 'con', 'una', 'por', 'del', 'muy', 'como']),
+                    fr: new Set(['le', 'la', 'les', 'des', 'que', 'pour', 'avec', 'une', 'dans', 'est', 'pas', 'sur']),
+                    de: new Set(['der', 'die', 'das', 'den', 'und', 'mit', 'für', 'ist', 'nicht', 'ein', 'eine', 'auf']),
+                    it: new Set(['il', 'lo', 'la', 'gli', 'che', 'per', 'con', 'una', 'sono', 'non', 'del', 'dei']),
+                    pt: new Set(['o', 'a', 'os', 'as', 'que', 'para', 'com', 'uma', 'por', 'não', 'dos', 'das'])
+                };
+                const scores = Object.entries(profiles).map(([language, markers]) => [
+                    language,
+                    words.reduce((score, word) => score + (markers.has(word) ? 1 : 0), 0)
+                ]).sort((left, right) => right[1] - left[1]);
+                if (scores[0][1] < 2 || scores[0][1] === scores[1][1]) return '';
+                return scores[0][0];
+            },
+
+            _detectCommentLanguage(thread) {
+                const text = this._getCommentText(thread);
+                const metadataNodes = [thread];
+                try {
+                    thread.querySelectorAll('[lang], [data-language], [data-comment-language], [data-lang]')
+                        .forEach((node) => metadataNodes.push(node));
+                } catch (_) {
+                    // reason: a partial comment fixture may not support metadata queries
+                }
+                for (const node of metadataNodes) {
+                    for (const attribute of ['lang', 'data-language', 'data-comment-language', 'data-lang']) {
+                        const explicit = this._normaliseLanguageCode(node.getAttribute?.(attribute));
+                        if (explicit) return explicit;
+                    }
+                }
+                return this._languageFromScript(text) || this._languageFromWords(text);
+            },
+
+            _shouldHideForLanguage(thread, allowlist = this._parseLanguageAllowlist()) {
+                if (!allowlist.size) return false;
+                const detected = this._detectCommentLanguage(thread);
+                // Unknown language is fail-open: the local detector must not
+                // hide a comment merely because its text is too short.
+                return !!detected && !this._languageMatches(detected, allowlist);
+            },
+
             _processThread(thread) {
                 if (!(thread instanceof HTMLElement)) return;
-                if (thread.dataset.ytkitCommentFilterChecked === this._lastRulesHash) return;
-                thread.dataset.ytkitCommentFilterChecked = this._lastRulesHash;
-                const hide = this._shouldHideThread(thread);
-                if (hide) {
-                    if (thread.dataset.ytkitCommentFilterHidden !== '1') {
-                        thread.dataset.ytkitCommentFilterHidden = '1';
-                        thread.dataset.ytkitCommentFilterDisplay = thread.style.display || '';
-                        thread.style.display = 'none';
-                        this._hiddenCount++;
-                    }
-                } else if (thread.dataset.ytkitCommentFilterHidden === '1') {
-                    thread.style.display = thread.dataset.ytkitCommentFilterDisplay || '';
-                    delete thread.dataset.ytkitCommentFilterHidden;
-                    delete thread.dataset.ytkitCommentFilterDisplay;
-                    this._hiddenCount = Math.max(0, this._hiddenCount - 1);
+                if (thread.dataset.ytkitCommentFilterChecked !== this._lastRulesHash) {
+                    thread.dataset.ytkitCommentFilterChecked = this._lastRulesHash;
+                    this._setVisibilityReason(thread, 'filter', this._shouldHideThread(thread));
                 }
+                this._setVisibilityReason(thread, 'language', this._shouldHideForLanguage(thread));
             },
 
             _shortHash(text) {
@@ -35084,12 +35268,131 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return ('00000000' + (h >>> 0).toString(16)).slice(-8);
             },
 
+            _normaliseDuplicateText(text) {
+                return String(text || '')
+                    .normalize('NFKC')
+                    .toLowerCase()
+                    .replace(/https?:\/\/\S+/g, ' url ')
+                    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            },
+
+            _duplicateSimilarity(left, right) {
+                if (!left || !right) return 0;
+                if (left === right) return left.length >= 16 ? 1 : 0;
+                const leftTokens = left.split(' ').filter(Boolean);
+                const rightTokens = right.split(' ').filter(Boolean);
+                const minimum = Math.min(leftTokens.length, rightTokens.length);
+                if (minimum < 5) return 0;
+                const leftSet = new Set(leftTokens);
+                const rightSet = new Set(rightTokens);
+                let intersection = 0;
+                leftSet.forEach((token) => { if (rightSet.has(token)) intersection++; });
+                const union = new Set([...leftSet, ...rightSet]).size;
+                const containment = intersection / Math.min(leftSet.size, rightSet.size);
+                const jaccard = union ? intersection / union : 0;
+                return containment >= 0.86 && jaccard >= 0.7 ? Math.max(containment, jaccard) : 0;
+            },
+
+            _setDuplicateVisibility(thread, hidden) {
+                const marker = 'data-ytkit-comment-duplicate-hidden';
+                if (!thread.hasAttribute(marker)) {
+                    thread.setAttribute('data-ytkit-comment-duplicate-original-hidden', thread.hidden ? '1' : '0');
+                    thread.setAttribute(marker, '1');
+                }
+                thread.hidden = !!hidden;
+            },
+
+            _restoreDuplicateUi() {
+                document.querySelectorAll('.ytkit-comment-duplicates-toggle').forEach((button) => button.remove());
+                document.querySelectorAll('[data-ytkit-comment-duplicate-hidden="1"]').forEach((thread) => {
+                    thread.hidden = thread.getAttribute('data-ytkit-comment-duplicate-original-hidden') === '1';
+                    thread.removeAttribute('data-ytkit-comment-duplicate-hidden');
+                    thread.removeAttribute('data-ytkit-comment-duplicate-original-hidden');
+                });
+                document.querySelectorAll('[data-ytkit-comment-duplicate-generated-id="1"]').forEach((thread) => {
+                    thread.removeAttribute('id');
+                    thread.removeAttribute('data-ytkit-comment-duplicate-generated-id');
+                });
+                this._duplicateGroups = [];
+            },
+
+            _applyDuplicateCollapse(threads) {
+                if (appState.settings.commentDuplicateCollapse !== true) return;
+                const candidates = threads
+                    .filter((thread) => !thread.hidden
+                        && thread.dataset.ytkitCommentFilterHidden !== '1'
+                        && thread.dataset.ytkitCommentLanguageHidden !== '1'
+                        && thread.style.display !== 'none')
+                    .map((thread) => ({ thread, text: this._normaliseDuplicateText(this._getCommentText(thread)) }))
+                    .filter(({ text }) => text.length >= 12)
+                    .slice(0, 400);
+                const groups = [];
+                for (const candidate of candidates) {
+                    const group = groups.find((entry) => this._duplicateSimilarity(entry.text, candidate.text) > 0);
+                    if (group) group.duplicates.push(candidate.thread);
+                    else groups.push({ primary: candidate.thread, text: candidate.text, duplicates: [] });
+                }
+                for (const group of groups.filter((entry) => entry.duplicates.length > 0)) {
+                    const ids = group.duplicates.map((thread) => {
+                        if (!thread.id) {
+                            thread.id = `ytkit-comment-duplicate-${++this._duplicateGroupCounter}`;
+                            thread.setAttribute('data-ytkit-comment-duplicate-generated-id', '1');
+                        }
+                        return thread.id;
+                    });
+                    group.duplicates.forEach((thread) => this._setDuplicateVisibility(thread, true));
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'ytkit-comment-duplicates-toggle';
+                    button.setAttribute('aria-expanded', 'false');
+                    button.setAttribute('aria-controls', ids.join(' '));
+                    const collapsedLabel = () => t('commentDuplicateShowTpl', 'Show {count} similar comments')
+                        .replace('{count}', String(group.duplicates.length));
+                    const expandedLabel = () => t('commentDuplicateHide', 'Hide similar comments');
+                    button.textContent = collapsedLabel();
+                    button.setAttribute('aria-label', button.textContent);
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const expanded = button.getAttribute('aria-expanded') === 'true';
+                        group.duplicates.forEach((thread) => this._setDuplicateVisibility(thread, expanded));
+                        button.setAttribute('aria-expanded', String(!expanded));
+                        button.textContent = expanded ? collapsedLabel() : expandedLabel();
+                        button.setAttribute('aria-label', button.textContent);
+                    });
+                    group.primary.appendChild(button);
+                    this._duplicateGroups.push({ ...group, button });
+                }
+                if (this._duplicateGroups.length && !this._styleElement) {
+                    this._styleElement = injectStyle(`
+                        .ytkit-comment-duplicates-toggle{display:block;margin:8px 0 0;padding:6px 10px;border:1px solid rgba(var(--ytkit-accent-rgb),.42);border-radius:7px;background:rgba(var(--ytkit-accent-rgb),.1);color:var(--ytkit-accent-light,#c4b5fd);font:500 12px/1.35 Roboto,Arial,sans-serif;cursor:pointer;}
+                        .ytkit-comment-duplicates-toggle:hover{background:rgba(var(--ytkit-accent-rgb),.18);}
+                        .ytkit-comment-duplicates-toggle:focus-visible{outline:2px solid var(--ytkit-accent-light,#c4b5fd);outline-offset:2px;}
+                    `, this.id, true);
+                }
+            },
+
+            _scheduleScan(delay = 180) {
+                clearTimeout(this._scanTimer);
+                this._scanTimer = setTimeout(() => {
+                    this._scanTimer = null;
+                    if (isWatchPagePath()) this._scanAll();
+                }, delay);
+            },
+
             _scanAll() {
+                this._restoreDuplicateUi();
+                this._compileRules();
                 this._lastRulesHash = this._shortHash(this._compiledRulesSource);
                 this._hiddenCount = 0;
-                const comments = document.querySelector('ytd-comments#comments');
+                const comments = this._findCommentRoot();
                 if (!comments) return;
-                comments.querySelectorAll('ytd-comment-thread-renderer').forEach(t => this._processThread(t));
+                const threads = this._findCommentThreads(comments);
+                threads.forEach((thread) => this._processThread(thread));
+                this._hiddenCount = comments.querySelectorAll('[data-ytkit-comment-filter-hidden="1"]').length;
+                this._applyDuplicateCollapse(threads);
             },
 
             init() {
@@ -35098,30 +35401,60 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._compiledRulesSource = '';
                 this._lastRulesHash = '';
                 this._scanAll();
+                this._settingsHandler = (event) => {
+                    const detail = event?.detail || {};
+                    const keys = Array.isArray(detail.keys)
+                        ? detail.keys
+                        : detail.key ? [detail.key] : null;
+                    const relevant = ['commentFilterRules', 'commentLanguageAllowlist', 'commentDuplicateCollapse'];
+                    if (!keys || keys.some((key) => relevant.includes(key))) this._scheduleScan(0);
+                };
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
                 addMutationRule(this.id, (mutations) => {
+                    let hasCommentChange = false;
                     for (const m of mutations) {
                         if (m.type !== 'childList') continue;
                         for (const node of m.addedNodes) {
                             if (node.nodeType !== 1) continue;
-                            if (node.matches?.('ytd-comment-thread-renderer')) this._processThread(node);
-                            else node.querySelectorAll?.('ytd-comment-thread-renderer').forEach(t => this._processThread(t));
+                            const directThread = node.matches?.('ytd-comment-thread-renderer, ytd-comment-view-model, ytd-comment-renderer');
+                            const nestedThreads = node.querySelectorAll?.('ytd-comment-thread-renderer, ytd-comment-view-model, ytd-comment-renderer') || [];
+                            if (directThread || nestedThreads.length) {
+                                hasCommentChange = true;
+                                if (directThread) this._processThread(node);
+                                nestedThreads.forEach((thread) => this._processThread(thread));
+                            }
                         }
                     }
+                    if (hasCommentChange) this._scheduleScan();
                 });
                 addNavigateRule(this.id, () => {
-                    setTimeout(() => isWatchPagePath() && this._scanAll(), 800);
+                    clearTimeout(this._navigateTimer);
+                    this._navigateTimer = setTimeout(() => {
+                        this._navigateTimer = null;
+                        if (isWatchPagePath()) this._scanAll();
+                    }, 800);
                 });
             },
 
             destroy() {
+                clearTimeout(this._scanTimer);
+                clearTimeout(this._navigateTimer);
+                this._scanTimer = null;
+                this._navigateTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule(this.id);
-                document.querySelectorAll('ytd-comment-thread-renderer[data-ytkit-comment-filter-hidden="1"]').forEach(t => {
-                    t.style.display = t.dataset.ytkitCommentFilterDisplay || '';
-                    delete t.dataset.ytkitCommentFilterHidden;
-                    delete t.dataset.ytkitCommentFilterDisplay;
-                    delete t.dataset.ytkitCommentFilterChecked;
+                document.querySelectorAll('ytd-comment-thread-renderer[data-ytkit-comment-filter-hidden="1"], ytd-comment-view-model[data-ytkit-comment-filter-hidden="1"], ytd-comment-renderer[data-ytkit-comment-filter-hidden="1"], ytd-comment-thread-renderer[data-ytkit-comment-language-hidden="1"], ytd-comment-view-model[data-ytkit-comment-language-hidden="1"], ytd-comment-renderer[data-ytkit-comment-language-hidden="1"]').forEach((thread) => {
+                    this._setVisibilityReason(thread, 'filter', false);
+                    this._setVisibilityReason(thread, 'language', false);
+                    thread.removeAttribute('data-ytkit-comment-filter-checked');
                 });
+                this._restoreDuplicateUi();
+                this._styleElement?.remove();
+                this._styleElement = null;
+                if (this._settingsHandler) {
+                    document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                    this._settingsHandler = null;
+                }
                 this._compiledRules = null;
                 this._compiledRulesSource = '';
                 this._hiddenCount = 0;
@@ -35129,18 +35462,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'commentFilterRules',
-            name: 'Comment Filter Rules',
-            description: 'One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded).',
+            name: t('feature_commentFilterRules_name', 'Comment Filter Rules'),
+            description: t('feature_commentFilterRules_desc', 'One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded).'),
             group: 'Comments',
             icon: 'filter',
             type: 'textarea',
             settingKey: 'commentFilterRules',
+            placeholder: '@channel-name\nspam phrase\n!keep this',
             dependsOn: 'commentFilterManager',
             init() {
                 const f = getFeatureById('commentFilterManager');
                 if (f?._initialized) f._scanAll();
             },
             destroy() { /* textarea — no runtime side effects of its own */ }
+        },
+        {
+            id: 'commentLanguageAllowlist',
+            name: t('feature_commentLanguageAllowlist_name', 'Comment Language Allowlist'),
+            description: t('feature_commentLanguageAllowlist_desc', 'Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain.'),
+            group: 'Comments',
+            icon: 'languages',
+            isSubFeature: true,
+            parentId: 'commentFilterManager',
+            type: 'textarea',
+            settingKey: 'commentLanguageAllowlist',
+            placeholder: 'en, es, fr',
+            dependsOn: 'commentFilterManager',
+            init() {
+                const f = getFeatureById('commentFilterManager');
+                if (f?._initialized) f._scheduleScan(0);
+            },
+            destroy() {}
+        },
+        {
+            id: 'commentDuplicateCollapse',
+            name: t('feature_commentDuplicateCollapse_name', 'Collapse Similar Comments'),
+            description: t('feature_commentDuplicateCollapse_desc', 'Collapse near-duplicate comments under an accessible expander using local text comparison only.'),
+            group: 'Comments',
+            icon: 'copy-check',
+            isSubFeature: true,
+            parentId: 'commentFilterManager',
+            init() {
+                const f = getFeatureById('commentFilterManager');
+                if (f?._initialized) f._scheduleScan(0);
+            },
+            destroy() {}
         },
         // ═══════════════════════════════════════════════════════════════════
         //  BULK CARD ACTIONS — Multi-select for feed cards
