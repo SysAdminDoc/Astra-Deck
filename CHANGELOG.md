@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Notification menu controls.** Chronological notifications now support an
+  independent visible-count cap and an explicit hide-read policy, with
+  loop-safe filtering, bounded settings metadata, and localized controls.
 - **Independent AI surface controls.** Watch pages now expose separate Ask AI,
   Gemini, AI summary, and AI context-panel toggles with document-start hiding,
   localized labels, capture-backed selector hooks, and migration of the legacy

@@ -2266,6 +2266,8 @@
 
         // ─── comments ───
         Object.freeze({ key: "chronologicalNotifications", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "notificationMaxCount", category: "comments", type: "number", defaultValue: 0, min: 0, max: 100, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
+        Object.freeze({ key: "notificationHideRead", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
 
         // ─── feed ───
         Object.freeze({ key: "hideLatestPosts", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

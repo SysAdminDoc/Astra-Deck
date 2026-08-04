@@ -5644,5 +5644,17 @@
   },
   "feature_hideGeminiButtons_name": {
     "message": "Hide Gemini Buttons"
+  },
+  "feature_notificationHideRead_desc": {
+    "message": "Hide notifications that YouTube marks as already read."
+  },
+  "feature_notificationHideRead_name": {
+    "message": "Hide Read Notifications"
+  },
+  "feature_notificationMaxCount_desc": {
+    "message": "Limit the number of notifications shown. Set to 0 to show all."
+  },
+  "feature_notificationMaxCount_name": {
+    "message": "Notification Count"
   }
 }

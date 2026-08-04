@@ -3440,6 +3440,8 @@ return response;
             autoOpenChapters: false,
             autoOpenTranscript: false,
             chronologicalNotifications: false,
+            notificationMaxCount: 0,
+            notificationHideRead: false,
             hideLatestPosts: false,
             disableMiniPlayer: false,
             adaptiveLiveLayout: false,
@@ -28268,7 +28270,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Sort notifications chronologically (newest first)',
             group: 'Advanced',
             icon: 'bell-ring',
-            _observer: null,
+            _sortTimer: null,
+            _settingsHandler: null,
+            _hiddenOriginalState: new Map(),
             _parseRelativeAge(text) {
                 // Parse relative time strings like "3 hours ago", "2 days ago" into seconds
                 const match = text.match(/(\d+)\s*(second|minute|hour|day|week|month|year)/i);
@@ -28278,38 +28282,248 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const multipliers = { second: 1, minute: 60, hour: 3600, day: 86400, week: 604800, month: 2592000, year: 31536000 };
                 return n * (multipliers[unit] || 1);
             },
-            init() {
-                const sortNotifications = () => {
-                    const container = document.querySelector('ytd-notification-renderer');
-                    if (!container) return;
-                    const parent = container.parentElement;
+            _findPopupRoot() {
+                const selectors = globalThis.YTKitCore?.getSurfaceHookSelectorChain?.('notifications', 'popup.root') || [
+                    'ytd-popup-container ytd-multi-page-menu-renderer',
+                    'ytd-multi-page-menu-renderer',
+                    'ytd-popup-container'
+                ];
+                for (const selector of selectors) {
+                    try {
+                        const root = document.querySelector(selector);
+                        if (root) return root;
+                    } catch (_) {
+                        // reason: a stale selector-pack entry must not disable the menu feature
+                    }
+                }
+                return null;
+            },
+            _findNotificationItems(root) {
+                const selectors = globalThis.YTKitCore?.getSurfaceHookSelectorChain?.('notifications', 'element.item') || [
+                    'ytd-multi-page-menu-renderer ytd-notification-renderer',
+                    'ytd-popup-container ytd-notification-renderer',
+                    'ytd-notification-renderer'
+                ];
+                const items = [];
+                const seen = new Set();
+                for (const selector of selectors) {
+                    try {
+                        if (root.matches?.(selector) && !seen.has(root)) {
+                            seen.add(root);
+                            items.push(root);
+                        }
+                        root.querySelectorAll(selector).forEach((item) => {
+                            if (!seen.has(item)) {
+                                seen.add(item);
+                                items.push(item);
+                            }
+                        });
+                    } catch (_) {
+                        // reason: a stale selector-pack entry must not disable the menu feature
+                    }
+                }
+                return items;
+            },
+            _markerTruthy(node, attribute) {
+                if (!node?.hasAttribute?.(attribute)) return false;
+                const value = node.getAttribute(attribute);
+                return !/^(?:false|0|no|off)$/i.test(String(value || ''));
+            },
+            _classHasState(node, state) {
+                const className = typeof node?.className === 'string'
+                    ? node.className
+                    : node?.getAttribute?.('class') || '';
+                return className.split(/\s+/).some((token) => {
+                    if (state === 'unread') return /^(?:is-)?unread$/i.test(token);
+                    return /^(?:is-)?read$|^notification-read$/i.test(token);
+                });
+            },
+            _readState(item) {
+                const unreadNodes = [item, ...Array.from(item.querySelectorAll?.(
+                    '[is-unread], [data-is-unread], [data-unread], [unread], .is-unread, .notification-unread, .unread'
+                ) || [])];
+                for (const node of unreadNodes) {
+                    if (this._markerTruthy(node, 'is-unread')
+                        || this._markerTruthy(node, 'data-is-unread')
+                        || this._markerTruthy(node, 'data-unread')
+                        || this._markerTruthy(node, 'unread')
+                        || this._classHasState(node, 'unread')) {
+                        return 'unread';
+                    }
+                }
+
+                const readNodes = [item, ...Array.from(item.querySelectorAll?.(
+                    '[is-read], [data-is-read], [data-read], [read], .is-read, .notification-read, .read'
+                ) || [])];
+                for (const node of readNodes) {
+                    if (this._markerTruthy(node, 'is-read')
+                        || this._markerTruthy(node, 'data-is-read')
+                        || this._markerTruthy(node, 'data-read')
+                        || this._markerTruthy(node, 'read')
+                        || this._classHasState(node, 'read')) {
+                        return 'read';
+                    }
+                }
+
+                const label = `${item.getAttribute?.('aria-label') || ''} ${item.getAttribute?.('title') || ''}`;
+                if (/\bunread\b/i.test(label)) return 'unread';
+                return 'unknown';
+            },
+            _setHidden(item, marker, shouldHide) {
+                const markerAttr = `data-ytkit-notification-${marker}-hidden`;
+                const otherMarker = marker === 'read'
+                    ? 'data-ytkit-notification-cap-hidden'
+                    : 'data-ytkit-notification-read-hidden';
+                if (shouldHide) {
+                    if (!this._hiddenOriginalState.has(item)) {
+                        this._hiddenOriginalState.set(item, item.hidden === true);
+                    }
+                    item.setAttribute(markerAttr, '1');
+                    if (!item.hidden) item.hidden = true;
+                    return;
+                }
+                if (!item.hasAttribute?.(markerAttr)) return;
+                item.removeAttribute(markerAttr);
+                if (!item.hasAttribute?.(otherMarker)) {
+                    item.hidden = this._hiddenOriginalState.get(item) ?? false;
+                    this._hiddenOriginalState.delete(item);
+                }
+            },
+            _restoreHiddenItems() {
+                for (const [item, originalHidden] of this._hiddenOriginalState) {
+                    item.hidden = originalHidden;
+                    item.removeAttribute?.('data-ytkit-notification-read-hidden');
+                    item.removeAttribute?.('data-ytkit-notification-cap-hidden');
+                }
+                this._hiddenOriginalState.clear();
+            },
+            _scheduleApply(delay = 180) {
+                clearTimeout(this._sortTimer);
+                this._sortTimer = setTimeout(() => {
+                    this._sortTimer = null;
+                    this._applyNotifications();
+                }, delay);
+            },
+            _applyNotifications() {
+                if (appState.settings?.chronologicalNotifications !== true) {
+                    this._restoreHiddenItems();
+                    return;
+                }
+                const root = this._findPopupRoot();
+                if (!root) {
+                    this._restoreHiddenItems();
+                    return;
+                }
+                const items = this._findNotificationItems(root);
+                if (!items.length) {
+                    this._restoreHiddenItems();
+                    return;
+                }
+
+                // Clear this feature's prior visibility decisions before
+                // recomputing them. Native hidden state is restored from the
+                // map, so read/cap changes never accumulate across scans.
+                items.forEach((item) => {
+                    this._setHidden(item, 'read', false);
+                    this._setHidden(item, 'cap', false);
+                });
+
+                const groups = new Map();
+                items.forEach((item) => {
+                    const parent = item.parentElement;
                     if (!parent) return;
-                    const items = Array.from(parent.querySelectorAll('ytd-notification-renderer'));
-                    if (items.length < 2) return;
-                    const sorted = items.slice().sort((a, b) => {
+                    if (!groups.has(parent)) groups.set(parent, []);
+                    groups.get(parent).push(item);
+                });
+
+                const orderedItems = [];
+                for (const [parent, groupItems] of groups) {
+                    const sorted = groupItems.slice().sort((a, b) => {
                         const timeA = a.querySelector('#message')?.textContent || '';
                         const timeB = b.querySelector('#message')?.textContent || '';
                         return this._parseRelativeAge(timeA) - this._parseRelativeAge(timeB);
                     });
-                    // Idempotent reorder: only mutate the DOM when the order
-                    // actually changes, so the MutationObserver that re-triggers
-                    // this sort settles after one pass instead of looping. The
-                    // previous permanent `dataset.sorted` latch stopped the loop
-                    // but also blocked late-arriving notifications from ever being
-                    // re-sorted — this preserves loop-safety while still resorting
-                    // when new notifications stream in.
-                    if (sorted.every((item, i) => item === items[i])) return;
-                    sorted.forEach(item => parent.appendChild(item));
-                };
-                this._sortTimer = null;
-                this._observer = new MutationObserver(() => {
-                    clearTimeout(this._sortTimer);
-                    this._sortTimer = setTimeout(sortNotifications, 300);
+                    // Reordering is deliberately idempotent. The shared
+                    // mutation observer sees appendChild, so only mutate when
+                    // the order differs and let the next pass settle.
+                    if (!sorted.every((item, index) => item === groupItems[index])) {
+                        sorted.forEach((item) => parent.appendChild(item));
+                    }
+                    orderedItems.push(...sorted);
+                }
+
+                const hideRead = appState.settings.notificationHideRead === true;
+                const readStates = new Map(orderedItems.map((item) => [item, this._readState(item)]));
+                orderedItems.forEach((item) => {
+                    this._setHidden(item, 'read', hideRead && readStates.get(item) === 'read');
                 });
-                const popup = document.querySelector('ytd-popup-container');
-                if (popup) this._observer.observe(popup, { childList: true, subtree: true });
+
+                const maxRaw = Number(appState.settings.notificationMaxCount);
+                const maxCount = Number.isFinite(maxRaw) && maxRaw > 0 ? Math.floor(maxRaw) : 0;
+                const visibleItems = orderedItems.filter((item) => !item.hidden);
+                visibleItems.forEach((item, index) => {
+                    this._setHidden(item, 'cap', maxCount > 0 && index >= maxCount);
+                });
             },
-            destroy() { clearTimeout(this._sortTimer); this._observer?.disconnect(); this._observer = null; }
+            init() {
+                this._hiddenOriginalState.clear();
+                this._settingsHandler = (event) => {
+                    const detail = event?.detail || {};
+                    const keys = Array.isArray(detail.keys)
+                        ? detail.keys
+                        : detail.key ? [detail.key] : null;
+                    if (!keys || keys.some((key) => ['chronologicalNotifications', 'notificationMaxCount', 'notificationHideRead'].includes(key))) {
+                        this._scheduleApply(0);
+                    }
+                };
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
+                addMutationRule(this.id, () => this._scheduleApply());
+                this._scheduleApply(0);
+            },
+            destroy() {
+                clearTimeout(this._sortTimer);
+                this._sortTimer = null;
+                removeMutationRule(this.id);
+                if (this._settingsHandler) {
+                    document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                    this._settingsHandler = null;
+                }
+                this._restoreHiddenItems();
+            }
+        },
+
+        {
+            id: 'notificationMaxCount',
+            name: t('feature_notificationMaxCount_name', 'Notification Count'),
+            description: t('feature_notificationMaxCount_desc', 'Limit the number of notifications shown. Set to 0 to show all.'),
+            group: 'Advanced',
+            icon: 'list-ordered',
+            isSubFeature: true,
+            parentId: 'chronologicalNotifications',
+            type: 'range',
+            min: 0,
+            max: 100,
+            step: 1,
+            formatValue: (value) => Number(value) > 0 ? `${value} notifications` : 'All',
+            init() {
+                const parent = getFeatureById(this.parentId);
+                if (parent?._initialized) parent._scheduleApply(0);
+            },
+            destroy() {}
+        },
+        {
+            id: 'notificationHideRead',
+            name: t('feature_notificationHideRead_name', 'Hide Read Notifications'),
+            description: t('feature_notificationHideRead_desc', 'Hide notifications that YouTube marks as already read.'),
+            group: 'Advanced',
+            icon: 'mail-open',
+            isSubFeature: true,
+            parentId: 'chronologicalNotifications',
+            init() {
+                const parent = getFeatureById(this.parentId);
+                if (parent?._initialized) parent._scheduleApply(0);
+            },
+            destroy() {}
         },
 
         // ── Preload Comments ──

@@ -87,7 +87,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // fixture alongside the existing blocklist.
     // The Shorts daily limit adds 117 bytes for its limit, action, and ledger.
     // Independent AI surface controls add 69 bytes for three booleans.
-    assert.equal(assessment.totalBytes, 184431);
+    // Notification count and read-state controls add 54 bytes.
+    assert.equal(assessment.totalBytes, 184485);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -262,6 +262,8 @@
   "autoOpenChapters": false,
   "autoOpenTranscript": false,
   "chronologicalNotifications": false,
+  "notificationMaxCount": 0,
+  "notificationHideRead": false,
   "hideLatestPosts": false,
   "disableMiniPlayer": false,
   "adaptiveLiveLayout": false,

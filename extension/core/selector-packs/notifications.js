@@ -13,6 +13,23 @@
     const registry = core.SurfacePackRegistry || (core.SurfacePackRegistry = new Map());
     if (registry.has('notifications')) return;
 
+    const hooks = Object.freeze({
+        'popup.root': Object.freeze({
+            stable: Object.freeze([
+                'ytd-popup-container ytd-multi-page-menu-renderer',
+                'ytd-multi-page-menu-renderer'
+            ]),
+            fallback: Object.freeze(['ytd-popup-container'])
+        }),
+        'element.item': Object.freeze({
+            stable: Object.freeze([
+                'ytd-multi-page-menu-renderer ytd-notification-renderer',
+                'ytd-popup-container ytd-notification-renderer'
+            ]),
+            fallback: Object.freeze(['ytd-notification-renderer'])
+        })
+    });
+
     registry.set('notifications', Object.freeze({
         surface: 'notifications',
         stable: Object.freeze([
@@ -24,6 +41,7 @@
             '.ytd-notification-topbar-button-renderer .badge-shape-wiz',
             'ytd-multi-page-menu-renderer ytd-notification-renderer'
         ]),
+        hooks,
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
             'mhtml/YouTube.mhtml'
