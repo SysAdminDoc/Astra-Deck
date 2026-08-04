@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Parametric EQ.** The shared MAIN-world audio graph now offers an
+  off-by-default three-band low/mid/high EQ with bounded ±12 dB controls,
+  live updates, SPA-safe reconnects, and true bypass when disabled.
 - **Playlist power pack.** Playlist panels now offer duration sorting with
   original-order restoration, bounded per-playlist last-video resume, and an
   explicit persisted auto-skip toggle for entries at least 90% watched.

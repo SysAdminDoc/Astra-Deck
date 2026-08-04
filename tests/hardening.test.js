@@ -5417,11 +5417,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (427 → 430). Notification count and read-state controls add two
     // preferences (430 → 432). Comment language and duplicate policies add
     // two more preferences (432 → 434). Playlist auto-skip adds one more
-    // preference (434 → 435).
+    // preference (434 → 435). Parametric EQ adds four preferences
+    // (435 → 439).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 435,
-        'SETTINGS_SCHEMA must cover all 435 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 439,
+        'SETTINGS_SCHEMA must cover all 439 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

@@ -3499,6 +3499,10 @@ return response;
             audioNormalization: false,
             audioAutoGain: false,
             audioHighPass: false,
+            audioParametricEq: false,
+            audioEqLowGainDb: 0,
+            audioEqMidGainDb: 0,
+            audioEqHighGainDb: 0,
             audioPan: 0,
             audioSyncOffsetMs: 0,
             frameByFrameButtons: false,
@@ -31875,6 +31879,126 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._remove();
                 removeNavigateRule('audioHighPass');
+            }
+        },
+
+        // ── Parametric EQ ──
+        {
+            id: 'audioParametricEq',
+            name: t('feature_audioParametricEq_name', 'Parametric EQ'),
+            description: t('feature_audioParametricEq_desc', 'Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB.'),
+            group: 'Video Player',
+            icon: 'sliders',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-audio-eq', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-audio-eq');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioParametricEq', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioParametricEq');
+            }
+        },
+        {
+            id: 'audioEqLowGainDb',
+            name: t('feature_audioEqLowGainDb_name', 'EQ Low Band'),
+            description: t('feature_audioEqLowGainDb_desc', 'Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB.'),
+            group: 'Video Player',
+            icon: 'sliders',
+            type: 'range',
+            min: -12,
+            max: 12,
+            step: 1,
+            defaultValue: 0,
+            isSubFeature: true,
+            parentId: 'audioParametricEq',
+            dependsOn: 'audioParametricEq',
+            _apply() {
+                const value = Number(appState.settings?.audioEqLowGainDb);
+                const gain = Number.isFinite(value) ? Math.max(-12, Math.min(12, Math.round(value))) : 0;
+                document.documentElement.setAttribute('data-ytkit-audio-eq-low', String(gain));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-audio-eq-low', '0');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioEqLowGainDb', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioEqLowGainDb');
+            }
+        },
+        {
+            id: 'audioEqMidGainDb',
+            name: t('feature_audioEqMidGainDb_name', 'EQ Mid Band'),
+            description: t('feature_audioEqMidGainDb_desc', 'Peaking gain centered at 1 kHz, from -12 dB to +12 dB.'),
+            group: 'Video Player',
+            icon: 'sliders',
+            type: 'range',
+            min: -12,
+            max: 12,
+            step: 1,
+            defaultValue: 0,
+            isSubFeature: true,
+            parentId: 'audioParametricEq',
+            dependsOn: 'audioParametricEq',
+            _apply() {
+                const value = Number(appState.settings?.audioEqMidGainDb);
+                const gain = Number.isFinite(value) ? Math.max(-12, Math.min(12, Math.round(value))) : 0;
+                document.documentElement.setAttribute('data-ytkit-audio-eq-mid', String(gain));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-audio-eq-mid', '0');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioEqMidGainDb', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioEqMidGainDb');
+            }
+        },
+        {
+            id: 'audioEqHighGainDb',
+            name: t('feature_audioEqHighGainDb_name', 'EQ High Band'),
+            description: t('feature_audioEqHighGainDb_desc', 'High-shelf gain centered at 8 kHz, from -12 dB to +12 dB.'),
+            group: 'Video Player',
+            icon: 'sliders',
+            type: 'range',
+            min: -12,
+            max: 12,
+            step: 1,
+            defaultValue: 0,
+            isSubFeature: true,
+            parentId: 'audioParametricEq',
+            dependsOn: 'audioParametricEq',
+            _apply() {
+                const value = Number(appState.settings?.audioEqHighGainDb);
+                const gain = Number.isFinite(value) ? Math.max(-12, Math.min(12, Math.round(value))) : 0;
+                document.documentElement.setAttribute('data-ytkit-audio-eq-high', String(gain));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-audio-eq-high', '0');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioEqHighGainDb', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioEqHighGainDb');
             }
         },
 
