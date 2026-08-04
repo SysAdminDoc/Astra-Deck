@@ -403,6 +403,7 @@ def build():
         # legacy composition root proceeds. Keep them explicit in the frozen
         # graph so legacy imports remain available in packaged builds.
         "--hidden-import", "_compat",
+        "--hidden-import", "companion_ports",
         "--hidden-import", "config",
         "--hidden-import", "download",
         "--hidden-import", "health",

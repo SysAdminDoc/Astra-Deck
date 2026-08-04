@@ -14,6 +14,7 @@ const {
     extractSettingsVersionFromSource
 } = require('./scripts/catalog-utils');
 const { patchManifestForFirefox } = require('./scripts/manifest-patch');
+const { COMPANION_PORT_CATALOGUE } = require('./scripts/companion-port-catalogue');
 const { buildDefaultsFromSchema } = require('./extension/core/settings-schema');
 const { ORIGIN_CATALOGUE } = require('./extension/core/data-flow');
 
@@ -86,14 +87,7 @@ const ORIGIN_HOST_PERMISSION_ALIASES = Object.freeze({
         'https://www.reddit.com/*',
         'https://old.reddit.com/*'
     ]),
-    'http://127.0.0.1:9751-9851': Object.freeze([
-        'http://127.0.0.1:9751/*',
-        'http://127.0.0.1:9761/*',
-        'http://127.0.0.1:9771/*',
-        'http://127.0.0.1:9781/*',
-        'http://127.0.0.1:9791/*',
-        'http://127.0.0.1:9851/*'
-    ])
+    [COMPANION_PORT_CATALOGUE.origin]: COMPANION_PORT_CATALOGUE.hostPermissions
 });
 
 function unique(values) {

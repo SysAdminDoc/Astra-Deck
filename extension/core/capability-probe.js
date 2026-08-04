@@ -22,10 +22,22 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.capabilityProbe) return;
 
-    // The Astra Downloader companion uses six fallback ports; we only
+    let companionPorts = core.companionPorts || null;
+    if (!companionPorts && typeof module !== 'undefined' && module.exports
+        && typeof require === 'function') {
+        try {
+            companionPorts = require('./companion-ports');
+        } catch (_) {
+            // reason: direct Node consumers may omit the manifest bootstrap.
+        }
+    }
+
+    // The Astra Downloader companion uses the declared fallback ports; we only
     // need to know whether ANY of them responds. The probe stops on
     // the first success.
-    const MEDIA_DL_PORTS = Object.freeze([9751, 9761, 9771, 9781, 9791, 9851]);
+    const MEDIA_DL_PORTS = Object.freeze(
+        Array.isArray(companionPorts?.ports) ? companionPorts.ports.slice() : []
+    );
     const OLLAMA_PORT = 11434;
     // Strict timeout so a hung probe never blocks the popup boot.
     const PROBE_TIMEOUT_MS = 1500;
@@ -103,7 +115,8 @@
         // = ports.length * PROBE_TIMEOUT_MS but realistic case = one
         // round trip on the canonical port.
         for (const port of MEDIA_DL_PORTS) {
-            const ok = await fetchWithTimeout(`http://127.0.0.1:${port}/health`, PROBE_TIMEOUT_MS);
+            const host = companionPorts?.host || '127.0.0.1';
+            const ok = await fetchWithTimeout(`http://${host}:${port}/health`, PROBE_TIMEOUT_MS);
             if (ok) return true;
         }
         return false;

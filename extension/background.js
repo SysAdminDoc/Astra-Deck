@@ -70,8 +70,20 @@ function callExtensionApi(target, method, ...args) {
 // Firefox's background.scripts entry still loads background.js as a classic
 // worker script, where importScripts is available as well.
 if (typeof importScripts === 'function') {
-    importScripts('core/settings-schema.js', 'core/settings-controller.js', 'core/credential-vault.js');
+    importScripts(
+        'core/companion-ports.js',
+        'core/settings-schema.js',
+        'core/settings-controller.js',
+        'core/credential-vault.js'
+    );
 }
+
+const COMPANION_PORT_CATALOGUE = globalThis.YTKitCore?.companionPorts || null;
+const COMPANION_ORIGINS = Object.freeze(
+    Array.isArray(COMPANION_PORT_CATALOGUE?.cspOrigins)
+        ? COMPANION_PORT_CATALOGUE.cspOrigins.slice()
+        : []
+);
 
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const _settingsMutationController = globalThis.YTKitCore?.createSettingsMutationController?.({
@@ -451,15 +463,10 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://api.cobalt.tools',
     'https://www.reddit.com',
     'https://old.reddit.com',
-    // AstraDownloader — primary port plus fallbacks (must match astra_downloader.PORT_FALLBACKS
-    // and MediaDLManager._PORT_CANDIDATES). Extension probes these when 9751 is blocked.
-    'http://127.0.0.1:9751',
-    'http://127.0.0.1:9761',
-    'http://127.0.0.1:9771',
-    'http://127.0.0.1:9781',
-    'http://127.0.0.1:9791',
-    'http://127.0.0.1:9851',
     'http://127.0.0.1:11434',
+    // The shared catalogue's primary URL is http://127.0.0.1:9751 in the shipped profile;
+    // every fallback origin is appended below from that same source.
+    ...COMPANION_ORIGINS,
 ];
 
 // Origins that are allowed to receive cookies on proxied requests.
@@ -472,12 +479,7 @@ const CREDENTIALED_FETCH_ORIGINS = new Set([
     'https://music.youtube.com',
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
-    'http://127.0.0.1:9751',
-    'http://127.0.0.1:9761',
-    'http://127.0.0.1:9771',
-    'http://127.0.0.1:9781',
-    'http://127.0.0.1:9791',
-    'http://127.0.0.1:9851',
+    ...COMPANION_ORIGINS,
 ]);
 
 const ALLOWED_COOKIE_DOMAINS = new Set([
@@ -646,12 +648,7 @@ const AUTH_HEADER_ALLOWED_ORIGINS = new Set([
     'https://api.anthropic.com',
     'https://generativelanguage.googleapis.com',
     // Local-only services — see SECURITY NOTE above for why `localhost` is omitted.
-    'http://127.0.0.1:9751',
-    'http://127.0.0.1:9761',
-    'http://127.0.0.1:9771',
-    'http://127.0.0.1:9781',
-    'http://127.0.0.1:9791',
-    'http://127.0.0.1:9851',
+    ...COMPANION_ORIGINS,
     'http://127.0.0.1:11434',
 ]);
 

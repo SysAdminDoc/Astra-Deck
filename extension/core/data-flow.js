@@ -30,6 +30,31 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createDataFlow) return;
 
+    let companionPorts = core.companionPorts || null;
+    if (!companionPorts && typeof module !== 'undefined' && module.exports
+        && typeof require === 'function') {
+        try {
+            companionPorts = require('./companion-ports');
+        } catch (_) {
+            // reason: direct Node consumers may load this module without the
+            // manifest's companion-port bootstrap script.
+        }
+    }
+
+    const COMPANION_ORIGIN_ENTRY = companionPorts ? Object.freeze({
+        origin: companionPorts.origin,
+        purpose: 'Astra Downloader local companion (health, downloads, history, stream links).',
+        requiredByFeatures: [
+            'showLocalDownloadButton', 'downloadHistoryPanel',
+            'downloadHealthPanel', 'downloadStreamLinksPanel',
+            'autoDownloadOnVisit', 'vlcMpvHandoff'
+        ],
+        credentialsPolicy: 'local-loopback',
+        profile: 'github-full',
+        hostGrant: 'required',
+        riskBand: 'local-companion'
+    }) : null;
+
     // Origin catalogue. Each entry maps a stable origin to its purpose,
     // the schema keys that drive requests to it, and the credentials
     // policy applied by background.js. This is the source of truth the
@@ -117,19 +142,7 @@
             hostGrant: 'required',
             riskBand: 'local-companion'
         }),
-        Object.freeze({
-            origin: 'http://127.0.0.1:9751-9851',
-            purpose: 'Astra Downloader local companion (health, downloads, history, stream links).',
-            requiredByFeatures: [
-                'showLocalDownloadButton', 'downloadHistoryPanel',
-                'downloadHealthPanel', 'downloadStreamLinksPanel',
-                'autoDownloadOnVisit', 'vlcMpvHandoff'
-            ],
-            credentialsPolicy: 'local-loopback',
-            profile: 'github-full',
-            hostGrant: 'required',
-            riskBand: 'local-companion'
-        }),
+        ...(COMPANION_ORIGIN_ENTRY ? [COMPANION_ORIGIN_ENTRY] : []),
         Object.freeze({
             origin: 'https://api.cobalt.tools',
             purpose: 'Cobalt fallback download API (user-configurable instance, off by default).',
@@ -146,14 +159,9 @@
             'https://www.reddit.com/*',
             'https://old.reddit.com/*'
         ]),
-        'http://127.0.0.1:9751-9851': Object.freeze([
-            'http://127.0.0.1:9751/*',
-            'http://127.0.0.1:9761/*',
-            'http://127.0.0.1:9771/*',
-            'http://127.0.0.1:9781/*',
-            'http://127.0.0.1:9791/*',
-            'http://127.0.0.1:9851/*'
-        ])
+        ...(companionPorts ? {
+            [companionPorts.origin]: companionPorts.hostPermissions
+        } : {})
     });
 
     function unique(values) {

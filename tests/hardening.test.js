@@ -7272,6 +7272,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/userscript-ai-summary.js',
         'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
+        'extension/core/companion-ports.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',

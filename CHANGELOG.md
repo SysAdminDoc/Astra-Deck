@@ -22,6 +22,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   channel-age tooltips, and their accessible names now resolve through locale
   keys; the copy gate also fingerprints new direct literals at text, title,
   aria-label, and toast sinks with reviewed brand/format exceptions.
+- **Companion port catalogue.** One validated JSON catalogue now generates the
+  Python fallback constants, extension probe lists, background allowlists,
+  build-profile permissions/CSP, and manifest parity checks.
 
 ## [4.51.1] - 2026-08-02 (companion v1.7.0)
 
