@@ -93,6 +93,27 @@ function channelVideoCard(href = null, channelName = '') {
     };
 }
 
+function multiChannelVideoCard(channels) {
+    const links = channels.map(({ href, name }) => ({
+        href,
+        textContent: name,
+        getAttribute: key => key === 'href' ? href : null
+    }));
+    return {
+        textContent: '',
+        dataset: {},
+        querySelector(selector) {
+            if (selector.includes('a[href*="/@"]') || selector.includes('a[href*="/channel/"]')) return links[0] || null;
+            if (selector.includes('#channel-name a')) return links[0] || null;
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector.includes('a[href*="/@"]') || selector.includes('a[href*="/channel/"]')) return links;
+            return [];
+        }
+    };
+}
+
 test('hideVideosFromHome module exports the Video Hider runtime factory', () => {
     const { mod, exported } = loadModule();
     assert.equal(typeof mod.createHideVideosFromHomeFeature, 'function');
@@ -112,6 +133,7 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
         'destroy',
         '_processAllVideos',
         '_processVideoElement',
+        '_extractChannelInfos',
         '_setBlockedChannelCache',
         '_getBlockedChannelKeys',
         '_getAllowedChannels',
@@ -129,6 +151,57 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
     }
+});
+
+test('Video Hider extracts every credited channel and applies blocked/allowed decisions across the card', () => {
+    const { mod } = loadModule();
+    const storage = new Map();
+    const appState = {
+        settings: {
+            hideVideosChannelAllowlist: false,
+            hideVideosKeywordFilter: '',
+            hideVideosHideLive: false,
+            hideVideosHideUpcoming: false,
+            hideVideosHideMixes: false,
+            hideVideosHidePlaylists: false,
+            hideVideosHideMovies: false,
+            hideVideosHideAutoDubbed: false,
+            hideVideosLowViewFilter: false,
+            hideVideosWatchedRatio: 0,
+            advancedLocalPredicate: false,
+            hideVideosDurationFilter: 0
+        }
+    };
+    const normalizeChannel = entry => {
+        const id = String(entry?.id || '').trim()
+            .replace(/^https?:\/\/(?:www\.)?youtube\.com\//i, '');
+        return id ? { id, name: entry.name || id, source: entry.source || 'dom' } : null;
+    };
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState,
+        storageRead: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
+        storageWrite: (key, value) => storage.set(key, value),
+        sanitizeImportedBlockedChannels: value => Array.isArray(value) ? value : [],
+        sanitizeImportedAllowedChannels: value => Array.isArray(value) ? value : [],
+        normalizeBlockedChannelRecord: normalizeChannel,
+        getBlockedChannelIdentityKeys: channel => channel?.id ? [String(channel.id).toLowerCase()] : []
+    });
+    const card = multiChannelVideoCard([
+        { href: 'https://youtube.com/@first', name: 'First uploader' },
+        { href: 'https://youtube.com/@second', name: 'Second uploader' }
+    ]);
+
+    const infos = feature._extractChannelInfos(card);
+    assert.deepEqual(infos.map(info => info.name), ['First uploader', 'Second uploader']);
+
+    feature._setBlockedChannels([{ id: '@second', name: 'Second uploader' }]);
+    assert.equal(feature._isChannelBlocked(infos), true, 'any blocked participant must match the card');
+    assert.equal(feature._shouldHide(card), true, 'a blocked participant must hide the collaboration card');
+
+    appState.settings.hideVideosChannelAllowlist = true;
+    feature._setBlockedChannels([{ id: '@first', name: 'First uploader' }]);
+    feature._setAllowedChannels([{ id: '@second', name: 'Second uploader' }]);
+    assert.equal(feature._shouldHide(card), false, 'allowlist mode must remain an override when any participant is allowed');
 });
 
 test('Video Hider ignores live/upcoming words in titles but detects metadata rows', () => {
