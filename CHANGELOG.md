@@ -13,6 +13,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Navigation API routing.** Route dispatch now prefers the platform
   Navigation API when available, keeps YouTube events as a compatibility
   fallback, and remains observer-clean across long SPA sessions.
+- **List feed layout.** Home, Subscriptions, and Search can now opt into
+  thumbnail-left rows with metadata on the right, including modern lockup
+  cards, responsive sizing, and mutual exclusion with Videos Per Row.
 - **Playlist power pack.** Playlist panels now offer duration sorting with
   original-order restoration, bounded per-playlist last-video resume, and an
   explicit persisted auto-skip toggle for entries at least 90% watched.

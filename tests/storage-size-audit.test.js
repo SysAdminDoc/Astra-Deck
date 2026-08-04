@@ -23,11 +23,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     const assessment = assessSyncEligibility(safeStoreProfile);
 
     // Channel allowlist mode adds the setting and its safe-sync allowlist
-    // entry to the profile snapshot.
-    assert.equal(assessment.totalBytes, 5811);
+    // entry to the profile snapshot. List feed layout adds its setting and
+    // allowlist entry for another 57 bytes.
+    assert.equal(assessment.totalBytes, 5868);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 5811);
+    assert.equal(assessment.largestItem.bytes, 5868);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -90,8 +91,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // Notification count and read-state controls add 54 bytes. Comment
     // language and duplicate policies add another 63 bytes.
     // Playlist auto-skip adds 32 bytes for its persisted preference.
-    // Parametric EQ adds four bounded preferences for 90 bytes.
-    assert.equal(assessment.totalBytes, 184670);
+    // Parametric EQ adds four bounded preferences for 90 bytes. List feed
+    // layout adds one boolean preference for 40 bytes.
+    assert.equal(assessment.totalBytes, 184710);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
