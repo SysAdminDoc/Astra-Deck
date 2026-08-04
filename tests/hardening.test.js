@@ -5407,11 +5407,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Audio auto-gain and high-pass add two extension-only preferences
     // (422 → 424). The Shorts budget adds a limit, mode, and local ledger
     // (424 → 427). Independent AI surface controls add three preferences
-    // (427 → 430).
+    // (427 → 430). Notification count and read-state controls add two
+    // preferences (430 → 432).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 430,
-        'SETTINGS_SCHEMA must cover all 430 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 432,
+        'SETTINGS_SCHEMA must cover all 432 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

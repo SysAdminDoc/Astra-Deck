@@ -102,6 +102,8 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     audioSyncOffsetMs: 'intentional-extension-only',
     shortsDailyLimitMin: 'intentional-extension-only',
     shortsDailyLimitMode: 'intentional-extension-only',
+    notificationMaxCount: 'intentional-extension-only',
+    notificationHideRead: 'intentional-extension-only',
     audioTrackLanguage: 'intentional-extension-only',
     preferDescriptiveAudio: 'intentional-extension-only',
     autoDismissContentWarning: 'not-yet-ported',

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
   "referenceLocale": "en",
-  "referenceKeys": 1881,
+  "referenceKeys": 1885,
   "locales": {
-    "ar": 651,
-    "de": 654,
-    "es": 659,
-    "fr": 659,
-    "it": 660,
-    "ja": 648,
-    "ko": 648,
-    "pt_BR": 657,
-    "ru": 648,
-    "zh_CN": 643
+    "ar": 655,
+    "de": 658,
+    "es": 663,
+    "fr": 663,
+    "it": 664,
+    "ja": 652,
+    "ko": 652,
+    "pt_BR": 661,
+    "ru": 652,
+    "zh_CN": 647
   }
 }

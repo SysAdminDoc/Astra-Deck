@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Notification menu controls: cap count + hide read
-  Why: Count and read-state filtering are user-selected policies, not safe unconditional behavior under chronological sorting.
-  Evidence: competitor notification options; `chronologicalNotifications` in `extension/ytkit.js`.
-  Touches: chronologicalNotifications runtime, settings schema/locales.
-  Acceptance: Independent options cap rendered notifications and hide read entries without observer/re-render loops.
-  Complexity: S
-
 - [ ] P2 — Comment intelligence pack
   Why: Language selection and duplicate expansion need discoverable controls; the existing `commentFilterRules` textarea already persists `@author` block rules but its localized contract does not cover language or duplicate behavior.
   Evidence: YouTube Comment Language Filter (GF 558814), Similar Comments Hider (hjk789), user-block scripts; `commentFilterManager` in `extension/ytkit.js`.
