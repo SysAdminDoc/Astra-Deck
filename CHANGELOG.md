@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Playlist power pack.** Playlist panels now offer duration sorting with
+  original-order restoration, bounded per-playlist last-video resume, and an
+  explicit persisted auto-skip toggle for entries at least 90% watched.
 - **Comment intelligence pack.** Comment filtering now includes localized
   language allowlisting with local fail-open detection, conservative duplicate
   collapse under accessible expanders, and localized author-rule controls.

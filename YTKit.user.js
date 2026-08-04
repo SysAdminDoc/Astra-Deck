@@ -2209,6 +2209,7 @@
         // ─── playback-audio ───
         Object.freeze({ key: "watchLaterQuickAdd", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "playlistEnhancer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "playlistAutoSkipWatched", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
 
         // ─── comments ───
         Object.freeze({ key: "commentSearch", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -31341,6 +31342,7 @@
             thumbnailQualityUpgrade: false,
             watchLaterQuickAdd: false,
             playlistEnhancer: false,
+            playlistAutoSkipWatched: false,
             commentSearch: false,
             videoZoom: false,
             forceDarkEverywhere: false,
@@ -39476,68 +39478,373 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'playlistEnhancer',
             name: 'Playlist Enhancer',
-            description: 'Adds shuffle and remove-duplicates buttons to playlist panels',
+            description: 'Adds shuffle, duration sorting, per-playlist resume, and watched-item controls to playlist panels',
             group: 'Watch Page',
             icon: 'shuffle',
             _btns: null,
+            _statusEl: null,
+            _durationBtn: null,
+            _resumeBtn: null,
+            _autoSkipBtn: null,
+            _createTimer: null,
+            _syncTimer: null,
+            _copyTimer: null,
+            _sortMode: 'none',
+            _nativeOrder: new WeakMap(),
+            _nextNativeOrder: 0,
+            _resumeStore: null,
+            _settingsHandler: null,
+            _autoSkipGuard: '',
+
+            _parseDuration(text) {
+                const value = String(text || '').trim().replace(/\s+/g, '');
+                if (!/^\d{1,3}(?::\d{2}){1,2}$/.test(value)) return null;
+                const parts = value.split(':').map(Number);
+                if (parts.some(part => !Number.isFinite(part))) return null;
+                return parts.length === 2
+                    ? parts[0] * 60 + parts[1]
+                    : parts[0] * 3600 + parts[1] * 60 + parts[2];
+            },
+
+            _getWatchedPercent(item) {
+                const progress = item.querySelector('#progress, ytd-thumbnail-overlay-resume-playback-renderer #progress, [aria-valuenow]');
+                const ariaPercent = Array.from(item.querySelectorAll('[aria-label]'))
+                    .find(element => /%/.test(element.getAttribute('aria-label') || ''));
+                const raw = progress?.style?.width
+                    || progress?.getAttribute?.('aria-valuenow')
+                    || ariaPercent?.getAttribute('aria-label')
+                    || '';
+                const match = String(raw).match(/(\d+(?:\.\d+)?)\s*%?/);
+                const value = match ? Number(match[1]) : 0;
+                return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+            },
+
+            _rememberNativeOrder(entries) {
+                entries.forEach(({ item }) => {
+                    if (!this._nativeOrder.has(item)) this._nativeOrder.set(item, this._nextNativeOrder++);
+                });
+            },
+
+            _getPlaylistEntries() {
+                const entries = Array.from(document.querySelectorAll('ytd-playlist-panel-video-renderer')).map(item => {
+                    const link = item.querySelector('a#wc-endpoint, a[href*="/watch"], a[href*="/shorts/"], a[href*="/live/"]');
+                    const href = link?.href || '';
+                    const durationText = item.querySelector('#length, ytd-thumbnail-overlay-time-status-renderer, .badge-shape-wiz__text')?.textContent || '';
+                    return {
+                        item,
+                        link,
+                        href,
+                        videoId: getVideoId(href),
+                        durationSec: this._parseDuration(durationText),
+                        watchedPct: this._getWatchedPercent(item)
+                    };
+                }).filter(entry => entry.link && entry.href);
+                this._rememberNativeOrder(entries);
+                return entries;
+            },
+
+            _getPlaylistId() {
+                try {
+                    const list = new URL(window.location.href).searchParams.get('list') || '';
+                    return /^[A-Za-z0-9_-]{1,128}$/.test(list) ? list : '';
+                } catch (_) {
+                    return '';
+                }
+            },
+
+            _loadResumeStore() {
+                if (this._resumeStore) return this._resumeStore;
+                const raw = StorageManager.get('ytkit-playlist-resume', {});
+                this._resumeStore = {};
+                if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return this._resumeStore;
+                for (const [playlistId, value] of Object.entries(raw)) {
+                    if (!/^[A-Za-z0-9_-]{1,128}$/.test(playlistId)
+                        || !value || typeof value !== 'object'
+                        || !VIDEO_ID_PATTERN.test(String(value.videoId || ''))
+                        || !Number.isFinite(Number(value.ts)) || Number(value.ts) <= 0) continue;
+                    this._resumeStore[playlistId] = {
+                        videoId: String(value.videoId),
+                        ts: Number(value.ts)
+                    };
+                }
+                return this._resumeStore;
+            },
+
+            _recordCurrentVideo() {
+                const playlistId = this._getPlaylistId();
+                const videoId = getVideoId();
+                if (!playlistId || !videoId) return;
+                const store = this._loadResumeStore();
+                store[playlistId] = { videoId, ts: Date.now() };
+                const entries = Object.entries(store).sort((left, right) => left[1].ts - right[1].ts);
+                this._resumeStore = Object.fromEntries(entries.slice(-200));
+                StorageManager.set('ytkit-playlist-resume', this._resumeStore);
+            },
+
+            _resumeLastVideo() {
+                const playlistId = this._getPlaylistId();
+                const resume = this._loadResumeStore()[playlistId];
+                if (!playlistId || !resume?.videoId || resume.videoId === getVideoId()) return;
+                const entry = this._getPlaylistEntries().find(({ videoId }) => videoId === resume.videoId);
+                if (entry?.link) {
+                    entry.link.click();
+                    return;
+                }
+                const target = new URL('/watch', window.location.origin);
+                target.searchParams.set('v', resume.videoId);
+                target.searchParams.set('list', playlistId);
+                window.location.assign(target.href);
+            },
+
+            _orderedEntries(entries, mode = this._sortMode) {
+                const ordered = [...entries];
+                const nativeCompare = (left, right) => this._nativeOrder.get(left.item) - this._nativeOrder.get(right.item);
+                if (mode === 'none') return ordered.sort(nativeCompare);
+                return ordered.sort((left, right) => {
+                    const leftKnown = Number.isFinite(left.durationSec);
+                    const rightKnown = Number.isFinite(right.durationSec);
+                    if (leftKnown !== rightKnown) return leftKnown ? -1 : 1;
+                    if (leftKnown && left.durationSec !== right.durationSec) {
+                        return mode === 'duration-desc'
+                            ? right.durationSec - left.durationSec
+                            : left.durationSec - right.durationSec;
+                    }
+                    return nativeCompare(left, right);
+                });
+            },
+
+            _applyEntryOrder(entries, mode = this._sortMode) {
+                if (entries.length < 2) return;
+                const parent = entries[0].item.parentElement;
+                if (!parent || entries.some(({ item }) => item.parentElement !== parent)) return;
+                const ordered = this._orderedEntries(entries, mode);
+                if (ordered.every((entry, index) => entries[index].item === entry.item)) return;
+                const marker = document.createComment('ytkit-playlist-order');
+                parent.insertBefore(marker, entries[0].item);
+                const fragment = document.createDocumentFragment();
+                ordered.forEach(({ item }) => fragment.appendChild(item));
+                parent.insertBefore(fragment, marker.nextSibling);
+                marker.remove();
+            },
+
+            _applyDurationSort() {
+                this._applyEntryOrder(this._getPlaylistEntries(), this._sortMode);
+            },
+
+            _updateStatus() {
+                if (!this._statusEl || !this._durationBtn || !this._resumeBtn || !this._autoSkipBtn) return;
+                const entries = this._getPlaylistEntries();
+                this._statusEl.textContent = `${entries.length} video${entries.length === 1 ? '' : 's'}`;
+
+                const durationSorted = this._sortMode !== 'none';
+                this._durationBtn.setAttribute('aria-pressed', String(durationSorted));
+                this._durationBtn.textContent = durationSorted
+                    ? (this._sortMode === 'duration-desc' ? 'Duration ↓' : 'Duration ↑')
+                    : 'Sort Duration';
+                this._durationBtn.title = durationSorted
+                    ? 'Restore the original playlist order'
+                    : 'Sort playlist items by duration; activate again to reverse';
+
+                const playlistId = this._getPlaylistId();
+                const resume = playlistId ? this._loadResumeStore()[playlistId] : null;
+                const hasResume = !!resume?.videoId && resume.videoId !== getVideoId();
+                this._resumeBtn.disabled = !hasResume;
+                this._resumeBtn.title = hasResume
+                    ? 'Open the last video remembered for this playlist'
+                    : 'No earlier video is remembered for this playlist';
+
+                const autoSkip = appState.settings.playlistAutoSkipWatched === true;
+                this._autoSkipBtn.setAttribute('aria-pressed', String(autoSkip));
+                this._autoSkipBtn.textContent = autoSkip ? 'Auto-skip: On' : 'Auto-skip: Off';
+                this._autoSkipBtn.title = 'Skip playlist entries with at least 90% watched progress';
+            },
+
+            _scheduleSync(delay = 300) {
+                if (this._syncTimer) clearTimeout(this._syncTimer);
+                this._syncTimer = setTimeout(() => {
+                    this._syncTimer = null;
+                    this._applyDurationSort();
+                    this._updateStatus();
+                    this._autoSkipWatched();
+                }, delay);
+            },
+
+            _autoSkipWatched() {
+                if (appState.settings.playlistAutoSkipWatched !== true) {
+                    this._autoSkipGuard = '';
+                    return false;
+                }
+                const playlistId = this._getPlaylistId();
+                const currentVideoId = getVideoId();
+                if (!playlistId || !currentVideoId) return false;
+                const entries = this._getPlaylistEntries();
+                const currentIndex = entries.findIndex(({ videoId }) => videoId === currentVideoId);
+                if (currentIndex < 0 || entries[currentIndex].watchedPct < 90) return false;
+                const next = entries.slice(currentIndex + 1).find(({ watchedPct }) => watchedPct < 90);
+                if (!next?.link) return false;
+                const guard = `${playlistId}:${currentVideoId}:${next.videoId}`;
+                if (guard === this._autoSkipGuard) return false;
+                this._autoSkipGuard = guard;
+                next.link.click();
+                return true;
+            },
 
             _create() {
                 if (!isWatchPagePath()) return;
                 const playlistHeader = document.querySelector('ytd-playlist-panel-renderer #header-contents, ytd-playlist-panel-renderer .header');
                 if (!playlistHeader) return;
                 if (playlistHeader.querySelector('.ytkit-playlist-enhance')) return;
+                this._recordCurrentVideo();
 
                 const container = document.createElement('div');
                 container.className = 'ytkit-playlist-enhance';
-                container.style.cssText = 'display:flex;gap:8px;padding:4px 8px;';
+                container.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;';
+
+                const status = document.createElement('span');
+                status.style.cssText = 'font-size:11px;color:var(--yt-spec-text-secondary,#aaa);margin-right:4px;';
+                status.setAttribute('aria-live', 'polite');
+                container.appendChild(status);
+
+                const makeButton = (label) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.style.cssText = 'background:rgba(255,255,255,0.1);border:1px solid transparent;color:#fff;cursor:pointer;padding:4px 9px;border-radius:16px;font-size:12px;';
+                    button.textContent = label;
+                    button.addEventListener('focus', () => { button.style.outline = '2px solid #3ea6ff'; });
+                    button.addEventListener('blur', () => { button.style.outline = ''; });
+                    return button;
+                };
 
                 // Shuffle button
-                const shuffleBtn = document.createElement('button');
-                shuffleBtn.style.cssText = 'background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;padding:4px 10px;border-radius:16px;font-size:12px;';
-                shuffleBtn.textContent = '\uD83D\uDD00 Shuffle';
+                const shuffleBtn = makeButton('\uD83D\uDD00 Shuffle');
                 shuffleBtn.addEventListener('click', () => {
-                    const items = document.querySelectorAll('ytd-playlist-panel-video-renderer');
-                    if (items.length < 2) return;
-                    // Pick a random video from the playlist
-                    const randomIdx = Math.floor(Math.random() * items.length);
-                    const link = items[randomIdx]?.querySelector('a#wc-endpoint');
-                    if (link) link.click();
+                    const entries = this._getPlaylistEntries();
+                    if (entries.length < 2) return;
+                    entries[Math.floor(Math.random() * entries.length)].link.click();
                 });
 
                 // Copy playlist URLs
-                const copyBtn = document.createElement('button');
-                copyBtn.style.cssText = 'background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;padding:4px 10px;border-radius:16px;font-size:12px;';
-                copyBtn.textContent = '\uD83D\uDCCB Copy All URLs';
+                const copyBtn = makeButton('\uD83D\uDCCB Copy All URLs');
                 copyBtn.addEventListener('click', async () => {
-                    const items = document.querySelectorAll('ytd-playlist-panel-video-renderer a#wc-endpoint');
-                    const urls = Array.from(items).map(a => a.href).filter(Boolean);
+                    const urls = this._getPlaylistEntries().map(({ href }) => href).filter(Boolean);
                     if (urls.length > 0) {
                         try {
                             await navigator.clipboard.writeText(urls.join('\n'));
                             copyBtn.textContent = '\u2705 Copied!';
-                            setTimeout(() => copyBtn.textContent = '\uD83D\uDCCB Copy All URLs', 2000);
-                        } catch(e) {}
+                            if (this._copyTimer) clearTimeout(this._copyTimer);
+                            this._copyTimer = setTimeout(() => { copyBtn.textContent = '\uD83D\uDCCB Copy All URLs'; }, 2000);
+                        } catch (_) { copyBtn.textContent = 'Retry Copy'; }
                     }
+                });
+
+                const durationBtn = makeButton('Sort Duration');
+                durationBtn.addEventListener('click', () => {
+                    this._sortMode = this._sortMode === 'none'
+                        ? 'duration-asc'
+                        : this._sortMode === 'duration-asc' ? 'duration-desc' : 'none';
+                    this._applyDurationSort();
+                    this._updateStatus();
+                });
+
+                const resumeBtn = makeButton('Resume Last');
+                resumeBtn.addEventListener('click', () => this._resumeLastVideo());
+
+                const autoSkipBtn = makeButton('Auto-skip: Off');
+                autoSkipBtn.addEventListener('click', () => {
+                    appState.settings.playlistAutoSkipWatched = !(appState.settings.playlistAutoSkipWatched === true);
+                    settingsManager.save(appState.settings);
+                    document.dispatchEvent(new CustomEvent('ytkit-settings-changed', { detail: { key: 'playlistAutoSkipWatched' } }));
+                    this._autoSkipGuard = '';
+                    this._updateStatus();
+                    this._scheduleSync(0);
                 });
 
                 container.appendChild(shuffleBtn);
                 container.appendChild(copyBtn);
+                container.appendChild(durationBtn);
+                container.appendChild(resumeBtn);
+                container.appendChild(autoSkipBtn);
                 playlistHeader.appendChild(container);
                 this._btns = container;
+                this._statusEl = status;
+                this._durationBtn = durationBtn;
+                this._resumeBtn = resumeBtn;
+                this._autoSkipBtn = autoSkipBtn;
+                this._updateStatus();
+                this._scheduleSync(0);
             },
 
             init() {
+                this._loadResumeStore();
+                this._settingsHandler = (event) => {
+                    const key = event?.detail?.key;
+                    if (key !== 'playlistAutoSkipWatched') return;
+                    this._autoSkipGuard = '';
+                    this._scheduleSync(0);
+                };
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
                 addNavigateRule('playlistEnhancer', () => {
                     this._btns?.remove(); this._btns = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._statusEl = null;
+                    this._durationBtn = null;
+                    this._resumeBtn = null;
+                    this._autoSkipBtn = null;
+                    this._sortMode = 'none';
+                    this._nativeOrder = new WeakMap();
+                    this._nextNativeOrder = 0;
+                    this._autoSkipGuard = '';
+                    if (this._createTimer) clearTimeout(this._createTimer);
+                    this._createTimer = setTimeout(() => { this._createTimer = null; this._create(); }, 2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                addMutationRule('playlistEnhancer', () => {
+                    if (!isWatchPagePath()) return;
+                    if (!document.querySelector('.ytkit-playlist-enhance')) {
+                        if (this._createTimer) clearTimeout(this._createTimer);
+                        this._createTimer = setTimeout(() => { this._createTimer = null; this._create(); }, 400);
+                    } else {
+                        this._scheduleSync(250);
+                    }
+                });
+                this._createTimer = setTimeout(() => { this._createTimer = null; this._create(); }, 2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                if (this._syncTimer) clearTimeout(this._syncTimer);
+                if (this._copyTimer) clearTimeout(this._copyTimer);
+                this._createTimer = null;
+                this._syncTimer = null;
+                this._copyTimer = null;
                 removeNavigateRule('playlistEnhancer');
+                removeMutationRule('playlistEnhancer');
+                this._sortMode = 'none';
+                this._applyDurationSort();
                 this._btns?.remove(); this._btns = null;
+                this._statusEl = null;
+                this._durationBtn = null;
+                this._resumeBtn = null;
+                this._autoSkipBtn = null;
                 document.querySelectorAll('.ytkit-playlist-enhance').forEach(b => b.remove());
+                if (this._settingsHandler) {
+                    document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                    this._settingsHandler = null;
+                }
+                this._nativeOrder = new WeakMap();
+                this._nextNativeOrder = 0;
+                this._resumeStore = null;
+                this._autoSkipGuard = '';
             }
+        },
+        {
+            id: 'playlistAutoSkipWatched',
+            name: 'Auto-skip watched playlist items',
+            description: 'When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled.',
+            group: 'Watch Page',
+            icon: 'skip-forward',
+            isSubFeature: true,
+            parentId: 'playlistEnhancer',
+            dependsOn: 'playlistEnhancer',
+            init() {},
+            destroy() {}
         },
         {
             id: 'commentSearch',

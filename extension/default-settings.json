@@ -239,6 +239,7 @@
   "thumbnailQualityUpgrade": false,
   "watchLaterQuickAdd": false,
   "playlistEnhancer": false,
+  "playlistAutoSkipWatched": false,
   "commentSearch": false,
   "videoZoom": false,
   "forceDarkEverywhere": false,

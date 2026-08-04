@@ -5674,5 +5674,110 @@
   },
   "feature_commentLanguageAllowlist_name": {
     "message": "Comment Language Allowlist"
+  },
+  "feature_playlistAutoSkipWatched_desc": {
+    "message": "When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled."
+  },
+  "feature_playlistAutoSkipWatched_name": {
+    "message": "Auto-skip watched playlist items"
+  },
+  "playlistAutoSkipOff": {
+    "message": "Auto-skip: Off"
+  },
+  "playlistAutoSkipOn": {
+    "message": "Auto-skip: On"
+  },
+  "playlistAutoSkipTitle": {
+    "message": "Skip playlist entries with at least 90% watched progress"
+  },
+  "playlistCopied": {
+    "message": "Copied"
+  },
+  "playlistCopyAllTitle": {
+    "message": "Copy all playlist video URLs"
+  },
+  "playlistCopyBlocked": {
+    "message": "Clipboard access was blocked. Try again or use the browser copy shortcut."
+  },
+  "playlistCopying": {
+    "message": "Copying…"
+  },
+  "playlistCopyRetry": {
+    "message": "Retry"
+  },
+  "playlistCopyUrls": {
+    "message": "Copy URLs"
+  },
+  "playlistCopyVisibleTitle": {
+    "message": "Copy the visible playlist video URLs"
+  },
+  "playlistCurrentIsLast": {
+    "message": "Resume Last"
+  },
+  "playlistDuplicateCountTpl": {
+    "message": "{count} duplicates"
+  },
+  "playlistDurationLongest": {
+    "message": "Duration ↓"
+  },
+  "playlistDurationShortest": {
+    "message": "Duration ↑"
+  },
+  "playlistHiddenDuplicatesTpl": {
+    "message": "{count} duplicates hidden"
+  },
+  "playlistHideDuplicates": {
+    "message": "Hide Duplicates"
+  },
+  "playlistHideDuplicatesTitle": {
+    "message": "Hide repeated videos in this playlist panel"
+  },
+  "playlistNoResumeTitle": {
+    "message": "No earlier video is remembered for this playlist"
+  },
+  "playlistNoUrls": {
+    "message": "No URLs"
+  },
+  "playlistNoUrlsToast": {
+    "message": "No playlist URLs are ready to copy yet."
+  },
+  "playlistRestoreOrderTitle": {
+    "message": "Restore the original playlist order"
+  },
+  "playlistResumeLast": {
+    "message": "Resume Last"
+  },
+  "playlistResumeLastTitle": {
+    "message": "Open the last video remembered for this playlist"
+  },
+  "playlistShowDuplicates": {
+    "message": "Show Duplicates"
+  },
+  "playlistShowDuplicatesTitle": {
+    "message": "Show repeated videos in this playlist panel"
+  },
+  "playlistShuffle": {
+    "message": "Shuffle"
+  },
+  "playlistShuffleNeedTwo": {
+    "message": "Need at least 2 playlist items to shuffle."
+  },
+  "playlistShuffleTitle": {
+    "message": "Play a random visible video from this playlist panel"
+  },
+  "playlistSortDuration": {
+    "message": "Sort Duration"
+  },
+  "playlistSortDurationTitle": {
+    "message": "Sort playlist items by duration; activate again to reverse"
+  },
+  "playlistStatusLoading": {
+    "message": "Playlist"
+  },
+  "playlistToolsTitle": {
+    "message": "Playlist Tools"
+  },
+  "playlistVideoCountTpl": {
+    "message": "{count} videos"
   }
 }

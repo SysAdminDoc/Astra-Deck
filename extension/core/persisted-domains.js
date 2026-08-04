@@ -46,6 +46,7 @@
         { id: 'watchTime', location: 'extension-local', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
         { id: 'channelSpeeds', location: 'extension-local', key: 'ytkit-channel-speeds', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'channel-speed-v1' },
         { id: 'resumePositions', location: 'extension-local', key: 'ytkit_resume_positions', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'resume-position-v1' },
+        { id: 'playlistResume', location: 'extension-local', key: 'ytkit-playlist-resume', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'playlist-resume-v1' },
         { id: 'persistentQueue', location: 'extension-local', key: 'ytkit-queue', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'queue-v1' },
         { id: 'reactionSpammerState', location: 'extension-local', key: 'ytkitReactionSpammerState', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'reaction-state-v1' },
         { id: 'watchLaterRemovalLog', location: 'extension-local', key: 'ytkit-wl-removal-log', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
@@ -237,6 +238,20 @@
         return Object.fromEntries(rows.slice(-500));
     }
 
+    function sanitizePlaylistResume(value) {
+        if (!isPlainObject(value)) return {};
+        const rows = [];
+        for (const [playlistId, raw] of Object.entries(value)) {
+            if (!/^[A-Za-z0-9_-]{1,128}$/.test(playlistId) || !isPlainObject(raw)) continue;
+            const videoId = String(raw.videoId || '');
+            const ts = Number(raw.ts);
+            if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(ts) || ts <= 0) continue;
+            rows.push([playlistId, { videoId, ts }]);
+        }
+        rows.sort((left, right) => left[1].ts - right[1].ts);
+        return Object.fromEntries(rows.slice(-200));
+    }
+
     function sanitizeQueue(value) {
         if (!isPlainObject(value)) return { v: 1, items: [] };
         const seen = new Set();
@@ -298,6 +313,7 @@
         case 'watchTime': return sanitizeWatchTime(value);
         case 'channelSpeeds': return sanitizeChannelSpeeds(value);
         case 'resumePositions': return sanitizeResumePositions(value);
+        case 'playlistResume': return sanitizePlaylistResume(value);
         case 'persistentQueue': return sanitizeQueue(value);
         case 'reactionSpammerState': return sanitizeReactionState(value);
         case 'watchLaterRemovalLog': return (Array.isArray(value) ? value : []).slice(-500).map((row) => safeClone(row));
