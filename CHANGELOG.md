@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Comment intelligence pack.** Comment filtering now includes localized
+  language allowlisting with local fail-open detection, conservative duplicate
+  collapse under accessible expanders, and localized author-rule controls.
 - **Notification menu controls.** Chronological notifications now support an
   independent visible-count cap and an explicit hide-read policy, with
   loop-safe filtering, bounded settings metadata, and localized controls.

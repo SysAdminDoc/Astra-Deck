@@ -5656,5 +5656,23 @@
   },
   "feature_notificationMaxCount_name": {
     "message": "Notification Count"
+  },
+  "commentDuplicateHide": {
+    "message": "Hide similar comments"
+  },
+  "commentDuplicateShowTpl": {
+    "message": "Show {count} similar comments"
+  },
+  "feature_commentDuplicateCollapse_desc": {
+    "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."
+  },
+  "feature_commentDuplicateCollapse_name": {
+    "message": "Collapse Similar Comments"
+  },
+  "feature_commentLanguageAllowlist_desc": {
+    "message": "Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain."
+  },
+  "feature_commentLanguageAllowlist_name": {
+    "message": "Comment Language Allowlist"
   }
 }

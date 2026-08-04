@@ -417,6 +417,8 @@
   "advancedLocalPredicateCode": "",
   "commentFilterManager": false,
   "commentFilterRules": "",
+  "commentLanguageAllowlist": "",
+  "commentDuplicateCollapse": false,
   "bulkCardActions": false,
   "feedTriageProfile": false,
   "downloadScreenshotFormat": "png",
