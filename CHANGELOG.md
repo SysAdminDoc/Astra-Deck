@@ -10,6 +10,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Parametric EQ.** The shared MAIN-world audio graph now offers an
   off-by-default three-band low/mid/high EQ with bounded ±12 dB controls,
   live updates, SPA-safe reconnects, and true bypass when disabled.
+- **Buffer / preload control.** Watch pages can now opt into a bounded
+  20-second VOD buffer target when YouTube exposes the page-owned API, while
+  live streams and unsupported player builds remain unchanged and report a
+  diagnostic reason.
 - **Navigation API routing.** Route dispatch now prefers the platform
   Navigation API when available, keeps YouTube events as a compatibility
   fallback, and remains observer-clean across long SPA sessions.

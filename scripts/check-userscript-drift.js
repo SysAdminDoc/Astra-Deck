@@ -200,6 +200,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     vlcMpvHandoff: 'native-companion',
     volumeBoost: 'intentional-extension-only',
     volumeBoostLevel: 'intentional-extension-only',
+    bufferPreload: 'intentional-extension-only',
     volumeWheelMode: 'not-yet-ported',
     watchHistoryAnalytics: 'intentional-extension-only',
     watchLaterCleanup: 'intentional-extension-only',

@@ -5419,11 +5419,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // two more preferences (432 → 434). Playlist auto-skip adds one more
     // preference (434 → 435). Parametric EQ adds four preferences
     // (435 → 439). List feed layout adds one more preference
-    // (439 → 440).
+    // (439 → 440). Buffer / preload adds one more extension preference
+    // (440 → 441).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 440,
-        'SETTINGS_SCHEMA must cover all 440 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 441,
+        'SETTINGS_SCHEMA must cover all 441 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
