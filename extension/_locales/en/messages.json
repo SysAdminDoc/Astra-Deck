@@ -4959,10 +4959,10 @@
     "message": "Staged {count} stale channels for unsubscribe review"
   },
   "subscriptionHealthStagedEmpty": {
-    "message": "Nothing staged. Staging flags channels for your review — it never clicks YouTube unsubscribe controls."
+    "message": "Nothing staged. Stage stale channels to review them before a bounded unsubscribe session."
   },
   "subscriptionHealthStagedHeading": {
-    "message": "Staged unsubscribes (review-only, 30-day undo window)"
+    "message": "Staged unsubscribes (review before applying, 30-day recovery window)"
   },
   "subscriptionHealthStaleEmpty": {
     "message": "No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan."
@@ -4999,6 +4999,42 @@
   },
   "subscriptionHealthUndoStageAriaTpl": {
     "message": "Undo staged unsubscribe for {channel}"
+  },
+  "subscriptionMenuUnsubscribe": {
+    "message": "Unsubscribe"
+  },
+  "subscriptionUnsubscribeCapTpl": {
+    "message": "{count} remain staged beyond the {cap}-per-run cap."
+  },
+  "subscriptionUnsubscribeEmpty": {
+    "message": "Nothing is staged for unsubscribe."
+  },
+  "subscriptionUnsubscribeLogAria": {
+    "message": "Export the local unsubscribe session log as JSON"
+  },
+  "subscriptionUnsubscribeLogButton": {
+    "message": "Unsubscribe log"
+  },
+  "subscriptionUnsubscribeLogEmpty": {
+    "message": "No unsubscribe sessions recorded yet."
+  },
+  "subscriptionUnsubscribeLogExportedTpl": {
+    "message": "Exported {count} unsubscribe sessions"
+  },
+  "subscriptionUnsubscribeRunAriaTpl": {
+    "message": "Unsubscribe up to {count} staged channels in this bounded session"
+  },
+  "subscriptionUnsubscribeRunTitleTpl": {
+    "message": "Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing."
+  },
+  "subscriptionUnsubscribeRunTpl": {
+    "message": "Unsubscribe staged ({count})"
+  },
+  "subscriptionUnsubscribeRunning": {
+    "message": "An unsubscribe session is already running."
+  },
+  "subscriptionUnsubscribeSessionTpl": {
+    "message": "{removed} unsubscribed, {failed} unchanged; {remaining} remain staged."
   },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"

@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Bulk unsubscribe from inactive channels
-  Why: Astra already stages stale channels — `_extractCardAgeDays`, `subscriptionUnsubscribeStagingData` with a 30-day `undoUntil`, and Scan/Stage/Undo actions — but stops short of performing the unsubscribe, so the workflow dead-ends. PocketTube's equivalent is a headline differentiator at 250K+ users.
-  Evidence: `extension/ytkit.js:37291-37298` (staging), `extension/ytkit.js:3456` (`subscriptionUnsubscribeStagingData` shape); PocketTube v18.7.1, https://pockettube.io/.
-  Touches: `extension/features/subscription-groups/index.js`, `extension/ytkit.js` staging runtime, `extension/_locales/*`.
-  Acceptance: staged channels can be unsubscribed in a bounded session reusing the `bulkCardActions` pattern (25 per run, 400 ms pacing, local log, JSON export); the action operates only on the reviewable staged list, records every removal in the existing recovery log, and is a no-op when the staging list is empty.
-  Complexity: M
-
 - [ ] P2 — Budget and gate content-script startup cost
   Why: `manifest.json` content-script entry 3 injects ~96 files into every YouTube page at `document_idle` with no measured budget, benchmark or regression gate. High CPU and post-update slowdown are among the most common review complaints for every competitor in this class, and the repo currently has no way to notice a regression.
   Evidence: `extension/manifest.json` content_scripts entry 3; `extension/ytkit.js` 52,883 lines; RESEARCH.md 2026-08-02 §Architecture Assessment.

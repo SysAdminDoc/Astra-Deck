@@ -10,6 +10,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Client-side mark as watched.** Video Hider now offers an opt-in per-card
   control with capped LRU storage, export/import support, dim-or-remove feed
   behavior, and Undo toasts for both marking and unmarking.
+- **Bounded inactive-channel unsubscribe.** Subscription Groups can now apply
+  YouTube's unsubscribe action only to the staged stale-channel review list,
+  in 25-item sessions paced at 400 ms, while retaining failed items, recording
+  per-channel results locally, and exporting the capped session log as JSON.
 
 ### Fixed
 - **Audio sync offset.** The shared MAIN-world audio graph now exposes a

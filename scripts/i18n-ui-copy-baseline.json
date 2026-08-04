@@ -102,10 +102,10 @@
       "strictDigest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
-      "count": 1325,
-      "digest": "5b5824c621b656212a3225b1010ca7adb8807aaa345b88adb09219e123972c83",
-      "strictCount": 658,
-      "strictDigest": "e032e7d1a03925e00e9eb49d6f62aefd8563e937f28e2f19e63a0f9018652b5d"
+      "count": 1323,
+      "digest": "20735a16d4cf2a77d7a9d6e549179ce7d86bdeeedd07af5445a0ca0ad8b74be1",
+      "strictCount": 656,
+      "strictDigest": "17083bd371a3877d82cc1cc2a8f1c1832cdc7984b46842f8f73ab00d119d7b5d"
     }
   }
 }

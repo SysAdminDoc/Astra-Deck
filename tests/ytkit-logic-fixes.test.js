@@ -556,8 +556,8 @@ test('subscriptionGroups ships a unified health/action center in both copies', (
             `${label}: health center must reuse the stale-channel collector`);
         assert.match(panelBlock, /No stale channels detected among the rendered cards/,
             `${label}: stale section must have an explanatory empty state`);
-        assert.match(panelBlock, /Nothing staged\. Staging flags channels for your review/,
-            `${label}: staged section empty state must explain review-only semantics`);
+        assert.match(panelBlock, /Nothing staged\. Stage stale channels to review them before a bounded unsubscribe session/,
+            `${label}: staged section empty state must explain review-before-apply semantics`);
         assert.match(panelBlock, /Undo all staged/,
             `${label}: staged section must expose bulk undo recovery`);
         assert.match(panelBlock, /Health scan failed/,

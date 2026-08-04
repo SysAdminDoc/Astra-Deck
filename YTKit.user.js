@@ -18937,6 +18937,10 @@
                 _LAST_VISIT_KEY: 'subscriptionLastVisitData',
                 _UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData',
                 _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
+                _UNSUBSCRIBE_BATCH_CAP: 25,
+                _UNSUBSCRIBE_PACE_MS: 400,
+                _UNSUBSCRIBE_LOG_KEY: 'ytkit-subscription-unsubscribe-sessions',
+                _UNSUBSCRIBE_LOG_MAX: 20,
                 _STALE_CHANNEL_MIN_AGE_DAYS: 365,
                 _SORT_MODES: Object.freeze([
                     'default',
@@ -18949,6 +18953,9 @@
                 ]),
                 _budgetHandles: null,
                 _lastScanDiagnostics: null,
+                _unsubscribeRunning: false,
+                _unsubscribeSessionToken: null,
+                _lifecycleToken: 0,
 
                 _ensureBudgetHandles() {
                     if (!this._budgetHandles) this._budgetHandles = new Map();
@@ -19018,6 +19025,8 @@
                         .ytkit-sub-toolbar button[data-action="health"]{background:rgba(124,58,237,0.14);border-color:rgba(124,58,237,0.36);color:#ddd6fe;}
                         .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
                         .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
+                        .ytkit-sub-toolbar button[data-action="unsubscribe-staged"]{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.36);color:#fecaca;}
+                        .ytkit-sub-toolbar button[data-action="export-unsubscribe-log"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
                         .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
                         .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                         .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
@@ -19091,6 +19100,8 @@
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="health"]{color:#5b21b6;}
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{color:#92400e;}
                         html:not([dark]) .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{color:#166534;}
+                        html:not([dark]) .ytkit-sub-toolbar button[data-action="unsubscribe-staged"]{color:#b91c1c;}
+                        html:not([dark]) .ytkit-sub-toolbar button[data-action="export-unsubscribe-log"]{color:#166534;}
                         html:not([dark]) .ytkit-sub-group-chip{background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.38);color:#5b21b6;}
                         html:not([dark]) .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                         html:not([dark]) .ytkit-sub-group-chip[data-depth="1"]{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.34);color:#1d4ed8;}
@@ -19681,9 +19692,8 @@
 
                 // One coherent subscriptions health/action center: stale-channel
                 // candidates, staged-unsubscribe recovery, new-since-last-visit
-                // counts, and export actions — all read from the same local data
-                // the toolbar actions already maintain. No YouTube unsubscribe
-                // controls are clicked from here; staging stays review-only.
+                // counts, bounded unsubscribe actions, and export actions — all
+                // read from the same local data the toolbar actions maintain.
                 _renderHealthPanel() {
                     if (!this._toolbar?.isConnected) this._renderToolbar();
                     if (!this._toolbar?.isConnected) return;
@@ -19820,14 +19830,14 @@
                         // ── Staged unsubscribe recovery ──
                         const stagedHeading = document.createElement('div');
                         stagedHeading.className = 'ytkit-sub-health-section';
-                        stagedHeading.textContent = t('subscriptionHealthStagedHeading', 'Staged unsubscribes (review-only, 30-day undo window)');
+                        stagedHeading.textContent = t('subscriptionHealthStagedHeading', 'Staged unsubscribes (review before applying, 30-day recovery window)');
                         panel.appendChild(stagedHeading);
                         const stagedList = document.createElement('div');
                         stagedList.className = 'ytkit-sub-digest-list';
                         if (!stagedEntries.length) {
                             const empty = document.createElement('div');
                             empty.className = 'ytkit-sub-digest-empty';
-                            empty.textContent = t('subscriptionHealthStagedEmpty', 'Nothing staged. Staging flags channels for your review — it never clicks YouTube unsubscribe controls.');
+                            empty.textContent = t('subscriptionHealthStagedEmpty', 'Nothing staged. Stage stale channels to review them before a bounded unsubscribe session.');
                             stagedList.appendChild(empty);
                         } else {
                             for (const entry of stagedEntries.slice(0, 12)) {
@@ -19868,6 +19878,20 @@
                             });
                             undoAllWrap.appendChild(undoAll);
                             stagedList.appendChild(undoAllWrap);
+                            const stagedActions = document.createElement('div');
+                            stagedActions.className = 'ytkit-sub-health-actions';
+                            const unsubscribe = document.createElement('button');
+                            unsubscribe.type = 'button';
+                            unsubscribe.textContent = t('subscriptionUnsubscribeRunTpl', 'Unsubscribe staged ({count})')
+                                .replace('{count}', String(stagedEntries.length));
+                            unsubscribe.setAttribute('aria-label', t('subscriptionUnsubscribeRunAriaTpl', 'Unsubscribe up to {count} staged channels in this bounded session')
+                                .replace('{count}', String(this._UNSUBSCRIBE_BATCH_CAP)));
+                            unsubscribe.title = t('subscriptionUnsubscribeRunTitleTpl', 'Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing.')
+                                .replace('{count}', String(this._UNSUBSCRIBE_BATCH_CAP));
+                            unsubscribe.disabled = this._unsubscribeRunning;
+                            unsubscribe.addEventListener('click', () => { void this._runStagedUnsubscribeSession(); });
+                            stagedActions.appendChild(unsubscribe);
+                            stagedList.appendChild(stagedActions);
                         }
                         panel.appendChild(stagedList);
 
@@ -19921,7 +19945,8 @@
                         for (const [label, handler, aria] of [
                             ['JSON', () => this._exportGroups(), t('subscriptionExportJsonAria', 'Export subscription groups as JSON')],
                             ['CSV', () => this._exportGroupsCsv(), t('subscriptionExportCsvAria', 'Export subscription groups as CSV')],
-                            ['OPML', () => this._exportGroupsOpml(), t('subscriptionExportOpmlAria', 'Export subscription groups as OPML')]
+                            ['OPML', () => this._exportGroupsOpml(), t('subscriptionExportOpmlAria', 'Export subscription groups as OPML')],
+                            [t('subscriptionUnsubscribeLogButton', 'Unsubscribe log'), () => this._exportUnsubscribeLog(), t('subscriptionUnsubscribeLogAria', 'Export the local unsubscribe session log as JSON')]
                         ]) {
                             const btn = document.createElement('button');
                             btn.type = 'button';
@@ -20170,6 +20195,256 @@
                         showToast(t('subscriptionHealthRemovedStagedTpl', 'Removed {count} staged unsubscribes')
                             .replace('{count}', String(removed)), '#22c55e', { duration: 4 });
                     }
+                },
+
+                _readUnsubscribeLog() {
+                    const log = storageReadJSON(this._UNSUBSCRIBE_LOG_KEY, []);
+                    return Array.isArray(log)
+                        ? log.filter(entry => entry && typeof entry === 'object').slice(-this._UNSUBSCRIBE_LOG_MAX)
+                        : [];
+                },
+
+                _appendUnsubscribeSession(session) {
+                    const entries = Array.isArray(session?.entries) ? session.entries : [];
+                    const normalizedEntries = entries.slice(0, this._UNSUBSCRIBE_BATCH_CAP).map(entry => ({
+                        channelId: String(entry?.channelId || '').slice(0, 128),
+                        channelName: String(entry?.channelName || '').slice(0, 120),
+                        unsubscribed: !!entry?.unsubscribed,
+                        reason: String(entry?.reason || '').slice(0, 160)
+                    })).filter(entry => entry.channelId);
+                    const log = this._readUnsubscribeLog();
+                    log.push({
+                        ts: Number(session?.ts) || Date.now(),
+                        requested: Math.max(0, Number(session?.requested) || normalizedEntries.length),
+                        removed: normalizedEntries.filter(entry => entry.unsubscribed).length,
+                        failed: normalizedEntries.filter(entry => !entry.unsubscribed).length,
+                        skippedOverCap: Math.max(0, Number(session?.skippedOverCap) || 0),
+                        partial: !!session?.partial,
+                        entries: normalizedEntries
+                    });
+                    while (log.length > this._UNSUBSCRIBE_LOG_MAX) log.shift();
+                    try { storageWriteJSON(this._UNSUBSCRIBE_LOG_KEY, log); }
+                    catch (e) { DebugManager.log('SubGroups', `Unsubscribe log save failed: ${e.message}`); }
+                },
+
+                _exportUnsubscribeLog() {
+                    const log = this._readUnsubscribeLog();
+                    if (!log.length) {
+                        if (typeof showToast === 'function') showToast(t('subscriptionUnsubscribeLogEmpty', 'No unsubscribe sessions recorded yet.'), '#6b7280');
+                        return;
+                    }
+                    handleFileExport(
+                        `astra-deck-subscription-unsubscribe-log-${new Date().toISOString().slice(0, 10)}.json`,
+                        JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), sessions: log }, null, 2)
+                    );
+                    if (typeof showToast === 'function') {
+                        showToast(t('subscriptionUnsubscribeLogExportedTpl', 'Exported {count} unsubscribe sessions')
+                            .replace('{count}', String(log.length)), '#22c55e');
+                    }
+                },
+
+                _getUnsubscribeControlLabel(node) {
+                    return [
+                        node?.getAttribute?.('aria-label'),
+                        node?.getAttribute?.('title'),
+                        node?.getAttribute?.('data-tooltip-text'),
+                        node?.dataset?.tooltipText,
+                        node?.textContent
+                    ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+                },
+
+                _findUnsubscribeMenuItem() {
+                    const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').trim().toLowerCase();
+                    const items = document.querySelectorAll([
+                        'ytd-menu-service-item-renderer',
+                        'ytd-menu-navigation-item-renderer',
+                        '[role="menuitem"]'
+                    ].join(','));
+                    return Array.from(items).find(item => {
+                        if (item.getAttribute?.('aria-hidden') === 'true') return false;
+                        const popup = item.closest?.('tp-yt-iron-dropdown, ytd-popup-container');
+                        if (popup?.getAttribute?.('aria-hidden') === 'true') return false;
+                        const iconType = String(
+                            item?.data?.icon?.iconType || item?.data?.iconType || item?.getAttribute?.('data-icon-type') || ''
+                        ).toUpperCase();
+                        if (iconType.includes('UNSUBSCRIBE')) return true;
+                        const label = this._getUnsubscribeControlLabel(item).toLowerCase();
+                        return (localizedLabel && label.includes(localizedLabel)) || /\bunsubscrib(?:e|ed|ing)\b/i.test(label);
+                    });
+                },
+
+                _clickUnsubscribeMenuItem() {
+                    return new Promise(resolve => {
+                        const tryClick = (attempt) => {
+                            const item = this._findUnsubscribeMenuItem();
+                            if (item) {
+                                item.click?.();
+                                resolve(true);
+                                return;
+                            }
+                            if (attempt < 2) {
+                                setTimeout(() => tryClick(attempt + 1), 250);
+                                return;
+                            }
+                            const dropdown = document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]');
+                            if (dropdown && document.body?.click) document.body.click();
+                            resolve(false);
+                        };
+                        setTimeout(() => tryClick(0), 250);
+                    });
+                },
+
+                async _confirmUnsubscribeDialog() {
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        const button = document.querySelector([
+                            'ytd-confirm-dialog-renderer #confirm-button',
+                            'ytd-confirm-dialog-renderer button[aria-label]',
+                            'ytd-confirm-dialog-renderer [role="button"]'
+                        ].join(','));
+                        if (button) {
+                            const label = this._getUnsubscribeControlLabel(button);
+                            const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
+                            if (button.id === 'confirm-button' || label.toLowerCase().includes(localizedLabel) || /\bunsubscrib/i.test(label)) {
+                                button.click?.();
+                                return true;
+                            }
+                        }
+                        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                    return false;
+                },
+
+                _findStagedChannelCard(channelId) {
+                    const cards = document.querySelectorAll([
+                        'ytd-channel-renderer',
+                        'ytd-subscription-card-renderer',
+                        'ytd-rich-item-renderer',
+                        'ytd-video-renderer'
+                    ].join(','));
+                    return Array.from(cards).find(card => this._extractChannelIdFromCard(card) === channelId) || null;
+                },
+
+                async _applyNativeUnsubscribeAction(card) {
+                    if (!card?.isConnected) return false;
+                    const controls = card.querySelectorAll?.([
+                        'ytd-subscribe-button-renderer button',
+                        'ytd-subscribe-button-renderer tp-yt-paper-button',
+                        '#subscribe-button button',
+                        '#subscribe-button tp-yt-paper-button',
+                        '[data-subscription-state="subscribed"]'
+                    ].join(',')) || [];
+                    const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
+                    const control = Array.from(controls).find(candidate => {
+                        const label = this._getUnsubscribeControlLabel(candidate).toLowerCase();
+                        return label.includes(localizedLabel) || /\bunsubscrib(?:e|ed|ing)\b|\bsubscribed\b/i.test(label);
+                    });
+                    if (control) {
+                        const before = this._getUnsubscribeControlLabel(control);
+                        control.click?.();
+                        const menuClicked = await this._clickUnsubscribeMenuItem();
+                        const confirmed = await this._confirmUnsubscribeDialog();
+                        if (menuClicked || confirmed) return true;
+                        const after = this._getUnsubscribeControlLabel(control);
+                        if (/\bsubscribe\b/i.test(after) && !/\bunsubscrib|\bsubscribed\b/i.test(after)) return true;
+                        return /\bunsubscrib/i.test(before);
+                    }
+
+                    const menuButton = card.querySelector?.([
+                        'ytd-menu-renderer yt-icon-button',
+                        'ytd-menu-renderer button',
+                        'ytd-menu-renderer [role="button"]'
+                    ].join(','));
+                    if (!menuButton) return false;
+                    menuButton.click?.();
+                    const menuClicked = await this._clickUnsubscribeMenuItem();
+                    if (!menuClicked) return false;
+                    await this._confirmUnsubscribeDialog();
+                    return true;
+                },
+
+                async _runStagedUnsubscribeSession() {
+                    if (this._unsubscribeRunning) {
+                        if (typeof showToast === 'function') showToast(t('subscriptionUnsubscribeRunning', 'An unsubscribe session is already running.'), '#f59e0b');
+                        return { requested: 0, removed: 0, failed: 0, skippedOverCap: 0, results: [], running: true };
+                    }
+                    const staged = this._readUnsubscribeStaging();
+                    const stagedEntries = Object.entries(staged);
+                    if (!stagedEntries.length) {
+                        if (typeof showToast === 'function') showToast(t('subscriptionUnsubscribeEmpty', 'Nothing is staged for unsubscribe.'), '#6b7280');
+                        return { requested: 0, removed: 0, failed: 0, skippedOverCap: 0, results: [] };
+                    }
+
+                    const picked = stagedEntries.slice(0, this._UNSUBSCRIBE_BATCH_CAP);
+                    const skippedOverCap = stagedEntries.length - picked.length;
+                    const sessionToken = this._lifecycleToken;
+                    const next = { ...staged };
+                    const results = [];
+                    this._unsubscribeRunning = true;
+                    this._unsubscribeSessionToken = sessionToken;
+                    try {
+                        for (const [channelId, record] of picked) {
+                            if (this._lifecycleToken !== sessionToken) break;
+                            const card = this._findStagedChannelCard(channelId);
+                            let unsubscribed = false;
+                            let reason = '';
+                            if (!card) {
+                                reason = 'channel-card-not-rendered';
+                            } else {
+                                try {
+                                    unsubscribed = await this._applyNativeUnsubscribeAction(card);
+                                    if (!unsubscribed) reason = 'unsubscribe-control-not-found';
+                                } catch (error) {
+                                    reason = String(error?.message || 'unsubscribe-action-failed').slice(0, 160);
+                                    DebugManager.log('SubGroups', `Unsubscribe action failed for ${channelId}: ${reason}`);
+                                }
+                            }
+                            results.push({
+                                channelId,
+                                channelName: record?.channelName || channelId,
+                                unsubscribed,
+                                reason
+                            });
+                            if (unsubscribed) {
+                                delete next[channelId];
+                                this._writeUnsubscribeStaging(next);
+                            }
+                            if (this._lifecycleToken !== sessionToken) break;
+                            await new Promise(resolve => setTimeout(resolve, this._UNSUBSCRIBE_PACE_MS));
+                        }
+                    } finally {
+                        if (this._unsubscribeSessionToken === sessionToken) {
+                            this._unsubscribeRunning = false;
+                            this._unsubscribeSessionToken = null;
+                        }
+                    }
+
+                    const partial = this._lifecycleToken !== sessionToken;
+                    this._appendUnsubscribeSession({
+                        ts: Date.now(),
+                        requested: picked.length,
+                        skippedOverCap,
+                        partial,
+                        entries: results
+                    });
+                    const removed = results.filter(entry => entry.unsubscribed).length;
+                    const failed = results.filter(entry => !entry.unsubscribed).length;
+                    if (partial) return { requested: picked.length, removed, failed, skippedOverCap, results, partial: true };
+
+                    this._renderDeadChannelMarkers();
+                    this._renderToolbar();
+                    const remaining = Object.keys(this._readUnsubscribeStaging()).length;
+                    const capNote = skippedOverCap > 0
+                        ? ` ${t('subscriptionUnsubscribeCapTpl', '{count} remain staged beyond the {cap}-per-run cap.')
+                            .replace('{count}', String(skippedOverCap)).replace('{cap}', String(this._UNSUBSCRIBE_BATCH_CAP))}`
+                        : '';
+                    if (typeof showToast === 'function') {
+                        showToast(t('subscriptionUnsubscribeSessionTpl', '{removed} unsubscribed, {failed} unchanged; {remaining} remain staged.')
+                            .replace('{removed}', String(removed))
+                            .replace('{failed}', String(failed))
+                            .replace('{remaining}', String(remaining)) + capNote,
+                        removed ? '#22c55e' : '#f59e0b', { duration: 8, tone: removed ? 'success' : 'warning' });
+                    }
+                    return { requested: picked.length, removed, failed, skippedOverCap, results, remaining };
                 },
 
                 _parseCompactViewCount(text) {
@@ -20744,6 +21019,29 @@
                             .replace('{count}', String(stagedCount)));
                         undoStageBtn.addEventListener('click', () => this._undoStagedUnsubscribes(Object.keys(this._readUnsubscribeStaging())));
                         bar.appendChild(undoStageBtn);
+
+                        const unsubscribeBtn = document.createElement('button');
+                        unsubscribeBtn.type = 'button';
+                        unsubscribeBtn.dataset.action = 'unsubscribe-staged';
+                        unsubscribeBtn.textContent = t('subscriptionUnsubscribeRunTpl', 'Unsubscribe staged ({count})')
+                            .replace('{count}', String(stagedCount));
+                        unsubscribeBtn.setAttribute('aria-label', t('subscriptionUnsubscribeRunAriaTpl', 'Unsubscribe up to {count} staged channels in this bounded session')
+                            .replace('{count}', String(this._UNSUBSCRIBE_BATCH_CAP)));
+                        unsubscribeBtn.title = t('subscriptionUnsubscribeRunTitleTpl', 'Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing.')
+                            .replace('{count}', String(this._UNSUBSCRIBE_BATCH_CAP));
+                        unsubscribeBtn.disabled = this._unsubscribeRunning;
+                        unsubscribeBtn.addEventListener('click', () => { void this._runStagedUnsubscribeSession(); });
+                        bar.appendChild(unsubscribeBtn);
+                    }
+
+                    if (this._readUnsubscribeLog().length > 0) {
+                        const exportUnsubscribeLogBtn = document.createElement('button');
+                        exportUnsubscribeLogBtn.type = 'button';
+                        exportUnsubscribeLogBtn.dataset.action = 'export-unsubscribe-log';
+                        exportUnsubscribeLogBtn.textContent = t('subscriptionUnsubscribeLogButton', 'Unsubscribe log');
+                        exportUnsubscribeLogBtn.setAttribute('aria-label', t('subscriptionUnsubscribeLogAria', 'Export the local unsubscribe session log as JSON'));
+                        exportUnsubscribeLogBtn.addEventListener('click', () => this._exportUnsubscribeLog());
+                        bar.appendChild(exportUnsubscribeLogBtn);
                     }
 
                     target.parentElement.insertBefore(bar, target);
@@ -20759,12 +21057,17 @@
                     // the feature permanently inert (the page tracker skips init
                     // because _initialized is already true). The navigate rule and
                     // every deferred callback below re-check the path themselves.
+                    this._lifecycleToken += 1;
+                    this._unsubscribeRunning = false;
+                    this._unsubscribeSessionToken = null;
                     this._ensureStyles();
                     this._navRule = () => {
                         if (window.location.pathname !== '/feed/subscriptions') {
+                            this._lifecycleToken += 1;
                             this._cancelAllBudgetedScans();
                             return;
                         }
+                        this._lifecycleToken += 1;
                         // Track + clear these so a navigation away within the delay
                         // can't fire them on the wrong page. The 8s _stampLastVisit
                         // in particular would otherwise stamp lastVisit for whatever
@@ -20803,6 +21106,9 @@
                 },
 
                 destroy() {
+                    this._lifecycleToken += 1;
+                    this._unsubscribeRunning = false;
+                    this._unsubscribeSessionToken = null;
                     this._sessionLastVisit = null;
                     removeNavigateRule(this.id);
                     removeScopedMutationRule(this.id);

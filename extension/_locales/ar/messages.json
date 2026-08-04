@@ -5000,6 +5000,42 @@
   "subscriptionHealthUndoStageAriaTpl": {
     "message": "Undo staged unsubscribe for {channel}"
   },
+  "subscriptionMenuUnsubscribe": {
+    "message": "Unsubscribe"
+  },
+  "subscriptionUnsubscribeCapTpl": {
+    "message": "{count} remain staged beyond the {cap}-per-run cap."
+  },
+  "subscriptionUnsubscribeEmpty": {
+    "message": "Nothing is staged for unsubscribe."
+  },
+  "subscriptionUnsubscribeLogAria": {
+    "message": "Export the local unsubscribe session log as JSON"
+  },
+  "subscriptionUnsubscribeLogButton": {
+    "message": "Unsubscribe log"
+  },
+  "subscriptionUnsubscribeLogEmpty": {
+    "message": "No unsubscribe sessions recorded yet."
+  },
+  "subscriptionUnsubscribeLogExportedTpl": {
+    "message": "Exported {count} unsubscribe sessions"
+  },
+  "subscriptionUnsubscribeRunAriaTpl": {
+    "message": "Unsubscribe up to {count} staged channels in this bounded session"
+  },
+  "subscriptionUnsubscribeRunTitleTpl": {
+    "message": "Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing."
+  },
+  "subscriptionUnsubscribeRunTpl": {
+    "message": "Unsubscribe staged ({count})"
+  },
+  "subscriptionUnsubscribeRunning": {
+    "message": "An unsubscribe session is already running."
+  },
+  "subscriptionUnsubscribeSessionTpl": {
+    "message": "{removed} unsubscribed, {failed} unchanged; {remaining} remain staged."
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5375,10 +5411,22 @@
   "watchLaterScanning": {
     "message": "جارٍ الفحص…"
   },
-  "videoHiderMarkWatched": { "message": "Mark as watched" },
-  "videoHiderUnmarkWatched": { "message": "Unmark as watched" },
-  "videoHiderMarkedWatched": { "message": "Marked as watched" },
-  "videoHiderUnmarkedWatched": { "message": "Mark removed" },
-  "videoHiderMarkWatchedToggle": { "message": "Show mark-as-watched button" },
-  "videoHiderMarkWatchedToggleDesc": { "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled." }
+  "videoHiderMarkWatched": {
+    "message": "Mark as watched"
+  },
+  "videoHiderUnmarkWatched": {
+    "message": "Unmark as watched"
+  },
+  "videoHiderMarkedWatched": {
+    "message": "Marked as watched"
+  },
+  "videoHiderUnmarkedWatched": {
+    "message": "Mark removed"
+  },
+  "videoHiderMarkWatchedToggle": {
+    "message": "Show mark-as-watched button"
+  },
+  "videoHiderMarkWatchedToggleDesc": {
+    "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
+  }
 }
