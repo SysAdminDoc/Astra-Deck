@@ -7155,33 +7155,41 @@
             navigateDebounceTimer = setTimeout(runNavigateRules, runtime.navDebounce);
         }
 
-        // v3.23.0 (L1): Navigation API self-detection as a last-resort
-        // fallback for SPA reloads. yt-navigate-finish + yt-page-data-updated
-        // + popstate cover ~99.9% of YouTube navigations, but Tampermonkey
-        // issue #2673 (closed as "not planned") leaves a pre-existing class
-        // of SPA reloads where these YT-internal events never fire — the
-        // browser's own Navigation API still observes the URL change. We
-        // attach as an additive fallback, gated behind feature detection
-        // so older browsers without `window.navigation` aren't affected.
+        // v3.23.0 (L1): Navigation API self-detection for platform-owned SPA
+        // route dispatch. YouTube's events remain the compatibility path for
+        // browsers without `window.navigation` or for implementations that
+        // expose the object but reject listener registration.
         // Refs:
         //   https://github.com/tampermonkey/tampermonkey/issues/2673
         //   https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API
         let navigationApiHandler = null;
 
         function attachNavigationApi() {
-            if (navigationApiHandler) return;
-            if (typeof window.navigation?.addEventListener !== 'function') return;
-            navigationApiHandler = () => {
-                pendingMutationRouteReset = true;
-                debouncedRunNavigateRules();
+            if (navigationApiHandler) return true;
+            if (typeof window.navigation?.addEventListener !== 'function') return false;
+            navigationApiHandler = (event) => {
+                const dispatch = () => {
+                    pendingMutationRouteReset = true;
+                    debouncedRunNavigateRules({ type: 'navigate' });
+                };
+                // The navigate event can precede the committed URL. Prefer the
+                // platform's commit promise when it is available, while keeping
+                // a synchronous fallback for older implementations and tests.
+                if (event?.committed && typeof event.committed.then === 'function') {
+                    event.committed.then(dispatch, dispatch);
+                    return;
+                }
+                dispatch();
             };
             try {
                 window.navigation.addEventListener('navigate', navigationApiHandler);
+                return true;
             } catch (_) {
                 // reason: Navigation API surface is experimental; some
                 // browsers expose `navigation` but reject addEventListener.
                 // Fall back to the existing yt-*/popstate chain silently.
                 navigationApiHandler = null;
+                return false;
             }
         }
 
@@ -7199,10 +7207,14 @@
         function ensureNavigateListener() {
             if (isNavigateListenerAttached) return;
 
-            document.addEventListener('yt-navigate-finish', debouncedRunNavigateRules);
+            const navigationApiAttached = attachNavigationApi();
+            if (!navigationApiAttached) {
+                document.addEventListener('yt-navigate-finish', debouncedRunNavigateRules);
+                window.addEventListener('popstate', debouncedRunNavigateRules);
+            }
+            // This is a same-URL content refresh signal, not the primary route
+            // detector; keep it active for feed/page-data re-renders.
             document.addEventListener('yt-page-data-updated', debouncedRunNavigateRules);
-            window.addEventListener('popstate', debouncedRunNavigateRules);
-            attachNavigationApi();
 
             ensureWatchFlexyObserver();
             runNavigateRules();
@@ -7212,10 +7224,13 @@
         function stopNavigateListener() {
             if (!isNavigateListenerAttached) return;
 
-            document.removeEventListener('yt-navigate-finish', debouncedRunNavigateRules);
+            if (navigationApiHandler) {
+                detachNavigationApi();
+            } else {
+                document.removeEventListener('yt-navigate-finish', debouncedRunNavigateRules);
+                window.removeEventListener('popstate', debouncedRunNavigateRules);
+            }
             document.removeEventListener('yt-page-data-updated', debouncedRunNavigateRules);
-            window.removeEventListener('popstate', debouncedRunNavigateRules);
-            detachNavigationApi();
             if (navigateDebounceTimer) {
                 clearTimeout(navigateDebounceTimer);
                 navigateDebounceTimer = null;
