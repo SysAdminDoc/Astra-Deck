@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Audio chain completion: auto-gain + high-pass
-  Why: Astra already implements compressor-backed `audioNormalization`; the remaining independently selectable nodes are auto-gain and high-pass filtering.
-  Evidence: Tweaks for YouTube feature set; `extension/ytkit-main.js` audio graph and `audioNormalization` setting.
-  Touches: MAIN-world audio graph, isolated-world bridge, settings schema/locales.
-  Acceptance: Auto-gain and high-pass nodes toggle independently with sane defaults, live-apply, and never double-connect across SPA navigation.
-  Complexity: M
-
 - [ ] P2 — Enforced Shorts daily limit
   Why: A Shorts-specific budget and hard-block/snooze policy are distinct from the existing all-video `dwDailyCapMin` setting.
   Evidence: TechCrunch 2025-10-22 Shorts timer coverage; Shorts Addiction Helper scripts; `extension/features/digital-wellbeing/`.

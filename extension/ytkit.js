@@ -3490,6 +3490,8 @@ return response;
             volumeBoost: false,
             volumeBoostLevel: 2,
             audioNormalization: false,
+            audioAutoGain: false,
+            audioHighPass: false,
             audioPan: 0,
             audioSyncOffsetMs: 0,
             frameByFrameButtons: false,
@@ -31277,6 +31279,54 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._remove();
                 removeNavigateRule('audioNormalization');
+            }
+        },
+
+        // ── Audio Auto-Gain ──
+        {
+            id: 'audioAutoGain',
+            name: t('feature_audioAutoGain_name', 'Audio Auto-Gain'),
+            description: t('feature_audioAutoGain_desc', 'Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage.'),
+            group: 'Video Player',
+            icon: 'gauge',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-audio-auto-gain', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-audio-auto-gain');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioAutoGain', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioAutoGain');
+            }
+        },
+
+        // ── Audio High-Pass Filter ──
+        {
+            id: 'audioHighPass',
+            name: t('feature_audioHighPass_name', 'Audio High-Pass Filter'),
+            description: t('feature_audioHighPass_desc', 'Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph.'),
+            group: 'Video Player',
+            icon: 'filter',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-audio-high-pass', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-audio-high-pass');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioHighPass', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioHighPass');
             }
         },
 

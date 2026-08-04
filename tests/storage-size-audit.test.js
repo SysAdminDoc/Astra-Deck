@@ -78,13 +78,14 @@ test('typical local payload is not storage.sync eligible', () => {
     // ytkit-ai-summaries key (-28 bytes from the settings bag).
     // v4.50.8 descriptive-audio preference adds 31 bytes.
     // v4.51.1 audio sync offset adds 22 bytes.
+    // Audio auto-gain + high-pass add 44 bytes to the local settings payload.
     // Client-side mark-as-watched adds 46 bytes to this local fixture.
     // Dual-language subtitles add the master toggle and language selector,
     // adding 60 bytes to the local settings payload.
     // Channel allowlist mode adds 64 bytes to the local settings payload.
     // The separate allowed-channel list adds a bounded 80-channel local
     // fixture alongside the existing blocklist.
-    assert.equal(assessment.totalBytes, 184201);
+    assert.equal(assessment.totalBytes, 184245);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

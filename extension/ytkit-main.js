@@ -497,10 +497,10 @@
     // Feature 4+5: Shared audio processing graph
     // ──────────────────────────────────────────────────────────────────
     // Single AudioContext for ALL audio features (mono-to-stereo,
-    // volume boost, audio normalization, and sync offset). createMediaElementSource is
+    // volume boost, audio normalization, auto-gain, high-pass, and sync offset). createMediaElementSource is
     // one-shot per element — multiple AudioContexts competing for the
     // same <video> would throw InvalidStateError. The shared graph is:
-    //   source → monoMerge → compressor → pan → boostGain → delay → destination
+    //   source → monoMerge → compressor → highPass → analyser → autoGain → pan → boostGain → delay → destination
     // Each node passes through when its feature is disabled.
 (function() {
     'use strict';
@@ -511,14 +511,35 @@
     var _monoEnabled = false;
     var _boostGain = 1.0;
     var _normalizeEnabled = false;
+    var _autoGainEnabled = false;
+    var _highPassEnabled = false;
     var _panValue = 0;
     var _audioSyncOffsetMs = 0;
     var _delayNode = null;
+    var _autoGainMeter = null;
+    var _autoGainSamples = null;
+    var AUTO_GAIN_TARGET_RMS = 0.14;
+    var AUTO_GAIN_MIN = 1.0;
+    var AUTO_GAIN_MAX = 3.0;
+    var AUTO_GAIN_INTERVAL_MS = 250;
+    var HIGH_PASS_CUTOFF_HZ = 80;
+    var HIGH_PASS_BYPASS_HZ = 10;
+    var HIGH_PASS_Q = 0.707;
     var _audioSyncAttr = 'data-ytkit-audio-sync-offset';
+    var _audioAutoGainAttr = 'data-ytkit-audio-auto-gain';
+    var _audioHighPassAttr = 'data-ytkit-audio-high-pass';
     var _audioTrackSelection = globalThis.YTKitCore && globalThis.YTKitCore.audioTrackSelection;
     if (_audioTrackSelection && _audioTrackSelection.ATTRS
         && _audioTrackSelection.ATTRS.syncOffset) {
         _audioSyncAttr = _audioTrackSelection.ATTRS.syncOffset;
+    }
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.autoGain) {
+        _audioAutoGainAttr = _audioTrackSelection.ATTRS.autoGain;
+    }
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.highPass) {
+        _audioHighPassAttr = _audioTrackSelection.ATTRS.highPass;
     }
     var _normalizeAudioSyncOffset = _audioTrackSelection
         && typeof _audioTrackSelection.normalizeAudioSyncOffset === 'function'
@@ -537,6 +558,9 @@
     var _source = null;
     var _monoMerge = null;
     var _compressor = null;
+    var _highPassNode = null;
+    var _autoGainAnalyser = null;
+    var _autoGainNode = null;
     var _panNode = null;
     var _gainNode = null;
     var _connectedVideo = null;
@@ -547,6 +571,7 @@
 
     function isActive() {
         return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled
+            || _autoGainEnabled || _highPassEnabled
             || Math.abs(_panValue) > 0.001 || _audioSyncOffsetMs > 0;
     }
 
@@ -607,15 +632,39 @@
             _compressor.ratio.value = 12;
             _compressor.attack.value = 0.003;
             _compressor.release.value = 0.25;
+            _highPassNode = typeof ctx.createBiquadFilter === 'function'
+                ? ctx.createBiquadFilter()
+                : null;
+            _autoGainAnalyser = typeof ctx.createAnalyser === 'function'
+                ? ctx.createAnalyser()
+                : null;
+            if (_autoGainAnalyser) {
+                try {
+                    _autoGainAnalyser.fftSize = 2048;
+                    _autoGainAnalyser.smoothingTimeConstant = 0.8;
+                } catch (e) { /* reason: analyser tuning is best-effort */ }
+            }
+            _autoGainNode = ctx.createGain();
             _panNode = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
             _gainNode = ctx.createGain();
             _source.connect(_monoMerge);
             _monoMerge.connect(_compressor);
+            var tail = _compressor;
+            if (_highPassNode) {
+                tail.connect(_highPassNode);
+                tail = _highPassNode;
+            }
+            if (_autoGainAnalyser) {
+                tail.connect(_autoGainAnalyser);
+                tail = _autoGainAnalyser;
+            }
+            tail.connect(_autoGainNode);
+            tail = _autoGainNode;
             if (_panNode) {
-                _compressor.connect(_panNode);
+                tail.connect(_panNode);
                 _panNode.connect(_gainNode);
             } else {
-                _compressor.connect(_gainNode);
+                tail.connect(_gainNode);
             }
             _delayNode = typeof ctx.createDelay === 'function'
                 ? ctx.createDelay(0.5)
@@ -647,6 +696,14 @@
         }
         if (_panNode) _panNode.pan.value = _panValue;
         if (_gainNode) _gainNode.gain.value = _boostGain;
+        if (_highPassNode) {
+            _highPassNode.type = 'highpass';
+            _highPassNode.frequency.value = _highPassEnabled
+                ? HIGH_PASS_CUTOFF_HZ
+                : HIGH_PASS_BYPASS_HZ;
+            if (_highPassNode.Q) _highPassNode.Q.value = HIGH_PASS_Q;
+        }
+        if (_autoGainNode && !_autoGainEnabled) _autoGainNode.gain.value = 1;
         if (_delayNode && _delayNode.delayTime) {
             // Web Audio is causal: positive values delay the audio path. A
             // negative request cannot be rendered as negative latency, so it
@@ -662,15 +719,67 @@
                 _compressor.ratio.value = 1;
             }
         }
+        syncAutoGainMeter();
+    }
+
+    function stopAutoGainMeter() {
+        if (_autoGainMeter !== null && typeof clearInterval === 'function') {
+            clearInterval(_autoGainMeter);
+        }
+        _autoGainMeter = null;
+        _autoGainSamples = null;
+    }
+
+    function updateAutoGain() {
+        if (!_autoGainEnabled || !_autoGainNode || !_autoGainAnalyser
+            || typeof _autoGainAnalyser.getFloatTimeDomainData !== 'function'
+            || typeof Float32Array === 'undefined') return;
+        var sampleCount = Number(_autoGainAnalyser.fftSize) || 2048;
+        if (!_autoGainSamples || _autoGainSamples.length !== sampleCount) {
+            _autoGainSamples = new Float32Array(sampleCount);
+        }
+        try {
+            _autoGainAnalyser.getFloatTimeDomainData(_autoGainSamples);
+        } catch (e) {
+            return; // reason: a browser can invalidate the analyser during teardown
+        }
+        var sum = 0;
+        for (var i = 0; i < _autoGainSamples.length; i++) {
+            var sample = _autoGainSamples[i] || 0;
+            sum += sample * sample;
+        }
+        var rms = Math.sqrt(sum / _autoGainSamples.length);
+        if (!isFinite(rms) || rms < 0.0001) return;
+        var desired = Math.max(AUTO_GAIN_MIN, Math.min(AUTO_GAIN_MAX, AUTO_GAIN_TARGET_RMS / rms));
+        var current = Number(_autoGainNode.gain.value);
+        if (!isFinite(current)) current = 1;
+        var smoothing = desired >= current ? 0.35 : 0.12;
+        _autoGainNode.gain.value = current + ((desired - current) * smoothing);
+    }
+
+    function syncAutoGainMeter() {
+        if (!_autoGainEnabled) {
+            stopAutoGainMeter();
+            return;
+        }
+        updateAutoGain();
+        if (_autoGainMeter === null && _autoGainAnalyser
+            && typeof setInterval === 'function' && typeof clearInterval === 'function') {
+            _autoGainMeter = setInterval(updateAutoGain, AUTO_GAIN_INTERVAL_MS);
+        }
     }
 
     function disconnectProcessing() {
         // Disconnect the processing chain but keep the source node and context
         // alive — Chrome binds media elements to their first source forever.
         // Route source → destination as passthrough so audio is never muted.
+        stopAutoGainMeter();
         if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } }
         if (_monoMerge) { try { _monoMerge.disconnect(); } catch (e) { /* reason: already disconnected */ } _monoMerge = null; }
         if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
+        if (_highPassNode) { try { _highPassNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _highPassNode = null; }
+        if (_autoGainAnalyser) { try { _autoGainAnalyser.disconnect(); } catch (e) { /* reason: already disconnected */ } _autoGainAnalyser = null; }
+        if (_autoGainNode) { try { _autoGainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _autoGainNode = null; }
         if (_panNode) { try { _panNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _panNode = null; }
         if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
         if (_delayNode) { try { _delayNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _delayNode = null; }
@@ -702,6 +811,20 @@
     _obsRegister(['data-ytkit-audio-normalize'], function() {
         var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
         _normalizeEnabled = val === '1';
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioAutoGainAttr], function() {
+        var val = document.documentElement.getAttribute(_audioAutoGainAttr);
+        _autoGainEnabled = val === '1';
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioHighPassAttr], function() {
+        var val = document.documentElement.getAttribute(_audioHighPassAttr);
+        _highPassEnabled = val === '1';
         if (isActive()) connect();
         else disconnectProcessing();
     });

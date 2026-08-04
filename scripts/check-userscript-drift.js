@@ -96,6 +96,8 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     antiTranslateTranscript: 'not-yet-ported',
     astraContextMenu: 'chrome-api',
     audioNormalization: 'intentional-extension-only',
+    audioAutoGain: 'intentional-extension-only',
+    audioHighPass: 'intentional-extension-only',
     audioPan: 'intentional-extension-only',
     audioSyncOffsetMs: 'intentional-extension-only',
     audioTrackLanguage: 'intentional-extension-only',

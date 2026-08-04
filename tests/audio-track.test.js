@@ -58,6 +58,8 @@ test('language selection prefers an exact BCP-47 match before a primary-subtag m
 
 test('audio sync offset is shared and clamped to the bounded bridge range', () => {
     assert.equal(audio.ATTRS.syncOffset, 'data-ytkit-audio-sync-offset');
+    assert.equal(audio.ATTRS.autoGain, 'data-ytkit-audio-auto-gain');
+    assert.equal(audio.ATTRS.highPass, 'data-ytkit-audio-high-pass');
     assert.equal(audio.normalizeAudioSyncOffset(-999), -500);
     assert.equal(audio.normalizeAudioSyncOffset(245.6), 246);
     assert.equal(audio.normalizeAudioSyncOffset(999), 500);

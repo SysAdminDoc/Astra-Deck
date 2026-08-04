@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Audio chain completion.** The shared MAIN-world audio graph now includes
+  independently toggleable adaptive auto-gain and an 80 Hz high-pass filter,
+  with bounded gain control, live updates, and SPA-safe teardown/reconnect.
 - **Channel allowlist mode.** Video Hider can now apply channel filtering as an
   explicitly opt-in allowlist, with separate backupable channel storage,
   recoverable settings management, and an empty-list fail-open guard.
