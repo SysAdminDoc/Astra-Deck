@@ -2194,6 +2194,8 @@ return response;
 
         .ytkit-global-toast {
             position: fixed;
+            inset: auto;
+            margin: 0;
             bottom: calc(18px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%) translateY(18px) scale(0.985);
@@ -2222,6 +2224,14 @@ return response;
                 opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
                 transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 220ms ease;
+        }
+
+        .ytkit-global-toast:popover-open {
+            inset: auto !important;
+            right: auto !important;
+            bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+            left: 50% !important;
+            margin: 0 !important;
         }
 
         .ytkit-global-toast.is-visible {
@@ -2455,6 +2465,53 @@ return response;
         }
     }
 
+    function supportsPopover() {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.supportsPopover === 'function') {
+            return mod.supportsPopover();
+        }
+        const HTMLElementCtor = typeof globalThis !== 'undefined' ? globalThis.HTMLElement : null;
+        return typeof HTMLElementCtor?.prototype?.showPopover === 'function'
+            && typeof HTMLElementCtor?.prototype?.hidePopover === 'function';
+    }
+
+    function createCloseWatcher(onClose) {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.createCloseWatcher === 'function') {
+            return mod.createCloseWatcher(onClose);
+        }
+        const CloseWatcherCtor = typeof globalThis !== 'undefined' ? globalThis.CloseWatcher : null;
+        if (typeof CloseWatcherCtor !== 'function' || typeof onClose !== 'function') return null;
+        try {
+            const watcher = new CloseWatcherCtor();
+            watcher.addEventListener('close', onClose);
+            return watcher;
+        } catch (_) {
+            // reason: CloseWatcher can reject construction outside a user activation.
+            return null;
+        }
+    }
+
+    function destroyCloseWatcher(watcher) {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.destroyCloseWatcher === 'function') {
+            mod.destroyCloseWatcher(watcher);
+            return;
+        }
+        if (!watcher) return;
+        try {
+            watcher.destroy?.();
+        } catch (_) {
+            // reason: the browser may have already destroyed the watcher.
+        }
+    }
+
     // v4.42.0: lazy delegation to extension/core/toast-dom.js. The
     // first call to showToast/dismissToast builds the system once and
     // caches it on `_toastSystem`. If the module is unavailable
@@ -2475,6 +2532,9 @@ return response;
                 normalizeToastTone,
                 getToastRgb,
                 getToastBadgeLabel,
+                supportsPopover,
+                createCloseWatcher,
+                destroyCloseWatcher,
                 t,
                 getToastAriaDefaults: (tone) => normalizeToastTone(tone) === 'error'
                     ? { role: 'alert', ariaLive: 'assertive' }
@@ -2501,6 +2561,22 @@ return response;
         if (toast._removeTimer) {
             clearTimeout(toast._removeTimer);
             toast._removeTimer = null;
+        }
+        if (toast._closeWatcher) {
+            const watcher = toast._closeWatcher;
+            toast._closeWatcher = null;
+            destroyCloseWatcher(watcher);
+        }
+        if (toast._popoverToggleHandler) {
+            toast.removeEventListener('toggle', toast._popoverToggleHandler);
+            toast._popoverToggleHandler = null;
+        }
+        if (typeof toast.hidePopover === 'function') {
+            try {
+                toast.hidePopover();
+            } catch (_) {
+                // reason: the toast may already have closed natively.
+            }
         }
         toast.classList.remove('is-visible');
         if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -2659,7 +2735,35 @@ return response;
         toast.appendChild(badge);
         toast.appendChild(body);
         toast.appendChild(actionWrap);
+        let usePopover = false;
+        try {
+            usePopover = supportsPopover() === true;
+        } catch (_) {
+            // reason: host feature detection must not prevent a toast.
+        }
+        if (usePopover) toast.setAttribute('popover', 'manual');
         document.body.appendChild(toast);
+
+        if (usePopover) {
+            const toggleHandler = (event) => {
+                if (event.newState !== 'closed') return;
+                toast.removeEventListener('toggle', toggleHandler);
+                toast._popoverToggleHandler = null;
+                dismissToast(toast);
+            };
+            toast._popoverToggleHandler = toggleHandler;
+            toast.addEventListener('toggle', toggleHandler);
+            try {
+                toast.showPopover();
+                toast._closeWatcher = createCloseWatcher(() => dismissToast(toast));
+            } catch (_) {
+                // reason: a browser can expose the Popover API but reject a particular show call.
+                toast.removeEventListener('toggle', toggleHandler);
+                toast._popoverToggleHandler = null;
+                toast.removeAttribute('popover');
+                usePopover = false;
+            }
+        }
 
         let remainingMs = durationMs;
         let dismissAt = Date.now() + remainingMs;
@@ -4647,6 +4751,9 @@ return response;
         ICONS: globalThis.YTKitCore?.ICONS,
         BRAND,
         t,
+        supportsPopover,
+        createCloseWatcher,
+        destroyCloseWatcher,
         getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
     });
     const {
@@ -5135,6 +5242,9 @@ return response;
                 storageReadJSON,
                 storageWrite,
                 t,
+                supportsPopover,
+                createCloseWatcher,
+                destroyCloseWatcher,
                 trapFocusWithin,
                 getPinSessionUnlocked: () => _pinSessionUnlocked,
                 getPageModalOpen: () => _pageModalOpen,
@@ -5204,6 +5314,7 @@ return response;
     }
 
     let _settingsPanelLastFocus = null;
+    let _settingsPanelCloseWatcher = null;
     let _pageModalOpen = false;
     let _pageModalEl = null;
     let _pageModalOverlay = null;
@@ -5226,6 +5337,15 @@ return response;
         document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
         panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
         if (open) {
+            if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
+                try {
+                    panel.showPopover();
+                    _settingsPanelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
+                } catch (_) {
+                    // reason: a browser can expose Popover but reject this show call.
+                    panel.removeAttribute('popover');
+                }
+            }
             const focusInitialControl = () => {
                 if (!isSettingsPanelOpen()) return;
                 const searchInput = document.getElementById('ytkit-search');
@@ -5240,6 +5360,18 @@ return response;
                 }
             });
         } else if (wasOpen) {
+            if (_settingsPanelCloseWatcher) {
+                const watcher = _settingsPanelCloseWatcher;
+                _settingsPanelCloseWatcher = null;
+                destroyCloseWatcher(watcher);
+            }
+            if (typeof panel?.hidePopover === 'function') {
+                try {
+                    panel.hidePopover();
+                } catch (_) {
+                    // reason: the panel may already have been closed natively.
+                }
+            }
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
                 ? _settingsPanelLastFocus
                 : document.getElementById('ytkit-watch-btn') || document.getElementById('ytkit-masthead-btn');
@@ -42022,6 +42154,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         panel.setAttribute('aria-modal', 'true');
         panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
         panel.setAttribute('aria-hidden', 'true');
+        let panelUsesPopover = false;
+        try {
+            panelUsesPopover = supportsPopover() === true;
+        } catch (_) {
+            // reason: host feature detection must not prevent the panel from building.
+        }
+        if (panelUsesPopover) {
+            panel.setAttribute('popover', 'manual');
+            panel.addEventListener('toggle', (event) => {
+                if (event.newState === 'closed' && isSettingsPanelOpen()) {
+                    setSettingsPanelOpen(false);
+                }
+            });
+        }
         const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
         const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
         panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
@@ -45395,6 +45541,8 @@ body.ytkit-panel-open {
 
 #ytkit-settings-panel {
     position: fixed;
+    inset: auto;
+    margin: 0;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.96);
@@ -45417,6 +45565,15 @@ body.ytkit-panel-open {
     pointer-events: none;
     transition: opacity 260ms var(--ytkit-ease-out), transform 260ms var(--ytkit-ease-out);
     overflow: hidden;
+}
+
+#ytkit-settings-panel:popover-open {
+    inset: auto !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    margin: 0 !important;
 }
 
 #ytkit-overlay {
@@ -50314,6 +50471,8 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
 
         .ytkit-dl-popup {
             position: fixed;
+            inset: auto;
+            margin: 0;
             width: 292px;
             padding: 0;
             border-radius: 12px;
@@ -50329,6 +50488,11 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             flex-direction: column;
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
+        }
+
+        .ytkit-dl-popup:popover-open {
+            inset: auto !important;
+            margin: 0 !important;
         }
 
         .ytkit-dl-popup [hidden] {

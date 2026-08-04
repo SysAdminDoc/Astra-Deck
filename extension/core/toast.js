@@ -85,12 +85,43 @@
         return { role: 'status', ariaLive: 'polite' };
     }
 
+    function supportsPopover() {
+        const HTMLElementCtor = typeof globalThis !== 'undefined' ? globalThis.HTMLElement : null;
+        return typeof HTMLElementCtor?.prototype?.showPopover === 'function'
+            && typeof HTMLElementCtor?.prototype?.hidePopover === 'function';
+    }
+
+    function createCloseWatcher(onClose) {
+        const CloseWatcherCtor = typeof globalThis !== 'undefined' ? globalThis.CloseWatcher : null;
+        if (typeof CloseWatcherCtor !== 'function' || typeof onClose !== 'function') return null;
+        try {
+            const watcher = new CloseWatcherCtor();
+            watcher.addEventListener('close', onClose);
+            return watcher;
+        } catch (_) {
+            // reason: CloseWatcher can reject construction outside a user activation.
+            return null;
+        }
+    }
+
+    function destroyCloseWatcher(watcher) {
+        if (!watcher) return;
+        try {
+            watcher.destroy?.();
+        } catch (_) {
+            // reason: the browser may have already destroyed the watcher.
+        }
+    }
+
     core.toast = Object.freeze({
         inferToastTone,
         normalizeToastTone,
         getToastRgb,
         getToastBadgeLabel,
         getToastAriaDefaults,
+        supportsPopover,
+        createCloseWatcher,
+        destroyCloseWatcher,
         TONE_RGB,
         TONE_BADGE
     });
@@ -98,7 +129,8 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             inferToastTone, normalizeToastTone, getToastRgb, getToastBadgeLabel,
-            getToastAriaDefaults, TONE_RGB, TONE_BADGE
+            getToastAriaDefaults, supportsPopover, createCloseWatcher,
+            destroyCloseWatcher, TONE_RGB, TONE_BADGE
         };
     }
 })();
