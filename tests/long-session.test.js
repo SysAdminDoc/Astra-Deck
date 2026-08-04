@@ -12,9 +12,10 @@ const coreFiles = [
     'navigation.js'
 ];
 
-function createLongSessionHarness() {
+function createLongSessionHarness({ navigationApi = false } = {}) {
     const documentListeners = new Map();
     const windowListeners = new Map();
+    const navigationListeners = new Map();
     const observers = [];
     const rafQueue = [];
     const timers = new Map();
@@ -36,6 +37,12 @@ function createLongSessionHarness() {
         const listeners = Array.from(map.get(type) || []);
         for (const callback of listeners) callback({ type });
     }
+
+    const navigation = navigationApi ? {
+        addEventListener(type, callback) { addListener(navigationListeners, type, callback); },
+        removeEventListener(type, callback) { removeListener(navigationListeners, type, callback); },
+        dispatchNavigate() { dispatch(navigationListeners, 'navigate'); }
+    } : undefined;
 
     const body = { nodeType: 1, nodeName: 'BODY' };
     const documentElement = { nodeType: 1, nodeName: 'HTML' };
@@ -108,6 +115,7 @@ function createLongSessionHarness() {
         },
         addEventListener(type, callback) { addListener(windowListeners, type, callback); },
         removeEventListener(type, callback) { removeListener(windowListeners, type, callback); },
+        navigation,
         globalThis: null,
         window: null
     };
@@ -159,6 +167,8 @@ function createLongSessionHarness() {
         activeObservers,
         sharedMutationObserver,
         listenerCount,
+        navigationListenerCount(type) { return (navigationListeners.get(type) || new Set()).size; },
+        dispatchNavigation() { navigation?.dispatchNavigate(); },
         location: context.location,
         viewTransitionCount: () => viewTransitions,
         setViewTransitionThrows(value) { viewTransitionThrows = !!value; },
@@ -284,6 +294,45 @@ test('long-session route/mutation stress keeps observers and diagnostics bounded
     assert.equal(harness.listenerCount('document', 'yt-navigate-finish'), 0);
     assert.equal(harness.listenerCount('document', 'yt-page-data-updated'), 0);
     assert.equal(harness.listenerCount('window', 'popstate'), 0);
+});
+
+test('Navigation API is the primary route signal and remains bounded over 1000 cycles', () => {
+    const harness = createLongSessionHarness({ navigationApi: true });
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+
+    let navRuns = 0;
+    core.addNavigateRule('navigation-api-primary', () => { navRuns += 1; });
+    core.addScopedMutationRule('navigation-api-scoped', 'ytd-rich-item-renderer', () => {});
+
+    assert.equal(harness.navigationListenerCount('navigate'), 1,
+        'Navigation API should own route dispatch when available');
+    assert.equal(harness.listenerCount('document', 'yt-navigate-finish'), 0,
+        'YouTube route events should remain dormant on the API path');
+    assert.equal(harness.listenerCount('window', 'popstate'), 0,
+        'popstate should remain dormant on the API path');
+    assert.equal(harness.activeObservers().length, 1);
+
+    for (let i = 0; i < 1000; i++) {
+        harness.location.href = `https://www.youtube.com/watch?v=api-${i}`;
+        harness.dispatchNavigation();
+        harness.flushTimers();
+        const observer = harness.sharedMutationObserver();
+        assert.ok(observer, 'shared mutation observer must stay connected on API routes');
+        observer.emit([{ type: 'childList', addedNodes: [] }]);
+        harness.flushRaf();
+    }
+
+    assert.equal(navRuns, 1001,
+        'Navigation API route dispatch should run once per cycle plus registration');
+    assert.equal(harness.activeObservers().length, 1,
+        'Navigation API cycles must not multiply observers');
+
+    core.removeScopedMutationRule('navigation-api-scoped');
+    core.removeNavigateRule('navigation-api-primary');
+    assert.equal(harness.navigationListenerCount('navigate'), 0,
+        'Navigation API listener must be removed after the last rule');
+    assert.equal(harness.activeObservers().length, 0);
 });
 
 test('mutation-rule circuit isolates a self-triggering rule and resets on navigation or retry', () => {
