@@ -198,6 +198,9 @@
             BRAND = {},
             t = (_key, fallback) => fallback,
             getPlayerResponseGlobal = () => null,
+            supportsPopover = () => false,
+            createCloseWatcher = () => null,
+            destroyCloseWatcher = () => {},
             setTimeoutFn = setTimeout,
             clearTimeoutFn = clearTimeout,
             setIntervalFn = setInterval,
@@ -1312,10 +1315,16 @@
         let _dlPopup = null;
         let _dlPopupCleanup = null;
         let _dlPopupReturnFocus = null;
+        let _dlPopupCloseWatcher = null;
 
         function _closeDlPopup() {
             const returnFocus = _dlPopupReturnFocus;
             _dlPopupReturnFocus = null;
+            if (_dlPopupCloseWatcher) {
+                const watcher = _dlPopupCloseWatcher;
+                _dlPopupCloseWatcher = null;
+                destroyCloseWatcher(watcher);
+            }
             if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
             if (_dlPopup) {
                 try { if (_dlPopup.hidePopover) _dlPopup.hidePopover(); } catch (_) { /* reason: already hidden or not a popover */ }
@@ -1376,7 +1385,12 @@
             popup.setAttribute('role', 'dialog');
             popup.setAttribute('aria-modal', 'true');
             popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
-            const _usePopover = typeof HTMLElement.prototype.showPopover === 'function';
+            let _usePopover = false;
+            try {
+                _usePopover = supportsPopover() === true;
+            } catch (_) {
+                // reason: host feature detection must not prevent download options.
+            }
             const _useCssAnchor = Boolean(
                 anchorEl?.matches?.('.ytkit-po-dl')
                 && CSS.supports?.('anchor-name: --x')
@@ -1909,11 +1923,22 @@
             };
             popup.addEventListener('keydown', dialogKeydown);
 
+            let popupToggleHandler = null;
             if (_usePopover) {
-                popup.showPopover();
-                popup.addEventListener('toggle', (e) => {
-                    if (e.newState === 'closed') _closeDlPopup();
-                }, { once: true });
+                try {
+                    popup.showPopover();
+                    popupToggleHandler = (e) => {
+                        if (e.newState !== 'closed') return;
+                        popup.removeEventListener('toggle', popupToggleHandler);
+                        _closeDlPopup();
+                    };
+                    popup.addEventListener('toggle', popupToggleHandler);
+                    _dlPopupCloseWatcher = createCloseWatcher(() => _closeDlPopup());
+                } catch (_) {
+                    // reason: a browser can expose Popover but reject this show call.
+                    popup.removeAttribute('popover');
+                    _usePopover = false;
+                }
             }
 
             if (anchorEl && !_useCssAnchor) {
@@ -1950,11 +1975,13 @@
                     document.removeEventListener('click', outsideClick, true);
                     document.removeEventListener('keydown', escHandler);
                     popup.removeEventListener('keydown', dialogKeydown);
+                    if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
                     anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             } else {
                 _dlPopupCleanup = () => {
                     popup.removeEventListener('keydown', dialogKeydown);
+                    if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
                     anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             }

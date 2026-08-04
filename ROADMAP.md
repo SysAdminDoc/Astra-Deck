@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Move injected overlays to the Popover API with CloseWatcher
-  Why: Astra's overlays fight YouTube for stacking context — the toast z-index had to be raised to `2147483647` and the settings panel forces `2147483646` — which is a losing arms race. The Popover API renders in the top layer and is Baseline (newly available 2025-01-27); `CloseWatcher` gives one consistent Esc/back close path. The existing headless `smoke-settings-overlay.js` harness can verify this without a live browser.
-  Evidence: `extension/ytkit.js` `Z.TOAST` and settings-panel z-index forcing; https://webstatus.dev (Popover API Baseline 2025-01-27; CloseWatcher Chrome 126 / Firefox 149).
-  Touches: `extension/core/toast-dom.js`, `extension/core/toast.js`, `extension/ytkit.js` settings panel, `extension/features/settings-panel/index.js`, `scripts/smoke-settings-overlay.js`.
-  Acceptance: settings panel, toasts and the download-options popup render as popovers, with a non-popover fallback retained for the userscript vehicle; the rendered overlay smoke passes in all existing states plus a stacking state that previously required the maximum z-index; `CloseWatcher` handles Esc where available with the current key handler as fallback.
-  Complexity: L
-
 - [ ] P2 — Dual-language subtitles
   Why: A second independently selected caption track is valuable for language learners but must be explicitly enabled and configured.
   Evidence: YtDLS (CY Fung), Youtube dual subtitle (0xjax), vanadis bilingual persist.

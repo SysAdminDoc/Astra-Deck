@@ -6636,8 +6636,42 @@ function loadToastModule() {
 test('v4.14.0 core/toast exports the full helper surface', () => {
     const core = loadToastModule();
     assert.ok(core.toast, 'core.toast must be present after module load');
-    for (const name of ['inferToastTone', 'normalizeToastTone', 'getToastRgb', 'getToastBadgeLabel', 'getToastAriaDefaults', 'TONE_RGB', 'TONE_BADGE']) {
+    for (const name of ['inferToastTone', 'normalizeToastTone', 'getToastRgb', 'getToastBadgeLabel', 'getToastAriaDefaults', 'supportsPopover', 'createCloseWatcher', 'destroyCloseWatcher', 'TONE_RGB', 'TONE_BADGE']) {
         assert.ok(name in core.toast, 'core.toast must export ' + name);
+    }
+});
+
+test('Popover capability helpers fail safely and route CloseWatcher close events', () => {
+    const previousHTMLElement = globalThis.HTMLElement;
+    const previousCloseWatcher = globalThis.CloseWatcher;
+    let destroyed = 0;
+    let closeListener = null;
+    class FakeHTMLElement {}
+    FakeHTMLElement.prototype.showPopover = () => {};
+    FakeHTMLElement.prototype.hidePopover = () => {};
+    class FakeCloseWatcher {
+        addEventListener(type, listener) {
+            if (type === 'close') closeListener = listener;
+        }
+        destroy() { destroyed += 1; }
+    }
+    globalThis.HTMLElement = FakeHTMLElement;
+    globalThis.CloseWatcher = FakeCloseWatcher;
+    try {
+        const core = loadToastModule();
+        assert.equal(core.toast.supportsPopover(), true);
+        let closed = 0;
+        const watcher = core.toast.createCloseWatcher(() => { closed += 1; });
+        assert.ok(watcher);
+        closeListener?.();
+        assert.equal(closed, 1);
+        core.toast.destroyCloseWatcher(watcher);
+        assert.equal(destroyed, 1);
+    } finally {
+        if (previousHTMLElement === undefined) delete globalThis.HTMLElement;
+        else globalThis.HTMLElement = previousHTMLElement;
+        if (previousCloseWatcher === undefined) delete globalThis.CloseWatcher;
+        else globalThis.CloseWatcher = previousCloseWatcher;
     }
 });
 

@@ -52,7 +52,10 @@
             storageReadJSON,
             storageWrite,
             t,
-            trapFocusWithin
+            trapFocusWithin,
+            supportsPopover = () => false,
+            createCloseWatcher = () => null,
+            destroyCloseWatcher = () => {}
         } = deps;
         const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
             ? deps.getPageModalOpen
@@ -72,6 +75,7 @@
         let _globalUIListenersAttached = false;
         let _panelUIListenersAttached = false;
         let _panelSearchUpdater = null;
+        let _panelCloseWatcher = null;
 
 function isSettingsPanelOpen() {
         return !!document.body?.classList.contains(PANEL_OPEN_CLASS);
@@ -89,6 +93,15 @@ function setSettingsPanelOpen(open) {
         document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
         panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
         if (open) {
+            if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
+                try {
+                    panel.showPopover();
+                    _panelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
+                } catch (_) {
+                    // reason: a browser can expose Popover but reject this show call.
+                    panel.removeAttribute('popover');
+                }
+            }
             const focusInitialControl = () => {
                 if (!isSettingsPanelOpen()) return;
                 const searchInput = document.getElementById('ytkit-search');
@@ -106,6 +119,18 @@ function setSettingsPanelOpen(open) {
                 }
             });
         } else if (wasOpen) {
+            if (_panelCloseWatcher) {
+                const watcher = _panelCloseWatcher;
+                _panelCloseWatcher = null;
+                destroyCloseWatcher(watcher);
+            }
+            if (typeof panel?.hidePopover === 'function') {
+                try {
+                    panel.hidePopover();
+                } catch (_) {
+                    // reason: the panel may already have been closed natively.
+                }
+            }
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
                 ? _settingsPanelLastFocus
                 : document.getElementById('ytkit-watch-btn') || document.getElementById('ytkit-masthead-btn');
@@ -260,6 +285,20 @@ function buildSettingsPanel() {
         panel.setAttribute('aria-modal', 'true');
         panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
         panel.setAttribute('aria-hidden', 'true');
+        let panelUsesPopover = false;
+        try {
+            panelUsesPopover = supportsPopover() === true;
+        } catch (_) {
+            // reason: host feature detection must not prevent the panel from building.
+        }
+        if (panelUsesPopover) {
+            panel.setAttribute('popover', 'manual');
+            panel.addEventListener('toggle', (event) => {
+                if (event.newState === 'closed' && isSettingsPanelOpen()) {
+                    setSettingsPanelOpen(false);
+                }
+            });
+        }
         const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
         const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
         panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';

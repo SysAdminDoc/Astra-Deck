@@ -17,6 +17,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Content-script startup budget.** A headless fixture benchmark now tracks
   parse-plus-init and first-feature-paint medians, and the repository check
   rejects regressions beyond the recorded tolerance.
+- **Popover overlay top layer.** Settings, toasts, and download options now
+  use feature-detected Popovers with CloseWatcher close handling while
+  retaining the userscript and older-browser fallback path.
 
 ### Fixed
 - **Audio sync offset.** The shared MAIN-world audio graph now exposes a

@@ -37,6 +37,19 @@
             || ((tone) => tone === 'error'
                 ? { role: 'alert', ariaLive: 'assertive' }
                 : { role: 'status', ariaLive: 'polite' });
+        const supportsPopover = deps.supportsPopover
+            || globalThis.YTKitCore?.toast?.supportsPopover
+            || (() => {
+                const HTMLElementCtor = typeof globalThis !== 'undefined' ? globalThis.HTMLElement : null;
+                return typeof HTMLElementCtor?.prototype?.showPopover === 'function'
+                    && typeof HTMLElementCtor?.prototype?.hidePopover === 'function';
+            });
+        const createCloseWatcher = deps.createCloseWatcher
+            || globalThis.YTKitCore?.toast?.createCloseWatcher
+            || (() => null);
+        const destroyCloseWatcher = deps.destroyCloseWatcher
+            || globalThis.YTKitCore?.toast?.destroyCloseWatcher
+            || (() => {});
 
         function dismissToast(toast, immediate = false) {
             if (!toast) return;
@@ -47,6 +60,22 @@
             if (toast._removeTimer) {
                 clearTimeout(toast._removeTimer);
                 toast._removeTimer = null;
+            }
+            if (toast._closeWatcher) {
+                const watcher = toast._closeWatcher;
+                toast._closeWatcher = null;
+                destroyCloseWatcher(watcher);
+            }
+            if (toast._popoverToggleHandler) {
+                toast.removeEventListener('toggle', toast._popoverToggleHandler);
+                toast._popoverToggleHandler = null;
+            }
+            if (typeof toast.hidePopover === 'function') {
+                try {
+                    toast.hidePopover();
+                } catch (_) {
+                    // reason: the toast may already have closed natively.
+                }
             }
             toast.classList.remove('is-visible');
             // The reduced-motion branch matches ytkit.js's inline
@@ -143,7 +172,35 @@
             toast.appendChild(badge);
             toast.appendChild(body);
             toast.appendChild(actionWrap);
+            let usePopover = false;
+            try {
+                usePopover = supportsPopover() === true;
+            } catch (_) {
+                // reason: host feature detection must not prevent a toast.
+            }
+            if (usePopover) toast.setAttribute('popover', 'manual');
             document.body.appendChild(toast);
+
+            if (usePopover) {
+                const toggleHandler = (event) => {
+                    if (event.newState !== 'closed') return;
+                    toast.removeEventListener('toggle', toggleHandler);
+                    toast._popoverToggleHandler = null;
+                    dismissToast(toast);
+                };
+                toast._popoverToggleHandler = toggleHandler;
+                toast.addEventListener('toggle', toggleHandler);
+                try {
+                    toast.showPopover();
+                    toast._closeWatcher = createCloseWatcher(() => dismissToast(toast));
+                } catch (_) {
+                    // reason: a browser can expose the Popover API but reject a particular show call.
+                    toast.removeEventListener('toggle', toggleHandler);
+                    toast._popoverToggleHandler = null;
+                    toast.removeAttribute('popover');
+                    usePopover = false;
+                }
+            }
 
             let remainingMs = durationMs;
             let dismissAt = Date.now() + remainingMs;

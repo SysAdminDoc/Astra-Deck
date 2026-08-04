@@ -182,6 +182,12 @@ const IN_PAGE_CHECKS = `(() => {
     const failures = [];
     const panel = document.querySelector(PANEL_SELECTOR);
     if (!panel) return JSON.stringify({ failures: ['settings overlay root not found (' + PANEL_SELECTOR + ')'] });
+    const hasPopover = typeof globalThis.HTMLElement?.prototype?.showPopover === 'function'
+        && typeof globalThis.HTMLElement?.prototype?.hidePopover === 'function';
+    if (hasPopover) {
+        if (panel.getAttribute('popover') !== 'manual') failures.push('settings panel did not opt into manual Popover mode');
+        if (!panel.matches(':popover-open')) failures.push('settings panel is not open in the Popover top layer');
+    }
     const rect = panel.getBoundingClientRect();
     const controls = panel.querySelectorAll('button, input, select, textarea, [role="tab"]');
     if (rect.width < 280 || rect.height < 300) {
@@ -191,7 +197,8 @@ const IN_PAGE_CHECKS = `(() => {
         failures.push('blank render: only ' + controls.length + ' interactive controls inside the panel');
     }
     if (rect.left < -1 || rect.right > window.innerWidth + 1) {
-        failures.push('horizontal overflow: panel spans ' + Math.round(rect.left) + '..' + Math.round(rect.right) + ' in a ' + window.innerWidth + 'px viewport');
+        const panelStyle = getComputedStyle(panel);
+        failures.push('horizontal overflow: panel spans ' + Math.round(rect.left) + '..' + Math.round(rect.right) + ' in a ' + window.innerWidth + 'px viewport (left ' + panelStyle.left + ', top ' + panelStyle.top + ', inset ' + panelStyle.inset + ', margin ' + panelStyle.margin + ', transform ' + panelStyle.transform + ')');
     }
     if (document.documentElement.scrollWidth > window.innerWidth + 1) {
         failures.push('document horizontal overflow: scrollWidth ' + document.documentElement.scrollWidth + ' > viewport ' + window.innerWidth);
@@ -410,6 +417,9 @@ function buildFixture(stageDir, { fallbackOnly = false } = {}) {
     const downloadUi = typeof factory === 'function' ? factory({
         appState: { settings: {} },
         extensionFetchJson: async () => ({ data: null }),
+        supportsPopover: () => globalThis.YTKitCore?.toast?.supportsPopover?.() === true,
+        createCloseWatcher: (onClose) => globalThis.YTKitCore?.toast?.createCloseWatcher?.(onClose) || null,
+        destroyCloseWatcher: (watcher) => globalThis.YTKitCore?.toast?.destroyCloseWatcher?.(watcher),
         t: (_key, fallback) => fallback
     }) : null;
     globalThis.__ytkitA11y = {
@@ -417,6 +427,9 @@ function buildFixture(stageDir, { fallbackOnly = false } = {}) {
             if (!downloadUi) return false;
             downloadUi.showDownloadPopup(anchor);
             return Boolean(document.querySelector('.ytkit-dl-popup'));
+        },
+        closeDownload() {
+            downloadUi?._closeDlPopup?.();
         }
     };
 })();
@@ -813,6 +826,50 @@ async function main() {
                     captureBeyondViewport: false
                 });
                 fs.writeFileSync(path.join(outDir, 'blue-light-default.png'), Buffer.from(featureShot.data, 'base64'));
+            }
+            if (state.name === 'desktop-dark') {
+                // Open the download options over the already-open settings
+                // panel. In Popover-capable engines the later top-layer entry
+                // must win hit testing even though both legacy fallbacks keep
+                // their historical maximum z-index values.
+                const stackingProof = await client.evaluate(`(() => {
+                    const supports = typeof globalThis.HTMLElement?.prototype?.showPopover === 'function'
+                        && typeof globalThis.HTMLElement?.prototype?.hidePopover === 'function';
+                    const opened = globalThis.__ytkitA11y?.openDownload?.() === true;
+                    const popup = document.querySelector('.ytkit-dl-popup');
+                    const panel = document.querySelector('#ytkit-settings-panel');
+                    if (!opened || !popup || !panel) return { supports, opened, found: Boolean(popup), panelOpen: Boolean(panel) };
+                    const rect = popup.getBoundingClientRect();
+                    const probe = document.elementFromPoint(
+                        rect.left + Math.max(1, Math.min(rect.width / 2, rect.width - 1)),
+                        rect.top + Math.max(1, Math.min(rect.height / 2, rect.height - 1))
+                    );
+                    return {
+                        supports,
+                        opened,
+                        found: true,
+                        popover: popup.getAttribute('popover') || '',
+                        popupOpen: supports ? popup.matches(':popover-open') : true,
+                        panelOpen: supports ? panel.matches(':popover-open') : true,
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height),
+                        abovePanel: probe === popup || popup.contains(probe)
+                    };
+                })()`);
+                if (!stackingProof?.opened || !stackingProof?.found) {
+                    failuresByState[state.name].push('download options popup did not render for the stacking proof');
+                } else if (stackingProof.supports) {
+                    if (stackingProof.popover !== 'auto' || !stackingProof.popupOpen) {
+                        failuresByState[state.name].push('download options popup is not open as an auto Popover');
+                    }
+                    if (!stackingProof.panelOpen) {
+                        failuresByState[state.name].push('settings panel closed when the download Popover opened');
+                    }
+                    if (!stackingProof.abovePanel) {
+                        failuresByState[state.name].push('download Popover did not win top-layer hit testing over the settings panel');
+                    }
+                }
+                await client.evaluate('globalThis.__ytkitA11y?.closeDownload?.()');
             }
             console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
         }

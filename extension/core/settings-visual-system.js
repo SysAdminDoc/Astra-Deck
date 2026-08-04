@@ -7,6 +7,8 @@
     const SETTINGS_VISUAL_SYSTEM_CSS = `
         /* Astra Deck settings visual system v4 — premium control-center UI. */
         #ytkit-settings-panel {
+            inset: auto;
+            margin: 0;
             --ytkit-v3-bg: #090e14;
             --ytkit-v3-surface: #0f1720;
             --ytkit-v3-surface-raised: #141e29;
@@ -40,6 +42,15 @@
             font-size: 15px !important;
             line-height: 1.45 !important;
             overflow: hidden !important;
+        }
+
+        #ytkit-settings-panel:popover-open {
+            inset: auto !important;
+            top: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            left: 50% !important;
+            margin: 0 !important;
         }
 
         #ytkit-overlay {

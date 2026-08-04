@@ -258,6 +258,8 @@
         const SETTINGS_VISUAL_SYSTEM_CSS = `
             /* Astra Deck settings visual system v4 — premium control-center UI. */
             #ytkit-settings-panel {
+                inset: auto;
+                margin: 0;
                 --ytkit-v3-bg: #090e14;
                 --ytkit-v3-surface: #0f1720;
                 --ytkit-v3-surface-raised: #141e29;
@@ -291,6 +293,15 @@
                 font-size: 15px !important;
                 line-height: 1.45 !important;
                 overflow: hidden !important;
+            }
+
+            #ytkit-settings-panel:popover-open {
+                inset: auto !important;
+                top: 50% !important;
+                right: auto !important;
+                bottom: auto !important;
+                left: 50% !important;
+                margin: 0 !important;
             }
 
             #ytkit-overlay {
@@ -6599,12 +6610,43 @@
             return { role: 'status', ariaLive: 'polite' };
         }
 
+        function supportsPopover() {
+            const HTMLElementCtor = typeof globalThis !== 'undefined' ? globalThis.HTMLElement : null;
+            return typeof HTMLElementCtor?.prototype?.showPopover === 'function'
+                && typeof HTMLElementCtor?.prototype?.hidePopover === 'function';
+        }
+
+        function createCloseWatcher(onClose) {
+            const CloseWatcherCtor = typeof globalThis !== 'undefined' ? globalThis.CloseWatcher : null;
+            if (typeof CloseWatcherCtor !== 'function' || typeof onClose !== 'function') return null;
+            try {
+                const watcher = new CloseWatcherCtor();
+                watcher.addEventListener('close', onClose);
+                return watcher;
+            } catch (_) {
+                // reason: CloseWatcher can reject construction outside a user activation.
+                return null;
+            }
+        }
+
+        function destroyCloseWatcher(watcher) {
+            if (!watcher) return;
+            try {
+                watcher.destroy?.();
+            } catch (_) {
+                // reason: the browser may have already destroyed the watcher.
+            }
+        }
+
         core.toast = Object.freeze({
             inferToastTone,
             normalizeToastTone,
             getToastRgb,
             getToastBadgeLabel,
             getToastAriaDefaults,
+            supportsPopover,
+            createCloseWatcher,
+            destroyCloseWatcher,
             TONE_RGB,
             TONE_BADGE
         });
@@ -6612,7 +6654,8 @@
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = {
                 inferToastTone, normalizeToastTone, getToastRgb, getToastBadgeLabel,
-                getToastAriaDefaults, TONE_RGB, TONE_BADGE
+                getToastAriaDefaults, supportsPopover, createCloseWatcher,
+                destroyCloseWatcher, TONE_RGB, TONE_BADGE
             };
         }
     })();
@@ -6657,6 +6700,19 @@
                 || ((tone) => tone === 'error'
                     ? { role: 'alert', ariaLive: 'assertive' }
                     : { role: 'status', ariaLive: 'polite' });
+            const supportsPopover = deps.supportsPopover
+                || globalThis.YTKitCore?.toast?.supportsPopover
+                || (() => {
+                    const HTMLElementCtor = typeof globalThis !== 'undefined' ? globalThis.HTMLElement : null;
+                    return typeof HTMLElementCtor?.prototype?.showPopover === 'function'
+                        && typeof HTMLElementCtor?.prototype?.hidePopover === 'function';
+                });
+            const createCloseWatcher = deps.createCloseWatcher
+                || globalThis.YTKitCore?.toast?.createCloseWatcher
+                || (() => null);
+            const destroyCloseWatcher = deps.destroyCloseWatcher
+                || globalThis.YTKitCore?.toast?.destroyCloseWatcher
+                || (() => {});
 
             function dismissToast(toast, immediate = false) {
                 if (!toast) return;
@@ -6667,6 +6723,22 @@
                 if (toast._removeTimer) {
                     clearTimeout(toast._removeTimer);
                     toast._removeTimer = null;
+                }
+                if (toast._closeWatcher) {
+                    const watcher = toast._closeWatcher;
+                    toast._closeWatcher = null;
+                    destroyCloseWatcher(watcher);
+                }
+                if (toast._popoverToggleHandler) {
+                    toast.removeEventListener('toggle', toast._popoverToggleHandler);
+                    toast._popoverToggleHandler = null;
+                }
+                if (typeof toast.hidePopover === 'function') {
+                    try {
+                        toast.hidePopover();
+                    } catch (_) {
+                        // reason: the toast may already have closed natively.
+                    }
                 }
                 toast.classList.remove('is-visible');
                 // The reduced-motion branch matches ytkit.js's inline
@@ -6763,7 +6835,35 @@
                 toast.appendChild(badge);
                 toast.appendChild(body);
                 toast.appendChild(actionWrap);
+                let usePopover = false;
+                try {
+                    usePopover = supportsPopover() === true;
+                } catch (_) {
+                    // reason: host feature detection must not prevent a toast.
+                }
+                if (usePopover) toast.setAttribute('popover', 'manual');
                 document.body.appendChild(toast);
+
+                if (usePopover) {
+                    const toggleHandler = (event) => {
+                        if (event.newState !== 'closed') return;
+                        toast.removeEventListener('toggle', toggleHandler);
+                        toast._popoverToggleHandler = null;
+                        dismissToast(toast);
+                    };
+                    toast._popoverToggleHandler = toggleHandler;
+                    toast.addEventListener('toggle', toggleHandler);
+                    try {
+                        toast.showPopover();
+                        toast._closeWatcher = createCloseWatcher(() => dismissToast(toast));
+                    } catch (_) {
+                        // reason: a browser can expose the Popover API but reject a particular show call.
+                        toast.removeEventListener('toggle', toggleHandler);
+                        toast._popoverToggleHandler = null;
+                        toast.removeAttribute('popover');
+                        usePopover = false;
+                    }
+                }
 
                 let remainingMs = durationMs;
                 let dismissAt = Date.now() + remainingMs;
@@ -22136,7 +22236,10 @@
                 storageReadJSON,
                 storageWrite,
                 t,
-                trapFocusWithin
+                trapFocusWithin,
+                supportsPopover = () => false,
+                createCloseWatcher = () => null,
+                destroyCloseWatcher = () => {}
             } = deps;
             const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
                 ? deps.getPageModalOpen
@@ -22156,6 +22259,7 @@
             let _globalUIListenersAttached = false;
             let _panelUIListenersAttached = false;
             let _panelSearchUpdater = null;
+            let _panelCloseWatcher = null;
 
     function isSettingsPanelOpen() {
             return !!document.body?.classList.contains(PANEL_OPEN_CLASS);
@@ -22173,6 +22277,15 @@
             document.getElementById('ytkit-overlay')?.setAttribute('aria-hidden', open ? 'false' : 'true');
             panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
             if (open) {
+                if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
+                    try {
+                        panel.showPopover();
+                        _panelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
+                    } catch (_) {
+                        // reason: a browser can expose Popover but reject this show call.
+                        panel.removeAttribute('popover');
+                    }
+                }
                 const focusInitialControl = () => {
                     if (!isSettingsPanelOpen()) return;
                     const searchInput = document.getElementById('ytkit-search');
@@ -22190,6 +22303,18 @@
                     }
                 });
             } else if (wasOpen) {
+                if (_panelCloseWatcher) {
+                    const watcher = _panelCloseWatcher;
+                    _panelCloseWatcher = null;
+                    destroyCloseWatcher(watcher);
+                }
+                if (typeof panel?.hidePopover === 'function') {
+                    try {
+                        panel.hidePopover();
+                    } catch (_) {
+                        // reason: the panel may already have been closed natively.
+                    }
+                }
                 const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
                     ? _settingsPanelLastFocus
                     : document.getElementById('ytkit-watch-btn') || document.getElementById('ytkit-masthead-btn');
@@ -22344,6 +22469,20 @@
             panel.setAttribute('aria-modal', 'true');
             panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
             panel.setAttribute('aria-hidden', 'true');
+            let panelUsesPopover = false;
+            try {
+                panelUsesPopover = supportsPopover() === true;
+            } catch (_) {
+                // reason: host feature detection must not prevent the panel from building.
+            }
+            if (panelUsesPopover) {
+                panel.setAttribute('popover', 'manual');
+                panel.addEventListener('toggle', (event) => {
+                    if (event.newState === 'closed' && isSettingsPanelOpen()) {
+                        setSettingsPanelOpen(false);
+                    }
+                });
+            }
             const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
             const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
             panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
