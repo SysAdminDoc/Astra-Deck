@@ -1989,6 +1989,7 @@
         Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, min: 0.05, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "hideVideosRemoveHiddenCards", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosShowQuickHideButton", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "markWatchedVideos", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.52.0" }),
         Object.freeze({ key: "hideVideosAllowChannelBlock", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosRememberRestoredVideos", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosScopeHome", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -2354,7 +2355,7 @@
         Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "githubFullProfile", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "syncSafePrefs", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowQuickHideButton","hideVideosAllowChannelBlock","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── content-filter ───
         Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -8493,7 +8494,7 @@
             }
         }
 
-        // The Astra Downloader companion uses six fallback ports; we only
+        // The Astra Downloader companion uses the declared fallback ports; we only
         // need to know whether ANY of them responds. The probe stops on
         // the first success.
         const MEDIA_DL_PORTS = Object.freeze(
@@ -16299,7 +16300,7 @@
                 sanitizeImportedHiddenVideos = value => (Array.isArray(value) ? value : []),
                 sanitizeImportedVideoIdList = value => (Array.isArray(value) ? value : []),
                 sanitizeImportedBlockedChannels = value => (Array.isArray(value) ? value : []),
-                IMPORT_LIMITS = { hiddenVideos: 5000, allowedVideos: 5000, blockedChannels: 2000 },
+                IMPORT_LIMITS = { hiddenVideos: 5000, allowedVideos: 5000, markedWatchedVideos: 5000, blockedChannels: 2000 },
                 VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/,
                 normalizeBlockedChannelRecord = value => value,
                 getBlockedChannelIdentityKeys = value => (value ? [String(value.id || value.channelId || value.handle || value.url || value)] : []),
@@ -16354,14 +16355,18 @@
                 _styleElement: null,
                 _observer: null,
                 _lastHidden: null,
+                _lastMarkedWatched: null,
                 _STORAGE_KEY: 'ytkit-hidden-videos',
                 _ALLOWLIST_KEY: 'ytkit-video-hider-allowed-videos',
+                _MARKED_WATCHED_KEY: 'ytkit-marked-watched-videos',
                 _CHANNELS_KEY: 'ytkit-blocked-channels',
                 _VIDEO_SELECTORS: 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer',
                 _hiddenSet: null,
                 _hiddenList: null,
                 _allowedSet: null,
                 _allowedList: null,
+                _markedWatchedSet: null,
+                _markedWatchedList: null,
                 _channelsCache: null,
                 _channelKeyCache: null,
                 _directWatchRouteKey: null,
@@ -16696,6 +16701,63 @@
                     if (removed.length === 0) return [];
                     this._setAllowedVideos(allowed.filter(id => !idSet.has(id)));
                     return removed;
+                },
+                _getMarkedWatchedVideos() {
+                    if (this._markedWatchedList === null) {
+                        const stored = storageRead(this._MARKED_WATCHED_KEY, []);
+                        const limit = IMPORT_LIMITS.markedWatchedVideos || 5000;
+                        const sanitized = sanitizeImportedVideoIdList(
+                            Array.isArray(stored) ? stored.slice(-limit) : stored,
+                            limit
+                        );
+                        this._markedWatchedList = sanitized;
+                        this._markedWatchedSet = new Set(sanitized);
+                        try {
+                            if (JSON.stringify(stored) !== JSON.stringify(sanitized)) storageWrite(this._MARKED_WATCHED_KEY, sanitized);
+                        } catch (_) {
+                            // reason: malformed storage must not break feed filtering
+                        }
+                    }
+                    return this._markedWatchedList;
+                },
+                _isVideoMarkedWatched(videoId) {
+                    if (!videoId) return false;
+                    if (this._markedWatchedSet === null) this._getMarkedWatchedVideos();
+                    return this._markedWatchedSet.has(videoId);
+                },
+                _setMarkedWatchedVideos(videos) {
+                    const limit = IMPORT_LIMITS.markedWatchedVideos || 5000;
+                    const sanitized = sanitizeImportedVideoIdList(
+                        Array.isArray(videos) ? videos.slice(-limit) : videos,
+                        limit
+                    );
+                    this._markedWatchedList = sanitized;
+                    this._markedWatchedSet = new Set(sanitized);
+                    storageWrite(this._MARKED_WATCHED_KEY, sanitized);
+                },
+                _addMarkedWatchedVideo(videoId) {
+                    if (!VIDEO_ID_PATTERN.test(videoId)) return false;
+                    const marked = this._getMarkedWatchedVideos();
+                    const next = marked.filter(id => id !== videoId);
+                    next.push(videoId);
+                    const limit = IMPORT_LIMITS.markedWatchedVideos || 5000;
+                    if (next.length > limit) next.splice(0, next.length - limit);
+                    this._setMarkedWatchedVideos(next);
+                    return true;
+                },
+                _removeMarkedWatchedVideo(videoId) {
+                    if (!videoId) return false;
+                    const marked = this._getMarkedWatchedVideos();
+                    if (!marked.includes(videoId)) return false;
+                    this._setMarkedWatchedVideos(marked.filter(id => id !== videoId));
+                    return true;
+                },
+                _applyMarkedWatchedState(element, marked) {
+                    if (!element?.classList) return;
+                    const active = !!marked && appState.settings.markWatchedVideos === true;
+                    element.classList.toggle('ytkit-video-marked-watched', active);
+                    if (active) element.dataset.ytkitMarkedWatched = 'true';
+                    else delete element.dataset.ytkitMarkedWatched;
                 },
                 _addHiddenVideos(videoIds) {
                     const hidden = this._getHiddenVideos();
@@ -17339,6 +17401,52 @@
                     return btn;
                 },
 
+                _createMarkWatchedButton(marked = false) {
+                    const btn = document.createElement('button');
+                    btn.className = 'ytkit-video-mark-watched-btn';
+                    this._updateMarkWatchedButton(btn, marked);
+                    btn.appendChild(this._createSVG('M20 6 9 17l-5-5 1.41-1.41L9 14.17 18.59 4.59 20 6z'));
+                    return btn;
+                },
+
+                _updateMarkWatchedButton(btn, marked) {
+                    const label = marked
+                        ? t('videoHiderUnmarkWatched', 'Unmark as watched')
+                        : t('videoHiderMarkWatched', 'Mark as watched');
+                    btn.dataset.marked = marked ? 'true' : 'false';
+                    btn.title = label;
+                    btn.setAttribute('aria-label', label);
+                },
+
+                _syncMarkWatchedButton(element, videoId) {
+                    const thumbnail = this._findThumbnailContainer(element);
+                    if (!thumbnail) return;
+                    const existing = thumbnail.querySelector('.ytkit-video-mark-watched-btn');
+                    const controlsEnabled = appState.settings.markWatchedVideos === true && this._isScopeEnabledForPath();
+                    if (!controlsEnabled || !videoId) {
+                        existing?.remove();
+                        return;
+                    }
+                    const marked = this._isVideoMarkedWatched(videoId);
+                    if (existing) {
+                        this._updateMarkWatchedButton(existing, marked);
+                        return;
+                    }
+                    if (typeof window !== 'undefined' && window.getComputedStyle && window.getComputedStyle(thumbnail).position === 'static') {
+                        thumbnail.style.position = 'relative';
+                    }
+                    const btn = this._createMarkWatchedButton(marked);
+                    btn.addEventListener('click', e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const id = element.dataset.ytkitVideoId || this._extractVideoId(element) || videoId;
+                        if (!id) return;
+                        if (this._isVideoMarkedWatched(id)) this._unmarkWatchedVideo(id, element);
+                        else this._markWatchedVideo(id, element);
+                    });
+                    thumbnail.appendChild(btn);
+                },
+
                 _syncQuickHideButton(element, videoId) {
                     const thumbnail = this._findThumbnailContainer(element);
                     if (!thumbnail) return;
@@ -17387,6 +17495,36 @@
                             onClick: button.onClick
                         }))
                     });
+                },
+
+                _markWatchedVideo(videoId, element) {
+                    if (!this._addMarkedWatchedVideo(videoId)) return false;
+                    this._lastMarkedWatched = { type: 'mark', id: videoId, element };
+                    this._processAllVideos();
+                    this._showToast(t('videoHiderMarkedWatched', 'Marked as watched'), [
+                        { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoMarkWatched() }
+                    ]);
+                    return true;
+                },
+
+                _unmarkWatchedVideo(videoId, element) {
+                    if (!this._removeMarkedWatchedVideo(videoId)) return false;
+                    this._lastMarkedWatched = { type: 'unmark', id: videoId, element };
+                    this._processAllVideos();
+                    this._showToast(t('videoHiderUnmarkedWatched', 'Mark removed'), [
+                        { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoMarkWatched() }
+                    ]);
+                    return true;
+                },
+
+                _undoMarkWatched() {
+                    const last = this._lastMarkedWatched;
+                    if (!last) return false;
+                    if (last.type === 'mark') this._removeMarkedWatchedVideo(last.id);
+                    else this._addMarkedWatchedVideo(last.id);
+                    this._processAllVideos();
+                    this._lastMarkedWatched = null;
+                    return true;
                 },
 
                 _hideVideo(videoId, element) {
@@ -17477,6 +17615,13 @@
                     const videoId = this._extractVideoId(element);
                     if (videoId && this._isVideoAllowed(videoId)) return false;
                     if (videoId && this._isVideoIdHidden(videoId)) return true;
+                    if (videoId
+                        && appState.settings.markWatchedVideos === true
+                        && appState.settings.hideVideosRemoveHiddenCards === true
+                        && this._isVideoMarkedWatched(videoId)) {
+                        element.dataset.ytkitFilterReason = 'marked-watched';
+                        return true;
+                    }
                     const channelInfo = this._extractChannelInfo(element);
                     if (this._isChannelBlocked(channelInfo)) return true;
 
@@ -17649,11 +17794,15 @@
                     if (videoId) element.dataset.ytkitVideoId = videoId;
                     if (!this._isScopeEnabledForPath()) {
                         this._applyVideoHiddenState(element, false);
+                        this._applyMarkedWatchedState(element, false);
                         this._syncQuickHideButton(element, videoId);
+                        this._syncMarkWatchedButton(element, videoId);
                         return;
                     }
                     this._applyVideoHiddenState(element, this._shouldHide(element));
+                    this._applyMarkedWatchedState(element, appState.settings.markWatchedVideos === true && this._isVideoMarkedWatched(videoId));
                     this._syncQuickHideButton(element, videoId);
+                    this._syncMarkWatchedButton(element, videoId);
                 },
 
                 _processVideoElementWithResult(element) {
@@ -17662,12 +17811,16 @@
                     if (videoId) element.dataset.ytkitVideoId = videoId;
                     if (!this._isScopeEnabledForPath()) {
                         this._applyVideoHiddenState(element, false);
+                        this._applyMarkedWatchedState(element, false);
                         this._syncQuickHideButton(element, videoId);
+                        this._syncMarkWatchedButton(element, videoId);
                         return false;
                     }
                     const shouldHide = this._shouldHide(element);
                     this._applyVideoHiddenState(element, shouldHide);
+                    this._applyMarkedWatchedState(element, appState.settings.markWatchedVideos === true && this._isVideoMarkedWatched(videoId));
                     this._syncQuickHideButton(element, videoId);
+                    this._syncMarkWatchedButton(element, videoId);
                     return shouldHide;
                 },
 
@@ -18057,6 +18210,34 @@
                         ytd-video-renderer:hover .ytkit-video-hide-btn,
                         ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
                         ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity: 1; }
+                        .ytkit-video-mark-watched-btn {
+                            position: absolute;
+                            top: 8px;
+                            right: 42px;
+                            width: 28px;
+                            height: 28px;
+                            background: rgba(14, 116, 144, 0.82);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            border-radius: 50%;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: ${Z.HIDE_BTN};
+                            opacity: 0;
+                            transition: opacity 180ms var(--ytkit-ease-out), background-color 180ms var(--ytkit-ease-out), border-color 180ms var(--ytkit-ease-out), transform 180ms var(--ytkit-ease-out);
+                            padding: 0;
+                            color: #fff;
+                            backdrop-filter: none;
+                        }
+                        .ytkit-video-mark-watched-btn:hover { background: rgba(8, 145, 178, 0.96); border-color: rgba(255, 255, 255, 0.2); transform: scale(1.08); }
+                        .ytkit-video-mark-watched-btn:focus-visible { opacity: 1; outline: none; box-shadow: var(--ytkit-focus-ring); }
+                        .ytkit-video-mark-watched-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
+                        ytd-rich-item-renderer:hover .ytkit-video-mark-watched-btn,
+                        ytd-video-renderer:hover .ytkit-video-mark-watched-btn,
+                        ytd-grid-video-renderer:hover .ytkit-video-mark-watched-btn,
+                        ytd-compact-video-renderer:hover .ytkit-video-mark-watched-btn { opacity: 1; }
+                        .ytkit-video-marked-watched { opacity: 0.48 !important; filter: saturate(0.72); }
                         .ytkit-video-hidden { display: none !important; }
                         .ytkit-blocked-watch-overlay {
                             position: fixed;
@@ -18288,7 +18469,9 @@
                     if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
                     removeNavigateRule('hideVideosFromHomeNav');
                     document.querySelectorAll('.ytkit-video-hide-btn').forEach(b => b.remove());
+                    document.querySelectorAll('.ytkit-video-mark-watched-btn').forEach(b => b.remove());
                     document.querySelectorAll('.ytkit-video-hidden').forEach(e => e.classList.remove('ytkit-video-hidden'));
+                    document.querySelectorAll('.ytkit-video-marked-watched').forEach(e => e.classList.remove('ytkit-video-marked-watched'));
                     document.querySelectorAll('[data-ytkit-hide-processed]').forEach(e => delete e.dataset.ytkitHideProcessed);
                     this._removeSubsHideAllButton();
                     this._removeHomeHideAllButton();
@@ -22318,6 +22501,7 @@
                         || (appState.settings.hideVideosSubsLoadThreshold || 3) !== 3
                         || appState.settings.hideVideosRemoveHiddenCards === true
                         || appState.settings.hideVideosShowQuickHideButton === false
+                        || appState.settings.markWatchedVideos === true
                         || appState.settings.hideVideosAllowChannelBlock === false
                         || appState.settings.hideVideosRememberRestoredVideos === false
                         || appState.settings.hideVideosLowViewFilter === true
@@ -23024,6 +23208,12 @@
                             key: 'hideVideosShowQuickHideButton',
                             title: 'Show thumbnail hide button',
                             description: 'Display the X button on supported video thumbnails for one-click hiding.'
+                        }));
+                        controlsSection.appendChild(createVideoHiderToggle({
+                            key: 'markWatchedVideos',
+                            title: t('videoHiderMarkWatchedToggle', 'Show mark-as-watched button'),
+                            description: t('videoHiderMarkWatchedToggleDesc', 'Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled.'),
+                            defaultChecked: false
                         }));
                         controlsSection.appendChild(createVideoHiderToggle({
                             key: 'hideVideosAllowChannelBlock',

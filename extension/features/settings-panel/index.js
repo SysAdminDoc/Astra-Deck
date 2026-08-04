@@ -723,6 +723,7 @@ function buildSettingsPanel() {
                     || (appState.settings.hideVideosSubsLoadThreshold || 3) !== 3
                     || appState.settings.hideVideosRemoveHiddenCards === true
                     || appState.settings.hideVideosShowQuickHideButton === false
+                    || appState.settings.markWatchedVideos === true
                     || appState.settings.hideVideosAllowChannelBlock === false
                     || appState.settings.hideVideosRememberRestoredVideos === false
                     || appState.settings.hideVideosLowViewFilter === true
@@ -1429,6 +1430,12 @@ function buildSettingsPanel() {
                         key: 'hideVideosShowQuickHideButton',
                         title: 'Show thumbnail hide button',
                         description: 'Display the X button on supported video thumbnails for one-click hiding.'
+                    }));
+                    controlsSection.appendChild(createVideoHiderToggle({
+                        key: 'markWatchedVideos',
+                        title: t('videoHiderMarkWatchedToggle', 'Show mark-as-watched button'),
+                        description: t('videoHiderMarkWatchedToggleDesc', 'Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled.'),
+                        defaultChecked: false
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosAllowChannelBlock',
