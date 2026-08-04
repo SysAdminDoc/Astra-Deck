@@ -3454,6 +3454,7 @@ return response;
             theaterAutoScroll: false,
             scrollWheelSpeed: false,
             speedStep: 0.25,
+            bufferPreload: false,
             preloadComments: false,
             // autoExpandComments already defined above
             playbackSpeedOSD: false,
@@ -3527,7 +3528,7 @@ return response;
                 'watchPageRestyle', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
                 'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
                 'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
-                'videosPerRow', 'listFeedLayout', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+                'videosPerRow', 'listFeedLayout', 'bufferPreload', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
                 'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
                 'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
                 'hideVideosRemoveHiddenCards', 'hideVideosShowQuickHideButton',
@@ -32107,6 +32108,80 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._remove();
                 removeNavigateRule('audioSyncOffsetMs');
+            }
+        },
+
+        // ── Buffer / Preload ──
+        {
+            id: 'bufferPreload',
+            name: t('feature_bufferPreload_name', 'Buffer / Preload'),
+            description: t('feature_bufferPreload_desc', 'Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed.'),
+            group: 'Video Player',
+            icon: 'download',
+            pages: [PageTypes.WATCH],
+            _statusObserver: null,
+            _lastStatusKey: '',
+            _syncStatus() {
+                const root = document.documentElement;
+                if (!root) return;
+                const status = root.getAttribute('data-ytkit-buffer-status') || '';
+                const reason = root.getAttribute('data-ytkit-buffer-reason') || '';
+                if (!status || status === 'off' || status === 'retry') return;
+                const detail = reason || (status === 'degraded'
+                    ? 'The page player does not expose a compatible buffer API.'
+                    : status === 'skipped' ? 'Live streams are intentionally excluded.' : '');
+                const key = `${status}:${detail}`;
+                if (status === 'degraded') {
+                    setFeatureHealth(this.id, {
+                        status: 'degraded',
+                        source: 'buffer-preload',
+                        initialized: true,
+                        lastError: detail
+                    });
+                    if (this._lastStatusKey !== key) {
+                        this._lastStatusKey = key;
+                        DiagnosticLog?.record?.('buffer-preload', detail);
+                    }
+                    return;
+                }
+                setFeatureHealth(this.id, {
+                    status: 'initialized',
+                    source: 'buffer-preload',
+                    initialized: true,
+                    lastError: null
+                });
+                if (status === 'skipped' && this._lastStatusKey !== key) {
+                    this._lastStatusKey = key;
+                    DiagnosticLog?.record?.('buffer-preload', detail);
+                } else if (status === 'applied') {
+                    this._lastStatusKey = '';
+                }
+            },
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-buffer-preload', 'on');
+                this._syncStatus();
+            },
+            init() {
+                this._lastStatusKey = '';
+                this._statusObserver = new MutationObserver(() => this._syncStatus());
+                this._statusObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-ytkit-buffer-status', 'data-ytkit-buffer-reason']
+                });
+                this._apply();
+                this._navRule = () => {
+                    this._lastStatusKey = '';
+                    this._apply();
+                };
+                addNavigateRule('bufferPreload', this._navRule);
+            },
+            destroy() {
+                removeNavigateRule('bufferPreload');
+                this._navRule = null;
+                this._statusObserver?.disconnect();
+                this._statusObserver = null;
+                this._lastStatusKey = '';
+                document.documentElement.removeAttribute('data-ytkit-buffer-preload');
             }
         },
 

@@ -494,6 +494,197 @@
 })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature 3.5: Bounded VOD buffer target
+    // ──────────────────────────────────────────────────────────────────
+    // The buffer target is deliberately capability-gated. YouTube's
+    // page-owned movie_player has exposed setBufferingGoal() in some player
+    // builds, but it is not part of the public IFrame API. Never emulate it
+    // by pausing, seeking, or changing media element behaviour: when the
+    // method is absent, publish a degradation reason and leave playback alone.
+(function() {
+    'use strict';
+    if (typeof document === 'undefined' || !document.documentElement) return;
+
+    var ENABLE_ATTR = 'data-ytkit-buffer-preload';
+    var STATUS_ATTR = 'data-ytkit-buffer-status';
+    var REASON_ATTR = 'data-ytkit-buffer-reason';
+    var TARGET_SECONDS = 20;
+    var ON = false;
+    var lastAppliedVideo = null;
+    var pendingTimer = null;
+    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var TASK_ID = 'ytkit-main:bufferPreload';
+    var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
+    var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
+
+    function writeStatus(status, reason) {
+        var nextStatus = String(status || 'off');
+        var nextReason = reason ? String(reason).slice(0, 240) : '';
+        if (document.documentElement.getAttribute(STATUS_ATTR) !== nextStatus) {
+            document.documentElement.setAttribute(STATUS_ATTR, nextStatus);
+        }
+        if (nextReason) {
+            if (document.documentElement.getAttribute(REASON_ATTR) !== nextReason) {
+                document.documentElement.setAttribute(REASON_ATTR, nextReason);
+            }
+        } else {
+            document.documentElement.removeAttribute(REASON_ATTR);
+        }
+    }
+
+    function getPlayer(ctx) {
+        return (ctx && ctx.player) ||
+            document.getElementById('movie_player') ||
+            document.querySelector('.html5-video-player');
+    }
+
+    function getVideo(ctx) {
+        return (ctx && ctx.video) || document.querySelector('.html5-main-video');
+    }
+
+    function isTruthyFlag(value) {
+        return value === true || value === 1 || value === '1' || value === 'true';
+    }
+
+    function isLiveVideo(video, player) {
+        try {
+            if (player && typeof player.getVideoData === 'function') {
+                var data = player.getVideoData();
+                if (data && (isTruthyFlag(data.isLive) || isTruthyFlag(data.isLivePlayback))) return true;
+            }
+        } catch (_) {
+            // reason: player metadata is optional and may be unavailable during route changes
+        }
+        try {
+            var response = globalThis.ytInitialPlayerResponse;
+            var details = response && response.videoDetails;
+            if (details && (isTruthyFlag(details.isLive) || isTruthyFlag(details.isLiveContent))) return true;
+        } catch (_) {
+            // reason: page response globals are not stable across SPA routes
+        }
+        if (video && video.duration === Infinity) return true;
+        try {
+            return !!document.querySelector('ytd-watch-flexy[is-live], .ytp-live-badge');
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function apply(ctx) {
+        if (!ON) {
+            writeStatus('off');
+            return true;
+        }
+        if (ctx && (ctx.reason === 'loadstart' || ctx.reason === 'navigate' || ctx.reason === 'page-data')) {
+            lastAppliedVideo = null;
+        }
+        var video = getVideo(ctx);
+        var player = getPlayer(ctx);
+        if (!video || !player) return false;
+
+        if (isLiveVideo(video, player)) {
+            lastAppliedVideo = video;
+            writeStatus('skipped', 'live-stream');
+            return true;
+        }
+        if (video === lastAppliedVideo) return true;
+        if (typeof player.setBufferingGoal !== 'function') {
+            writeStatus('degraded', 'player-api-missing');
+            return true;
+        }
+
+        try {
+            player.setBufferingGoal(TARGET_SECONDS);
+            lastAppliedVideo = video;
+            writeStatus('applied', 'setBufferingGoal:' + TARGET_SECONDS);
+            return true;
+        } catch (_) {
+            writeStatus('degraded', 'player-api-error');
+            return true;
+        }
+    }
+
+    function cancelTask() {
+        if (PlayerTaskManager && typeof PlayerTaskManager.cancel === 'function') {
+            PlayerTaskManager.cancel(TASK_ID);
+        }
+        if (pendingTimer) {
+            clearTimeout(pendingTimer);
+            pendingTimer = null;
+        }
+    }
+
+    function schedule(delay, reason) {
+        if (PlayerTaskManager && typeof PlayerTaskManager.schedule === 'function') {
+            PlayerTaskManager.schedule(TASK_ID, apply, {
+                owner: 'ytkit-main',
+                reason: reason || 'manual',
+                delay: delay || 0,
+                needsVideo: true,
+                needsPlayer: true,
+                maxAttempts: RETRY_DELAYS.length,
+                retryDelays: RETRY_DELAYS,
+                events: TASK_EVENTS
+            });
+            return;
+        }
+        if (pendingTimer) clearTimeout(pendingTimer);
+        pendingTimer = setTimeout(function() {
+            pendingTimer = null;
+            apply({ reason: reason || 'manual' });
+        }, delay || 0);
+    }
+
+    function syncFromAttr() {
+        var next = document.documentElement.getAttribute(ENABLE_ATTR) === 'on';
+        if (next === ON) {
+            if (ON) schedule(0, 'attribute');
+            return;
+        }
+        ON = next;
+        lastAppliedVideo = null;
+        cancelTask();
+        if (ON) {
+            writeStatus('retry', 'waiting-for-player');
+            schedule(0, 'attribute');
+        } else {
+            writeStatus('off');
+        }
+    }
+
+    if (!PlayerTaskManager) {
+        document.addEventListener('loadstart', function(e) {
+            if (ON && e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+                lastAppliedVideo = null;
+                schedule(0, 'loadstart');
+            }
+        }, true);
+        document.addEventListener('loadedmetadata', function(e) {
+            if (ON && e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+                schedule(0, 'loadedmetadata');
+            }
+        }, true);
+        document.addEventListener('canplay', function(e) {
+            if (ON && e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+                schedule(0, 'canplay');
+            }
+        }, true);
+        window.addEventListener('yt-navigate-finish', function() {
+            if (ON) {
+                lastAppliedVideo = null;
+                schedule(0, 'navigate');
+            }
+        });
+        window.addEventListener('yt-page-data-updated', function() {
+            if (ON) schedule(0, 'page-data');
+        });
+    }
+
+    _obsRegister([ENABLE_ATTR], syncFromAttr);
+    syncFromAttr();
+})();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 4+5: Shared audio processing graph
     // ──────────────────────────────────────────────────────────────────
     // Single AudioContext for ALL audio features (mono-to-stereo,

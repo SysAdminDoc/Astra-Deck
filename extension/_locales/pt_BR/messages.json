@@ -5809,5 +5809,11 @@
   },
   "feature_listFeedLayout_name": {
     "message": "List Feed Layout"
+  },
+  "feature_bufferPreload_desc": {
+    "message": "Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed."
+  },
+  "feature_bufferPreload_name": {
+    "message": "Buffer / Preload"
   }
 }
