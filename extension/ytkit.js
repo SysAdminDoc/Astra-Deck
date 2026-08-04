@@ -3626,6 +3626,8 @@ return response;
             apiRetryBackoff: true,
             // v3.10.0 additions
             watchHistoryAnalytics: false,
+            dualLanguageSubtitles: false,
+            dualSubtitleLanguage: 'auto',
             subtitleStyling: false,
             subStyleFontSize: 100,           // 50-300%
             subStyleFontFamily: 'default',   // default | sans | serif | mono | 'YouTube Sans'
@@ -4851,8 +4853,8 @@ return response;
     // Fetch transcript with PO Token fallback. Tries json3 API first,
     // then falls back to engagement-panel DOM scraping.
     // Returns { cues: [{start, text}], source: 'api'|'panel'|null }
-    async function fetchTranscriptWithFallback(tracks) {
-        const track = pickTranscriptTrack(tracks);
+    async function fetchTranscriptWithFallback(tracks, selectedTrack = null) {
+        const track = selectedTrack || pickTranscriptTrack(tracks);
         if (!track) return { cues: null, source: null, error: 'No caption tracks available' };
 
         // Guard against missing/corrupt baseUrl — skip API fetch, try panel fallback
@@ -32717,6 +32719,75 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             init() { this._apply(); },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+
+        // ── Dual-language subtitles ──
+        {
+            id: 'dualLanguageSubtitles',
+            name: t('feature_dualLanguageSubtitles_name', 'Dual-language Subtitles'),
+            description: t('feature_dualLanguageSubtitles_desc', 'Show an independently selected second caption track below YouTube captions when available'),
+            group: 'Video Player',
+            icon: 'languages',
+            pages: [PageTypes.WATCH],
+            _runtime: null,
+            init() {
+                const factory = globalThis.YTKitFeatures?.subtitles?.createDualLanguageSubtitlesRuntime;
+                if (typeof factory !== 'function') {
+                    // reason: the peeled subtitle module is loaded before
+                    // ytkit.js in both vehicles; keep a clean no-op if a
+                    // partial content-script load omits it.
+                    this._runtime = null;
+                    return;
+                }
+                this._runtime = factory({
+                    appState,
+                    addNavigateRule,
+                    removeNavigateRule,
+                    injectStyle,
+                    getVideoId,
+                    getMainVideoElement,
+                    getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw
+                        ? _rw.ytInitialPlayerResponse
+                        : null),
+                    extensionFetchJson,
+                    fetchCaptionTrack: (track, tracks) => fetchTranscriptWithFallback(tracks, track),
+                    t
+                });
+                this._runtime?.init?.();
+            },
+            destroy() {
+                this._runtime?.destroy?.();
+                this._runtime = null;
+            }
+        },
+        {
+            id: 'dualSubtitleLanguage',
+            name: t('feature_dualSubtitleLanguage_name', 'Second Subtitle Language'),
+            description: t('feature_dualSubtitleLanguage_desc', 'Choose the caption language rendered below native YouTube captions'),
+            group: 'Video Player',
+            icon: 'languages',
+            isSubFeature: true,
+            parentId: 'dualLanguageSubtitles',
+            type: 'select',
+            options: {
+                auto: t('dualSubtitleLanguageAuto', 'Automatic alternate language'),
+                en: t('languageEn', 'English'),
+                es: t('languageEs', 'Español (Spanish)'),
+                fr: t('languageFr', 'Français (French)'),
+                de: t('languageDe', 'Deutsch (German)'),
+                it: t('languageIt', 'Italiano (Italian)'),
+                pt: t('languagePtBr', 'Português (Brazilian Portuguese)'),
+                ru: t('languageRu', 'Русский (Russian)'),
+                ja: t('languageJa', '日本語 (Japanese)'),
+                ko: t('languageKo', '한국어 (Korean)'),
+                zh: t('languageZhCn', '简体中文 (Simplified Chinese)'),
+                ar: t('languageAr', 'العربية (Arabic)')
+            },
+            settingKey: 'dualSubtitleLanguage',
+            init() {
+                getFeatureById('dualLanguageSubtitles')?._runtime?.reload?.();
+            },
+            destroy() {}
         },
 
         // ── AI Video Summary ──

@@ -5428,5 +5428,23 @@
   },
   "videoHiderMarkWatchedToggleDesc": {
     "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
+  },
+  "dualSubtitleLanguageAuto": {
+    "message": "Automatic alternate language"
+  },
+  "dualSubtitleTrackAria": {
+    "message": "Secondary subtitles"
+  },
+  "feature_dualLanguageSubtitles_desc": {
+    "message": "Show an independently selected second caption track below YouTube captions when available"
+  },
+  "feature_dualLanguageSubtitles_name": {
+    "message": "Dual-language Subtitles"
+  },
+  "feature_dualSubtitleLanguage_desc": {
+    "message": "Choose the caption language rendered below native YouTube captions"
+  },
+  "feature_dualSubtitleLanguage_name": {
+    "message": "Second Subtitle Language"
   }
 }

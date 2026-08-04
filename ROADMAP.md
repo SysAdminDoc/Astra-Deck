@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Dual-language subtitles
-  Why: A second independently selected caption track is valuable for language learners but must be explicitly enabled and configured.
-  Evidence: YtDLS (CY Fung), Youtube dual subtitle (0xjax), vanadis bilingual persist.
-  Touches: timedtext track fetch, subtitle renderer/styling pipeline, settings schema/locales.
-  Acceptance: An opt-in second caption track renders below native captions with an independent language picker and clean unavailable-track fallback.
-  Complexity: M
-
 - [ ] P2 — Allowlist hiding mode
   Why: Inverse channel filtering needs a deliberate mode control and an empty-list safety guard to avoid hiding all of YouTube accidentally.
   Evidence: BlockTube issue #133; FocusTube HN subscriptions-only demand.

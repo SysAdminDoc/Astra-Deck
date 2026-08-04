@@ -79,7 +79,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // v4.50.8 descriptive-audio preference adds 31 bytes.
     // v4.51.1 audio sync offset adds 22 bytes.
     // Client-side mark-as-watched adds 46 bytes to this local fixture.
-    assert.equal(assessment.totalBytes, 179574);
+    // Dual-language subtitles add the master toggle and language selector,
+    // adding 60 bytes to the local settings payload.
+    assert.equal(assessment.totalBytes, 179634);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

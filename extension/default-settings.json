@@ -487,6 +487,8 @@
   "storageQuotaLRU": false,
   "apiRetryBackoff": true,
   "watchHistoryAnalytics": false,
+  "dualLanguageSubtitles": false,
+  "dualSubtitleLanguage": "auto",
   "subtitleStyling": false,
   "subStyleFontSize": 100,
   "subStyleFontFamily": "default",

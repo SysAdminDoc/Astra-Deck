@@ -20,6 +20,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Popover overlay top layer.** Settings, toasts, and download options now
   use feature-detected Popovers with CloseWatcher close handling while
   retaining the userscript and older-browser fallback path.
+- **Dual-language subtitles.** Watch pages can now opt into a separately
+  selected caption track rendered below native captions, with language
+  selection, SPA-safe cue updates, and clean unavailable-track fallback in
+  both the extension and userscript.
 
 ### Fixed
 - **Audio sync offset.** The shared MAIN-world audio graph now exposes a

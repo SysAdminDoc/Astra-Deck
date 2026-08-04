@@ -5389,10 +5389,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // alongside the existing preferred-language selector (416 → 417).
     // v4.51.1 added the bounded extension-only audio sync offset (417 → 418).
     // Client-side mark-as-watched adds one opt-in feed preference (418 → 419).
+    // Dual-language subtitles add the master toggle and language selector
+    // (419 → 421).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 419,
-        'SETTINGS_SCHEMA must cover all 419 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 421,
+        'SETTINGS_SCHEMA must cover all 421 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -6525,6 +6527,159 @@ test('v4.13.0 features/subtitles exports buildSubtitleCss + featureSpec + FONT_F
     // the in-monolith delegating consumer.
     assert.ok(stub.subtitles, 'must attach to globalThis.YTKitFeatures');
     assert.equal(typeof stub.subtitles.buildSubtitleCss, 'function');
+    assert.equal(typeof mod.createDualLanguageSubtitlesRuntime, 'function');
+    assert.equal(typeof mod.pickSecondaryCaptionTrack, 'function');
+    assert.equal(typeof mod.parseJson3Cues, 'function');
+});
+
+test('v4.51.1 dual subtitles select an alternate track and fail closed when unavailable', () => {
+    const {
+        appendTimedTextFormat,
+        findActiveCaptionCue,
+        parseJson3Cues,
+        pickSecondaryCaptionTrack
+    } = require('../extension/features/subtitles/index.js');
+    const tracks = [
+        { languageCode: 'en', baseUrl: 'https://timedtext.test?lang=en' },
+        { languageCode: 'es-MX', baseUrl: 'https://timedtext.test?lang=es-MX' },
+        { languageCode: 'fr', baseUrl: 'https://timedtext.test?lang=fr' }
+    ];
+
+    assert.equal(pickSecondaryCaptionTrack(tracks, 'auto', 'en')?.languageCode, 'es-MX');
+    assert.equal(pickSecondaryCaptionTrack(tracks, 'fr', 'en')?.languageCode, 'fr');
+    assert.equal(pickSecondaryCaptionTrack(tracks, 'de', 'en'), null,
+        'an explicitly unavailable language must not silently show another language');
+    assert.equal(pickSecondaryCaptionTrack([{ languageCode: 'en' }], 'auto', 'en'), null,
+        'auto mode must not duplicate the only native-language track');
+    assert.equal(appendTimedTextFormat(tracks[0].baseUrl), 'https://timedtext.test?lang=en&fmt=json3');
+
+    const cues = parseJson3Cues({
+        events: [
+            { tStartMs: 1000, dDurationMs: 1400, segs: [{ utf8: 'Hello' }, { utf8: '\nworld' }] },
+            { tStartMs: 4000, segs: [{ utf8: 'Later' }] },
+            { tStartMs: 5000, segs: [] }
+        ]
+    });
+    assert.deepEqual(cues, [
+        { start: 1, end: 2.4, text: 'Hello\nworld' },
+        { start: 4, end: null, text: 'Later' }
+    ]);
+    assert.equal(findActiveCaptionCue(cues, 1.5)?.text, 'Hello\nworld');
+    assert.equal(findActiveCaptionCue(cues, 3), null);
+    assert.equal(findActiveCaptionCue(cues, 4.5)?.text, 'Later');
+});
+
+test('v4.51.1 dual subtitles runtime mounts below the player and tears down cleanly', async () => {
+    const { createDualLanguageSubtitlesRuntime } = require('../extension/features/subtitles/index.js');
+
+    class FakeElement {
+        constructor(tagName) {
+            this.tagName = tagName;
+            this.children = [];
+            this.parentNode = null;
+            this.style = {};
+            this.dataset = {};
+            this.listeners = new Map();
+            this.hidden = false;
+            this.textContent = '';
+            this.rect = { left: 0, top: 0, right: 1000, bottom: 600, width: 1000, height: 600 };
+        }
+        appendChild(child) {
+            child.parentNode = this;
+            this.children.push(child);
+            return child;
+        }
+        removeChild(child) {
+            this.children = this.children.filter((item) => item !== child);
+            child.parentNode = null;
+        }
+        remove() {
+            this.parentNode?.removeChild(this);
+        }
+        setAttribute(name, value) {
+            this[name] = String(value);
+        }
+        addEventListener(name, fn) {
+            this.listeners.set(name, fn);
+        }
+        removeEventListener(name, fn) {
+            if (this.listeners.get(name) === fn) this.listeners.delete(name);
+        }
+        querySelector() { return null; }
+        getBoundingClientRect() { return this.rect; }
+    }
+
+    const player = new FakeElement('div');
+    const video = new FakeElement('video');
+    video.currentTime = 1.2;
+    const pageData = new FakeElement('ytd-watch-flexy');
+    pageData.__data = {
+        playerResponse: {
+            videoDetails: { videoId: 'video123' },
+            captions: {
+                playerCaptionsTracklistRenderer: {
+                    captionTracks: [
+                        { languageCode: 'en', baseUrl: 'https://timedtext.test?lang=en' },
+                        { languageCode: 'es', baseUrl: 'https://timedtext.test?lang=es' }
+                    ]
+                }
+            }
+        }
+    };
+    const doc = {
+        querySelector(selector) {
+            if (selector === '#movie_player') return player;
+            if (selector === 'ytd-watch-flexy') return pageData;
+            return null;
+        },
+        createElement(tagName) { return new FakeElement(tagName); }
+    };
+    const windowListeners = new Map();
+    const fakeWindow = {
+        navigator: { language: 'en-US' },
+        addEventListener(name, fn) { windowListeners.set(name, fn); },
+        removeEventListener(name, fn) {
+            if (windowListeners.get(name) === fn) windowListeners.delete(name);
+        }
+    };
+    const pendingTimers = [];
+    let styleRemoved = false;
+    let addedRule = null;
+    let removedRule = null;
+    const settings = { dualSubtitleLanguage: 'es', transcriptPreferredLanguage: 'auto' };
+    const runtime = createDualLanguageSubtitlesRuntime({
+        document: doc,
+        window: fakeWindow,
+        appState: { settings },
+        getVideoId: () => 'video123',
+        getMainVideoElement: () => video,
+        addNavigateRule: (id, fn) => { addedRule = { id, fn }; },
+        removeNavigateRule: (id) => { removedRule = id; },
+        injectStyle: () => ({ remove() { styleRemoved = true; } }),
+        fetchCaptionTrack: async (track) => ({
+            track,
+            cues: [{ start: 1, end: 2, text: 'Hola' }]
+        }),
+        setTimeout: (fn) => { pendingTimers.push(fn); return fn; },
+        clearTimeout: () => {},
+        t: (_key, fallback) => fallback
+    });
+
+    runtime.init();
+    assert.equal(addedRule.id, 'dualLanguageSubtitles');
+    await runtime._load();
+    assert.equal(player.children.length, 1);
+    assert.equal(player.children[0].dataset.language, 'es');
+    assert.equal(player.children[0].textContent, 'Hola');
+    assert.equal(player.children[0].hidden, false);
+    assert.equal(video.listeners.has('timeupdate'), true);
+
+    runtime.destroy();
+    assert.equal(player.children.length, 0);
+    assert.equal(video.listeners.size, 0);
+    assert.equal(removedRule, 'dualLanguageSubtitles');
+    assert.equal(styleRemoved, true);
+    assert.ok(pendingTimers.length >= 1, 'initialization should defer until player data is ready');
 });
 
 test('v4.13.0 buildSubtitleCss is deterministic and byte-stable for known input', () => {
