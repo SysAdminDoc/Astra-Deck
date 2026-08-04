@@ -122,13 +122,18 @@ class FakeDocument {
     }
 }
 
-function makeFeature(settings = {}) {
+function makeFeature(settings = {}, options = {}) {
     const appState = { settings: { ...settings } };
     const toasts = [];
+    const storage = options.storage || new Map();
+    const exports = [];
     const feature = createSubscriptionGroupsFeature({
         appState,
         settingsManager: { save() {} },
         showToast: (...args) => toasts.push(args),
+        storageReadJSON: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
+        storageWriteJSON: (key, value) => storage.set(key, value),
+        handleFileExport: (...args) => exports.push(args),
     });
     // Import and membership tests should exercise state transitions without
     // requiring YouTube's live DOM to be mounted.
@@ -136,7 +141,7 @@ function makeFeature(settings = {}) {
     feature._applyGroupFilter = () => {};
     feature._applyNewSinceMarkers = () => {};
     feature._renderDeadChannelMarkers = () => {};
-    return { appState, feature, toasts };
+    return { appState, feature, toasts, storage, exports };
 }
 
 test('subscription groups support create/read/update/delete flows and membership editing', () => {
@@ -303,4 +308,77 @@ test('OPML import preserves nested groups and counts duplicate channels with und
 
     toasts[0][2].action.onClick();
     assert.deepEqual(appState.settings.subscriptionGroupData, {});
+});
+
+test('staged unsubscribe session is bounded, paced, review-list-only, and recoverable in a local log', async () => {
+    const staged = Object.fromEntries(Array.from({ length: 26 }, (_, index) => {
+        const channelId = `UCstage${String(index).padStart(17, '0')}`;
+        return [channelId, { channelId, channelName: `Channel ${index}`, undoUntil: Date.now() + 86400000 }];
+    }));
+    const { appState, feature, storage } = makeFeature({ subscriptionUnsubscribeStagingData: staged });
+    feature._UNSUBSCRIBE_PACE_MS = 0;
+    const visited = [];
+    feature._findStagedChannelCard = channelId => {
+        visited.push(channelId);
+        return { channelId, isConnected: true };
+    };
+    feature._applyNativeUnsubscribeAction = async () => true;
+
+    const result = await feature._runStagedUnsubscribeSession();
+
+    assert.equal(result.requested, 25);
+    assert.equal(result.skippedOverCap, 1);
+    assert.equal(result.removed, 25);
+    assert.equal(result.failed, 0);
+    assert.equal(visited.length, 25);
+    assert.equal(Object.keys(appState.settings.subscriptionUnsubscribeStagingData).length, 1);
+    const log = storage.get(feature._UNSUBSCRIBE_LOG_KEY);
+    assert.equal(log.length, 1);
+    assert.equal(log[0].entries.length, 25);
+    assert.equal(log[0].removed, 25);
+    assert.equal(log[0].skippedOverCap, 1);
+});
+
+test('staged unsubscribe keeps failed review items and exports every result as JSON', async () => {
+    const staged = {
+        success: { channelId: 'success', channelName: 'Success', undoUntil: Date.now() + 86400000 },
+        failed: { channelId: 'failed', channelName: 'Failed', undoUntil: Date.now() + 86400000 },
+    };
+    const { appState, feature, storage, exports } = makeFeature({ subscriptionUnsubscribeStagingData: staged });
+    feature._UNSUBSCRIBE_PACE_MS = 0;
+    feature._findStagedChannelCard = channelId => ({ channelId, isConnected: true });
+    feature._applyNativeUnsubscribeAction = async card => card.channelId === 'success';
+
+    const result = await feature._runStagedUnsubscribeSession();
+
+    assert.equal(result.removed, 1);
+    assert.equal(result.failed, 1);
+    assert.deepEqual(Object.keys(appState.settings.subscriptionUnsubscribeStagingData), ['failed']);
+    assert.deepEqual(storage.get(feature._UNSUBSCRIBE_LOG_KEY)[0].entries.map(entry => [entry.channelId, entry.unsubscribed]), [
+        ['success', true],
+        ['failed', false],
+    ]);
+
+    feature._exportUnsubscribeLog();
+    assert.equal(exports.length, 1);
+    assert.match(exports[0][0], /subscription-unsubscribe-log-\d{4}-\d{2}-\d{2}\.json$/);
+    assert.deepEqual(JSON.parse(exports[0][1]).sessions[0].entries[1], {
+        channelId: 'failed',
+        channelName: 'Failed',
+        unsubscribed: false,
+        reason: 'unsubscribe-control-not-found',
+    });
+});
+
+test('staged unsubscribe is a no-op when review staging is empty', async () => {
+    const { feature, toasts, storage } = makeFeature({ subscriptionUnsubscribeStagingData: {} });
+    let applied = false;
+    feature._applyNativeUnsubscribeAction = async () => { applied = true; return true; };
+
+    const result = await feature._runStagedUnsubscribeSession();
+
+    assert.equal(result.requested, 0);
+    assert.equal(applied, false);
+    assert.equal(storage.has(feature._UNSUBSCRIBE_LOG_KEY), false);
+    assert.match(toasts.at(-1)[0], /Nothing is staged/);
 });

@@ -49,6 +49,7 @@
         { id: 'reactionSpammerState', location: 'extension-local', key: 'ytkitReactionSpammerState', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'reaction-state-v1' },
         { id: 'watchLaterRemovalLog', location: 'extension-local', key: 'ytkit-wl-removal-log', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
         { id: 'recommendationScrubSessions', location: 'extension-local', key: 'ytkit-scrub-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
+        { id: 'subscriptionUnsubscribeSessions', location: 'extension-local', key: 'ytkit-subscription-unsubscribe-sessions', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-log-v1' },
         { id: 'usageStats', location: 'extension-local', key: 'ytkit_stats', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'bounded-object-v1' },
         { id: 'localeOverride', location: 'extension-local', key: '_localeOverride', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'locale-tag-v1' },
         { id: 'debugPreference', location: 'extension-local', key: 'ytkit_debug', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'boolean-v1' },
@@ -299,6 +300,7 @@
         case 'reactionSpammerState': return sanitizeReactionState(value);
         case 'watchLaterRemovalLog': return (Array.isArray(value) ? value : []).slice(-500).map((row) => safeClone(row));
         case 'recommendationScrubSessions': return (Array.isArray(value) ? value : []).slice(-20).map((row) => safeClone(row));
+        case 'subscriptionUnsubscribeSessions': return (Array.isArray(value) ? value : []).slice(-20).map((row) => safeClone(row));
         case 'localeOverride': return typeof value === 'string' && /^[A-Za-z]{2,3}(?:[_-][A-Za-z0-9]{2,8})?$/.test(value) ? value.slice(0, 16) : '';
         case 'debugPreference': return value === true;
         case 'playerControlDismissals': {
@@ -326,7 +328,7 @@
     }
 
     function defaultDomainValue(id) {
-        if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'transcriptIndex'].includes(id)) return [];
+        if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'transcriptIndex'].includes(id)) return [];
         if (id === 'persistentQueue') return { v: 1, items: [] };
         if (id === 'reactionSpammerState') return sanitizeReactionState({});
         if (id === 'localeOverride' || id === 'digitalWellbeingDismissal') return '';

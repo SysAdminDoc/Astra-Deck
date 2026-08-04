@@ -16,7 +16,7 @@ test('durable-domain registry explicitly classifies every known storage boundary
         'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'bookmarks',
         'watchProgress', 'watchTime', 'channelSpeeds', 'resumePositions',
         'persistentQueue', 'reactionSpammerState', 'watchLaterRemovalLog',
-        'recommendationScrubSessions', 'localeOverride', 'debugPreference',
+        'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'localeOverride', 'debugPreference',
         'playerControlDismissals', 'theaterSplitRatio', 'transcriptIndex', 'credentialVault',
         'deArrowCache', 'sponsorBlockCache', 'returnDislikeCache', 'pageCrashGuard', 'updateRecovery',
         'stickyChatLayout'
