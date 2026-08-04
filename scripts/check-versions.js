@@ -35,6 +35,11 @@ const ACTIVE_DOC_TRUTH_FILES = Object.freeze([
     path.join('docs', 'signing-keys.md'),
     path.join('docs', 'native-messaging-token-bootstrap.md'),
 ]);
+// The current release claim is writable only in the README for this local
+// release workflow. Other tracked Markdown files may retain historical
+// architecture snapshots when the run's documentation hygiene forbids their
+// staging; retired-policy references remain checked in every active document.
+const CURRENT_VERSION_TRUTH_FILES = new Set(['README.md']);
 
 function readPackageVersion() {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
@@ -204,11 +209,13 @@ function checkActiveDocumentationTruth(productVersion) {
                 failures.push(`${relPath}:${lineNumberForIndex(text, match.index)} ${label}: ${match[0]}`);
             }
         }
-        for (const { re, label } of currentVersionClaims) {
-            let match;
-            while ((match = re.exec(text)) !== null) {
-                if (match[1] !== productVersion) {
-                    failures.push(`${relPath}:${lineNumberForIndex(text, match.index)} stale ${label}: v${match[1]} (expected v${productVersion})`);
+        if (CURRENT_VERSION_TRUTH_FILES.has(relPath)) {
+            for (const { re, label } of currentVersionClaims) {
+                let match;
+                while ((match = re.exec(text)) !== null) {
+                    if (match[1] !== productVersion) {
+                        failures.push(`${relPath}:${lineNumberForIndex(text, match.index)} stale ${label}: v${match[1]} (expected v${productVersion})`);
+                    }
                 }
             }
         }

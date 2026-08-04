@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.51.2] - 2026-08-03
+
 ### Added
 - **Parametric EQ.** The shared MAIN-world audio graph now offers an
   off-by-default three-band low/mid/high EQ with bounded ±12 dB controls,

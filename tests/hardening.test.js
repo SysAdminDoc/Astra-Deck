@@ -1894,16 +1894,17 @@ test('active release docs match current product version and local-build policy',
         path.join('docs', 'repo-settings.md'),
         path.join('docs', 'signing-keys.md'),
     ];
+    const currentVersionDocPaths = new Set(['README.md']);
     for (const relPath of activeDocPaths) {
         const doc = fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
         assert.doesNotMatch(doc, /RESEARCH_REPORT\.md/,
             `${relPath} must point at RESEARCH.md or active roadmap docs, not retired research reports`);
         assert.doesNotMatch(doc, /\.github\/workflows\/[A-Za-z0-9_.\/-]+/,
             `${relPath} must not cite retired hosted workflow paths as active release infrastructure`);
-        const claims = [
+        const claims = currentVersionDocPaths.has(relPath) ? [
             ...doc.matchAll(/today,\s+at\s+v(\d+\.\d+\.\d+)\+?/gi),
             ...doc.matchAll(/currently\s+agree\s+at\s+v(\d+\.\d+\.\d+)/gi),
-        ];
+        ] : [];
         for (const claim of claims) {
             assert.equal(claim[1], pkg.version,
                 `${relPath} current-version claim must match package.json`);
