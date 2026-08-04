@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Dedicated behavioural tests for the download and subscription-groups modules
-  Why: `extension/features/download-ui/index.js` (2,818 lines) is the entire download path — port probing, foreign-server detection, auto-start, format selection, recovery classification — and is covered only by the adjacent `tests/download-health-boundary.test.js`. `extension/features/subscription-groups/index.js` (2,453 lines) has no dedicated file. Commit history shows the companion and download path are the most fix-prone areas in the repo.
-  Evidence: `tests/` contains 89 files / 1272 tests with no `download-ui` or `subscription-groups` suite; `git log` over the last 400 commits shows `companion` as the highest-frequency `fix(...)` scope.
-  Touches: new `tests/features/download-ui.test.js` and `tests/features/subscription-groups.test.js`.
-  Acceptance: the download suite covers port-probe fallback ordering, foreign-server detection and its repair copy, auto-start retry budgets, and each `error_code` recovery branch; the subscription-groups suite covers group CRUD, membership editing, sort modes, and JSON/OPML import counters including the duplicate path.
-  Complexity: M
-
 - [ ] P2 — Client-side "mark as watched"
   Why: users want to clear a card from feeds without playing it; YouTube offers no such control, and the existing Hide Watched Videos feature can only read YouTube's own progress overlay. This is a recurring feed-hygiene request and fits the existing hidden/allowed-video storage and Undo pattern exactly.
   Evidence: Enhancer for YouTube feature request 2026-03-09, https://github.com/YouTube-Enhancer/extension/issues; PocketTube ships watched-marking, https://pockettube.io/.
