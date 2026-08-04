@@ -7,6 +7,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Fixed
+- **Audio sync offset.** The shared MAIN-world audio graph now exposes a
+  bounded, off-by-default -500 ms to +500 ms control, applies positive delay
+  changes live through a cached `DelayNode`, and returns to a dry source path
+  at zero without rebuilding the media source across SPA navigation.
 - **Selector localization hardening.** Watch action and masthead controls now
   resolve through structural selector-pack hooks before any English fallback;
   selector health records fallback misses, and the check suite blocks new

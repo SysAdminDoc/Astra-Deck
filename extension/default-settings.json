@@ -309,6 +309,7 @@
   "volumeBoostLevel": 2,
   "audioNormalization": false,
   "audioPan": 0,
+  "audioSyncOffsetMs": 0,
   "frameByFrameButtons": false,
   "digitalWellbeing": false,
   "dwBreakIntervalMin": 30,

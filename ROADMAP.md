@@ -27,13 +27,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Audio sync offset on the existing MAIN-world audio graph
-  Why: the most-requested open enhancement on Enhancer for YouTube, and Astra already owns every prerequisite — a single shared `AudioContext` with `createMediaElementSource`, gain, compressor and stereo-panner nodes, plus a WeakMap-cached reconnect path across SPA navigation. Adding audio delay is one `createDelay` node in a graph that is already built, tested and reconnect-safe.
-  Evidence: `extension/ytkit-main.js:499-594` (graph construction; no `createDelay`); Enhancer for YouTube open enhancement "Audio Sync Adjustment" (2026-06-09), https://github.com/YouTube-Enhancer/extension/issues.
-  Touches: `extension/ytkit-main.js`, `extension/core/audio-track.js`, `extension/core/settings-schema.js`, `extension/_locales/*`, `docs/i18n-coverage.md`.
-  Acceptance: an off-by-default offset (range roughly -500 ms to +500 ms) applies live without restarting playback, survives two SPA navigations without double-connecting the graph, and returns to zero added latency when set to 0.
-  Complexity: M
-
 - [ ] P2 — Single-source the companion port list
   Why: the six loopback ports are declared independently in four places, so adding or changing a fallback port requires four coordinated edits with no gate connecting them. A partial edit produces a companion listening on a port the extension has no host permission for — a silent, hard-to-diagnose total download failure.
   Evidence: `astra_downloader/astra_downloader.py:222` (`PORT_FALLBACKS`), `astra_downloader/config.py:91,493`, `extension/manifest.json` host_permissions + CSP `connect-src`, `build-extension.js:89-95`.

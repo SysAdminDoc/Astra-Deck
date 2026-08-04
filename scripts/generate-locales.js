@@ -1790,6 +1790,50 @@ const AUDIO_TRACK_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(AUDIO_TRACK_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const AUDIO_SYNC_TRANSLATIONS = {
+  ar: {
+    'Audio Sync Offset': 'إزاحة مزامنة الصوت',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'اضبط توقيت الصوت بالنسبة إلى الفيديو من -500 مللي ثانية إلى +500 مللي ثانية. تضيف القيم الموجبة تأخيرًا للصوت، بينما تستخدم القيم السالبة أقل زمن تأخير متاح في Web Audio.'
+  },
+  de: {
+    'Audio Sync Offset': 'Audio-Synchronisationsversatz',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Passt das Audio-Timing relativ zum Video von -500 ms bis +500 ms an. Positive Werte fügen eine Audioverzögerung hinzu; negative Werte verwenden die geringste verfügbare Web-Audio-Latenz.'
+  },
+  es: {
+    'Audio Sync Offset': 'Desfase de sincronización de audio',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Ajusta el tiempo del audio respecto al vídeo de -500 ms a +500 ms. Los valores positivos añaden retraso al audio; los negativos usan la latencia mínima disponible de Web Audio.'
+  },
+  fr: {
+    'Audio Sync Offset': 'Décalage de synchronisation audio',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Ajustez le timing audio par rapport à la vidéo de -500 ms à +500 ms. Les valeurs positives ajoutent un délai audio ; les valeurs négatives utilisent la latence Web Audio minimale disponible.'
+  },
+  it: {
+    'Audio Sync Offset': 'Offset di sincronizzazione audio',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Regola la temporizzazione dell’audio rispetto al video da -500 ms a +500 ms. I valori positivi aggiungono un ritardo audio; quelli negativi usano la latenza Web Audio minima disponibile.'
+  },
+  ja: {
+    'Audio Sync Offset': '音声同期オフセット',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': '動画に対する音声のタイミングを -500 ms から +500 ms の範囲で調整します。正の値は音声を遅らせ、負の値は利用可能な Web Audio の最小レイテンシを使用します。'
+  },
+  ko: {
+    'Audio Sync Offset': '오디오 동기화 오프셋',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': '동영상에 대한 오디오 타이밍을 -500ms에서 +500ms까지 조정합니다. 양수 값은 오디오 지연을 추가하고, 음수 값은 사용 가능한 최소 Web Audio 지연 시간을 사용합니다.'
+  },
+  pt_BR: {
+    'Audio Sync Offset': 'Deslocamento de sincronização do áudio',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Ajuste o tempo do áudio em relação ao vídeo de -500 ms a +500 ms. Valores positivos adicionam atraso ao áudio; valores negativos usam a latência mínima disponível do Web Audio.'
+  },
+  ru: {
+    'Audio Sync Offset': 'Смещение синхронизации аудио',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Настройте тайминг аудио относительно видео от -500 до +500 мс. Положительные значения добавляют задержку аудио, а отрицательные используют минимальную доступную задержку Web Audio.'
+  },
+  zh_CN: {
+    'Audio Sync Offset': '音频同步偏移',
+    'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': '将音频相对于视频的时间调整为 -500 毫秒至 +500 毫秒。正值会增加音频延迟；负值使用可用的最低 Web Audio 延迟。'
+  }
+};
+for (const [locale, messages] of Object.entries(AUDIO_SYNC_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const WATCH_LATER_TRANSLATIONS = {
   de: {
     'Published on {date}': 'Veröffentlicht am {date}',

@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "Balance de audio"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "Ajusta el tiempo del audio respecto al vídeo de -500 ms a +500 ms. Los valores positivos añaden retraso al audio; los negativos usan la latencia mínima disponible de Web Audio."
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "Desfase de sincronización de audio"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "Selecciona tu idioma de audio preferido mediante el puente del reproductor sin abrir ni pulsar la configuración de YouTube."
   },

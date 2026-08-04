@@ -8,8 +8,10 @@
         language: 'data-ytkit-audio-language',
         descriptive: 'data-ytkit-audio-description',
         original: 'data-ytkit-audio-original',
-        status: 'data-ytkit-audio-track-status'
+        status: 'data-ytkit-audio-track-status',
+        syncOffset: 'data-ytkit-audio-sync-offset'
     });
+    const AUDIO_SYNC_OFFSET_LIMIT_MS = 500;
     const TASK_ID = 'ytkit-main:audioTrack';
     const RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
     const TASK_EVENTS = Object.freeze([
@@ -25,6 +27,15 @@
         const raw = String(value || '').trim().replace(/_/g, '-');
         if (!raw || !/^[a-z]{2,3}(?:-[a-z0-9]{1,8})*$/i.test(raw)) return '';
         return raw.toLowerCase();
+    }
+
+    function normalizeAudioSyncOffset(value) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return 0;
+        return Math.max(
+            -AUDIO_SYNC_OFFSET_LIMIT_MS,
+            Math.min(AUDIO_SYNC_OFFSET_LIMIT_MS, Math.round(parsed))
+        );
     }
 
     function getText(value) {
@@ -239,8 +250,10 @@
 
     const audioTrackSelection = Object.freeze({
         ATTRS,
+        AUDIO_SYNC_OFFSET_LIMIT_MS,
         TASK_ID,
         normalizeLanguageTag,
+        normalizeAudioSyncOffset,
         getTrackLabel,
         getTrackLanguage,
         isDescriptiveTrack,

@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "オーディオパン"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "動画に対する音声のタイミングを -500 ms から +500 ms の範囲で調整します。正の値は音声を遅らせ、負の値は利用可能な Web Audio の最小レイテンシを使用します。"
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "音声同期オフセット"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "プレーヤーブリッジを使用して、YouTube の設定を開いたりクリックしたりせずに優先する音声言語を選択します。"
   },

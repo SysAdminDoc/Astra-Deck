@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "音频平衡"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "将音频相对于视频的时间调整为 -500 毫秒至 +500 毫秒。正值会增加音频延迟；负值使用可用的最低 Web Audio 延迟。"
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "音频同步偏移"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "通过播放器桥接选择首选音频语言，无需打开或点击 YouTube 设置。"
   },

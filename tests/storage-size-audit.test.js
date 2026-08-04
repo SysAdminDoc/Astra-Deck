@@ -75,7 +75,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // v4.49.7 moved the AI summary archive to the top-level
     // ytkit-ai-summaries key (-28 bytes from the settings bag).
     // v4.50.8 descriptive-audio preference adds 31 bytes.
-    assert.equal(assessment.totalBytes, 179506);
+    // v4.51.1 audio sync offset adds 22 bytes.
+    assert.equal(assessment.totalBytes, 179528);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

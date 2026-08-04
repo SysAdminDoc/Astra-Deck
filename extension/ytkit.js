@@ -3372,6 +3372,7 @@ return response;
             volumeBoostLevel: 2,
             audioNormalization: false,
             audioPan: 0,
+            audioSyncOffsetMs: 0,
             frameByFrameButtons: false,
             digitalWellbeing: false,
             dwBreakIntervalMin: 30,          // 0 = off
@@ -30998,6 +30999,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._remove();
                 removeNavigateRule('audioPan');
+            }
+        },
+
+        // ── Audio Sync Offset ──
+        {
+            id: 'audioSyncOffsetMs',
+            name: t('feature_audioSyncOffsetMs_name', 'Audio Sync Offset'),
+            description: t('feature_audioSyncOffsetMs_desc', 'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.'),
+            group: 'Video Player',
+            icon: 'timer-reset',
+            type: 'range',
+            min: -500,
+            max: 500,
+            step: 10,
+            defaultValue: 0,
+            _apply() {
+                const value = Number(appState.settings?.audioSyncOffsetMs);
+                const offset = Number.isFinite(value)
+                    ? Math.max(-500, Math.min(500, Math.round(value)))
+                    : 0;
+                document.documentElement.setAttribute('data-ytkit-audio-sync-offset', String(offset));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-audio-sync-offset', '0');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioSyncOffsetMs', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioSyncOffsetMs');
             }
         },
 

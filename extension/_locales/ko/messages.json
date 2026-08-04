@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "오디오 팬"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "동영상에 대한 오디오 타이밍을 -500ms에서 +500ms까지 조정합니다. 양수 값은 오디오 지연을 추가하고, 음수 값은 사용 가능한 최소 Web Audio 지연 시간을 사용합니다."
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "오디오 동기화 오프셋"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "플레이어 브리지를 통해 YouTube 설정을 열거나 클릭하지 않고 선호하는 오디오 언어를 선택합니다."
   },
