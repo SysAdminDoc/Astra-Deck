@@ -71,6 +71,28 @@ function predicateVideoCard({ title = 'Example video', rowText = '', short = fal
     };
 }
 
+function channelVideoCard(href = null, channelName = '') {
+    const channelLink = href
+        ? {
+            href,
+            getAttribute: name => name === 'href' ? href : null
+        }
+        : null;
+    const channelNode = channelName ? { textContent: channelName } : null;
+    return {
+        textContent: '',
+        dataset: {},
+        querySelector(selector) {
+            if (selector.includes('a[href*="/@"]') || selector.includes('a[href*="/channel/"]')) return channelLink;
+            if (selector.includes('#channel-name a')) return channelNode;
+            return null;
+        },
+        querySelectorAll() {
+            return [];
+        }
+    };
+}
+
 test('hideVideosFromHome module exports the Video Hider runtime factory', () => {
     const { mod, exported } = loadModule();
     assert.equal(typeof mod.createHideVideosFromHomeFeature, 'function');
@@ -92,6 +114,10 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
         '_processVideoElement',
         '_setBlockedChannelCache',
         '_getBlockedChannelKeys',
+        '_getAllowedChannels',
+        '_setAllowedChannels',
+        '_addAllowedChannel',
+        '_removeAllowedChannel',
         '_evaluateDirectWatchBlock',
         '_showDirectWatchInterstitial',
         '_getPredicateEvaluator',
@@ -221,6 +247,67 @@ test('Video Hider predicate context derives age, Shorts, and members-only fields
     }
 });
 
+test('Video Hider channel allowlist is fail-open when empty and isolated from the blocklist', () => {
+    const { mod } = loadModule();
+    const storage = new Map();
+    const appState = {
+        settings: {
+            hideVideosChannelAllowlist: true,
+            hideVideosKeywordFilter: '',
+            hideVideosHideLive: false,
+            hideVideosHideUpcoming: false,
+            hideVideosHideMixes: false,
+            hideVideosHidePlaylists: false,
+            hideVideosHideMovies: false,
+            hideVideosHideAutoDubbed: false,
+            hideVideosLowViewFilter: false,
+            hideVideosWatchedRatio: 0,
+            advancedLocalPredicate: false,
+            hideVideosDurationFilter: 0
+        }
+    };
+    const normalizeChannel = entry => {
+        const raw = typeof entry === 'string'
+            ? entry
+            : (entry.channelId || entry.id || entry.handle || entry.url || '');
+        const id = String(raw).replace(/^https?:\/\/(?:www\.)?youtube\.com\//i, '');
+        return id
+            ? {
+                id,
+                name: typeof entry === 'object' && entry.name ? entry.name : id,
+                ...(typeof entry === 'object' && entry.source ? { source: entry.source } : {})
+            }
+            : null;
+    };
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState,
+        storageRead: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
+        storageWrite: (key, value) => storage.set(key, value),
+        sanitizeImportedBlockedChannels: value => Array.isArray(value) ? value : [],
+        sanitizeImportedAllowedChannels: value => Array.isArray(value) ? value : [],
+        normalizeBlockedChannelRecord: normalizeChannel,
+        getBlockedChannelIdentityKeys: channel => channel?.id ? [String(channel.id).toLowerCase()] : []
+    });
+    const allowedCard = channelVideoCard('https://youtube.com/@allowed', 'Allowed Channel');
+    const otherCard = channelVideoCard('https://youtube.com/@other', 'Other Channel');
+    const unknownCard = channelVideoCard();
+
+    assert.equal(feature._shouldHide(allowedCard), false, 'an empty allowlist must not hide identified channels');
+    assert.equal(feature._shouldHide(otherCard), false, 'an empty allowlist must fail open for every channel');
+    assert.equal(feature._shouldHide(unknownCard), false, 'an unresolvable channel must fail open');
+
+    feature._addAllowedChannel({ id: '@allowed', name: 'Allowed Channel', source: 'settings' });
+    assert.equal(feature._shouldHide(allowedCard), false, 'listed channels must remain visible');
+    assert.equal(feature._shouldHide(otherCard), true, 'unlisted channels must be hidden when the allowlist is populated');
+    assert.deepEqual(storage.get('ytkit-allowed-channels'), [{ id: '@allowed', name: 'Allowed Channel', source: 'settings' }]);
+
+    appState.settings.hideVideosChannelAllowlist = false;
+    feature._setBlockedChannels([{ id: '@other', name: 'Other Channel' }]);
+    assert.equal(feature._shouldHide(otherCard), true, 'blocklist mode must still hide blocked channels');
+    assert.equal(feature._shouldHide(allowedCard), false, 'blocklist mode must not reinterpret the allowlist');
+    assert.deepEqual(storage.get('ytkit-allowed-channels'), [{ id: '@allowed', name: 'Allowed Channel', source: 'settings' }]);
+});
+
 test('Video Hider strips stateful regex flags before boolean matching', () => {
     assert.match(MODULE_SOURCE, /regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
         'Video Hider module must strip global/sticky flags');
@@ -310,6 +397,7 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
         'sanitizeImportedHiddenVideos',
         'sanitizeImportedVideoIdList',
         'sanitizeImportedBlockedChannels',
+        'sanitizeImportedAllowedChannels',
         'IMPORT_LIMITS',
         'VIDEO_ID_PATTERN',
         'normalizeBlockedChannelRecord',

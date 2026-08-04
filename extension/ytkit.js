@@ -972,6 +972,7 @@ return response;
         allowedVideos: 'ytkit-video-hider-allowed-videos',
         markedWatchedVideos: 'ytkit-marked-watched-videos',
         blockedChannels: 'ytkit-blocked-channels',
+        allowedChannels: 'ytkit-allowed-channels',
         bookmarks: 'ytkit-bookmarks',
         watchProgress: 'ytkit-watch-progress',
         watchTime: 'ytkit-watch-time'
@@ -986,6 +987,7 @@ return response;
         allowedVideos: 5000,
         markedWatchedVideos: 5000,
         blockedChannels: 2000,
+        allowedChannels: 2000,
         bookmarkVideos: 400,
         bookmarksPerVideo: 100,
         bookmarkNoteChars: 500,
@@ -1212,6 +1214,10 @@ return response;
             if (sanitized.length >= IMPORT_LIMITS.blockedChannels) break;
         }
         return sanitized;
+    }
+
+    function sanitizeImportedAllowedChannels(value) {
+        return sanitizeImportedBlockedChannels(value);
     }
 
     function sanitizeTimestampBookmarks(value, limits = IMPORT_LIMITS) {
@@ -3272,6 +3278,7 @@ return response;
             hideVideosShowQuickHideButton: true,
             markWatchedVideos: false,
             hideVideosAllowChannelBlock: true,
+            hideVideosChannelAllowlist: false,
             hideVideosRememberRestoredVideos: true,
             hideVideosScopeHome: true,
             hideVideosScopeSubscriptions: true,
@@ -3508,7 +3515,7 @@ return response;
                 'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
                 'hideVideosRemoveHiddenCards', 'hideVideosShowQuickHideButton',
                 'markWatchedVideos',
-                'hideVideosAllowChannelBlock', 'hideVideosRememberRestoredVideos',
+                'hideVideosAllowChannelBlock', 'hideVideosChannelAllowlist', 'hideVideosRememberRestoredVideos',
                 'hideVideosScopeHome', 'hideVideosScopeSubscriptions', 'hideVideosScopeSearch',
                 'hideVideosScopeWatch', 'hideVideosScopeChannels', 'hideVideosScopeOther',
                 'hideVideosLowViewFilter', 'hideVideosLowViewThreshold',
@@ -4189,6 +4196,7 @@ return response;
             if (summary.allowedVideos) parts.push(`${summary.allowedVideos} allowed video${summary.allowedVideos === 1 ? '' : 's'}`);
             if (summary.markedWatchedVideos) parts.push(`${summary.markedWatchedVideos} marked-watched video${summary.markedWatchedVideos === 1 ? '' : 's'}`);
             if (summary.blockedChannels) parts.push(`${summary.blockedChannels} blocked channel${summary.blockedChannels === 1 ? '' : 's'}`);
+            if (summary.allowedChannels) parts.push(`${summary.allowedChannels} allowed channel${summary.allowedChannels === 1 ? '' : 's'}`);
             if (summary.bookmarkVideos) parts.push(`${summary.bookmarkVideos} bookmark video${summary.bookmarkVideos === 1 ? '' : 's'}`);
             if (summary.aiSummaries) parts.push(`${summary.aiSummaries} AI summar${summary.aiSummaries === 1 ? 'y' : 'ies'}`);
             const main = parts.length ? parts.join(', ') : 'no value changes';
@@ -4204,6 +4212,7 @@ return response;
             let allowedVideos = [];
             let markedWatchedVideos = [];
             let blockedChannels = [];
+            let allowedChannels = [];
             let bookmarks = {};
             let aiSummaries = {};
             try {
@@ -4211,6 +4220,7 @@ return response;
                 allowedVideos = StorageManager.get(STORAGE_KEYS.allowedVideos, []);
                 markedWatchedVideos = StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []);
                 blockedChannels = StorageManager.get(STORAGE_KEYS.blockedChannels, []);
+                allowedChannels = StorageManager.get(STORAGE_KEYS.allowedChannels, []);
                 bookmarks = StorageManager.get(STORAGE_KEYS.bookmarks, {});
                 const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
                 if (typeof summarySanitizer === 'function') {
@@ -4230,6 +4240,7 @@ return response;
                 allowedVideos: allowedVideosForExport,
                 markedWatchedVideos: markedWatchedVideosForExport,
                 blockedChannels: sanitizeImportedBlockedChannels(blockedChannels),
+                allowedChannels: sanitizeImportedAllowedChannels(allowedChannels),
                 bookmarks: sanitizeImportedBookmarks(bookmarks),
                 aiSummaries,
                 exportVersion: 4,
@@ -4249,11 +4260,12 @@ return response;
                 if (!isPlainObject(importedData)) return { ok: false, message: 'Invalid file format.' };
 
                 // Handle different export versions
-                let settings, hiddenVideos, allowedVideos, markedWatchedVideos, blockedChannels, bookmarks;
+                let settings, hiddenVideos, allowedVideos, markedWatchedVideos, blockedChannels, allowedChannels, bookmarks;
                 let rawHiddenVideos = null;
                 let rawAllowedVideos = null;
                 let rawMarkedWatchedVideos = null;
                 let rawBlockedChannels = null;
+                let rawAllowedChannels = null;
                 let rawBookmarks = null;
                 // AI summaries: new backups carry a top-level aiSummaries
                 // store; pre-4.49.7 backups embedded aiSummaryArtifactsData
@@ -4280,11 +4292,13 @@ return response;
                     rawAllowedVideos = importedData.allowedVideos;
                     rawMarkedWatchedVideos = importedData.markedWatchedVideos;
                     rawBlockedChannels = importedData.blockedChannels;
+                    rawAllowedChannels = importedData.allowedChannels;
                     rawBookmarks = importedData.bookmarks;
                     hiddenVideos = sanitizeImportedHiddenVideos(rawHiddenVideos);
                     allowedVideos = sanitizeImportedVideoIdList(rawAllowedVideos, IMPORT_LIMITS.allowedVideos);
                     markedWatchedVideos = sanitizeImportedMarkedWatchedVideos(rawMarkedWatchedVideos);
                     blockedChannels = sanitizeImportedBlockedChannels(rawBlockedChannels);
+                    allowedChannels = sanitizeImportedAllowedChannels(rawAllowedChannels);
                     bookmarks = sanitizeImportedBookmarks(rawBookmarks);
                 } else if (importedData.exportVersion >= 2) {
                     settings = this._sanitize(importedData.settings || {});
@@ -4294,6 +4308,7 @@ return response;
                     allowedVideos = null;
                     markedWatchedVideos = null;
                     blockedChannels = sanitizeImportedBlockedChannels(rawBlockedChannels);
+                    allowedChannels = null;
                     bookmarks = null;
                 } else {
                     settings = this._sanitize(importedData);
@@ -4301,6 +4316,7 @@ return response;
                     allowedVideos = null;
                     markedWatchedVideos = null;
                     blockedChannels = null;
+                    allowedChannels = null;
                     bookmarks = null;
                 }
 
@@ -4313,6 +4329,7 @@ return response;
                     || (allowedVideos !== null && allowedVideos.length > 0)
                     || (markedWatchedVideos !== null && markedWatchedVideos.length > 0)
                     || (blockedChannels !== null && blockedChannels.length > 0)
+                    || (allowedChannels !== null && allowedChannels.length > 0)
                     || (bookmarks !== null && Object.keys(bookmarks).length > 0)
                     || (aiSummaries !== null && Object.keys(aiSummaries).length > 0);
                 if (Object.keys(settings).length > 0 && !hasValidKey) return { ok: false, message: 'No known settings found in file.' };
@@ -4326,6 +4343,7 @@ return response;
                     allowedVideos: StorageManager.get(STORAGE_KEYS.allowedVideos, []),
                     markedWatchedVideos: StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []),
                     blockedChannels: StorageManager.get(STORAGE_KEYS.blockedChannels, []),
+                    allowedChannels: StorageManager.get(STORAGE_KEYS.allowedChannels, []),
                     bookmarks: StorageManager.get(STORAGE_KEYS.bookmarks, {}),
                     aiSummaries: StorageManager.get(STORAGE_KEYS.aiSummaries, {}),
                 };
@@ -4339,6 +4357,7 @@ return response;
                     ...(allowedVideos !== null ? { [STORAGE_KEYS.allowedVideos]: allowedVideos } : {}),
                     ...(markedWatchedVideos !== null ? { [STORAGE_KEYS.markedWatchedVideos]: markedWatchedVideos } : {}),
                     ...(blockedChannels !== null ? { [STORAGE_KEYS.blockedChannels]: blockedChannels } : {}),
+                    ...(allowedChannels !== null ? { [STORAGE_KEYS.allowedChannels]: allowedChannels } : {}),
                     ...(bookmarks !== null ? { [STORAGE_KEYS.bookmarks]: bookmarks } : {}),
                     ...(aiSummaries !== null ? { [STORAGE_KEYS.aiSummaries]: aiSummaries } : {})
                 });
@@ -4355,6 +4374,13 @@ return response;
                         duplicates: 0
                     }
                     : { imported: blockedChannels?.length || 0, skipped: 0, duplicates: 0 };
+                const allowedChannelSummary = Array.isArray(rawAllowedChannels)
+                    ? {
+                        imported: allowedChannels?.length || 0,
+                        skipped: Math.max(0, rawAllowedChannels.length - (allowedChannels?.length || 0)),
+                        duplicates: 0
+                    }
+                    : { imported: allowedChannels?.length || 0, skipped: 0, duplicates: 0 };
                 const bookmarkSummary = this._summarizeObjectMapImport(rawBookmarks, bookmarks);
                 const aiSummarySummary = this._summarizeObjectMapImport(rawAiSummaries, aiSummaries);
                 const summary = {
@@ -4363,10 +4389,11 @@ return response;
                     allowedVideos: allowedSummary.imported,
                     markedWatchedVideos: markedWatchedSummary.imported,
                     blockedChannels: blockedSummary.imported,
+                    allowedChannels: allowedChannelSummary.imported,
                     bookmarkVideos: bookmarkSummary.imported,
                     aiSummaries: aiSummarySummary.imported,
-                    skipped: hiddenSummary.skipped + allowedSummary.skipped + markedWatchedSummary.skipped + blockedSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
-                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + markedWatchedSummary.duplicates + blockedSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
+                    skipped: hiddenSummary.skipped + allowedSummary.skipped + markedWatchedSummary.skipped + blockedSummary.skipped + allowedChannelSummary.skipped + bookmarkSummary.skipped + aiSummarySummary.skipped,
+                    duplicates: hiddenSummary.duplicates + allowedSummary.duplicates + markedWatchedSummary.duplicates + blockedSummary.duplicates + allowedChannelSummary.duplicates + bookmarkSummary.duplicates + aiSummarySummary.duplicates
                 };
                 const restore = (snapshot) => {
                     // Aggregate the restore writes exactly like apply() does:
@@ -4381,6 +4408,7 @@ return response;
                         StorageManager.setSync(STORAGE_KEYS.allowedVideos, snapshot.allowedVideos),
                         StorageManager.setSync(STORAGE_KEYS.markedWatchedVideos, snapshot.markedWatchedVideos),
                         StorageManager.setSync(STORAGE_KEYS.blockedChannels, snapshot.blockedChannels),
+                        StorageManager.setSync(STORAGE_KEYS.allowedChannels, snapshot.allowedChannels),
                         StorageManager.setSync(STORAGE_KEYS.bookmarks, snapshot.bookmarks),
                         StorageManager.setSync(STORAGE_KEYS.aiSummaries, snapshot.aiSummaries)
                     ];
@@ -4412,6 +4440,7 @@ return response;
                         if (allowedVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.allowedVideos, allowedVideos));
                         if (markedWatchedVideos !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.markedWatchedVideos, markedWatchedVideos));
                         if (blockedChannels !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.blockedChannels, blockedChannels));
+                        if (allowedChannels !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.allowedChannels, allowedChannels));
                         if (bookmarks !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.bookmarks, bookmarks));
                         if (aiSummaries !== null) writes.push(StorageManager.setSync(STORAGE_KEYS.aiSummaries, aiSummaries));
                         return Promise.all(writes).then((results) => {
@@ -5465,7 +5494,7 @@ return response;
             updateAllToggleStates();
         }
 
-        if (filteredChanges[STORAGE_KEYS.hiddenVideos] || filteredChanges[STORAGE_KEYS.allowedVideos] || filteredChanges[STORAGE_KEYS.markedWatchedVideos] || filteredChanges[STORAGE_KEYS.blockedChannels]) {
+        if (filteredChanges[STORAGE_KEYS.hiddenVideos] || filteredChanges[STORAGE_KEYS.allowedVideos] || filteredChanges[STORAGE_KEYS.markedWatchedVideos] || filteredChanges[STORAGE_KEYS.blockedChannels] || filteredChanges[STORAGE_KEYS.allowedChannels]) {
             const videoHider = getFeatureById('hideVideosFromHome');
             if (videoHider) {
                 if (filteredChanges[STORAGE_KEYS.hiddenVideos]) {
@@ -5488,11 +5517,16 @@ return response;
                         || [];
                     videoHider._setBlockedChannelCache?.(channels);
                 }
+                if (filteredChanges[STORAGE_KEYS.allowedChannels]) {
+                    const channels = videoHider._normalizeAllowedChannels?.(filteredChanges[STORAGE_KEYS.allowedChannels].newValue || [])
+                        || [];
+                    videoHider._setAllowedChannelCache?.(channels);
+                }
                 if (videoHider._initialized) {
                     try { videoHider._processAllVideos?.(); } catch (error) {
                         DebugManager.log('Storage', `Video Hider refresh failed: ${error.message}`);
                     }
-                    if (filteredChanges[STORAGE_KEYS.blockedChannels]) {
+                    if (filteredChanges[STORAGE_KEYS.blockedChannels] || filteredChanges[STORAGE_KEYS.allowedChannels]) {
                         try { videoHider._evaluateDirectWatchBlock?.(); } catch (error) {
                             DebugManager.log('Storage', `Direct-watch block refresh failed: ${error.message}`);
                         }
@@ -16729,8 +16763,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             storageReadJSON,
             storageWrite,
             sanitizeImportedHiddenVideos,
-            sanitizeImportedVideoIdList,
-            sanitizeImportedBlockedChannels,
+             sanitizeImportedVideoIdList,
+             sanitizeImportedBlockedChannels,
+             sanitizeImportedAllowedChannels,
             IMPORT_LIMITS,
             VIDEO_ID_PATTERN,
             normalizeBlockedChannelRecord,
@@ -16759,6 +16794,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _STORAGE_KEY: 'ytkit-hidden-videos',
             _ALLOWLIST_KEY: 'ytkit-video-hider-allowed-videos',
             _CHANNELS_KEY: 'ytkit-blocked-channels',
+            _ALLOWED_CHANNELS_KEY: 'ytkit-allowed-channels',
             _VIDEO_SELECTORS: 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer',
             _hiddenSet: null,
             _hiddenList: null,
@@ -16766,6 +16802,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _allowedList: null,
             _channelsCache: null,
             _channelKeyCache: null,
+            _allowedChannelsCache: null,
+            _allowedChannelKeyCache: null,
             _removedVideoNodes: [],
             _subsBannerCollapsed: false,
             _subsLoadState: {
@@ -17188,6 +17226,75 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._setBlockedChannels(channels.filter(channel => !this._isSameChannel(channel, channelInfo)));
                 return removed;
             },
+            _normalizeAllowedChannels(channels) {
+                return sanitizeImportedAllowedChannels(Array.isArray(channels) ? channels : []);
+            },
+            _setAllowedChannelCache(channels) {
+                const cachedChannels = Array.isArray(channels) ? channels : [];
+                const keyCache = new Set();
+                for (const channel of cachedChannels) {
+                    this._getChannelIdentityKeys(channel).forEach(key => keyCache.add(key));
+                }
+                this._allowedChannelsCache = cachedChannels;
+                this._allowedChannelKeyCache = keyCache;
+                return cachedChannels;
+            },
+            _getAllowedChannels() {
+                if (this._allowedChannelsCache === null) {
+                    const stored = storageRead(this._ALLOWED_CHANNELS_KEY, []);
+                    const sanitized = this._normalizeAllowedChannels(stored);
+                    this._setAllowedChannelCache(sanitized);
+                    try {
+                        if (JSON.stringify(stored) !== JSON.stringify(sanitized)) storageWrite(this._ALLOWED_CHANNELS_KEY, sanitized);
+                    } catch (error) {
+                        void error;
+                    }
+                }
+                return this._allowedChannelsCache;
+            },
+            _setAllowedChannels(channels) {
+                const sanitized = this._normalizeAllowedChannels(channels);
+                this._setAllowedChannelCache(sanitized);
+                storageWrite(this._ALLOWED_CHANNELS_KEY, sanitized);
+            },
+            _getAllowedChannelKeys() {
+                if (this._allowedChannelKeyCache === null) this._getAllowedChannels();
+                return this._allowedChannelKeyCache || new Set();
+            },
+            _isChannelAllowed(channelInfo) {
+                if (!channelInfo) return false;
+                const keys = this._getChannelIdentityKeys(channelInfo);
+                if (keys.length === 0) return false;
+                const allowedKeys = this._getAllowedChannelKeys();
+                return keys.some(key => allowedKeys.has(key));
+            },
+            _normalizeChannelInput(value) {
+                const raw = typeof value === 'string' ? value.trim() : '';
+                if (!raw) return null;
+                return normalizeBlockedChannelRecord({ id: raw, name: raw, source: 'settings' });
+            },
+            _isChannelAllowlistMode() {
+                return appState.settings.hideVideosChannelAllowlist === true;
+            },
+            _addAllowedChannel(channelInfo) {
+                const record = normalizeBlockedChannelRecord({
+                    ...(isPlainObject(channelInfo) ? channelInfo : { id: channelInfo }),
+                    source: isPlainObject(channelInfo) && channelInfo.source ? channelInfo.source : 'thumbnail'
+                });
+                if (!record) return { added: false, record: null };
+                const channels = this._getAllowedChannels();
+                const existing = channels.find(channel => this._isSameChannel(channel, record));
+                if (existing) return { added: false, record: existing };
+                this._setAllowedChannels([...channels, record]);
+                return { added: true, record };
+            },
+            _removeAllowedChannel(channelInfo) {
+                const channels = this._getAllowedChannels();
+                const removed = channels.filter(channel => this._isSameChannel(channel, channelInfo));
+                if (removed.length === 0) return [];
+                this._setAllowedChannels(channels.filter(channel => !this._isSameChannel(channel, channelInfo)));
+                return removed;
+            },
             _getChannelUrl(channelInfo) {
                 const record = normalizeBlockedChannelRecord(channelInfo);
                 if (!record) return '';
@@ -17466,7 +17573,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.className = 'ytkit-video-hide-btn';
                 btn.title = appState.settings.hideVideosAllowChannelBlock === false
                     ? 'Hide this video'
-                    : 'Hide this video (right-click to block channel)';
+                    : this._isChannelAllowlistMode()
+                        ? t('videoHiderHideButtonAllowChannel', 'Hide this video (right-click to allow channel)')
+                        : t('videoHiderHideButtonBlockChannel', 'Hide this video (right-click to block channel)');
                 btn.setAttribute('aria-label', btn.title);
                 btn.appendChild(this._createSVG('M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'));
                 return btn;
@@ -17484,7 +17593,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (existing) {
                     existing.title = appState.settings.hideVideosAllowChannelBlock === false
                         ? 'Hide this video'
-                        : 'Hide this video (right-click to block channel)';
+                        : this._isChannelAllowlistMode()
+                            ? t('videoHiderHideButtonAllowChannel', 'Hide this video (right-click to allow channel)')
+                            : t('videoHiderHideButtonBlockChannel', 'Hide this video (right-click to block channel)');
                     existing.setAttribute('aria-label', existing.title);
                     return;
                 }
@@ -17501,6 +17612,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const id = element.dataset.ytkitVideoId || this._extractVideoId(element) || videoId;
                     if (id) this._hideVideo(id, element);
                 });
+                btn.title = appState.settings.hideVideosAllowChannelBlock === false
+                    ? 'Hide this video'
+                    : this._isChannelAllowlistMode()
+                        ? t('videoHiderHideButtonAllowChannel', 'Hide this video (right-click to allow channel)')
+                        : t('videoHiderHideButtonBlockChannel', 'Hide this video (right-click to block channel)');
+                btn.setAttribute('aria-label', btn.title);
                 btn.addEventListener('contextmenu', e => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -17540,6 +17657,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     showToast('Channel blocking is disabled', '#6b7280');
                     return;
                 }
+                if (this._isChannelAllowlistMode()) {
+                    const result = this._addAllowedChannel(channelInfo);
+                    const record = result.record || channelInfo;
+                    this._hideChannelVideos(record);
+                    this._lastHidden = { type: 'allowed-channel', info: record };
+                    const message = result.added
+                        ? t('videoHiderAllowedChannelToast', 'Channel allowed: {name}').replace('{name}', record.name)
+                        : t('videoHiderAlreadyAllowedChannelToast', '{name} is already allowed').replace('{name}', record.name);
+                    this._showToast(message, [
+                        { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
+                        { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
+                    ]);
+                    return;
+                }
                 const result = this._addBlockedChannel(channelInfo);
                 const record = result.record || channelInfo;
                 this._hideChannelVideos(record);
@@ -17576,6 +17707,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else if (this._lastHidden.type === 'channel') {
                     this._removeBlockedChannel(this._lastHidden.info);
                     this._processAllVideos();
+                } else if (this._lastHidden.type === 'allowed-channel') {
+                    this._removeAllowedChannel(this._lastHidden.info);
+                    this._processAllVideos();
                 }
                 this._updatePageActionButtons();
                 this._lastHidden = null;
@@ -17611,7 +17745,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (videoId && this._isVideoAllowed(videoId)) return false;
                 if (videoId && this._isVideoIdHidden(videoId)) return true;
                 const channelInfo = this._extractChannelInfo(element);
-                if (this._isChannelBlocked(channelInfo)) return true;
+                if (this._isChannelAllowlistMode()) {
+                    // Empty or unresolved allowlists are fail-open: an empty
+                    // list must never hide every feed card, and cards whose
+                    // channel cannot be identified must remain recoverable.
+                    if (channelInfo
+                        && this._getAllowedChannelKeys().size > 0
+                        && !this._isChannelAllowed(channelInfo)) return true;
+                } else if (this._isChannelBlocked(channelInfo)) {
+                    return true;
+                }
 
                 const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
                 if (filterStr) {
@@ -32475,6 +32618,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         'ytkit-blocked-channels',
                         []
                     );
+                    this._pruneTopLevelStore(
+                        STORAGE_KEYS.allowedChannels,
+                        value => sanitizeImportedAllowedChannels(
+                            Array.isArray(value) ? value.slice(-IMPORT_LIMITS.allowedChannels) : value
+                        ),
+                        'ytkit-allowed-channels',
+                        []
+                    );
 
                     const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
                     if (typeof summarySanitizer === 'function') {
@@ -42595,7 +42746,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             paneTitleH2.textContent = 'Video Hider';
             const paneDescription = document.createElement('p');
             paneDescription.className = 'ytkit-pane-description';
-            paneDescription.textContent = 'Review hidden videos, manage blocked channels, and tune automatic filters without leaving the page.';
+            paneDescription.textContent = t('videoHiderPaneDescription', 'Review hidden videos, manage channel lists, and tune automatic filters without leaving the page.');
             const paneMeta = document.createElement('div');
             paneMeta.className = 'ytkit-pane-meta';
             const paneStateChip = document.createElement('span');
@@ -42670,13 +42821,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 { id: 'settings', label: 'Filters & Limits' }
             ];
             const tabButtons = new Map();
+            let activeTabId = tabs[0].id;
+
+            const isChannelAllowlistMode = () => appState.settings.hideVideosChannelAllowlist === true;
+            const getManagedChannels = () => isChannelAllowlistMode()
+                ? (videoHiderFeature?._getAllowedChannels?.() || [])
+                : (videoHiderFeature?._getBlockedChannels?.() || []);
+            const setManagedChannels = channels => {
+                if (isChannelAllowlistMode()) videoHiderFeature?._setAllowedChannels?.(channels);
+                else videoHiderFeature?._setBlockedChannels?.(channels);
+            };
+            const removeManagedChannel = channel => isChannelAllowlistMode()
+                ? (videoHiderFeature?._removeAllowedChannel?.(channel) || [])
+                : (videoHiderFeature?._removeBlockedChannel?.(channel) || []);
 
             function getVideoCount() {
                 return videoHiderFeature?._getHiddenVideos()?.length || 0;
             }
 
             function getChannelCount() {
-                return videoHiderFeature?._getBlockedChannels()?.length || 0;
+                return getManagedChannels().length;
             }
 
             function getAllowedCount() {
@@ -42703,6 +42867,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || appState.settings.hideVideosShowQuickHideButton === false
                     || appState.settings.markWatchedVideos === true
                     || appState.settings.hideVideosAllowChannelBlock === false
+                    || appState.settings.hideVideosChannelAllowlist === true
                     || appState.settings.hideVideosRememberRestoredVideos === false
                     || appState.settings.hideVideosLowViewFilter === true
                     || (appState.settings.hideVideosLowViewThreshold || 1000) !== 1000
@@ -42725,7 +42890,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 paneStateChip.textContent = isEnabled ? 'Feature On' : 'Feature Off';
                 paneHiddenChip.textContent = `${countLabel(getVideoCount(), 'Video')} Hidden`;
                 paneAllowedChip.textContent = `${countLabel(getAllowedCount(), 'Video')} Allowed`;
-                paneChannelsChip.textContent = `${countLabel(getChannelCount(), 'Channel')} Blocked`;
+                const channelModeLabel = isChannelAllowlistMode()
+                    ? t('videoHiderAllowedChannelsTab', 'Allowed Channels')
+                    : t('videoHiderBlockedChannelsTab', 'Blocked Channels');
+                const channelStatusLabel = isChannelAllowlistMode()
+                    ? t('videoHiderAllowedChannelsStatus', 'Allowed')
+                    : t('videoHiderBlockedChannelsStatus', 'Blocked');
+                paneChannelsChip.textContent = `${countLabel(getChannelCount(), 'Channel')} ${channelStatusLabel}`;
+                const channelTabLabel = tabButtons.get('channels')?.querySelector('.ytkit-vh-tab__label');
+                if (channelTabLabel) channelTabLabel.textContent = channelModeLabel;
 
                 const videoBadge = tabButtons.get('videos')?.querySelector('.ytkit-vh-tab__badge');
                 const allowedBadge = tabButtons.get('allowed')?.querySelector('.ytkit-vh-tab__badge');
@@ -42782,7 +42955,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 videoHiderFeature?._removeHomeHideAllButton?.();
                 videoHiderFeature?._createSubsHideAllButton?.();
                 videoHiderFeature?._createHomeHideAllButton?.();
-                updateVideoHiderMeta();
+                renderTabContent(activeTabId);
             }
 
             function createVideoHiderToggle({ key, title, description, defaultChecked = true, onChange = null }) {
@@ -42864,7 +43037,70 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return section;
             }
 
+            function createChannelEntryForm() {
+                const allowlist = isChannelAllowlistMode();
+                const section = createVideoHiderSection(
+                    allowlist
+                        ? t('videoHiderAddAllowedChannelTitle', 'Add Allowed Channel')
+                        : t('videoHiderAddBlockedChannelTitle', 'Add Blocked Channel'),
+                    allowlist
+                        ? t('videoHiderAddAllowedChannelCopy', 'Paste a channel URL, handle, or channel ID. Only channels in this list are filtered by allowlist mode; an empty list is safe and applies no channel filter.')
+                        : t('videoHiderAddBlockedChannelCopy', 'Paste a channel URL, handle, or channel ID to add it to the channel blocklist.'),
+                );
+                const form = document.createElement('form');
+                form.className = 'ytkit-vh-inline-form';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = allowlist ? 'ytkit-vh-add-allowed-channel' : 'ytkit-vh-add-blocked-channel';
+                input.className = 'ytkit-vh-text-input';
+                input.placeholder = allowlist
+                    ? t('videoHiderChannelAllowlistPlaceholder', 'https://youtube.com/@channel or @handle')
+                    : t('videoHiderChannelBlocklistPlaceholder', 'https://youtube.com/@channel or @handle');
+                input.autocomplete = 'off';
+                input.spellcheck = false;
+                input.inputMode = 'url';
+                const button = document.createElement('button');
+                button.type = 'submit';
+                button.className = 'ytkit-vh-list-btn';
+                button.textContent = allowlist
+                    ? t('videoHiderAllowChannelButton', 'Allow Channel')
+                    : t('videoHiderBlockChannelButton', 'Block Channel');
+                const status = document.createElement('span');
+                status.className = 'ytkit-vh-form-status';
+                status.setAttribute('role', 'status');
+                status.setAttribute('aria-live', 'polite');
+                form.appendChild(input);
+                form.appendChild(button);
+                form.appendChild(status);
+                form.addEventListener('submit', event => {
+                    event.preventDefault();
+                    const channel = videoHiderFeature?._normalizeChannelInput?.(input.value);
+                    if (!channel) {
+                        status.textContent = t('videoHiderInvalidChannelInput', 'Enter a valid YouTube channel URL, handle, or channel ID.');
+                        input.focus();
+                        return;
+                    }
+                    status.textContent = '';
+                    const result = allowlist
+                        ? videoHiderFeature?._addAllowedChannel?.(channel)
+                        : videoHiderFeature?._addBlockedChannel?.(channel);
+                    videoHiderFeature?._restoreRemovedVideoNodes?.();
+                    videoHiderFeature?._processAllVideos?.();
+                    renderTabContent('channels');
+                    updateVideoHiderMeta();
+                    const record = result?.record || channel;
+                    const name = record.name || record.id;
+                    const message = result?.added
+                        ? t(allowlist ? 'videoHiderAllowedChannelAddedToast' : 'videoHiderBlockedChannelAddedToast', '{name} added to the channel list')
+                        : t(allowlist ? 'videoHiderAlreadyAllowedChannelToast' : 'videoHiderAlreadyBlockedChannelToast', '{name} is already in the channel list');
+                    showToast(message.replace('{name}', name), '#6b7280');
+                });
+                section.appendChild(form);
+                return section;
+            }
+
             function setActiveTab(nextTabId) {
+                activeTabId = nextTabId;
                 tabButtons.forEach((button, tabId) => {
                     const isActive = tabId === nextTabId;
                     button.classList.toggle('active', isActive);
@@ -43237,21 +43473,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         tabContent.appendChild(clearBtn);
                     }
                 } else if (tab === 'channels') {
-                    const channels = videoHiderFeature?._getBlockedChannels() || [];
+                    const allowlist = isChannelAllowlistMode();
+                    const channels = getManagedChannels();
+                    tabContent.appendChild(createChannelEntryForm());
                     if (channels.length === 0) {
                         tabContent.appendChild(createVideoHiderLead(
-                            'Channel Blocks',
-                            'No blocked channels yet',
-                            'Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks.',
+                            allowlist
+                                ? t('videoHiderChannelAllowlistEmptyEyebrow', 'Allowlist is empty')
+                                : t('videoHiderChannelBlocklistEmptyEyebrow', 'Channel Blocks'),
+                            allowlist
+                                ? t('videoHiderChannelAllowlistEmptyTitle', 'No allowed channels yet')
+                                : t('videoHiderChannelBlocklistEmptyTitle', 'No blocked channels yet'),
+                            allowlist
+                                ? t('videoHiderChannelAllowlistEmptyCopy', 'Add channels here or right-click the thumbnail X button to allow a channel. An empty allowlist is safe and applies no channel filter.')
+                                : t('videoHiderChannelBlocklistEmptyCopy', 'Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks.'),
                             true
                         ));
                     } else {
                         const list = document.createElement('div');
                         list.className = 'ytkit-vh-stack';
                         tabContent.appendChild(createVideoHiderLead(
-                            'Blocklist',
-                            `${countLabel(channels.length, 'Blocked Channel')} in Your List`,
-                            'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.'
+                            allowlist ? t('videoHiderChannelAllowlistEyebrow', 'Allowlist') : t('videoHiderChannelBlocklistEyebrow', 'Blocklist'),
+                            t('videoHiderChannelListCount', '{count} in Your List').replace('{count}', countLabel(channels.length, allowlist ? t('videoHiderAllowedChannelSingular', 'Allowed Channel') : t('videoHiderBlockedChannelSingular', 'Blocked Channel'))),
+                            allowlist
+                                ? t('videoHiderChannelAllowlistCopy', 'Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
+                                : t('videoHiderChannelBlocklistCopy', 'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.')
                         ));
                         channels.forEach(ch => {
                             const item = document.createElement('article');
@@ -43267,7 +43513,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             info.className = 'ytkit-vh-item-main';
                             const label = document.createElement('div');
                             label.className = 'ytkit-vh-item-label';
-                            label.textContent = 'Blocked Channel';
+                            label.textContent = allowlist
+                                ? t('videoHiderAllowedChannelLabel', 'Allowed Channel')
+                                : t('videoHiderBlockedChannelLabel', 'Blocked Channel');
                             const name = document.createElement('div');
                             name.className = 'ytkit-vh-item-title';
                             name.textContent = ch.name || ch.id;
@@ -43290,13 +43538,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const removeBtn = document.createElement('button');
                             removeBtn.type = 'button';
                             removeBtn.className = 'ytkit-vh-list-btn';
-                            removeBtn.textContent = 'Unblock';
-                            removeBtn.setAttribute('aria-label', `Unblock channel ${ch.name || ch.id}`);
+                            removeBtn.textContent = allowlist
+                                ? t('videoHiderRemoveAllowedChannel', 'Remove from Allowlist')
+                                : t('videoHiderUnblockChannel', 'Unblock');
+                            removeBtn.setAttribute('aria-label', allowlist
+                                ? `${t('videoHiderRemoveAllowedChannel', 'Remove from Allowlist')} ${ch.name || ch.id}`
+                                : `${t('videoHiderUnblockChannel', 'Unblock')} channel ${ch.name || ch.id}`);
                             removeBtn.onclick = () => {
-                                videoHiderFeature._removeBlockedChannel?.(ch);
+                                removeManagedChannel(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
+                                updateVideoHiderMeta();
                             };
                             info.appendChild(label);
                             info.appendChild(name);
@@ -43311,19 +43564,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const clearBtn = document.createElement('button');
                         clearBtn.type = 'button';
                         clearBtn.className = 'ytkit-vh-clear-btn';
-                        clearBtn.textContent = `Unblock All Channels (${channels.length})`;
+                        clearBtn.textContent = allowlist
+                            ? `${t('videoHiderClearAllowedChannels', 'Clear Allowed Channels')} (${channels.length})`
+                            : `${t('videoHiderClearBlockedChannels', 'Unblock All Channels')} (${channels.length})`;
                         clearBtn.onclick = () => {
-                            const backup = [...videoHiderFeature._getBlockedChannels()];
-                            videoHiderFeature._setBlockedChannels([]);
+                            const backup = [...getManagedChannels()];
+                            setManagedChannels([]);
                             videoHiderFeature._restoreRemovedVideoNodes?.();
                             videoHiderFeature._processAllVideos();
                             renderTabContent('channels');
-                            showToast(`Unblocked ${backup.length} channels`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
-                                videoHiderFeature._setBlockedChannels(backup);
+                            showToast(t(allowlist ? 'videoHiderClearedAllowedChannelsToast' : 'videoHiderClearedBlockedChannelsToast', 'Cleared {count} channels').replace('{count}', String(backup.length)), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
+                                setManagedChannels(backup);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
                                 updateVideoHiderMeta();
-                                showToast('Channels restored', '#22c55e');
+                                showToast(t(allowlist ? 'videoHiderAllowedChannelsRestoredToast' : 'videoHiderBlockedChannelsRestoredToast', 'Channels restored'), '#22c55e');
                             }}});
                         };
                         tabContent.appendChild(clearBtn);
@@ -43417,8 +43672,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosAllowChannelBlock',
-                        title: 'Allow right-click channel blocking',
-                        description: 'Use right-click on the thumbnail X button to block the whole channel.'
+                        title: t('videoHiderChannelActionToggle', 'Allow right-click channel actions'),
+                        description: t('videoHiderChannelActionToggleDesc', 'Use right-click on the thumbnail X button to add the channel to the active channel list.')
+                    }));
+                    controlsSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosChannelAllowlist',
+                        title: t('videoHiderChannelAllowlistToggle', 'Use channel allowlist mode'),
+                        description: t('videoHiderChannelAllowlistToggleDesc', 'Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter.'),
+                        defaultChecked: false
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosRememberRestoredVideos',
@@ -44913,6 +45174,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
                             [STORAGE_KEYS.markedWatchedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []) },
                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
+                            [STORAGE_KEYS.allowedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.allowedChannels, []) },
                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                         }, 'import', { forceApplyLocal: true });
                         showToast(result.message, '#22c55e', {
@@ -44928,6 +45190,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                             [STORAGE_KEYS.allowedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.allowedVideos, []) },
                                             [STORAGE_KEYS.markedWatchedVideos]: { newValue: StorageManager.get(STORAGE_KEYS.markedWatchedVideos, []) },
                                             [STORAGE_KEYS.blockedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.blockedChannels, []) },
+                                            [STORAGE_KEYS.allowedChannels]: { newValue: StorageManager.get(STORAGE_KEYS.allowedChannels, []) },
                                             [STORAGE_KEYS.bookmarks]: { newValue: StorageManager.get(STORAGE_KEYS.bookmarks, {}) }
                                         }, 'import-undo', { forceApplyLocal: true });
                                         showToast(undo.message, '#6b7280', { duration: 4, tone: 'neutral' });

@@ -13,7 +13,7 @@ function fixture(version) {
 test('durable-domain registry explicitly classifies every known storage boundary', () => {
     const ids = new Set(persisted.DURABLE_DOMAIN_REGISTRY.map((entry) => entry.id));
     for (const required of [
-        'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'bookmarks',
+        'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'bookmarks',
         'watchProgress', 'watchTime', 'channelSpeeds', 'resumePositions',
         'persistentQueue', 'reactionSpammerState', 'watchLaterRemovalLog',
         'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'localeOverride', 'debugPreference',
@@ -123,6 +123,7 @@ test('current backup payload represents every included domain and scrubs credent
         'ytkit-hidden-videos': ['abcdefghijk'],
         'ytkit-video-hider-allowed-videos': ['lmnopqrstuv'],
         'ytkit-blocked-channels': [{ id: 'UCfixture', name: 'Fixture' }],
+        'ytkit-allowed-channels': [{ id: 'UCallowed', name: 'Allowed' }],
         'ytkit-bookmarks': { abcdefghijk: [{ t: 12, n: 'note', d: 1700000000000 }] }
     };
     const domains = persisted.buildIncludedDomainPayload(allStorage);

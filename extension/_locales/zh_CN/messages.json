@@ -5446,5 +5446,131 @@
   },
   "feature_dualSubtitleLanguage_name": {
     "message": "Second Subtitle Language"
+  },
+  "videoHiderAddAllowedChannelCopy": {
+    "message": "Paste a channel URL, handle, or channel ID. Only channels in this list are filtered by allowlist mode; an empty list is safe and applies no channel filter."
+  },
+  "videoHiderAddAllowedChannelTitle": {
+    "message": "Add Allowed Channel"
+  },
+  "videoHiderAddBlockedChannelCopy": {
+    "message": "Paste a channel URL, handle, or channel ID to add it to the channel blocklist."
+  },
+  "videoHiderAddBlockedChannelTitle": {
+    "message": "Add Blocked Channel"
+  },
+  "videoHiderAllowChannelButton": {
+    "message": "Allow Channel"
+  },
+  "videoHiderAllowedChannelLabel": {
+    "message": "Allowed Channel"
+  },
+  "videoHiderAllowedChannelSingular": {
+    "message": "Allowed Channel"
+  },
+  "videoHiderAllowedChannelsTab": {
+    "message": "Allowed Channels"
+  },
+  "videoHiderBlockChannelButton": {
+    "message": "Block Channel"
+  },
+  "videoHiderBlockedChannelLabel": {
+    "message": "Blocked Channel"
+  },
+  "videoHiderBlockedChannelSingular": {
+    "message": "Blocked Channel"
+  },
+  "videoHiderBlockedChannelsTab": {
+    "message": "Blocked Channels"
+  },
+  "videoHiderChannelActionToggle": {
+    "message": "Allow right-click channel actions"
+  },
+  "videoHiderChannelActionToggleDesc": {
+    "message": "Use right-click on the thumbnail X button to add the channel to the active channel list."
+  },
+  "videoHiderChannelAllowlistCopy": {
+    "message": "Only channels in this list remain eligible for channel-based filtering. Remove an entry to let that channel pass the allowlist check again. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
+  },
+  "videoHiderChannelAllowlistEmptyCopy": {
+    "message": "Add channels here or right-click the thumbnail X button to allow a channel. An empty allowlist is safe and applies no channel filter."
+  },
+  "videoHiderChannelAllowlistEmptyEyebrow": {
+    "message": "Allowlist is empty"
+  },
+  "videoHiderChannelAllowlistEmptyTitle": {
+    "message": "No allowed channels yet"
+  },
+  "videoHiderChannelAllowlistEyebrow": {
+    "message": "Allowlist"
+  },
+  "videoHiderChannelAllowlistPlaceholder": {
+    "message": "https://youtube.com/@channel or @handle"
+  },
+  "videoHiderChannelAllowlistToggle": {
+    "message": "Use channel allowlist mode"
+  },
+  "videoHiderChannelAllowlistToggleDesc": {
+    "message": "Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter."
+  },
+  "videoHiderChannelBlocklistCopy": {
+    "message": "Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
+  },
+  "videoHiderChannelBlocklistEmptyCopy": {
+    "message": "Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks."
+  },
+  "videoHiderChannelBlocklistEmptyEyebrow": {
+    "message": "Channel Blocks"
+  },
+  "videoHiderChannelBlocklistEmptyTitle": {
+    "message": "No blocked channels yet"
+  },
+  "videoHiderChannelBlocklistEyebrow": {
+    "message": "Blocklist"
+  },
+  "videoHiderChannelBlocklistPlaceholder": {
+    "message": "https://youtube.com/@channel or @handle"
+  },
+  "videoHiderClearAllowedChannels": {
+    "message": "Clear Allowed Channels"
+  },
+  "videoHiderClearBlockedChannels": {
+    "message": "Unblock All Channels"
+  },
+  "videoHiderInvalidChannelInput": {
+    "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+  },
+  "videoHiderPaneDescription": {
+    "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
+  },
+  "videoHiderRemoveAllowedChannel": {
+    "message": "Remove from Allowlist"
+  },
+  "videoHiderUnblockChannel": {
+    "message": "Unblock"
+  },
+  "toastActionManage": {
+    "message": "Manage"
+  },
+  "videoHiderAllowedChannelsStatus": {
+    "message": "Allowed"
+  },
+  "videoHiderAllowedChannelToast": {
+    "message": "Channel allowed: {name}"
+  },
+  "videoHiderAlreadyAllowedChannelToast": {
+    "message": "{name} is already allowed"
+  },
+  "videoHiderBlockedChannelsStatus": {
+    "message": "Blocked"
+  },
+  "videoHiderChannelListCount": {
+    "message": "{count} in Your List"
+  },
+  "videoHiderHideButtonAllowChannel": {
+    "message": "Hide this video (right-click to allow channel)"
+  },
+  "videoHiderHideButtonBlockChannel": {
+    "message": "Hide this video (right-click to block channel)"
   }
 }

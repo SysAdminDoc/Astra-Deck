@@ -22,12 +22,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     const { safeStoreProfile } = buildAuditPayloads();
     const assessment = assessSyncEligibility(safeStoreProfile);
 
-    // Client-side mark-as-watched adds 46 bytes to the local settings bag and
-    // 20 bytes for its safe-sync allowlist entry.
-    assert.equal(assessment.totalBytes, 5718);
+    // Channel allowlist mode adds the setting and its safe-sync allowlist
+    // entry to the profile snapshot.
+    assert.equal(assessment.totalBytes, 5811);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 5718);
+    assert.equal(assessment.largestItem.bytes, 5811);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -81,7 +81,10 @@ test('typical local payload is not storage.sync eligible', () => {
     // Client-side mark-as-watched adds 46 bytes to this local fixture.
     // Dual-language subtitles add the master toggle and language selector,
     // adding 60 bytes to the local settings payload.
-    assert.equal(assessment.totalBytes, 179634);
+    // Channel allowlist mode adds 64 bytes to the local settings payload.
+    // The separate allowed-channel list adds a bounded 80-channel local
+    // fixture alongside the existing blocklist.
+    assert.equal(assessment.totalBytes, 184201);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -376,6 +376,7 @@ const STORAGE_KEYS = {
     allowedVideos: 'ytkit-video-hider-allowed-videos',
     markedWatchedVideos: 'ytkit-marked-watched-videos',
     blockedChannels: 'ytkit-blocked-channels',
+    allowedChannels: 'ytkit-allowed-channels',
     bookmarks: 'ytkit-bookmarks',
     watchProgress: 'ytkit-watch-progress',
     watchTime: 'ytkit-watch-time',
@@ -390,6 +391,7 @@ const IMPORT_LIMITS = Object.freeze({
     hiddenVideos: 5000,
     allowedVideos: 5000,
     blockedChannels: 2000,
+    allowedChannels: 2000,
     bookmarkVideos: 400,
     bookmarksPerVideo: 100,
     bookmarkNoteChars: 500,
@@ -1886,7 +1888,7 @@ function detectStorageCorruption(allStorage) {
             detail: `expected plain object, got ${typeof settingsRaw}` + (Array.isArray(settingsRaw) ? ' (array)' : '')
         });
     }
-    for (const k of ['hiddenVideos', 'allowedVideos', 'blockedChannels']) {
+    for (const k of ['hiddenVideos', 'allowedVideos', 'blockedChannels', 'allowedChannels']) {
         const raw = allStorage[STORAGE_KEYS[k]];
         if (raw !== undefined && !Array.isArray(raw)) {
             findings.push({
@@ -3851,6 +3853,8 @@ function buildExportData(allStorage, transcriptRecords) {
     const markedWatchedVideos = Array.isArray(rawMarkedWatched) ? rawMarkedWatched.filter(v => typeof v === 'string' && v.trim()) : [];
     const rawBlocked = allStorage[STORAGE_KEYS.blockedChannels];
     const blockedChannels = Array.isArray(rawBlocked) ? rawBlocked.filter(v => v && typeof v === 'object') : [];
+    const rawAllowedChannels = allStorage[STORAGE_KEYS.allowedChannels];
+    const allowedChannels = Array.isArray(rawAllowedChannels) ? rawAllowedChannels.filter(v => v && typeof v === 'object') : [];
     const rawBookmarks = allStorage[STORAGE_KEYS.bookmarks];
     const bookmarks = (rawBookmarks && typeof rawBookmarks === 'object' && !Array.isArray(rawBookmarks)) ? rawBookmarks : {};
     const exportSettings = buildSchemaValidatedExportSettings(mergedSettings);
@@ -3862,6 +3866,7 @@ function buildExportData(allStorage, transcriptRecords) {
         allowedVideos,
         markedWatchedVideos,
         blockedChannels,
+        allowedChannels,
         bookmarks
     };
     const transcriptAvailable = Array.isArray(transcriptRecords);
@@ -3876,6 +3881,7 @@ function buildExportData(allStorage, transcriptRecords) {
         allowedVideos: domains.allowedVideos || allowedVideos,
         markedWatchedVideos: domains.markedWatchedVideos || markedWatchedVideos,
         blockedChannels: domains.blockedChannels || blockedChannels,
+        allowedChannels: domains.allowedChannels || allowedChannels,
         bookmarks: domains.bookmarks || bookmarks,
         domains,
         unavailableDomains: transcriptAvailable ? [] : ['transcriptIndex'],
@@ -5003,6 +5009,7 @@ function installWheelScrolling() {
             || changes[STORAGE_KEYS.hiddenVideos]
             || changes[STORAGE_KEYS.allowedVideos]
             || changes[STORAGE_KEYS.blockedChannels]
+            || changes[STORAGE_KEYS.allowedChannels]
             || changes[STORAGE_KEYS.bookmarks];
         if (!relevant) return;
         void loadSettings().then((settings) => {
