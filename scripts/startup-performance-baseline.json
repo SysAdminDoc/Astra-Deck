@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-04T01:37:11.321Z",
+  "fixture": "scripts/smoke-settings-overlay.js::buildFixture",
+  "metricOrigin": "performance.now() from the marker before the isolated-world stack",
+  "browser": "chrome.exe",
+  "iterations": 5,
+  "tolerance": {
+    "relative": 0.35,
+    "absoluteMs": 25
+  },
+  "metrics": {
+    "parseInitMs": {
+      "medianMs": 97.2,
+      "p95Ms": 107.9,
+      "minMs": 78.4,
+      "maxMs": 107.9
+    },
+    "firstFeaturePaintMs": {
+      "medianMs": 57.3,
+      "p95Ms": 64,
+      "minMs": 50.6,
+      "maxMs": 64
+    }
+  }
+}

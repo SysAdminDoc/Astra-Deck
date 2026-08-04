@@ -14,6 +14,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   YouTube's unsubscribe action only to the staged stale-channel review list,
   in 25-item sessions paced at 400 ms, while retaining failed items, recording
   per-channel results locally, and exporting the capped session log as JSON.
+- **Content-script startup budget.** A headless fixture benchmark now tracks
+  parse-plus-init and first-feature-paint medians, and the repository check
+  rejects regressions beyond the recorded tolerance.
 
 ### Fixed
 - **Audio sync offset.** The shared MAIN-world audio graph now exposes a

@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Budget and gate content-script startup cost
-  Why: `manifest.json` content-script entry 3 injects ~96 files into every YouTube page at `document_idle` with no measured budget, benchmark or regression gate. High CPU and post-update slowdown are among the most common review complaints for every competitor in this class, and the repo currently has no way to notice a regression.
-  Evidence: `extension/manifest.json` content_scripts entry 3; `extension/ytkit.js` 52,883 lines; RESEARCH.md 2026-08-02 §Architecture Assessment.
-  Touches: `scripts/smoke-mv3-worker-lifecycle.js` or a new bench script, `tests/long-session.test.js`, `npm run check`.
-  Acceptance: a headless benchmark reports parse+init time and first-feature-paint against the existing fixture page and writes a tracked baseline; `npm run check` fails when the measured budget regresses beyond a stated tolerance.
-  Complexity: M
-
 - [ ] P2 — Move injected overlays to the Popover API with CloseWatcher
   Why: Astra's overlays fight YouTube for stacking context — the toast z-index had to be raised to `2147483647` and the settings panel forces `2147483646` — which is a losing arms race. The Popover API renders in the top layer and is Baseline (newly available 2025-01-27); `CloseWatcher` gives one consistent Esc/back close path. The existing headless `smoke-settings-overlay.js` harness can verify this without a live browser.
   Evidence: `extension/ytkit.js` `Z.TOAST` and settings-panel z-index forcing; https://webstatus.dev (Popover API Baseline 2025-01-27; CloseWatcher Chrome 126 / Firefox 149).
