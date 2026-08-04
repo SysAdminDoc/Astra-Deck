@@ -3209,6 +3209,7 @@ return response;
             stickyVideo: true,
             cleanShareUrls: true,
             videosPerRow: 0,                // 0 = dynamic, 3-8 = fixed columns
+            listFeedLayout: false,          // thumbnail-left row layout for home, subscriptions, and search
             quickLinkMenu: true,
             quickLinkItems: 'History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /',
             autoMaxResolution: true,
@@ -3526,7 +3527,7 @@ return response;
                 'watchPageRestyle', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
                 'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
                 'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
-                'videosPerRow', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+                'videosPerRow', 'listFeedLayout', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
                 'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
                 'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
                 'hideVideosRemoveHiddenCards', 'hideVideosShowQuickHideButton',
@@ -5904,6 +5905,8 @@ return response;
     // in tests/hardening.test.js.
     const CONFLICT_MAP = {
         hideRelatedVideos: { conflicts: [], note: 'expandVideoWidth depends on this' },
+        listFeedLayout: { conflicts: ['videosPerRow'], reason: 'Row feed layout and fixed grid columns cannot control the same cards' },
+        videosPerRow: { conflicts: ['listFeedLayout'], reason: 'Fixed grid columns and row feed layout cannot control the same cards' },
         hideSidebar: { conflicts: ['hiddenChatElementsManager', 'hiddenGuideElementsManager'], reason: 'Sidebar hidden removes chat access and makes per-Guide-item hiding moot' },
         removeAllShorts: { conflicts: ['redirectShorts'], reason: 'Removed shorts cannot be redirected' },
         persistentSpeed: { conflicts: ['perChannelSpeed'], reason: 'Global speed overrides per-channel speed' },
@@ -8497,6 +8500,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('hideSubscriptionOptions', 'Hide Layout Options', 'Remove the "Latest" header and view toggles on subscriptions', 'Home / Subscriptions', 'layout',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideSubscriptionOptionsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideSubscriptionOptionsCss())
             || 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)'),
+        cssFeature('listFeedLayout',
+            t('feature_listFeedLayout_name', 'List Feed Layout'),
+            t('feature_listFeedLayout_desc', 'Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row.'),
+            'Home / Subscriptions',
+            'rows-3',
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildListFeedLayoutCss && globalThis.YTKitFeatures.homeSubsCss.buildListFeedLayoutCss())
+            || `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer,ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer{display:flex !important;flex-direction:column !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,ytd-browse[page-subtype="home"] yt-lockup-view-model,ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,ytd-browse[page-subtype="search"] yt-lockup-view-model{display:grid !important;grid-template-columns:minmax(180px, min(32vw, 360px)) minmax(0, 1fr) !important;gap:16px !important;}`),
         {
             id: 'videosPerRow',
             name: 'Videos Per Row',

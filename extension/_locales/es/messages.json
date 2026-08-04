@@ -5803,5 +5803,11 @@
   },
   "feature_audioParametricEq_name": {
     "message": "Parametric EQ"
+  },
+  "feature_listFeedLayout_desc": {
+    "message": "Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row."
+  },
+  "feature_listFeedLayout_name": {
+    "message": "List Feed Layout"
   }
 }

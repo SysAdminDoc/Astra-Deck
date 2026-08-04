@@ -19,13 +19,30 @@ test('Home/Subs CSS module covers expected feature IDs', () => {
         path.join(__dirname, '..', '..', 'extension', 'features', 'home-subs-css', 'index.js'), 'utf8');
     // These are the features documented as bundled in the home-subs-css peel
     const expectedIds = ['hideCreateButton', 'hideVoiceSearch', 'widenSearchBar',
-        'disablePlayOnHover', 'fullWidthSubscriptions', 'hideSubscriptionOptions'];
+        'disablePlayOnHover', 'fullWidthSubscriptions', 'hideSubscriptionOptions',
+        'listFeedLayout'];
     let found = 0;
     for (const id of expectedIds) {
         if (modSrc.includes(id)) found++;
     }
     assert.ok(found >= 3,
-        `Module should reference at least 3 of the 6 bundled home/subs features (found ${found})`);
+        `Module should reference at least 3 of the 7 bundled home/subs features (found ${found})`);
+});
+
+test('listFeedLayout covers the three feed surfaces and modern card metadata', () => {
+    const mod = require('../../extension/features/home-subs-css/index.js');
+    const css = mod.buildListFeedLayoutCss();
+    for (const marker of [
+        'page-subtype="home"',
+        'page-subtype="subscriptions"',
+        'page-subtype="search"',
+        'grid-template-columns',
+        'yt-lockup-view-model',
+        'yt-lockup-metadata-view-model',
+        '#details'
+    ]) {
+        assert.ok(css.includes(marker), `listFeedLayout CSS must contain ${marker}`);
+    }
 });
 
 test('hideCreateButton does not depend on the English aria-label alone', () => {

@@ -5418,11 +5418,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // preferences (430 → 432). Comment language and duplicate policies add
     // two more preferences (432 → 434). Playlist auto-skip adds one more
     // preference (434 → 435). Parametric EQ adds four preferences
-    // (435 → 439).
+    // (435 → 439). List feed layout adds one more preference
+    // (439 → 440).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 439,
-        'SETTINGS_SCHEMA must cover all 439 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 440,
+        'SETTINGS_SCHEMA must cover all 440 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -8956,7 +8957,7 @@ test('v4.39.0 ≥1 settings-schema entry has profile=github-full (badge has cove
 
 // ── v4.40.0 NX1: labelKey/descriptionKey override fields on schema entries ──
 
-// ── v4.43.0 NX1: feature-peel batch 2 (6 home / subs CSS-only features) ──
+// ── v4.43.0 NX1: feature-peel batch 2 (7 home / subs CSS-only features) ──
 
 function loadHomeSubsCssModule() {
     delete require.cache[require.resolve('../extension/features/home-subs-css/index.js')];
@@ -8968,7 +8969,7 @@ function loadHomeSubsCssModule() {
     return stub.homeSubsCss;
 }
 
-test('v4.43.0 home-subs-css module exports six pure builders', () => {
+test('v4.43.0 home-subs-css module exports seven pure builders', () => {
     const mod = loadHomeSubsCssModule();
     assert.ok(mod, 'YTKitFeatures.homeSubsCss must be populated by the IIFE');
     for (const name of [
@@ -8977,7 +8978,8 @@ test('v4.43.0 home-subs-css module exports six pure builders', () => {
         'buildWidenSearchBarCss',
         'buildDisablePlayOnHoverCss',
         'buildFullWidthSubscriptionsCss',
-        'buildHideSubscriptionOptionsCss'
+        'buildHideSubscriptionOptionsCss',
+        'buildListFeedLayoutCss'
     ]) {
         assert.equal(typeof mod[name], 'function', `homeSubsCss.${name} must be a function`);
         const css = mod[name]();
@@ -8995,7 +8997,8 @@ test('v4.43.0 home-subs-css helpers return CSS that the monolith inline fallback
         ['buildWidenSearchBarCss', 'margin-left: -180px'],
         ['buildDisablePlayOnHoverCss', 'ytd-moving-thumbnail-renderer'],
         ['buildFullWidthSubscriptionsCss', 'max-width: 100% !important'],
-        ['buildHideSubscriptionOptionsCss', '.grid-subheader']
+        ['buildHideSubscriptionOptionsCss', '.grid-subheader'],
+        ['buildListFeedLayoutCss', 'grid-template-columns']
     ];
     for (const [fn, marker] of cases) {
         const css = mod[fn]();
@@ -9013,7 +9016,8 @@ test('v4.43.0 monolith cssFeature() callsites delegate via globalThis.YTKitFeatu
         'buildWidenSearchBarCss',
         'buildDisablePlayOnHoverCss',
         'buildFullWidthSubscriptionsCss',
-        'buildHideSubscriptionOptionsCss'
+        'buildHideSubscriptionOptionsCss',
+        'buildListFeedLayoutCss'
     ]) {
         assert.ok(
             ytkit.includes(`globalThis.YTKitFeatures.homeSubsCss.${fn}()`),
@@ -9960,6 +9964,7 @@ test('v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs', () => 
         ['persistentSpeed', 'perChannelSpeed'],
         ['forceH264', 'codecSelector'],
         ['fitPlayerToWindow', 'stickyVideo'],
+        ['listFeedLayout', 'videosPerRow'],
     ];
     for (const [a, b] of symmetricPairs) {
         const aBlock = mapSrc.match(new RegExp(`${a}:\\s*\\{[^}]*\\}`));
