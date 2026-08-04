@@ -5626,5 +5626,23 @@
   },
   "dwShortsSnoozeMessage": {
     "message": "You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes."
+  },
+  "feature_hideAiContextPanels_desc": {
+    "message": "Remove fact-checking and contextual information panels"
+  },
+  "feature_hideAiContextPanels_name": {
+    "message": "Hide AI Context Panels"
+  },
+  "feature_hideAskAi_desc": {
+    "message": "Remove Ask AI buttons and conversational sections"
+  },
+  "feature_hideAskAi_name": {
+    "message": "Hide Ask AI"
+  },
+  "feature_hideGeminiButtons_desc": {
+    "message": "Remove Gemini-branded actions without hiding other AI surfaces"
+  },
+  "feature_hideGeminiButtons_name": {
+    "message": "Hide Gemini Buttons"
   }
 }

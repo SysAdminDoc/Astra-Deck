@@ -12,6 +12,39 @@
     const registry = core.SurfacePackRegistry || (core.SurfacePackRegistry = new Map());
     if (registry.has('engagementPanels')) return;
 
+    const hooks = Object.freeze({
+        'panel.aiSummary': Object.freeze({
+            stable: Object.freeze([
+                'ytd-engagement-panel-section-list-renderer[target-id*="summary" i]',
+                'ytd-engagement-panel-section-list-renderer[panel-target-id*="summary" i]'
+            ]),
+            fallback: Object.freeze([
+                'ytd-ai-summary-renderer',
+                '[class*="ai-summary" i]'
+            ])
+        }),
+        'panel.aiContext': Object.freeze({
+            stable: Object.freeze([
+                'ytd-info-panel-content-renderer:has([icon="info_outline"])',
+                'ytd-factoid-renderer'
+            ]),
+            fallback: Object.freeze([
+                'ytd-engagement-panel-section-list-renderer[target-id*="context" i]',
+                '[data-panel-type="context"]'
+            ])
+        }),
+        'panel.gemini': Object.freeze({
+            stable: Object.freeze([
+                'ytd-engagement-panel-section-list-renderer[target-id*="gemini" i]',
+                'ytd-engagement-panel-section-list-renderer[panel-target-id*="gemini" i]'
+            ]),
+            fallback: Object.freeze([
+                '[data-gemini]',
+                '[data-ai-type="gemini"]'
+            ])
+        })
+    });
+
     registry.set('engagementPanels', Object.freeze({
         surface: 'engagementPanels',
         stable: Object.freeze([
@@ -29,6 +62,7 @@
         lastVerified: '2026-05-19',
         highChurn: true,
         needsFreshCapture: false,
+        hooks,
         notes: 'Chapters, transcript, AI summary, and clips live here.'
     }));
 })();

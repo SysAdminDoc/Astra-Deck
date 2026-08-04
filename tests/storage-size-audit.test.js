@@ -86,7 +86,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // The separate allowed-channel list adds a bounded 80-channel local
     // fixture alongside the existing blocklist.
     // The Shorts daily limit adds 117 bytes for its limit, action, and ledger.
-    assert.equal(assessment.totalBytes, 184362);
+    // Independent AI surface controls add 69 bytes for three booleans.
+    assert.equal(assessment.totalBytes, 184431);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
