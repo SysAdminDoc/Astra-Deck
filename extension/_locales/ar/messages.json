@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "توازن الصوت"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "اضبط توقيت الصوت بالنسبة إلى الفيديو من -500 مللي ثانية إلى +500 مللي ثانية. تضيف القيم الموجبة تأخيرًا للصوت، بينما تستخدم القيم السالبة أقل زمن تأخير متاح في Web Audio."
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "إزاحة مزامنة الصوت"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "حدّد لغة الصوت المفضلة عبر جسر المشغّل دون فتح إعدادات YouTube أو النقر عليها."
   },

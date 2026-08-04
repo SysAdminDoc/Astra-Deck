@@ -497,10 +497,10 @@
     // Feature 4+5: Shared audio processing graph
     // ──────────────────────────────────────────────────────────────────
     // Single AudioContext for ALL audio features (mono-to-stereo,
-    // volume boost, audio normalization). createMediaElementSource is
+    // volume boost, audio normalization, and sync offset). createMediaElementSource is
     // one-shot per element — multiple AudioContexts competing for the
     // same <video> would throw InvalidStateError. The shared graph is:
-    //   source → monoMerge → compressor → boostGain → destination
+    //   source → monoMerge → compressor → pan → boostGain → delay → destination
     // Each node passes through when its feature is disabled.
 (function() {
     'use strict';
@@ -512,6 +512,22 @@
     var _boostGain = 1.0;
     var _normalizeEnabled = false;
     var _panValue = 0;
+    var _audioSyncOffsetMs = 0;
+    var _delayNode = null;
+    var _audioSyncAttr = 'data-ytkit-audio-sync-offset';
+    var _audioTrackSelection = globalThis.YTKitCore && globalThis.YTKitCore.audioTrackSelection;
+    if (_audioTrackSelection && _audioTrackSelection.ATTRS
+        && _audioTrackSelection.ATTRS.syncOffset) {
+        _audioSyncAttr = _audioTrackSelection.ATTRS.syncOffset;
+    }
+    var _normalizeAudioSyncOffset = _audioTrackSelection
+        && typeof _audioTrackSelection.normalizeAudioSyncOffset === 'function'
+        ? _audioTrackSelection.normalizeAudioSyncOffset
+        : function(value) {
+            var parsed = Number(value);
+            if (!isFinite(parsed)) return 0;
+            return Math.max(-500, Math.min(500, Math.round(parsed)));
+        };
     // Chrome permanently binds a MediaElement to its first
     // MediaElementAudioSourceNode. Closing the AudioContext and recreating
     // the source on the same <video> throws InvalidStateError — so the
@@ -530,7 +546,8 @@
     }
 
     function isActive() {
-        return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled || Math.abs(_panValue) > 0.001;
+        return _monoEnabled || _boostGain > 1.001 || _normalizeEnabled
+            || Math.abs(_panValue) > 0.001 || _audioSyncOffsetMs > 0;
     }
 
     var _resumeHooked = false;
@@ -600,7 +617,15 @@
             } else {
                 _compressor.connect(_gainNode);
             }
-            _gainNode.connect(ctx.destination);
+            _delayNode = typeof ctx.createDelay === 'function'
+                ? ctx.createDelay(0.5)
+                : null;
+            if (_delayNode) {
+                _gainNode.connect(_delayNode);
+                _delayNode.connect(ctx.destination);
+            } else {
+                _gainNode.connect(ctx.destination);
+            }
             syncGraph();
             _connectedVideo = video;
         } catch (e) {
@@ -622,6 +647,12 @@
         }
         if (_panNode) _panNode.pan.value = _panValue;
         if (_gainNode) _gainNode.gain.value = _boostGain;
+        if (_delayNode && _delayNode.delayTime) {
+            // Web Audio is causal: positive values delay the audio path. A
+            // negative request cannot be rendered as negative latency, so it
+            // remains an explicit zero-latency request at the graph boundary.
+            _delayNode.delayTime.value = Math.max(0, _audioSyncOffsetMs) / 1000;
+        }
         if (_compressor) {
             if (_normalizeEnabled) {
                 _compressor.threshold.value = -24;
@@ -642,6 +673,7 @@
         if (_compressor) { try { _compressor.disconnect(); } catch (e) { /* reason: already disconnected */ } _compressor = null; }
         if (_panNode) { try { _panNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _panNode = null; }
         if (_gainNode) { try { _gainNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _gainNode = null; }
+        if (_delayNode) { try { _delayNode.disconnect(); } catch (e) { /* reason: already disconnected */ } _delayNode = null; }
         if (_source && _ctx) {
             try { _source.connect(_ctx.destination); } catch (e) { /* reason: context may be suspended */ }
         }
@@ -679,6 +711,13 @@
         if (val < -1) val = -1;
         if (val > 1) val = 1;
         _panValue = val;
+        if (isActive()) connect();
+        else disconnectProcessing();
+    });
+
+    _obsRegister([_audioSyncAttr], function() {
+        var val = document.documentElement.getAttribute(_audioSyncAttr);
+        _audioSyncOffsetMs = _normalizeAudioSyncOffset(val);
         if (isActive()) connect();
         else disconnectProcessing();
     });

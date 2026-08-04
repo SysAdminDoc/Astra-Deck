@@ -5387,10 +5387,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // ytkit-ai-summaries storage key (416 → 415).
     // v4.50.8 added the extension-only descriptive-audio preference
     // alongside the existing preferred-language selector (416 → 417).
+    // v4.51.1 added the bounded extension-only audio sync offset (417 → 418).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 417,
-        'SETTINGS_SCHEMA must cover all 417 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 418,
+        'SETTINGS_SCHEMA must cover all 418 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

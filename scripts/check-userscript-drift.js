@@ -97,6 +97,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     astraContextMenu: 'chrome-api',
     audioNormalization: 'intentional-extension-only',
     audioPan: 'intentional-extension-only',
+    audioSyncOffsetMs: 'intentional-extension-only',
     audioTrackLanguage: 'intentional-extension-only',
     preferDescriptiveAudio: 'intentional-extension-only',
     autoDismissContentWarning: 'not-yet-ported',

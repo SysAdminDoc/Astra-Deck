@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "Pan de áudio"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "Ajuste o tempo do áudio em relação ao vídeo de -500 ms a +500 ms. Valores positivos adicionam atraso ao áudio; valores negativos usam a latência mínima disponível do Web Audio."
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "Deslocamento de sincronização do áudio"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "Selecione seu idioma de áudio preferido pela ponte do player sem abrir nem clicar nas configurações do YouTube."
   },

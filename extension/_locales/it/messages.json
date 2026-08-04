@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "Bilanciamento audio"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "Regola la temporizzazione dell’audio rispetto al video da -500 ms a +500 ms. I valori positivi aggiungono un ritardo audio; quelli negativi usano la latenza Web Audio minima disponibile."
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "Offset di sincronizzazione audio"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "Seleziona la lingua audio preferita tramite il bridge del lettore senza aprire o fare clic sulle impostazioni di YouTube."
   },

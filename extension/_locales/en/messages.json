@@ -668,6 +668,12 @@
   "feature_audioPan_name": {
     "message": "Audio Pan"
   },
+  "feature_audioSyncOffsetMs_desc": {
+    "message": "Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency."
+  },
+  "feature_audioSyncOffsetMs_name": {
+    "message": "Audio Sync Offset"
+  },
   "feature_audioTrackLanguage_desc": {
     "message": "Select your preferred audio language through the player bridge without opening or clicking YouTube settings."
   },

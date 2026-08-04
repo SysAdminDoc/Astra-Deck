@@ -56,6 +56,14 @@ test('language selection prefers an exact BCP-47 match before a primary-subtag m
     assert.equal(audio.selectLanguageTrack([primary], 'fr-CA'), primary);
 });
 
+test('audio sync offset is shared and clamped to the bounded bridge range', () => {
+    assert.equal(audio.ATTRS.syncOffset, 'data-ytkit-audio-sync-offset');
+    assert.equal(audio.normalizeAudioSyncOffset(-999), -500);
+    assert.equal(audio.normalizeAudioSyncOffset(245.6), 246);
+    assert.equal(audio.normalizeAudioSyncOffset(999), 500);
+    assert.equal(audio.normalizeAudioSyncOffset('not-a-number'), 0);
+});
+
 test('descriptive preference selects same-language described audio with a standard fallback', () => {
     const standard = { id: 'en-standard', languageCode: 'en-US', displayName: 'English' };
     const described = {
