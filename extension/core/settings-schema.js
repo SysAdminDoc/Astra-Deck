@@ -595,6 +595,9 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "dwBreakIntervalMin", category: "research-ai", type: "number", defaultValue: 30, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "dwDailyCapMin", category: "research-ai", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "dwWatchTimeToday", category: "research-ai", type: "object", defaultValue: {"date":"","seconds":0}, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "shortsDailyLimitMin", category: "research-ai", type: "number", defaultValue: 0, min: 0, max: 1440, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
+    Object.freeze({ key: "shortsDailyLimitMode", category: "research-ai", type: "string", defaultValue: "hard", enum: ["hard", "snooze"], risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
+    Object.freeze({ key: "shortsWatchTimeToday", category: "research-ai", type: "object", defaultValue: {"date":"","seconds":0,"snoozeUntil":0}, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
 
     // ─── privacy-profiles ───
     Object.freeze({ key: "_profiles", category: "privacy-profiles", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),

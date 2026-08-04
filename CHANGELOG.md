@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Shorts daily limit.** Digital Wellbeing now tracks a separate local-day
+  Shorts budget with a configurable hard block or five-minute snooze, an
+  accessible route-out overlay, and midnight reset behavior.
 - **Audio chain completion.** The shared MAIN-world audio graph now includes
   independently toggleable adaptive auto-gain and an 80 Hz high-pass filter,
   with bounded gain control, live updates, and SPA-safe teardown/reconnect.
