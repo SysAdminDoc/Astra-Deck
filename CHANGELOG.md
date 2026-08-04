@@ -7,6 +7,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 ## [Unreleased]
 
 ### Added
+- **Channel allowlist mode.** Video Hider can now apply channel filtering as an
+  explicitly opt-in allowlist, with separate backupable channel storage,
+  recoverable settings management, and an empty-list fail-open guard.
 - **Client-side mark as watched.** Video Hider now offers an opt-in per-card
   control with capped LRU storage, export/import support, dim-or-remove feed
   behavior, and Undo toasts for both marking and unmarking.

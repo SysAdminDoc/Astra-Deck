@@ -18,13 +18,6 @@ Source evidence and rejected alternatives: `RESEARCH.md` (2026-08-02). Baseline 
 
 ### P2 — Locale fidelity, capability, and maintainability
 
-- [ ] P2 — Allowlist hiding mode
-  Why: Inverse channel filtering needs a deliberate mode control and an empty-list safety guard to avoid hiding all of YouTube accidentally.
-  Evidence: BlockTube issue #133; FocusTube HN subscriptions-only demand.
-  Touches: `extension/features/video-hider/`, settings schema/locales, blocked/allowed channel storage.
-  Acceptance: An explicitly labelled mode toggle switches home/search/related filtering to allowlist semantics; card and settings management remain recoverable.
-  Complexity: M
-
 - [ ] P2 — Audio chain completion: auto-gain + high-pass
   Why: Astra already implements compressor-backed `audioNormalization`; the remaining independently selectable nodes are auto-gain and high-pass filtering.
   Evidence: Tweaks for YouTube feature set; `extension/ytkit-main.js` audio graph and `audioNormalization` setting.
