@@ -107,6 +107,19 @@ The native companion opens to a local command center with live queue metrics,
 server actions, and a System Pulse for yt-dlp, FFmpeg, Deno, PO-provider, and
 SABR readiness. Its Settings page can follow the system language or select any
 of the extension's 11 bundled locales; a restart applies language changes.
+
+**Any site, not just YouTube (companion v1.8.0).** Paste any public video link
+into **Downloads → Quick download** — Reddit, X/Twitter, TikTok, Vimeo, Twitch
+clips, a direct `.mp4`, or anything else yt-dlp has an extractor for — and it
+downloads with the same queue, clip ranges, format and quality controls.
+Several links can be pasted at once, separated by spaces, and are queued as a
+batch. The clipboard grabber stages any copied video link, not only YouTube
+ones. Private, loopback, link-local, and single-label hosts (`127.0.0.1`,
+`192.168.x.x`, `169.254.169.254`, `nas`, `printer.local`) are refused with a
+reason: the companion downloads from the public internet only. Sign-in cookies
+stay YouTube-scoped and are never attached to another site's extraction, and
+the Deno / JavaScript-runtime requirement now applies only to YouTube, which is
+the only extractor that needs it.
 Open **Subscriptions** to add a YouTube channel or playlist, choose a scan
 interval from 5 minutes to 7 days, and let the companion enqueue only uploads
 that are absent from its durable archive. The schedule and archive live in

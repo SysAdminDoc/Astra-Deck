@@ -1920,11 +1920,11 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(client.post("/playlist", json={"url": playlist_url}).status_code, 401)
         rejected = client.post(
             "/playlist",
-            json={"url": "https://example.com/playlist?list=PLfixture"},
+            json={"url": "http://192.168.1.10/playlist?list=PLfixture"},
             headers={"X-Auth-Token": token},
         )
         self.assertEqual(rejected.status_code, 400)
-        self.assertEqual(rejected.get_json()["code"], "non-youtube-url")
+        self.assertEqual(rejected.get_json()["code"], "private-host")
 
         preview = {
             "id": "PLfixture",
@@ -1990,7 +1990,7 @@ class ApiSecurityTests(unittest.TestCase):
             for _ in range(manager.FORMATS_PROBE_LIMIT):
                 manager._formats_gate.release()
 
-    def test_formats_endpoint_requires_auth_and_youtube(self):
+    def test_formats_endpoint_requires_auth_and_public_host(self):
         token = "a" * 32
         config = FakeConfig({"ServerToken": token})
         manager = ad.DownloadManager(config, FakeHistory())
@@ -1998,10 +1998,10 @@ class ApiSecurityTests(unittest.TestCase):
         client = api.test_client()
         # no token
         self.assertEqual(client.post("/formats", json={"url": "https://youtube.com/watch?v=x"}).status_code, 401)
-        # non-YouTube rejected before spawning yt-dlp
-        resp = client.post("/formats", json={"url": "https://example.com/x"}, headers={"X-Auth-Token": token})
+        # private-network target rejected before spawning yt-dlp
+        resp = client.post("/formats", json={"url": "http://127.0.0.1/x"}, headers={"X-Auth-Token": token})
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.get_json().get("code"), "non-youtube-url")
+        self.assertEqual(resp.get_json().get("code"), "private-host")
         # missing url
         self.assertEqual(client.post("/formats", json={}, headers={"X-Auth-Token": token}).status_code, 400)
 
@@ -2357,21 +2357,27 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.get_json()["code"], "unsupported-ytdlp-flags")
         self.assertEqual(manager.downloads, {})
 
-    def test_download_endpoint_rejects_non_youtube_url_before_queueing(self):
-        # SSRF hardening: the server must enforce the YouTube-only allowlist at
-        # the trust boundary, not rely on the extension. A token-holder pointing
-        # at an internal/LAN/metadata host must be rejected before yt-dlp (and
-        # the cookie jar) is ever invoked.
+    def test_download_endpoint_rejects_private_network_url_before_queueing(self):
+        # SSRF hardening: v1.8.0 replaced the YouTube-only allowlist with a
+        # private-network denylist, and the server — not the extension — must
+        # enforce it. A token-holder pointing at an internal/LAN/metadata host
+        # must be rejected before yt-dlp (and the cookie jar) is ever invoked.
         token = "n" * 32
         config = FakeConfig({"ServerToken": token})
         manager = ad.DownloadManager(config, FakeHistory())
         api = ad.create_api(config, manager, FakeHistory())
         client = api.test_client()
-        for hostile in (
-            "http://169.254.169.254/latest/meta-data/",
-            "http://192.168.1.1/admin",
-            "http://127.0.0.1:9999/",
-            "https://example.com/watch?v=abc",
+        for hostile, expected_code in (
+            ("http://169.254.169.254/latest/meta-data/", "private-host"),
+            ("http://192.168.1.1/admin", "private-host"),
+            ("http://127.0.0.1:9999/", "private-host"),
+            ("http://localhost:9751/download", "private-host"),
+            ("http://nas/movie.mp4", "private-host"),
+            ("http://printer.local/stream", "private-host"),
+            ("https://[::1]/video", "private-host"),
+            ("http://2130706433/", "private-host"),
+            ("http://0x7f.0.0.1/", "non-public-host"),
+            ("https://user:secret@example.com/watch?v=abc", "credentials-in-url"),
         ):
             resp = client.post(
                 "/download",
@@ -2379,35 +2385,48 @@ class ApiSecurityTests(unittest.TestCase):
                 headers={"X-Auth-Token": token},
             )
             self.assertEqual(resp.status_code, 400, hostile)
-            self.assertEqual(resp.get_json()["code"], "non-youtube-url", hostile)
+            self.assertEqual(resp.get_json()["code"], expected_code, hostile)
         self.assertEqual(manager.downloads, {})
 
-    def test_download_endpoint_accepts_youtube_hosts(self):
-        # The allowlist must still pass canonical YouTube hosts through to the
-        # queue (guards against an over-tight regex regression).
+    def test_download_endpoint_accepts_any_public_media_host(self):
+        # The whole point of v1.8.0: YouTube keeps working AND every other
+        # public site yt-dlp supports reaches the queue.
         token = "y" * 32
         config = FakeConfig({"ServerToken": token})
         manager = ad.DownloadManager(config, FakeHistory())
         api = ad.create_api(config, manager, FakeHistory())
         client = api.test_client()
+        ok_urls = (
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+            "https://www.reddit.com/r/videos/comments/abc123/clip/",
+            "https://v.redd.it/abc123",
+            "https://x.com/someone/status/1234567890",
+            "https://twitter.com/someone/status/1234567890",
+            "https://www.tiktok.com/@someone/video/1234567890",
+            "https://vimeo.com/123456789",
+            "https://www.twitch.tv/someone/clip/SomeClip",
+            "https://cdn.example.com/media/clip.mp4",
+        )
         with mock.patch.object(manager, 'start_download', return_value=('dl_test', None)) as start:
-            for ok_url in (
-                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                "https://youtu.be/dQw4w9WgXcQ",
-                "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
-            ):
+            for ok_url in ok_urls:
                 resp = client.post(
                     "/download",
                     json={"url": ok_url},
                     headers={"X-Auth-Token": token},
                 )
-                # Must get PAST the YouTube allowlist without launching a real
-                # yt-dlp worker from the unit suite.
+                # Must get PAST the URL policy without launching a real yt-dlp
+                # worker from the unit suite.
                 body = resp.get_json() or {}
-                self.assertNotEqual(body.get("code"), "non-youtube-url", ok_url)
+                self.assertNotIn(
+                    body.get("code"),
+                    set(ad.MEDIA_URL_BLOCK_MESSAGES),
+                    ok_url,
+                )
                 self.assertEqual(resp.status_code, 200, ok_url)
 
-        self.assertEqual(start.call_count, 3)
+        self.assertEqual(start.call_count, len(ok_urls))
 
     def test_download_endpoint_queue_full_response_includes_capacity_and_remediation(self):
         token = 'q' * 32
@@ -5071,16 +5090,16 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_7_0(self):
-        # v1.7.0 roadmap drain: durable scheduled subscriptions, archive-aware
-        # dedupe, the companion Subscriptions page, and authenticated CRUD/scan
-        # routes.
-        # Prior v1.6.0 work also delivered Qt localization across the shipped locale set,
-        # update checks pinned to the published Release, PO-token provider
-        # advice on failures that need one, bounded custom filename templates,
-        # a shared yt-dlp output parser for the cookie-less live retry, and a
-        # session-fallback port explained on the Settings page.
-        self.assertEqual(ad.APP_VERSION, "1.7.0")
+    def test_app_version_bumped_to_1_8_0(self):
+        # v1.8.0 any-site downloads: the YouTube-only URL allowlist became a
+        # private-network denylist, the JS-runtime gate and the cookie jar are
+        # YouTube-scoped, non-YouTube singles download with --no-playlist, a
+        # zero-exit run that wrote no file reports `skipped`, and the quick
+        # download box accepts a multi-link paste.
+        # Prior v1.7.0 work delivered durable scheduled subscriptions,
+        # archive-aware dedupe, the companion Subscriptions page, and
+        # authenticated CRUD/scan routes.
+        self.assertEqual(ad.APP_VERSION, "1.8.0")
 
 
 class EndToEndDownloadTests(unittest.TestCase):
@@ -5408,7 +5427,11 @@ class EndToEndDownloadTests(unittest.TestCase):
 
     def test_saved_config_cannot_inject_link_file_flags_into_spawn(self):
         captured_args = []
-        base_factory = self._make_fake_popen([], returncode=0)
+        # A real successful yt-dlp run always announces its destination; an
+        # empty stdout now classifies as 'skipped' (nothing was written).
+        base_factory = self._make_fake_popen(
+            ['[download] Destination: clip.mp4'], returncode=0
+        )
 
         def capture(args, **kwargs):
             captured_args.append(list(args))
@@ -5453,7 +5476,11 @@ class EndToEndDownloadTests(unittest.TestCase):
 
     def test_playlist_subset_is_the_only_playlist_selection_passed_to_ytdlp(self):
         captured_args = []
-        base_factory = self._make_fake_popen([], returncode=0)
+        # A real successful yt-dlp run always announces its destination; an
+        # empty stdout now classifies as 'skipped' (nothing was written).
+        base_factory = self._make_fake_popen(
+            ['[download] Destination: clip.mp4'], returncode=0
+        )
 
         def capture(args, **kwargs):
             captured_args.append(list(args))
@@ -5520,6 +5547,7 @@ class EndToEndDownloadTests(unittest.TestCase):
                 def __init__(self):
                     self.stdout = io.StringIO(
                         'MDLP_JSON {"downloaded_bytes": 1, "total_bytes": 1}\n'
+                        '[download] Destination: clip.mp4\n'
                     )
                     self.returncode = 0
 
@@ -6858,7 +6886,7 @@ class TrayCompletionNotifyTests(unittest.TestCase):
 
 
 class ClipboardLinkGrabberTests(unittest.TestCase):
-    """Clipboard capture stages reviewed YouTube URLs and never enqueues them."""
+    """Clipboard capture stages reviewed media URLs and never enqueues them."""
 
     class _TextWidget:
         def __init__(self):
@@ -6887,7 +6915,7 @@ class ClipboardLinkGrabberTests(unittest.TestCase):
             _clipboard_staged_url="",
             _dependencies={
                 "normalize_url": ad.normalize_url,
-                "is_youtube_url": ad.is_youtube_url,
+                "looks_like_media_link": ad.looks_like_media_link,
             },
             quick_download_url=self._TextWidget(),
             quick_download_status=self._TextWidget(),
@@ -6906,30 +6934,46 @@ class ClipboardLinkGrabberTests(unittest.TestCase):
         self.assertEqual(messages, [])
         self.assertEqual(logs, [])
 
-    def test_enabled_grabber_stages_only_youtube_and_deduplicates(self):
+    def test_enabled_grabber_ignores_non_media_and_private_links(self):
         import gui as gui_module
 
         window, messages, logs = self._window()
         with mock.patch.object(gui_module, "repolish"):
-            ad.MainWindow._handle_clipboard_change(
-                window, "https://example.com/watch?v=abcdefghijk"
-            )
-            ad.MainWindow._handle_clipboard_change(
-                window, "https://youtube.com.evil/watch?v=abcdefghijk"
-            )
-            self.assertEqual(window.quick_download_url.text(), "")
+            for ignored in (
+                "https://example.com/pricing",      # public, but not media-shaped
+                "http://127.0.0.1:9751/watch",      # loopback: never stageable
+                "http://nas.local/videos/clip.mp4",  # private host wins over path
+                "not a url at all",
+            ):
+                ad.MainWindow._handle_clipboard_change(window, ignored)
+                self.assertEqual(window.quick_download_url.text(), "", ignored)
+        self.assertEqual(messages, [])
 
-            url = "https://www.youtube.com/watch?v=abcdefghijk"
-            ad.MainWindow._handle_clipboard_change(window, f"  {url}  ")
-            ad.MainWindow._handle_clipboard_change(window, url)
+    def test_enabled_grabber_stages_any_supported_site_and_deduplicates(self):
+        import gui as gui_module
 
-        self.assertEqual(window.quick_download_url.text(), url)
-        self.assertEqual(window._clipboard_staged_url, url)
-        self.assertTrue(window.quick_download_status.visible)
-        self.assertEqual(window.quick_download_status.properties["state"], "success")
-        self.assertIn("Review the options", window.quick_download_status.text())
-        self.assertEqual(len(messages), 1)
-        self.assertEqual(logs, ["Staged a copied YouTube link for review."])
+        for url in (
+            "https://www.youtube.com/watch?v=abcdefghijk",
+            "https://www.reddit.com/r/videos/comments/abc/clip/",
+            "https://x.com/someone/status/1234567890",
+            "https://vimeo.com/123456789",
+            "https://cdn.example.com/assets/clip.mp4",
+        ):
+            window, messages, logs = self._window()
+            with mock.patch.object(gui_module, "repolish"):
+                ad.MainWindow._handle_clipboard_change(window, f"  {url}  ")
+                ad.MainWindow._handle_clipboard_change(window, url)
+
+            self.assertEqual(window.quick_download_url.text(), url)
+            self.assertEqual(window._clipboard_staged_url, url)
+            self.assertTrue(window.quick_download_status.visible)
+            self.assertEqual(
+                window.quick_download_status.properties["state"], "success"
+            )
+            self.assertIn("Review the options", window.quick_download_status.text())
+            # Deduplicated: the repeat paste must not notify or log twice.
+            self.assertEqual(len(messages), 1, url)
+            self.assertEqual(logs, ["Staged a copied video link for review."], url)
 
 
 class CompanionUpdateEndpointTests(unittest.TestCase):
@@ -7960,6 +8004,471 @@ class DownloadWorkerRaceGuardTests(unittest.TestCase):
             restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
             self.assertFalse(restored.intake_paused,
                              "the relaunched manager must see the persisted flag")
+
+
+class MediaSourcePolicyTests(unittest.TestCase):
+    """v1.8.0: any public media URL is accepted; private networks never are."""
+
+    PUBLIC_URLS = (
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://youtu.be/dQw4w9WgXcQ",
+        "https://music.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://www.reddit.com/r/videos/comments/abc123/title/",
+        "https://v.redd.it/abc123",
+        "https://old.reddit.com/r/aww/comments/abc/clip/",
+        "https://x.com/someone/status/1234567890",
+        "https://twitter.com/someone/status/1234567890",
+        "https://www.tiktok.com/@someone/video/7000000000000000000",
+        "https://vimeo.com/123456789",
+        "https://www.twitch.tv/someone/clip/AbcDef",
+        "https://www.dailymotion.com/video/x8abcde",
+        "https://www.instagram.com/reel/Abc123/",
+        "https://www.facebook.com/watch/?v=1234567890",
+        "https://www.bilibili.com/video/BV1xx411c7mD",
+        "https://soundcloud.com/artist/track",
+        "https://streamable.com/abc123",
+        "https://cdn.example.com/media/clip.mp4",
+        "https://example.co.uk/watch?v=1",
+        "https://xn--p1ai.xn--p1ai/video/1",
+    )
+
+    BLOCKED_URLS = (
+        ("http://127.0.0.1:9751/download", "private-host"),
+        ("http://localhost/video", "private-host"),
+        ("http://[::1]/video", "private-host"),
+        ("http://[::ffff:127.0.0.1]/video", "private-host"),
+        ("http://10.1.2.3/video.mp4", "private-host"),
+        ("http://192.168.0.10/admin", "private-host"),
+        ("http://172.16.4.4/stream", "private-host"),
+        ("http://169.254.169.254/latest/meta-data/", "private-host"),
+        ("http://metadata.google.internal/computeMetadata/v1/", "private-host"),
+        ("http://nas/movie.mp4", "private-host"),
+        ("http://printer.local/stream", "private-host"),
+        ("http://host.lan/video", "private-host"),
+        ("http://0.0.0.0/video", "private-host"),
+        ("http://2130706433/", "private-host"),
+        ("http://127.1/", "non-public-host"),
+        ("http://0x7f.0.0.1/", "non-public-host"),
+        ("https://user:pw@example.com/video", "credentials-in-url"),
+        ("ftp://example.com/video.mp4", "invalid-url"),
+        ("file:///C:/secret.mp4", "invalid-url"),
+        ("", "invalid-url"),
+    )
+
+    def test_public_media_urls_are_supported(self):
+        for url in self.PUBLIC_URLS:
+            self.assertIsNone(ad.media_url_block_reason(url), url)
+            self.assertTrue(ad.is_supported_media_url(url), url)
+
+    def test_private_and_malformed_urls_are_blocked_with_a_reason(self):
+        for url, expected in self.BLOCKED_URLS:
+            self.assertEqual(ad.media_url_block_reason(url), expected, url)
+            self.assertFalse(ad.is_supported_media_url(url), url)
+
+    def test_every_block_reason_has_user_facing_copy(self):
+        for _url, reason in self.BLOCKED_URLS:
+            message = ad.describe_media_url_block(reason)
+            self.assertIn(reason, ad.MEDIA_URL_BLOCK_MESSAGES)
+            self.assertTrue(message and not message.endswith(" "), reason)
+
+    def test_clipboard_heuristic_stages_media_shaped_links_only(self):
+        for staged in (
+            "https://www.youtube.com/watch?v=abc",
+            "https://www.reddit.com/r/videos/comments/abc/x/",
+            "https://x.com/a/status/1",
+            "https://vimeo.com/1",
+            "https://cdn.example.com/a/clip.mp4",
+            "https://site.example/embed/abc",
+        ):
+            self.assertTrue(ad.looks_like_media_link(staged), staged)
+        for ignored in (
+            "https://example.com/pricing",
+            "https://docs.example.com/getting-started",
+            "http://127.0.0.1/watch",          # loopback beats the path hint
+            "http://nas.local/videos/clip.mp4",  # private host beats the extension hint
+            "nonsense",
+        ):
+            self.assertFalse(ad.looks_like_media_link(ignored), ignored)
+
+    def test_start_download_rejects_private_targets_from_every_entry_point(self):
+        # The GUI quick-download box and the clipboard grabber call
+        # start_download directly, bypassing the HTTP routes, so the policy has
+        # to hold at the queue boundary too.
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            dl_id, error = manager.start_download(url="http://127.0.0.1:9751/x")
+            self.assertIsNone(dl_id)
+            self.assertIn("private", error.lower())
+            self.assertEqual(manager.downloads, {})
+
+    def test_start_download_accepts_non_youtube_public_urls(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            manager.pause_intake()  # queue it without spawning a worker
+            dl_id, error = manager.start_download(
+                url="https://www.reddit.com/r/videos/comments/abc/clip/"
+            )
+            self.assertIsNone(error)
+            self.assertIn(dl_id, manager.downloads)
+
+    def test_playlist_detection_covers_other_sites_without_changing_youtube(self):
+        for playlist in (
+            "https://www.youtube.com/playlist?list=PL123",
+            "https://soundcloud.com/artist/sets/my-set",
+            "https://example.com/album/12345",
+            "https://tube.example/videos/playlist/abc",
+            "https://podcast.example/series/season-one",
+        ):
+            self.assertTrue(ad.is_playlist_url(playlist), playlist)
+        for single in (
+            "https://www.youtube.com/watch?v=abc&list=PL123",  # historical contract
+            "https://www.youtube.com/watch?v=abc",
+            "https://www.reddit.com/r/videos/comments/abc/clip/",
+            "https://x.com/someone/status/1",
+            "https://cdn.example.com/clip.mp4",
+        ):
+            self.assertFalse(ad.is_playlist_url(single), single)
+
+    def test_recovered_queue_keeps_non_youtube_entries(self):
+        # Before v1.8.0 the restore path dropped every non-YouTube row, so a
+        # Reddit download that survived a restart vanished without a trace.
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_path = Path(tmp) / "download-queue.json"
+            config = FakeConfig({"DownloadPath": tmp, "AudioDownloadPath": tmp})
+            manager = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            manager.pause_intake()
+            manager.start_download(url="https://v.redd.it/abc123")
+            self.assertEqual(len(manager.downloads), 1)
+
+            restored = ad.DownloadManager(config, FakeHistory(), queue_path=queue_path)
+            self.assertEqual(len(restored.downloads), 1)
+            self.assertEqual(
+                next(iter(restored.downloads.values())).url,
+                "https://v.redd.it/abc123",
+            )
+
+
+class AnySiteDownloadArgvTests(unittest.TestCase):
+    """yt-dlp argv stays YouTube-scoped where it must and generic elsewhere."""
+
+    class _FakeProc:
+        def __init__(self, lines, returncode=0):
+            self.stdout = iter(lines)
+            self.returncode = returncode
+            self._waited = False
+
+        def wait(self):
+            self._waited = True
+            return self.returncode
+
+        def poll(self):
+            return self.returncode if self._waited else None
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            pass
+
+        def communicate(self, *_args, **_kwargs):
+            self._waited = True
+            return ('', '')
+
+    def _argv_for(self, url, *, config_overrides=None, with_cookies=True):
+        attempts = []
+
+        def popen(args, **_kwargs):
+            if '--ignore-config' not in args:
+                return self._FakeProc([], 0)
+            attempts.append(list(args))
+            return self._FakeProc([
+                'MDLP_JSON {"downloaded_bytes": 10, "total_bytes": 10}',
+                'MDLP_FILEPATH "clip.mp4"',
+            ], 0)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            settings = {"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir}
+            settings.update(config_overrides or {})
+            config = FakeConfig(settings)
+            manager = ad.DownloadManager(config, FakeHistory())
+            download = ad.Download("dl_argv", url, output_dir=tmpdir)
+            download.status = "queued"
+            if with_cookies:
+                jar = Path(tmpdir) / "cookies.txt"
+                jar.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+                download.cookies_file = str(jar)
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                manager._run_download(download)
+        self.assertTrue(attempts, "no yt-dlp invocation was captured")
+        return attempts[0]
+
+    def test_non_youtube_download_is_single_item_and_cookie_free(self):
+        argv = self._argv_for("https://www.reddit.com/r/videos/comments/abc/clip/")
+        self.assertIn('--no-playlist', argv,
+                      "a non-YouTube single link must not walk a whole profile")
+        self.assertNotIn('--cookies', argv,
+                         "the YouTube cookie jar must not follow the request off-site")
+        self.assertNotIn('--extractor-args', argv,
+                         "YouTube PO-token/client args are YouTube-only")
+
+    def test_youtube_download_keeps_cookies_and_extractor_args(self):
+        argv = self._argv_for("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        self.assertIn('--cookies', argv)
+        self.assertIn('--extractor-args', argv)
+        self.assertNotIn('--no-playlist', argv,
+                         "YouTube keeps its historical playlist semantics")
+
+    def test_non_youtube_playlist_url_still_downloads_the_collection(self):
+        argv = self._argv_for("https://soundcloud.com/artist/sets/my-set",
+                              with_cookies=False)
+        self.assertIn('--yes-playlist', argv)
+        self.assertNotIn('--no-playlist', argv)
+
+    def test_zero_exit_without_a_file_reports_skipped_not_complete(self):
+        # yt-dlp exits 0 when --max-filesize rejects every format. Reporting
+        # "complete" with nothing on disk reads as a broken downloader.
+        attempts = []
+
+        def popen(args, **_kwargs):
+            if '--ignore-config' not in args:
+                return self._FakeProc([], 0)
+            attempts.append(list(args))
+            return self._FakeProc([], 0)  # no Destination / filepath line
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+                "MaxFileSizeMB": 25,
+            })
+            history = FakeHistory()
+            manager = ad.DownloadManager(config, history)
+            download = ad.Download(
+                "dl_skip", "https://archive.org/details/BigBuckBunny_124",
+                output_dir=tmpdir,
+            )
+            download.status = "queued"
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                manager._run_download(download)
+
+        self.assertEqual(download.status, "skipped")
+        self.assertIn("25 MB size limit", download.error)
+        self.assertEqual(download.progress, 0)
+        self.assertEqual(manager.total_completed, 0,
+                         "a skip is not a completed download")
+        self.assertEqual(history.entries, [],
+                         "nothing was written, so nothing enters history")
+        self.assertIn("skipped", ad.DOWNLOAD_TERMINAL_STATES,
+                      "a skip must be terminal or the queue slot never frees")
+
+    def test_zero_exit_with_a_file_still_completes(self):
+        # Guards the skip rule against over-reach: a run that announces a
+        # destination is a real success on any site.
+        def popen(args, **_kwargs):
+            if '--ignore-config' not in args:
+                return self._FakeProc([], 0)
+            return self._FakeProc(['[download] Destination: clip.mp4'], 0)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+                "MaxFileSizeMB": 25,
+            })
+            manager = ad.DownloadManager(config, FakeHistory())
+            download = ad.Download(
+                "dl_ok", "https://v.redd.it/abc123", output_dir=tmpdir,
+            )
+            download.status = "queued"
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                manager._run_download(download)
+
+        self.assertEqual(download.status, "complete")
+        self.assertEqual(download.progress, 100)
+        self.assertEqual(download.filename, "clip.mp4")
+
+    def test_sponsorblock_is_not_requested_off_youtube(self):
+        overrides = {"SponsorBlock": True, "SponsorBlockAction": "remove"}
+        youtube = self._argv_for("https://www.youtube.com/watch?v=abc",
+                                 config_overrides=overrides, with_cookies=False)
+        self.assertIn('--sponsorblock-remove', youtube)
+        other = self._argv_for("https://vimeo.com/123", config_overrides=overrides,
+                               with_cookies=False)
+        self.assertNotIn('--sponsorblock-remove', other)
+
+
+class NonYoutubeRuntimeGateTests(unittest.TestCase):
+    """The Deno/JS-runtime hard gate is a YouTube requirement, not a global one."""
+
+    def _client(self, token):
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        return api.test_client(), manager
+
+    def test_missing_js_runtime_blocks_youtube_but_not_other_sites(self):
+        token = "r" * 32
+        client, manager = self._client(token)
+        unusable = {
+            'runtime': None,
+            'installed': False,
+            'supported': False,
+            'ejsReady': False,
+            'ytdlpNeedsRuntime': True,
+            'reason': 'runtime-not-installed',
+            'advice': 'Install Deno.',
+        }
+        with mock.patch.object(ad, 'probe_javascript_runtime', return_value=unusable), \
+             mock.patch.object(manager, 'start_download', return_value=('dl_ok', None)):
+            youtube = client.post(
+                "/download",
+                json={"url": "https://www.youtube.com/watch?v=abc"},
+                headers={"X-Auth-Token": token},
+            )
+            self.assertEqual(youtube.status_code, 422)
+            self.assertEqual(youtube.get_json()["code"], "js-runtime-missing")
+
+            other = client.post(
+                "/download",
+                json={"url": "https://www.reddit.com/r/videos/comments/abc/clip/"},
+                headers={"X-Auth-Token": token},
+            )
+            self.assertEqual(
+                other.status_code, 200,
+                "Reddit extraction never needs the YouTube n/sig runtime",
+            )
+
+
+class QuickDownloadBatchTests(unittest.TestCase):
+    """The standalone quick-download box accepts one link or a whole paste."""
+
+    class _TextWidget:
+        def __init__(self, value=""):
+            self.value = value
+            self.visible = False
+            self.properties = {}
+
+        def setText(self, value):
+            self.value = value
+
+        def text(self):
+            return self.value
+
+        def clear(self):
+            self.value = ""
+
+        def setProperty(self, key, value):
+            self.properties[key] = value
+
+        def show(self):
+            self.visible = True
+
+    class _Combo:
+        def __init__(self, value):
+            self.value = value
+
+        def currentData(self):
+            return self.value
+
+    def _window(self, url_text, results, start="", end=""):
+        calls = []
+
+        def start_download(**kwargs):
+            calls.append(kwargs)
+            return results[len(calls) - 1]
+
+        window = types.SimpleNamespace(
+            quick_download_url=self._TextWidget(url_text),
+            quick_download_start=self._TextWidget(start),
+            quick_download_end=self._TextWidget(end),
+            quick_download_status=self._TextWidget(),
+            quick_download_type=self._Combo(False),
+            quick_download_format=self._Combo("mp4"),
+            quick_download_quality=self._Combo("best"),
+            dl_manager=types.SimpleNamespace(start_download=start_download),
+            _dependencies={
+                "normalize_download_section": ad.normalize_download_section,
+            },
+            _clipboard_staged_url="",
+            _append_log=lambda *_args: None,
+            _update_ui=lambda: None,
+        )
+        window._set_quick_download_status = types.MethodType(
+            gui_module_for_tests().MainWindowCore._set_quick_download_status, window
+        )
+        return window, calls
+
+    def test_single_link_queues_once(self):
+        window, calls = self._window(
+            " https://vimeo.com/1 ", [("dl_1", None)]
+        )
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        self.assertEqual([call["url"] for call in calls], ["https://vimeo.com/1"])
+        self.assertIn("Queued dl_1", window.quick_download_status.text())
+        self.assertEqual(window.quick_download_url.text(), "")
+
+    def test_multiple_pasted_links_queue_as_a_batch(self):
+        urls = [
+            "https://www.youtube.com/watch?v=a",
+            "https://www.reddit.com/r/videos/comments/b/c/",
+            "https://x.com/u/status/3",
+        ]
+        window, calls = self._window(
+            "  ".join(urls), [("dl_1", None), ("dl_2", None), ("dl_3", None)]
+        )
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        self.assertEqual([call["url"] for call in calls], urls)
+        self.assertIn("Queued 3 downloads", window.quick_download_status.text())
+        self.assertEqual(
+            window.quick_download_status.properties["state"], "success"
+        )
+
+    def test_batch_reports_rejected_links_without_losing_the_accepted_ones(self):
+        window, calls = self._window(
+            "https://vimeo.com/1 http://127.0.0.1/x",
+            [("dl_1", None), (None, "That address is on a private network.")],
+        )
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        self.assertEqual(len(calls), 2)
+        text = window.quick_download_status.text()
+        self.assertIn("Queued dl_1", text)
+        self.assertIn("1 link(s) rejected", text)
+        self.assertEqual(
+            window.quick_download_status.properties["state"], "warning"
+        )
+
+    def test_clip_range_requires_a_single_link(self):
+        window, calls = self._window(
+            "https://vimeo.com/1 https://vimeo.com/2", [], start="0:05", end="0:10"
+        )
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        self.assertEqual(calls, [], "nothing may queue when the request is ambiguous")
+        self.assertIn("single link", window.quick_download_status.text())
+        self.assertEqual(window.quick_download_status.properties["state"], "error")
+
+    def test_empty_box_reports_instead_of_queueing_nothing(self):
+        window, calls = self._window("   ", [])
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        self.assertEqual(calls, [])
+        self.assertIn("Paste a video link", window.quick_download_status.text())
+
+
+def gui_module_for_tests():
+    import gui as gui_module
+    return gui_module
 
 
 if __name__ == "__main__":

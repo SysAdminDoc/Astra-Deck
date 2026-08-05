@@ -6,6 +6,7 @@ frameworks, which lets config tooling and tests run without PyQt or Flask.
 """
 
 import os
+import ipaddress
 import json
 import math
 import re
@@ -34,6 +35,9 @@ __all__ = (
     "MAX_RESPONSE_BYTES", "HELPER_DOWNLOAD_MAX_BYTES", "sanitize_config",
     "normalize_url", "normalize_output_dir", "normalize_download_section",
     "normalize_playlist_items",
+    "media_url_block_reason", "is_supported_media_url",
+    "describe_media_url_block", "looks_like_media_link",
+    "MEDIA_URL_BLOCK_MESSAGES", "MEDIA_HOST_HINTS",
     "validate_download_request_body",
     "allowed_output_roots", "clean_text", "clean_path_text", "coerce_bool",
     "clamp_int", "normalize_rate_limit", "normalize_proxy", "normalize_sublangs",
@@ -52,6 +56,9 @@ _OWNED_EXPORTS = {
     "bound_output_template_fields",
     "normalize_output_template",
     "normalize_url", "normalize_download_section", "normalize_playlist_items",
+    "media_url_block_reason", "is_supported_media_url",
+    "describe_media_url_block", "looks_like_media_link",
+    "MEDIA_URL_BLOCK_MESSAGES", "MEDIA_HOST_HINTS",
     "validate_download_request_body",
     "normalize_output_dir", "allowed_output_roots",
     "DEFAULT_CONFIG", "sanitize_config",
@@ -298,6 +305,154 @@ def normalize_url(value):
     if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         return None, "Enter a valid http or https URL."
     return url, None
+
+
+# ── Media source policy ───────────────────────────────────────────────────
+# Astra Downloader accepts any public http(s) media URL yt-dlp can extract
+# (YouTube, Reddit, X/Twitter, TikTok, Vimeo, Twitch clips, …). Until v1.8.0
+# the HTTP boundary enforced a YouTube-only host allowlist; that allowlist was
+# never about YouTube, it was the SSRF control — yt-dlp fetches, follows, and
+# retries whatever URL it is handed, so a caller holding the loopback token
+# could otherwise aim it (and any attached cookie jar) at LAN services or the
+# cloud-metadata endpoint. Widening the capability therefore replaces the
+# allowlist with an explicit private-network denylist rather than removing the
+# check. Cookie jars, PO tokens, and the JS-runtime gate stay YouTube-scoped.
+MEDIA_URL_BLOCK_MESSAGES = {
+    "invalid-url": "Enter a valid http or https URL.",
+    "credentials-in-url": (
+        "URLs that embed a username or password are not accepted. "
+        "Paste the plain video link instead."
+    ),
+    "private-host": (
+        "That address is on a private, loopback, or link-local network. "
+        "Astra Downloader only downloads from public sites."
+    ),
+    "non-public-host": (
+        "That host is not a public internet address. "
+        "Paste a normal video link such as https://www.reddit.com/r/…"
+    ),
+}
+# Hostname forms that never belong to a public media site. `.internal` also
+# covers metadata.google.internal; 169.254.169.254 is caught as link-local.
+_BLOCKED_MEDIA_HOSTS = frozenset({
+    "localhost", "localhost.localdomain", "ip6-localhost", "ip6-loopback",
+})
+_BLOCKED_MEDIA_HOST_SUFFIXES = (
+    ".local", ".localdomain", ".internal", ".intranet", ".lan", ".home.arpa",
+)
+# Hosts a paste-anything clipboard grabber should stage without being asked
+# twice. Purely a UX hint — it never gates a download.
+MEDIA_HOST_HINTS = (
+    "youtube.com", "youtu.be", "youtube-nocookie.com", "reddit.com", "redd.it",
+    "twitter.com", "x.com", "t.co", "tiktok.com", "vimeo.com", "twitch.tv",
+    "dailymotion.com", "dai.ly", "streamable.com", "bilibili.com",
+    "soundcloud.com", "facebook.com", "fb.watch", "instagram.com",
+    "bsky.app", "rumble.com", "odysee.com", "kick.com", "nicovideo.jp",
+    "vk.com", "ok.ru", "pscp.tv", "periscope.tv", "imgur.com", "gfycat.com",
+    "9gag.com", "newgrounds.com", "archive.org", "ted.com", "coub.com",
+    "bitchute.com", "peertube.tv", "loom.com", "vidyard.com", "wistia.com",
+)
+_MEDIA_PATH_HINTS = (
+    "/watch", "/video", "/videos", "/v/", "/embed/", "/clip", "/clips/",
+    "/shorts/", "/reel", "/status/", "/comments/", "/playlist", "/episode",
+    "/media/", "/stream", "/live/",
+)
+_MEDIA_EXTENSION_HINTS = (
+    ".mp4", ".webm", ".mkv", ".mov", ".m4v", ".avi", ".flv", ".m3u8", ".mpd",
+    ".ts", ".mp3", ".m4a", ".opus", ".ogg", ".wav", ".flac",
+)
+
+
+def _media_url_host(url):
+    """Return the bare lowercase host of a URL (no port, no brackets, no dot)."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return None, None
+    host = parsed.hostname  # already strips userinfo, port, and [] on IPv6
+    if not host:
+        return None, parsed
+    return host.strip().rstrip(".").lower(), parsed
+
+
+def _ip_is_public(address):
+    """Reject every non-globally-routable literal, including IPv4-mapped v6."""
+    mapped = getattr(address, "ipv4_mapped", None)
+    if mapped is not None:
+        address = mapped
+    sixtofour = getattr(address, "sixtofour", None)
+    if sixtofour is not None:
+        address = sixtofour
+    return not (
+        address.is_private or address.is_loopback or address.is_link_local
+        or address.is_multicast or address.is_reserved or address.is_unspecified
+    )
+
+
+def media_url_block_reason(url):
+    """Return why a URL must not be handed to yt-dlp, or None when it is fine.
+
+    Deliberately literal-only: no DNS resolution happens here, because a name
+    that resolves privately at validation time can resolve publicly a
+    millisecond later (and vice versa). The residual — a public DNS name
+    pointed at a private address — is documented in HARDENING.md.
+    """
+    normalized, error = normalize_url(url)
+    if error or not normalized:
+        return "invalid-url"
+    host, parsed = _media_url_host(normalized)
+    if not host:
+        return "invalid-url"
+    if parsed.username or parsed.password or "@" in (parsed.netloc or ""):
+        return "credentials-in-url"
+    try:
+        return None if _ip_is_public(ipaddress.ip_address(host)) else "private-host"
+    except ValueError:
+        # reason: not an IP literal — the hostname rules below decide
+        pass
+    if host in _BLOCKED_MEDIA_HOSTS or host.endswith(_BLOCKED_MEDIA_HOST_SUFFIXES):
+        return "private-host"
+    labels = host.split(".")
+    if len(labels) < 2 or not all(labels):
+        # Single-label names are intranet hosts ("nas", "router", "localhost").
+        return "private-host"
+    tld = labels[-1]
+    # A public suffix is alphabetic (or punycode). Requiring that rejects the
+    # obfuscated loopback literals urlparse does not recognise as IPs —
+    # "127.1", "0x7f.0.0.1", "2130706433" — without touching real domains,
+    # including internationalized ones.
+    if not (tld.isalpha() or (tld.startswith("xn--") and len(tld) > 4)):
+        return "non-public-host"
+    return None
+
+
+def is_supported_media_url(url):
+    """True when yt-dlp may be pointed at this URL."""
+    return media_url_block_reason(url) is None
+
+
+def describe_media_url_block(reason):
+    """Map a block reason onto user-facing copy."""
+    return MEDIA_URL_BLOCK_MESSAGES.get(
+        reason, MEDIA_URL_BLOCK_MESSAGES["invalid-url"]
+    )
+
+
+def looks_like_media_link(url):
+    """UX-only heuristic for the clipboard grabber: does this copied link look
+    like something worth staging? Never used to allow or deny a download —
+    `is_supported_media_url` owns that decision."""
+    if not is_supported_media_url(url):
+        return False
+    host, parsed = _media_url_host(url)
+    if not host:
+        return False
+    if any(host == hint or host.endswith("." + hint) for hint in MEDIA_HOST_HINTS):
+        return True
+    path = (parsed.path or "").lower()
+    if any(marker in path for marker in _MEDIA_PATH_HINTS):
+        return True
+    return path.endswith(_MEDIA_EXTENSION_HINTS)
 
 
 def _parse_section_timestamp(value):
