@@ -79,7 +79,11 @@ try:
         DOWNLOAD_RUNNING_STATES, DOWNLOAD_STALL_TIMEOUT_SECONDS,
         DOWNLOAD_TERMINAL_STATES, DOWNLOAD_WATCHDOG_POLL_SECONDS,
         DOWNLOAD_QUEUE_SCHEMA_VERSION, MAX_CONCURRENT, MAX_QUEUED_TOTAL,
-        PLAYLIST_PREVIEW_LIMIT,
+        MAX_SITE_LOGIN_COOKIES, MAX_SITE_LOGINS, PLAYLIST_PREVIEW_LIMIT,
+        SITE_LOGIN_BROWSERS, SITE_LOGIN_DIRNAME, SiteLoginStore,
+        build_browser_cookie_args,
+        cookie_domain_in_site, describe_browser_cookie_failure,
+        parse_netscape_cookies, registrable_domain, site_login_key,
         Download, DownloadManagerCore,
         DownloadQueueStore,
         PO_PROVIDER_NUDGE, PO_PROVIDER_NUDGE_CODES, po_provider_nudge_advice,
@@ -155,7 +159,11 @@ except ImportError:  # Direct script / flat source-path compatibility.
         DOWNLOAD_RUNNING_STATES, DOWNLOAD_STALL_TIMEOUT_SECONDS,
         DOWNLOAD_TERMINAL_STATES, DOWNLOAD_WATCHDOG_POLL_SECONDS,
         DOWNLOAD_QUEUE_SCHEMA_VERSION, MAX_CONCURRENT, MAX_QUEUED_TOTAL,
-        PLAYLIST_PREVIEW_LIMIT,
+        MAX_SITE_LOGIN_COOKIES, MAX_SITE_LOGINS, PLAYLIST_PREVIEW_LIMIT,
+        SITE_LOGIN_BROWSERS, SITE_LOGIN_DIRNAME, SiteLoginStore,
+        build_browser_cookie_args,
+        cookie_domain_in_site, describe_browser_cookie_failure,
+        parse_netscape_cookies, registrable_domain, site_login_key,
         Download, DownloadManagerCore,
         DownloadQueueStore,
         PO_PROVIDER_NUDGE, PO_PROVIDER_NUDGE_CODES, po_provider_nudge_advice,
@@ -210,7 +218,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.9.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
@@ -2971,6 +2979,7 @@ def create_api(config, dl_manager, history, subscriptions=None):
         'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
         'legacy_health_token_origin_allowlist': lambda *args, **kwargs: legacy_health_token_origin_allowlist(*args, **kwargs),
         'media_url_block_reason': lambda *args, **kwargs: media_url_block_reason(*args, **kwargs),
+        'MAX_SITE_LOGIN_COOKIES': MAX_SITE_LOGIN_COOKIES,
         'normalize_extension_origin': lambda *args, **kwargs: normalize_extension_origin(*args, **kwargs),
         'normalize_url': lambda *args, **kwargs: normalize_url(*args, **kwargs),
         'probe_javascript_runtime': lambda *args, **kwargs: probe_javascript_runtime(*args, **kwargs),
@@ -3202,6 +3211,7 @@ class MainWindow(MainWindowCore):
                 'get_ffmpeg_version': lambda *args, **kwargs: get_ffmpeg_version(*args, **kwargs),
                 'get_recent_log_entries': lambda *args, **kwargs: get_recent_log_entries(*args, **kwargs),
                 'get_ytdlp_version': lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
+                'SITE_LOGIN_BROWSERS': lambda: SITE_LOGIN_BROWSERS,
                 'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
                 'looks_like_media_link': lambda *args, **kwargs: looks_like_media_link(*args, **kwargs),
                 'evaluate_sabr_support': lambda *args, **kwargs: evaluate_sabr_support(*args, **kwargs),

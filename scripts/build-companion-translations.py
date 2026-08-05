@@ -31,18 +31,21 @@ SOURCE_STRINGS = (
     "Start Server",
     "Stop Server",
     "Tray behavior",
-    "Stage copied YouTube links for review",
+    "Stage copied video links for review",
+    "Sign-ins",
     "Save changes",
 )
 
 CATALOGS = {
     "ar": {
+        "Sign-ins": "تسجيلات الدخول",
         "Dashboard": "لوحة المعلومات",
         "Downloads": "التنزيلات",
         "History": "السجل",
         "Settings": "الإعدادات",
     },
     "de": {
+        "Sign-ins": "Anmeldungen",
         "Dashboard": "Übersicht",
         "Downloads": "Downloads",
         "History": "Verlauf",
@@ -67,55 +70,63 @@ CATALOGS = {
         "Start Server": "Server starten",
         "Stop Server": "Server stoppen",
         "Tray behavior": "Infobereich",
-        "Stage copied YouTube links for review": (
+        "Stage copied video links for review": (
             "Kopierte YouTube-Links zur Prüfung vormerken"
         ),
         "Save changes": "Änderungen speichern",
     },
     "en": {},
     "es": {
+        "Sign-ins": "Inicios de sesión",
         "Dashboard": "Panel",
         "Downloads": "Descargas",
         "History": "Historial",
         "Settings": "Configuración",
     },
     "fr": {
+        "Sign-ins": "Connexions",
         "Dashboard": "Tableau de bord",
         "Downloads": "Téléchargements",
         "History": "Historique",
         "Settings": "Paramètres",
     },
     "it": {
+        "Sign-ins": "Accessi",
         "Dashboard": "Panoramica",
         "Downloads": "Download",
         "History": "Cronologia",
         "Settings": "Impostazioni",
     },
     "ja": {
+        "Sign-ins": "サインイン",
         "Dashboard": "ダッシュボード",
         "Downloads": "ダウンロード",
         "History": "履歴",
         "Settings": "設定",
     },
     "ko": {
+        "Sign-ins": "로그인",
         "Dashboard": "대시보드",
         "Downloads": "다운로드",
         "History": "기록",
         "Settings": "설정",
     },
     "pt_BR": {
+        "Sign-ins": "Logins",
         "Dashboard": "Painel",
         "Downloads": "Downloads",
         "History": "Histórico",
         "Settings": "Configurações",
     },
     "ru": {
+        "Sign-ins": "Входы",
         "Dashboard": "Обзор",
         "Downloads": "Загрузки",
         "History": "История",
         "Settings": "Настройки",
     },
     "zh_CN": {
+        "Sign-ins": "登录",
         "Dashboard": "仪表板",
         "Downloads": "下载",
         "History": "历史记录",

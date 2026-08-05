@@ -83,8 +83,12 @@
       <translation>Tray behavior</translation>
     </message>
     <message>
-      <source>Stage copied YouTube links for review</source>
-      <translation>Stage copied YouTube links for review</translation>
+      <source>Stage copied video links for review</source>
+      <translation>Stage copied video links for review</translation>
+    </message>
+    <message>
+      <source>Sign-ins</source>
+      <translation>Inicios de sesión</translation>
     </message>
     <message>
       <source>Save changes</source>

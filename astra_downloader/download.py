@@ -39,6 +39,11 @@ __all__ = (
     "ALLOWED_COOKIE_DOMAINS", "build_subprocess_env",
     "DownloadQueueStore", "DOWNLOAD_QUEUE_SCHEMA_VERSION",
     "PLAYLIST_PREVIEW_LIMIT",
+    "SiteLoginStore", "site_login_key", "registrable_domain",
+    "cookie_domain_in_site", "parse_netscape_cookies",
+    "build_browser_cookie_args", "describe_browser_cookie_failure",
+    "SITE_LOGIN_BROWSERS", "MAX_SITE_LOGINS", "MAX_SITE_LOGIN_COOKIES",
+    "SITE_LOGIN_DIRNAME",
 )
 
 MAX_CONCURRENT = 3
@@ -253,10 +258,17 @@ def _apply_cookie_jar_acl(target_path):
         raise PermissionError('cookie jar ACL still contains inherited permissions')
 
 
-def write_cookies_netscape(cookies, target_path, *, logger=None):
-    """Persist allowlisted browser cookies as an atomic protected jar."""
+def write_cookies_netscape(cookies, target_path, *, logger=None, domain_filter=None):
+    """Persist allowlisted browser cookies as an atomic protected jar.
+
+    `domain_filter` decides which cookie domains may be written. It defaults to
+    the YouTube/Google allowlist used by the extension's per-download jars; the
+    site-login store passes a filter scoped to the one site the jar belongs to,
+    so a stored login can never widen into a general cookie dump.
+    """
     if not isinstance(cookies, list) or not cookies:
         return None
+    allow_domain = domain_filter or _is_allowed_cookie_domain
     target_path = Path(target_path)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
@@ -269,7 +281,7 @@ def write_cookies_netscape(cookies, target_path, *, logger=None):
             continue
         name = _sanitize_cookie_field(entry.get("name"), 256)
         domain = _sanitize_cookie_field(entry.get("domain"), 256)
-        if not name or not _is_allowed_cookie_domain(domain):
+        if not name or not allow_domain(domain):
             continue
         try:
             raw_expiry = entry.get("expirationDate")
@@ -323,6 +335,413 @@ def write_cookies_netscape(cookies, target_path, *, logger=None):
             # reason: the temporary jar may already have been removed by the failed operation
             pass
         return None
+
+
+# ── Site logins ───────────────────────────────────────────────────────────
+# Sites other than YouTube (X, Instagram, Facebook, members-only Vimeo, adult
+# and paywalled sites) serve media only to a signed-in session. The extension's
+# YouTube cookie bridge cannot help there: it is YouTube-scoped by design, and
+# it only runs on YouTube pages. So the companion keeps its own store — one
+# protected Netscape jar per site, imported once, attached automatically to
+# downloads for that site and to nothing else.
+#
+# Import sources, in order of reliability on Windows:
+#   1. A cookies.txt file or pasted text exported from the browser.
+#   2. Extension-shaped cookie records posted to /site-logins.
+#   3. yt-dlp's own browser reader (`--cookies-from-browser`), which works for
+#      Firefox but fails on Chrome 127+ / Edge because app-bound encryption
+#      blocks DPAPI (yt-dlp issue #10927) — the failure is reported verbatim so
+#      the user is told to use source 1 instead of being left guessing.
+
+SITE_LOGIN_DIRNAME = 'site-logins'
+SITE_LOGIN_INDEX_NAME = 'index.json'
+SITE_LOGIN_SCHEMA_VERSION = 1
+MAX_SITE_LOGINS = 50
+MAX_SITE_LOGIN_COOKIES = 400
+MAX_SITE_LOGIN_TEXT_BYTES = 1024 * 1024
+SITE_LOGIN_BROWSERS = (
+    'brave', 'chrome', 'chromium', 'edge', 'firefox', 'opera', 'safari',
+    'vivaldi', 'whale',
+)
+# Two-label public suffixes common enough to matter when deciding what "the
+# same site" means. Not a full PSL — a wrong answer here only makes the store
+# key more or less specific, never more permissive than the host itself.
+_MULTI_LABEL_SUFFIXES = frozenset({
+    'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'me.uk', 'net.uk', 'sch.uk',
+    'com.au', 'net.au', 'org.au', 'edu.au', 'gov.au', 'co.nz', 'net.nz',
+    'org.nz', 'co.jp', 'ne.jp', 'or.jp', 'ac.jp', 'go.jp', 'com.br',
+    'net.br', 'org.br', 'com.cn', 'net.cn', 'org.cn', 'com.mx', 'com.ar',
+    'com.tr', 'com.tw', 'com.hk', 'com.sg', 'com.my', 'com.ph', 'co.in',
+    'co.kr', 'co.za', 'com.pl', 'com.ua', 'co.il', 'com.co', 'com.pe',
+})
+_SITE_KEY_RE = re.compile(r'[^a-z0-9.\-]')
+
+
+def registrable_domain(host):
+    """Return the "same site" key for a host: `www.reddit.com` -> `reddit.com`.
+
+    Falls back to the host itself when it is already minimal or unparseable.
+    """
+    host = str(host or '').strip().strip('.').lower()
+    if not host:
+        return ''
+    labels = [label for label in host.split('.') if label]
+    if len(labels) < 3:
+        return '.'.join(labels)
+    if '.'.join(labels[-2:]) in _MULTI_LABEL_SUFFIXES and len(labels) >= 3:
+        return '.'.join(labels[-3:])
+    return '.'.join(labels[-2:])
+
+
+def site_login_key(value):
+    """Normalize a URL or hostname into a filesystem-safe store key."""
+    raw = str(value or '').strip()
+    if not raw:
+        return ''
+    if '://' in raw:
+        try:
+            raw = urlparse(raw).hostname or ''
+        except ValueError:
+            return ''
+    else:
+        raw = raw.split('/', 1)[0].split(':', 1)[0]
+    key = registrable_domain(raw)
+    key = _SITE_KEY_RE.sub('', key)
+    return key.strip('.')[:120]
+
+
+def cookie_domain_in_site(cookie_domain, site_key):
+    """True when a cookie's domain belongs to the site the jar was stored for.
+
+    This is the guard that keeps a stored login site-scoped: an imported
+    cookies.txt full of every site the browser knows is reduced to the one site
+    being signed in to, both when it is written and when it is used.
+    """
+    domain = str(cookie_domain or '').strip().lstrip('.').lower().rstrip('.')
+    site = str(site_key or '').strip().lower()
+    if not domain or not site:
+        return False
+    return domain == site or domain.endswith('.' + site)
+
+
+def parse_netscape_cookies(text, *, limit=MAX_SITE_LOGIN_COOKIES):
+    """Parse Netscape cookies.txt content into extension-shaped records.
+
+    Returns records in the same shape the extension posts (`name`, `value`,
+    `domain`, `path`, `secure`, `httpOnly`, `expirationDate`) so both import
+    paths converge on one writer, one sanitizer, and one ACL.
+    """
+    records = []
+    for raw_line in str(text or '').splitlines():
+        if len(records) >= limit:
+            break
+        line = raw_line.rstrip('\n').rstrip('\r')
+        http_only = False
+        if line.startswith('#HttpOnly_'):
+            http_only = True
+            line = line[len('#HttpOnly_'):]
+        elif line.lstrip().startswith('#') or not line.strip():
+            continue
+        fields = line.split('\t')
+        if len(fields) < 7:
+            # Some exporters emit space-padded columns; accept those too.
+            fields = line.split()
+            if len(fields) < 7:
+                continue
+            fields = fields[:6] + [' '.join(fields[6:])]
+        domain, _include_sub, path, secure, expiry, name, value = fields[:7]
+        if not domain or not name:
+            continue
+        try:
+            expiration = max(0, int(float(expiry)))
+        except (TypeError, ValueError, OverflowError):
+            expiration = 0
+        records.append({
+            'name': name,
+            'value': value,
+            'domain': domain,
+            'path': path or '/',
+            'secure': str(secure).strip().upper() == 'TRUE',
+            'httpOnly': http_only,
+            'expirationDate': expiration,
+        })
+    return records
+
+
+class SiteLoginStore:
+    """Durable, per-site cookie jars for signed-in downloads.
+
+    Cookie values never leave the jar files: `entries()` reports counts,
+    domains, and expiry only, which is what the GUI, the API, and the
+    diagnostics bundle are allowed to see.
+    """
+
+    def __init__(self, root, *, logger=None, clock=time.time,
+                 reader=None, writer=None):
+        self.root = Path(root) / SITE_LOGIN_DIRNAME
+        self.index_path = self.root / SITE_LOGIN_INDEX_NAME
+        self._logger = logger
+        self._clock = clock
+        self._reader = reader
+        self._writer = writer
+        self._lock = threading.RLock()
+
+    # -- storage -----------------------------------------------------------
+    def _log(self, message):
+        if self._logger:
+            try:
+                self._logger(message)
+            except Exception:
+                # reason: store bookkeeping must never fail a download
+                pass
+
+    def _ensure_root(self):
+        self.root.mkdir(parents=True, exist_ok=True)
+        try:
+            _apply_cookie_jar_acl(self.root)
+        except Exception as error:
+            self._log(f"WARNING: site-login directory ACL failed: {error}")
+
+    def _load_index(self):
+        if self._reader is not None:
+            raw = self._reader(self.index_path, {})
+        else:
+            try:
+                raw = json.loads(self.index_path.read_text(encoding='utf-8'))
+            except (OSError, ValueError):
+                raw = {}
+        if not isinstance(raw, dict):
+            return {}
+        entries = raw.get('sites')
+        if not isinstance(entries, dict):
+            return {}
+        return {
+            str(key): value for key, value in entries.items()
+            if isinstance(value, dict)
+        }
+
+    def _save_index(self, entries):
+        payload = {
+            'schemaVersion': SITE_LOGIN_SCHEMA_VERSION,
+            'sites': entries,
+        }
+        if self._writer is not None:
+            return bool(self._writer(self.index_path, payload))
+        try:
+            self._ensure_root()
+            self.index_path.write_text(
+                json.dumps(payload, indent=2), encoding='utf-8'
+            )
+            return True
+        except OSError as error:
+            self._log(f"WARNING: site-login index save failed: {error}")
+            return False
+
+    def _jar_path(self, key):
+        return self.root / f"{key}.txt"
+
+    # -- reads -------------------------------------------------------------
+    def entries(self):
+        """Return metadata for every stored login. Never returns cookie data."""
+        with self._lock:
+            index = self._load_index()
+        result = []
+        now = self._clock()
+        for key, record in sorted(index.items()):
+            expiry = record.get('earliestExpiry') or 0
+            try:
+                expiry = int(expiry)
+            except (TypeError, ValueError):
+                expiry = 0
+            result.append({
+                'site': key,
+                'label': str(record.get('label') or key)[:120],
+                'source': str(record.get('source') or 'import')[:60],
+                'cookies': int(record.get('cookies') or 0),
+                'importedAt': int(record.get('importedAt') or 0),
+                'earliestExpiry': expiry,
+                'expired': bool(expiry and expiry <= now),
+                'stored': self._jar_path(key).exists(),
+            })
+        return result
+
+    def has_login_for(self, url):
+        return bool(self.site_key_for_url(url))
+
+    def site_key_for_url(self, url):
+        """Return the stored site key that covers a URL, or '' when none does."""
+        key = site_login_key(url)
+        if not key:
+            return ''
+        with self._lock:
+            index = self._load_index()
+        if key in index and self._jar_path(key).exists():
+            return key
+        return ''
+
+    # -- writes ------------------------------------------------------------
+    def save_cookies(self, site, cookies, *, source='import', label=None):
+        """Filter cookie records to one site and persist a protected jar."""
+        key = site_login_key(site)
+        if not key:
+            return None, 'Enter the site address you signed in to, such as x.com.'
+        if not isinstance(cookies, list) or not cookies:
+            return None, 'No cookies were found to import.'
+        scoped = [
+            entry for entry in cookies[:MAX_SITE_LOGIN_COOKIES]
+            if isinstance(entry, dict)
+            and cookie_domain_in_site(entry.get('domain'), key)
+        ]
+        if not scoped:
+            return None, (
+                f'None of those cookies belong to {key}. Sign in to the site '
+                'first, then export or share its cookies.'
+            )
+        with self._lock:
+            index = self._load_index()
+            if key not in index and len(index) >= MAX_SITE_LOGINS:
+                return None, (
+                    f'Site sign-in limit reached ({MAX_SITE_LOGINS}). '
+                    'Remove one before adding another.'
+                )
+            self._ensure_root()
+            written = write_cookies_netscape(
+                scoped,
+                self._jar_path(key),
+                logger=self._logger,
+                domain_filter=lambda domain: cookie_domain_in_site(domain, key),
+            )
+            if not written:
+                return None, 'Astra Downloader could not store the cookies safely.'
+            expiries = [
+                int(entry.get('expirationDate') or 0) for entry in scoped
+                if int(entry.get('expirationDate') or 0) > 0
+            ]
+            index[key] = {
+                'label': str(label or key)[:120],
+                'source': str(source)[:60],
+                'cookies': len(scoped),
+                'importedAt': int(self._clock()),
+                'earliestExpiry': min(expiries) if expiries else 0,
+            }
+            self._save_index(index)
+        self._log(
+            f"Stored a site sign-in for {key} ({len(scoped)} cookies, source={source})"
+        )
+        return {
+            'site': key,
+            'cookies': len(scoped),
+            'skipped': max(0, len(cookies) - len(scoped)),
+        }, None
+
+    def import_netscape_text(self, site, text, *, source='cookies.txt', label=None):
+        """Import a cookies.txt export, keeping only the target site's cookies."""
+        if not isinstance(text, str) or not text.strip():
+            return None, 'The cookie file is empty.'
+        if len(text.encode('utf-8', 'ignore')) > MAX_SITE_LOGIN_TEXT_BYTES:
+            return None, 'That cookie file is too large to be a browser export.'
+        records = parse_netscape_cookies(text)
+        if not records:
+            return None, (
+                'No cookies were found. Export the file in Netscape '
+                'cookies.txt format, not JSON.'
+            )
+        return self.save_cookies(site, records, source=source, label=label)
+
+    def remove(self, site):
+        key = site_login_key(site)
+        if not key:
+            return False
+        with self._lock:
+            index = self._load_index()
+            existed = key in index
+            index.pop(key, None)
+            self._save_index(index)
+            try:
+                self._jar_path(key).unlink(missing_ok=True)
+            except OSError as error:
+                self._log(f"WARNING: site-login jar delete failed: {error}")
+                return False
+        if existed:
+            self._log(f"Removed the stored site sign-in for {key}")
+        return existed
+
+    def export_jar_for(self, url, target_path):
+        """Write a per-download copy of the stored jar, or None when unusable.
+
+        A copy is used rather than the stored file itself because `--cookies`
+        is also a write path: yt-dlp saves the jar back when it exits, so two
+        concurrent downloads for one site would race on the stored file, and a
+        redirect through a CDN would append foreign domains to it.
+        """
+        key = self.site_key_for_url(url)
+        if not key:
+            return None
+        try:
+            text = self._jar_path(key).read_text(encoding='utf-8')
+        except OSError as error:
+            self._log(f"WARNING: stored site sign-in for {key} is unreadable: {error}")
+            return None
+        records = parse_netscape_cookies(text)
+        now = self._clock()
+        fresh = [
+            record for record in records
+            if cookie_domain_in_site(record.get('domain'), key)
+            and (not record.get('expirationDate')
+                 or int(record.get('expirationDate') or 0) > now)
+        ]
+        if not fresh:
+            self._log(
+                f"Stored site sign-in for {key} has no unexpired cookies; "
+                "sign in again to refresh it."
+            )
+            return None
+        return write_cookies_netscape(
+            fresh,
+            target_path,
+            logger=self._logger,
+            domain_filter=lambda domain: cookie_domain_in_site(domain, key),
+        )
+
+
+def build_browser_cookie_args(browser, profile=None):
+    """Return the yt-dlp argument pair for reading a browser's cookie store."""
+    name = str(browser or '').strip().lower()
+    if name not in SITE_LOGIN_BROWSERS:
+        return []
+    target = name
+    profile = str(profile or '').strip()
+    if profile:
+        # yt-dlp accepts BROWSER[:PROFILE]; ':' and '+' are its own separators
+        # and must not arrive from a profile name.
+        if any(character in profile for character in ':+"'):
+            return []
+        target = f"{name}:{profile}"
+    return ['--cookies-from-browser', target]
+
+
+def describe_browser_cookie_failure(output):
+    """Explain a failed browser cookie read in the user's terms."""
+    text = str(output or '').lower()
+    if 'dpapi' in text or 'app-bound' in text or 'app bound' in text:
+        return (
+            'Chrome and Edge 127+ encrypt their cookie store so no outside '
+            'program can read it. Export a cookies.txt file from the browser '
+            'and import that instead.'
+        )
+    if 'could not find' in text and 'cookies' in text:
+        return (
+            'That browser profile has no cookie database. Pick the profile you '
+            'actually browse with.'
+        )
+    if 'unsupported browser' in text:
+        return 'That browser is not one yt-dlp can read cookies from.'
+    if 'permission denied' in text or 'being used by another process' in text:
+        return (
+            'The browser is holding its cookie database open. Close the '
+            'browser and try again, or import a cookies.txt export.'
+        )
+    return ''
 
 
 def cleanup_stale_cookie_jars(install_dir, older_than_seconds=300, *, clock=time.time):
@@ -699,6 +1118,11 @@ class Download:
         self.subscription_id = subscription_id
         self.archive_key = archive_key
         self.cookies_file = cookies_file
+        # Which site the jar at `cookies_file` was built for: 'youtube' for the
+        # extension's bridge, or a stored site-login key. A jar is only ever
+        # passed to yt-dlp for the site it belongs to, so a caller cannot post
+        # one site's URL with another site's cookies and have them sent.
+        self.cookies_scope = ""
         self.requires_auth = bool(requires_auth)
         self._cookies = None
         self.status = "pending"
@@ -883,6 +1307,13 @@ class DownloadManagerCore:
                 max_records=MAX_QUEUED_TOTAL,
             )
             if self._queue_path is not None else None
+        )
+        # Signed-in downloads for sites other than YouTube. Rooted in the
+        # install dir alongside the transient per-download jars so one sweep
+        # and one ACL policy cover both.
+        self.site_logins = SiteLoginStore(
+            self._dependencies['INSTALL_DIR'](),
+            logger=lambda message: self._dependencies['write_persistent_log'](message),
         )
         self._persistence_error = ""
         self._persistence_compatible = True
@@ -1089,12 +1520,25 @@ class DownloadManagerCore:
                     continue
                 cookies = dl._cookies
                 dl._cookies = None
+            # A stored site sign-in stands in for the extension's cookie
+            # bridge on every site the extension cannot reach. Request-supplied
+            # cookies still win: they are fresher than anything on disk.
+            site_login_used = False
+            if not cookies and not self._dependencies['is_youtube_url'](dl.url):
+                jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"
+                exported = self.site_logins.export_jar_for(dl.url, jar_path)
+                if exported:
+                    dl.cookies_file = exported
+                    dl.cookies_scope = self.site_logins.site_key_for_url(dl.url)
+                    site_login_used = True
             if cookies:
                 jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"
                 dl.cookies_file = write_cookies_netscape(
                     cookies, jar_path,
                     logger=self._dependencies['write_persistent_log'],
                 )
+                dl.cookies_scope = 'youtube' if dl.cookies_file else ''
+            if cookies or site_login_used:
                 with self._lock:
                     if dl.status != 'queued':
                         # Cancelled while the jar was being written. cancel()
@@ -1110,7 +1554,12 @@ class DownloadManagerCore:
                                 # reason: cancellation cleanup races with the jar writer and is idempotent
                                 pass
                         continue
-                if not dl.cookies_file:
+                # Only a requested cookie jar is mandatory. A stored site
+                # sign-in that cannot be exported (none saved, all expired) is
+                # not a failure — the download proceeds signed-out and, if the
+                # site refuses, classify_download_failure raises
+                # `sign-in-required` with the advice that names this store.
+                if cookies and not dl.cookies_file:
                     with self._lock:
                         self._running_ids.discard(dl.id)
                         dl.status = 'failed'
@@ -1597,6 +2046,18 @@ class DownloadManagerCore:
                     dl.filename = m.group(1)
         return last_lines, last_error
 
+    def _cookie_jar_matches_target(self, dl):
+        """True when the jar on this download belongs to the site being asked
+        for. Falls back to the YouTube check when a jar predates scope
+        tracking (a queue recovered from an older companion)."""
+        scope = getattr(dl, 'cookies_scope', '') or ''
+        is_youtube = self._dependencies['is_youtube_url'](dl.url)
+        if not scope:
+            return is_youtube
+        if scope == 'youtube':
+            return is_youtube
+        return scope == site_login_key(dl.url)
+
     def _empty_result_reason(self, dl):
         """Return why a zero-exit run produced no media, or None when it did.
 
@@ -1704,12 +2165,13 @@ class DownloadManagerCore:
             args += ['--max-filesize', f'{max_filesize}M']
         if dl.referer:
             args += ['--referer', dl.referer]
-        # The jar only ever holds YouTube/Google cookies (ALLOWED_COOKIE_DOMAINS
-        # filters every write), but --cookies also makes yt-dlp write the
-        # session back to that file. Attaching it to a non-YouTube extraction
-        # would mix a third-party site's cookies into a YouTube jar for no
-        # benefit, so scope the flag to the site the jar was created for.
-        if dl.cookies_file and self._dependencies['is_youtube_url'](dl.url):
+        # Two jars can reach this point, each scoped to one site: the
+        # extension's YouTube bridge (ALLOWED_COOKIE_DOMAINS) and a stored site
+        # sign-in (one registrable domain, enforced by SiteLoginStore).
+        # `--cookies` is also a write path, so a jar is attached only for the
+        # site it was built for — a request that pairs one site's URL with
+        # another site's cookies sends nothing.
+        if dl.cookies_file and self._cookie_jar_matches_target(dl):
             args += ['--cookies', dl.cookies_file]
         if is_playlist:
             args.append('--yes-playlist')
@@ -2454,6 +2916,88 @@ class DownloadManagerCore:
         except Exception:  # noqa: BLE001
             return None, 'Could not parse yt-dlp output while listing formats.'
         return summarize_ytdlp_formats(info), None
+
+    def import_site_login_from_browser(self, site, browser, profile=None,
+                                       timeout=90):
+        """Read one site's cookies out of an installed browser via yt-dlp.
+
+        yt-dlp writes the loaded jar to `--cookies` even when the URL itself
+        cannot be extracted, so this needs no downloadable page — the site
+        address alone is enough. The extracted jar is filtered to the target
+        site before anything is stored.
+        """
+        key = site_login_key(site)
+        if not key:
+            return None, 'Enter the site address you signed in to, such as x.com.'
+        browser_args = build_browser_cookie_args(browser, profile)
+        if not browser_args:
+            return None, (
+                'Choose one of the supported browsers: '
+                + ', '.join(SITE_LOGIN_BROWSERS) + '.'
+            )
+        install_dir = Path(self._dependencies['INSTALL_DIR']())
+        staging = install_dir / f".cookies.import.{uuid.uuid4().hex}.txt"
+        args = [
+            str(self._dependencies['YTDLP_PATH']()), '--ignore-config',
+            '--no-colors', '--skip-download', '--simulate', '--no-playlist',
+        ]
+        args += browser_args
+        args += ['--cookies', str(staging), f'https://{key}/']
+        try:
+            proc = self._dependencies['spawn_ytdlp'](
+                args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding='utf-8', errors='replace',
+                creationflags=self._dependencies['CREATE_NO_WINDOW'],
+                env=self._dependencies['_build_subprocess_env'](),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return None, f'Could not start yt-dlp: {exc}'
+        try:
+            output, _ = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            try:
+                self._dependencies['terminate_process_tree'](proc)
+            except Exception as error:
+                # reason: best-effort kill; the reader may already have exited
+                self._dependencies['write_persistent_log'](
+                    f"WARNING: cookie import termination failed: {error}"
+                )
+            self._unlink_quietly(staging)
+            return None, 'Timed out while reading cookies from the browser.'
+        try:
+            try:
+                text = staging.read_text(encoding='utf-8')
+            except OSError:
+                text = ''
+            explained = describe_browser_cookie_failure(output)
+            if explained:
+                return None, explained
+            if not text.strip():
+                return None, (
+                    'The browser returned no cookies. Sign in to the site in '
+                    'that browser and profile first.'
+                )
+            result, error = self.site_logins.import_netscape_text(
+                key, text, source=f'browser:{str(browser).strip().lower()}'
+            )
+            if error and 'None of those cookies belong to' in error:
+                return None, (
+                    f'That browser profile holds no cookies for {key}. Sign in '
+                    'to the site there, or export a cookies.txt file instead.'
+                )
+            return result, error
+        finally:
+            # The staging jar holds every cookie the browser exposed — far more
+            # than the one site being stored. It never outlives this call.
+            self._unlink_quietly(staging)
+
+    def _unlink_quietly(self, path):
+        try:
+            Path(path).unlink(missing_ok=True)
+        except OSError as error:
+            self._dependencies['write_persistent_log'](
+                f"WARNING: temporary cookie file cleanup failed: {error}"
+            )
 
     def preview_playlist(self, url, timeout=60):
         """Return a bounded flat-playlist preview without downloading media."""

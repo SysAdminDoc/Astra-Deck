@@ -8,11 +8,18 @@ downloads. It is the store-review and maintainer-facing explanation for the
 `cookies` permission and for the companion's cookie jar lifecycle.
 
 Companion v1.8.0 downloads from any public site yt-dlp supports, not only
-YouTube. Cookie handling did not widen with it: the jar is still built solely
-from `ALLOWED_COOKIE_DOMAINS` (YouTube/Google) and is now attached only to
-YouTube extractions. The SSRF control that the old YouTube-only URL allowlist
-provided is preserved as an explicit private-network denylist — see the
-threats table.
+YouTube. The extension's cookie bridge did not widen with it: that jar is still
+built solely from `ALLOWED_COOKIE_DOMAINS` (YouTube/Google) and is attached
+only to YouTube extractions. The SSRF control that the old YouTube-only URL
+allowlist provided is preserved as an explicit private-network denylist — see
+the threats table.
+
+Companion v1.9.0 adds a second, separate cookie path: **site sign-ins**, a
+durable per-site store the user populates deliberately (`SiteLoginStore`, one
+jar per registrable domain under `%LOCALAPPDATA%\AstraDownloader\site-logins`).
+It exists because sites other than YouTube serve media only to a signed-in
+session and the extension bridge cannot reach them. Its scoping rules are
+described below and are what keep it from becoming a general cookie dump.
 
 ## Source References
 
@@ -69,6 +76,13 @@ baseline for CVE-2023-35934.
 | YouTube cookies leak to third-party APIs. | Background fetch policy sends credentials only to YouTube/nocookie and local companion origins; SponsorBlock, DeArrow, RYD, Reddit, AI providers, and Cobalt use credentialless requests. |
 | DNS rebinding or localhost aliasing reaches another local service. | Extension and companion use literal `127.0.0.1` loopback ports, not `localhost`; the companion also validates Host headers. |
 | A token holder aims the downloader (and its cookie jar) at a LAN service or the cloud-metadata endpoint. | v1.8.0 replaced the YouTube-only URL allowlist with `media_url_block_reason()`: `/download`, `/formats`, `/playlist`, and `DownloadManagerCore.start_download()` reject loopback, private, link-local, reserved, multicast, single-label, `.local`/`.internal`/`.lan`, credential-bearing, and non-public-TLD targets before yt-dlp is spawned. Cookies are additionally YouTube-scoped (row above). |
+| An imported browser export carries every site's cookies, not just the one being signed in to. | `SiteLoginStore` filters records to the target registrable domain three times over — at import, when the protected jar is written (`write_cookies_netscape(domain_filter=…)`), and again when the per-download copy is exported. `cookie_domain_in_site()` matches exactly or on a leading dot, so `notx.com` / `x.com.evil.net` never match `x.com`. The import result reports how many foreign cookies were discarded. |
+| The full-browser jar produced while reading a browser's cookie store leaks. | `import_site_login_from_browser()` writes yt-dlp's `--cookies` output to a staging file inside the install dir, filters it, and deletes it in a `finally` — it never outlives the call and is never the file handed to a download. |
+| A stored sign-in is sent to a site it does not belong to. | `Download.cookies_scope` records the site each jar was built for and `_cookie_jar_matches_target()` gates the `--cookies` flag, so a request pairing one site's URL with another site's cookies sends nothing. Verified by a mutation test: removing the gate fails the suite. |
+| Stored cookie values are read back out through the local API or UI. | `/site-logins` GET, `SiteLoginStore.entries()`, the Sign-ins page, the log, and the diagnostics bundle expose only site, source, count, and expiry. There is no read path for names or values. |
+| Two downloads for one site corrupt the stored session, or a CDN redirect appends foreign domains to it. | yt-dlp saves the jar back when it exits, so downloads always receive a per-download copy (`export_jar_for()`); the stored file is read-only from the download path's perspective. |
+| A profile name smuggles yt-dlp cookie-source syntax (`chrome:profile+keyring`). | `build_browser_cookie_args()` rejects `:`, `+`, and `"` in profile names and accepts only the known browser list; an unknown browser never reaches a process spawn. |
+| The store grows without bound or a site key escapes the store directory. | 50 sites, 400 cookies per site, 1 MB per import; `site_login_key()` reduces any input to a sanitized registrable domain (`../../etc/passwd` → empty, refused). |
 | A public hostname resolves to a private address (DNS rebinding against the URL policy). | Not fully mitigated. The policy is literal-only by design — resolving at validation time proves nothing about resolution a millisecond later — so a name pointed at RFC1918 space still reaches yt-dlp. Residual risk is bounded by the loopback-only listener, the bearer token, and the YouTube-only cookie scope: no session credential accompanies the request. |
 
 ## Store-Review Copy

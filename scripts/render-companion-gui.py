@@ -24,6 +24,7 @@ CAPTURE_NAMES = (
     "history-cleared-undo",
     "history-restored",
     "subscriptions-empty",
+    "site-logins-stored",
     "settings-dirty",
     "settings-fallback-port",
     "settings-invalid",
@@ -160,7 +161,10 @@ def main():
             return window, config, history, manager
 
         def select_page(window, page_name):
-            expected_index = ("Dashboard", "Downloads", "History", "Subscriptions", "Settings").index(page_name)
+            expected_index = (
+                "Dashboard", "Downloads", "History", "Subscriptions",
+                "Sign-ins", "Settings",
+            ).index(page_name)
             window._nav_click(page_name)
             for nav_button in window.nav_buttons:
                 nav_button.clearFocus()
@@ -315,7 +319,8 @@ def main():
                 assert_visible_text(window, {"Übersicht"})
                 nav_text = [button.text() for button in window.nav_buttons]
                 if nav_text != [
-                    "Übersicht", "Downloads", "Verlauf", "Subscriptions", "Einstellungen",
+                    "Übersicht", "Downloads", "Verlauf", "Subscriptions",
+                    "Anmeldungen", "Einstellungen",
                 ]:
                     raise RuntimeError(
                         f"German navigation catalogue did not render: {nav_text}"
@@ -479,6 +484,23 @@ def main():
                 raise RuntimeError("Subscription fixture did not render its scan interval")
             capture_window(window, scenario)
 
+        def capture_site_login_state(window):
+            select_page(window, "Sign-ins")
+            # Fixture only: a stored sign-in with no cookie values anywhere in
+            # the rendered page, which is the property this view must hold.
+            store = window.dl_manager.site_logins
+            store.import_netscape_text(
+                "x.com",
+                ".x.com	TRUE	/	TRUE	2000000000	auth_token	fixture-value",
+            )
+            window._refresh_site_logins(force=True)
+            app.processEvents()
+            assert_visible_text(window, {"x.com"})
+            rendered = " ".join(visible_text(window))
+            if "fixture-value" in rendered or "auth_token" in rendered:
+                raise RuntimeError("Cookie values must never render in the sign-ins view")
+            capture_window(window, scenario)
+
         def capture_settings_state(window, config):
             select_page(window, "Settings")
             expected = ""
@@ -558,6 +580,8 @@ def main():
                     capture_history_state(window, history)
                 elif scenario == "subscriptions-empty":
                     capture_subscription_state(window)
+                elif scenario.startswith("site-logins-"):
+                    capture_site_login_state(window)
                 elif scenario.startswith("settings-"):
                     capture_settings_state(window, config)
                 else:

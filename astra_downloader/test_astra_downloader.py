@@ -5090,16 +5090,26 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_8_0(self):
+    def test_app_version_bumped_to_1_9_0(self):
+        # v1.9.0 site sign-ins: a per-site cookie store (import a cookies.txt,
+        # post extension-shaped records, or read a browser profile) so sites
+        # that only serve media to signed-in viewers download. Each jar is
+        # filtered to one registrable domain and attached to that site alone.
+        self.assertEqual(ad.APP_VERSION, "1.9.0")
+
+    def test_v1_8_0_any_site_download_surface_is_still_present(self):
         # v1.8.0 any-site downloads: the YouTube-only URL allowlist became a
         # private-network denylist, the JS-runtime gate and the cookie jar are
         # YouTube-scoped, non-YouTube singles download with --no-playlist, a
         # zero-exit run that wrote no file reports `skipped`, and the quick
         # download box accepts a multi-link paste.
-        # Prior v1.7.0 work delivered durable scheduled subscriptions,
-        # archive-aware dedupe, the companion Subscriptions page, and
-        # authenticated CRUD/scan routes.
-        self.assertEqual(ad.APP_VERSION, "1.8.0")
+        # Pinned by capability rather than by version so the v1.8.0 surface
+        # cannot quietly regress behind a later bump.
+        self.assertTrue(ad.is_supported_media_url("https://www.reddit.com/r/videos/x/"))
+        self.assertEqual(ad.media_url_block_reason("http://127.0.0.1/x"), "private-host")
+        self.assertIn("skipped", ad.DOWNLOAD_TERMINAL_STATES)
+        self.assertTrue(ad.is_playlist_url("https://soundcloud.com/a/sets/b"))
+        self.assertFalse(ad.is_playlist_url("https://x.com/a/status/1"))
 
 
 class EndToEndDownloadTests(unittest.TestCase):
@@ -8469,6 +8479,504 @@ class QuickDownloadBatchTests(unittest.TestCase):
 def gui_module_for_tests():
     import gui as gui_module
     return gui_module
+
+
+class SiteLoginPolicyTests(unittest.TestCase):
+    """Scoping rules that keep one stored sign-in from becoming a cookie dump."""
+
+    def test_registrable_domain_collapses_subdomains(self):
+        for host, expected in (
+            ("www.reddit.com", "reddit.com"),
+            ("old.reddit.com", "reddit.com"),
+            ("x.com", "x.com"),
+            ("video.twimg.com", "twimg.com"),
+            ("a.b.c.example.co.uk", "example.co.uk"),
+            ("site.com.au", "site.com.au"),
+            ("localhost", "localhost"),
+            ("", ""),
+        ):
+            self.assertEqual(ad.registrable_domain(host), expected, host)
+
+    def test_site_login_key_accepts_urls_and_bare_hosts(self):
+        for value, expected in (
+            ("https://x.com/someone/status/1", "x.com"),
+            ("https://www.instagram.com/reel/abc/", "instagram.com"),
+            ("instagram.com", "instagram.com"),
+            ("WWW.Vimeo.COM", "vimeo.com"),
+            ("https://example.co.uk:8443/watch", "example.co.uk"),
+            ("../../etc/passwd", ""),
+            ("", ""),
+        ):
+            self.assertEqual(ad.site_login_key(value), expected, value)
+
+    def test_site_login_key_never_escapes_the_store_directory(self):
+        for hostile in ("../../secrets", "a/../../b", "..", "C:\\Windows\\System32"):
+            key = ad.site_login_key(hostile)
+            self.assertNotIn("/", key, hostile)
+            self.assertNotIn("\\", key, hostile)
+            self.assertNotIn("..", key, hostile)
+
+    def test_cookie_domain_membership_is_suffix_exact(self):
+        self.assertTrue(ad.cookie_domain_in_site(".x.com", "x.com"))
+        self.assertTrue(ad.cookie_domain_in_site("api.x.com", "x.com"))
+        self.assertTrue(ad.cookie_domain_in_site("x.com", "x.com"))
+        # The classic suffix-matching bug: a lookalike domain must not match.
+        self.assertFalse(ad.cookie_domain_in_site("notx.com", "x.com"))
+        self.assertFalse(ad.cookie_domain_in_site("x.com.evil.net", "x.com"))
+        self.assertFalse(ad.cookie_domain_in_site("youtube.com", "x.com"))
+        self.assertFalse(ad.cookie_domain_in_site("", "x.com"))
+        self.assertFalse(ad.cookie_domain_in_site("x.com", ""))
+
+    def test_parse_netscape_cookies_reads_real_exporter_output(self):
+        text = "\n".join([
+            "# Netscape HTTP Cookie File",
+            "",
+            ".x.com\tTRUE\t/\tTRUE\t2000000000\tauth_token\tsecret",
+            "#HttpOnly_.x.com\tTRUE\t/\tTRUE\t0\tct0\tsession-value",
+            "broken-line-without-columns",
+            ".x.com\tTRUE\t/\tFALSE\tnot-a-number\tpref\tvalue with spaces",
+        ])
+        records = ad.parse_netscape_cookies(text)
+        self.assertEqual([r["name"] for r in records], ["auth_token", "ct0", "pref"])
+        self.assertTrue(records[0]["secure"])
+        self.assertFalse(records[0]["httpOnly"])
+        self.assertTrue(records[1]["httpOnly"], "#HttpOnly_ is a cookie, not a comment")
+        self.assertEqual(records[1]["expirationDate"], 0, "session cookie")
+        self.assertEqual(records[2]["expirationDate"], 0, "unparseable expiry is not fatal")
+        self.assertEqual(records[2]["value"], "value with spaces")
+
+    def test_parse_netscape_cookies_is_bounded(self):
+        text = "\n".join(
+            f".x.com\tTRUE\t/\tTRUE\t2000000000\tc{index}\tv"
+            for index in range(ad.MAX_SITE_LOGIN_COOKIES + 50)
+        )
+        self.assertEqual(len(ad.parse_netscape_cookies(text)), ad.MAX_SITE_LOGIN_COOKIES)
+
+    def test_browser_args_reject_injection_and_unknown_browsers(self):
+        self.assertEqual(
+            ad.build_browser_cookie_args("firefox"), ["--cookies-from-browser", "firefox"]
+        )
+        self.assertEqual(
+            ad.build_browser_cookie_args("chrome", "Profile 2"),
+            ["--cookies-from-browser", "chrome:Profile 2"],
+        )
+        # ':' and '+' are yt-dlp's own separators for keyring/container
+        # selection — a profile name must never be able to smuggle them in.
+        self.assertEqual(ad.build_browser_cookie_args("chrome", "a:b"), [])
+        self.assertEqual(ad.build_browser_cookie_args("chrome", "a+gnomekeyring"), [])
+        self.assertEqual(ad.build_browser_cookie_args("netscape-navigator"), [])
+        self.assertEqual(ad.build_browser_cookie_args(""), [])
+
+    def test_browser_failures_are_explained_in_users_terms(self):
+        self.assertIn(
+            "cookies.txt",
+            ad.describe_browser_cookie_failure(
+                "ERROR: Failed to decrypt with DPAPI. See https://github.com/yt-dlp/yt-dlp/issues/10927"
+            ),
+        )
+        self.assertIn(
+            "profile",
+            ad.describe_browser_cookie_failure("could not find chrome cookies database"),
+        )
+        self.assertEqual(ad.describe_browser_cookie_failure("Extracted 12 cookies"), "")
+
+
+class SiteLoginStoreTests(unittest.TestCase):
+    """The store keeps one site's session and discards everything else."""
+
+    MIXED_EXPORT = "\n".join([
+        "# Netscape HTTP Cookie File",
+        ".x.com\tTRUE\t/\tTRUE\t2000000000\tauth_token\tX-SECRET",
+        "#HttpOnly_.x.com\tTRUE\t/\tTRUE\t2000000000\tct0\tX-CT0",
+        ".youtube.com\tTRUE\t/\tTRUE\t2000000000\tSID\tYT-SECRET",
+        ".instagram.com\tTRUE\t/\tTRUE\t2000000000\tsessionid\tIG-SECRET",
+        "video.twimg.com\tFALSE\t/\tTRUE\t2000000000\tcdn\tCDN",
+    ])
+
+    def _store(self, root, clock=None):
+        return ad.SiteLoginStore(root, clock=clock or (lambda: 1_700_000_000))
+
+    def test_import_keeps_only_the_target_sites_cookies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            result, error = store.import_netscape_text("https://x.com/", self.MIXED_EXPORT)
+            self.assertIsNone(error)
+            self.assertEqual(result["site"], "x.com")
+            self.assertEqual(result["cookies"], 2)
+            self.assertEqual(result["skipped"], 3)
+            jar = Path(tmp) / ad.SITE_LOGIN_DIRNAME / "x.com.txt"
+            body = jar.read_text(encoding="utf-8")
+            self.assertIn("X-SECRET", body)
+            for foreign in ("YT-SECRET", "IG-SECRET", "CDN"):
+                self.assertNotIn(foreign, body, "a foreign site's cookie was stored")
+
+    def test_entries_never_expose_cookie_names_or_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            store.import_netscape_text("x.com", self.MIXED_EXPORT)
+            entries = store.entries()
+            self.assertEqual(len(entries), 1)
+            rendered = json.dumps(entries)
+            for secret in ("X-SECRET", "X-CT0", "auth_token", "ct0"):
+                self.assertNotIn(secret, rendered)
+            self.assertEqual(entries[0]["cookies"], 2)
+            self.assertTrue(entries[0]["stored"])
+            self.assertFalse(entries[0]["expired"])
+
+    def test_import_rejects_cookies_that_do_not_belong_to_the_site(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            result, error = store.import_netscape_text("vimeo.com", self.MIXED_EXPORT)
+            self.assertIsNone(result)
+            self.assertIn("belong to vimeo.com", error)
+            self.assertFalse((Path(tmp) / ad.SITE_LOGIN_DIRNAME / "vimeo.com.txt").exists())
+
+    def test_store_is_bounded_and_removable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            for index in range(ad.MAX_SITE_LOGINS):
+                site = f"site{index}.com"
+                _result, error = store.import_netscape_text(
+                    site, f".{site}\tTRUE\t/\tTRUE\t2000000000\ta\tb"
+                )
+                self.assertIsNone(error, site)
+            _result, error = store.import_netscape_text(
+                "overflow.com", ".overflow.com\tTRUE\t/\tTRUE\t2000000000\ta\tb"
+            )
+            self.assertIn("limit reached", error)
+
+            self.assertTrue(store.remove("site0.com"))
+            self.assertFalse((Path(tmp) / ad.SITE_LOGIN_DIRNAME / "site0.com.txt").exists())
+            self.assertFalse(store.remove("site0.com"), "removal is idempotent")
+            _result, error = store.import_netscape_text(
+                "overflow.com", ".overflow.com\tTRUE\t/\tTRUE\t2000000000\ta\tb"
+            )
+            self.assertIsNone(error, "a freed slot can be reused")
+
+    def test_export_skips_expired_cookies_and_unknown_sites(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # Clock is past the cookie's expiry.
+            store = self._store(tmp, clock=lambda: 2_100_000_000)
+            store.import_netscape_text("x.com", self.MIXED_EXPORT)
+            target = Path(tmp) / "per-download.txt"
+            self.assertIsNone(
+                store.export_jar_for("https://x.com/a/status/1", target),
+                "an expired session must not be presented as a live sign-in",
+            )
+            self.assertFalse(target.exists())
+            self.assertIsNone(store.export_jar_for("https://vimeo.com/1", target))
+
+    def test_export_writes_a_scoped_per_download_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            store.import_netscape_text("x.com", self.MIXED_EXPORT)
+            target = Path(tmp) / "per-download.txt"
+            written = store.export_jar_for("https://x.com/someone/status/1", target)
+            self.assertTrue(written)
+            body = Path(written).read_text(encoding="utf-8")
+            self.assertIn("X-SECRET", body)
+            self.assertNotIn("YT-SECRET", body)
+            # The stored jar is never handed to yt-dlp directly: --cookies is a
+            # write path, so concurrent downloads would race on it.
+            self.assertNotEqual(
+                Path(written).resolve(),
+                (Path(tmp) / ad.SITE_LOGIN_DIRNAME / "x.com.txt").resolve(),
+            )
+
+    def test_site_key_lookup_requires_a_stored_jar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            self.assertEqual(store.site_key_for_url("https://x.com/a"), "")
+            store.import_netscape_text("x.com", self.MIXED_EXPORT)
+            self.assertEqual(store.site_key_for_url("https://x.com/a"), "x.com")
+            self.assertEqual(store.site_key_for_url("https://api.x.com/a"), "x.com")
+            self.assertEqual(store.site_key_for_url("https://vimeo.com/1"), "")
+
+
+class SiteLoginDownloadTests(unittest.TestCase):
+    """A stored sign-in reaches yt-dlp for its own site and no other."""
+
+    class _FakeProc:
+        def __init__(self, lines, returncode=0):
+            self.stdout = iter(lines)
+            self.returncode = returncode
+            self._waited = False
+
+        def wait(self):
+            self._waited = True
+            return self.returncode
+
+        def poll(self):
+            return self.returncode if self._waited else None
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            pass
+
+        def communicate(self, *_args, **_kwargs):
+            self._waited = True
+            return ('', '')
+
+    def _run(self, url, *, seed_site=None, request_cookies=None):
+        captured = []
+        # The cookie jar's owner-only ACL is applied by shelling out to
+        # icacls through this very Popen, so a fake that swallows every
+        # command silently breaks jar creation and the test then "proves"
+        # cookies were not attached for the wrong reason.
+        real_popen = ad.subprocess.Popen
+
+        def popen(args, **kwargs):
+            if args and str(args[0]).lower().endswith('icacls'):
+                return real_popen(args, **kwargs)
+            if '--ignore-config' not in args:
+                return self._FakeProc([], 0)
+            captured.append(list(args))
+            return self._FakeProc(['[download] Destination: clip.mp4'], 0)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            if seed_site:
+                manager.site_logins.import_netscape_text(
+                    seed_site,
+                    f".{seed_site}\tTRUE\t/\tTRUE\t2000000000\tauth\tSITE-SECRET",
+                )
+            # Drive the production path: start_download schedules the worker,
+            # which is where the jar is chosen and written. Faking the process
+            # first keeps a real yt-dlp out of the unit suite.
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                dl_id, error = manager.start_download(url=url, cookies=request_cookies)
+                self.assertIsNone(error, error)
+                download = manager.downloads[dl_id]
+                deadline = time.time() + 10
+                while download.status not in ad.DOWNLOAD_TERMINAL_STATES and time.time() < deadline:
+                    time.sleep(0.05)
+            jar_body = ''
+            argv = captured[-1] if captured else []
+            if '--cookies' in argv:
+                jar_path = Path(argv[argv.index('--cookies') + 1])
+                jar_body = jar_path.read_text(encoding='utf-8') if jar_path.exists() else '(cleaned)'
+            return argv, download, jar_body
+
+    def test_stored_sign_in_is_attached_for_its_own_site(self):
+        argv, download, _body = self._run(
+            "https://x.com/someone/status/1", seed_site="x.com"
+        )
+        self.assertIn('--cookies', argv)
+        self.assertEqual(download.cookies_scope, 'x.com')
+
+    def test_stored_sign_in_is_not_attached_to_another_site(self):
+        argv, download, _body = self._run(
+            "https://www.reddit.com/r/videos/comments/a/b/", seed_site="x.com"
+        )
+        self.assertNotIn('--cookies', argv)
+        self.assertEqual(download.cookies_scope, '')
+
+    def test_no_stored_sign_in_downloads_signed_out_instead_of_failing(self):
+        argv, download, _body = self._run("https://vimeo.com/123")
+        self.assertNotIn('--cookies', argv)
+        self.assertEqual(download.status, 'complete',
+                         "a missing sign-in is not a cookie-jar failure")
+
+    def test_youtube_request_cookies_never_follow_a_url_off_site(self):
+        # A token holder posting a non-YouTube URL with YouTube cookies must
+        # not cause those cookies to be sent anywhere.
+        argv, download, _body = self._run(
+            "https://vimeo.com/123",
+            request_cookies=[{
+                "name": "SID", "value": "YT-SECRET", "domain": ".youtube.com",
+                "path": "/", "secure": True, "expirationDate": 2_000_000_000,
+            }],
+        )
+        self.assertEqual(download.cookies_scope, 'youtube')
+        self.assertNotIn('--cookies', argv)
+
+
+class SiteLoginApiTests(unittest.TestCase):
+    """/site-logins is authenticated, write-only for secrets, and URL-policed."""
+
+    EXPORT = ".x.com\tTRUE\t/\tTRUE\t2000000000\tauth_token\tX-SECRET"
+
+    def _client(self, token):
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        return api.test_client(), manager
+
+    def test_requires_authentication(self):
+        client, _manager = self._client("z" * 32)
+        self.assertEqual(client.get("/site-logins").status_code, 401)
+        self.assertEqual(
+            client.post("/site-logins", json={"site": "x.com"}).status_code, 401
+        )
+        self.assertEqual(
+            client.delete("/site-logins", json={"site": "x.com"}).status_code, 401
+        )
+
+    def test_import_list_and_delete_round_trip(self):
+        token = "z" * 32
+        client, manager = self._client(token)
+        with tempfile.TemporaryDirectory() as tmp:
+            manager.site_logins = ad.SiteLoginStore(tmp)
+            created = client.post(
+                "/site-logins",
+                json={"site": "https://x.com/", "cookiesText": self.EXPORT},
+                headers={"X-Auth-Token": token},
+            )
+            self.assertEqual(created.status_code, 200)
+            self.assertEqual(created.get_json()["site"], "x.com")
+
+            listing = client.get("/site-logins", headers={"X-Auth-Token": token})
+            self.assertEqual(listing.status_code, 200)
+            body = listing.get_data(as_text=True)
+            self.assertIn("x.com", body)
+            self.assertNotIn("X-SECRET", body, "cookie values must never be readable")
+            self.assertNotIn("auth_token", body)
+
+            removed = client.delete(
+                "/site-logins", json={"site": "x.com"}, headers={"X-Auth-Token": token}
+            )
+            self.assertEqual(removed.status_code, 200)
+            self.assertTrue(removed.get_json()["removed"])
+            self.assertEqual(
+                client.get("/site-logins", headers={"X-Auth-Token": token}).get_json()["sites"],
+                [],
+            )
+
+    def test_extension_shaped_cookie_records_are_accepted(self):
+        token = "z" * 32
+        client, manager = self._client(token)
+        with tempfile.TemporaryDirectory() as tmp:
+            manager.site_logins = ad.SiteLoginStore(tmp)
+            resp = client.post(
+                "/site-logins",
+                json={
+                    "site": "instagram.com",
+                    "source": "extension",
+                    "cookies": [
+                        {"name": "sessionid", "value": "IG", "domain": ".instagram.com",
+                         "path": "/", "secure": True, "expirationDate": 2_000_000_000},
+                        {"name": "SID", "value": "YT", "domain": ".youtube.com",
+                         "path": "/", "secure": True, "expirationDate": 2_000_000_000},
+                    ],
+                },
+                headers={"X-Auth-Token": token},
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.get_json()["cookies"], 1)
+            self.assertEqual(resp.get_json()["skipped"], 1, "the YouTube cookie is dropped")
+
+    def test_private_network_sites_are_refused(self):
+        token = "z" * 32
+        client, manager = self._client(token)
+        with tempfile.TemporaryDirectory() as tmp:
+            manager.site_logins = ad.SiteLoginStore(tmp)
+            for hostile in ("http://192.168.1.5/", "localhost", "127.0.0.1"):
+                resp = client.post(
+                    "/site-logins",
+                    json={"site": hostile, "cookiesText": self.EXPORT},
+                    headers={"X-Auth-Token": token},
+                )
+                self.assertEqual(resp.status_code, 400, hostile)
+                self.assertEqual(resp.get_json()["code"], "private-host", hostile)
+
+    def test_missing_payload_is_rejected(self):
+        token = "z" * 32
+        client, manager = self._client(token)
+        with tempfile.TemporaryDirectory() as tmp:
+            manager.site_logins = ad.SiteLoginStore(tmp)
+            resp = client.post(
+                "/site-logins", json={"site": "x.com"}, headers={"X-Auth-Token": token}
+            )
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(resp.get_json()["code"], "missing-cookies")
+
+
+class SiteLoginBrowserImportTests(unittest.TestCase):
+    """Reading a browser cookie store: filtered on the way in, cleaned up after."""
+
+    def test_browser_import_filters_and_removes_the_staging_jar(self):
+        staged = {}
+        real_popen = ad.subprocess.Popen
+
+        def popen(args, **kwargs):
+            # icacls protects the stored jar through this same Popen.
+            if args and str(args[0]).lower().endswith('icacls'):
+                return real_popen(args, **kwargs)
+            jar = Path(args[args.index('--cookies') + 1])
+            staged['path'] = jar
+            jar.write_text(
+                "# Netscape HTTP Cookie File\n"
+                ".x.com\tTRUE\t/\tTRUE\t2000000000\tauth_token\tX-SECRET\n"
+                ".bank.example\tTRUE\t/\tTRUE\t2000000000\tsession\tBANK-SECRET\n",
+                encoding="utf-8",
+            )
+
+            class Proc:
+                returncode = 0
+
+                def communicate(self, *_a, **_k):
+                    return ("Extracted 2 cookies from firefox", "")
+
+            return Proc()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                result, error = manager.import_site_login_from_browser("x.com", "firefox")
+
+            self.assertIsNone(error)
+            self.assertEqual(result["cookies"], 1)
+            self.assertEqual(result["skipped"], 1)
+            self.assertFalse(
+                staged['path'].exists(),
+                "the staging jar holds every browser cookie and must not survive",
+            )
+            stored = manager.site_logins.export_jar_for("https://x.com/a", Path(tmpdir) / "out.txt")
+            body = Path(stored).read_text(encoding="utf-8")
+            self.assertIn("X-SECRET", body)
+            self.assertNotIn("BANK-SECRET", body)
+
+    def test_app_bound_encryption_failure_is_explained_not_swallowed(self):
+        def popen(args, **_kwargs):
+            class Proc:
+                returncode = 1
+
+                def communicate(self, *_a, **_k):
+                    return (
+                        "ERROR: Failed to decrypt with DPAPI. See "
+                        "https://github.com/yt-dlp/yt-dlp/issues/10927 for more info",
+                        "",
+                    )
+
+            return Proc()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            with mock.patch.object(ad.subprocess, 'Popen', popen), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                result, error = manager.import_site_login_from_browser("x.com", "chrome")
+        self.assertIsNone(result)
+        self.assertIn("cookies.txt", error)
+
+    def test_unsupported_browser_never_spawns_a_process(self):
+        def popen(*_args, **_kwargs):
+            raise AssertionError("no process may be spawned for an unknown browser")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            with mock.patch.object(ad.subprocess, 'Popen', popen):
+                result, error = manager.import_site_login_from_browser("x.com", "netscape")
+        self.assertIsNone(result)
+        self.assertIn("supported browsers", error)
 
 
 if __name__ == "__main__":
