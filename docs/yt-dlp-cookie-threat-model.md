@@ -1,11 +1,18 @@
 # yt-dlp Cookie Threat Model
 
-Last reviewed: 2026-08-03.
+Last reviewed: 2026-08-05.
 
 This document covers how Astra Deck moves YouTube cookies from the browser
 extension into the local Astra Downloader companion for authenticated yt-dlp
 downloads. It is the store-review and maintainer-facing explanation for the
 `cookies` permission and for the companion's cookie jar lifecycle.
+
+Companion v1.8.0 downloads from any public site yt-dlp supports, not only
+YouTube. Cookie handling did not widen with it: the jar is still built solely
+from `ALLOWED_COOKIE_DOMAINS` (YouTube/Google) and is now attached only to
+YouTube extractions. The SSRF control that the old YouTube-only URL allowlist
+provided is preserved as an explicit private-network denylist — see the
+threats table.
 
 ## Source References
 
@@ -34,9 +41,13 @@ downloads. It is the store-review and maintainer-facing explanation for the
    /inheritance:r /grant:r <current-user>:F`; POSIX platforms use and verify
    mode `0600`. If the protection step fails, the temporary file is deleted and
    the download stops with the classified `cookie-jar-failed` error.
-5. `DownloadManager._run_download()` passes the jar with `--cookies <path>`.
-   It does not accept client-supplied yt-dlp argv, `--add-header Cookie:`, or
-   `--load-info-json`.
+5. `DownloadManager._run_download()` passes the jar with `--cookies <path>`,
+   and only when the target URL is a YouTube URL (`is_youtube_url`). Companion
+   v1.8.0 downloads from any public site, so this scoping keeps a YouTube jar
+   off every other extractor — `--cookies` is also a write path, and yt-dlp
+   would otherwise persist a third-party site's session into a YouTube jar.
+   The handler does not accept client-supplied yt-dlp argv,
+   `--add-header Cookie:`, or `--load-info-json`.
 6. The download `finally` block deletes the jar after yt-dlp exits. A startup
    sweep removes stale `.cookies.*.txt` files older than 300 seconds after a
    crash or forced process kill.
@@ -57,6 +68,8 @@ baseline for CVE-2023-35934.
 | Cookie jar is readable by other local users. | The writer creates an empty file, removes inherited Windows ACEs with `icacls /inheritance:r`, grants full control only to the current account, verifies the resulting ACL has no inherited entries, and only then writes cookie bytes. POSIX platforms require verified mode `0600`; ACL failure aborts the download. |
 | YouTube cookies leak to third-party APIs. | Background fetch policy sends credentials only to YouTube/nocookie and local companion origins; SponsorBlock, DeArrow, RYD, Reddit, AI providers, and Cobalt use credentialless requests. |
 | DNS rebinding or localhost aliasing reaches another local service. | Extension and companion use literal `127.0.0.1` loopback ports, not `localhost`; the companion also validates Host headers. |
+| A token holder aims the downloader (and its cookie jar) at a LAN service or the cloud-metadata endpoint. | v1.8.0 replaced the YouTube-only URL allowlist with `media_url_block_reason()`: `/download`, `/formats`, `/playlist`, and `DownloadManagerCore.start_download()` reject loopback, private, link-local, reserved, multicast, single-label, `.local`/`.internal`/`.lan`, credential-bearing, and non-public-TLD targets before yt-dlp is spawned. Cookies are additionally YouTube-scoped (row above). |
+| A public hostname resolves to a private address (DNS rebinding against the URL policy). | Not fully mitigated. The policy is literal-only by design — resolving at validation time proves nothing about resolution a millisecond later — so a name pointed at RFC1918 space still reaches yt-dlp. Residual risk is bounded by the loopback-only listener, the bearer token, and the YouTube-only cookie scope: no session credential accompanies the request. |
 
 ## Store-Review Copy
 

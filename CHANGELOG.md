@@ -6,6 +6,53 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Astra Downloader v1.8.0 — Downloads from any site, not just YouTube
+
+The companion is now a general video downloader. Every site yt-dlp has an
+extractor for works from the standalone Quick download box, the clipboard
+grabber, and the HTTP API.
+
+#### Added
+- **Any public media URL is accepted.** `/download`, `/formats`, `/playlist`,
+  and `DownloadManagerCore.start_download()` no longer require a YouTube host.
+  Verified end to end against real downloads from Reddit, archive.org, a direct
+  `.mp4` (generic extractor), and YouTube.
+- **Multi-link paste.** The Quick download box splits a whitespace-separated
+  paste into a batch, queues each link, and reports how many were queued and
+  which were rejected. Clip ranges still require a single link.
+- **`skipped` outcome for zero-exit runs that wrote no file.** yt-dlp exits 0
+  when `--max-filesize` rejects every format (a 300 MB item under a 25 MB cap),
+  which previously reported "Complete" with nothing on disk. The download now
+  reports `skipped` and names the size limit. `skipped` joined
+  `DOWNLOAD_TERMINAL_STATES`; the extension's download panel has rendered that
+  status since v3.20.7.
+
+#### Changed
+- **SSRF control kept, allowlist replaced.** The YouTube-only host allowlist was
+  the SSRF boundary, not a product decision, so it became an explicit
+  private-network denylist (`media_url_block_reason()` in `config.py`):
+  loopback, RFC1918, link-local (incl. `169.254.169.254`), reserved, multicast,
+  single-label hosts, `.local` / `.internal` / `.lan` / `.home.arpa`,
+  credential-bearing URLs, and non-public TLDs (`127.1`, `0x7f.0.0.1`,
+  `2130706433`) are refused with a specific `code` and user-facing reason.
+- **Cookies are YouTube-scoped.** `--cookies` is attached only for YouTube URLs.
+  The jar was already YouTube-only by content, but `--cookies` is also a write
+  path — yt-dlp would otherwise persist another site's session into it.
+- **The JavaScript-runtime hard gate applies to YouTube only.** Deno solves
+  YouTube's n/sig challenges; no other extractor needs it, so a missing runtime
+  no longer blocks a Reddit or X download.
+- **Non-YouTube single links download with `--no-playlist`,** so pasting a
+  profile or channel link cannot queue a whole collection. YouTube keeps its
+  historical `&list=` semantics unchanged. `is_playlist_url()` additionally
+  recognises `/playlist`, `/sets/`, `/album/`, `/series/`, and `/collection/`
+  paths so real non-YouTube playlists still download in full.
+- **SponsorBlock is only requested for YouTube URLs** (its segment data is
+  YouTube-only; elsewhere it added a warning line that competed with the real
+  failure reason in the output tail).
+- Recovered-queue restore no longer drops non-YouTube rows, and failure copy
+  that named YouTube is now site-neutral. GUI copy, the clipboard-grabber
+  setting, and `docs/yt-dlp-cookie-threat-model.md` were updated to match.
+
 ## [4.51.2] - 2026-08-03
 
 ### Added

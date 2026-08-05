@@ -63,7 +63,10 @@ try:
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
         HistoryStore, PORT_FALLBACKS, SERVER_PORT,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
-        clean_path_text, clean_text, coerce_bool, load_json_file,
+        MEDIA_HOST_HINTS, MEDIA_URL_BLOCK_MESSAGES,
+        clean_path_text, clean_text, coerce_bool, describe_media_url_block,
+        is_supported_media_url, load_json_file, looks_like_media_link,
+        media_url_block_reason,
         normalize_download_section, normalize_playlist_items, normalize_output_dir,
         normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
@@ -136,7 +139,10 @@ except ImportError:  # Direct script / flat source-path compatibility.
         DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS,
         HistoryStore, PORT_FALLBACKS, SERVER_PORT,
         allowed_output_roots, atomic_write_json, backup_corrupt_file, clamp_int,
-        clean_path_text, clean_text, coerce_bool, load_json_file,
+        MEDIA_HOST_HINTS, MEDIA_URL_BLOCK_MESSAGES,
+        clean_path_text, clean_text, coerce_bool, describe_media_url_block,
+        is_supported_media_url, load_json_file, looks_like_media_link,
+        media_url_block_reason,
         normalize_download_section, normalize_playlist_items, normalize_output_dir,
         normalize_output_template, normalize_proxy,
         normalize_rate_limit, normalize_sublangs, normalize_url, sanitize_config,
@@ -204,7 +210,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.8.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
@@ -2869,6 +2875,7 @@ class DownloadManager(DownloadManagerCore):
                 'clean_text': lambda *args, **kwargs: clean_text(*args, **kwargs),
                 'cleanup_stale_cookie_jars': lambda *args, **kwargs: cleanup_stale_cookie_jars(*args, **kwargs),
                 'coerce_bool': lambda *args, **kwargs: coerce_bool(*args, **kwargs),
+                'is_supported_media_url': lambda *args, **kwargs: is_supported_media_url(*args, **kwargs),
                 'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
                 'load_json_file': lambda *args, **kwargs: load_json_file(*args, **kwargs),
                 # v1.5.4: let the download path drive the throttled, race-safe
@@ -2960,8 +2967,10 @@ def create_api(config, dl_manager, history, subscriptions=None):
         'get_recent_log_entries': lambda *args, **kwargs: get_recent_log_entries(*args, **kwargs),
         'get_ytdlp_version': lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
         'evaluate_sabr_support': lambda *args, **kwargs: evaluate_sabr_support(*args, **kwargs),
+        'describe_media_url_block': lambda *args, **kwargs: describe_media_url_block(*args, **kwargs),
         'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
         'legacy_health_token_origin_allowlist': lambda *args, **kwargs: legacy_health_token_origin_allowlist(*args, **kwargs),
+        'media_url_block_reason': lambda *args, **kwargs: media_url_block_reason(*args, **kwargs),
         'normalize_extension_origin': lambda *args, **kwargs: normalize_extension_origin(*args, **kwargs),
         'normalize_url': lambda *args, **kwargs: normalize_url(*args, **kwargs),
         'probe_javascript_runtime': lambda *args, **kwargs: probe_javascript_runtime(*args, **kwargs),
@@ -3194,6 +3203,7 @@ class MainWindow(MainWindowCore):
                 'get_recent_log_entries': lambda *args, **kwargs: get_recent_log_entries(*args, **kwargs),
                 'get_ytdlp_version': lambda *args, **kwargs: get_ytdlp_version(*args, **kwargs),
                 'is_youtube_url': lambda *args, **kwargs: is_youtube_url(*args, **kwargs),
+                'looks_like_media_link': lambda *args, **kwargs: looks_like_media_link(*args, **kwargs),
                 'evaluate_sabr_support': lambda *args, **kwargs: evaluate_sabr_support(*args, **kwargs),
                 'maybe_auto_update_ytdlp': lambda *args, **kwargs: maybe_auto_update_ytdlp(*args, **kwargs),
                 'normalize_output_dir': lambda *args, **kwargs: normalize_output_dir(*args, **kwargs),
