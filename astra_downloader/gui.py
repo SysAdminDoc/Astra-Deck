@@ -260,6 +260,8 @@ def download_status_tone(status):
         return "success"
     if status in ("failed", "cancelled"):
         return "danger"
+    if status == "skipped":
+        return "warning"
     if status in ("merging", "extracting", "trimming", "queued", "pending", "paused", "needs-auth"):
         return "warning"
     if status == "downloading":
@@ -280,6 +282,7 @@ def human_status(status):
         "complete": "Complete",
         "failed": "Failed",
         "cancelled": "Cancelled",
+        "skipped": "Nothing downloaded",
     }.get(status, str(status).title())
 
 
@@ -804,6 +807,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'get_recent_log_entries',
     'get_ytdlp_version',
     'is_youtube_url',
+    'looks_like_media_link',
     'maybe_auto_update_ytdlp',
     'normalize_output_dir',
     'normalize_download_section',
@@ -1324,8 +1328,11 @@ class MainWindowCore(QMainWindow):
         quick_layout.addWidget(make_section_label("Quick download"))
         url_row = QHBoxLayout()
         self.quick_download_url = QLineEdit()
-        self.quick_download_url.setAccessibleName("YouTube URL")
-        self.quick_download_url.setPlaceholderText(tr("Paste a YouTube video or playlist URL"))
+        self.quick_download_url.setAccessibleName("Video URL")
+        self.quick_download_url.setPlaceholderText(
+            tr("Paste any video link — YouTube, Reddit, X, TikTok, Vimeo, "
+               "or several at once")
+        )
         self.quick_download_url.returnPressed.connect(self._start_quick_download)
         self.quick_download_url.textEdited.connect(self._quick_download_url_edited)
         url_row.addWidget(self.quick_download_url, 1)
@@ -1369,6 +1376,11 @@ class MainWindowCore(QMainWindow):
         self.quick_download_end.setMaximumWidth(84)
         options_row.addWidget(self.quick_download_end)
         quick_layout.addLayout(options_row)
+        quick_layout.addWidget(make_label(
+            tr("Any site yt-dlp supports works here. Clip ranges apply to a "
+               "single link."),
+            "fieldHint",
+        ))
         self.quick_download_status = make_label("", "fieldHint")
         self.quick_download_status.setAccessibleName("Quick download status")
         self.quick_download_status.hide()
@@ -1425,42 +1437,75 @@ class MainWindowCore(QMainWindow):
         self.quick_download_quality.setEnabled(not audio_only)
 
     def _start_quick_download(self):
-        url = self.quick_download_url.text().strip()
+        # A URL can never contain whitespace (normalize_url rejects it), so
+        # splitting on whitespace safely turns a multi-link paste — the common
+        # case when the companion is used standalone — into a batch enqueue.
+        urls = self.quick_download_url.text().split()
         start = self.quick_download_start.text().strip()
         end = self.quick_download_end.text().strip()
         section = None
+        if not urls:
+            self._set_quick_download_status(
+                "Paste a video link first.", "error"
+            )
+            return
         if start or end:
+            if len(urls) > 1:
+                self._set_quick_download_status(
+                    "Clip ranges apply to a single link. Remove the extra "
+                    "links or clear the clip range.",
+                    "error",
+                )
+                return
             section, error = self._dependencies['normalize_download_section']({
                 "start": start,
                 "end": end,
             })
             if error:
-                self.quick_download_status.setText(error)
-                self.quick_download_status.setProperty("state", "error")
-                self.quick_download_status.show()
-                repolish(self.quick_download_status)
+                self._set_quick_download_status(error, "error")
                 return
-        dl_id, error = self.dl_manager.start_download(
-            url=url,
-            audio_only=bool(self.quick_download_type.currentData()),
-            fmt=self.quick_download_format.currentData(),
-            quality=self.quick_download_quality.currentData() or "best",
-            section=section,
-        )
-        if error:
-            self.quick_download_status.setText(error)
-            self.quick_download_status.setProperty("state", "error")
-        else:
-            self.quick_download_status.setText(
-                f"Queued {dl_id}"
-                + (" for an accurate ffmpeg clip." if section else ".")
+
+        queued = []
+        failures = []
+        for url in urls:
+            dl_id, error = self.dl_manager.start_download(
+                url=url,
+                audio_only=bool(self.quick_download_type.currentData()),
+                fmt=self.quick_download_format.currentData(),
+                quality=self.quick_download_quality.currentData() or "best",
+                section=section,
             )
-            self.quick_download_status.setProperty("state", "success")
+            if error:
+                failures.append((url, error))
+            else:
+                queued.append(dl_id)
+
+        if queued:
+            if len(queued) == 1:
+                message = f"Queued {queued[0]}" + (
+                    " for an accurate ffmpeg clip." if section else "."
+                )
+            else:
+                message = f"Queued {len(queued)} downloads."
+            if failures:
+                message += f" {len(failures)} link(s) rejected: {failures[0][1]}"
+            self._set_quick_download_status(
+                message, "warning" if failures else "success"
+            )
             self._clipboard_staged_url = ""
             self.quick_download_url.clear()
             self.quick_download_start.clear()
             self.quick_download_end.clear()
+            self._append_log(
+                f"Queued {len(queued)} download(s) from the quick download box."
+            )
             self._update_ui()
+        else:
+            self._set_quick_download_status(failures[0][1], "error")
+
+    def _set_quick_download_status(self, message, state):
+        self.quick_download_status.setText(message)
+        self.quick_download_status.setProperty("state", state)
         self.quick_download_status.show()
         repolish(self.quick_download_status)
 
@@ -2049,15 +2094,17 @@ class MainWindowCore(QMainWindow):
         self.cfg_startmin.setChecked(self.config.get("StartMinimized", False))
         self.cfg_notify = QCheckBox(tr("Notify when a download finishes (while minimized)"))
         self.cfg_notify.setChecked(self.config.get("NotifyOnComplete", True))
-        self.cfg_clipboard = QCheckBox(tr("Stage copied YouTube links for review"))
+        self.cfg_clipboard = QCheckBox(tr("Stage copied video links for review"))
         self.cfg_clipboard.setChecked(self.config.get("ClipboardLinkGrabber", False))
         self.cfg_clipboard.setToolTip(
-            "Watch clipboard changes for YouTube links. Matching links fill the "
-            "Quick download field but are never downloaded until you confirm."
+            "Watch clipboard changes for video links from any supported site. "
+            "Matching links fill the Quick download field but are never "
+            "downloaded until you confirm."
         )
         self.cfg_clipboard.setAccessibleDescription(
-            "Off by default. Non-YouTube clipboard content is ignored, and a "
-            "matching link is staged without starting a download."
+            "Off by default. Clipboard content that does not look like a video "
+            "link is ignored, and a matching link is staged without starting a "
+            "download."
         )
         for w in [
             self.cfg_autoupdate, self.cfg_closetotray, self.cfg_startmin,
@@ -3233,7 +3280,7 @@ class MainWindowCore(QMainWindow):
         self.quick_download_status.hide()
 
     def _handle_clipboard_change(self, clipboard_text=None):
-        """Stage a copied YouTube URL for review without starting a download."""
+        """Stage a copied media URL for review without starting a download."""
         if not self.config.get("ClipboardLinkGrabber", False):
             return
         if clipboard_text is None:
@@ -3245,7 +3292,11 @@ class MainWindowCore(QMainWindow):
             return
         self._clipboard_last_seen = raw
         url, error = self._dependencies['normalize_url'](raw)
-        if error or not self._dependencies['is_youtube_url'](url):
+        # `looks_like_media_link` is a UX filter, not a security one: it keeps
+        # the grabber from staging every copied http link (docs, tickets,
+        # search results) while still covering any site whose URL reads like
+        # media. The download itself is gated by the manager's policy check.
+        if error or not self._dependencies['looks_like_media_link'](url):
             return
         if url == self._clipboard_staged_url:
             return
@@ -3253,16 +3304,16 @@ class MainWindowCore(QMainWindow):
         self._clipboard_staged_url = url
         self.quick_download_url.setText(url)
         self.quick_download_status.setText(
-            "Copied YouTube link staged. Review the options, then choose Add to queue."
+            "Copied video link staged. Review the options, then choose Add to queue."
         )
         self.quick_download_status.setProperty("state", "success")
         self.quick_download_status.show()
         repolish(self.quick_download_status)
-        self._append_log("Staged a copied YouTube link for review.")
+        self._append_log("Staged a copied video link for review.")
         if hasattr(self, "tray"):
             self.tray.showMessage(
                 self._value('APP_NAME'),
-                "YouTube link staged. Open Downloads to review it before adding it to the queue.",
+                "Video link staged. Open Downloads to review it before adding it to the queue.",
                 QSystemTrayIcon.MessageIcon.Information,
                 5000,
             )

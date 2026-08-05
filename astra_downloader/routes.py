@@ -163,8 +163,10 @@ _REQUIRED_API_DEPENDENCIES = frozenset({
     'get_recent_log_entries',
     'get_ytdlp_version',
     'evaluate_sabr_support',
+    'describe_media_url_block',
     'is_youtube_url',
     'legacy_health_token_origin_allowlist',
+    'media_url_block_reason',
     'normalize_extension_origin',
     'normalize_url',
     'probe_javascript_runtime',
@@ -211,8 +213,10 @@ def create_api(config, dl_manager, history, *, dependencies):
     get_recent_log_entries = dependencies['get_recent_log_entries']
     get_ytdlp_version = dependencies['get_ytdlp_version']
     evaluate_sabr_support = dependencies['evaluate_sabr_support']
+    describe_media_url_block = dependencies['describe_media_url_block']
     is_youtube_url = dependencies['is_youtube_url']
     legacy_health_token_origin_allowlist = dependencies['legacy_health_token_origin_allowlist']
+    media_url_block_reason = dependencies['media_url_block_reason']
     normalize_extension_origin = dependencies['normalize_extension_origin']
     normalize_url = dependencies['normalize_url']
     probe_javascript_runtime = dependencies['probe_javascript_runtime']
@@ -477,29 +481,34 @@ def create_api(config, dl_manager, history, *, dependencies):
         if url_err:
             return cors_response({"error": url_err}, 400)
 
-        # SSRF / cookie-scope hardening: the companion is a YouTube downloader,
-        # and the documented threat model promises a YouTube-only domain
-        # allowlist. Enforce that allowlist here at the HTTP trust boundary —
-        # `normalize_url` only checks scheme+netloc, so without this a caller
-        # holding the token could point yt-dlp (and the attached session cookie
-        # jar) at arbitrary internal/LAN/cloud-metadata hosts. The allowlist
-        # lived only in the extension (an untrusted boundary) until now.
-        if not is_youtube_url(url):
+        # SSRF hardening: v1.8.0 opened the companion to every site yt-dlp
+        # supports, so the old YouTube-only allowlist no longer applies — but
+        # its actual job does. `normalize_url` only checks scheme+netloc, so
+        # without this a caller holding the token could point yt-dlp (and the
+        # attached cookie jar) at internal/LAN/cloud-metadata hosts. The
+        # private-network denylist enforces that here, at the trust boundary,
+        # rather than in the extension (an untrusted boundary).
+        block_reason = media_url_block_reason(url)
+        if block_reason:
             return cors_response(
                 {
-                    "error": "Astra Downloader only downloads from YouTube.",
-                    "code": "non-youtube-url",
+                    "error": describe_media_url_block(block_reason),
+                    "code": block_reason,
                 },
                 400,
             )
 
-        # Runtime capability hard gate. Presence is insufficient: downloads
-        # require a supported version and a successful EJS execution probe.
+        # Runtime capability hard gate — YouTube only. yt-dlp needs an external
+        # JavaScript runtime to solve YouTube's n/sig challenges; no other
+        # extractor does, so refusing a Reddit or X download because Deno is
+        # missing would block a capability that works fine without it.
+        # Presence is insufficient for YouTube: downloads require a supported
+        # version and a successful EJS execution probe.
         runtime = probe_javascript_runtime(
             configured_runtime=config.get('JavaScriptRuntime', 'auto')
         )
         runtime_usable = runtime.get('supported') is True and runtime.get('ejsReady') is True
-        if runtime.get('ytdlpNeedsRuntime') and not runtime_usable:
+        if is_youtube_url(url) and runtime.get('ytdlpNeedsRuntime') and not runtime_usable:
             reason = runtime.get('reason')
             if reason == 'runtime-not-installed':
                 error_code = 'js-runtime-missing'
@@ -591,10 +600,11 @@ def create_api(config, dl_manager, history, *, dependencies):
         url, url_err = normalize_url(body['url'])
         if url_err:
             return cors_response({"error": url_err}, 400)
-        if not is_youtube_url(url):
+        block_reason = media_url_block_reason(url)
+        if block_reason:
             return cors_response({
-                "error": "Astra Downloader only previews YouTube playlists.",
-                "code": "non-youtube-url",
+                "error": describe_media_url_block(block_reason),
+                "code": block_reason,
             }, 400)
         result, err = dl_manager.preview_playlist(url)
         if err:
@@ -628,11 +638,12 @@ def create_api(config, dl_manager, history, *, dependencies):
         url, url_err = normalize_url(body['url'])
         if url_err:
             return cors_response({"error": url_err}, 400)
-        # Same YouTube-only trust boundary as /download — never point yt-dlp
-        # (and any attached cookie jar) at arbitrary hosts.
-        if not is_youtube_url(url):
+        # Same trust boundary as /download — never point yt-dlp (and any
+        # attached cookie jar) at private-network hosts.
+        block_reason = media_url_block_reason(url)
+        if block_reason:
             return cors_response(
-                {"error": "Astra Downloader only lists formats for YouTube.", "code": "non-youtube-url"},
+                {"error": describe_media_url_block(block_reason), "code": block_reason},
                 400,
             )
         result, err = dl_manager.list_formats(url)

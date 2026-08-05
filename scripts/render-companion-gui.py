@@ -269,7 +269,7 @@ def main():
             fixture_download(
                 manager, "needsauth", "Members-only archive", "needs-auth", 4,
                 requires_auth=True,
-                error="Fresh YouTube authentication is required.",
+                error="Fresh sign-in is required.",
             )
             fixture_download(
                 manager, "failed", "Unavailable livestream", "failed", 5,
@@ -405,7 +405,7 @@ def main():
                 assert_visible_text(
                     window,
                     {
-                        "Copied YouTube link staged. Review the options, then choose Add to queue.",
+                        "Copied video link staged. Review the options, then choose Add to queue.",
                     },
                 )
                 if window.quick_download_url.text() != (

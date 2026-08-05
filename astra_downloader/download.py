@@ -50,7 +50,10 @@ PLAYLIST_PREVIEW_LIMIT = 200
 DOWNLOAD_RUNNING_STATES = {'queued', 'downloading', 'merging', 'extracting', 'trimming'}
 DOWNLOAD_PENDING_STATES = {'pending', 'paused', 'needs-auth'}
 DOWNLOAD_ACTIVE_STATES = DOWNLOAD_RUNNING_STATES | DOWNLOAD_PENDING_STATES
-DOWNLOAD_TERMINAL_STATES = {'complete', 'failed', 'cancelled'}
+# 'skipped' = yt-dlp exited 0 without writing media (size cap, no downloadable
+# media on the page). Terminal like the rest; the extension's download panel
+# has rendered this status since v3.20.7.
+DOWNLOAD_TERMINAL_STATES = {'complete', 'failed', 'cancelled', 'skipped'}
 DOWNLOAD_RETRYABLE_ERROR_CODES = {
     'network-unreachable',
     'po-provider-stale',
@@ -134,7 +137,7 @@ DOWNLOAD_FAILURE_RECOVERY = {
         'next_action': 'refresh-ffmpeg',
     },
     'network-unreachable': {
-        'error': 'Astra Downloader could not reach YouTube or a required provider.',
+        'error': 'Astra Downloader could not reach the site or a required provider.',
         'advice': 'Check the network, VPN, firewall, and provider process, then retry.',
         'next_action': 'check-network-and-retry',
     },
@@ -397,6 +400,18 @@ def terminate_process_tree(proc, timeout=3, *, platform=None, runner=None,
         _log_warning(logger, f"process kill fallback failed: {error}")
 
 
+# Path markers that mean "this URL is a collection, not one video" on the
+# non-YouTube sites yt-dlp supports (SoundCloud sets, Bandcamp/Vimeo albums,
+# PeerTube playlists, podcast series…). Deliberately narrow: anything not
+# matched here is treated as a single item and downloaded with --no-playlist,
+# so pasting a profile or subreddit link can never queue a hundred videos.
+_PLAYLIST_PATH_MARKERS = (
+    '/playlist', '/playlists/', '/sets/', '/album/', '/albums/',
+    '/series/', '/collection/', '/collections/',
+)
+_PLAYLIST_QUERY_KEYS = ('list', 'playlist', 'album', 'set')
+
+
 def is_playlist_url(url):
     try:
         parsed = urlparse(url)
@@ -404,10 +419,19 @@ def is_playlist_url(url):
         for part in parsed.query.split('&'):
             if '=' in part:
                 key, value = part.split('=', 1)
-                params.setdefault(key, []).append(value)
+                params.setdefault(key.lower(), []).append(value)
         has_list = bool(params.get('list', [''])[0])
         has_video = bool(params.get('v', [''])[0])
-        return has_list and not has_video
+        if has_list:
+            # A YouTube watch URL carrying &list= stays a single video; that
+            # has been the contract since v1.2 and the extension relies on it.
+            return not has_video
+        path = (parsed.path or '').lower()
+        if any(marker in path for marker in _PLAYLIST_PATH_MARKERS):
+            return True
+        return any(
+            bool(params.get(key, [''])[0]) for key in _PLAYLIST_QUERY_KEYS
+        )
     except Exception:
         return False
 
@@ -798,6 +822,7 @@ _REQUIRED_MANAGER_DEPENDENCIES = frozenset({
     'clean_text',
     'cleanup_stale_cookie_jars',
     'coerce_bool',
+    'is_supported_media_url',
     'is_youtube_url',
     'load_json_file',
     'normalize_output_dir',
@@ -906,7 +931,7 @@ class DownloadManagerCore:
             if not isinstance(item, dict):
                 continue
             url, err = self._dependencies['normalize_url'](item.get('url'))
-            if err or not self._dependencies['is_youtube_url'](url):
+            if err or not self._dependencies['is_supported_media_url'](url):
                 continue
             output_dir = self._dependencies['clean_path_text'](item.get('outputDir'))
             try:
@@ -975,7 +1000,7 @@ class DownloadManagerCore:
             )
             dl.status = 'needs-auth' if requires_auth else 'paused'
             dl.error = (
-                'Fresh YouTube authentication is required before this recovered download can run.'
+                'Fresh sign-in is required before this recovered download can run.'
                 if requires_auth else
                 'Recovered after restart. Resume the queue when you are ready.'
             )
@@ -1209,6 +1234,15 @@ class DownloadManagerCore:
         url, err = self._dependencies['normalize_url'](url)
         if err:
             return None, err
+        # Every entry point lands here — HTTP routes, the GUI quick-download
+        # box, the clipboard grabber, and the subscription scheduler — so the
+        # private-network denylist is enforced once, at the queue boundary,
+        # instead of once per caller.
+        if not self._dependencies['is_supported_media_url'](url):
+            return None, (
+                'That address is on a private, loopback, or link-local network. '
+                'Astra Downloader only downloads from public sites.'
+            )
         audio_only = self._dependencies['coerce_bool'](audio_only, False)
         section, section_error = self._dependencies['normalize_download_section'](section)
         if section_error:
@@ -1563,6 +1597,34 @@ class DownloadManagerCore:
                     dl.filename = m.group(1)
         return last_lines, last_error
 
+    def _empty_result_reason(self, dl):
+        """Return why a zero-exit run produced no media, or None when it did.
+
+        `dl.filename` is set from yt-dlp's own Destination/Merger/after_move
+        output, so an empty value means nothing was written. A value that no
+        longer exists on disk means a post-processor consumed the file and its
+        replacement was never announced — treated as a real result rather than
+        a skip, to avoid a false alarm on unusual post-processor chains.
+        """
+        if dl.filename:
+            return None
+        max_filesize = 0
+        try:
+            max_filesize = int(self.config.get("MaxFileSizeMB", 0) or 0)
+        except (TypeError, ValueError):
+            max_filesize = 0
+        if max_filesize > 0:
+            return (
+                "Nothing was downloaded: every available format is larger than "
+                f"the {max_filesize} MB size limit. Raise or clear Max file "
+                "size in Settings, then retry."
+            )
+        return (
+            "Nothing was downloaded: this link produced no media file. It may "
+            "be a page without a downloadable video, or the site may serve it "
+            "only to signed-in viewers."
+        )
+
     def _run_download(self, dl):
         with self._lock:
             if dl.status != 'queued':
@@ -1619,7 +1681,10 @@ class DownloadManagerCore:
         if self.config.get("EmbedSubs"):
             langs = re.sub(r'[^a-zA-Z0-9,\-]', '', self.config.get("SubLangs", "en"))
             args += ['--embed-subs', '--write-subs', '--write-auto-subs', '--sub-langs', langs]
-        if self.config.get("SponsorBlock"):
+        # SponsorBlock has YouTube-only segment data; passing it for any other
+        # site only produces a warning line that later competes with the real
+        # failure reason in the output tail.
+        if self.config.get("SponsorBlock") and self._dependencies['is_youtube_url'](dl.url):
             action = 'mark' if self.config.get("SponsorBlockAction") == 'mark' else 'remove'
             args += [f'--sponsorblock-{action}', 'all']
         # v1.3.0: --force-overwrites lets the user re-download the same URL
@@ -1639,12 +1704,24 @@ class DownloadManagerCore:
             args += ['--max-filesize', f'{max_filesize}M']
         if dl.referer:
             args += ['--referer', dl.referer]
-        if dl.cookies_file:
+        # The jar only ever holds YouTube/Google cookies (ALLOWED_COOKIE_DOMAINS
+        # filters every write), but --cookies also makes yt-dlp write the
+        # session back to that file. Attaching it to a non-YouTube extraction
+        # would mix a third-party site's cookies into a YouTube jar for no
+        # benefit, so scope the flag to the site the jar was created for.
+        if dl.cookies_file and self._dependencies['is_youtube_url'](dl.url):
             args += ['--cookies', dl.cookies_file]
         if is_playlist:
             args.append('--yes-playlist')
             if dl.playlist_items:
                 args += ['--playlist-items', ','.join(str(item) for item in dl.playlist_items)]
+        elif not self._dependencies['is_youtube_url'](dl.url):
+            # Single-item intent on a non-YouTube URL. Without this, pasting a
+            # channel/profile/subreddit link makes yt-dlp walk the whole
+            # collection. YouTube keeps its historical default (a watch URL
+            # carrying &list= is handled by the extension) so this cannot
+            # change any behaviour the extension already depends on.
+            args.append('--no-playlist')
 
         # Format selection
         if dl.audio_only:
@@ -1759,8 +1836,20 @@ class DownloadManagerCore:
                     )
                     apply_download_failure_classification(dl, 'network-unreachable')
                 elif proc.returncode == 0:
-                    dl.status = "complete"
-                    dl.progress = 100
+                    # yt-dlp exits 0 when it deliberately downloads nothing —
+                    # most often because --max-filesize rejected every format
+                    # (a 300 MB archive.org item under a 25 MB cap), or the
+                    # extractor produced no media. Reporting "complete" with no
+                    # file on disk reads exactly like a broken downloader, so
+                    # surface it as `skipped` with the reason instead.
+                    skip_reason = self._empty_result_reason(dl)
+                    if skip_reason:
+                        dl.status = "skipped"
+                        dl.progress = 0
+                        dl.error = skip_reason
+                    else:
+                        dl.status = "complete"
+                        dl.progress = 100
                 else:
                     dl.status = "failed"
                     # Audit pass: truncate the last ERROR line like the
@@ -2306,14 +2395,16 @@ class DownloadManagerCore:
 
     def list_formats(self, url, timeout=60):
         """Return `(summary, error)` of the real available formats for a single
-        YouTube URL via `yt-dlp -J`, run under the same extractor + JS-runtime
+        media URL via `yt-dlp -J`, run under the same extractor + JS-runtime
         conditions as an actual download so the listing matches what would be
         downloaded."""
         url, err = self._dependencies['normalize_url'](url)
         if err:
             return None, err
-        if not self._dependencies['is_youtube_url'](url):
-            return None, 'Astra Downloader only lists formats for YouTube.'
+        if not self._dependencies['is_supported_media_url'](url):
+            return None, (
+                'Astra Downloader only lists formats for public media URLs.'
+            )
         if not self._formats_gate.acquire(blocking=False):
             return None, self.FORMATS_BUSY_MESSAGE
         try:
@@ -2369,8 +2460,10 @@ class DownloadManagerCore:
         url, err = self._dependencies['normalize_url'](url)
         if err:
             return None, err
-        if not self._dependencies['is_youtube_url'](url) or not is_playlist_url(url):
-            return None, 'Enter a YouTube playlist URL.'
+        if not self._dependencies['is_supported_media_url'](url):
+            return None, 'Enter a public playlist URL.'
+        if not is_playlist_url(url):
+            return None, 'Enter a playlist URL.'
         if not self._formats_gate.acquire(blocking=False):
             return None, self.PLAYLIST_BUSY_MESSAGE
         try:
