@@ -120,6 +120,31 @@ reason: the companion downloads from the public internet only. Sign-in cookies
 stay YouTube-scoped and are never attached to another site's extraction, and
 the Deno / JavaScript-runtime requirement now applies only to YouTube, which is
 the only extractor that needs it.
+
+**Site sign-ins (companion v1.9.0).** Sites that only serve video to a
+signed-in viewer — X, Instagram, Facebook, members-only Vimeo, most paywalled
+video — need a session. The **Sign-ins** page stores one per site:
+
+1. Sign in to the site in your browser as usual.
+2. Give Astra Downloader that site's cookies, either by **Import cookies.txt**
+   (any browser extension that exports Netscape `cookies.txt` works) or by
+   **Read from browser**, which asks yt-dlp to read the browser's own cookie
+   store.
+3. Downloads for that site attach the stored session automatically. Nothing
+   else changes.
+
+Chrome, Edge, and Brave 127+ encrypt their cookie store with app-bound
+encryption, so **Read from browser** normally fails for them and says so —
+use the `cookies.txt` import for those. Firefox can usually be read directly.
+
+Each stored sign-in is filtered to one registrable domain on the way in and
+attached only to downloads for that domain, so importing a whole-browser export
+stores just the one site's cookies and discards the rest. Jars are written with
+an owner-only ACL under `%LOCALAPPDATA%\AstraDownloader\site-logins`, cookie
+values are never readable back through the API, the GUI, or the diagnostics
+bundle, and a per-download copy is what reaches yt-dlp so concurrent downloads
+cannot corrupt the stored session. YouTube keeps using the extension's cookie
+bridge and needs nothing here.
 Open **Subscriptions** to add a YouTube channel or playlist, choose a scan
 interval from 5 minutes to 7 days, and let the companion enqueue only uploads
 that are absent from its durable archive. The schedule and archive live in

@@ -6,6 +6,47 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Astra Downloader v1.9.0 — Site sign-ins for private and members-only video
+
+Downloading from any site (v1.8.0) only gets you as far as what a signed-out
+visitor can see. This adds a per-site session store so X, Instagram, Facebook,
+members-only Vimeo, and paywalled video download too.
+
+#### Added
+- **Sign-ins page** in the companion. Enter the site address, then either
+  **Import cookies.txt** (any browser's Netscape export) or **Read from
+  browser**, which drives yt-dlp's own browser cookie reader. Stored sign-ins
+  are listed with their cookie count, source, and expiry, and can be removed.
+- **`SiteLoginStore`** — one protected Netscape jar per registrable domain
+  under `%LOCALAPPDATA%\AstraDownloader\site-logins`, written with the same
+  owner-only ACL as the transient YouTube jars.
+- **`/site-logins` (GET / POST / DELETE)**, token-authenticated. POST accepts
+  extension-shaped cookie records, raw `cookiesText`, or a `browser` to read
+  from. GET returns metadata only.
+- Downloads attach a stored sign-in automatically when one covers the target
+  site; request-supplied cookies still take priority.
+
+#### Security properties
+- **One site per jar.** Cookies are filtered to the target registrable domain
+  at import, at export, and at write time — importing a whole-browser export
+  stores only the site being signed in to. Suffix matching is exact, so
+  `notx.com` never matches `x.com`.
+- **Write-only for secrets.** No API, GUI view, log line, or diagnostics bundle
+  can read a cookie name or value back out.
+- **Jars are scoped to their own site at spawn time.** `Download.cookies_scope`
+  records which site a jar was built for, and `--cookies` is passed only when
+  it matches the URL being fetched — so a request pairing one site's URL with
+  another site's cookies sends nothing.
+- **A per-download copy** reaches yt-dlp, never the stored file: `--cookies` is
+  also a write path, so concurrent downloads for one site would otherwise race
+  on it and a CDN redirect could append foreign domains.
+- Expired sessions are not presented as live ones; browser profile names cannot
+  smuggle yt-dlp's `:`/`+` separators; unknown browsers never spawn a process;
+  and the staging jar holding the full browser cookie set is deleted in a
+  `finally`, never outliving the import.
+- Chrome/Edge/Brave 127+ app-bound encryption is reported as the specific,
+  actionable failure it is (yt-dlp #10927) instead of a generic error.
+
 ### Astra Downloader v1.8.0 — Downloads from any site, not just YouTube
 
 The companion is now a general video downloader. Every site yt-dlp has an
