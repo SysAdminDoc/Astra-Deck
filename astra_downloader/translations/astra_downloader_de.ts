@@ -83,8 +83,12 @@
       <translation>Infobereich</translation>
     </message>
     <message>
-      <source>Stage copied YouTube links for review</source>
+      <source>Stage copied video links for review</source>
       <translation>Kopierte YouTube-Links zur Prüfung vormerken</translation>
+    </message>
+    <message>
+      <source>Sign-ins</source>
+      <translation>Anmeldungen</translation>
     </message>
     <message>
       <source>Save changes</source>

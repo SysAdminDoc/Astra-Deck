@@ -167,6 +167,7 @@ _REQUIRED_API_DEPENDENCIES = frozenset({
     'is_youtube_url',
     'legacy_health_token_origin_allowlist',
     'media_url_block_reason',
+    'MAX_SITE_LOGIN_COOKIES',
     'normalize_extension_origin',
     'normalize_url',
     'probe_javascript_runtime',
@@ -217,6 +218,7 @@ def create_api(config, dl_manager, history, *, dependencies):
     is_youtube_url = dependencies['is_youtube_url']
     legacy_health_token_origin_allowlist = dependencies['legacy_health_token_origin_allowlist']
     media_url_block_reason = dependencies['media_url_block_reason']
+    MAX_SITE_LOGIN_COOKIES = dependencies['MAX_SITE_LOGIN_COOKIES']
     normalize_extension_origin = dependencies['normalize_extension_origin']
     normalize_url = dependencies['normalize_url']
     probe_javascript_runtime = dependencies['probe_javascript_runtime']
@@ -619,6 +621,79 @@ def create_api(config, dl_manager, history, *, dependencies):
                 "error": err,
                 "code": "invalid-playlist-url" if status_code == 400 else "playlist-unavailable",
             }, status_code)
+        return cors_response(result)
+
+    @api.route('/site-logins', methods=['GET', 'POST', 'DELETE'])
+    def site_logins():
+        """Manage the per-site cookie store used for signed-in downloads.
+
+        GET returns metadata only — site, source, cookie count, expiry. Cookie
+        names and values are never readable back out of this endpoint, so a
+        token holder cannot turn the store into a credential dump.
+        """
+        if not check_auth():
+            return cors_response({
+                "error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."
+            }, 401)
+        store = getattr(dl_manager, 'site_logins', None)
+        if store is None:
+            return cors_response({"error": "Site sign-ins are unavailable.", "code": "site-logins-unavailable"}, 503)
+
+        if request.method == 'GET':
+            return cors_response({"sites": store.entries()})
+
+        allowed, retry_after = download_rate_limiter.allow('site-logins')
+        if not allowed:
+            return cors_response(
+                {"error": "Too many site sign-in requests in a short period. Please wait a moment."},
+                429,
+                extra_headers={"Retry-After": str(int(retry_after) + 1)},
+            )
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict) or not isinstance(body.get('site'), str):
+            return cors_response({"error": "Missing site address.", "code": "missing-site"}, 400)
+
+        if request.method == 'DELETE':
+            removed = store.remove(body['site'])
+            return cors_response({"removed": bool(removed)}, 200 if removed else 404)
+
+        # A site sign-in is only meaningful for a site the downloader may
+        # actually reach, so it runs through the same URL policy as /download.
+        probe_url, probe_error = normalize_url(
+            body['site'] if '://' in body['site'] else f"https://{body['site'].strip()}/"
+        )
+        if probe_error:
+            return cors_response({"error": probe_error, "code": "invalid-site"}, 400)
+        block_reason = media_url_block_reason(probe_url)
+        if block_reason:
+            return cors_response(
+                {"error": describe_media_url_block(block_reason), "code": block_reason},
+                400,
+            )
+
+        raw_cookies = body.get('cookies')
+        cookies_text = body.get('cookiesText')
+        if isinstance(raw_cookies, list):
+            result, error = store.save_cookies(
+                body['site'], raw_cookies[:MAX_SITE_LOGIN_COOKIES],
+                source=str(body.get('source') or 'extension')[:60],
+            )
+        elif isinstance(cookies_text, str):
+            result, error = store.import_netscape_text(
+                body['site'], cookies_text,
+                source=str(body.get('source') or 'cookies.txt')[:60],
+            )
+        elif isinstance(body.get('browser'), str):
+            result, error = dl_manager.import_site_login_from_browser(
+                body['site'], body['browser'], body.get('profile'),
+            )
+        else:
+            return cors_response({
+                "error": "Provide cookies, cookiesText, or a browser to read them from.",
+                "code": "missing-cookies",
+            }, 400)
+        if error:
+            return cors_response({"error": error, "code": "site-login-failed"}, 400)
         return cors_response(result)
 
     @api.route('/formats', methods=['POST'])

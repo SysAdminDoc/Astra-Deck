@@ -237,6 +237,11 @@ def make_line_icon(name, size=18):
         x_tail = 12 if direction == -1 else 6
         painter.drawLine(x_tail, 3, x_tip, 9)
         painter.drawLine(x_tip, 9, x_tail, 15)
+    elif "sign-in" in key or "signin" in key:
+        painter.drawEllipse(2, 6, 7, 7)
+        painter.drawLine(8, 9, 16, 9)
+        painter.drawLine(13, 9, 13, 13)
+        painter.drawLine(16, 9, 16, 12)
     elif "export" in key:
         painter.drawLine(9, 2, 9, 12)
         painter.drawLine(5, 6, 9, 2)
@@ -806,6 +811,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'get_ffmpeg_version',
     'get_recent_log_entries',
     'get_ytdlp_version',
+    'SITE_LOGIN_BROWSERS',
     'is_youtube_url',
     'looks_like_media_link',
     'maybe_auto_update_ytdlp',
@@ -828,6 +834,7 @@ class MainWindowCore(QMainWindow):
     instance_command = pyqtSignal(str)
     tools_update_finished = pyqtSignal(dict)
     tools_status_text_ready = pyqtSignal(str)
+    site_login_finished = pyqtSignal(dict)
 
     def __init__(self, config, dl_manager, history, start_minimized=False, *, dependencies):
         missing = sorted(set(_REQUIRED_MAIN_WINDOW_DEPENDENCIES) - set(dependencies))
@@ -857,6 +864,7 @@ class MainWindowCore(QMainWindow):
         self.instance_command.connect(self._handle_instance_command)
         self.tools_update_finished.connect(self._finish_ytdlp_update)
         self.tools_status_text_ready.connect(self._set_tools_status_text)
+        self.site_login_finished.connect(self._finish_site_login_import)
 
         self.setWindowTitle(self._value('APP_NAME'))
         self.setMinimumSize(900, 620)
@@ -924,7 +932,10 @@ class MainWindowCore(QMainWindow):
 
         # Nav buttons
         self.nav_buttons = []
-        self._page_names = ["Dashboard", "Downloads", "History", "Subscriptions", "Settings"]
+        self._page_names = [
+            "Dashboard", "Downloads", "History", "Subscriptions",
+            "Sign-ins", "Settings",
+        ]
         for name in self._page_names:
             translated_name = tr(name)
             btn = QPushButton(translated_name)
@@ -969,6 +980,7 @@ class MainWindowCore(QMainWindow):
         self._build_downloads()
         self._build_history()
         self._build_subscriptions()
+        self._build_site_logins()
         self._build_settings()
 
         self._nav_click("Dashboard")
@@ -1739,6 +1751,246 @@ class MainWindowCore(QMainWindow):
             row_layout.addWidget(remove, 0, Qt.AlignmentFlag.AlignTop)
             self.subscription_container.addWidget(row)
         self.subscription_container.addStretch()
+
+    # ── Site sign-ins ────────────────────────────────────────────────────
+    def _build_site_logins(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(38, 26, 38, 24)
+        layout.setSpacing(14)
+        layout.addLayout(self._make_page_header(
+            "Sign-ins",
+            tr("Store a signed-in session so private or members-only videos "
+               "download. Cookies stay on this PC and are only ever sent to "
+               "the site they came from."),
+        ))
+
+        add_card, add_layout = self._make_settings_group(tr("Add a site sign-in"))
+        site_row = QHBoxLayout()
+        self.site_login_url = QLineEdit()
+        self.site_login_url.setAccessibleName("Site address for the sign-in")
+        self.site_login_url.setPlaceholderText(
+            tr("Site address you signed in to — x.com, instagram.com, vimeo.com")
+        )
+        site_row.addWidget(self.site_login_url, 1)
+        add_layout.addLayout(site_row)
+
+        source_row = QHBoxLayout()
+        source_row.setSpacing(8)
+        source_row.addWidget(make_label(tr("Read from"), "fieldHint"))
+        self.site_login_browser = QComboBox()
+        self.site_login_browser.setAccessibleName("Browser to read cookies from")
+        for browser in self._value('SITE_LOGIN_BROWSERS'):
+            self.site_login_browser.addItem(browser.title(), browser)
+        # Firefox is the one browser whose cookie store can still be read from
+        # outside on Windows, so it is the default rather than whichever name
+        # sorts first.
+        firefox_index = self.site_login_browser.findData("firefox")
+        if firefox_index >= 0:
+            self.site_login_browser.setCurrentIndex(firefox_index)
+        source_row.addWidget(self.site_login_browser)
+        self.site_login_profile = QLineEdit()
+        self.site_login_profile.setAccessibleName("Browser profile name or path")
+        self.site_login_profile.setPlaceholderText(tr("Profile (optional)"))
+        self.site_login_profile.setMaximumWidth(220)
+        source_row.addWidget(self.site_login_profile)
+        self.btn_site_login_browser = self._make_tool_button("Read from browser", "primary")
+        self.btn_site_login_browser.clicked.connect(self._import_site_login_from_browser)
+        source_row.addWidget(self.btn_site_login_browser)
+        self.btn_site_login_file = self._make_tool_button("Import cookies.txt", "ghost")
+        self.btn_site_login_file.clicked.connect(self._import_site_login_from_file)
+        source_row.addWidget(self.btn_site_login_file)
+        source_row.addStretch()
+        add_layout.addLayout(source_row)
+
+        add_layout.addWidget(make_label(
+            tr("Chrome, Edge, and Brave 127+ encrypt their cookie store, so "
+               "reading them from outside the browser usually fails — export a "
+               "cookies.txt file from the browser and import that instead. "
+               "Firefox can normally be read directly."),
+            "toolbarMeta",
+            word_wrap=True,
+        ))
+        self.site_login_status = make_label("", "fieldHint", word_wrap=True)
+        self.site_login_status.setAccessibleName("Site sign-in status")
+        self.site_login_status.hide()
+        add_layout.addWidget(self.site_login_status)
+        layout.addWidget(add_card)
+
+        self.site_login_scroll = QScrollArea()
+        self.site_login_scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.site_login_container = QVBoxLayout(content)
+        self.site_login_container.setContentsMargins(0, 0, 0, 0)
+        self.site_login_container.setSpacing(10)
+        self.site_login_scroll.setWidget(content)
+        layout.addWidget(self.site_login_scroll, 1)
+        self.tabs.addTab(page, "Sign-ins")
+        self._refresh_site_logins(force=True)
+
+    def _site_login_store(self):
+        return getattr(self.dl_manager, "site_logins", None)
+
+    def _refresh_site_logins(self, force=False):
+        store = self._site_login_store()
+        entries = []
+        if store is not None:
+            try:
+                entries = store.entries()
+            except Exception as error:  # noqa: BLE001
+                self._show_site_login_status(
+                    f"Could not read stored sign-ins: {error}", "error"
+                )
+        signature = json.dumps(entries, sort_keys=True, default=str)
+        if not force and signature == getattr(self, "_site_logins_signature", None):
+            return
+        self._site_logins_signature = signature
+        self._clear_layout(self.site_login_container)
+        if not entries:
+            self.site_login_container.addWidget(make_empty_state(
+                tr("No stored sign-ins"),
+                tr("Add one above for any site that only serves video to "
+                   "signed-in viewers. YouTube downloads use the browser "
+                   "extension instead and need nothing here."),
+            ))
+            self.site_login_container.addStretch()
+            return
+        for entry in entries:
+            row = QFrame()
+            row.setProperty("class", "card")
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(16, 12, 16, 12)
+            row_layout.setSpacing(10)
+            copy_layout = QVBoxLayout()
+            copy_layout.setSpacing(3)
+            copy_layout.addWidget(make_label(entry.get("site", ""), "cardTitle"))
+            if entry.get("expired"):
+                state = tr("Expired — sign in again to refresh it")
+            elif not entry.get("stored"):
+                state = tr("Missing on disk — import it again")
+            elif entry.get("earliestExpiry"):
+                try:
+                    expires = time.strftime(
+                        "%Y-%m-%d", time.localtime(float(entry["earliestExpiry"]))
+                    )
+                except (TypeError, ValueError, OverflowError, OSError):
+                    expires = tr("unknown")
+                state = f"{tr('First cookie expires')} {expires}"
+            else:
+                state = tr("Session cookies — valid until the site signs you out")
+            count = int(entry.get("cookies", 0) or 0)
+            copy_layout.addWidget(make_label(
+                f"{count} {tr('cookie') if count == 1 else tr('cookies')} · "
+                f"{tr('from')} {entry.get('source', 'import')} · {state}",
+                "toolbarMeta",
+                word_wrap=True,
+            ))
+            row_layout.addLayout(copy_layout, 1)
+            remove = self._make_tool_button("Remove", "ghost")
+            remove.clicked.connect(
+                lambda checked=False, site=entry.get("site"): self._remove_site_login(site)
+            )
+            row_layout.addWidget(remove, 0, Qt.AlignmentFlag.AlignTop)
+            self.site_login_container.addWidget(row)
+        self.site_login_container.addStretch()
+
+    def _show_site_login_status(self, message, state="neutral"):
+        self.site_login_status.setText(message)
+        self.site_login_status.setProperty("state", state)
+        self.site_login_status.show()
+        repolish(self.site_login_status)
+
+    def _apply_site_login_result(self, result, error):
+        if error:
+            self._show_site_login_status(error, "error")
+            return False
+        site = (result or {}).get("site", "")
+        count = (result or {}).get("cookies", 0)
+        skipped = (result or {}).get("skipped", 0)
+        message = f"{tr('Signed in to')} {site} — {count} {tr('cookies stored')}."
+        if skipped:
+            message += f" {skipped} {tr('cookies for other sites were discarded.')}"
+        self._show_site_login_status(message, "success")
+        self._append_log(f"Stored a site sign-in for {site} ({count} cookies).")
+        self.site_login_url.clear()
+        self._refresh_site_logins(force=True)
+        return True
+
+    def _import_site_login_from_browser(self):
+        store = self._site_login_store()
+        if store is None:
+            self._show_site_login_status(
+                tr("Site sign-ins are unavailable in this session."), "error"
+            )
+            return
+        if getattr(self, "_site_login_reading", False):
+            return
+        # Reading a browser cookie store spawns yt-dlp and can take tens of
+        # seconds (or hit a decryption failure), so it never runs on the GUI
+        # thread — the window stays responsive and the result arrives by signal.
+        self._site_login_reading = True
+        self.btn_site_login_browser.setEnabled(False)
+        self._show_site_login_status(tr("Reading cookies from the browser…"), "neutral")
+        site = self.site_login_url.text()
+        browser = self.site_login_browser.currentData()
+        profile = self.site_login_profile.text()
+
+        def worker():
+            try:
+                result, error = self.dl_manager.import_site_login_from_browser(
+                    site, browser, profile
+                )
+            except Exception as exc:  # noqa: BLE001
+                result, error = None, f"Reading browser cookies failed: {exc}"
+            self.site_login_finished.emit({"result": result or {}, "error": error or ""})
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_site_login_import(self, payload):
+        self._site_login_reading = False
+        if hasattr(self, "btn_site_login_browser"):
+            self.btn_site_login_browser.setEnabled(True)
+        if not isinstance(payload, dict):
+            return
+        self._apply_site_login_result(
+            payload.get("result") or None, payload.get("error") or None
+        )
+
+    def _import_site_login_from_file(self):
+        store = self._site_login_store()
+        if store is None:
+            self._show_site_login_status(
+                tr("Site sign-ins are unavailable in this session."), "error"
+            )
+            return
+        path, _filter = QFileDialog.getOpenFileName(
+            self,
+            "Select the exported cookies.txt",
+            str(Path.home()),
+            "Cookie files (*.txt);;All files (*.*)",
+        )
+        if not path:
+            return
+        try:
+            text = Path(path).read_text(encoding="utf-8", errors="replace")
+        except OSError as error:
+            self._show_site_login_status(f"Could not read that file: {error}", "error")
+            return
+        result, error = store.import_netscape_text(
+            self.site_login_url.text(), text, source="cookies.txt"
+        )
+        self._apply_site_login_result(result, error)
+
+    def _remove_site_login(self, site):
+        store = self._site_login_store()
+        if store is None or not site:
+            return
+        if store.remove(site):
+            self._show_site_login_status(
+                f"{tr('Removed the stored sign-in for')} {site}.", "neutral"
+            )
+            self._append_log(f"Removed the stored site sign-in for {site}.")
+        self._refresh_site_logins(force=True)
 
     def _add_subscription(self):
         manager = self._subscription_manager()
