@@ -429,10 +429,10 @@
     "message": "انقطاع مؤقت مع Astra Downloader — جارٍ إعادة المحاولة تلقائياً."
   },
   "dlProgressSkippedDefault": {
-    "message": "تم التنزيل مسبقاً — تم تخطيه."
+    "message": "لم يتم تنزيل أي ملف."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "تم التنزيل مسبقاً"
+  "dlProgressStateNothingDownloaded": {
+    "message": "لم يتم تنزيل أي شيء"
   },
   "dlProgressStateComplete": {
     "message": "مكتمل"

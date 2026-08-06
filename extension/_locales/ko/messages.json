@@ -429,10 +429,10 @@
     "message": "Astra Downloader에 잠시 문제가 발생했습니다. 자동으로 재시도 중입니다."
   },
   "dlProgressSkippedDefault": {
-    "message": "이미 다운로드됨 — 건너뜀."
+    "message": "아무것도 다운로드되지 않았습니다."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "이미 다운로드됨"
+  "dlProgressStateNothingDownloaded": {
+    "message": "다운로드 없음"
   },
   "dlProgressStateComplete": {
     "message": "완료"

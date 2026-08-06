@@ -429,10 +429,10 @@
     "message": "Falha momentânea com o Astra Downloader — tentando novamente automaticamente."
   },
   "dlProgressSkippedDefault": {
-    "message": "Já baixado — ignorado."
+    "message": "Nada foi baixado."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "Já baixado"
+  "dlProgressStateNothingDownloaded": {
+    "message": "Nada foi baixado"
   },
   "dlProgressStateComplete": {
     "message": "Concluído"

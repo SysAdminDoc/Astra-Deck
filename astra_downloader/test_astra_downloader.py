@@ -8979,5 +8979,125 @@ class SiteLoginBrowserImportTests(unittest.TestCase):
         self.assertIn("supported browsers", error)
 
 
+class SkippedDownloadSurfaceTests(unittest.TestCase):
+    """A terminal status that renders nowhere is the failure `skipped` exists
+    to prevent, so the GUI bucket is pinned against the shared constant."""
+
+    def test_skipped_download_renders_with_its_reason_and_a_retry(self):
+        script = r'''
+import os
+import sys
+import tempfile
+
+temp_dir = tempfile.mkdtemp(prefix="astra-skip-surface-")
+os.environ["LOCALAPPDATA"] = temp_dir
+os.environ["ASTRA_DOWNLOADER_NO_BOOTSTRAP"] = "1"
+
+from astra_downloader import astra_downloader as app
+from PyQt6.QtWidgets import QApplication, QLabel, QPushButton
+
+app_instance = QApplication(["skip-surface"])
+app.MainWindow._start_instance_command_listener = lambda self: None
+app.MainWindow._stop_instance_command_listener = lambda self: None
+app.MainWindow._start_readiness_probe = lambda self: None
+app.MainWindow._refresh_tools_status = lambda self: None
+
+config = app.Config()
+config.update({
+    "CloseToTray": False,
+    "StartMinimized": False,
+    "DownloadPath": temp_dir,
+    "AudioDownloadPath": temp_dir,
+})
+manager = app.DownloadManager(config, app.History())
+window = app.MainWindow(config, manager, app.History())
+window._animate_page = lambda: None
+window.update_timer.stop()
+window.cleanup_timer.stop()
+window.tools_status_timer.stop()
+window.show()
+
+skipped = app.Download("dl_skip", "https://archive.org/details/x", output_dir=temp_dir)
+skipped.status = "skipped"
+skipped.title = "Oversized archive item"
+skipped.error = "Nothing was downloaded: every available format is larger than the 25 MB size limit."
+skipped.mark_terminal()
+manager.downloads["dl_skip"] = skipped
+
+window._nav_click("Downloads")
+window._downloads_signature = None
+window._update_ui()
+app_instance.processEvents()
+
+visible = " | ".join(
+    label.text() for label in window.findChildren(QLabel)
+    if label.isVisible() and label.text()
+)
+assert "Oversized archive item" in visible, "skipped download must be listed"
+assert "25 MB size limit" in visible, "the reason must be shown"
+
+buttons = [
+    button.text() for button in window.findChildren(QPushButton)
+    if button.isVisible() and button.text()
+]
+assert "Retry" in buttons, "a skipped download must offer a retry"
+
+assert "skipped" in app.DOWNLOAD_TERMINAL_STATES
+window.close()
+'''
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_gui_buckets_cover_every_terminal_state(self):
+        # Source pin: the "recent" bucket must read the shared constant so the
+        # next status added to DOWNLOAD_TERMINAL_STATES cannot go unrendered.
+        source = Path(ad.__file__).resolve().parent.joinpath("gui.py").read_text(
+            encoding="utf-8"
+        )
+        start = source.index("recent = [d for d in downloads")
+        block = source[start:start + 200]
+        self.assertIn("DOWNLOAD_TERMINAL_STATES", block)
+        self.assertNotIn("'complete', 'failed', 'cancelled'", block)
+
+    def test_skipped_download_can_be_retried(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            manager.pause_intake()
+            download = ad.Download("dl_skip", "https://archive.org/details/x",
+                                   output_dir=tmpdir)
+            download.status = "skipped"
+            download.error = "Nothing was downloaded: …size limit."
+            download.mark_terminal()
+            manager.downloads["dl_skip"] = download
+
+            ok, error = manager.retry("dl_skip")
+            self.assertTrue(ok, error)
+            self.assertEqual(manager.downloads["dl_skip"].status, "pending")
+            self.assertEqual(manager.downloads["dl_skip"].error, "")
+
+    def test_non_terminal_downloads_still_cannot_be_retried(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            manager.pause_intake()
+            download = ad.Download("dl_pending", "https://vimeo.com/1", output_dir=tmpdir)
+            download.status = "pending"
+            manager.downloads["dl_pending"] = download
+
+            ok, error = manager.retry("dl_pending")
+            self.assertFalse(ok)
+            self.assertIn("retried", error)
+
+
 if __name__ == "__main__":
     unittest.main()

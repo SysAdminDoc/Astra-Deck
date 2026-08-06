@@ -2666,9 +2666,12 @@ class DownloadManagerCore:
                 # worker's teardown discards the second worker's slot and
                 # marks the retrying download failed.
                 return False, 'Download is still finalizing — retry in a moment.'
-            if dl.status != 'failed':
-                return False, 'Only failed downloads can be retried.'
-            if dl.error_code not in DOWNLOAD_RETRYABLE_ERROR_CODES:
+            # `skipped` is retryable by definition: nothing was written, and
+            # the fix (raise the size limit, sign in, pick another link) is a
+            # setting change followed by exactly this action.
+            if dl.status not in ('failed', 'skipped'):
+                return False, 'Only failed or skipped downloads can be retried.'
+            if dl.status == 'failed' and dl.error_code not in DOWNLOAD_RETRYABLE_ERROR_CODES:
                 return False, 'This failure needs its recovery action before it can be retried.'
             if self._capacity_locked()['total'] >= MAX_QUEUED_TOTAL:
                 return False, (

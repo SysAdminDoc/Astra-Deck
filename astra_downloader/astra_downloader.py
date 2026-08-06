@@ -3186,6 +3186,7 @@ class MainWindow(MainWindowCore):
                 'DOWNLOAD_PENDING_STATES': lambda: DOWNLOAD_PENDING_STATES,
                 'DOWNLOAD_RETRYABLE_ERROR_CODES': lambda: DOWNLOAD_RETRYABLE_ERROR_CODES,
                 'DOWNLOAD_RUNNING_STATES': lambda: DOWNLOAD_RUNNING_STATES,
+                'DOWNLOAD_TERMINAL_STATES': lambda: DOWNLOAD_TERMINAL_STATES,
                 'FFMPEG_PATH': lambda: FFMPEG_PATH,
                 'ICON_PATH': lambda: ICON_PATH,
                 'INSTALL_DIR': lambda: INSTALL_DIR,

@@ -790,6 +790,7 @@ _REQUIRED_MAIN_WINDOW_DEPENDENCIES = frozenset({
     'DOWNLOAD_PENDING_STATES',
     'DOWNLOAD_RETRYABLE_ERROR_CODES',
     'DOWNLOAD_RUNNING_STATES',
+    'DOWNLOAD_TERMINAL_STATES',
     'FFMPEG_PATH',
     'ICON_PATH',
     'INSTALL_DIR',
@@ -2659,6 +2660,10 @@ class MainWindowCore(QMainWindow):
             if dl.status == "failed" and dl.error_code in self._value(
                     'DOWNLOAD_RETRYABLE_ERROR_CODES'):
                 action = "retry"
+            elif dl.status == "skipped":
+                # Nothing was written, so the whole recovery is "change the
+                # setting the reason names, then run it again".
+                action = "retry"
             elif dl.status == "complete" and dl.filename:
                 action = "show"
             else:
@@ -2773,7 +2778,11 @@ class MainWindowCore(QMainWindow):
             btn_cancel = self._make_tool_button("Cancel", "ghost")
             btn_cancel.clicked.connect(lambda checked=False, dl_id=dl.id: self.dl_manager.cancel(dl_id))
             top.addWidget(btn_cancel)
-        elif recent and dl.status == "failed" and dl.error_code in self._value('DOWNLOAD_RETRYABLE_ERROR_CODES'):
+        elif recent and (
+            (dl.status == "failed"
+             and dl.error_code in self._value('DOWNLOAD_RETRYABLE_ERROR_CODES'))
+            or dl.status == "skipped"
+        ):
             btn_retry = self._make_tool_button("Retry", "ghost")
             btn_retry.clicked.connect(lambda checked=False, item=dl: self._retry_download(item))
             top.addWidget(btn_retry)
@@ -2905,8 +2914,13 @@ class MainWindowCore(QMainWindow):
         present = {d.id for d in downloads}
         # Prune ids that left the active queue so the set can't grow unbounded.
         self._seen_complete &= present
+        # `skipped` finishes the same way a completion does — the queue slot is
+        # released and the user is done waiting — so it notifies too, with the
+        # reason as the body. Without this a minimized companion said nothing
+        # at all about a download that produced no file.
         newly_complete = [d for d in downloads
-                          if d.status == 'complete' and d.id not in self._seen_complete]
+                          if d.status in ('complete', 'skipped')
+                          and d.id not in self._seen_complete]
         if not newly_complete:
             return
         notify = (self.config.get("NotifyOnComplete", True)
@@ -2915,10 +2929,19 @@ class MainWindowCore(QMainWindow):
             self._seen_complete.add(d.id)
             if notify:
                 title = (getattr(d, 'title', '') or '').strip() or 'Your download is finished.'
+                skipped = d.status == 'skipped'
+                if skipped:
+                    heading = "Nothing downloaded"
+                    body = (getattr(d, 'error', '') or '').strip() or title
+                else:
+                    heading = "Download complete"
+                    body = title
                 try:
                     self.tray.showMessage(
-                        "Download complete", title,
-                        QSystemTrayIcon.MessageIcon.Information, 4000,
+                        heading, body,
+                        QSystemTrayIcon.MessageIcon.Warning if skipped
+                        else QSystemTrayIcon.MessageIcon.Information,
+                        4000,
                     )
                 except Exception:
                     # reason: tray notifications are best-effort polish
@@ -2953,8 +2976,12 @@ class MainWindowCore(QMainWindow):
         self._notify_completed_downloads(downloads)
         active = [d for d in downloads if d.status in self._value('DOWNLOAD_RUNNING_STATES')]
         pending = [d for d in downloads if d.status in self._value('DOWNLOAD_PENDING_STATES')]
+        # Every terminal status belongs here. A hardcoded tuple used to leave
+        # `skipped` out of all three buckets, so a download that wrote no file
+        # rendered nowhere at all — the silent outcome that status exists to
+        # make visible.
         recent = [d for d in downloads
-                  if d.status in ('complete', 'failed', 'cancelled')]
+                  if d.status in self._value('DOWNLOAD_TERMINAL_STATES')]
         active.sort(key=lambda d: d.start_time)
         pending.sort(key=lambda d: (d.queue_order, d.start_time))
         recent.sort(key=lambda d: d.start_time, reverse=True)

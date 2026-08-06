@@ -30193,6 +30193,18 @@
                         spd.textContent = '';
                         eta.textContent = 'Done!';
                         setTimeout(() => panel.remove(), 4000);
+                    } else if (data.status === 'skipped') {
+                        // Terminal since companion v1.8.0: yt-dlp exited
+                        // cleanly having written no file (every format past
+                        // the size limit, or no media on the page). Without
+                        // this branch the panel polled forever.
+                        clearInterval(pollInterval);
+                        fill.style.width = '0%';
+                        fill.style.background = '#f59e0b';
+                        pct.textContent = 'Skipped';
+                        spd.textContent = '';
+                        eta.textContent = data.error || 'Nothing was downloaded.';
+                        setTimeout(() => panel.remove(), 8000);
                     } else if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                         clearInterval(pollInterval);
                         fill.style.background = '#ef4444';
@@ -30966,11 +30978,11 @@
                     DebugManager.log('MediaDL', `Download response: ${r.status} - ${r.responseText}`);
                     try {
                         const resp = JSON.parse(r.responseText);
-                        if (resp.status === 'complete' && resp.message === 'Already downloaded') {
-                            showToast('File already exists - skipping download', '#3b82f6', { duration: 3 });
-                        } else if (resp.message === 'Already downloading') {
-                            showToast('Already downloading this video', '#f59e0b', { duration: 3 });
-                        } else if (resp.id) {
+                        // `/download` answers {id, status, capacity} or an
+                        // error payload. The `message` checks that used to sit
+                        // here targeted the download-archive feature deleted in
+                        // companion v1.3.0 and could never match.
+                        if (resp.id) {
                             showDownloadProgress(resp.id, token, audioOnly);
                         } else {
                             showDownloaderFailure(resp || {});

@@ -429,10 +429,10 @@
     "message": "本地下载器出现短暂故障 — 正在自动重试。"
   },
   "dlProgressSkippedDefault": {
-    "message": "已下载 — 已跳过。"
+    "message": "未下载任何内容。"
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "已下载"
+  "dlProgressStateNothingDownloaded": {
+    "message": "未下载任何内容"
   },
   "dlProgressStateComplete": {
     "message": "已完成"
