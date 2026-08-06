@@ -6,6 +6,58 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.54.0] - 2026-08-06
+
+Five new features, sourced by diffing the top-voted open feature requests of
+ImprovedTube, Enhancer for YouTube and Control Panel for YouTube against
+Astra's own settings. Astra already shipped roughly 90% of what their users
+are still asking for; these are what survived that diff.
+
+### Added
+
+- **Configurable buffer target.** The Buffer / Preload toggle pinned the
+  player to a hardcoded 20 seconds, which does not survive a tunnel or a rural
+  uplink. It is now a slider from 5 seconds to 10 minutes. The most-upvoted
+  open request on ImprovedTube (#581) asks to buffer the whole video; the same
+  thread records browsers failing on the largest ones, so the ceiling is real
+  rather than unbounded. Changing it applies to the video already playing.
+- **Audio-only mode.** Collapses the video and asks the player for the
+  cheapest stream it has, so a watch page costs roughly what a podcast does.
+  YouTube exposes no true audio-only stream to extensions, so the pill states
+  which you actually got — "Audio only" or "Audio mode · lowest quality" —
+  and the feature never claims one it did not get. Live streams are left
+  alone, and disabling hands the quality pin back instead of leaving the
+  player at 144p.
+- **Comment translation.** A Translate link under comments that are not
+  already in your language, built on Chrome's built-in on-device Translator.
+  Nothing is sent to a server, no API key is needed, and the extension gains
+  no host permission. The original text is stashed and restored verbatim, and
+  a browser without the API says so on the link rather than failing quietly.
+- **Cross-tab Picture-in-Picture handoff.** Popping out in a second tab left
+  the first still playing into the same speakers. A tab claiming PiP now
+  announces it and the previous holder pauses and clears its state. All three
+  PiP entry points participate, and a browser that denies site-data APIs
+  degrades to the previous behaviour.
+- **UI font.** A curated typeface list including a high-legibility option, as
+  a select rather than a free-text field — an arbitrary font-family is a CSS
+  injection surface, and Custom CSS already exists for that. The player is
+  deliberately untouched.
+
+### Changed
+
+- **"Disable Loudness Normalization" is now "Keep Volume At Full."** It never
+  disabled loudness normalization and could not: the gain runs in a Web Audio
+  node neither world can reach, and the MAIN-world bridge its comment pointed
+  at was never built. What it does — stop the player volume drifting below
+  100% — is now what it says.
+
+### Notes
+
+- Embedded YouTube players on third-party pages were evaluated and rejected;
+  the reasoning is in RESEARCH.md. Driving YouTube's own Stable Volume toggle
+  and the userscript-tier competitive survey are tracked in Roadmap_Blocked.md
+  with the specific evidence each needs.
+
 ## [4.53.0] - 2026-08-06
 
 Second half of the audit-backlog drain: every remaining P3 finding. ROADMAP.md
