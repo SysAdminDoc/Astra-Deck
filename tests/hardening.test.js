@@ -3483,8 +3483,15 @@ test('feedTriageProfile backs up prior values before applying the recipe', () =>
         'feedTriageProfile must declare a recipe object');
     assert.match(block, /_BACKUP_KEY:\s*'ytkit-feed-triage-backup'/,
         'feedTriageProfile must persist a backup under a stable storage key');
-    assert.match(block, /backup\[key\]\s*=\s*appState\.settings\[key\]/,
-        'feedTriageProfile must snapshot current settings before mutating them');
+    // The snapshot itself now lives in the shared buildPresetRecipeUpdate
+    // helper, which derives a new settings object rather than mutating
+    // appState in place; the feature must still take and persist it.
+    assert.match(block, /const \{ backup, next \} = buildPresetRecipeUpdate\(this\._RECIPE\)/,
+        'feedTriageProfile must snapshot current settings through the shared helper');
+    assert.match(block, /this\._writeBackup\(backup\)/,
+        'feedTriageProfile must persist the snapshot before applying the recipe');
+    assert.match(ytkitSource, /function buildPresetRecipeUpdate\(recipe\) \{[\s\S]*?backup\[key\] = appState\.settings\[key\];/,
+        'the shared helper must snapshot the current value of every recipe key');
 });
 
 test('feedTriageProfile destroy() restores prior values from the backup snapshot', () => {
@@ -4311,8 +4318,12 @@ test('lowPowerProfile backs up flags before applying, restores on destroy', () =
     const block = ytkitSource.slice(start, start + 6000);
     assert.match(block, /_BACKUP_KEY:\s*'ytkit-low-power-backup'/,
         'must persist backup under the documented storage key');
-    assert.match(block, /backup\[key\]\s*=\s*appState\.settings\[key\]/,
-        'must snapshot current settings before mutating');
+    // Snapshotting moved into the shared buildPresetRecipeUpdate helper when
+    // the recipes stopped mutating appState.settings in place.
+    assert.match(block, /const \{ backup, next \} = buildPresetRecipeUpdate\(this\._RECIPE\)/,
+        'must snapshot current settings through the shared helper');
+    assert.match(block, /this\._writeBackup\(backup\)/,
+        'must persist the snapshot before applying the recipe');
     assert.match(block, /enableCPU_Tamer:\s*true/,
         'must explicitly enable CPU Tamer when entering low power');
     const destroyIdx = block.indexOf('destroy()');
@@ -12331,4 +12342,33 @@ test('re-importing an overlapping Takeout export does not double-count watch tim
     // A third pass with no new entries must be a no-op on the totals.
     const third = mergeTakeoutWatchHistoryIntoStats(second.stats, [entryA, entryB], now);
     assert.equal(third.stats.total, 220, 'a fully duplicate re-import must not change the total');
+});
+
+// ── Preset recipes must reconcile features in the tab that toggles them ──
+// The recipes flip OTHER features' keys. Mutating appState.settings in place
+// left the recipe persisted but no feature started or stopped until a reload:
+// the storage listener consumes the local echo, and save()'s normalized-write
+// comparison found appState already equal to the persisted result.
+test('preset recipes build a next settings object instead of mutating appState in place', () => {
+    assert.doesNotMatch(ytkitSource, /appState\.settings\[key\] = this\._RECIPE\[key\]/,
+        'a preset must not write recipe values straight into appState.settings');
+    assert.doesNotMatch(ytkitSource, /for \(const key of Object\.keys\(backup\)\) appState\.settings\[key\] = backup\[key\]/,
+        'a preset restore must not write backup values straight into appState.settings');
+
+    assert.match(ytkitSource, /function buildPresetRecipeUpdate\(recipe\) \{[\s\S]*?const next = \{ \.\.\.appState\.settings \};/,
+        'buildPresetRecipeUpdate must derive a new settings object');
+    assert.match(ytkitSource, /function commitPresetSettings\(nextSettings\) \{[\s\S]*?settingsManager\.save\(nextSettings\);[\s\S]*?applyExternalSettingsUpdate\(\{ source: 'preset-recipe', nextSettings \}\);/,
+        'commitPresetSettings must persist AND reconcile through applyExternalSettingsUpdate');
+
+    // Every preset apply/restore routes through the shared commit.
+    const commits = ytkitSource.match(/commitPresetSettings\(next\)/g) || [];
+    assert.equal(commits.length, 12,
+        'six presets must each commit on both apply and restore');
+
+    // The backup record is what makes re-entrant init()/destroy() safe, so it
+    // must still be written/cleared BEFORE the commit.
+    assert.match(ytkitSource, /this\._writeBackup\(backup\);[\s\S]{0,220}?commitPresetSettings\(next\)/,
+        'the backup must be written before the recipe is committed');
+    assert.match(ytkitSource, /this\._clearBackup\(\);[\s\S]{0,120}?commitPresetSettings\(next\)/,
+        'the backup must be cleared before the restore is committed');
 });

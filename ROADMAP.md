@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Preset/Low-Power recipes never apply their feature changes in the tab that toggles them
-  Category: correctness
-  Where: extension/ytkit.js:42150-42183 (lowPowerProfile._apply/_restore), :42188-42339 (presetPrivacy/presetResearcher/presetPowerUser/presetFocus — same pattern)
-  Problem: `_apply()` flips the recipe keys in appState.settings IN PLACE and calls settingsManager.save(), but nothing destroys/inits the affected features in the same tab: the toggle handler only lifecycles the preset feature itself (ytkit.js:46782, module twin features/settings-panel/index.js:3191); handleExternalStorageChanges consumes the local echo via StorageManager.consumeLocalEcho so the save never reaches applyExternalSettingsUpdate; the save-normalization path (ytkit.js:4142-4148) only fires when the persisted result differs from appState.settings (it doesn't — mutated in place first); _pageChangeTracker only reacts to page-type changes. Turning on "Low Power Profile" mid-watch leaves cinemaAmbientGlow, videoVisualFilters, playbackStatsOverlay, researchTranscriptIndex etc. running and never starts enableCPU_Tamer — the toggle's entire purpose. Restore has the same gap. Cross-tab and next-pageload behave correctly (external-change path applies), which is why this survived earlier audits. Panel checkboxes for recipe keys also go stale (no syncFeatureControl for them).
-  Evidence: Full trace of all four suppression paths above; recipe keys verified to exist in default-settings.json (no typo'd dead keys).
-  Fix: After _apply()/_restore(), run the recipe keys through the same destroy/init reconciliation applyExternalSettingsUpdate performs (extract a helper or call it directly with the new settings and a force-local flag), and refresh the panel controls for those keys.
-  Acceptance: A test (or rendered smoke) enabling Low Power on a fixture with an affected feature initialized asserts destroy ran in the same tick chain and CPU tamer init ran; restore reverses it; cross-tab behavior unchanged.
-  Confidence: Likely (fully traced, not executed)
-  Effort: M
-
 - [ ] P2 — DeArrow Voting posts to a nonexistent API route with the wrong payload shape — every vote fails
   Category: correctness
   Where: extension/ytkit.js:37861-37877 (deArrowVoting._vote)
