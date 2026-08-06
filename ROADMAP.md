@@ -71,15 +71,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Confidence: Needs-repro (observed in offscreen render; not yet root-caused)
   Effort: S
 
-- [ ] P3 — Systemic closure: light-theme render lane for injected surfaces
-  Category: testing
-  Where: scripts/smoke-settings-overlay.js (pattern to copy), scripts/check-contrast.js (currently validates only 6 hand-picked popup constants), the ~1132 white/black-alpha literals in extension/ytkit.js
-  Problem: Every theming finding in this audit (P1 default-ON set, chat-style, videoNotes, chips, early.css) shares one root cause: no gate renders injected CSS against a YouTube light-theme fixture, so regressions recur as new surfaces ship dark-first. The existing smoke already proves the harness pattern works (module + fallback, six states).
-  Fix: Add a smoke lane that renders representative injected surfaces (watch metadata, action buttons, comment section, masthead launcher, toasts) over light and dark fixture pages and asserts computed text/background contrast ≥4.5:1, wired into npm run check next to audit:contrast. Seed it with the surfaces fixed in the P1/P2 theming items so it pins them.
-  Acceptance: Reverting any one of the theming fixes makes the new lane fail; lane runs in check without a live browser dependency beyond what existing smokes use.
-  Confidence: Verified (gap); design of the lane is the work
-  Effort: M
-
 - [ ] P3 — Unaudited residue from this pass
   Category: docs
   Where: repo-wide

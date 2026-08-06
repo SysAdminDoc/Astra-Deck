@@ -33,7 +33,7 @@
     "audit:storage": "node scripts/audit-storage-size.js",
     "capture:watch": "node scripts/capture-watch-mhtml.js",
     "capture:surface": "node scripts/capture-watch-mhtml.js",
-    "check": "node scripts/check-syntax.js && node scripts/generate-live-chat-css.js --check && node scripts/check-versions.js && npm run check:companion-ports && node scripts/check-i18n.js && node scripts/extract-i18n-keys.js --check-en && npm run i18n:copy:gate && node scripts/check-localized-selectors.js && node scripts/check-settings.js && node scripts/check-no-eval.js && node scripts/check-firefox-injection.js && node scripts/check-userscript-drift.js && npm run check:firefox && npm run check:startup && npm run lint && npm run audit:a11y && npm run audit:overlays && npm run audit:contrast && npm run audit:deps && npm run i18n:coverage:gate",
+    "check": "node scripts/check-syntax.js && node scripts/generate-live-chat-css.js --check && node scripts/check-versions.js && npm run check:companion-ports && node scripts/check-i18n.js && node scripts/extract-i18n-keys.js --check-en && npm run i18n:copy:gate && node scripts/check-localized-selectors.js && node scripts/check-settings.js && node scripts/check-no-eval.js && node scripts/check-firefox-injection.js && node scripts/check-userscript-drift.js && npm run check:firefox && npm run check:startup && npm run lint && npm run audit:a11y && npm run audit:overlays && npm run audit:contrast && npm run audit:light-theme && npm run audit:deps && npm run i18n:coverage:gate",
     "check:companion-ports": "node scripts/check-companion-port-catalogue.js",
     "audit:deps": "npm run audit:deps:production && npm audit --audit-level=moderate",
     "audit:deps:production": "npm audit --omit=dev --audit-level=moderate",
@@ -53,6 +53,7 @@
     "audit:a11y": "node scripts/audit-popup-a11y.js",
     "audit:overlays": "node scripts/audit-overlays-a11y.js",
     "audit:contrast": "node scripts/check-contrast.js",
+    "audit:light-theme": "node scripts/check-light-theme-lane.js",
     "test": "node --test tests/*.test.js tests/features/*.test.js"
   },
   "dependencies": {
