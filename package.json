@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "astra-deck",
-  "version": "4.55.0",
+  "version": "4.56.0",
   "description": "Chrome/Firefox MV3 extension and Tampermonkey userscript for YouTube enhancement",
   "author": "SysAdminDoc",
   "license": "MIT",
@@ -44,6 +44,7 @@
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "smoke:settings-overlay": "node scripts/smoke-settings-overlay.js",
+    "probe:panel-colors": "node scripts/probe-panel-colors.js",
     "smoke:a11y": "node scripts/smoke-headless-a11y.js",
     "smoke:transcript-index": "node scripts/smoke-transcript-index.js",
     "smoke:mv3-lifecycle": "node scripts/smoke-mv3-worker-lifecycle.js",

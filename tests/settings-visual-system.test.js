@@ -37,10 +37,62 @@ test('settings visual system renders the premium control-center hierarchy', () =
     assert.match(settingsPanel, /paneContextFeatures[\s\S]*?ytkit-pane-context-value/);
     assert.match(visualSystemSource, /\.ytkit-info-card\s*\{\s*grid-column:\s*1 \/ -1/);
     assert.doesNotMatch(settingsPanel, /card\.style\.cssText = 'background: linear-gradient/);
-    assert.match(
-        visualSystemSource,
-        /\.ytkit-feature-card\.ytkit-card-enabled\s*\{[\s\S]*?background:\s*transparent[\s\S]*?box-shadow:\s*none/
+    // The enabled state must be visible without tracking the switch at the far
+    // right of a 1300px row. It used to be `background: transparent` with no
+    // shadow — nothing at all — and the pin that was supposed to hold that
+    // shape matched lazily across the whole file, so it passed either way.
+    // Both assertions below are bounded to the rule block.
+    const enabledRule = visualSystemSource.match(
+        /\.ytkit-feature-card\.ytkit-card-enabled \{([^}]*)\}/
     );
+    assert.ok(enabledRule, 'the enabled-card rule must exist');
+    assert.match(enabledRule[1], /background:\s*rgba\(var\(--ytkit-v3-accent-rgb\),0\.055\)/,
+        'an enabled row must be tinted, not transparent');
+    const enabledRail = visualSystemSource.match(
+        /\.ytkit-feature-card\.ytkit-card-enabled::before \{([^}]*)\}/
+    );
+    assert.ok(enabledRail, 'enabled rows must carry a leading accent rail');
+    assert.match(enabledRail[1], /inset-inline-start:\s*0/,
+        'the rail must be logical so it flips in RTL');
+    assert.match(enabledRail[1], /background:\s*var\(--ytkit-v3-accent\)/);
+
+    // Category counts stay visible on every nav row, not only the open one —
+    // that map is how you find which category holds your enabled settings.
+    const countRule = visualSystemSource.match(/\.ytkit-nav-count \{([^}]*)\}/);
+    assert.ok(countRule, 'the nav-count rule must exist');
+    assert.match(countRule[1], /display:\s*inline !important/,
+        'every category must show its count, not just the active one');
+});
+
+// The panel used to paint --ytkit-v3-bg on the shell, the rail, the content
+// column, the header and the footer alike, at #090e14 — one notch off black.
+// With no elevation and hairline dividers, a 57-row category read as one
+// undifferentiated slab. Folding the planes back together is the specific
+// regression this guards.
+test('the settings panel keeps three distinct elevation planes', () => {
+    const luminance = (hex) => {
+        const chan = [1, 3, 5].map((i) => {
+            const x = parseInt(hex.slice(i, i + 2), 16) / 255;
+            return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * chan[0] + 0.7152 * chan[1] + 0.0722 * chan[2];
+    };
+    const token = (name) => {
+        const m = visualSystemSource.match(new RegExp(`--ytkit-v3-${name}:\\s*(#[0-9a-f]{6})`, 'i'));
+        assert.ok(m, `--ytkit-v3-${name} must be a literal hex`);
+        return m[1];
+    };
+    const [rail, bg, panel] = [token('rail'), token('bg'), token('panel')];
+    const [lRail, lBg, lPanel] = [rail, bg, panel].map(luminance);
+    assert.ok(lRail < lBg, `the nav rail (${rail}) must sit below the content plane (${bg})`);
+    assert.ok(lPanel > lBg, `the settings table (${panel}) must sit above the content plane (${bg})`);
+    // And the content plane must be off the floor: #090e14 was 0.0056.
+    assert.ok(lBg > 0.009, `the content plane (${bg}) must not be near-black (got ${lBg.toFixed(4)})`);
+
+    assert.match(visualSystemSource, /\.ytkit-sidebar \{[^}]*background:\s*var\(--ytkit-v3-rail\)/,
+        'the sidebar must paint the rail plane');
+    assert.match(visualSystemSource, /\.ytkit-features-grid \{[^}]*background:\s*var\(--ytkit-v3-panel\)/,
+        'the features table must paint the panel plane');
     assert.match(
         visualSystemSource,
         /\.ytkit-mediadl-banner\[data-state\][\s\S]*?background:\s*transparent[\s\S]*?\.ytkit-mediadl-banner__status[\s\S]*?color:\s*var\(--ytkit-v3-muted\)/
