@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — hideCollaborations (default ON) is inert after any SPA navigation to the subscriptions feed
-  Category: correctness
-  Where: extension/ytkit.js:16767-16804 (hideCollaborations.init); tracker subset at :54981 (`pageScopedFeatures = liveFeatureList.filter(f => !f._arrayKey && f.pages)`)
-  Problem: init() starts with `if (window.location.pathname !== '/feed/subscriptions') return;` and registers its navigate rule only AFTER that check. The feature declares no `pages` property, so _pageChangeTracker never re-initializes it on navigation. Unless the browser hard-loads directly on /feed/subscriptions, the feature (default true, ytkit.js:3272) does nothing all session — the common path (land on Home → click Subscriptions) leaves it permanently inert. initFeatureLifecycle marks it _initialized so nothing retries. Secondary issues in the same block, fix together: (a) _validateFeedCard matches only the legacy shelf layout (ytd-item-section-renderer + ytd-shelf-renderer #title-container a[title]) — likely a no-op on the modern rich-grid subs feed (needs a fixture to confirm); (b) _fetchSubscriptions parses only the first expandedShelfContentsRenderer batch of /feed/channels while _validateFeedCard destructively .remove()s cards from channels not in that batch — a truncated list would delete videos from genuinely subscribed channels.
-  Evidence: Early-return + missing pages property + tracker filter all verified by direct read; no module twin exists.
-  Fix: Give the feature `pages: [PageTypes.SUBSCRIPTIONS]` (or register the navigate rule unconditionally and defer the subscriptions fetch to first arrival). While there: hide via class toggle instead of .remove() so a truncated subscription fetch can't destroy cards, and add a rich-grid fixture to decide whether _validateFeedCard needs modern selectors.
-  Acceptance: Test: init on a non-subs page, simulated navigate to /feed/subscriptions → feature processes cards. Fixture decides the rich-grid question; removal replaced by reversible hiding.
-  Confidence: Verified (logic trace)
-  Effort: S
-
 - [ ] P2 — Popup schema overview ignores schema defaults — default-on features show Disabled, counts undercount, spurious per-key Reset buttons
   Category: correctness
   Where: extension/popup.js:2864 (buildSchemaOverviewKeyRow — `const on = settings[entry.key] === true;`), :3232-3241 (isToggleEnabled — `undefined → false`), :3197-3208 (isDefaultValue) with the reset-button gate at :3155-3157
