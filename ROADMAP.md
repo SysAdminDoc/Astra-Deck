@@ -57,16 +57,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — UX / theming / product
 
-- [ ] P2 — chatStyleComments paints white-alpha text over the page background — unreadable on YouTube light theme (both copies)
-  Category: visual
-  Where: extension/features/chat-style-comments/index.js:18 (buildCommentRestyleCss — #content-text rgba(255,255,255,0.78), timestamps 0.25, reply borders 0.035, container background = accent at 0.03 alpha) and :1316-1319 (styleReplyDialogs inline rgba(255,255,255,0.85) on rgba(255,255,255,0.04)); byte-identical fallback at extension/ytkit.js:7042
-  Problem: Opt-in feature, but 100% broken for light-theme users: the base layer restyles the entire comment section (and YouTube's own commentbox cancel/emoji buttons) with white-alpha text over the page background. The premium layer's dark cards mask it only when active. Sibling modules (return-dislike, video-notes, subscription-view) already use --yt-spec-* vars with html:not([dark]) overrides.
-  Evidence: No html:not([dark]) rules or spec vars anywhere in buildCommentRestyleCss/styleReplyDialogs (grep-verified).
-  Fix: Route text/border colors through var(--yt-spec-text-primary/-secondary, <current dark fallback>) with html:not([dark]) overrides where vars don't suffice. Fix the module first, re-splice the ytkit.js fallback (parity-pinned). While there, also strip the ~30 inline styles per comment on disable — normalizeCommentLayoutSurface/normalizeCommentInteractionSurface (ytkit.js:8156-8273) write setProperty(…,'important') per comment that neither destroy path removes (module cleanupRuntimeDom :1348-1357 removes only dataset flags/badges), leaving 24px avatars and forced layout on native comments after live toggle-off; the reply-dialog styles ARE stripped (:8296-8311), proving the pattern was known and these were missed.
-  Acceptance: Light-theme fixture: comment text legible with the feature on; toggling the feature off restores native comment layout without reload (no residual inline properties); dark theme unchanged; parity pin green.
-  Confidence: Verified (CSS + cleanup gap); visual outcome Likely (needs a light-theme drive)
-  Effort: M
-
 - [ ] P2 — Fresh-install defaults hide the caption overlay, core player controls, and auto-accept content warnings
   Category: ux
   Where: extension/default-settings.json:95-105 (hiddenPlayerControls default `["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"]` — `captions` maps to '.caption-window' at ytkit.js:16676-16693, i.e. the caption TEXT overlay), :85-94 (hiddenActionButtons hides Like/Share/Save), :251 (autoDismissContentWarning: true — auto-clicks "I understand and wish to proceed"), plus early.css:167-169 (all avatars hidden site-wide) and hiddenWatchElements hiding the transcript section

@@ -204,7 +204,15 @@ test('processComment skips restyling a comment that is already normalized', () =
             this.style = new FakeStyle(counter);
         }
         get writes() { return this.counter.writes; }
-        removeAttribute() {}
+        // The normalize passes record which inline properties they set so
+        // teardown can remove exactly those; a fake without the attribute API
+        // no longer stands in for an Element.
+        getAttribute(name) { return this._attrs?.get(name) ?? null; }
+        setAttribute(name, value) {
+            if (!this._attrs) this._attrs = new Map();
+            this._attrs.set(name, String(value));
+        }
+        removeAttribute(name) { this._attrs?.delete(name); }
         matches() { return false; }
         closest() { return null; }
         _match(selector) {
@@ -246,5 +254,48 @@ test('processComment skips restyling a comment that is already normalized', () =
     } finally {
         if (originalElement === undefined) delete globalThis.Element;
         else globalThis.Element = originalElement;
+    }
+});
+
+test('teardown removes the inline styles the normalize passes wrote', () => {
+    // The normalize passes write ~30 !important inline properties per comment.
+    // Neither cleanupRuntimeDom nor the monolith destroy removed them, so
+    // toggling the feature off left native comments with 24px avatars and
+    // forced flex layout until Polymer re-rendered or the page reloaded.
+    const src = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '..', '..', 'extension', 'features', 'chat-style-comments', 'index.js'),
+        'utf8'
+    );
+    assert.match(src, /function setManagedStyle\(node, key, value\)/,
+        'inline writes must be recorded as they are made');
+    assert.match(src, /node\.setAttribute\(MANAGED_STYLE_ATTR, recorded\.join\(','\)\)/,
+        'the property names must be recorded on the element itself, not a hand-kept list');
+    assert.match(src, /function cleanupRuntimeDom\(doc\) \{\s*clearManagedStyles\(doc\);/,
+        'teardown must strip the recorded properties first');
+    assert.match(src, /forEach\(\(key\) => node\.style\.removeProperty\(key\)\)/,
+        'exactly the recorded properties must be removed');
+    assert.ok(!/\bcomment\.style\.setProperty\(/.test(src),
+        'no normalize write may bypass the recorder');
+
+    // The monolith twin must strip them too, from a destroy() that cannot see
+    // init()'s locals.
+    const mono = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    assert.match(mono, /document\.querySelectorAll\('\[data-ytkit-chat-styled\]'\)[\s\S]{0,260}?removeProperty\(key\)/,
+        'the monolith destroy must remove the recorded inline properties');
+});
+
+test('chat-style comments are legible on YouTube light theme', () => {
+    const src = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '..', '..', 'extension', 'features', 'chat-style-comments', 'index.js'),
+        'utf8'
+    );
+    for (const selector of [
+        'ytd-comment-view-model #content-text',
+        'ytd-comment-view-model .published-time-text',
+        'ytd-commentbox #contenteditable-root',
+    ]) {
+        assert.ok(src.includes(`html:not([dark]) ${selector}`),
+            `${selector} must have a light-theme override (it paints white-alpha text on the page background)`);
     }
 });
