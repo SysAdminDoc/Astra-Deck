@@ -3276,7 +3276,7 @@
     "message": "此弹窗中提供 {count} 项快捷控件"
   },
   "resultsMatchTpl": {
-    "message": "{visible} 项控件中的 {total} 项与此筛选匹配"
+    "message": "{total} 项控件中的 {visible} 项与此筛选匹配"
   },
   "resultsMatching": {
     "message": "项匹配"

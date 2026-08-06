@@ -309,13 +309,13 @@
     "message": "Download audio"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as …"
+    "message": "Download audio as {format}"
   },
   "dlPopupCtaVideo": {
     "message": "Download video"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as … at …"
+    "message": "Download video as {format} at {quality}"
   },
   "dlPopupDefault": {
     "message": "Default"
@@ -360,10 +360,10 @@
     "message": "Download type"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% complete. … remaining."
+    "message": "{pct}% complete. {eta} remaining."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
+    "message": "{pct}% complete. Stay on YouTube while Astra Downloader finishes."
   },
   "dlProgressAriaAudio": {
     "message": "Audio download progress"
@@ -3066,10 +3066,10 @@
     "message": "Download Video"
   },
   "playerGearAriaTpl": {
-    "message": "Open … settings"
+    "message": "Open {brand} settings"
   },
   "playerGearTitleTpl": {
-    "message": "… Settings"
+    "message": "{brand} Settings"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "Reset"
   },
   "resultsAllAvailableTpl": {
-    "message": "… quick controls are available in this popup"
+    "message": "{count} quick controls are available in this popup"
   },
   "resultsMatchTpl": {
-    "message": "… of … … match this filter"
+    "message": "{visible} of {total} {controls} match this filter"
   },
   "resultsMatching": {
     "message": "matching"
@@ -3762,10 +3762,10 @@
     "message": "Extension version"
   },
   "speedBtnAriaTpl": {
-    "message": "Default playback speed …. Click to change."
+    "message": "Default playback speed {speed}. Click to change."
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: … — applies to every video"
+    "message": "Default playback speed: {speed} — applies to every video"
   },
   "speedPopupAria": {
     "message": "Default playback speed"
@@ -4002,7 +4002,7 @@
     "message": "enabled"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update …. Try again."
+    "message": "Couldn't update {name}. Try again."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

@@ -309,13 +309,13 @@
     "message": "오디오 다운로드"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "오디오를 …(으)로 다운로드"
+    "message": "오디오를 {format}(으)로 다운로드"
   },
   "dlPopupCtaVideo": {
     "message": "비디오 다운로드"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "비디오를 …(으)로 …에서 다운로드"
+    "message": "비디오를 {format}(으)로 {quality}에서 다운로드"
   },
   "dlPopupDefault": {
     "message": "기본값"
@@ -360,10 +360,10 @@
     "message": "다운로드 유형"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% 완료. … 남음."
+    "message": "{pct}% 완료. {eta} 남음."
   },
   "dlProgressActiveTpl": {
-    "message": "…% 완료. Astra Downloader가 끝날 때까지 YouTube에 머물러 주세요."
+    "message": "{pct}% 완료. Astra Downloader가 끝날 때까지 YouTube에 머물러 주세요."
   },
   "dlProgressAriaAudio": {
     "message": "오디오 다운로드 진행률"
@@ -3066,10 +3066,10 @@
     "message": "비디오 다운로드"
   },
   "playerGearAriaTpl": {
-    "message": "… 설정 열기"
+    "message": "{brand} 설정 열기"
   },
   "playerGearTitleTpl": {
-    "message": "… 설정"
+    "message": "{brand} 설정"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "재설정"
   },
   "resultsAllAvailableTpl": {
-    "message": "…개의 빠른 컨트롤이 이 팝업에서 사용 가능합니다"
+    "message": "{count}개의 빠른 컨트롤이 이 팝업에서 사용 가능합니다"
   },
   "resultsMatchTpl": {
-    "message": "… 중 …개가 이 필터와 일치합니다"
+    "message": "{total} 중 {visible}개가 이 필터와 일치합니다"
   },
   "resultsMatching": {
     "message": "일치"
@@ -3762,10 +3762,10 @@
     "message": "확장 프로그램 버전"
   },
   "speedBtnAriaTpl": {
-    "message": "기본 재생 속도 …. 클릭하여 변경."
+    "message": "기본 재생 속도 {speed}. 클릭하여 변경."
   },
   "speedBtnTitleTpl": {
-    "message": "기본 재생 속도: … — 모든 동영상에 적용"
+    "message": "기본 재생 속도: {speed} — 모든 동영상에 적용"
   },
   "speedPopupAria": {
     "message": "기본 재생 속도"
@@ -4002,7 +4002,7 @@
     "message": "활성화됨"
   },
   "toggleUpdateFailTpl": {
-    "message": "…을(를) 업데이트할 수 없습니다. 다시 시도하세요."
+    "message": "{name}을(를) 업데이트할 수 없습니다. 다시 시도하세요."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

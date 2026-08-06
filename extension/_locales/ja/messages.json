@@ -309,13 +309,13 @@
     "message": "音声をダウンロード"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "音声を … としてダウンロード"
+    "message": "音声を {format} としてダウンロード"
   },
   "dlPopupCtaVideo": {
     "message": "動画をダウンロード"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "動画を … で … としてダウンロード"
+    "message": "動画を {format} で {quality} としてダウンロード"
   },
   "dlPopupDefault": {
     "message": "デフォルト"
@@ -360,10 +360,10 @@
     "message": "ダウンロードタイプ"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% 完了。残り …。"
+    "message": "{pct}% 完了。残り {eta}。"
   },
   "dlProgressActiveTpl": {
-    "message": "…% 完了。Astra Downloader が完了するまで YouTube を開いたままにしてください。"
+    "message": "{pct}% 完了。Astra Downloader が完了するまで YouTube を開いたままにしてください。"
   },
   "dlProgressAriaAudio": {
     "message": "音声ダウンロードの進捗"
@@ -3066,10 +3066,10 @@
     "message": "動画をダウンロード"
   },
   "playerGearAriaTpl": {
-    "message": "… の設定を開く"
+    "message": "{brand} の設定を開く"
   },
   "playerGearTitleTpl": {
-    "message": "… の設定"
+    "message": "{brand} の設定"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "リセット"
   },
   "resultsAllAvailableTpl": {
-    "message": "… 個のクイックコントロールがこのポップアップで利用可能"
+    "message": "{count} 個のクイックコントロールがこのポップアップで利用可能"
   },
   "resultsMatchTpl": {
-    "message": "… 中 … 件がこのフィルターに一致"
+    "message": "{total} 中 {visible} 件がこのフィルターに一致"
   },
   "resultsMatching": {
     "message": "一致"
@@ -3762,10 +3762,10 @@
     "message": "拡張機能のバージョン"
   },
   "speedBtnAriaTpl": {
-    "message": "デフォルト再生速度 …。クリックで変更。"
+    "message": "デフォルト再生速度 {speed}。クリックで変更。"
   },
   "speedBtnTitleTpl": {
-    "message": "デフォルト再生速度: … — すべての動画に適用"
+    "message": "デフォルト再生速度: {speed} — すべての動画に適用"
   },
   "speedPopupAria": {
     "message": "デフォルト再生速度"
@@ -4002,7 +4002,7 @@
     "message": "有効"
   },
   "toggleUpdateFailTpl": {
-    "message": "… を更新できませんでした。再試行してください。"
+    "message": "{name} を更新できませんでした。再試行してください。"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
