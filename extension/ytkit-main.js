@@ -241,7 +241,14 @@
     });
 
     // Exposed for the codec-bridge tests; the page never calls these.
-    if (typeof module !== 'undefined' && module.exports) {
+    // MAIN-world scripts share the PAGE's global scope. `typeof module`
+    // is only a Node/CommonJS signal here; a page that defined its own
+    // CommonJS shim would have had it overwritten with bridge internals.
+    // Gate on the Node runtime itself, which a page can never fake.
+    const inNodeTests = typeof process !== 'undefined'
+        && !!process.versions
+        && typeof process.versions.node === 'string';
+    if (inNodeTests && typeof module !== 'undefined' && module.exports) {
         module.exports = { probeEfficientCodec: probeEfficientCodec, EFFICIENT_CANDIDATES: EFFICIENT_CANDIDATES };
     }
 

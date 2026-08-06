@@ -71,24 +71,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Confidence: Needs-repro (observed in offscreen render; not yet root-caused)
   Effort: S
 
-- [ ] P3 — Gate/tooling robustness batch
-  Category: maintainability
-  Where / Problems:
-  1. scripts/companion-port-catalogue.json:4 origin `http://127.0.0.1:9751-9851` is a port-RANGE pseudo-origin, not a valid origin; it works because both consumers route it through alias maps — and extension/core/data-flow.js:215-236 originMatchesManifest only matches it because `new URL()` THROWS and the catch falls back to startsWith, which succeeds by string-prefix coincidence with the primary port. Any future consumer using the generic origin+'/*' fallback emits an invalid pattern; a port change silently breaks the data-flow panel's permission display. Fix: special-case the pseudo-origin via ORIGIN_HOST_PERMISSION_ALIASES and validate it in companion-port-catalogue.js.
-  2. scripts/bench-startup.js:155-156, :406-429 — `--check` is parsed but never read; bench and gate modes are identical, so a bench run on a slower machine fails instead of reporting. Fix: make plain bench report-only.
-  3. scripts/check-i18n.js:167 — success line hardcodes "0 getMessage() calls all resolve" regardless of count. Fix: interpolate the real count.
-  4. scripts/generate-release-manifest.js:151-198 — no strict unknown-argv rejection (what let the documented `--require-companion` no-op silently; sibling gates all reject). Fix: add the same argv guard.
-  5. scripts/generate-release-readiness.js:378-401 — readiness verifies files against SHA256SUMS but never cross-checks release-manifest.json's per-asset sha256 against either; a manifest hand-edit or TOCTOU between the two hash passes goes unflagged. Fix: cross-check the two sources.
-  6. extension/ytkit-main.js:244-246 and extension/core/audio-track.js:287-288 — MAIN-world files execute `if (typeof module !== 'undefined' && module.exports) module.exports = …` in the PAGE's global scope; a page-defined CommonJS shim would be overwritten and handed bridge internals. Latent (YouTube defines no global module today). Fix: strip the export blocks from MAIN-world files at build or gate on an extension-test marker.
-  7. extension/popup.js:1693-1695 vs :4204-4213 — two code paths drive the companion-update buttons' hidden flags with different predicates (raw githubFullProfile vs policy.resolveEffectiveProfile), and render() runs last in refreshOptionalHostGrantState so it can override the policy result. normalizeProfileModel keeps the flags coherent so divergence needs out-of-band state — but it's the exact two-copies drift trap this repo keeps paying for. Fix: delete the raw-flag block; call refreshCompanionUpdateVisibility().
-  8. extension/sidepanel.js:262-264 — sendToTab calls globalThis.YTKitBrowser.sendTabMessage unconditionally, bypassing the deliberate bare-chrome fallback at :7-9; preview-mode-only breakage of the per-section empty states. Fix: optional-chain with a null fallback.
-  9. extension/sidebar.html:50, :118, :126 — three i18n keys drifted from sidepanel.html (toggleStateOn vs spOverviewEnabledLabel; healthClearBtn vs spSettingsClearBtn; dlProgressReady vs spRefreshStatusReady). EN matches today; translations can fork the twin surfaces. Fix: align keys (or generate one file from the other).
-  10. extension/core/storage-manager.js:56-58, :163-180 — the unload-hook WeakSet is per-factory-instance, so the "idempotent across multiple factory invocations" comment is false; a second call site would stack beforeunload/yt-navigate-start listeners closing over dead managers. No current production impact (one instance). Fix: hoist the guard to module scope keyed on window; fix the comment.
-  11. scripts/i18n-placeholder-baseline.json — ~700-717 accepted placeholder mismatches per locale (~37% of keys); the gate structurally cannot catch the P1 "…" class. After fixing the P1, ratchet the baseline down and fail on NEW mismatches of consumed tokens.
-  Acceptance: Each numbered fix verifiable by the named command/test; check gates green.
-  Confidence: Verified (6, 7 latent by construction)
-  Effort: S each
-
 - [ ] P3 — Systemic closure: light-theme render lane for injected surfaces
   Category: testing
   Where: scripts/smoke-settings-overlay.js (pattern to copy), scripts/check-contrast.js (currently validates only 6 hand-picked popup constants), the ~1132 white/black-alpha literals in extension/ytkit.js

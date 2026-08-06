@@ -48,10 +48,19 @@ test('userscript CPU Tamer snapshots originals after guards and gates restore on
 });
 
 test('popup gates the companion update buttons to the github-full profile', () => {
-    assert.ok(/updateCompanionButton\.hidden\s*=\s*!githubFull/.test(popup),
+    // ONE code path decides this. The render() copy that read the raw
+    // githubFullProfile flag has been deleted: it ran last in
+    // refreshOptionalHostGrantState and could overwrite the policy result.
+    assert.ok(/function refreshCompanionUpdateVisibility\(\)/.test(popup),
+        'a single visibility helper must own the decision');
+    assert.ok(/policy\.resolveEffectiveProfile\(popupState\.settings \|\| \{\}\)/.test(popup),
+        'visibility must come from the effective policy profile, not a raw flag');
+    assert.ok(/updateCompanionButton\.hidden = !show/.test(popup),
         'Update Companion must be hidden for store-safe users');
-    assert.ok(/updateYtdlpButton\.hidden\s*=\s*!githubFull/.test(popup),
+    assert.ok(/updateYtdlpButton\.hidden = !show/.test(popup),
         'Update yt-dlp must be hidden for store-safe users');
+    assert.ok(!/const githubFull = !!\(settings && settings\.githubFullProfile\)/.test(popup),
+        'the second, raw-flag copy of this decision must stay deleted');
 });
 
 test('popup status banner announces errors assertively', () => {

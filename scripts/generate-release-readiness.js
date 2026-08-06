@@ -400,6 +400,37 @@ function buildReadinessReport(options = {}) {
                 checksumDetails
             ));
         }
+
+        // The manifest carries its OWN per-asset sha256, and nothing compared
+        // it to the file on disk or to SHA256SUMS. A hand-edited manifest, or a
+        // file rewritten between the two hashing passes, published a manifest
+        // whose hashes described something else entirely.
+        const manifestHashDrift = [];
+        const manifestHashMissing = [];
+        for (const asset of releaseManifest.assets) {
+            const name = asset?.name;
+            if (!name) continue;
+            const declared = typeof asset.sha256 === 'string' ? asset.sha256.toLowerCase() : '';
+            if (!declared) { manifestHashMissing.push(name); continue; }
+            const filePath = path.join(buildDir, name);
+            if (fs.existsSync(filePath) && sha256(filePath) !== declared) {
+                manifestHashDrift.push(`${name} (file)`);
+            }
+            if (checksumEntries?.has(name) && checksumEntries.get(name).toLowerCase() !== declared) {
+                manifestHashDrift.push(`${name} (SHA256SUMS)`);
+            }
+        }
+        const manifestHashStatus = manifestHashDrift.length || manifestHashMissing.length ? 'fail' : 'pass';
+        checks.push(check(
+            'manifest-hash-agreement',
+            'release-manifest.json hashes agree with the files and SHA256SUMS',
+            manifestHashStatus,
+            [
+                manifestHashMissing.length ? `no sha256 declared: ${manifestHashMissing.join(', ')}` : null,
+                manifestHashDrift.length ? `disagrees: ${manifestHashDrift.join(', ')}` : null,
+                manifestHashStatus === 'pass' ? `${releaseManifest.assets.length} asset hash(es) agree` : null
+            ].filter(Boolean).join('; ')
+        ));
     } else if (releaseManifest) {
         checks.push(check(
             'manifest-assets-shape',

@@ -31,7 +31,11 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createStorageCache) return;
 
-    const DEFAULT_ECHO_TTL_MS = 1500;
+    // Module-scoped so the guard actually spans factory invocations: it is
+// keyed on the window whose listeners were installed.
+const _installedUnloadHooks = new WeakSet();
+
+const DEFAULT_ECHO_TTL_MS = 1500;
     const DEFAULT_SAVE_DEBOUNCE_MS = 500;
 
     function createStorageCache(options = {}) {
@@ -53,9 +57,6 @@
         const echoTtlMs = Number.isFinite(options.echoTtlMs) && options.echoTtlMs > 0
             ? options.echoTtlMs
             : DEFAULT_ECHO_TTL_MS;
-        // Re-entrancy guard so _initUnloadFlush() is idempotent across
-        // multiple factory invocations (production = one; tests = N).
-        const _installedUnloadHooks = new WeakSet();
 
         const manager = {
             _cache: {},
@@ -158,8 +159,10 @@
             },
 
             // Idempotent install of beforeunload / yt-navigate-start hooks
-            // that flush pending writes. The WeakSet guard means calling
-            // this twice on the same window object is a no-op.
+            // that flush pending writes. The guard is MODULE-scoped and keyed
+            // on the window: a per-factory WeakSet made the "idempotent across
+            // multiple factory invocations" claim false, so a second call site
+            // would stack listeners closing over a dead manager.
             _initUnloadFlush() {
                 if (typeof window === 'undefined' || typeof document === 'undefined') return;
                 if (_installedUnloadHooks.has(window)) return;
