@@ -6,6 +6,75 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.52.0] - 2026-08-06
+
+Audit-backlog drain: every P0/P1/P2 finding from the 2026-08-06 deep audit,
+plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
+
+### Fixed — features that were silently inert or wrong
+
+- **Comment Filter never filtered lazily-loaded comments.** Its mutation rule
+  was registered as a broad rule, whose dispatcher passes `document.body`, but
+  the callback iterated its argument as MutationRecords — so it threw on every
+  mutation batch, before the rescan, and flooded the diagnostics ring. Now a
+  scoped rule, which is the one that receives the added elements.
+- **Bulk unsubscribe could report success without unsubscribing**, then delete
+  the channel's 30-day recovery record. Success now requires either a confirmed
+  unsubscribe dialog or the control flipping away from its unsubscribe label;
+  the confirm step no longer accepts YouTube's generic `#confirm-button`, which
+  is shared with clear-watch-history and delete-playlist.
+- **Hide Collaborations (default on) was inert after any SPA navigation** — it
+  declared no page scope, so landing on Home and clicking Subscriptions left it
+  dormant all session. It also removed cards outright, so a truncated
+  subscription fetch destroyed real videos; hiding is now reversible.
+- **SponsorBlock highlights never rendered.** `poi_highlight` is a zero-length
+  point marker and was filtered out before reaching the progress bar.
+- **Preset recipes did nothing in the tab that toggled them** (Low Power, Feed
+  Triage, Privacy, Researcher, Power User, Focus): they mutated settings in
+  place, which defeated every reconciliation path, so no feature started or
+  stopped until a reload.
+- **Volume wheel was pinned to 45–55%** — it read the volume from a MAIN-world
+  player API invisible to the content script and fell back to a literal 50.
+- **Repeat Takeout imports double-counted watch time**, compounding on each
+  import.
+- **Two auto-dismiss features clicked any open confirm dialog**, so a
+  user-opened destructive confirmation could be auto-accepted.
+- Quick Links deletion destroyed entries stored beyond the ten-item cap; the
+  Video Hider interstitial's Unblock left the channel's cards hidden; the
+  Reaction Spammer fallback ignored the configured interval floor; the
+  subscription-groups fallback lost the frozen NEW-badge map and never
+  content-type-filtered infinite-scroll cards.
+
+### Fixed — accessibility, theming, and copy
+
+- **Closed captions no longer ship hidden.** The default hidden-player-controls
+  set included `captions`, which hides the subtitle text overlay itself, so CC
+  did not render on a fresh install. `fullscreen` is out of the default set too,
+  and content warnings are no longer auto-accepted.
+- **Default-on injected chrome is legible on YouTube light theme**: the
+  watch-page restyle, thin scrollbar, Download / Hide All buttons and the
+  masthead quick-link launcher were white-on-white. Chat-style comments,
+  video notes, the DeArrow chip, the AI buttons and early.css followed.
+- **The watch-time dashboard is a real dialog** — role, modal, labelled close,
+  Escape, focus restore — and no longer overflows below ~700px.
+- Eleven template messages shipped a literal ellipsis where their substitution
+  token belonged ("…% complete."); the flagship injected controls and preset
+  toasts were English-only. All are catalogued and translated in ten locales.
+- Toast dismissal fades again, and toasts re-enter the top layer above the
+  settings panel; the install prompt and download progress card go with them.
+
+### Fixed — gates that could not fail
+
+- The shipped userscript bundled a stale core module through three releases;
+  the "verbatim contents" test only checked one substring per module. Both the
+  drift gate and that test now rebuild the bundle and compare byte for byte.
+- `check-i18n` validates that every `{token}` a caller substitutes exists in
+  every locale; `bench-startup --check` gates while a bare bench reports;
+  `generate-release-manifest` rejects unknown flags; the data-flow origin match
+  no longer succeeds by string coincidence.
+- The release checklist, native-messaging doc, CODEOWNERS and the blocked
+  tracker no longer point at files the companion split removed.
+
 ## [4.51.4] - 2026-08-06
 
 ### Changed
