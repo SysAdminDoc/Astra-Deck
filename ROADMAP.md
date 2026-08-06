@@ -59,33 +59,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Correctness / reliability edge cases
 
-- [ ] P3 — Reaction Spammer ytkit.js twin doesn't enforce the configurable interval floor (module does)
-  Category: correctness
-  Where: extension/ytkit.js:16114-16118 (input min + change clamp use _INTERVAL_MIN_MS_FLOOR=500), :16248 (_tick clamp), enforcement only in _loadState :15774-15779; module copy enforces reactionSpammerMinIntervalMs at every clamp point (extension/features/live-chat/index.js:272, :431)
-  Problem: With reactionSpammerMinIntervalMs raised (v4.47.0 EI-NEW3), the ytkit-driven panel lets the user type below the configured floor and spam at that rate all session (clamped back only on next page load). Both copies write the same ytkitReactionSpammerState key with different invariants.
-  Fix: In the ytkit.js twin use the _INTERVAL_MIN_MS getter (not the hard floor) at the input min, the change-handler clamp, and the _tick clamp.
-  Acceptance: With min interval configured to 1500, typing 600 in the fallback panel clamps to 1500 immediately; parity test pins both copies.
-  Confidence: Verified (exact line comparison)
-  Effort: S
-
-- [ ] P3 — subscriptionGroups ytkit.js fallback lost the _sessionLastVisit NEW-badge fix (09b2d2d6)
-  Category: correctness
-  Where: Fallback: extension/ytkit.js:38471 (_applyNewSinceMarkers), :38560, :38570, :38616, nav rule :39895-39928 — `grep _sessionLastVisit extension/ytkit.js` → 0 hits; module: extension/features/subscription-groups/index.js:619, 708, 718, 787-789, 2220, 2242 (frozen session map so badges survive the whole visit)
-  Problem: In the fallback copy, 8s after arriving on /feed/subscriptions, _stampLastVisit overwrites lastVisit and the next feed mutation re-runs markers/digest against the fresh map — every NEW badge disappears and digest counts collapse to 0 mid-visit. Module (the shipping copy when module loading works) and the userscript both have the fix; only the inline fallback drifted, and no hardening test pins this pair.
-  Fix: Re-splice the fallback from the module and add a parity pin like the DeArrow twins have.
-  Acceptance: grep _sessionLastVisit extension/ytkit.js ≥ 1; parity pin added; fallback-only smoke shows badges persisting past the 8s stamp.
-  Confidence: Verified (drift); behavior Likely
-  Effort: M
-
-- [ ] P3 — subscriptionGroups content-type filter never runs for lazily-loaded cards (both copies)
-  Category: correctness
-  Where: module extension/features/subscription-groups/index.js:2228-2234 (scoped mutation rule re-applies group filter/markers but not _applyContentTypeFilter — that runs only in the nav-time pass at :2212); fallback ytkit.js:39921-39927 (same)
-  Problem: With subscriptionFilterLive/subscriptionFilterStreamed on, infinite-scroll cards are never live/streamed-filtered until the next navigation, while the group filter on the same cards works — inconsistent by construction.
-  Fix: Add `this._applyContentTypeFilter()` to the mutation rule in the module, re-splice the fallback.
-  Acceptance: Test: appending a card batch with the live filter active hides live cards without a navigation.
-  Confidence: Verified (code path)
-  Effort: S
-
 - [ ] P3 — Video Hider: interstitial "Unblock" leaves the channel's already-hidden rail cards hidden
   Category: correctness
   Where: extension/features/video-hider/index.js:815-820 (_handleDirectWatchDecision 'unblock' branch)

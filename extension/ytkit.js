@@ -16209,11 +16209,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 intervalLabel.textContent = t('reactionSenderIntervalLabel', 'Interval');
                 this._intervalEl = document.createElement('input');
                 this._intervalEl.type = 'number';
-                this._intervalEl.min = String(this._INTERVAL_MIN_MS_FLOOR);
+                // Honour the CONFIGURED floor, not just the hard 500ms safety
+                // floor: with reactionSpammerMinIntervalMs raised, the user could
+                // type a lower value here and spam at it for the whole session
+                // (it was only clamped back on the next page load).
+                this._intervalEl.min = String(this._INTERVAL_MIN_MS);
                 this._intervalEl.step = '50';
                 this._intervalEl.value = String(this._state.intervalMs);
                 this._intervalEl.addEventListener('change', () => {
-                    this._state.intervalMs = this._clampNumber(this._intervalEl.value, this._defaults.intervalMs, this._INTERVAL_MIN_MS_FLOOR, 60000);
+                    this._state.intervalMs = this._clampNumber(this._intervalEl.value, this._defaults.intervalMs, this._INTERVAL_MIN_MS, 60000);
                     this._intervalEl.value = String(this._state.intervalMs);
                     this._saveState();
                 });
@@ -16343,7 +16347,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._clickReaction(pick);
                 }
                 this._paint();
-                this._timer = setTimeout(() => this._tick(), Math.max(this._INTERVAL_MIN_MS_FLOOR, this._state.intervalMs));
+                this._timer = setTimeout(() => this._tick(), Math.max(this._INTERVAL_MIN_MS, this._state.intervalMs));
             },
 
             _scheduleRender() {
@@ -38753,7 +38757,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _applyNewSinceMarkers() {
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                 if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
-                const lastVisit = this._readLastVisit();
+                const lastVisit = this._sessionLastVisit || this._readLastVisit();
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
                     const channelId = this._extractChannelIdFromCard(card);
                     if (!channelId) return;
@@ -38839,7 +38843,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return '';
             },
 
-            _isCardNewSinceLastVisit(card, channelId, lastVisit = this._readLastVisit()) {
+            _isCardNewSinceLastVisit(card, channelId, lastVisit = this._sessionLastVisit || this._readLastVisit()) {
                 const id = String(channelId || '');
                 if (!id) return false;
                 const lastSeen = Number(lastVisit?.[id]) || 0;
@@ -38849,7 +38853,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return (Date.now() - ageMs) > lastSeen;
             },
 
-            _collectRenderedCardSummaries(lastVisit = this._readLastVisit()) {
+            _collectRenderedCardSummaries(lastVisit = this._sessionLastVisit || this._readLastVisit()) {
                 return Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'))
                     .map(card => {
                         const channelId = this._extractChannelIdFromCard(card);
@@ -38918,6 +38922,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 }
                 const marked = markedChannels.size;
+                if (this._sessionLastVisit) {
+                    for (const channelId of markedChannels) {
+                        this._sessionLastVisit[channelId] = now;
+                    }
+                }
                 this._writeLastVisit(this._capLastVisitMap(next));
                 this._applyNewSinceMarkers();
                 this._applySort();
@@ -38991,7 +39000,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.appendChild(head);
 
                 try {
-                    const lastVisit = this._readLastVisit();
+                    const lastVisit = this._sessionLastVisit || this._readLastVisit();
                     const summaries = this._collectRenderedCardSummaries(lastVisit);
                     const groups = this._readGroups();
                     const candidates = this._renderDeadChannelMarkers();
@@ -39210,7 +39219,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _renderDigestPanel() {
                 if (!this._toolbar?.isConnected) this._renderToolbar();
                 if (!this._toolbar?.isConnected) return;
-                const lastVisit = this._readLastVisit();
+                const lastVisit = this._sessionLastVisit || this._readLastVisit();
                 const summaries = this._collectRenderedCardSummaries(lastVisit);
                 const entries = this._buildGroupDigestEntries(this._readGroups(), lastVisit);
                 const allNew = summaries.filter(item => item.isNew);
@@ -40241,6 +40250,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._renderDeadChannelMarkers();
                         this._applySort();
                     }, 1200);
+                    // Freeze the pre-stamp map for this pageview: markers and
+                    // digest re-renders keep using it after the 8s stamp so
+                    // badges survive the whole visit. Without this the stamp
+                    // overwrote lastVisit and the next feed mutation collapsed
+                    // every NEW badge and digest count to zero mid-visit.
+                    this._sessionLastVisit = this._readLastVisit();
                     this._stampTimer = setTimeout(() => {
                         this._stampTimer = null;
                         if (window.location.pathname !== '/feed/subscriptions') return;
@@ -40251,6 +40266,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer', () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
                     this._applyGroupFilter();
+                    // Infinite-scroll cards were group-filtered but never
+                    // live/streamed-filtered until the next navigation.
+                    this._applyContentTypeFilter();
                     this._applyNewSinceMarkers();
                     this._renderDeadChannelMarkers();
                     if (this._digestPanel) this._renderDigestPanel();
@@ -40262,6 +40280,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._lifecycleToken += 1;
                 this._unsubscribeRunning = false;
                 this._unsubscribeSessionToken = null;
+                this._sessionLastVisit = null;
                 removeNavigateRule(this.id);
                 removeScopedMutationRule(this.id);
                 if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }

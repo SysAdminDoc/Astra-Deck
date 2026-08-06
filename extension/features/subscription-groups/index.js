@@ -2276,6 +2276,9 @@
                 addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer', () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
                     this._applyGroupFilter();
+                    // Infinite-scroll cards were group-filtered but never
+                    // live/streamed-filtered until the next navigation.
+                    this._applyContentTypeFilter();
                     this._applyNewSinceMarkers();
                     this._renderDeadChannelMarkers();
                     if (this._digestPanel) this._renderDigestPanel();
