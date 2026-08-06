@@ -96,6 +96,9 @@ function setSettingsPanelOpen(open) {
             if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
                 try {
                     panel.showPopover();
+                    // The top layer stacks by show-order: a toast shown before the
+                    // panel would now sit UNDER it for the rest of its life.
+                    globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
                     _panelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
                 } catch (_) {
                     // reason: a browser can expose Popover but reject this show call.

@@ -2592,20 +2592,25 @@ return response;
             toast.removeEventListener('toggle', toast._popoverToggleHandler);
             toast._popoverToggleHandler = null;
         }
-        if (typeof toast.hidePopover === 'function') {
-            try {
-                toast.hidePopover();
-            } catch (_) {
-                // reason: the toast may already have closed natively.
+        // Closing the popover first makes the exit animation unreachable:
+        // `[popover]:not(:popover-open)` is display:none. Hide on removal.
+        const finishRemoval = () => {
+            if (typeof toast.hidePopover === 'function') {
+                try {
+                    toast.hidePopover();
+                } catch (_) {
+                    // reason: the toast may already have closed natively.
+                }
             }
-        }
+            toast.remove();
+        };
         toast.classList.remove('is-visible');
         if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            toast.remove();
+            finishRemoval();
             return;
         }
         toast._removeTimer = setTimeout(() => {
-            if (toast.isConnected) toast.remove();
+            if (toast.isConnected) finishRemoval();
         }, 180);
     }
 
@@ -2768,6 +2773,12 @@ return response;
         if (usePopover) {
             const toggleHandler = (event) => {
                 if (event.newState !== 'closed') return;
+                // A programmatic re-stack (YTKitCore.toast.raiseActiveToasts)
+                // closes and reopens the popover; that is not a dismissal.
+                if (toast._restackDepth > 0) {
+                    toast._restackDepth -= 1;
+                    return;
+                }
                 toast.removeEventListener('toggle', toggleHandler);
                 toast._popoverToggleHandler = null;
                 dismissToast(toast);
@@ -5417,6 +5428,9 @@ return response;
             if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
                 try {
                     panel.showPopover();
+                    // The top layer stacks by show-order: a toast shown before the
+                    // panel would now sit UNDER it for the rest of its life.
+                    _getToastSystem()?.raiseActiveToasts?.();
                     _settingsPanelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
                 } catch (_) {
                     // reason: a browser can expose Popover but reject this show call.
