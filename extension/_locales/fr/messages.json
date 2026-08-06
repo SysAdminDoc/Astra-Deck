@@ -149,6 +149,14 @@
   "brandName": {
     "message": "Astra Deck"
   },
+  "bufferTargetMinutesTpl": {
+    "message": "{count} min",
+    "description": "Buffer target slider value rendered in minutes"
+  },
+  "bufferTargetSecondsTpl": {
+    "message": "{count} s",
+    "description": "Buffer target slider value rendered in seconds"
+  },
   "bulkActionsAria": {
     "message": "Bulk card actions"
   },
@@ -1278,8 +1286,14 @@
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
   },
+  "feature_bufferPreloadSeconds_desc": {
+    "message": "Combien de secondes d’une vidéo à la demande garder en mémoire tampon en avance. Des valeurs élevées absorbent des coupures plus longues ; le lecteur peut tout de même plafonner les objectifs très élevés sur les vidéos longues."
+  },
+  "feature_bufferPreloadSeconds_name": {
+    "message": "Objectif de mise en mémoire tampon"
+  },
   "feature_bufferPreload_desc": {
-    "message": "Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed."
+    "message": "Demande au lecteur YouTube de conserver une mémoire tampon plus grande pour les vidéos à la demande, afin qu’une brève coupure n’interrompe pas la lecture. Désactivé par défaut ; les directs ne sont jamais modifiés."
   },
   "feature_bufferPreload_name": {
     "message": "Buffer / Preload"

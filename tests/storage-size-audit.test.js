@@ -28,10 +28,10 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // extension-only toggle and allowlist entry for another 54 bytes.
     // Removing "captions" and "fullscreen" from the hiddenPlayerControls
     // default (closed captions never rendered on a fresh install) trims 24 bytes.
-    assert.equal(assessment.totalBytes, 5898);
+    assert.equal(assessment.totalBytes, 5970);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 5898);
+    assert.equal(assessment.largestItem.bytes, 5970);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -98,7 +98,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // layout adds one boolean preference for 40 bytes. Buffer / preload adds
     // one extension-only boolean preference for another 38 bytes.
     // Same default trim as above, less the extension-only keys: -23 bytes.
-    assert.equal(assessment.totalBytes, 184725);
+    assert.equal(assessment.totalBytes, 184774);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

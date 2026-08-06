@@ -3509,6 +3509,7 @@ return response;
             scrollWheelSpeed: false,
             speedStep: 0.25,
             bufferPreload: false,
+            bufferPreloadSeconds: 20,       // 5-600; how much VOD to keep buffered
             preloadComments: false,
             // autoExpandComments already defined above
             playbackSpeedOSD: false,
@@ -3582,7 +3583,7 @@ return response;
                 'watchPageRestyle', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
                 'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
                 'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
-                'videosPerRow', 'listFeedLayout', 'bufferPreload', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+                'videosPerRow', 'listFeedLayout', 'bufferPreload', 'bufferPreloadSeconds', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
                 'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
                 'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
                 'hideVideosRemoveHiddenCards', 'hideVideosShowQuickHideButton',
@@ -32605,7 +32606,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'bufferPreload',
             name: t('feature_bufferPreload_name', 'Buffer / Preload'),
-            description: t('feature_bufferPreload_desc', 'Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed.'),
+            description: t('feature_bufferPreload_desc', 'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.'),
             group: 'Video Player',
             icon: 'download',
             pages: [PageTypes.WATCH],
@@ -32648,8 +32649,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
             _apply() {
+                document.documentElement.setAttribute('data-ytkit-buffer-seconds', String(this._targetSeconds()));
                 document.documentElement.setAttribute('data-ytkit-buffer-preload', 'on');
                 this._syncStatus();
+            },
+
+            _targetSeconds() {
+                const raw = Number(appState.settings.bufferPreloadSeconds);
+                if (!Number.isFinite(raw) || raw <= 0) return 20;
+                return Math.min(600, Math.max(5, Math.round(raw)));
             },
             init() {
                 this._lastStatusKey = '';
@@ -32672,7 +32680,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._statusObserver = null;
                 this._lastStatusKey = '';
                 document.documentElement.removeAttribute('data-ytkit-buffer-preload');
+                document.documentElement.removeAttribute('data-ytkit-buffer-seconds');
             }
+        },
+        {
+            id: 'bufferPreloadSeconds',
+            name: t('feature_bufferPreloadSeconds_name', 'Buffer Target'),
+            description: t('feature_bufferPreloadSeconds_desc', 'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.'),
+            group: 'Video Player',
+            icon: 'download',
+            type: 'range',
+            min: 5,
+            max: 600,
+            step: 5,
+            formatValue: value => (value >= 60
+                ? t('bufferTargetMinutesTpl', '{count} min').replace('{count}', String(Math.round(value / 60)))
+                : t('bufferTargetSecondsTpl', '{count}s').replace('{count}', String(value))),
+            isSubFeature: true,
+            parentId: 'bufferPreload',
+            pages: [PageTypes.WATCH],
+            // Re-publishing the attribute is the whole job: the MAIN-world
+            // bridge observes it and releases its per-video short-circuit, so
+            // a new value applies to the video already playing.
+            _republish() {
+                const parent = getFeatureById('bufferPreload');
+                if (parent?._initialized) parent._apply();
+            },
+            init() { this._republish(); },
+            destroy() { this._republish(); }
         },
 
         // ── Frame-by-Frame Buttons ──
