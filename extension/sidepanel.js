@@ -260,7 +260,12 @@ async function getActiveYouTubeTab() {
 }
 
 function sendToTab(tabId, message) {
-    return globalThis.YTKitBrowser.sendTabMessage(tabId, message, { timeoutMs: 2000 });
+    // The wrapper may be absent — sidepanel.js deliberately falls back to bare
+    // `chrome` at the top of this file for static previews. Calling through it
+    // unconditionally threw there and broke the per-section empty states.
+    const send = globalThis.YTKitBrowser?.sendTabMessage;
+    if (typeof send !== 'function') return Promise.resolve(null);
+    return send(tabId, message, { timeoutMs: 2000 });
 }
 
 function formatBytes(bytes) {

@@ -1689,10 +1689,14 @@ function render(settings, filter) {
     // The Astra Downloader companion is a github-full-only feature. Hide the
     // "Update Companion" / "Update yt-dlp" actions for store-safe users instead
     // of surfacing buttons that only error ("open a YouTube tab first") against
-    // a companion they never installed. Mirrors the reenable-mediadl gating.
-    const githubFull = !!(settings && settings.githubFullProfile);
-    if (updateCompanionButton) updateCompanionButton.hidden = !githubFull;
-    if (updateYtdlpButton) updateYtdlpButton.hidden = !githubFull;
+    // a companion they never installed.
+    //
+    // ONE predicate: this used to read the raw githubFullProfile flag while
+    // refreshCompanionUpdateVisibility() resolved the effective policy profile,
+    // and render() runs last in refreshOptionalHostGrantState, so the raw flag
+    // could overwrite the policy result. Two copies of the same decision is the
+    // exact drift trap this repo keeps paying for.
+    refreshCompanionUpdateVisibility();
 
     const rawTerm = (filter || '').toLowerCase().trim();
     const parsed = parseSearchQuery(rawTerm);
