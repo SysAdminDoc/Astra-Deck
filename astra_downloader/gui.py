@@ -285,6 +285,25 @@ def download_status_tone(status):
     return "neutral"
 
 
+def describe_rejected_links(failures):
+    """Describe rejected links without inventing a single shared cause.
+
+    Reporting only the first reason made two different failures read as one,
+    so distinct reasons are counted and the leading one is named.
+    """
+    reasons = []
+    for _url, reason in failures:
+        if reason not in reasons:
+            reasons.append(reason)
+    noun = "link" if len(failures) == 1 else "links"
+    if len(reasons) == 1:
+        return f"{len(failures)} {noun} rejected: {reasons[0]}"
+    return (
+        f"{len(failures)} {noun} rejected for {len(reasons)} different "
+        f"reasons. First: {reasons[0]}"
+    )
+
+
 def human_status(status):
     return {
         "queued": "Queued",
@@ -1513,7 +1532,7 @@ class MainWindowCore(QMainWindow):
             else:
                 message = f"Queued {len(queued)} downloads."
             if failures:
-                message += f" {len(failures)} link(s) rejected: {failures[0][1]}"
+                message += " " + describe_rejected_links(failures)
             self._set_quick_download_status(
                 message, "warning" if failures else "success"
             )
@@ -1522,11 +1541,16 @@ class MainWindowCore(QMainWindow):
             self.quick_download_start.clear()
             self.quick_download_end.clear()
             self._append_log(
-                f"Queued {len(queued)} download(s) from the quick download box."
+                f"Queued {len(queued)} download"
+                f"{'' if len(queued) == 1 else 's'} from the quick download box."
             )
             self._update_ui()
         else:
-            self._set_quick_download_status(failures[0][1], "error")
+            self._set_quick_download_status(
+                describe_rejected_links(failures)
+                if len(failures) > 1 else failures[0][1],
+                "error",
+            )
 
     def _set_quick_download_status(self, message, state):
         self.quick_download_status.setText(message)

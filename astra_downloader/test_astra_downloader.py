@@ -8472,10 +8472,41 @@ class QuickDownloadBatchTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         text = window.quick_download_status.text()
         self.assertIn("Queued dl_1", text)
-        self.assertIn("1 link(s) rejected", text)
+        self.assertIn("1 link rejected", text)
+        self.assertNotIn("link(s)", text, "placeholder plurals are not shipped copy")
         self.assertEqual(
             window.quick_download_status.properties["state"], "warning"
         )
+
+    def test_batch_pluralises_and_does_not_merge_distinct_reasons(self):
+        window, calls = self._window(
+            "https://vimeo.com/1 http://127.0.0.1/x http://nas/y",
+            [
+                ("dl_1", None),
+                (None, "That address is on a private network."),
+                (None, "That address is on a private network."),
+            ],
+        )
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        text = window.quick_download_status.text()
+        self.assertIn("2 links rejected", text)
+        self.assertNotIn("different reasons", text,
+                         "one shared cause should be stated once")
+
+        window, _calls = self._window(
+            "https://vimeo.com/1 http://127.0.0.1/x not-a-url",
+            [
+                ("dl_1", None),
+                (None, "That address is on a private network."),
+                (None, "Enter a valid http or https URL."),
+            ],
+        )
+        with mock.patch.object(gui_module_for_tests(), "repolish"):
+            ad.MainWindow._start_quick_download(window)
+        text = window.quick_download_status.text()
+        self.assertIn("2 links rejected for 2 different reasons", text,
+                      "two causes must not be reported as one")
 
     def test_clip_range_requires_a_single_link(self):
         window, calls = self._window(
