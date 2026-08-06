@@ -429,10 +429,10 @@
     "message": "Кратковременный сбой Astra Downloader — повторная попытка автоматически."
   },
   "dlProgressSkippedDefault": {
-    "message": "Уже загружено — пропущено."
+    "message": "Ничего не было загружено."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "Уже загружено"
+  "dlProgressStateNothingDownloaded": {
+    "message": "Ничего не загружено"
   },
   "dlProgressStateComplete": {
     "message": "Завершено"

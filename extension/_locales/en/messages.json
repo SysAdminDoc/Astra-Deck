@@ -429,10 +429,10 @@
     "message": "Momentary hiccup with Astra Downloader — retrying automatically."
   },
   "dlProgressSkippedDefault": {
-    "message": "Already downloaded — skipped."
+    "message": "Nothing was downloaded."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "Already Downloaded"
+  "dlProgressStateNothingDownloaded": {
+    "message": "Nothing Downloaded"
   },
   "dlProgressStateComplete": {
     "message": "Complete"

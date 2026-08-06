@@ -429,10 +429,10 @@
     "message": "Astra Downloader で一時的な接続障害が発生しました。自動的に再試行中です。"
   },
   "dlProgressSkippedDefault": {
-    "message": "すでにダウンロード済み — スキップしました。"
+    "message": "何もダウンロードされませんでした。"
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "すでにダウンロード済み"
+  "dlProgressStateNothingDownloaded": {
+    "message": "ダウンロードなし"
   },
   "dlProgressStateComplete": {
     "message": "完了"

@@ -1779,3 +1779,75 @@ test('info-panel cleanup hides age-warning endpoints without hiding generic watc
         'the generic endpoint selector must stay context-scoped so channel and product links remain visible'
     );
 });
+
+// ── `skipped` outcome copy: companion v1.8.0 gave the status the opposite
+// meaning of the retired download-archive feature it was invented for ──
+
+test('the skipped download branch describes a non-download, never "Already Downloaded"', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
+
+    const start = source.indexOf("if (data.status === 'skipped') {");
+    assert.ok(start > -1, 'the skipped status branch should exist');
+    const end = source.indexOf("if (data.status === 'error'", start);
+    assert.ok(end > start, 'the skipped branch should be followed by the failure branch');
+    const block = source.slice(start, end);
+
+    assert.ok(block.includes('dlProgressStateNothingDownloaded'),
+        'the skipped state pill should use the nothing-downloaded key');
+    // Strip comments: the claim is about rendered copy, and the block
+    // deliberately explains the retired archive semantics in prose.
+    const rendered = block.replace(/\/\/[^\n]*/g, '');
+    assert.ok(!/Already/i.test(rendered),
+        'skipped now means nothing was written — the copy must not claim the file was already downloaded');
+    assert.ok(block.includes("fill.style.width = '0%'"),
+        'a run that wrote no file must not render a full progress bar');
+    assert.ok(block.includes('data.error ||'),
+        'the server-supplied reason should win over the generic fallback');
+});
+
+test('every locale defines the nothing-downloaded state and drops the retired key', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const localesDir = path.join(__dirname, '..', 'extension', '_locales');
+    const locales = fs.readdirSync(localesDir);
+    assert.ok(locales.length >= 11, 'the locale set should be intact');
+
+    for (const locale of locales) {
+        const messages = JSON.parse(
+            fs.readFileSync(path.join(localesDir, locale, 'messages.json'), 'utf8')
+        );
+        assert.ok(messages.dlProgressStateNothingDownloaded?.message,
+            `${locale} should define dlProgressStateNothingDownloaded`);
+        assert.equal(messages.dlProgressStateAlreadyDownloaded, undefined,
+            `${locale} should not keep the retired dlProgressStateAlreadyDownloaded key`);
+        assert.doesNotMatch(messages.dlProgressSkippedDefault?.message ?? '', /Already/i,
+            `${locale} skip fallback should not claim the file was already downloaded`);
+    }
+});
+
+test('the userscript download poller terminates on a skipped result', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+
+    const start = source.indexOf('function showDownloadProgress(');
+    assert.ok(start > -1, 'the userscript progress poller should exist');
+    const end = source.indexOf('pollInterval = setInterval(poll', start);
+    assert.ok(end > start, 'the poller body should be locatable');
+    const block = source.slice(start, end);
+
+    const skippedAt = block.indexOf("data.status === 'skipped'");
+    assert.ok(skippedAt > -1,
+        'the poller must handle the skipped status or it polls forever');
+    const afterSkipped = block.slice(skippedAt, skippedAt + 400);
+    assert.ok(afterSkipped.includes('clearInterval(pollInterval)'),
+        'the skipped branch must stop the poll interval');
+
+    assert.ok(!source.includes("resp.message === 'Already downloaded'"),
+        'the retired download-archive response check should be gone');
+});

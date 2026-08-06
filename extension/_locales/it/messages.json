@@ -429,10 +429,10 @@
     "message": "Breve interruzione con Astra Downloader -- nuovo tentativo automatico."
   },
   "dlProgressSkippedDefault": {
-    "message": "Già scaricato — saltato."
+    "message": "Non è stato scaricato nulla."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "Già scaricato"
+  "dlProgressStateNothingDownloaded": {
+    "message": "Nessun download"
   },
   "dlProgressStateComplete": {
     "message": "Completato"

@@ -429,10 +429,10 @@
     "message": "Kurze Unterbrechung bei Astra Downloader — automatischer Wiederverbindungsversuch."
   },
   "dlProgressSkippedDefault": {
-    "message": "Bereits heruntergeladen — übersprungen."
+    "message": "Es wurde nichts heruntergeladen."
   },
-  "dlProgressStateAlreadyDownloaded": {
-    "message": "Bereits heruntergeladen"
+  "dlProgressStateNothingDownloaded": {
+    "message": "Nichts heruntergeladen"
   },
   "dlProgressStateComplete": {
     "message": "Abgeschlossen"

@@ -946,15 +946,22 @@
                     }
                     if (data.status === 'skipped') {
                         stopPolling();
-                        const skipReason = data.error || t('dlProgressSkippedDefault', 'Already downloaded — skipped.');
+                        // `skipped` used to mean "this URL is already in
+                        // archive.txt"; that feature was removed in companion
+                        // v1.3.0 and v1.8.0 gave the status the opposite
+                        // meaning — nothing was written, because every format
+                        // exceeded the size limit or the page held no media.
+                        // The copy has to say that, and the bar must not read
+                        // as a finished download.
+                        const skipReason = data.error || t('dlProgressSkippedDefault', 'Nothing was downloaded.');
                         DiagnosticLog?.record?.('download-outcome', `skipped: ${skipReason.slice(0, 200)}`);
-                        fill.style.width = '100%';
+                        fill.style.width = '0%';
                         fill.classList.remove('is-error');
                         title.textContent = skipReason;
                         pct.textContent = t('dlProgressStateSkipped', 'Skipped');
                         spd.textContent = '';
                         eta.textContent = '';
-                        setProgressState('warning', t('dlProgressStateAlreadyDownloaded', 'Already Downloaded'), skipReason);
+                        setProgressState('warning', t('dlProgressStateNothingDownloaded', 'Nothing Downloaded'), skipReason);
                         showToast(skipReason, '#f59e0b', { duration: 8 });
                         setTimeout(() => panel.remove(), 8000);
                         return;
