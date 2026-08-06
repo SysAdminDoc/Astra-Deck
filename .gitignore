@@ -6,7 +6,7 @@ build/
 *.mhtml
 *.bak
 comments.png
-YTKit-v1.2.0.user.js
+/YTKit-v1.2.0.user.js
 
 # Authenticated selector-capture state is local, sensitive, and must never be
 # staged. Use an external Chrome profile for account-gated MHTML captures.
@@ -15,9 +15,10 @@ playwright/.auth/
 capture-profiles/
 *.storageState.json
 
-# v3.23.0 NX15: AstraDownloader.exe is a release artifact built by
-# astra_downloader/build.py — it does not belong in the source tree.
-# Build locally then attach it to the GitHub Release.
+# AstraDownloader.exe belongs to SysAdminDoc/AstraDownloader, which builds and
+# releases it (the companion left this repo in a6bb685f). Astra Deck releases
+# must never carry it — `npm run release:readiness` fails on a staged copy.
+# Ignored so a stray local build cannot be committed here.
 AstraDownloader.exe
 CLAUDE.md
 CODEX-CHANGELOG.md
@@ -41,17 +42,13 @@ docs/research-feature-plan-*.md
 docs/archive/research/
 docs/archive/roadmap-dossier-*.md
 
-# Python build artifacts
-astra_downloader/build/
-astra_downloader/dist/
-astra_downloader/*.spec
-astra_downloader/__pycache__/
+# Python build artifacts (the companion's own tree lives in another repo now;
+# *.pyc still applies to any local tooling run from scripts/)
 *.pyc
 
 # Local-only working notes (never track). Public product docs — README,
 # CHANGELOG, INSTALL, SECURITY, ROADMAP, docs/ — stay tracked: CI tests pin
 # them and the store listings require a reachable privacy policy.
-RESEARCH.md
 TODO.md
 NOTES.md
 AUDIT*.md

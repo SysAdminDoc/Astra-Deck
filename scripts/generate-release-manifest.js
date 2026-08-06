@@ -148,7 +148,20 @@ function assertExpectedAssets(assetNames, version, options = {}) {
     }
 }
 
+function assertKnownArgs(argv) {
+    // Every sibling gate rejects unknown flags. This one accepted anything,
+    // which is how a documented-but-nonexistent `--require-companion` in the
+    // release checklist read as a gate while doing nothing.
+    const known = new Set(['--validation-build']);
+    const unknown = argv.filter((arg) => arg.startsWith('--') && !known.has(arg));
+    if (unknown.length) {
+        console.error(`[release-manifest] unknown argument(s): ${unknown.join(', ')}`);
+        process.exit(2);
+    }
+}
+
 function main() {
+    assertKnownArgs(process.argv.slice(2));
     const version = readProductVersion();
     if (!version) throw new Error('package.json version is empty');
 

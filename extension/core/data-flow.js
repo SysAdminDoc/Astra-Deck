@@ -214,6 +214,18 @@
 
     function originMatchesManifest(origin, hostPermissions) {
         if (!Array.isArray(hostPermissions)) return null;
+        // The companion origin is a port-RANGE pseudo-origin
+        // (http://127.0.0.1:9751-9851), which `new URL()` rejects. Matching it
+        // used to fall through to the catch below and succeed only because the
+        // range string happens to start with the primary port — a check that
+        // worked by coincidence and would silently stop matching if the
+        // catalogue's primary port or formatting ever changed. Resolve it
+        // through the alias map that already enumerates its real permissions.
+        const aliased = ORIGIN_HOST_PERMISSION_ALIASES[origin];
+        if (Array.isArray(aliased)) {
+            const matched = aliased.find((perm) => hostPermissions.includes(perm));
+            if (matched) return matched;
+        }
         for (const perm of hostPermissions) {
             const trimmed = perm.replace(/\/\*$/, '');
             try {

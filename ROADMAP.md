@@ -157,17 +157,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Confidence: Verified
   Effort: S-M
 
-- [ ] P3 — Post-split root/hygiene residue batch
-  Category: maintainability
-  Where / Problems:
-  1. AstraDownloader.exe.sha256 (tracked) — pins a hash of a companion build that no longer ships from this repo; nothing in scripts/tests reads the root sidecar. AstraDownloader.ico (tracked) — no remaining source references. AstraDownloader.exe (untracked, 40.4MB, stale v1.9.x) — dead weight. Fix: git rm the sidecar + ico, delete the local exe.
-  2. .gitignore:18-20 — comment still says the exe "is a release artifact built by astra_downloader/build.py … attach it to the GitHub Release" (deleted path; now forbidden by the release gates); RESEARCH.md listed under "never track" yet tracked and published (inert line, false comment); bare `YTKit-v1.2.0.user.js` pattern also matches the tracked archive/ copy (unanchored); astra_downloader/ build-artifact block ignores a directory that no longer exists. Fix: correct the comment, drop stale lines, anchor with leading /.
-  3. scripts/__pycache__/ — orphaned bytecode of scripts deleted by the split (render-companion-gui, yt-dlp-smoke). Fix: delete the directory.
-  4. outputs/astra-downloader-{dashboard,downloads,history,settings}-premium-mockup.png (tracked) — companion GUI design targets; the GUI lives in SysAdminDoc/AstraDownloader now. Fix: move to that repo or delete.
-  Acceptance: `git ls-files | grep -i astradownloader` returns nothing; .gitignore comments truthful; no __pycache__ under scripts/.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Gate/tooling robustness batch
   Category: maintainability
   Where / Problems:

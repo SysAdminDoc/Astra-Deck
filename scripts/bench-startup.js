@@ -423,7 +423,15 @@ async function main(argv = process.argv.slice(2)) {
     const baseline = readBaseline();
     const failures = checkAgainstBaseline(result.metrics, baseline);
     if (failures.length) {
-        throw new Error(`startup budget regression:\n${failures.map((failure) => `  - ${failure}`).join('\n')}`);
+        // `--check` gates (that is `npm run check:startup`); a bare bench run
+        // REPORTS. The flag was parsed but never read, so both modes were
+        // identical and measuring on a busy machine failed the run instead of
+        // printing the numbers you asked for.
+        const summary = `startup budget regression:\n${failures.map((failure) => `  - ${failure}`).join('\n')}`;
+        if (options.check) throw new Error(summary);
+        console.warn(`[bench-startup] ${summary}`);
+        console.warn('[bench-startup] reporting only — run `npm run check:startup` to gate on this.');
+        return { result, baseline, failures };
     }
     console.log('[bench-startup] PASS — startup metrics are within the tracked budget');
     return { result, baseline, failures };
