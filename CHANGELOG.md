@@ -6,16 +6,48 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
-### Astra Downloader v1.10.0 — Start Menu entry
+## [4.51.4] - 2026-08-06
 
-#### Added
-- **Start Menu entry.** The companion now publishes "Astra Downloader" to the
-  per-user Start Menu on the same version-stamped integration pass that already
-  maintains the desktop shortcut, protocol handlers, logon task, and uninstall
-  entry — so an upgrade refreshes the target automatically and a user who
-  closes the app can find it by typing its name. Previously the only ways back
-  in were the tray icon, a desktop shortcut, or waiting for the logon task.
-  `--uninstall` removes it alongside the desktop shortcut.
+### Changed
+
+- **Astra Downloader moved to its own repository**
+  ([SysAdminDoc/AstraDownloader](https://github.com/SysAdminDoc/AstraDownloader)).
+  It was a Python desktop program living inside a browser-extension
+  repository; it is now a product with its own releases, tests, and
+  documentation. Its 204 commits of history moved with it. This repository
+  keeps only the extension side of the contract.
+- **The in-page install prompt no longer points at a pinned release tag.**
+  It pointed at `Astra-Deck/releases/download/v4.50.7/AstraDownloader.exe`,
+  because newer extension-only releases stopped carrying the executable and
+  `releases/latest/download` could not resolve it. It now resolves through
+  `AstraDownloader/releases/latest/download`, which cannot go stale. The
+  userscript carried the same hardcoded URL and was fixed with it.
+- The Astra Downloader companion setup section in the README is now a pointer
+  to that repository rather than a second copy of its documentation.
+
+### Added
+
+- **Release gates that refuse to republish the companion.** Publishing a
+  second, independently versioned `AstraDownloader.exe` behind one update
+  check is how installs previously ended up four versions stale. The
+  executable is no longer an expected release asset, so a staged copy is
+  reported as unexpected, and `npm run release:readiness` fails if it appears
+  in `build/` (`companion-not-republished`) or in the release manifest
+  (`companion-not-manifested`).
+- The port catalogue's shape — the ordered port list and the loopback host —
+  is pinned here as well as in the companion repository. The two copies of
+  `scripts/companion-port-catalogue.json` are the contract; a reordered list
+  would otherwise satisfy every consumer assertion while breaking probe order.
+
+### Removed
+
+- `astra_downloader/`, `pytest.ini`, the Python dependency audit and
+  catch-reason gates, the companion licence inventory and release staging
+  scripts, the companion GUI and yt-dlp smoke scripts, the translation
+  builder, and `docs/yt-dlp-cookie-threat-model.md`. Their tests moved to the
+  companion repository rather than being deleted.
+- Companion components from the release SBOM, which now describes the npm
+  dependency graph only. The companion carries its own inventory.
 
 ## [4.51.3] - 2026-08-05 (Astra Downloader v1.9.1)
 
