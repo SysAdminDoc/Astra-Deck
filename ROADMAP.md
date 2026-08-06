@@ -117,15 +117,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Theming / a11y / polish residue
 
-- [ ] P3 — Remaining light-theme gaps on lesser surfaces
-  Category: visual
-  Where: extension/ytkit.js:37711-37715 (.ytkit-da-channel-chip — #e9d5ff on 12-14% tint, no light lane), :40407 (.ytkit-local-ai-btn — also reused by the Study/Work export buttons at :41348), :40535 (.ytkit-ai-qa-btn), :22257-22262 (videoNotes container — rgba(255,255,255,0.04) bg, #e5e7eb/#fff text); extension/early.css:28-31 (keyMoments border-left rgba(255,255,255,0.12) — invisible on light) and :23-31 (creatorCommentHighlight/keyMoments use PHYSICAL border-left/padding-left — wrong side in RTL, the settings layer already converted to logical props)
-  Problem: Same class as the P1 theming item but opt-in/lesser surfaces; sibling controls in the same feature families already carry html:not([dark]) overrides (.ytkit-da-vote-btn :37839, .ytkit-transcript-search-btn :41710).
-  Fix: Add html:not([dark]) lanes matching the sibling patterns; convert the two early.css blocks to border-inline-start/padding-inline-start.
-  Acceptance: Light-theme fixture legibility for each control; RTL fixture shows accents on the correct side.
-  Confidence: Verified (CSS)
-  Effort: S
-
 - [ ] P3 — Settings overlay search placeholder renders clipped mid-word despite a wide input
   Category: visual
   Where: Placeholder string 'Search settings, pages, controls…' set at extension/ytkit.js:43735 and extension/features/settings-panel/index.js:405; observed in build/settings-overlay-smoke/*.png (all six states)
@@ -135,16 +126,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Acceptance: Smoke screenshots show the full placeholder (or a right-edge ellipsis); no layout regression in the six states.
   Confidence: Needs-repro (observed in offscreen render; not yet root-caused)
   Effort: S
-
-- [ ] P3 — EN catalog mixes straight and curly apostrophes
-  Category: ux
-  Where: extension/_locales/en/messages.json — 17 messages use ', 11 use ’ (e.g. "Couldn't" vs curly elsewhere)
-  Fix: Normalize to one form (curly, matching the majority of recent strings); regenerate locales; update copy-gate baseline.
-  Acceptance: One apostrophe form across the EN catalog; i18n gates green.
-  Confidence: Verified
-  Effort: S
-
-### P3 — Maintainability / testing / hygiene
 
 - [ ] P3 — Test-suite hardening batch (latent vacuous-pass hazards + coverage gaps)
   Category: testing

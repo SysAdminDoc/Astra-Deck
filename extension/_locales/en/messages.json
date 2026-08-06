@@ -1069,7 +1069,7 @@
     "message": "Adaptive Live Layout"
   },
   "feature_ageRestrictionBypass_desc": {
-    "message": "Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required."
+    "message": "Bypass age verification by fetching video data from YouTube’s embed endpoint. No sign-in required."
   },
   "feature_ageRestrictionBypass_name": {
     "message": "Age Restriction Bypass"
@@ -1213,7 +1213,7 @@
     "message": "Auto-Expand Description"
   },
   "feature_autoLikeSubscribed_desc": {
-    "message": "Automatically like videos from channels you're subscribed to after watching for 30 seconds"
+    "message": "Automatically like videos from channels you’re subscribed to after watching for 30 seconds"
   },
   "feature_autoLikeSubscribed_name": {
     "message": "Auto-Like Subscribed Channels"
@@ -1291,7 +1291,7 @@
     "message": "Bulk Card Actions"
   },
   "feature_bypassPlaylistMode_desc": {
-    "message": "Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist"
+    "message": "Strip the &list= parameter from clicked thumbnails so you don’t get stuck inside someone’s playlist"
   },
   "feature_bypassPlaylistMode_name": {
     "message": "Bypass Playlist Mode on Clicks"
@@ -1435,7 +1435,7 @@
     "message": "Cinema Ambient Glow"
   },
   "feature_classicLayoutProfile_desc": {
-    "message": "Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
+    "message": "Pick a layout profile. Modern keeps YouTube’s 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
   },
   "feature_classicLayoutProfile_name": {
     "message": "Layout Profile"
@@ -1645,7 +1645,7 @@
     "message": "Debug Mode"
   },
   "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars."
+    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube’s native layout — only our own panels, chips, pills, and toolbars."
   },
   "feature_denseMode_name": {
     "message": "Dense Mode"
@@ -1693,7 +1693,7 @@
     "message": "Disable Hover Preview"
   },
   "feature_disableSpaNavigation_desc": {
-    "message": "Force full page loads instead of YouTube's smooth transitions (fixes player sizing issues)"
+    "message": "Force full page loads instead of YouTube’s smooth transitions (fixes player sizing issues)"
   },
   "feature_disableSpaNavigation_name": {
     "message": "Disable SPA Navigation"
@@ -2077,7 +2077,7 @@
     "message": "Hide Channel Join Button"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you're not subscribed to in your subscriptions feed"
+    "message": "Hide videos from channels you’re not subscribed to in your subscriptions feed"
   },
   "feature_hideCollaborations_name": {
     "message": "Hide Collaborations"
@@ -2395,13 +2395,13 @@
     "message": "Mono to Stereo"
   },
   "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up"
+    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren’t sped up"
   },
   "feature_musicVideoSpeedLock_name": {
     "message": "Lock 1× Speed on Music Videos"
   },
   "feature_newPlayerUiRestore_desc": {
-    "message": "Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
+    "message": "Hides YouTube’s new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
   },
   "feature_newPlayerUiRestore_name": {
     "message": "Restore Classic Player Chrome"
@@ -2419,7 +2419,7 @@
     "message": "Disable Frosted Glass"
   },
   "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
+    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube’s feedback API"
   },
   "feature_notInterestedButton_name": {
     "message": "\"Not Interested\" on Thumbnails"
@@ -2449,7 +2449,7 @@
     "message": "Nyan Cat Progress Bar"
   },
   "feature_oledTheme_desc": {
-    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes."
+    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube’s native theme switches because we hook the tokens themselves, not the surface classes."
   },
   "feature_oledTheme_name": {
     "message": "OLED Theme"
@@ -2695,7 +2695,7 @@
     "message": "Reaction Spammer"
   },
   "feature_rectangularizeYouTube_desc": {
-    "message": "Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
+    "message": "Strips YouTube’s pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
   },
   "feature_rectangularizeYouTube_name": {
     "message": "Rectangularize UI"
@@ -2773,7 +2773,7 @@
     "message": "Study / Work Export"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube's transcript panel. Search stays local in IndexedDB; no telemetry."
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "Transcript Search Index"
@@ -3145,7 +3145,7 @@
     "message": "Timestamp Bookmarks"
   },
   "feature_titleCaseTransform_desc": {
-    "message": "Override YouTube's clickbait UPPERCASE titles with a casing style of your choice"
+    "message": "Override YouTube’s clickbait UPPERCASE titles with a casing style of your choice"
   },
   "feature_titleCaseTransform_name": {
     "message": "Transform Video Title Case"
@@ -3157,7 +3157,7 @@
     "message": "Normalize Clickbait Titles"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
+    "message": "Pipes the user’s themeAccentColor into YouTube’s native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
   },
   "feature_tokenThemeBridge_name": {
     "message": "Native Token Theme Bridge"
@@ -5323,7 +5323,7 @@
     "message": "enabled"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update {name}. Try again."
+    "message": "Couldn’t update {name}. Try again."
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -5686,7 +5686,7 @@
     "message": "Nothing to remove"
   },
   "watchLaterRemoveFailed": {
-    "message": "Couldn't remove {count} video(s) — YouTube's menu item wasn't found."
+    "message": "Couldn’t remove {count} video(s) — YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "Remove Watched"
