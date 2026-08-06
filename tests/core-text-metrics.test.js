@@ -59,8 +59,13 @@ test('parseCompactCount returns the caller-chosen missingValue when there is no 
     const { parseCompactCount } = loadCore();
     assert.equal(parseCompactCount('Streamed 3 years ago', null), null);
     assert.equal(parseCompactCount('Streamed 3 years ago', 0), 0);
-    assert.equal(parseCompactCount('', null), 0); // empty text is treated as zero views
-    assert.equal(parseCompactCount(null, null), 0);
+    // Empty text carries no count, so it takes missingValue like any other
+    // unparseable input. "No views" is the only thing that means zero.
+    assert.equal(parseCompactCount('', null), null);
+    assert.equal(parseCompactCount(null, null), null);
+    assert.equal(parseCompactCount('   ', null), null);
+    assert.equal(parseCompactCount('', 0), 0);
+    assert.equal(parseCompactCount('No views', null), 0);
 });
 
 test('text-metrics loads before ytkit.js in the manifest content scripts', () => {

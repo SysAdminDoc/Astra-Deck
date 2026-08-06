@@ -534,6 +534,40 @@ test('_parseCompactCount preserves comma-grouped view counts (no decimal corrupt
     // Sentinels.
     assert.equal(feature._parseCompactCount('No views'), 0);
     assert.equal(feature._parseCompactCount('Streamed 3 years ago'), null);
+
+    // Empty text is "no data", not "0 views" — the low-view guard below
+    // depends on the difference.
+    assert.equal(feature._parseCompactCount(''), null);
+});
+
+test('a card with no rendered metadata is not hidden as low-view', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState: {
+            settings: {
+                hideVideosLowViewFilter: true,
+                hideVideosLowViewThreshold: 1000
+            }
+        }
+    });
+
+    // Cards processed before Polymer hydrates carry a title but no metadata
+    // row yet. Reading that as 0 views hid them permanently as "low-view".
+    const unhydrated = fakeVideoCard('Freshly rendered card');
+    assert.equal(feature._extractViewCount(unhydrated), null,
+        'missing metadata must report "no data", not zero views');
+    assert.equal(feature._matchesMetadataFilters(unhydrated).hide, false);
+
+    // A genuinely zero-view card still hides.
+    const zeroViews = fakeVideoCard('Brand new upload', 'No views  2 minutes ago');
+    assert.equal(feature._extractViewCount(zeroViews), 0);
+    assert.deepEqual(feature._matchesMetadataFilters(zeroViews), {
+        hide: true,
+        reason: 'low-view'
+    });
+
+    // Subscriber metadata keeps the same contract for predicate authors.
+    assert.equal(feature._extractSubsCount(''), null);
 });
 
 test('Video Hider parses localized view and subscriber counts structurally', () => {
