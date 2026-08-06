@@ -91,6 +91,39 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: Protocol decision — confirm the native host never sends a pre-token frame. If it can, the client must ignore non-terminal frames until a token/terminal-error arrives or the timeout fires.
 
+- [ ] P3 — SponsorBlock segment submission and voting
+  Why: Astra reads the SponsorBlock commons (`skipSegments` GET only) with no path to contribute, and reviewers of competing tools repeatedly ask for a local correction path when a segment is wrong. DeArrow voting and casual mode are already shipped, so the UI precedent exists.
+  Evidence: `extension/features/sponsorblock/index.js:242-306` (read-only); `extension/ytkit.js` `deArrowVoting` / `casualMode` precedent; https://github.com/ajayyy/SponsorBlock/issues.
+  Touches: `extension/features/sponsorblock/index.js`, `extension/core/credential-vault.js` or a new durable domain for the private user ID, `extension/core/data-flow.js`, settings schema and locales.
+  Acceptance: off by default and GitHub-full only; a locally generated private user ID is stored in a backup-excluded, scrub-covered domain; voting works before submission is enabled; every write is rate-budgeted and surfaces failures through `external-api-health`.
+  Complexity: L
+  Blocker: Requires maintainer product/liability judgment on whether Astra should carry submission at all, versus voting only or neither. The choice changes the identity, durable-storage, and outbound-write design and cannot be inferred from the repository.
+
+- [ ] P2 — DeArrow Voting posts to a nonexistent API route with the wrong payload shape — every vote fails
+  Category: correctness
+  Where: extension/ytkit.js:37861-37877 (deArrowVoting._vote)
+  Problem: Votes go to `POST https://sponsor.ajay.app/api/branding/vote/${type}` with body {UUID, userID}. SponsorBlockServer exposes no /api/branding/vote/<n> route; branding votes are `POST /api/branding` with {videoID, userID, title|thumbnail, downvote}; the {UUID, userID, type} shape belongs to the segment endpoint /api/voteOnSponsorTime. Every vote 404s, so both vote buttons always show "DeArrow vote failed." The v4.51.0 audit fixed the attribute wiring that makes these buttons appear — nothing verifies the vote round-trip.
+  Evidence: The only other DeArrow API use is GET /api/branding?videoID= (features/dearrow/index.js:167, ytkit.js:31172); no test covers the vote endpoint (grep branding/vote tests/ → nothing).
+  Fix: POST /api/branding with videoID + the existing title/thumbnail evidence + `downvote: type === 0` per the DeArrow API docs (or remove the vote buttons if submission is out of scope — align with the Roadmap_Blocked SponsorBlock-submission product decision). Add a fetch-fake test pinning URL + payload shape.
+  Acceptance: Vote requests hit /api/branding with the documented shape (test-pinned); a live vote returns 200 when verified against the real API.
+  Confidence: Likely (endpoint knowledge verified against SponsorBlockServer docs; not network-verified from here)
+  Effort: S
+  Blocker: Fixing this means sending an outbound WRITE to DeArrow's public crowdsourced
+  database (sponsor.ajay.app), and the correct payload cannot be confirmed without
+  actually submitting to that production commons — a wrong shape would publish garbage
+  titles into a community dataset. The repository only ever calls `GET /api/branding`,
+  so there is no in-repo evidence of the write contract. It also needs the same
+  maintainer product/liability judgment as "P3 — SponsorBlock segment submission and
+  voting" above: whether Astra should carry outbound contributions at all.
+  Unblock by: (a) deciding whether voting stays, then (b) confirming the branding-vote
+  contract against DeArrow's API docs and a test submission on a throwaway userID —
+  the expected shape is `POST /api/branding` with
+  `{videoID, userID, service, title: {title, original}, downvote: type === 0}`, NOT the
+  current `/api/branding/vote/<n>` with `{UUID, userID}` (that UUID shape belongs to the
+  segment endpoint `/api/voteOnSponsorTime`). Until then every vote 404s and both
+  buttons always show "DeArrow vote failed", so the feature is inert, not merely
+  degraded — dropping the buttons is an equally acceptable resolution.
+
 ## P1 — Trust / Reliability / Distribution
 
 - [ ] P1 — Chrome Web Store submission (store-safe profile)
