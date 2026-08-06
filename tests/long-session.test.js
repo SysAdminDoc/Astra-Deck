@@ -33,18 +33,27 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
         map.get(type)?.delete(callback);
     }
 
-    function dispatch(map, type) {
+    function dispatch(map, type, detail) {
         const listeners = Array.from(map.get(type) || []);
-        for (const callback of listeners) callback({ type });
+        for (const callback of listeners) callback({ type, ...detail });
     }
 
+    // Shaped like the real API: `navigatesuccess` carries no useful payload,
+    // while `navigate` (which we deliberately do NOT listen to) carries the
+    // hashChange / downloadRequest / canIntercept flags that make it fire for
+    // navigations that never commit.
     const navigation = navigationApi ? {
         addEventListener(type, callback) { addListener(navigationListeners, type, callback); },
         removeEventListener(type, callback) { removeListener(navigationListeners, type, callback); },
         dispatchNavigate() { dispatch(navigationListeners, 'navigatesuccess'); },
-        // The pre-commit event, which must NOT drive route dispatch: it also
-        // fires for downloads, cancelled navigations and replaceState.
-        dispatchPreCommitNavigate() { dispatch(navigationListeners, 'navigate'); }
+        dispatchPreCommitNavigate(detail = {}) {
+            dispatch(navigationListeners, 'navigate', {
+                hashChange: false,
+                downloadRequest: null,
+                canIntercept: true,
+                ...detail
+            });
+        }
     } : undefined;
 
     const body = { nodeType: 1, nodeName: 'BODY' };
@@ -172,7 +181,7 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
         listenerCount,
         navigationListenerCount(type) { return (navigationListeners.get(type) || new Set()).size; },
         dispatchNavigation() { navigation?.dispatchNavigate(); },
-        dispatchPreCommitNavigation() { navigation?.dispatchPreCommitNavigate(); },
+        dispatchPreCommitNavigation(detail) { navigation?.dispatchPreCommitNavigate(detail); },
         location: context.location,
         viewTransitionCount: () => viewTransitions,
         setViewTransitionThrows(value) { viewTransitionThrows = !!value; },
@@ -339,6 +348,43 @@ test('Navigation API is the primary route signal and remains bounded over 1000 c
     assert.equal(harness.navigationListenerCount('navigatesuccess'), 0,
         'Navigation API listener must be removed after the last rule');
     assert.equal(harness.activeObservers().length, 0);
+});
+
+test('pre-commit navigate events never drive route dispatch, whatever they carry', () => {
+    const harness = createLongSessionHarness({ navigationApi: true });
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+
+    let navRuns = 0;
+    core.addNavigateRule('navigate-shapes', () => { navRuns += 1; });
+    assert.equal(navRuns, 1, 'registration runs the rule once');
+
+    // Every shape of the pre-commit event fires for navigations that may never
+    // commit. Listening to it was what made downloads and cancelled clicks look
+    // like route changes.
+    harness.location.href = 'https://www.youtube.com/watch?v=nav-shapes';
+    harness.dispatchPreCommitNavigation({ hashChange: true });
+    harness.dispatchPreCommitNavigation({ downloadRequest: 'clip.mp4' });
+    harness.dispatchPreCommitNavigation({ canIntercept: false });
+    harness.flushTimers();
+    assert.equal(navRuns, 1, 'no pre-commit shape may dispatch a route change');
+
+    // The post-commit signal does.
+    harness.dispatchNavigation();
+    harness.flushTimers();
+    assert.equal(navRuns, 2);
+
+    // A same-document hash change still commits, so it still signals — and it
+    // must not be counted twice or leak an observer.
+    harness.location.href = 'https://www.youtube.com/watch?v=nav-shapes#t=42';
+    harness.dispatchNavigation();
+    harness.flushTimers();
+    assert.equal(navRuns, 3, 'a committed hash change is a real route event');
+    assert.equal(harness.navigationListenerCount('navigatesuccess'), 1,
+        'repeated dispatch must not stack listeners');
+
+    core.removeNavigateRule('navigate-shapes');
+    assert.equal(harness.navigationListenerCount('navigatesuccess'), 0);
 });
 
 test('mutation-rule circuit isolates a self-triggering rule and resets on navigation or retry', () => {

@@ -646,6 +646,13 @@ test('popup.js requests declared optional hosts before enabling optional feature
     const fnBody = popupSource.slice(fnStart, fnStart + 1200);
     assert.match(fnBody, /await requestOptionalHostsForSetting\(key, value\)/,
         'writeSetting must request optional hosts before persisting enabled state');
+    // Both anchors must be PRESENT: a deleted line yields indexOf === -1,
+    // which is less than any positive index, so the ordering pin would pass
+    // exactly when the code it guards had been removed.
+    assert.ok(fnBody.indexOf('requestOptionalHostsForSetting') > -1,
+        'the optional-host request must still be in writeSetting');
+    assert.ok(fnBody.indexOf('.mutate(key, value)') > -1,
+        'the background mutation must still be in writeSetting');
     assert.ok(
         fnBody.indexOf('requestOptionalHostsForSetting') < fnBody.indexOf('.mutate(key, value)'),
         'optional host request must happen before the background mutation persists enabled state'
@@ -5087,6 +5094,10 @@ test('in-page locale override is validated before extension URL construction', (
     const loadBody = ytkitSource.slice(loadStart, loadEnd);
     assert.match(loadBody, /if \(!isValidBundledLocaleOverride\(locale\)\)/,
         'locale must be rejected before chrome.runtime.getURL is called');
+    assert.ok(loadBody.indexOf('isValidBundledLocaleOverride(locale)') > -1,
+        'the allowlist check must still exist');
+    assert.ok(loadBody.indexOf('chrome.runtime.getURL') > -1,
+        'the URL construction must still exist');
     assert.ok(
         loadBody.indexOf('isValidBundledLocaleOverride(locale)') < loadBody.indexOf('chrome.runtime.getURL'),
         'allowlist check must precede extension URL construction'
@@ -9113,6 +9124,10 @@ test('v4.41.0 popup JSON editor skips persistence + shows pill on parse error', 
     const persistBody = popupSource.slice(persistIdx, persistIdx + 1500);
     assert.match(persistBody, /errorPill\.textContent = t\('schemaJsonInvalidTpl', 'Invalid JSON: \{error\}'\)/,
         'parse-error pill must render through the localized schemaJsonInvalidTpl template');
+    assert.ok(persistBody.indexOf('errorPill.hidden = false') > -1,
+        'the parse-error pill must still be revealed');
+    assert.ok(persistBody.indexOf('writeSetting') > -1,
+        'the persist path must still call writeSetting');
     assert.ok(persistBody.indexOf('errorPill.hidden = false') < persistBody.indexOf('writeSetting'),
         'pill must be shown BEFORE writeSetting could otherwise run on bad data');
 });

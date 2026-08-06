@@ -71,17 +71,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Confidence: Needs-repro (observed in offscreen render; not yet root-caused)
   Effort: S
 
-- [ ] P3 — Test-suite hardening batch (latent vacuous-pass hazards + coverage gaps)
-  Category: testing
-  Where / Problems:
-  1. tests/hardening.test.js:9084 and tests/bugfix-validation.test.js:874-883 — five `indexOf(a) < indexOf(b)` ordering pins whose first operand is never asserted present: if A is deleted, indexOf → -1 < anyPositive and the "A before B" pin passes — exactly the regression they exist to catch. (All windows currently contain their targets — latent, not live.) Fix: precede each with `assert.ok(indexOf(a) > -1)` as hardening.test.js:645-648 already does.
-  2. tests/long-session.test.js — the Navigation API fake dispatches no event object and fabricates a `committed` property real browsers never provide (see the P2 Navigation item); nothing tests hashChange/downloadRequest/cancel dispatch behavior.
-  3. tests/features/next-monolith-peel.test.js — shorts daily limit: no test covers the local-midnight rollover (`raw.date !== today → reset`); every scenario seeds today's ledger. Add: seed yesterday's date with seconds>limit and a far-future snoozeUntil, drive a tick, assert no overlay and the ledger re-keys to today with snoozeUntil 0 (a stale snooze must not survive rollover), plus one _flushShortsToday merge assertion.
-  4. tests/comment-intelligence.test.js:129-133 — replace the source-regex pin with a real-dispatcher test (see the P1 comment-filter item).
-  Acceptance: Each listed test added/strengthened; deliberately deleting the anchored line makes the ordering pins fail.
-  Confidence: Verified
-  Effort: S-M
-
 - [ ] P3 — Gate/tooling robustness batch
   Category: maintainability
   Where / Problems:
