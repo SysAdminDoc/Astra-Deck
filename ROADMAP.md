@@ -59,15 +59,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Correctness / reliability edge cases
 
-- [ ] P3 — parseCompactCount('') returns 0, violating its own missingValue contract and video-hider's "no data ≠ 0 views" guards
-  Category: correctness
-  Where: extension/core/text-metrics.js:150 (`if (!raw) return 0;`); consumers features/video-hider/index.js:1124-1133 (_extractViewCount), :1217 (`views !== null && views < threshold` guard), :1604-1609 (_extractSubsCount)
-  Problem: The docstring promises missingValue (default null) for unparseable text so callers can distinguish "no data" from "0 views", but empty/whitespace input short-circuits to 0. A card processed before Polymer hydration yields views=0 → hidden as low-view; subs-count predicates get 0 for missing metadata. Transient (rescans self-heal), but it defeats two downstream null-guards written to depend on the opposite. NOTE: the behavior is deliberately pinned by tests/core-text-metrics.test.js:62 — the pin contradicts the docstring and both consumers; changing it is a decision, not just a fix.
-  Fix: Return missingValue for empty input and update the test pin (or have the two extractors skip empty candidate text). Sweep other parseCompactCount callers for empty-string reliance first.
-  Acceptance: parseCompactCount('', null) === null (pin updated); a pre-hydration empty-metadata card is not hidden by the low-view rule (test).
-  Confidence: Verified (path); transient impact
-  Effort: S
-
 - [ ] P3 — Five features match English UI text only — inert or misbehaving on the 10 non-EN locales
   Category: correctness
   Where: extension/ytkit.js — sortCommentsNewest._sort :23018-23050 (matches 'newest'; on non-EN it opens the sort menu, finds nothing, never closes the dropdown, and the mutation rule re-opens it every ~2s — worst of the group); autoLikeSubscribed._isSubscribed :23545-23552 ('subscribed'/'unsubscribe' text); watchLaterQuickAdd._findWatchLaterMenuItem :25906-25917 ('watch later' → error toast every use); notInterestedButton :21906-21931 ('not interested' text, plus it queries menu items on the NEXT animation frame after menuBtn.click() — usually before the menu renders, so native feedback rarely lands even in English while the card still visually hides, silently diverging from YouTube's recommendation state); preciseViewCounts._process :20507 (text.includes('view') gate — the view-count half inert on non-EN)

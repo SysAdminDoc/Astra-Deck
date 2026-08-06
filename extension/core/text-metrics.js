@@ -147,7 +147,11 @@
             .replace(/\s+/g, ' ')
             .trim()
             .toLowerCase());
-        if (!raw) return 0;
+        // Empty/whitespace input is "no data", not "0 views". A card read
+        // before Polymer hydrates renders no metadata text at all, and the
+        // consumers guard on `!== null` precisely so a pre-hydration card is
+        // not mistaken for a zero-view one.
+        if (!raw) return missingValue;
 
         const labels = options.labels || VIEW_COUNT_LABELS;
         const zeroPattern = options.zeroPattern === undefined ? DEFAULT_NO_COUNT : options.zeroPattern;
