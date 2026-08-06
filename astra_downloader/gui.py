@@ -107,6 +107,15 @@ def tr(text):
 
 def make_label(text, class_name=None, word_wrap=False):
     label = QLabel(tr(text))
+    # Plain text, always. Most strings reaching a label are not ours — video
+    # and channel titles come from remote metadata and error text is yt-dlp
+    # output, and `clean_text` deliberately preserves `<` and `>`. Qt's default
+    # AutoText would parse those as HTML: a title like
+    # `Clip <img src="http://host/beacon.png">` renders as rich text and Qt
+    # fetches the image, turning a queue row into an outbound request from a
+    # loopback-only app. Setting the format at the one construction point
+    # covers every current and future caller.
+    label.setTextFormat(Qt.TextFormat.PlainText)
     if class_name:
         label.setProperty("class", class_name)
     label.setWordWrap(word_wrap)
@@ -138,6 +147,7 @@ def make_card(class_name="card"):
 def make_status_badge(text, tone="neutral"):
     translated = tr(text)
     badge = QLabel(translated)
+    badge.setTextFormat(Qt.TextFormat.PlainText)
     badge.setProperty("class", "badge")
     badge.setProperty("tone", tone)
     badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -149,6 +159,7 @@ def make_status_badge(text, tone="neutral"):
 def make_state_label(text, tone="neutral"):
     translated = tr(text)
     label = QLabel(f"\u25cf  {translated}")
+    label.setTextFormat(Qt.TextFormat.PlainText)
     label.setProperty("class", "stateLabel")
     label.setProperty("tone", tone)
     label.setAccessibleName(f"{tr('Status')}: {translated}")
@@ -346,6 +357,7 @@ def make_stat(label_text, value_text="0", hint_text=""):
     layout.setSpacing(4)
     label = make_label(label_text, "metricLabel")
     value = QLabel(value_text)
+    value.setTextFormat(Qt.TextFormat.PlainText)
     value.setAlignment(Qt.AlignmentFlag.AlignLeft)
     value.setProperty("class", "metricValue")
     value.setObjectName(f"stat_{label_text.lower()}")

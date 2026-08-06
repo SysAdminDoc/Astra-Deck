@@ -9204,5 +9204,82 @@ window.close()
         self.assertIn("QCheckBox::indicator:checked:focus", sheet)
 
 
+class LabelPlainTextTests(unittest.TestCase):
+    """Labels render remote-supplied strings literally. Qt's default AutoText
+    parsed video titles and yt-dlp output as HTML, so a crafted title made the
+    companion fetch a remote image."""
+
+    def test_labels_never_interpret_remote_markup(self):
+        script = r'''
+import os
+import sys
+import tempfile
+
+temp_dir = tempfile.mkdtemp(prefix="astra-plaintext-")
+os.environ["LOCALAPPDATA"] = temp_dir
+os.environ["ASTRA_DOWNLOADER_NO_BOOTSTRAP"] = "1"
+
+from astra_downloader import gui
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication
+
+app = QApplication(["plaintext-pin"])
+hostile = 'Clip <img src="http://198.51.100.7/beacon.png" width="40" height="40">'
+
+builders = {
+    "make_label": gui.make_label(hostile, "cardTitle"),
+    "make_status_badge": gui.make_status_badge(hostile),
+    "make_state_label": gui.make_state_label(hostile),
+}
+for name, label in builders.items():
+    assert label.textFormat() == Qt.TextFormat.PlainText, name
+    assert "<img" in label.text(), name + " should keep the markup literal"
+
+benign = gui.make_label("Cat video", "cardTitle")
+benign.adjustSize()
+attack = gui.make_label(hostile, "cardTitle")
+attack.adjustSize()
+assert benign.sizeHint().height() == attack.sizeHint().height(), (
+    "an <img> tag must not reserve an image box, which is Qt resolving a remote URL"
+)
+'''
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_every_label_constructor_pins_the_text_format(self):
+        # Source pin: a new QLabel(...) without a format defaults to AutoText,
+        # which is the defect. Every construction site must set it.
+        source = Path(ad.__file__).resolve().parent.joinpath("gui.py").read_text(
+            encoding="utf-8"
+        )
+        constructors = [
+            index for index in range(len(source))
+            if source.startswith("QLabel(", index)
+        ]
+        self.assertTrue(constructors, "gui.py should build labels")
+        for position, index in enumerate(constructors):
+            # Bound each slice by the NEXT constructor rather than a fixed
+            # byte window: a fixed window silently breaks the moment the block
+            # grows (a comment is enough) and then passes for the wrong reason.
+            end = (constructors[position + 1]
+                   if position + 1 < len(constructors) else len(source))
+            block = source[index:end]
+            if block.startswith("QLabel()"):
+                continue  # icon-only labels carry no text
+            self.assertIn(
+                "setTextFormat(Qt.TextFormat.PlainText)", block,
+                "every text-carrying QLabel must pin PlainText near construction",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
