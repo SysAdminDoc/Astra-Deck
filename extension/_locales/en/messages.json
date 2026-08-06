@@ -128,8 +128,104 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "blockedWatchAllowOnce": {
+    "message": "Allow once"
+  },
+  "blockedWatchBack": {
+    "message": "Back"
+  },
+  "blockedWatchDescription": {
+    "message": "This video is from a channel you blocked."
+  },
+  "blockedWatchTitle": {
+    "message": "Blocked channel"
+  },
+  "blockedWatchUnblock": {
+    "message": "Unblock"
+  },
+  "blockedWatchUnknownChannel": {
+    "message": "Unknown channel"
+  },
   "brandName": {
     "message": "Astra Deck"
+  },
+  "bulkActionsAria": {
+    "message": "Bulk card actions"
+  },
+  "bulkAllow": {
+    "message": "Allow"
+  },
+  "bulkAllowedTpl": {
+    "message": "Allowed {count} videos"
+  },
+  "bulkCopiedTpl": {
+    "message": "Copied {count} URLs"
+  },
+  "bulkCopyUrls": {
+    "message": "Copy URLs"
+  },
+  "bulkDontRecommend": {
+    "message": "Don’t recommend"
+  },
+  "bulkDontRecommendTitleTpl": {
+    "message": "Apply YouTube’s native “Don’t recommend channel” to up to {count} selected cards, hide them locally, and log the session."
+  },
+  "bulkExportLog": {
+    "message": "Export log"
+  },
+  "bulkExportLogTitle": {
+    "message": "Download the local scrub-session summary as JSON. Nothing leaves this device."
+  },
+  "bulkExportedScrubTpl": {
+    "message": "Exported {count} scrub sessions"
+  },
+  "bulkHiddenTpl": {
+    "message": "Hidden {count} videos"
+  },
+  "bulkHide": {
+    "message": "Hide"
+  },
+  "bulkNoScrubSessions": {
+    "message": "No scrub sessions recorded yet."
+  },
+  "bulkNotInterested": {
+    "message": "Not interested"
+  },
+  "bulkNotInterestedTitleTpl": {
+    "message": "Apply YouTube’s native “Not interested” to up to {count} selected cards, hide them locally, and log the session."
+  },
+  "bulkRestoredTpl": {
+    "message": "Restored {count} local hides (native feedback stays applied)"
+  },
+  "bulkScrubCapTpl": {
+    "message": " ({skipped} over the {cap}-per-run cap left selected)"
+  },
+  "bulkScrubDoneTpl": {
+    "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
+  },
+  "bulkScrubPartialTpl": {
+    "message": "YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}"
+  },
+  "bulkScrubRunning": {
+    "message": "A scrub session is already running."
+  },
+  "bulkScrubSelectFirst": {
+    "message": "Select cards to scrub first."
+  },
+  "bulkSelect": {
+    "message": "Bulk Select"
+  },
+  "bulkSelectedTpl": {
+    "message": "{count} selected"
+  },
+  "bulkUndoHides": {
+    "message": "Undo hides"
+  },
+  "channelAgePublishedOnTpl": {
+    "message": "Published on {date}"
+  },
+  "channelAgeScheduledForTpl": {
+    "message": "Scheduled for {date}"
   },
   "clearFilterAria": {
     "message": "Clear quick toggle filter"
@@ -137,8 +233,71 @@
   "clearFilterBtn": {
     "message": "Clear Filter"
   },
+  "clipboardWriteFailed": {
+    "message": "Clipboard write failed"
+  },
   "closeBtnAria": {
     "message": "Close"
+  },
+  "commentDuplicateHide": {
+    "message": "Hide similar comments"
+  },
+  "commentDuplicateShowTpl": {
+    "message": "Show {count} similar comments"
+  },
+  "commonActive": {
+    "message": "Active"
+  },
+  "commonAll": {
+    "message": "All"
+  },
+  "commonChecking": {
+    "message": "Checking…"
+  },
+  "commonClear": {
+    "message": "Clear"
+  },
+  "commonClose": {
+    "message": "Close"
+  },
+  "commonCopyFailed": {
+    "message": "Copy failed"
+  },
+  "commonDone": {
+    "message": "Done"
+  },
+  "commonExport": {
+    "message": "Export"
+  },
+  "commonImport": {
+    "message": "Import"
+  },
+  "commonJustNow": {
+    "message": "Just now"
+  },
+  "commonLoading": {
+    "message": "Loading…"
+  },
+  "commonPreparing": {
+    "message": "Preparing…"
+  },
+  "commonReady": {
+    "message": "Ready"
+  },
+  "commonRefresh": {
+    "message": "Refresh"
+  },
+  "commonReset": {
+    "message": "Reset"
+  },
+  "commonTryAgain": {
+    "message": "Try again"
+  },
+  "commonUnexpectedError": {
+    "message": "unexpected error"
+  },
+  "commonUntitled": {
+    "message": "Untitled"
   },
   "contextNoteAnyTab": {
     "message": "Quick toggles are saved now and sync when YouTube is open."
@@ -176,6 +335,15 @@
   "dataFlowDriver": {
     "message": "driver"
   },
+  "dataFlowGrant": {
+    "message": "grant"
+  },
+  "dataFlowGrantActive": {
+    "message": "granted"
+  },
+  "dataFlowGrantNeeded": {
+    "message": "permission needed"
+  },
   "dataFlowInactive": {
     "message": "idle"
   },
@@ -196,6 +364,249 @@
   },
   "dataMgmtAria": {
     "message": "Data management"
+  },
+  "dlHealthAuth": {
+    "message": "Auth"
+  },
+  "dlHealthDenoFailed": {
+    "message": "Deno provision failed"
+  },
+  "dlHealthDenoFailedLabel": {
+    "message": "Deno: failed"
+  },
+  "dlHealthDenoFailedTpl": {
+    "message": "Deno provision failed: {error}"
+  },
+  "dlHealthDenoProvisioned": {
+    "message": "Deno provisioned successfully"
+  },
+  "dlHealthDownloader": {
+    "message": "Downloader"
+  },
+  "dlHealthLegacy": {
+    "message": "legacy"
+  },
+  "dlHealthLegacyAuthTitle": {
+    "message": "Using legacy /health token bootstrap because native messaging is unavailable."
+  },
+  "dlHealthLive": {
+    "message": "live"
+  },
+  "dlHealthNative": {
+    "message": "native"
+  },
+  "dlHealthNativeAuthTitle": {
+    "message": "Token received over browser native messaging; /health token echo suppressed."
+  },
+  "dlHealthNotRunning": {
+    "message": "not running"
+  },
+  "dlHealthOffline": {
+    "message": "offline"
+  },
+  "dlHealthProvisioning": {
+    "message": "Provisioning…"
+  },
+  "dlHealthRegionAria": {
+    "message": "Downloader health"
+  },
+  "dlHealthSabrLimitedTitle": {
+    "message": "Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482."
+  },
+  "dlHealthUnknown": {
+    "message": "unknown"
+  },
+  "dlHealthUnreachable": {
+    "message": "unreachable"
+  },
+  "dlHistoryAllFormats": {
+    "message": "All formats"
+  },
+  "dlHistoryAllStatuses": {
+    "message": "All statuses"
+  },
+  "dlHistoryButton": {
+    "message": "History"
+  },
+  "dlHistoryButtonTitle": {
+    "message": "View recent downloads"
+  },
+  "dlHistoryCloseAria": {
+    "message": "Close recent downloads"
+  },
+  "dlHistoryComplete": {
+    "message": "Complete"
+  },
+  "dlHistoryCount": {
+    "message": "{start}–{end} of {filtered} filtered · {total} retained"
+  },
+  "dlHistoryDateFromAria": {
+    "message": "Filter history saved from date"
+  },
+  "dlHistoryDateToAria": {
+    "message": "Filter history saved through date"
+  },
+  "dlHistoryEmpty": {
+    "message": "No completed downloads yet."
+  },
+  "dlHistoryExporting": {
+    "message": "Exporting…"
+  },
+  "dlHistoryFormatAria": {
+    "message": "Filter history by format"
+  },
+  "dlHistoryNewest": {
+    "message": "Newest first"
+  },
+  "dlHistoryNext": {
+    "message": "Next"
+  },
+  "dlHistoryNoMatches": {
+    "message": "No downloads match these filters."
+  },
+  "dlHistoryOldest": {
+    "message": "Oldest first"
+  },
+  "dlHistoryPrevious": {
+    "message": "Previous"
+  },
+  "dlHistoryRegionAria": {
+    "message": "Recent downloads"
+  },
+  "dlHistorySearchAria": {
+    "message": "Search download history"
+  },
+  "dlHistorySearchPlaceholder": {
+    "message": "Search title or filename"
+  },
+  "dlHistorySortAria": {
+    "message": "Sort download history"
+  },
+  "dlHistoryStatusAria": {
+    "message": "Filter history by status"
+  },
+  "dlHistoryTitle": {
+    "message": "Recent Downloads"
+  },
+  "dlHistoryUnavailableCount": {
+    "message": "History unavailable"
+  },
+  "dlHistoryUnreachable": {
+    "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
+  },
+  "dlInstallCheckAgain": {
+    "message": "Check again"
+  },
+  "dlInstallCheckDetail": {
+    "message": "Use this after running the setup file."
+  },
+  "dlInstallCheckingService": {
+    "message": "Checking for the Astra Downloader service…"
+  },
+  "dlInstallCloseAria": {
+    "message": "Close local downloader prompt"
+  },
+  "dlInstallCommandCopied": {
+    "message": "Command copied"
+  },
+  "dlInstallCommandCopiedHint": {
+    "message": "Fallback command copied. Use it in PowerShell only if the setup file cannot run."
+  },
+  "dlInstallCommandDetail": {
+    "message": "Use only if the downloaded setup file cannot run."
+  },
+  "dlInstallConnectionCheck": {
+    "message": "Connection check"
+  },
+  "dlInstallCopyCommand": {
+    "message": "Copy fallback command"
+  },
+  "dlInstallDownloadDetail": {
+    "message": "Recommended. Installs or repairs Astra Downloader."
+  },
+  "dlInstallDownloadSetup": {
+    "message": "Download setup"
+  },
+  "dlInstallDownloadedHint": {
+    "message": "Setup downloaded. Open the file, finish installation, then choose Check again."
+  },
+  "dlInstallDownloadingSetup": {
+    "message": "Downloading the setup file…"
+  },
+  "dlInstallDownloadingSetupShort": {
+    "message": "Downloading setup…"
+  },
+  "dlInstallLocalDownloads": {
+    "message": "Local downloads"
+  },
+  "dlInstallNoResponse": {
+    "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
+  },
+  "dlInstallNotDetected": {
+    "message": "Not detected yet"
+  },
+  "dlInstallNotDetectedHint": {
+    "message": "Setup was not detected yet. Make sure the installer finished, then check again."
+  },
+  "dlInstallOpenSetup": {
+    "message": "Open setup file"
+  },
+  "dlInstallOpenedHint": {
+    "message": "The setup file should be open. Finish installation, then choose Check again."
+  },
+  "dlInstallPortConflictTpl": {
+    "message": "Another program is answering on Astra Downloader’s port {port}{version}. It is usually a leftover downloader from an earlier install. Close it, remove it from Startup apps (look for “YTYT-Downloader” or “Astra Deck Downloader”), then start Astra Downloader and choose Check again."
+  },
+  "dlInstallPortVersionTpl": {
+    "message": " (reporting version {version})"
+  },
+  "dlInstallReconnectTitle": {
+    "message": "Reconnect Astra Downloader"
+  },
+  "dlInstallRepairDesc": {
+    "message": "Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service."
+  },
+  "dlInstallRepairHint": {
+    "message": "Fastest path: start the service again first. If it still does not respond, run setup to repair the install."
+  },
+  "dlInstallSetupDesc": {
+    "message": "Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads."
+  },
+  "dlInstallSetupHint": {
+    "message": "Recommended path: download setup, open the file, then return here and check again."
+  },
+  "dlInstallSetupReady": {
+    "message": "Setup ready"
+  },
+  "dlInstallSetupTitle": {
+    "message": "Set up local downloads"
+  },
+  "dlInstallSkip": {
+    "message": "Skip for now"
+  },
+  "dlInstallStartDetail": {
+    "message": "Fastest fix if the downloader is installed but idle."
+  },
+  "dlInstallStartService": {
+    "message": "Start service"
+  },
+  "dlInstallStarting": {
+    "message": "Starting…"
+  },
+  "dlInstallStartingService": {
+    "message": "Starting the Astra Downloader service…"
+  },
+  "dlInstallStepCheck": {
+    "message": "Choose Check again so Astra Deck can confirm the service is ready."
+  },
+  "dlInstallStepDownload": {
+    "message": "Download the Astra Downloader setup file."
+  },
+  "dlInstallStepOpen": {
+    "message": "Open the setup file from Downloads and finish installation."
+  },
+  "dlInstallStepStart": {
+    "message": "Start the service again if the downloader is already installed."
   },
   "dlPopupAria": {
     "message": "Download options"
@@ -227,20 +638,26 @@
   "dlPopupClipStartPlaceholder": {
     "message": "Start · 0:00"
   },
-  "videoInsightsSourceDegraded": {
-    "message": "From this page — YouTube lookup unavailable"
+  "dlPopupCtaAudio": {
+    "message": "Download audio"
   },
-  "videoInsightsSourceThrottled": {
-    "message": "From this page — YouTube lookup paused"
+  "dlPopupCtaAudioAriaTpl": {
+    "message": "Download audio as {format}"
   },
-  "videoInsightsUnchecked": {
-    "message": "Not checked"
+  "dlPopupCtaVideo": {
+    "message": "Download video"
   },
-  "subscriptionOrderGroupsHint": {
-    "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
+  "dlPopupCtaVideoAriaTpl": {
+    "message": "Download video as {format} at {quality}"
   },
-  "subscriptionImportTitle": {
-    "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
+  "dlPopupDefault": {
+    "message": "Default"
+  },
+  "dlPopupDownloaderOffline": {
+    "message": "Downloader not running"
+  },
+  "dlPopupFormat": {
+    "message": "Format"
   },
   "dlPopupFormatsAdjusted": {
     "message": "switched to Best"
@@ -269,6 +686,18 @@
   "dlPopupFormatsUnavailable": {
     "message": "Format list unavailable."
   },
+  "dlPopupLoading": {
+    "message": "Loading…"
+  },
+  "dlPopupOutsideRoots": {
+    "message": "That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path."
+  },
+  "dlPopupPickerUnavailable": {
+    "message": "Folder picker unavailable"
+  },
+  "dlPopupPicking": {
+    "message": "Picking…"
+  },
   "dlPopupPlaylistClear": {
     "message": "Clear"
   },
@@ -296,44 +725,14 @@
   "dlPopupPlaylistSelectAll": {
     "message": "Select all"
   },
-  "dlPopupPlaylistSelectionTpl": {
-    "message": "{selected} selected · {shown} shown · {total} total"
-  },
   "dlPopupPlaylistSelectRequired": {
     "message": "Select at least one playlist item."
   },
+  "dlPopupPlaylistSelectionTpl": {
+    "message": "{selected} selected · {shown} shown · {total} total"
+  },
   "dlPopupPlaylistUnavailable": {
     "message": "Playlist preview unavailable."
-  },
-  "dlPopupCtaAudio": {
-    "message": "Download audio"
-  },
-  "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as {format}"
-  },
-  "dlPopupCtaVideo": {
-    "message": "Download video"
-  },
-  "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as {format} at {quality}"
-  },
-  "dlPopupDefault": {
-    "message": "Default"
-  },
-  "dlPopupDownloaderOffline": {
-    "message": "Downloader not running"
-  },
-  "dlPopupFormat": {
-    "message": "Format"
-  },
-  "dlPopupLoading": {
-    "message": "Loading…"
-  },
-  "dlPopupPickerUnavailable": {
-    "message": "Folder picker unavailable"
-  },
-  "dlPopupPicking": {
-    "message": "Picking…"
   },
   "dlPopupQuality": {
     "message": "Quality"
@@ -431,9 +830,6 @@
   "dlProgressSkippedDefault": {
     "message": "Nothing was downloaded."
   },
-  "dlProgressStateNothingDownloaded": {
-    "message": "Nothing Downloaded"
-  },
   "dlProgressStateComplete": {
     "message": "Complete"
   },
@@ -454,6 +850,9 @@
   },
   "dlProgressStateNeedsAttention": {
     "message": "Needs Attention"
+  },
+  "dlProgressStateNothingDownloaded": {
+    "message": "Nothing Downloaded"
   },
   "dlProgressStatePreparing": {
     "message": "Preparing"
@@ -478,6 +877,57 @@
   },
   "dlRepairBtn": {
     "message": "Repair downloader"
+  },
+  "dlStreamButtonTitle": {
+    "message": "Show adaptive format URLs"
+  },
+  "dlStreamCopied": {
+    "message": "Stream URL copied"
+  },
+  "dlStreamCopyUrl": {
+    "message": "Copy URL"
+  },
+  "dlStreamEmpty": {
+    "message": "No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate."
+  },
+  "dlStreamLinksTitle": {
+    "message": "Stream Links"
+  },
+  "dlStreamSabrOnly": {
+    "message": "SABR-only"
+  },
+  "dlStreamWarning": {
+    "message": "URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead."
+  },
+  "dualSubtitleLanguageAuto": {
+    "message": "Automatic alternate language"
+  },
+  "dualSubtitleTrackAria": {
+    "message": "Secondary subtitles"
+  },
+  "dwShortsHardBlockHint": {
+    "message": "This hard block resets at your next local midnight."
+  },
+  "dwShortsHardBlockMessage": {
+    "message": "You have reached your {limit}-minute Shorts budget for today. Leave Shorts to continue watching other YouTube videos."
+  },
+  "dwShortsLeaveButton": {
+    "message": "Leave Shorts"
+  },
+  "dwShortsLimitEyebrow": {
+    "message": "Shorts Guard"
+  },
+  "dwShortsLimitResetHint": {
+    "message": "The Shorts budget resets at your next local midnight."
+  },
+  "dwShortsLimitTitle": {
+    "message": "Shorts Limit Reached"
+  },
+  "dwShortsSnoozeButton": {
+    "message": "Snooze 5 Minutes"
+  },
+  "dwShortsSnoozeMessage": {
+    "message": "You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes."
   },
   "emptyNoMatch": {
     "message": "No quick toggles match"
@@ -656,6 +1106,36 @@
   "feature_astraContextMenu_name": {
     "message": "Astra Context Menu"
   },
+  "feature_audioAutoGain_desc": {
+    "message": "Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage."
+  },
+  "feature_audioAutoGain_name": {
+    "message": "Audio Auto-Gain"
+  },
+  "feature_audioEqHighGainDb_desc": {
+    "message": "High-shelf gain centered at 8 kHz, from -12 dB to +12 dB."
+  },
+  "feature_audioEqHighGainDb_name": {
+    "message": "EQ High Band"
+  },
+  "feature_audioEqLowGainDb_desc": {
+    "message": "Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB."
+  },
+  "feature_audioEqLowGainDb_name": {
+    "message": "EQ Low Band"
+  },
+  "feature_audioEqMidGainDb_desc": {
+    "message": "Peaking gain centered at 1 kHz, from -12 dB to +12 dB."
+  },
+  "feature_audioEqMidGainDb_name": {
+    "message": "EQ Mid Band"
+  },
+  "feature_audioHighPass_desc": {
+    "message": "Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph."
+  },
+  "feature_audioHighPass_name": {
+    "message": "Audio High-Pass Filter"
+  },
   "feature_audioNormalization_desc": {
     "message": "Compress dynamic range so quiet and loud passages play at similar volume. Uses a DynamicsCompressorNode in the MAIN world audio graph."
   },
@@ -668,6 +1148,12 @@
   "feature_audioPan_name": {
     "message": "Audio Pan"
   },
+  "feature_audioParametricEq_desc": {
+    "message": "Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB."
+  },
+  "feature_audioParametricEq_name": {
+    "message": "Parametric EQ"
+  },
   "feature_audioSyncOffsetMs_desc": {
     "message": "Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency."
   },
@@ -679,12 +1165,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Preferred Audio Track Language"
-  },
-  "feature_preferDescriptiveAudio_desc": {
-    "message": "When the preferred language offers an audio-description track, select it before the standard track."
-  },
-  "feature_preferDescriptiveAudio_name": {
-    "message": "Prefer Descriptive Audio"
   },
   "feature_autoClosePopups_desc": {
     "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
@@ -793,6 +1273,12 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
+  },
+  "feature_bufferPreload_desc": {
+    "message": "Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed."
+  },
+  "feature_bufferPreload_name": {
+    "message": "Buffer / Preload"
   },
   "feature_bulkCardActions_desc": {
     "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
@@ -980,6 +1466,12 @@
   "feature_colorThemeManager_name": {
     "message": "Color Theme"
   },
+  "feature_commentDuplicateCollapse_desc": {
+    "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."
+  },
+  "feature_commentDuplicateCollapse_name": {
+    "message": "Collapse Similar Comments"
+  },
   "feature_commentEnhancements_desc": {
     "message": "Highlight creator/OP replies, show like heat indicators, and add collapse-all-replies toggle per thread"
   },
@@ -997,6 +1489,12 @@
   },
   "feature_commentFilterRules_name": {
     "message": "Comment Filter Rules"
+  },
+  "feature_commentLanguageAllowlist_desc": {
+    "message": "Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain."
+  },
+  "feature_commentLanguageAllowlist_name": {
+    "message": "Comment Language Allowlist"
   },
   "feature_commentNavigator_desc": {
     "message": "Floating thread navigator with live counts for visible comments and filtered results"
@@ -1255,6 +1753,18 @@
   },
   "feature_downloadVideoFormat_name": {
     "message": "Video Format"
+  },
+  "feature_dualLanguageSubtitles_desc": {
+    "message": "Show an independently selected second caption track below YouTube captions when available"
+  },
+  "feature_dualLanguageSubtitles_name": {
+    "message": "Dual-language Subtitles"
+  },
+  "feature_dualSubtitleLanguage_desc": {
+    "message": "Choose the caption language rendered below native YouTube captions"
+  },
+  "feature_dualSubtitleLanguage_name": {
+    "message": "Second Subtitle Language"
   },
   "feature_enableCPU_Tamer_desc": {
     "message": "Reduce CPU usage by throttling background timers; in hidden tabs it also force-releases YouTube web locks and closes idle database connections"
@@ -1526,6 +2036,12 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "Hide Watch Page Elements"
   },
+  "feature_hideAiContextPanels_desc": {
+    "message": "Remove fact-checking and contextual information panels"
+  },
+  "feature_hideAiContextPanels_name": {
+    "message": "Hide AI Context Panels"
+  },
   "feature_hideAiSummary_desc": {
     "message": "Remove AI-generated summaries and Ask AI buttons"
   },
@@ -1537,6 +2053,12 @@
   },
   "feature_hideAirplayButton_name": {
     "message": "Hide Airplay Button"
+  },
+  "feature_hideAskAi_desc": {
+    "message": "Remove Ask AI buttons and conversational sections"
+  },
+  "feature_hideAskAi_name": {
+    "message": "Hide Ask AI"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "Removes the autoplay toggle switch from the player controls"
@@ -1615,6 +2137,12 @@
   },
   "feature_hideFundraiser_name": {
     "message": "Hide Fundraisers"
+  },
+  "feature_hideGeminiButtons_desc": {
+    "message": "Remove Gemini-branded actions without hiding other AI surfaces"
+  },
+  "feature_hideGeminiButtons_name": {
+    "message": "Hide Gemini Buttons"
   },
   "feature_hideHashtags_desc": {
     "message": "Remove hashtag links above video titles"
@@ -1808,6 +2336,12 @@
   "feature_likeViewRatio_name": {
     "message": "Like-to-View Ratio"
   },
+  "feature_listFeedLayout_desc": {
+    "message": "Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row."
+  },
+  "feature_listFeedLayout_name": {
+    "message": "List Feed Layout"
+  },
   "feature_liveSpeedReset_desc": {
     "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
   },
@@ -1885,6 +2419,18 @@
   },
   "feature_notInterestedButton_name": {
     "message": "\"Not Interested\" on Thumbnails"
+  },
+  "feature_notificationHideRead_desc": {
+    "message": "Hide notifications that YouTube marks as already read."
+  },
+  "feature_notificationHideRead_name": {
+    "message": "Hide Read Notifications"
+  },
+  "feature_notificationMaxCount_desc": {
+    "message": "Limit the number of notifications shown. Set to 0 to show all."
+  },
+  "feature_notificationMaxCount_name": {
+    "message": "Notification Count"
   },
   "feature_notifyAutoDubbedAudio_desc": {
     "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
@@ -2036,6 +2582,12 @@
   "feature_playbackStatsOverlay_name": {
     "message": "Playback Stats Overlay"
   },
+  "feature_playlistAutoSkipWatched_desc": {
+    "message": "When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled."
+  },
+  "feature_playlistAutoSkipWatched_name": {
+    "message": "Auto-skip watched playlist items"
+  },
   "feature_playlistEnhancer_desc": {
     "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
   },
@@ -2065,6 +2617,12 @@
   },
   "feature_preciseViewCounts_name": {
     "message": "Precise View Counts"
+  },
+  "feature_preferDescriptiveAudio_desc": {
+    "message": "When the preferred language offers an audio-description track, select it before the standard track."
+  },
+  "feature_preferDescriptiveAudio_name": {
+    "message": "Prefer Descriptive Audio"
   },
   "feature_preloadComments_desc": {
     "message": "Eagerly load the comment section so it is ready when you scroll down"
@@ -2234,110 +2792,17 @@
   "feature_resumePlayback_name": {
     "message": "Resume Playback Position"
   },
-  "feature_returnDislike_desc": {
-    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
-  },
-  "feature_returnDislike_name": {
-    "message": "Return YouTube Dislike"
-  },
   "feature_returnDislikeOnCards_desc": {
     "message": "Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache."
   },
   "feature_returnDislikeOnCards_name": {
     "message": "Thumbnail Like-Ratio Bars"
   },
-  "feature_searchHideRelatedSearches_desc": {
-    "message": "Hide related-search chip blocks without removing filters, corrections, or direct results."
+  "feature_returnDislike_desc": {
+    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
   },
-  "feature_searchHideRelatedSearches_name": {
-    "message": "Hide Related Search Blocks"
-  },
-  "feature_searchHideUnrelatedShelves_desc": {
-    "message": "Keep direct video, channel, and playlist results while hiding unrelated search-page shelves."
-  },
-  "feature_searchHideUnrelatedShelves_name": {
-    "message": "Hide Unrelated Search Shelves"
-  },
-  "feature_searchHideWatchedRecommended_desc": {
-    "message": "Hide watched-progress results and recommendation interleaves from YouTube search."
-  },
-  "feature_searchHideWatchedRecommended_name": {
-    "message": "Hide Watched and Recommended Results"
-  },
-  "feature_searchWhileWatching_desc": {
-    "message": "Show YouTube search results in a lightweight watch-page panel without interrupting playback."
-  },
-  "feature_searchWhileWatching_name": {
-    "message": "Search While Watching"
-  },
-  "searchWatchClose": {
-    "message": "Close search results"
-  },
-  "searchWatchEmpty": {
-    "message": "No supported results found."
-  },
-  "searchWatchError": {
-    "message": "Search results could not be loaded."
-  },
-  "searchWatchInputLabel": {
-    "message": "Search YouTube"
-  },
-  "searchWatchLoading": {
-    "message": "Searching YouTube…"
-  },
-  "searchWatchOpenError": {
-    "message": "The result could not be opened."
-  },
-  "searchWatchOpenHintNew": {
-    "message": "Results open in a new tab."
-  },
-  "searchWatchOpenHintSame": {
-    "message": "Results replace the current video."
-  },
-  "searchWatchPlaceholder": {
-    "message": "Search while watching…"
-  },
-  "searchWatchResultsStatus": {
-    "message": "{count} results for \"{query}\""
-  },
-  "searchWatchRetry": {
-    "message": "Try again"
-  },
-  "searchWatchSubmit": {
-    "message": "Search"
-  },
-  "searchWatchTitle": {
-    "message": "Search without stopping playback"
-  },
-  "subscriptionLoadedOnlyHint": {
-    "message": "Newest first sorts only videos loaded on this page. Scroll to load more."
-  },
-  "subscriptionOrderLabel": {
-    "message": "Order"
-  },
-  "subscriptionOrderNative": {
-    "message": "YouTube order"
-  },
-  "subscriptionOrderNewestLoaded": {
-    "message": "Newest first (loaded only)"
-  },
-  "subscriptionViewCompact": {
-    "message": "Compact"
-  },
-  "subscriptionViewGrid": {
-    "message": "Grid"
-  },
-  "subscriptionViewLabel": {
-    "message": "View"
-  },
-  "subscriptionViewList": {
-    "message": "List"
-  },
-  "subscriptionViewToolbarLabel": {
-    "message": "Subscription view controls"
-  },
-  "ui_rydCardRatioSuffix": {
-    "message": "liked · estimated by Return YouTube Dislike"
+  "feature_returnDislike_name": {
+    "message": "Return YouTube Dislike"
   },
   "feature_reversePlaylist_desc": {
     "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
@@ -2429,6 +2894,30 @@
   "feature_searchFilterDefaults_name": {
     "message": "Search Filter Defaults"
   },
+  "feature_searchHideRelatedSearches_desc": {
+    "message": "Hide related-search chip blocks without removing filters, corrections, or direct results."
+  },
+  "feature_searchHideRelatedSearches_name": {
+    "message": "Hide Related Search Blocks"
+  },
+  "feature_searchHideUnrelatedShelves_desc": {
+    "message": "Keep direct video, channel, and playlist results while hiding unrelated search-page shelves."
+  },
+  "feature_searchHideUnrelatedShelves_name": {
+    "message": "Hide Unrelated Search Shelves"
+  },
+  "feature_searchHideWatchedRecommended_desc": {
+    "message": "Hide watched-progress results and recommendation interleaves from YouTube search."
+  },
+  "feature_searchHideWatchedRecommended_name": {
+    "message": "Hide Watched and Recommended Results"
+  },
+  "feature_searchWhileWatching_desc": {
+    "message": "Show YouTube search results in a lightweight watch-page panel without interrupting playback."
+  },
+  "feature_searchWhileWatching_name": {
+    "message": "Search While Watching"
+  },
   "feature_selectorHealthPanel_desc": {
     "message": "Review live selector drift signals and export a JSON health report for fixture refreshes."
   },
@@ -2458,6 +2947,18 @@
   },
   "feature_shortsAutoAdvance_name": {
     "message": "Shorts Auto-Advance"
+  },
+  "feature_shortsDailyLimitMin_desc": {
+    "message": "Maximum minutes of Shorts playback per local day. Set to 0 to disable."
+  },
+  "feature_shortsDailyLimitMin_name": {
+    "message": "Shorts Daily Limit"
+  },
+  "feature_shortsDailyLimitMode_desc": {
+    "message": "Choose whether reaching the limit blocks Shorts or offers five-minute snoozes."
+  },
+  "feature_shortsDailyLimitMode_name": {
+    "message": "Shorts Limit Action"
   },
   "feature_shortsSpeedControl_desc": {
     "message": "Adds a click-to-cycle playback speed chip to the Shorts player (0.5x-2x), honoring your persistent speed default"
@@ -2903,6 +3404,18 @@
   "filterTogglesPlaceholder": {
     "message": "Filter controls…"
   },
+  "floatingChatControlsAria": {
+    "message": "Floating chat controls"
+  },
+  "floatingChatDragAria": {
+    "message": "Move floating chat"
+  },
+  "floatingChatDragTitle": {
+    "message": "Drag to move"
+  },
+  "floatingChatOpacityAria": {
+    "message": "Chat opacity"
+  },
   "groupQuickControls": {
     "message": "Quick Controls"
   },
@@ -2996,6 +3509,42 @@
   "openYouTube": {
     "message": "Open YouTube"
   },
+  "optionalHostBannerDetailMany": {
+    "message": "{count} enabled enrichment features need host access: {origins}."
+  },
+  "optionalHostBannerDetailOne": {
+    "message": "1 enabled enrichment feature needs host access: {origins}."
+  },
+  "optionalHostBannerTitle": {
+    "message": "External access needed"
+  },
+  "optionalHostGrantAria": {
+    "message": "Grant optional host access"
+  },
+  "optionalHostGrantBtn": {
+    "message": "Grant access"
+  },
+  "optionalHostGrantName": {
+    "message": "optional host access"
+  },
+  "optionalHostPermissionAria": {
+    "message": "Permission needed."
+  },
+  "optionalHostPermissionBadge": {
+    "message": "permission needed"
+  },
+  "optionalHostPermissionGranted": {
+    "message": "Optional host access granted."
+  },
+  "optionalHostPermissionMissingTooltip": {
+    "message": "Host access for this optional feature is denied or was revoked. Enable the setting again to grant access."
+  },
+  "optionalHostPermissionRevoked": {
+    "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
+  },
+  "optionalHostUnknown": {
+    "message": "optional host access"
+  },
   "panelCloseAria": {
     "message": "Close settings"
   },
@@ -3070,6 +3619,105 @@
   },
   "playerGearTitleTpl": {
     "message": "{brand} Settings"
+  },
+  "playlistAutoSkipOff": {
+    "message": "Auto-skip: Off"
+  },
+  "playlistAutoSkipOn": {
+    "message": "Auto-skip: On"
+  },
+  "playlistAutoSkipTitle": {
+    "message": "Skip playlist entries with at least 90% watched progress"
+  },
+  "playlistCopied": {
+    "message": "Copied"
+  },
+  "playlistCopyAllTitle": {
+    "message": "Copy all playlist video URLs"
+  },
+  "playlistCopyBlocked": {
+    "message": "Clipboard access was blocked. Try again or use the browser copy shortcut."
+  },
+  "playlistCopyRetry": {
+    "message": "Retry"
+  },
+  "playlistCopyUrls": {
+    "message": "Copy URLs"
+  },
+  "playlistCopyVisibleTitle": {
+    "message": "Copy the visible playlist video URLs"
+  },
+  "playlistCopying": {
+    "message": "Copying…"
+  },
+  "playlistCurrentIsLast": {
+    "message": "Resume Last"
+  },
+  "playlistDuplicateCountTpl": {
+    "message": "{count} duplicates"
+  },
+  "playlistDurationLongest": {
+    "message": "Duration ↓"
+  },
+  "playlistDurationShortest": {
+    "message": "Duration ↑"
+  },
+  "playlistHiddenDuplicatesTpl": {
+    "message": "{count} duplicates hidden"
+  },
+  "playlistHideDuplicates": {
+    "message": "Hide Duplicates"
+  },
+  "playlistHideDuplicatesTitle": {
+    "message": "Hide repeated videos in this playlist panel"
+  },
+  "playlistNoResumeTitle": {
+    "message": "No earlier video is remembered for this playlist"
+  },
+  "playlistNoUrls": {
+    "message": "No URLs"
+  },
+  "playlistNoUrlsToast": {
+    "message": "No playlist URLs are ready to copy yet."
+  },
+  "playlistRestoreOrderTitle": {
+    "message": "Restore the original playlist order"
+  },
+  "playlistResumeLast": {
+    "message": "Resume Last"
+  },
+  "playlistResumeLastTitle": {
+    "message": "Open the last video remembered for this playlist"
+  },
+  "playlistShowDuplicates": {
+    "message": "Show Duplicates"
+  },
+  "playlistShowDuplicatesTitle": {
+    "message": "Show repeated videos in this playlist panel"
+  },
+  "playlistShuffle": {
+    "message": "Shuffle"
+  },
+  "playlistShuffleNeedTwo": {
+    "message": "Need at least 2 playlist items to shuffle."
+  },
+  "playlistShuffleTitle": {
+    "message": "Play a random visible video from this playlist panel"
+  },
+  "playlistSortDuration": {
+    "message": "Sort Duration"
+  },
+  "playlistSortDurationTitle": {
+    "message": "Sort playlist items by duration; activate again to reverse"
+  },
+  "playlistStatusLoading": {
+    "message": "Playlist"
+  },
+  "playlistToolsTitle": {
+    "message": "Playlist Tools"
+  },
+  "playlistVideoCountTpl": {
+    "message": "{count} videos"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3314,6 +3962,45 @@
   "schemaOverviewEyebrow": {
     "message": "Settings overview"
   },
+  "searchWatchClose": {
+    "message": "Close search results"
+  },
+  "searchWatchEmpty": {
+    "message": "No supported results found."
+  },
+  "searchWatchError": {
+    "message": "Search results could not be loaded."
+  },
+  "searchWatchInputLabel": {
+    "message": "Search YouTube"
+  },
+  "searchWatchLoading": {
+    "message": "Searching YouTube…"
+  },
+  "searchWatchOpenError": {
+    "message": "The result could not be opened."
+  },
+  "searchWatchOpenHintNew": {
+    "message": "Results open in a new tab."
+  },
+  "searchWatchOpenHintSame": {
+    "message": "Results replace the current video."
+  },
+  "searchWatchPlaceholder": {
+    "message": "Search while watching…"
+  },
+  "searchWatchResultsStatus": {
+    "message": "{count} results for \"{query}\""
+  },
+  "searchWatchRetry": {
+    "message": "Try again"
+  },
+  "searchWatchSubmit": {
+    "message": "Search"
+  },
+  "searchWatchTitle": {
+    "message": "Search without stopping playback"
+  },
   "selectorHealthCopyAria": {
     "message": "Copy selector-health report to clipboard"
   },
@@ -3335,6 +4022,9 @@
   "selectorHealthCopyPending": {
     "message": "Building report…"
   },
+  "selectorHealthCopySaveFallback": {
+    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+  },
   "selectorHealthEmpty": {
     "message": "No surfaces sampled yet."
   },
@@ -3344,11 +4034,161 @@
   "selectorHealthTotalTpl": {
     "message": "{count} surfaces tracked"
   },
+  "settingsDlActionsAria": {
+    "message": "Downloader actions"
+  },
+  "settingsDlCheckingStatus": {
+    "message": "Checking downloader status…"
+  },
+  "settingsDlCommandCopied": {
+    "message": "Fallback command copied. Use it only if the setup file cannot run."
+  },
+  "settingsDlCopyCommand": {
+    "message": "Copy command"
+  },
+  "settingsDlCopyCommandTitle": {
+    "message": "Copy the fallback PowerShell install command"
+  },
+  "settingsDlDownloadTitle": {
+    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+  },
+  "settingsDlNotConnected": {
+    "message": "Not connected. Local downloads need the setup helper."
+  },
+  "settingsDlOpenSetup": {
+    "message": "Open setup"
+  },
+  "settingsDlPreparingSetup": {
+    "message": "Preparing the setup file…"
+  },
+  "settingsDlRunning": {
+    "message": "Running"
+  },
+  "settingsDlRunningTpl": {
+    "message": "Running{version} — yt-dlp server ready"
+  },
+  "settingsDlSetupDownloaded": {
+    "message": "Setup downloaded. Open the file, finish installation, then refresh."
+  },
+  "settingsDlSetupOpened": {
+    "message": "Setup opened. Finish installation, then refresh."
+  },
+  "settingsDlStartFailed": {
+    "message": "The service did not start. Run setup to repair Astra Downloader."
+  },
+  "settingsDlStartFailedToast": {
+    "message": "Astra Downloader did not start. Run setup to repair it."
+  },
+  "settingsDlStartTitle": {
+    "message": "Try to start the Astra Downloader service"
+  },
+  "settingsDlTryingStart": {
+    "message": "Trying to start the Astra Downloader service…"
+  },
+  "settingsEnableAllAriaTpl": {
+    "message": "Enable all settings in {category}"
+  },
+  "settingsImportDoneTpl": {
+    "message": "{message} Undo is available in the toast."
+  },
   "settingsImportHistoryAriaLabel": {
     "message": "Import YouTube Takeout watch history"
   },
   "settingsImportHistoryLabel": {
     "message": "Import History"
+  },
+  "settingsImportInvalid": {
+    "message": "Import failed. Choose a valid Astra Deck settings export."
+  },
+  "settingsImportUndoUnavailable": {
+    "message": "Import undo is no longer available."
+  },
+  "settingsInsightsAria": {
+    "message": "Settings status and backup actions"
+  },
+  "settingsInsightsEnabled": {
+    "message": "Enabled"
+  },
+  "settingsInsightsExtension": {
+    "message": "Extension"
+  },
+  "settingsInsightsHealth": {
+    "message": "Health"
+  },
+  "settingsInsightsLastSave": {
+    "message": "Last save"
+  },
+  "settingsInsightsLiveApply": {
+    "message": "Live apply"
+  },
+  "settingsInsightsProfile": {
+    "message": "Profile"
+  },
+  "settingsInsightsReadyDesc": {
+    "message": "Controls are loaded. Service health appears beside affected features."
+  },
+  "settingsInsightsRecovery": {
+    "message": "Recovery"
+  },
+  "settingsInsightsRuleEngine": {
+    "message": "Rule engine"
+  },
+  "settingsInsightsSavedLocally": {
+    "message": "Saved locally"
+  },
+  "settingsInsightsSections": {
+    "message": "Sections"
+  },
+  "settingsInsightsStatus": {
+    "message": "Status"
+  },
+  "settingsInsightsUndoToasts": {
+    "message": "Undo toasts"
+  },
+  "settingsResetChooseSection": {
+    "message": "Choose a settings section before resetting."
+  },
+  "settingsResetDoneTpl": {
+    "message": "{category} reset to defaults. Undo is available in the toast."
+  },
+  "settingsResetGroupTitle": {
+    "message": "Reset this group to defaults"
+  },
+  "settingsResetRestoredToastTpl": {
+    "message": "“{category}” restored"
+  },
+  "settingsResetRestoredTpl": {
+    "message": "{category} restored."
+  },
+  "settingsResetToastTpl": {
+    "message": "“{category}” reset to defaults"
+  },
+  "settingsSearchHint": {
+    "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
+  },
+  "settingsSearchMatchesTpl": {
+    "message": "{count} matches"
+  },
+  "settingsSearchMatchingTpl": {
+    "message": "{count} matching settings"
+  },
+  "settingsSearchNoMatches": {
+    "message": "No matches"
+  },
+  "settingsSearchNoneTpl": {
+    "message": "No settings found for “{query}”"
+  },
+  "settingsSearchShowingTpl": {
+    "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsTakeoutImportInvalid": {
+    "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "shortsDailyLimitMode_hard": {
+    "message": "Hard block"
+  },
+  "shortsDailyLimitMode_snooze": {
+    "message": "Snooze 5 minutes"
   },
   "sidebarDocTitle": {
     "message": "Astra Deck — Firefox Sidebar"
@@ -3485,6 +4325,9 @@
   "spOverviewCopy": {
     "message": "Open a YouTube tab to stream diagnostics, then use quick settings for live recovery."
   },
+  "spOverviewEnabledLabel": {
+    "message": "Enabled"
+  },
   "spOverviewKicker": {
     "message": "Live workspace"
   },
@@ -3527,71 +4370,14 @@
   "spPerfTotalTpl": {
     "message": "{count} measured"
   },
-  "spq_autoTheaterMode_desc": {
-    "message": "Open videos in theater view."
-  },
-  "spq_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing."
-  },
-  "spq_cleanShareUrls_desc": {
-    "message": "Remove tracking parameters from copied links."
-  },
-  "spq_commentSearch_desc": {
-    "message": "Filter watch-page comments inline."
-  },
-  "spq_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails."
-  },
-  "spq_debugMode_desc": {
-    "message": "Record detailed local diagnostics for troubleshooting."
-  },
-  "spq_debugMode_name": {
-    "message": "Diagnostic Logging"
-  },
-  "spq_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing time."
-  },
-  "spq_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting automatically."
-  },
-  "spq_disableAutoplayNext_name": {
-    "message": "Disable Autoplay"
-  },
-  "spq_disableInfiniteScroll_desc": {
-    "message": "Stop feeds from loading forever."
-  },
-  "spq_disableInfiniteScroll_name": {
-    "message": "Cap Infinite Scroll"
-  },
-  "spq_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail."
-  },
-  "spq_miniPlayerBar_desc": {
-    "message": "Keep essential controls visible while scrolling."
-  },
-  "spq_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent between videos."
-  },
-  "spq_privacyDataFlowPanel_desc": {
-    "message": "Review every service Astra Deck can contact."
-  },
-  "spq_privacyDataFlowPanel_name": {
-    "message": "Data-Flow Panel"
-  },
-  "spq_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and navigation links."
-  },
-  "spq_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments."
-  },
-  "spq_transcriptViewer_desc": {
-    "message": "Read, jump through, and export captions."
-  },
   "spRefreshAria": {
     "message": "Refresh all dashboard sections"
   },
   "spRefreshBtn": {
     "message": "Refresh"
+  },
+  "spRefreshStatusReady": {
+    "message": "Ready"
   },
   "spReloadPanel": {
     "message": "Reload panel"
@@ -3662,6 +4448,9 @@
   "spSettingsClearAria": {
     "message": "Clear settings filter"
   },
+  "spSettingsClearBtn": {
+    "message": "Clear"
+  },
   "spSettingsClearFilter": {
     "message": "Clear filter"
   },
@@ -3713,14 +4502,14 @@
   "spSkipToSettings": {
     "message": "Skip to settings"
   },
-  "spStateUnknown": {
-    "message": "unknown"
-  },
   "spStatSize": {
     "message": "Size"
   },
   "spStatUnavailable": {
     "message": "Unavailable"
+  },
+  "spStateUnknown": {
+    "message": "unknown"
   },
   "spStatusDisabledTpl": {
     "message": "{name} disabled"
@@ -3776,6 +4565,66 @@
   "speedPopupSub": {
     "message": "Applies to every video until changed."
   },
+  "spq_autoTheaterMode_desc": {
+    "message": "Open videos in theater view."
+  },
+  "spq_blueLightFilter_desc": {
+    "message": "Warm the player for late viewing."
+  },
+  "spq_cleanShareUrls_desc": {
+    "message": "Remove tracking parameters from copied links."
+  },
+  "spq_commentSearch_desc": {
+    "message": "Filter watch-page comments inline."
+  },
+  "spq_deArrow_desc": {
+    "message": "Replace clickbait titles and thumbnails."
+  },
+  "spq_debugMode_desc": {
+    "message": "Record detailed local diagnostics for troubleshooting."
+  },
+  "spq_debugMode_name": {
+    "message": "Diagnostic Logging"
+  },
+  "spq_digitalWellbeing_desc": {
+    "message": "Track breaks and daily viewing time."
+  },
+  "spq_disableAutoplayNext_desc": {
+    "message": "Stop the next video from starting automatically."
+  },
+  "spq_disableAutoplayNext_name": {
+    "message": "Disable Autoplay"
+  },
+  "spq_disableInfiniteScroll_desc": {
+    "message": "Stop feeds from loading forever."
+  },
+  "spq_disableInfiniteScroll_name": {
+    "message": "Cap Infinite Scroll"
+  },
+  "spq_hideRelatedVideos_desc": {
+    "message": "Clear the watch-page side rail."
+  },
+  "spq_miniPlayerBar_desc": {
+    "message": "Keep essential controls visible while scrolling."
+  },
+  "spq_persistentSpeed_desc": {
+    "message": "Keep playback speed consistent between videos."
+  },
+  "spq_privacyDataFlowPanel_desc": {
+    "message": "Review every service Astra Deck can contact."
+  },
+  "spq_privacyDataFlowPanel_name": {
+    "message": "Data-Flow Panel"
+  },
+  "spq_removeAllShorts_desc": {
+    "message": "Remove Shorts shelves and navigation links."
+  },
+  "spq_sponsorBlock_desc": {
+    "message": "Skip crowd-marked sponsor segments."
+  },
+  "spq_transcriptViewer_desc": {
+    "message": "Read, jump through, and export captions."
+  },
   "statBlocked": {
     "message": "Blocked"
   },
@@ -3814,6 +4663,15 @@
   },
   "statusClipboardUnavailable": {
     "message": "Clipboard unavailable — see browser console."
+  },
+  "statusCompanionCurrentTpl": {
+    "message": "Astra Downloader already at v{version}."
+  },
+  "statusCompanionReadyTpl": {
+    "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
+  },
+  "statusCompanionUpdateFailedTpl": {
+    "message": "Astra Downloader update failed — {error}"
   },
   "statusDiagClearFail": {
     "message": "Could not clear log"
@@ -3863,6 +4721,12 @@
   "statusOpenWorkspaceFail": {
     "message": "Could not open the full workspace. Try again."
   },
+  "statusPerKeyReset": {
+    "message": "… reset to default."
+  },
+  "statusPerKeyResetFail": {
+    "message": "Could not reset"
+  },
   "statusQuickCtrlLoadFail": {
     "message": "Quick controls could not be loaded. Try reopening the popup."
   },
@@ -3908,11 +4772,23 @@
   "statusTakeoutNoEntries": {
     "message": "No valid YouTube Takeout watch-history entries found."
   },
+  "statusUpdateFailed": {
+    "message": "Update failed."
+  },
   "statusUpdateYtdlpNoTab": {
     "message": "Open a YouTube tab first — the popup needs it to reach the Astra Downloader."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"
+  },
+  "statusWelcomeProfileFail": {
+    "message": "Could not apply profile"
+  },
+  "statusWelcomeProfileFull": {
+    "message": "GitHub-Full profile enabled. Astra Downloader and AI providers are now available."
+  },
+  "statusWelcomeProfileSafe": {
+    "message": "Store-safe profile active. Open Full Settings to explore features."
   },
   "statusYoutubeStateChanged": {
     "message": "YouTube changed its page state before reset, so nothing was cleared."
@@ -3941,6 +4817,24 @@
   "statusYoutubeStateUndoFail": {
     "message": "YouTube state Undo failed"
   },
+  "statusYtdlpCurrentTpl": {
+    "message": "yt-dlp already at v{version}"
+  },
+  "statusYtdlpFromTpl": {
+    "message": " (from v{version})"
+  },
+  "statusYtdlpRestoredTpl": {
+    "message": " Active version restored to v{version}."
+  },
+  "statusYtdlpRollbackTpl": {
+    "message": " Last-known-good: v{version}."
+  },
+  "statusYtdlpUpdateFailedTpl": {
+    "message": "yt-dlp update failed — {error}{recovery}"
+  },
+  "statusYtdlpUpdatedTpl": {
+    "message": "yt-dlp updated to v{version}{from}"
+  },
   "storageBannerCorruptionTpl": {
     "message": "Storage data malformed — Reset to recover."
   },
@@ -3962,893 +4856,20 @@
   "storageStatsAriaLabel": {
     "message": "Storage statistics"
   },
-  "toastDlCmdCopied": {
-    "message": "Fallback install command copied. Use it only if you cannot run the downloaded setup file."
+  "subscriptionArchiveAdded": {
+    "message": "Scheduled"
   },
-  "toastDlInProgress": {
-    "message": "A download is already in progress."
+  "subscriptionArchiveExisting": {
+    "message": "already configured"
   },
-  "toastDlInstallPrompt": {
-    "message": "Install Astra Downloader to enable downloads."
+  "subscriptionArchiveNoChannels": {
+    "message": "Add channels to this group before scheduling downloads."
   },
-  "toastDlReady": {
-    "message": "Astra Downloader is ready."
+  "subscriptionArchiveStartCompanion": {
+    "message": "Start Astra Downloader before scheduling channel downloads."
   },
-  "toastDlRequestFailed": {
-    "message": "Astra Downloader request failed."
-  },
-  "toastDlRunning": {
-    "message": "Astra Downloader is running!"
-  },
-  "toastDlStarted": {
-    "message": "Astra Downloader started!"
-  },
-  "toastDlStarting": {
-    "message": "Starting Astra Downloader…"
-  },
-  "toastDlStopped": {
-    "message": "Astra Downloader stopped. Starting it again…"
-  },
-  "toggleStateOff": {
-    "message": "Disabled"
-  },
-  "toggleStateOffLower": {
-    "message": "disabled"
-  },
-  "toggleStateOn": {
-    "message": "Enabled"
-  },
-  "toggleStateOnLower": {
-    "message": "enabled"
-  },
-  "toggleUpdateFailTpl": {
-    "message": "Couldn't update {name}. Try again."
-  },
-  "undoImportAria": {
-    "message": "Restore data from the most recent Import"
-  },
-  "undoImportBtn": {
-    "message": "Undo Import"
-  },
-  "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
-  },
-  "undoResetBtn": {
-    "message": "Undo Reset"
-  },
-  "updateCompanionAria": {
-    "message": "Update Astra Downloader companion"
-  },
-  "updateCompanionBtn": {
-    "message": "Update Astra Downloader"
-  },
-  "videoInsightsCategory": {
-    "message": "Category"
-  },
-  "videoInsightsChannelId": {
-    "message": "Channel ID"
-  },
-  "videoInsightsLoading": {
-    "message": "Loading video details…"
-  },
-  "videoInsightsNoTags": {
-    "message": "No tags published"
-  },
-  "videoInsightsSourceCache": {
-    "message": "Cached YouTube details"
-  },
-  "videoInsightsSourceNetwork": {
-    "message": "Refreshed from YouTube"
-  },
-  "videoInsightsSourcePage": {
-    "message": "From this page"
-  },
-  "videoInsightsTags": {
-    "message": "Tags"
-  },
-  "videoInsightsTitle": {
-    "message": "Video insights"
-  },
-  "videoInsightsUnavailable": {
-    "message": "Not provided"
-  },
-  "videoInsightsUploaded": {
-    "message": "Uploaded"
-  },
-  "welcomePresetBody": {
-    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
-  },
-  "welcomePresetFocusDesc": {
-    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
-  },
-  "welcomePresetFocusTitle": {
-    "message": "Focus"
-  },
-  "welcomePresetGroupAria": {
-    "message": "Pick a usage preset"
-  },
-  "welcomePresetPowerDesc": {
-    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
-  },
-  "welcomePresetPowerTitle": {
-    "message": "Power User"
-  },
-  "welcomePresetPrivacyDesc": {
-    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
-  },
-  "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
-  },
-  "welcomePresetResearcherDesc": {
-    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
-  },
-  "welcomePresetResearcherTitle": {
-    "message": "Researcher"
-  },
-  "welcomePresetSkip": {
-    "message": "Skip — configure manually"
-  },
-  "welcomeProfileGroupAria": {
-    "message": "Pick a starting profile"
-  },
-  "wlwbChannelAria": {
-    "message": "Channel name filter"
-  },
-  "wlwbChannelPlaceholder": {
-    "message": "Channel contains…"
-  },
-  "wlwbCloseAria": {
-    "message": "Close workbench"
-  },
-  "wlwbExportCsv": {
-    "message": "Export CSV"
-  },
-  "wlwbExportJson": {
-    "message": "Export JSON"
-  },
-  "wlwbExportedToastTpl": {
-    "message": "Exported {count} loaded Watch Later entries"
-  },
-  "wlwbLogEmpty": {
-    "message": "Removal log is empty"
-  },
-  "wlwbNoMatches": {
-    "message": "No matching rows to remove"
-  },
-  "wlwbOpenAria": {
-    "message": "Open the Watch Later workbench"
-  },
-  "wlwbOpenBtn": {
-    "message": "Workbench"
-  },
-  "wlwbPanelAria": {
-    "message": "Watch Later workbench"
-  },
-  "wlwbRemovalLogBtn": {
-    "message": "Removal log"
-  },
-  "wlwbRemoveMatchedTpl": {
-    "message": "Remove matched (max {limit}/run)"
-  },
-  "wlwbRemovedRemainingTpl": {
-    "message": "— {count} still match, run again"
-  },
-  "wlwbRemovedToastTpl": {
-    "message": "Removed {count} video(s){remaining}. Recovery list is in the removal log."
-  },
-  "wlwbRemovingTpl": {
-    "message": "Removing {current} / {total}…"
-  },
-  "wlwbRowTitleTpl": {
-    "message": "{title} — {channel} ({percent}% watched)"
-  },
-  "wlwbSortAria": {
-    "message": "Preview sort order"
-  },
-  "wlwbSortLongest": {
-    "message": "Longest first"
-  },
-  "wlwbSortPlaylist": {
-    "message": "Playlist order"
-  },
-  "wlwbSortShortest": {
-    "message": "Shortest first"
-  },
-  "wlwbSortTitle": {
-    "message": "Title A–Z"
-  },
-  "wlwbStatusTpl": {
-    "message": "{matched} of {loaded} loaded videos match. Scroll the playlist to load more rows before running."
-  },
-  "wlwbTitleAria": {
-    "message": "Title filter"
-  },
-  "wlwbTitlePlaceholder": {
-    "message": "Title contains…"
-  },
-  "wlwbWatchedAria": {
-    "message": "Minimum watched percent filter"
-  },
-  "wlwbWatchedPlaceholder": {
-    "message": "Watched ≥ % (e.g. 90)"
-  },
-  "workspaceEyebrow": {
-    "message": "Settings workspace"
-  },
-  "workspaceSupport": {
-    "message": "Quick toggles save immediately and sync to YouTube."
-  },
-  "workspaceTitle": {
-    "message": "Controls and backups"
-  },
-  "youtubeStateResetToast": {
-    "message": "YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab."
-  },
-  "youtubeStateRestoreToast": {
-    "message": "YouTube state restored ({count}). Reload the page to apply it."
-  },
-  "blockedWatchAllowOnce": {
-    "message": "Allow once"
-  },
-  "blockedWatchBack": {
-    "message": "Back"
-  },
-  "blockedWatchDescription": {
-    "message": "This video is from a channel you blocked."
-  },
-  "blockedWatchTitle": {
-    "message": "Blocked channel"
-  },
-  "blockedWatchUnblock": {
-    "message": "Unblock"
-  },
-  "blockedWatchUnknownChannel": {
-    "message": "Unknown channel"
-  },
-  "bulkActionsAria": {
-    "message": "Bulk card actions"
-  },
-  "bulkAllow": {
-    "message": "Allow"
-  },
-  "bulkAllowedTpl": {
-    "message": "Allowed {count} videos"
-  },
-  "bulkCopiedTpl": {
-    "message": "Copied {count} URLs"
-  },
-  "bulkCopyUrls": {
-    "message": "Copy URLs"
-  },
-  "bulkDontRecommend": {
-    "message": "Don’t recommend"
-  },
-  "bulkDontRecommendTitleTpl": {
-    "message": "Apply YouTube’s native “Don’t recommend channel” to up to {count} selected cards, hide them locally, and log the session."
-  },
-  "bulkExportedScrubTpl": {
-    "message": "Exported {count} scrub sessions"
-  },
-  "bulkExportLog": {
-    "message": "Export log"
-  },
-  "bulkExportLogTitle": {
-    "message": "Download the local scrub-session summary as JSON. Nothing leaves this device."
-  },
-  "bulkHiddenTpl": {
-    "message": "Hidden {count} videos"
-  },
-  "bulkHide": {
-    "message": "Hide"
-  },
-  "bulkNoScrubSessions": {
-    "message": "No scrub sessions recorded yet."
-  },
-  "bulkNotInterested": {
-    "message": "Not interested"
-  },
-  "bulkNotInterestedTitleTpl": {
-    "message": "Apply YouTube’s native “Not interested” to up to {count} selected cards, hide them locally, and log the session."
-  },
-  "bulkRestoredTpl": {
-    "message": "Restored {count} local hides (native feedback stays applied)"
-  },
-  "bulkScrubCapTpl": {
-    "message": " ({skipped} over the {cap}-per-run cap left selected)"
-  },
-  "bulkScrubDoneTpl": {
-    "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
-  },
-  "bulkScrubPartialTpl": {
-    "message": "YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}"
-  },
-  "bulkScrubRunning": {
-    "message": "A scrub session is already running."
-  },
-  "bulkScrubSelectFirst": {
-    "message": "Select cards to scrub first."
-  },
-  "bulkSelect": {
-    "message": "Bulk Select"
-  },
-  "bulkSelectedTpl": {
-    "message": "{count} selected"
-  },
-  "bulkUndoHides": {
-    "message": "Undo hides"
-  },
-  "clipboardWriteFailed": {
-    "message": "Clipboard write failed"
-  },
-  "commonActive": {
-    "message": "Active"
-  },
-  "commonAll": {
-    "message": "All"
-  },
-  "commonChecking": {
-    "message": "Checking…"
-  },
-  "commonClear": {
-    "message": "Clear"
-  },
-  "commonClose": {
-    "message": "Close"
-  },
-  "commonCopyFailed": {
-    "message": "Copy failed"
-  },
-  "commonDone": {
-    "message": "Done"
-  },
-  "commonExport": {
-    "message": "Export"
-  },
-  "commonImport": {
-    "message": "Import"
-  },
-  "commonJustNow": {
-    "message": "Just now"
-  },
-  "commonLoading": {
-    "message": "Loading…"
-  },
-  "commonPreparing": {
-    "message": "Preparing…"
-  },
-  "commonReady": {
-    "message": "Ready"
-  },
-  "commonRefresh": {
-    "message": "Refresh"
-  },
-  "commonReset": {
-    "message": "Reset"
-  },
-  "commonTryAgain": {
-    "message": "Try again"
-  },
-  "commonUnexpectedError": {
-    "message": "unexpected error"
-  },
-  "commonUntitled": {
-    "message": "Untitled"
-  },
-  "dataFlowGrant": {
-    "message": "grant"
-  },
-  "dataFlowGrantActive": {
-    "message": "granted"
-  },
-  "dataFlowGrantNeeded": {
-    "message": "permission needed"
-  },
-  "dlHealthAuth": {
-    "message": "Auth"
-  },
-  "dlHealthDenoFailed": {
-    "message": "Deno provision failed"
-  },
-  "dlHealthDenoFailedLabel": {
-    "message": "Deno: failed"
-  },
-  "dlHealthDenoFailedTpl": {
-    "message": "Deno provision failed: {error}"
-  },
-  "dlHealthDenoProvisioned": {
-    "message": "Deno provisioned successfully"
-  },
-  "dlHealthDownloader": {
-    "message": "Downloader"
-  },
-  "dlHealthLegacy": {
-    "message": "legacy"
-  },
-  "dlHealthLegacyAuthTitle": {
-    "message": "Using legacy /health token bootstrap because native messaging is unavailable."
-  },
-  "dlHealthLive": {
-    "message": "live"
-  },
-  "dlHealthNative": {
-    "message": "native"
-  },
-  "dlHealthNativeAuthTitle": {
-    "message": "Token received over browser native messaging; /health token echo suppressed."
-  },
-  "dlHealthNotRunning": {
-    "message": "not running"
-  },
-  "dlHealthOffline": {
-    "message": "offline"
-  },
-  "dlHealthProvisioning": {
-    "message": "Provisioning…"
-  },
-  "dlHealthRegionAria": {
-    "message": "Downloader health"
-  },
-  "dlHealthSabrLimitedTitle": {
-    "message": "Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482."
-  },
-  "dlHealthUnknown": {
-    "message": "unknown"
-  },
-  "dlHealthUnreachable": {
-    "message": "unreachable"
-  },
-  "dlHistoryButton": {
-    "message": "History"
-  },
-  "dlHistoryButtonTitle": {
-    "message": "View recent downloads"
-  },
-  "dlHistoryAllFormats": {
-    "message": "All formats"
-  },
-  "dlHistoryAllStatuses": {
-    "message": "All statuses"
-  },
-  "dlHistoryCloseAria": {
-    "message": "Close recent downloads"
-  },
-  "dlHistoryComplete": {
-    "message": "Complete"
-  },
-  "dlHistoryCount": {
-    "message": "{start}–{end} of {filtered} filtered · {total} retained"
-  },
-  "dlHistoryDateFromAria": {
-    "message": "Filter history saved from date"
-  },
-  "dlHistoryDateToAria": {
-    "message": "Filter history saved through date"
-  },
-  "dlHistoryEmpty": {
-    "message": "No completed downloads yet."
-  },
-  "dlHistoryExporting": {
-    "message": "Exporting…"
-  },
-  "dlHistoryFormatAria": {
-    "message": "Filter history by format"
-  },
-  "dlHistoryNewest": {
-    "message": "Newest first"
-  },
-  "dlHistoryNext": {
-    "message": "Next"
-  },
-  "dlHistoryNoMatches": {
-    "message": "No downloads match these filters."
-  },
-  "dlHistoryOldest": {
-    "message": "Oldest first"
-  },
-  "dlHistoryPrevious": {
-    "message": "Previous"
-  },
-  "dlHistoryRegionAria": {
-    "message": "Recent downloads"
-  },
-  "dlHistorySearchAria": {
-    "message": "Search download history"
-  },
-  "dlHistorySearchPlaceholder": {
-    "message": "Search title or filename"
-  },
-  "dlHistorySortAria": {
-    "message": "Sort download history"
-  },
-  "dlHistoryStatusAria": {
-    "message": "Filter history by status"
-  },
-  "dlHistoryTitle": {
-    "message": "Recent Downloads"
-  },
-  "dlHistoryUnavailableCount": {
-    "message": "History unavailable"
-  },
-  "dlHistoryUnreachable": {
-    "message": "Astra Downloader unreachable. Start Astra Downloader and try again."
-  },
-  "dlInstallCheckAgain": {
-    "message": "Check again"
-  },
-  "dlInstallCheckDetail": {
-    "message": "Use this after running the setup file."
-  },
-  "dlInstallCheckingService": {
-    "message": "Checking for the Astra Downloader service…"
-  },
-  "dlInstallCloseAria": {
-    "message": "Close local downloader prompt"
-  },
-  "dlInstallCommandCopied": {
-    "message": "Command copied"
-  },
-  "dlInstallCommandCopiedHint": {
-    "message": "Fallback command copied. Use it in PowerShell only if the setup file cannot run."
-  },
-  "dlInstallCommandDetail": {
-    "message": "Use only if the downloaded setup file cannot run."
-  },
-  "dlInstallConnectionCheck": {
-    "message": "Connection check"
-  },
-  "dlInstallCopyCommand": {
-    "message": "Copy fallback command"
-  },
-  "dlInstallDownloadDetail": {
-    "message": "Recommended. Installs or repairs Astra Downloader."
-  },
-  "dlInstallDownloadedHint": {
-    "message": "Setup downloaded. Open the file, finish installation, then choose Check again."
-  },
-  "dlInstallDownloadingSetup": {
-    "message": "Downloading the setup file…"
-  },
-  "dlInstallDownloadingSetupShort": {
-    "message": "Downloading setup…"
-  },
-  "dlInstallDownloadSetup": {
-    "message": "Download setup"
-  },
-  "dlInstallLocalDownloads": {
-    "message": "Local downloads"
-  },
-  "dlInstallNoResponse": {
-    "message": "The service did not respond. Run setup below to repair Astra Downloader, then check again."
-  },
-  "dlInstallNotDetected": {
-    "message": "Not detected yet"
-  },
-  "dlInstallNotDetectedHint": {
-    "message": "Setup was not detected yet. Make sure the installer finished, then check again."
-  },
-  "dlInstallOpenedHint": {
-    "message": "The setup file should be open. Finish installation, then choose Check again."
-  },
-  "dlInstallOpenSetup": {
-    "message": "Open setup file"
-  },
-  "dlInstallPortConflictTpl": {
-    "message": "Another program is answering on Astra Downloader’s port {port}{version}. It is usually a leftover downloader from an earlier install. Close it, remove it from Startup apps (look for “YTYT-Downloader” or “Astra Deck Downloader”), then start Astra Downloader and choose Check again."
-  },
-  "dlInstallPortVersionTpl": {
-    "message": " (reporting version {version})"
-  },
-  "dlInstallReconnectTitle": {
-    "message": "Reconnect Astra Downloader"
-  },
-  "dlInstallRepairDesc": {
-    "message": "Astra Deck cannot reach the downloader service right now. Start it again if it is installed, or run setup to repair the local service."
-  },
-  "dlInstallRepairHint": {
-    "message": "Fastest path: start the service again first. If it still does not respond, run setup to repair the install."
-  },
-  "dlInstallSetupDesc": {
-    "message": "Enable reliable audio and video downloads by installing Astra Downloader on this device. One setup covers future downloads."
-  },
-  "dlInstallSetupHint": {
-    "message": "Recommended path: download setup, open the file, then return here and check again."
-  },
-  "dlInstallSetupReady": {
-    "message": "Setup ready"
-  },
-  "dlInstallSetupTitle": {
-    "message": "Set up local downloads"
-  },
-  "dlInstallSkip": {
-    "message": "Skip for now"
-  },
-  "dlInstallStartDetail": {
-    "message": "Fastest fix if the downloader is installed but idle."
-  },
-  "dlInstallStarting": {
-    "message": "Starting…"
-  },
-  "dlInstallStartingService": {
-    "message": "Starting the Astra Downloader service…"
-  },
-  "dlInstallStartService": {
-    "message": "Start service"
-  },
-  "dlInstallStepCheck": {
-    "message": "Choose Check again so Astra Deck can confirm the service is ready."
-  },
-  "dlInstallStepDownload": {
-    "message": "Download the Astra Downloader setup file."
-  },
-  "dlInstallStepOpen": {
-    "message": "Open the setup file from Downloads and finish installation."
-  },
-  "dlInstallStepStart": {
-    "message": "Start the service again if the downloader is already installed."
-  },
-  "dlPopupOutsideRoots": {
-    "message": "That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path."
-  },
-  "dlStreamButtonTitle": {
-    "message": "Show adaptive format URLs"
-  },
-  "dlStreamCopied": {
-    "message": "Stream URL copied"
-  },
-  "dlStreamCopyUrl": {
-    "message": "Copy URL"
-  },
-  "dlStreamEmpty": {
-    "message": "No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate."
-  },
-  "dlStreamLinksTitle": {
-    "message": "Stream Links"
-  },
-  "dlStreamSabrOnly": {
-    "message": "SABR-only"
-  },
-  "dlStreamWarning": {
-    "message": "URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead."
-  },
-  "floatingChatControlsAria": {
-    "message": "Floating chat controls"
-  },
-  "floatingChatDragAria": {
-    "message": "Move floating chat"
-  },
-  "floatingChatDragTitle": {
-    "message": "Drag to move"
-  },
-  "floatingChatOpacityAria": {
-    "message": "Chat opacity"
-  },
-  "optionalHostBannerDetailMany": {
-    "message": "{count} enabled enrichment features need host access: {origins}."
-  },
-  "optionalHostBannerDetailOne": {
-    "message": "1 enabled enrichment feature needs host access: {origins}."
-  },
-  "optionalHostBannerTitle": {
-    "message": "External access needed"
-  },
-  "optionalHostGrantAria": {
-    "message": "Grant optional host access"
-  },
-  "optionalHostGrantBtn": {
-    "message": "Grant access"
-  },
-  "optionalHostGrantName": {
-    "message": "optional host access"
-  },
-  "optionalHostPermissionAria": {
-    "message": "Permission needed."
-  },
-  "optionalHostPermissionBadge": {
-    "message": "permission needed"
-  },
-  "optionalHostPermissionGranted": {
-    "message": "Optional host access granted."
-  },
-  "optionalHostPermissionMissingTooltip": {
-    "message": "Host access for this optional feature is denied or was revoked. Enable the setting again to grant access."
-  },
-  "optionalHostPermissionRevoked": {
-    "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
-  },
-  "optionalHostUnknown": {
-    "message": "optional host access"
-  },
-  "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
-  },
-  "settingsDlActionsAria": {
-    "message": "Downloader actions"
-  },
-  "settingsDlCheckingStatus": {
-    "message": "Checking downloader status…"
-  },
-  "settingsDlCommandCopied": {
-    "message": "Fallback command copied. Use it only if the setup file cannot run."
-  },
-  "settingsDlCopyCommand": {
-    "message": "Copy command"
-  },
-  "settingsDlCopyCommandTitle": {
-    "message": "Copy the fallback PowerShell install command"
-  },
-  "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
-  },
-  "settingsDlNotConnected": {
-    "message": "Not connected. Local downloads need the setup helper."
-  },
-  "settingsDlOpenSetup": {
-    "message": "Open setup"
-  },
-  "settingsDlPreparingSetup": {
-    "message": "Preparing the setup file…"
-  },
-  "settingsDlRunning": {
-    "message": "Running"
-  },
-  "settingsDlRunningTpl": {
-    "message": "Running{version} — yt-dlp server ready"
-  },
-  "settingsDlSetupDownloaded": {
-    "message": "Setup downloaded. Open the file, finish installation, then refresh."
-  },
-  "settingsDlSetupOpened": {
-    "message": "Setup opened. Finish installation, then refresh."
-  },
-  "settingsDlStartFailed": {
-    "message": "The service did not start. Run setup to repair Astra Downloader."
-  },
-  "settingsDlStartFailedToast": {
-    "message": "Astra Downloader did not start. Run setup to repair it."
-  },
-  "settingsDlStartTitle": {
-    "message": "Try to start the Astra Downloader service"
-  },
-  "settingsDlTryingStart": {
-    "message": "Trying to start the Astra Downloader service…"
-  },
-  "settingsEnableAllAriaTpl": {
-    "message": "Enable all settings in {category}"
-  },
-  "settingsImportDoneTpl": {
-    "message": "{message} Undo is available in the toast."
-  },
-  "settingsImportInvalid": {
-    "message": "Import failed. Choose a valid Astra Deck settings export."
-  },
-  "settingsImportUndoUnavailable": {
-    "message": "Import undo is no longer available."
-  },
-  "settingsInsightsAria": {
-    "message": "Settings status and backup actions"
-  },
-  "settingsInsightsEnabled": {
-    "message": "Enabled"
-  },
-  "settingsInsightsExtension": {
-    "message": "Extension"
-  },
-  "settingsInsightsHealth": {
-    "message": "Health"
-  },
-  "settingsInsightsLastSave": {
-    "message": "Last save"
-  },
-  "settingsInsightsLiveApply": {
-    "message": "Live apply"
-  },
-  "settingsInsightsProfile": {
-    "message": "Profile"
-  },
-  "settingsInsightsReadyDesc": {
-    "message": "Controls are loaded. Service health appears beside affected features."
-  },
-  "settingsInsightsRecovery": {
-    "message": "Recovery"
-  },
-  "settingsInsightsRuleEngine": {
-    "message": "Rule engine"
-  },
-  "settingsInsightsSavedLocally": {
-    "message": "Saved locally"
-  },
-  "settingsInsightsSections": {
-    "message": "Sections"
-  },
-  "settingsInsightsStatus": {
-    "message": "Status"
-  },
-  "settingsInsightsUndoToasts": {
-    "message": "Undo toasts"
-  },
-  "settingsResetChooseSection": {
-    "message": "Choose a settings section before resetting."
-  },
-  "settingsResetDoneTpl": {
-    "message": "{category} reset to defaults. Undo is available in the toast."
-  },
-  "settingsResetGroupTitle": {
-    "message": "Reset this group to defaults"
-  },
-  "settingsResetRestoredToastTpl": {
-    "message": "“{category}” restored"
-  },
-  "settingsResetRestoredTpl": {
-    "message": "{category} restored."
-  },
-  "settingsResetToastTpl": {
-    "message": "“{category}” reset to defaults"
-  },
-  "settingsSearchHint": {
-    "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
-  },
-  "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
-  },
-  "settingsSearchMatchingTpl": {
-    "message": "{count} matching settings"
-  },
-  "settingsSearchNoMatches": {
-    "message": "No matches"
-  },
-  "settingsSearchNoneTpl": {
-    "message": "No settings found for “{query}”"
-  },
-  "settingsSearchShowingTpl": {
-    "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
-  },
-  "settingsTakeoutImportInvalid": {
-    "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
-  },
-  "statusCompanionCurrentTpl": {
-    "message": "Astra Downloader already at v{version}."
-  },
-  "statusCompanionReadyTpl": {
-    "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
-  },
-  "statusCompanionUpdateFailedTpl": {
-    "message": "Astra Downloader update failed — {error}"
-  },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
-  },
-  "statusPerKeyResetFail": {
-    "message": "Could not reset"
-  },
-  "statusUpdateFailed": {
-    "message": "Update failed."
-  },
-  "statusWelcomeProfileFail": {
-    "message": "Could not apply profile"
-  },
-  "statusWelcomeProfileFull": {
-    "message": "GitHub-Full profile enabled. Astra Downloader and AI providers are now available."
-  },
-  "statusWelcomeProfileSafe": {
-    "message": "Store-safe profile active. Open Full Settings to explore features."
-  },
-  "statusYtdlpCurrentTpl": {
-    "message": "yt-dlp already at v{version}"
-  },
-  "statusYtdlpFromTpl": {
-    "message": " (from v{version})"
-  },
-  "statusYtdlpRestoredTpl": {
-    "message": " Active version restored to v{version}."
-  },
-  "statusYtdlpRollbackTpl": {
-    "message": " Last-known-good: v{version}."
-  },
-  "statusYtdlpUpdatedTpl": {
-    "message": "yt-dlp updated to v{version}{from}"
-  },
-  "statusYtdlpUpdateFailedTpl": {
-    "message": "yt-dlp update failed — {error}{recovery}"
+  "subscriptionArchiveUnavailable": {
+    "message": "The Astra Downloader companion is not available."
   },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
@@ -4861,6 +4882,9 @@
   },
   "subscriptionDigestMarkAllReadAria": {
     "message": "Mark every rendered channel as read"
+  },
+  "subscriptionDigestMarkAllReadEmpty": {
+    "message": "Nothing new since your last visit"
   },
   "subscriptionDigestMarkRead": {
     "message": "Mark read"
@@ -5000,59 +5024,14 @@
   "subscriptionHealthUndoStageAriaTpl": {
     "message": "Undo staged unsubscribe for {channel}"
   },
-  "subscriptionMenuUnsubscribe": {
-    "message": "Unsubscribe"
-  },
-  "subscriptionUnsubscribeCapTpl": {
-    "message": "{count} remain staged beyond the {cap}-per-run cap."
-  },
-  "subscriptionUnsubscribeEmpty": {
-    "message": "Nothing is staged for unsubscribe."
-  },
-  "subscriptionUnsubscribeLogAria": {
-    "message": "Export the local unsubscribe session log as JSON"
-  },
-  "subscriptionUnsubscribeLogButton": {
-    "message": "Unsubscribe log"
-  },
-  "subscriptionUnsubscribeLogEmpty": {
-    "message": "No unsubscribe sessions recorded yet."
-  },
-  "subscriptionUnsubscribeLogExportedTpl": {
-    "message": "Exported {count} unsubscribe sessions"
-  },
-  "subscriptionUnsubscribeRunAriaTpl": {
-    "message": "Unsubscribe up to {count} staged channels in this bounded session"
-  },
-  "subscriptionUnsubscribeRunTitleTpl": {
-    "message": "Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing."
-  },
-  "subscriptionUnsubscribeRunTpl": {
-    "message": "Unsubscribe staged ({count})"
-  },
-  "subscriptionUnsubscribeRunning": {
-    "message": "An unsubscribe session is already running."
-  },
-  "subscriptionUnsubscribeSessionTpl": {
-    "message": "{removed} unsubscribed, {failed} unchanged; {remaining} remain staged."
-  },
-  "subscriptionArchiveAdded": {
-    "message": "Scheduled"
-  },
-  "subscriptionArchiveExisting": {
-    "message": "already configured"
-  },
-  "subscriptionArchiveNoChannels": {
-    "message": "Add channels to this group before scheduling downloads."
-  },
-  "subscriptionArchiveStartCompanion": {
-    "message": "Start Astra Downloader before scheduling channel downloads."
-  },
-  "subscriptionArchiveUnavailable": {
-    "message": "The Astra Downloader companion is not available."
-  },
   "subscriptionImportAria": {
     "message": "Import subscription groups"
+  },
+  "subscriptionImportTitle": {
+    "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
+  },
+  "subscriptionLoadedOnlyHint": {
+    "message": "Newest first sorts only videos loaded on this page. Scroll to load more."
   },
   "subscriptionMembersAdded": {
     "message": "Channel added to group"
@@ -5077,6 +5056,21 @@
   },
   "subscriptionMembersTitleTpl": {
     "message": "Edit channels — {group}"
+  },
+  "subscriptionMenuUnsubscribe": {
+    "message": "Unsubscribe"
+  },
+  "subscriptionOrderGroupsHint": {
+    "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
+  },
+  "subscriptionOrderLabel": {
+    "message": "Order"
+  },
+  "subscriptionOrderNative": {
+    "message": "YouTube order"
+  },
+  "subscriptionOrderNewestLoaded": {
+    "message": "Newest first (loaded only)"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
@@ -5159,6 +5153,57 @@
   "subscriptionToolbarUndoStagedTpl": {
     "message": "Undo Staged ({count})"
   },
+  "subscriptionUnsubscribeCapTpl": {
+    "message": "{count} remain staged beyond the {cap}-per-run cap."
+  },
+  "subscriptionUnsubscribeEmpty": {
+    "message": "Nothing is staged for unsubscribe."
+  },
+  "subscriptionUnsubscribeLogAria": {
+    "message": "Export the local unsubscribe session log as JSON"
+  },
+  "subscriptionUnsubscribeLogButton": {
+    "message": "Unsubscribe log"
+  },
+  "subscriptionUnsubscribeLogEmpty": {
+    "message": "No unsubscribe sessions recorded yet."
+  },
+  "subscriptionUnsubscribeLogExportedTpl": {
+    "message": "Exported {count} unsubscribe sessions"
+  },
+  "subscriptionUnsubscribeRunAriaTpl": {
+    "message": "Unsubscribe up to {count} staged channels in this bounded session"
+  },
+  "subscriptionUnsubscribeRunTitleTpl": {
+    "message": "Apply YouTube unsubscribe only to the staged review list, up to {count} channels at 400 ms pacing."
+  },
+  "subscriptionUnsubscribeRunTpl": {
+    "message": "Unsubscribe staged ({count})"
+  },
+  "subscriptionUnsubscribeRunning": {
+    "message": "An unsubscribe session is already running."
+  },
+  "subscriptionUnsubscribeSessionTpl": {
+    "message": "{removed} unsubscribed, {failed} unchanged; {remaining} remain staged."
+  },
+  "subscriptionViewCompact": {
+    "message": "Compact"
+  },
+  "subscriptionViewGrid": {
+    "message": "Grid"
+  },
+  "subscriptionViewLabel": {
+    "message": "View"
+  },
+  "subscriptionViewList": {
+    "message": "List"
+  },
+  "subscriptionViewToolbarLabel": {
+    "message": "Subscription view controls"
+  },
+  "toastActionManage": {
+    "message": "Manage"
+  },
   "toastActionOpen": {
     "message": "Open"
   },
@@ -5168,11 +5213,53 @@
   "toastDismissAria": {
     "message": "Dismiss notification"
   },
+  "toastDlCmdCopied": {
+    "message": "Fallback install command copied. Use it only if you cannot run the downloaded setup file."
+  },
+  "toastDlInProgress": {
+    "message": "A download is already in progress."
+  },
+  "toastDlInstallPrompt": {
+    "message": "Install Astra Downloader to enable downloads."
+  },
   "toastDlPreparingAudio": {
     "message": "Preparing your audio download…"
   },
   "toastDlPreparingVideo": {
     "message": "Preparing your video download…"
+  },
+  "toastDlReady": {
+    "message": "Astra Downloader is ready."
+  },
+  "toastDlRequestFailed": {
+    "message": "Astra Downloader request failed."
+  },
+  "toastDlRunning": {
+    "message": "Astra Downloader is running!"
+  },
+  "toastDlStarted": {
+    "message": "Astra Downloader started!"
+  },
+  "toastDlStarting": {
+    "message": "Starting Astra Downloader…"
+  },
+  "toastDlStopped": {
+    "message": "Astra Downloader stopped. Starting it again…"
+  },
+  "toggleStateOff": {
+    "message": "Disabled"
+  },
+  "toggleStateOffLower": {
+    "message": "disabled"
+  },
+  "toggleStateOn": {
+    "message": "Enabled"
+  },
+  "toggleStateOnLower": {
+    "message": "enabled"
+  },
+  "toggleUpdateFailTpl": {
+    "message": "Couldn't update {name}. Try again."
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -5228,6 +5315,9 @@
   "transcriptEyebrow": {
     "message": "Captions & Exports"
   },
+  "transcriptJumpAriaTpl": {
+    "message": "Jump to {time} in the transcript"
+  },
   "transcriptLlmPrompt": {
     "message": "LLM prompt"
   },
@@ -5243,14 +5333,14 @@
   "transcriptTranslate": {
     "message": "Translate"
   },
-  "transcriptTranslatedTpl": {
-    "message": "Translated to {language}"
-  },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
   },
   "transcriptTranslateUnavailable": {
     "message": "Chrome Translator API not available in this browser"
+  },
+  "transcriptTranslatedTpl": {
+    "message": "Translated to {language}"
   },
   "transcriptTranslating": {
     "message": "Translating…"
@@ -5258,194 +5348,35 @@
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
   },
+  "ui_rydCardRatioSuffix": {
+    "message": "liked · estimated by Return YouTube Dislike"
+  },
   "undo": {
     "message": "Undo"
+  },
+  "undoImportAria": {
+    "message": "Restore data from the most recent Import"
+  },
+  "undoImportBtn": {
+    "message": "Undo Import"
+  },
+  "undoResetAria": {
+    "message": "Restore data from the most recent Reset"
+  },
+  "undoResetBtn": {
+    "message": "Undo Reset"
+  },
+  "updateCompanionAria": {
+    "message": "Update Astra Downloader companion"
+  },
+  "updateCompanionBtn": {
+    "message": "Update Astra Downloader"
   },
   "updateYtdlpAria": {
     "message": "Force yt-dlp self-update"
   },
   "updateYtdlpBtn": {
     "message": "Update yt-dlp"
-  },
-  "videoNotesDelete": {
-    "message": "Delete"
-  },
-  "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
-  },
-  "videoNotesEmpty": {
-    "message": "No note saved for this video."
-  },
-  "videoNotesExport": {
-    "message": "Export Notes"
-  },
-  "videoNotesExportAria": {
-    "message": "Export all video notes"
-  },
-  "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
-  },
-  "videoNotesExportEmpty": {
-    "message": "No video notes to export."
-  },
-  "videoNotesEyebrow": {
-    "message": "Local Notes"
-  },
-  "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
-  },
-  "videoNotesInputAria": {
-    "message": "Notes for this video"
-  },
-  "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
-  },
-  "videoNotesRegionAria": {
-    "message": "Per-video notes"
-  },
-  "videoNotesRemoved": {
-    "message": "Removed video note"
-  },
-  "videoNotesRestored": {
-    "message": "Video note restored"
-  },
-  "videoNotesSaved": {
-    "message": "Saved locally."
-  },
-  "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
-  },
-  "videoNotesSaveFailed": {
-    "message": "Couldn\\u2019t save \\u2014 storage full or unavailable."
-  },
-  "videoNotesSaving": {
-    "message": "Saving…"
-  },
-  "videoNotesTitle": {
-    "message": "Video Notes"
-  },
-  "welcomeBody": {
-    "message": "Pick a profile to start. You can change it any time in Settings."
-  },
-  "welcomeDismiss": {
-    "message": "Skip"
-  },
-  "welcomeDismissAria": {
-    "message": "Dismiss welcome card"
-  },
-  "welcomeProfileFullDesc": {
-    "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."
-  },
-  "welcomeProfileFullTitle": {
-    "message": "GitHub-Full"
-  },
-  "welcomeProfileRecommended": {
-    "message": "Recommended"
-  },
-  "welcomeProfileSafeDesc": {
-    "message": "Everything that ships on extension stores. No download companion, no BYO AI keys."
-  },
-  "welcomeProfileSafeTitle": {
-    "message": "Store-Safe"
-  },
-  "welcomeTitle": {
-    "message": "Welcome to Astra Deck"
-  },
-  "whatsNewDismiss": {
-    "message": "Dismiss"
-  },
-  "whatsNewDismissAria": {
-    "message": "Dismiss"
-  },
-  "whatsNewOpen": {
-    "message": "Read changelog"
-  },
-  "whatsNewTitle": {
-    "message": "Updated"
-  },
-  "transcriptJumpAriaTpl": {
-    "message": "Jump to {time} in the transcript"
-  },
-  "spOverviewEnabledLabel": {
-    "message": "Enabled"
-  },
-  "spSettingsClearBtn": {
-    "message": "Clear"
-  },
-  "spRefreshStatusReady": {
-    "message": "Ready"
-  },
-  "subscriptionDigestMarkAllReadEmpty": {
-    "message": "Nothing new since your last visit"
-  },
-  "channelAgePublishedOnTpl": {
-    "message": "Published on {date}"
-  },
-  "channelAgeScheduledForTpl": {
-    "message": "Scheduled for {date}"
-  },
-  "watchLaterNothingToRemove": {
-    "message": "Nothing to remove"
-  },
-  "watchLaterRemovedAll": {
-    "message": "Removed {count} ✓"
-  },
-  "watchLaterRemovedPartial": {
-    "message": "Removed {removed} of {total}"
-  },
-  "watchLaterRemoveFailed": {
-    "message": "Couldn't remove {count} video(s) — YouTube's menu item wasn't found."
-  },
-  "watchLaterRemoveWatched": {
-    "message": "Remove Watched"
-  },
-  "watchLaterRemoveWatchedAria": {
-    "message": "Remove all watched videos from Watch Later"
-  },
-  "watchLaterRemovingProgress": {
-    "message": "Removing {current} / {total}…"
-  },
-  "watchLaterSaveManually": {
-    "message": "Open More actions on this card to save it manually."
-  },
-  "watchLaterScanning": {
-    "message": "Scanning…"
-  },
-  "videoHiderMarkWatched": {
-    "message": "Mark as watched"
-  },
-  "videoHiderUnmarkWatched": {
-    "message": "Unmark as watched"
-  },
-  "videoHiderMarkedWatched": {
-    "message": "Marked as watched"
-  },
-  "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
-  },
-  "videoHiderMarkWatchedToggle": {
-    "message": "Show mark-as-watched button"
-  },
-  "videoHiderMarkWatchedToggleDesc": {
-    "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
-  },
-  "dualSubtitleLanguageAuto": {
-    "message": "Automatic alternate language"
-  },
-  "dualSubtitleTrackAria": {
-    "message": "Secondary subtitles"
-  },
-  "feature_dualLanguageSubtitles_desc": {
-    "message": "Show an independently selected second caption track below YouTube captions when available"
-  },
-  "feature_dualLanguageSubtitles_name": {
-    "message": "Dual-language Subtitles"
-  },
-  "feature_dualSubtitleLanguage_desc": {
-    "message": "Choose the caption language rendered below native YouTube captions"
-  },
-  "feature_dualSubtitleLanguage_name": {
-    "message": "Second Subtitle Language"
   },
   "videoHiderAddAllowedChannelCopy": {
     "message": "Paste a channel URL, handle, or channel ID. Only channels in this list are filtered by allowlist mode; an empty list is safe and applies no channel filter."
@@ -5468,8 +5399,17 @@
   "videoHiderAllowedChannelSingular": {
     "message": "Allowed Channel"
   },
+  "videoHiderAllowedChannelToast": {
+    "message": "Channel allowed: {name}"
+  },
+  "videoHiderAllowedChannelsStatus": {
+    "message": "Allowed"
+  },
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
+  },
+  "videoHiderAlreadyAllowedChannelToast": {
+    "message": "{name} is already allowed"
   },
   "videoHiderBlockChannelButton": {
     "message": "Block Channel"
@@ -5479,6 +5419,9 @@
   },
   "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
+  },
+  "videoHiderBlockedChannelsStatus": {
+    "message": "Blocked"
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
@@ -5531,14 +5474,35 @@
   "videoHiderChannelBlocklistPlaceholder": {
     "message": "https://youtube.com/@channel or @handle"
   },
+  "videoHiderChannelListCount": {
+    "message": "{count} in Your List"
+  },
   "videoHiderClearAllowedChannels": {
     "message": "Clear Allowed Channels"
   },
   "videoHiderClearBlockedChannels": {
     "message": "Unblock All Channels"
   },
+  "videoHiderHideButtonAllowChannel": {
+    "message": "Hide this video (right-click to allow channel)"
+  },
+  "videoHiderHideButtonBlockChannel": {
+    "message": "Hide this video (right-click to block channel)"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+  },
+  "videoHiderMarkWatched": {
+    "message": "Mark as watched"
+  },
+  "videoHiderMarkWatchedToggle": {
+    "message": "Show mark-as-watched button"
+  },
+  "videoHiderMarkWatchedToggleDesc": {
+    "message": "Add a per-card control that marks a video watched locally. Marked cards dim, or hide when Remove hidden cards is enabled."
+  },
+  "videoHiderMarkedWatched": {
+    "message": "Marked as watched"
   },
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
@@ -5549,271 +5513,335 @@
   "videoHiderUnblockChannel": {
     "message": "Unblock"
   },
-  "toastActionManage": {
-    "message": "Manage"
+  "videoHiderUnmarkWatched": {
+    "message": "Unmark as watched"
   },
-  "videoHiderAllowedChannelsStatus": {
-    "message": "Allowed"
+  "videoHiderUnmarkedWatched": {
+    "message": "Mark removed"
   },
-  "videoHiderAllowedChannelToast": {
-    "message": "Channel allowed: {name}"
+  "videoInsightsCategory": {
+    "message": "Category"
   },
-  "videoHiderAlreadyAllowedChannelToast": {
-    "message": "{name} is already allowed"
+  "videoInsightsChannelId": {
+    "message": "Channel ID"
   },
-  "videoHiderBlockedChannelsStatus": {
-    "message": "Blocked"
+  "videoInsightsLoading": {
+    "message": "Loading video details…"
   },
-  "videoHiderChannelListCount": {
-    "message": "{count} in Your List"
+  "videoInsightsNoTags": {
+    "message": "No tags published"
   },
-  "videoHiderHideButtonAllowChannel": {
-    "message": "Hide this video (right-click to allow channel)"
+  "videoInsightsSourceCache": {
+    "message": "Cached YouTube details"
   },
-  "videoHiderHideButtonBlockChannel": {
-    "message": "Hide this video (right-click to block channel)"
+  "videoInsightsSourceDegraded": {
+    "message": "From this page — YouTube lookup unavailable"
   },
-  "feature_audioAutoGain_desc": {
-    "message": "Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage."
+  "videoInsightsSourceNetwork": {
+    "message": "Refreshed from YouTube"
   },
-  "feature_audioAutoGain_name": {
-    "message": "Audio Auto-Gain"
+  "videoInsightsSourcePage": {
+    "message": "From this page"
   },
-  "feature_audioHighPass_desc": {
-    "message": "Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph."
+  "videoInsightsSourceThrottled": {
+    "message": "From this page — YouTube lookup paused"
   },
-  "feature_audioHighPass_name": {
-    "message": "Audio High-Pass Filter"
+  "videoInsightsTags": {
+    "message": "Tags"
   },
-  "feature_shortsDailyLimitMin_desc": {
-    "message": "Maximum minutes of Shorts playback per local day. Set to 0 to disable."
+  "videoInsightsTitle": {
+    "message": "Video insights"
   },
-  "feature_shortsDailyLimitMin_name": {
-    "message": "Shorts Daily Limit"
+  "videoInsightsUnavailable": {
+    "message": "Not provided"
   },
-  "feature_shortsDailyLimitMode_desc": {
-    "message": "Choose whether reaching the limit blocks Shorts or offers five-minute snoozes."
+  "videoInsightsUnchecked": {
+    "message": "Not checked"
   },
-  "feature_shortsDailyLimitMode_name": {
-    "message": "Shorts Limit Action"
+  "videoInsightsUploaded": {
+    "message": "Uploaded"
   },
-  "shortsDailyLimitMode_hard": {
-    "message": "Hard block"
+  "videoNotesDelete": {
+    "message": "Delete"
   },
-  "shortsDailyLimitMode_snooze": {
-    "message": "Snooze 5 minutes"
+  "videoNotesDeleteAria": {
+    "message": "Delete the note for this video"
   },
-  "dwShortsHardBlockHint": {
-    "message": "This hard block resets at your next local midnight."
+  "videoNotesEmpty": {
+    "message": "No note saved for this video."
   },
-  "dwShortsHardBlockMessage": {
-    "message": "You have reached your {limit}-minute Shorts budget for today. Leave Shorts to continue watching other YouTube videos."
+  "videoNotesExport": {
+    "message": "Export Notes"
   },
-  "dwShortsLeaveButton": {
-    "message": "Leave Shorts"
+  "videoNotesExportAria": {
+    "message": "Export all video notes"
   },
-  "dwShortsLimitEyebrow": {
-    "message": "Shorts Guard"
+  "videoNotesExportEmpty": {
+    "message": "No video notes to export."
   },
-  "dwShortsLimitResetHint": {
-    "message": "The Shorts budget resets at your next local midnight."
+  "videoNotesExportedTpl": {
+    "message": "Exported {count} video notes"
   },
-  "dwShortsLimitTitle": {
-    "message": "Shorts Limit Reached"
+  "videoNotesEyebrow": {
+    "message": "Local Notes"
   },
-  "dwShortsSnoozeButton": {
-    "message": "Snooze 5 Minutes"
+  "videoNotesIdUnavailable": {
+    "message": "Video ID unavailable"
   },
-  "dwShortsSnoozeMessage": {
-    "message": "You have watched {minutes} minutes of Shorts today. Take a break, or snooze the guard for five more minutes."
+  "videoNotesInputAria": {
+    "message": "Notes for this video"
   },
-  "feature_hideAiContextPanels_desc": {
-    "message": "Remove fact-checking and contextual information panels"
+  "videoNotesPlaceholder": {
+    "message": "Write notes for this video…"
   },
-  "feature_hideAiContextPanels_name": {
-    "message": "Hide AI Context Panels"
+  "videoNotesRegionAria": {
+    "message": "Per-video notes"
   },
-  "feature_hideAskAi_desc": {
-    "message": "Remove Ask AI buttons and conversational sections"
+  "videoNotesRemoved": {
+    "message": "Removed video note"
   },
-  "feature_hideAskAi_name": {
-    "message": "Hide Ask AI"
+  "videoNotesRestored": {
+    "message": "Video note restored"
   },
-  "feature_hideGeminiButtons_desc": {
-    "message": "Remove Gemini-branded actions without hiding other AI surfaces"
+  "videoNotesSaveFailed": {
+    "message": "Couldn\\u2019t save \\u2014 storage full or unavailable."
   },
-  "feature_hideGeminiButtons_name": {
-    "message": "Hide Gemini Buttons"
+  "videoNotesSaved": {
+    "message": "Saved locally."
   },
-  "feature_notificationHideRead_desc": {
-    "message": "Hide notifications that YouTube marks as already read."
+  "videoNotesSavedUnderTpl": {
+    "message": "Saved under {videoId}"
   },
-  "feature_notificationHideRead_name": {
-    "message": "Hide Read Notifications"
+  "videoNotesSaving": {
+    "message": "Saving…"
   },
-  "feature_notificationMaxCount_desc": {
-    "message": "Limit the number of notifications shown. Set to 0 to show all."
+  "videoNotesTitle": {
+    "message": "Video Notes"
   },
-  "feature_notificationMaxCount_name": {
-    "message": "Notification Count"
+  "watchLaterNothingToRemove": {
+    "message": "Nothing to remove"
   },
-  "commentDuplicateHide": {
-    "message": "Hide similar comments"
+  "watchLaterRemoveFailed": {
+    "message": "Couldn't remove {count} video(s) — YouTube's menu item wasn't found."
   },
-  "commentDuplicateShowTpl": {
-    "message": "Show {count} similar comments"
+  "watchLaterRemoveWatched": {
+    "message": "Remove Watched"
   },
-  "feature_commentDuplicateCollapse_desc": {
-    "message": "Collapse near-duplicate comments under an accessible expander using local text comparison only."
+  "watchLaterRemoveWatchedAria": {
+    "message": "Remove all watched videos from Watch Later"
   },
-  "feature_commentDuplicateCollapse_name": {
-    "message": "Collapse Similar Comments"
+  "watchLaterRemovedAll": {
+    "message": "Removed {count} ✓"
   },
-  "feature_commentLanguageAllowlist_desc": {
-    "message": "Show only comments in these language codes, such as en, es, or fr. Leave empty to allow every language; detection stays local and fails open when uncertain."
+  "watchLaterRemovedPartial": {
+    "message": "Removed {removed} of {total}"
   },
-  "feature_commentLanguageAllowlist_name": {
-    "message": "Comment Language Allowlist"
+  "watchLaterRemovingProgress": {
+    "message": "Removing {current} / {total}…"
   },
-  "feature_playlistAutoSkipWatched_desc": {
-    "message": "When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled."
+  "watchLaterSaveManually": {
+    "message": "Open More actions on this card to save it manually."
   },
-  "feature_playlistAutoSkipWatched_name": {
-    "message": "Auto-skip watched playlist items"
+  "watchLaterScanning": {
+    "message": "Scanning…"
   },
-  "playlistAutoSkipOff": {
-    "message": "Auto-skip: Off"
+  "welcomeBody": {
+    "message": "Pick a profile to start. You can change it any time in Settings."
   },
-  "playlistAutoSkipOn": {
-    "message": "Auto-skip: On"
+  "welcomeDismiss": {
+    "message": "Skip"
   },
-  "playlistAutoSkipTitle": {
-    "message": "Skip playlist entries with at least 90% watched progress"
+  "welcomeDismissAria": {
+    "message": "Dismiss welcome card"
   },
-  "playlistCopied": {
-    "message": "Copied"
+  "welcomePresetBody": {
+    "message": "How will you use YouTube? Pick a preset or skip to configure manually."
   },
-  "playlistCopyAllTitle": {
-    "message": "Copy all playlist video URLs"
+  "welcomePresetFocusDesc": {
+    "message": "Reduce Shorts, related videos, infinite scroll, autoplay, and session drift."
   },
-  "playlistCopyBlocked": {
-    "message": "Clipboard access was blocked. Try again or use the browser copy shortcut."
+  "welcomePresetFocusTitle": {
+    "message": "Focus"
   },
-  "playlistCopying": {
-    "message": "Copying…"
+  "welcomePresetGroupAria": {
+    "message": "Pick a usage preset"
   },
-  "playlistCopyRetry": {
-    "message": "Retry"
+  "welcomePresetPowerDesc": {
+    "message": "Persistent speed, A-B loop, stats overlay, PiP, and focused mode."
   },
-  "playlistCopyUrls": {
-    "message": "Copy URLs"
+  "welcomePresetPowerTitle": {
+    "message": "Power User"
   },
-  "playlistCopyVisibleTitle": {
-    "message": "Copy the visible playlist video URLs"
+  "welcomePresetPrivacyDesc": {
+    "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
-  "playlistCurrentIsLast": {
-    "message": "Resume Last"
+  "welcomePresetPrivacyTitle": {
+    "message": "Privacy"
   },
-  "playlistDuplicateCountTpl": {
-    "message": "{count} duplicates"
+  "welcomePresetResearcherDesc": {
+    "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
   },
-  "playlistDurationLongest": {
-    "message": "Duration ↓"
+  "welcomePresetResearcherTitle": {
+    "message": "Researcher"
   },
-  "playlistDurationShortest": {
-    "message": "Duration ↑"
+  "welcomePresetSkip": {
+    "message": "Skip — configure manually"
   },
-  "playlistHiddenDuplicatesTpl": {
-    "message": "{count} duplicates hidden"
+  "welcomeProfileFullDesc": {
+    "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."
   },
-  "playlistHideDuplicates": {
-    "message": "Hide Duplicates"
+  "welcomeProfileFullTitle": {
+    "message": "GitHub-Full"
   },
-  "playlistHideDuplicatesTitle": {
-    "message": "Hide repeated videos in this playlist panel"
+  "welcomeProfileGroupAria": {
+    "message": "Pick a starting profile"
   },
-  "playlistNoResumeTitle": {
-    "message": "No earlier video is remembered for this playlist"
+  "welcomeProfileRecommended": {
+    "message": "Recommended"
   },
-  "playlistNoUrls": {
-    "message": "No URLs"
+  "welcomeProfileSafeDesc": {
+    "message": "Everything that ships on extension stores. No download companion, no BYO AI keys."
   },
-  "playlistNoUrlsToast": {
-    "message": "No playlist URLs are ready to copy yet."
+  "welcomeProfileSafeTitle": {
+    "message": "Store-Safe"
   },
-  "playlistRestoreOrderTitle": {
-    "message": "Restore the original playlist order"
+  "welcomeTitle": {
+    "message": "Welcome to Astra Deck"
   },
-  "playlistResumeLast": {
-    "message": "Resume Last"
+  "whaCloseAria": {
+    "message": "Close watch time dashboard",
+    "description": "Accessible label for the dashboard close button"
   },
-  "playlistResumeLastTitle": {
-    "message": "Open the last video remembered for this playlist"
+  "whaOpenButton": {
+    "message": "📊 Watch Stats",
+    "description": "Watch-page button that opens the watch-time dashboard"
   },
-  "playlistShowDuplicates": {
-    "message": "Show Duplicates"
+  "whaStatActiveDays": {
+    "message": "Active days",
+    "description": "Stat tile label: days with any watch time"
   },
-  "playlistShowDuplicatesTitle": {
-    "message": "Show repeated videos in this playlist panel"
+  "whaStatAllTime": {
+    "message": "All time",
+    "description": "Stat tile label: all-time watch total"
   },
-  "playlistShuffle": {
-    "message": "Shuffle"
+  "whaStatDailyAvg": {
+    "message": "Daily avg",
+    "description": "Stat tile label: average watch time per day"
   },
-  "playlistShuffleNeedTwo": {
-    "message": "Need at least 2 playlist items to shuffle."
+  "whaStatTotal": {
+    "message": "Total (30d)",
+    "description": "Stat tile label: total watch time over 30 days"
   },
-  "playlistShuffleTitle": {
-    "message": "Play a random visible video from this playlist panel"
+  "whaTitle": {
+    "message": "Watch Time — Last 30 Days",
+    "description": "Heading of the watch-time dashboard overlay"
   },
-  "playlistSortDuration": {
-    "message": "Sort Duration"
+  "whatsNewDismiss": {
+    "message": "Dismiss"
   },
-  "playlistSortDurationTitle": {
-    "message": "Sort playlist items by duration; activate again to reverse"
+  "whatsNewDismissAria": {
+    "message": "Dismiss"
   },
-  "playlistStatusLoading": {
-    "message": "Playlist"
+  "whatsNewOpen": {
+    "message": "Read changelog"
   },
-  "playlistToolsTitle": {
-    "message": "Playlist Tools"
+  "whatsNewTitle": {
+    "message": "Updated"
   },
-  "playlistVideoCountTpl": {
-    "message": "{count} videos"
+  "wlwbChannelAria": {
+    "message": "Channel name filter"
   },
-  "feature_audioEqHighGainDb_desc": {
-    "message": "High-shelf gain centered at 8 kHz, from -12 dB to +12 dB."
+  "wlwbChannelPlaceholder": {
+    "message": "Channel contains…"
   },
-  "feature_audioEqHighGainDb_name": {
-    "message": "EQ High Band"
+  "wlwbCloseAria": {
+    "message": "Close workbench"
   },
-  "feature_audioEqLowGainDb_desc": {
-    "message": "Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB."
+  "wlwbExportCsv": {
+    "message": "Export CSV"
   },
-  "feature_audioEqLowGainDb_name": {
-    "message": "EQ Low Band"
+  "wlwbExportJson": {
+    "message": "Export JSON"
   },
-  "feature_audioEqMidGainDb_desc": {
-    "message": "Peaking gain centered at 1 kHz, from -12 dB to +12 dB."
+  "wlwbExportedToastTpl": {
+    "message": "Exported {count} loaded Watch Later entries"
   },
-  "feature_audioEqMidGainDb_name": {
-    "message": "EQ Mid Band"
+  "wlwbLogEmpty": {
+    "message": "Removal log is empty"
   },
-  "feature_audioParametricEq_desc": {
-    "message": "Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB."
+  "wlwbNoMatches": {
+    "message": "No matching rows to remove"
   },
-  "feature_audioParametricEq_name": {
-    "message": "Parametric EQ"
+  "wlwbOpenAria": {
+    "message": "Open the Watch Later workbench"
   },
-  "feature_listFeedLayout_desc": {
-    "message": "Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row."
+  "wlwbOpenBtn": {
+    "message": "Workbench"
   },
-  "feature_listFeedLayout_name": {
-    "message": "List Feed Layout"
+  "wlwbPanelAria": {
+    "message": "Watch Later workbench"
   },
-  "feature_bufferPreload_desc": {
-    "message": "Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed."
+  "wlwbRemovalLogBtn": {
+    "message": "Removal log"
   },
-  "feature_bufferPreload_name": {
-    "message": "Buffer / Preload"
+  "wlwbRemoveMatchedTpl": {
+    "message": "Remove matched (max {limit}/run)"
+  },
+  "wlwbRemovedRemainingTpl": {
+    "message": "— {count} still match, run again"
+  },
+  "wlwbRemovedToastTpl": {
+    "message": "Removed {count} video(s){remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovingTpl": {
+    "message": "Removing {current} / {total}…"
+  },
+  "wlwbRowTitleTpl": {
+    "message": "{title} — {channel} ({percent}% watched)"
+  },
+  "wlwbSortAria": {
+    "message": "Preview sort order"
+  },
+  "wlwbSortLongest": {
+    "message": "Longest first"
+  },
+  "wlwbSortPlaylist": {
+    "message": "Playlist order"
+  },
+  "wlwbSortShortest": {
+    "message": "Shortest first"
+  },
+  "wlwbSortTitle": {
+    "message": "Title A–Z"
+  },
+  "wlwbStatusTpl": {
+    "message": "{matched} of {loaded} loaded videos match. Scroll the playlist to load more rows before running."
+  },
+  "wlwbTitleAria": {
+    "message": "Title filter"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "Title contains…"
+  },
+  "wlwbWatchedAria": {
+    "message": "Minimum watched percent filter"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "Watched ≥ % (e.g. 90)"
+  },
+  "workspaceEyebrow": {
+    "message": "Settings workspace"
+  },
+  "workspaceSupport": {
+    "message": "Quick toggles save immediately and sync to YouTube."
+  },
+  "workspaceTitle": {
+    "message": "Controls and backups"
+  },
+  "youtubeStateResetToast": {
+    "message": "YouTube state cleared ({count}). Use Undo in Astra Deck before closing this tab."
+  },
+  "youtubeStateRestoreToast": {
+    "message": "YouTube state restored ({count}). Reload the page to apply it."
   }
 }

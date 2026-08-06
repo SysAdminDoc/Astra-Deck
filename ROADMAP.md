@@ -57,16 +57,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — UX / theming / product
 
-- [ ] P2 — watchHistoryAnalytics overlay: no dialog semantics, unlabeled close, hardcoded English, off-brand palette, overflow below ~700px
-  Category: a11y
-  Where: extension/ytkit.js:33592-33686
-  Problem: (a) The modal has no role="dialog"/aria-modal, no focus trap, no Escape handling — the settings panel and toasts got CloseWatcher/popover treatment (d4bebef5); this overlay was skipped and is absent from audit-overlays-a11y.js's covered list. (b) `close.textContent='×'` has no aria-label and no type="button" (:33599). (c) All strings hardcoded English in an 11-locale product ('Watch Time — Last 30 Days', 'Total (30d)', 'Daily avg', 'Active days', 'All time', '📊 Watch Stats'). (d) Catppuccin palette (#1e1e2e/#cdd6f4/#89b4fa at :33641-33660) instead of the graphite/coral Astra system used by every other injected surface. (e) min-width:680px beats max-width:90vw → overflows below ~700px with no scroll. The injected '📊 Watch Stats' chip is fixed-dark (legible but alien on light theme).
-  Evidence: All sites read directly; overlay absent from the a11y audit script's list.
-  Fix: Give it the standard overlay treatment: popover/CloseWatcher + role=dialog + labeled close (type=button, aria-label via locale key), localize the six strings (locale-key flow: en + generate-locales + ar/zh_CN backfill), restyle with the shared surface tokens, swap min-width for width:min(680px, 94vw), and add it to audit-overlays-a11y.js's covered list.
-  Acceptance: audit:overlays covers it and passes; Escape closes it; strings resolve from the catalog in all 11 locales; renders inside a 390px viewport without overflow.
-  Confidence: Verified
-  Effort: M
-
 - [ ] P2 — Flagship injected controls are hardcoded English despite full i18n elsewhere
   Category: ux
   Where: extension/ytkit.js:18520-18536 (Download button 'Show local download options'/'Download' — no catalog keys), :18277-18287 ('Hide all visible videos on this page'/'Hide All'), :21406 ('Sleep timer' + hint), :2112-2113 (`'Dismiss ' + label` concatenation — can't localize grammatically), preset toasts at :42158/:42171 ('Low Power on…') and siblings; subscription dialog aria-labels that audit-overlays-a11y.js:457 pins AS English source strings

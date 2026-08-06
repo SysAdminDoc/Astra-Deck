@@ -33786,7 +33786,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _fmt(s) { const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); return h > 0 ? `${h}h ${m}m` : `${m}m`; },
             _open() {
-                if (this._modal) { this._modal.remove(); this._modal = null; return; }
+                if (this._modal) { this._closeOverlay(); return; }
                 const stats = sanitizeWatchTimeStats(StorageManager.get(this._storageKey, { days: {}, total: 0 }));
                 const days = [];
                 for (let i = 29; i >= 0; i--) {
@@ -33803,10 +33803,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 overlay.onclick = (e) => { if (e.target === overlay) this._open(); };
                 const card = document.createElement('div');
                 card.className = 'ytkit-wha-card';
+                // Dialog semantics: the settings panel and toasts got these in
+                // d4bebef5; this overlay was skipped and is absent from the
+                // audit-overlays covered list, so nothing caught it.
+                card.setAttribute('role', 'dialog');
+                card.setAttribute('aria-modal', 'true');
+                card.tabIndex = -1;
                 const head = document.createElement('div');
                 head.className = 'ytkit-wha-head';
-                const title = document.createElement('h2'); title.textContent = 'Watch Time — Last 30 Days';
-                const close = document.createElement('button'); close.textContent = '×'; close.className = 'ytkit-wha-close'; close.onclick = () => this._open();
+                const title = document.createElement('h2');
+                title.id = 'ytkit-wha-title';
+                title.textContent = t('whaTitle', 'Watch Time — Last 30 Days');
+                card.setAttribute('aria-labelledby', title.id);
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.textContent = '×';
+                close.className = 'ytkit-wha-close';
+                close.setAttribute('aria-label', t('whaCloseAria', 'Close watch time dashboard'));
+                close.onclick = () => this._open();
                 head.append(title, close);
                 const statsRow = document.createElement('div');
                 statsRow.className = 'ytkit-wha-stats';
@@ -33815,10 +33829,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const l = document.createElement('div'); l.className = 'ytkit-wha-stat-l'; l.textContent = lbl;
                     d.append(v, l); return d; };
                 statsRow.append(
-                    mk('Total (30d)', this._fmt(total)),
-                    mk('Daily avg', this._fmt(avg)),
-                    mk('Active days', `${active}/30`),
-                    mk('All time', this._fmt(stats.total || 0)),
+                    mk(t('whaStatTotal', 'Total (30d)'), this._fmt(total)),
+                    mk(t('whaStatDailyAvg', 'Daily avg'), this._fmt(avg)),
+                    mk(t('whaStatActiveDays', 'Active days'), `${active}/30`),
+                    mk(t('whaStatAllTime', 'All time'), this._fmt(stats.total || 0)),
                 );
                 const chart = document.createElement('div');
                 chart.className = 'ytkit-wha-chart';
@@ -33840,34 +33854,59 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 overlay.appendChild(card);
                 document.body.appendChild(overlay);
                 this._modal = overlay;
+                this._lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                this._keyHandler = (event) => {
+                    if (event.key === 'Escape') {
+                        event.stopPropagation();
+                        this._open();
+                    }
+                };
+                overlay.addEventListener('keydown', this._keyHandler);
+                card.focus();
+            },
+
+            _closeOverlay() {
+                if (this._keyHandler && this._modal) {
+                    this._modal.removeEventListener('keydown', this._keyHandler);
+                }
+                this._keyHandler = null;
+                this._modal?.remove();
+                this._modal = null;
+                if (this._lastFocus?.isConnected) this._lastFocus.focus();
+                this._lastFocus = null;
             },
             init() {
                 this._styleEl = injectStyle(`
                     .ytkit-wha-overlay {
                         position: fixed; inset: 0; z-index: 2147483647;
-                        background: rgba(17, 17, 27, 0.85); display: flex; align-items: center; justify-content: center;
+                        background: rgba(8, 10, 16, 0.86); display: flex; align-items: center; justify-content: center; padding: 16px;
                         backdrop-filter: none;
                     }
                     .ytkit-wha-card {
-                        background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
-                        border-radius: 12px; padding: 20px; min-width: 680px; max-width: 90vw;
+                        background: #12151c; color: #f4f6fb; border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 12px; padding: 20px;
+                        /* min-width beat max-width, so the card overflowed the
+                           viewport below ~700px with no way to scroll. */
+                        width: min(680px, 100%); max-height: min(88vh, 100%); overflow: auto;
                         box-shadow: 0 20px 60px rgba(0,0,0,0.6); font: 13px Roboto, system-ui;
                     }
                     .ytkit-wha-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-                    .ytkit-wha-head h2 { margin: 0; font: 700 18px Roboto; color: #89b4fa; }
-                    .ytkit-wha-close { background: transparent; color: #cdd6f4; border: none; font-size: 24px; cursor: pointer; }
+                    .ytkit-wha-head h2 { margin: 0; font: 700 18px Roboto; color: #f4f6fb; }
+                    .ytkit-wha-close { background: transparent; color: #f4f6fb; border: none; font-size: 24px; cursor: pointer; border-radius: 8px; line-height: 1; padding: 0 6px; }
+                    .ytkit-wha-close:focus-visible { outline: 2px solid var(--ytkit-accent-light, #ff7a59); outline-offset: 2px; }
+                    .ytkit-wha-card:focus-visible { outline: 2px solid var(--ytkit-accent-light, #ff7a59); outline-offset: 4px; }
                     .ytkit-wha-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-                    .ytkit-wha-stat { background: #313244; padding: 10px; border-radius: 8px; text-align: center; }
-                    .ytkit-wha-stat-v { font: 700 18px Roboto; color: #f5c2e7; }
-                    .ytkit-wha-stat-l { color: #a6adc8; font-size: 11px; margin-top: 2px; }
+                    .ytkit-wha-stat { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; }
+                    .ytkit-wha-stat-v { font: 700 18px Roboto; color: var(--ytkit-accent-light, #ff9f87); }
+                    .ytkit-wha-stat-l { color: rgba(244,246,251,0.72); font-size: 11px; margin-top: 2px; }
                     .ytkit-wha-chart { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; height: 240px; align-items: end; }
                     .ytkit-wha-col { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
                     .ytkit-wha-bar {
-                        width: 100%; background: linear-gradient(180deg, #89b4fa, #cba6f7);
+                        width: 100%; background: linear-gradient(180deg, rgba(var(--ytkit-accent-rgb,255,122,89),0.95), rgba(var(--ytkit-accent-rgb,255,122,89),0.45));
                         border-radius: 4px 4px 0 0; min-height: 2px; transition: filter 120ms;
                     }
                     .ytkit-wha-bar:hover { filter: brightness(1.3); }
-                    .ytkit-wha-lbl { font-size: 9px; color: #6c7086; margin-top: 4px; transform: rotate(-45deg); white-space: nowrap; }
+                    .ytkit-wha-lbl { font-size: 9px; color: rgba(244,246,251,0.55); margin-top: 4px; transform: rotate(-45deg); white-space: nowrap; }
                 `, this.id, true);
                 window.__ytkitOpenAnalytics = () => this._open();
                 // Add entry point as a button on watch page
@@ -33880,8 +33919,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!menu || document.querySelector('.ytkit-wha-btn')) return;
                 const btn = document.createElement('button');
                 btn.className = 'ytkit-wha-btn';
-                btn.textContent = '📊 Watch Stats';
-                btn.style.cssText = 'background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius: 10px;padding:6px 14px;font:600 12px Roboto;cursor:pointer;margin:4px;';
+                btn.type = 'button';
+                btn.textContent = t('whaOpenButton', '📊 Watch Stats');
+                btn.style.cssText = 'background:rgba(255,255,255,0.06);color:inherit;border:1px solid rgba(255,255,255,0.12);border-radius: 10px;padding:6px 14px;font:600 12px Roboto;cursor:pointer;margin:4px;';
                 btn.onclick = () => this._open();
                 menu.appendChild(btn);
             },
@@ -33889,7 +33929,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
                 removeNavigateRule('watchHistoryAnalytics');
-                this._modal?.remove(); this._modal = null;
+                this._closeOverlay();
                 this._styleEl?.remove(); this._styleEl = null;
                 document.querySelectorAll('.ytkit-wha-btn').forEach(b => b.remove());
                 delete window.__ytkitOpenAnalytics;

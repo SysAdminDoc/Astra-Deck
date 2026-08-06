@@ -1792,6 +1792,13 @@ for (const [locale, messages] of Object.entries(AUDIO_TRACK_TRANSLATIONS)) Objec
 
 const AUDIO_SYNC_TRANSLATIONS = {
   ar: {
+    'Watch Time — Last 30 Days': 'وقت المشاهدة — آخر 30 يومًا',
+    'Close watch time dashboard': 'إغلاق لوحة وقت المشاهدة',
+    'Total (30d)': 'الإجمالي (30 يومًا)',
+    'Daily avg': 'المتوسط اليومي',
+    'Active days': 'أيام النشاط',
+    'All time': 'كل الأوقات',
+    '📊 Watch Stats': '📊 إحصاءات المشاهدة',
     'Audio Sync Offset': 'إزاحة مزامنة الصوت',
     'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'اضبط توقيت الصوت بالنسبة إلى الفيديو من -500 مللي ثانية إلى +500 مللي ثانية. تضيف القيم الموجبة تأخيرًا للصوت، بينما تستخدم القيم السالبة أقل زمن تأخير متاح في Web Audio.'
   },
@@ -1828,6 +1835,13 @@ const AUDIO_SYNC_TRANSLATIONS = {
     'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': 'Настройте тайминг аудио относительно видео от -500 до +500 мс. Положительные значения добавляют задержку аудио, а отрицательные используют минимальную доступную задержку Web Audio.'
   },
   zh_CN: {
+    'Watch Time — Last 30 Days': '观看时长 — 最近 30 天',
+    'Close watch time dashboard': '关闭观看时长面板',
+    'Total (30d)': '总计（30 天）',
+    'Daily avg': '日均',
+    'Active days': '活跃天数',
+    'All time': '全部时间',
+    '📊 Watch Stats': '📊 观看统计',
     'Audio Sync Offset': '音频同步偏移',
     'Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency.': '将音频相对于视频的时间调整为 -500 毫秒至 +500 毫秒。正值会增加音频延迟；负值使用可用的最低 Web Audio 延迟。'
   }
@@ -1836,6 +1850,13 @@ for (const [locale, messages] of Object.entries(AUDIO_SYNC_TRANSLATIONS)) Object
 
 const WATCH_LATER_TRANSLATIONS = {
   de: {
+    'Watch Time — Last 30 Days': 'Wiedergabezeit — letzte 30 Tage',
+    'Close watch time dashboard': 'Wiedergabezeit-Übersicht schließen',
+    'Total (30d)': 'Gesamt (30 T.)',
+    'Daily avg': 'Ø pro Tag',
+    'Active days': 'Aktive Tage',
+    'All time': 'Gesamt',
+    '📊 Watch Stats': '📊 Wiedergabestatistik',
     'Published on {date}': 'Veröffentlicht am {date}',
     'Scheduled for {date}': 'Geplant für {date}',
     'Nothing to remove': 'Nichts zu entfernen',
@@ -1849,6 +1870,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'Wird gescannt…'
   },
   es: {
+    'Watch Time — Last 30 Days': 'Tiempo de visualización — últimos 30 días',
+    'Close watch time dashboard': 'Cerrar panel de tiempo de visualización',
+    'Total (30d)': 'Total (30 d)',
+    'Daily avg': 'Media diaria',
+    'Active days': 'Días activos',
+    'All time': 'Histórico',
+    '📊 Watch Stats': '📊 Estadísticas',
     'Published on {date}': 'Publicado el {date}',
     'Scheduled for {date}': 'Programado para {date}',
     'Nothing to remove': 'Nada que quitar',
@@ -1862,6 +1890,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'Analizando…'
   },
   fr: {
+    'Watch Time — Last 30 Days': 'Temps de visionnage — 30 derniers jours',
+    'Close watch time dashboard': 'Fermer le tableau de bord du temps de visionnage',
+    'Total (30d)': 'Total (30 j)',
+    'Daily avg': 'Moyenne par jour',
+    'Active days': 'Jours actifs',
+    'All time': 'Depuis le début',
+    '📊 Watch Stats': '📊 Statistiques',
     'Published on {date}': 'Publié le {date}',
     'Scheduled for {date}': 'Programmé pour le {date}',
     'Nothing to remove': 'Rien à supprimer',
@@ -1875,6 +1910,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'Analyse…'
   },
   it: {
+    'Watch Time — Last 30 Days': 'Tempo di visione — ultimi 30 giorni',
+    'Close watch time dashboard': 'Chiudi il pannello del tempo di visione',
+    'Total (30d)': 'Totale (30 gg)',
+    'Daily avg': 'Media giornaliera',
+    'Active days': 'Giorni attivi',
+    'All time': 'Da sempre',
+    '📊 Watch Stats': '📊 Statistiche',
     'Published on {date}': 'Pubblicato il {date}',
     'Scheduled for {date}': 'Programmato per {date}',
     'Nothing to remove': 'Niente da rimuovere',
@@ -1888,6 +1930,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'Scansione…'
   },
   pt_BR: {
+    'Watch Time — Last 30 Days': 'Tempo de exibição — últimos 30 dias',
+    'Close watch time dashboard': 'Fechar painel de tempo de exibição',
+    'Total (30d)': 'Total (30 d)',
+    'Daily avg': 'Média diária',
+    'Active days': 'Dias ativos',
+    'All time': 'Desde o início',
+    '📊 Watch Stats': '📊 Estatísticas',
     'Published on {date}': 'Publicado em {date}',
     'Scheduled for {date}': 'Agendado para {date}',
     'Nothing to remove': 'Nada para remover',
@@ -1901,6 +1950,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'Verificando…'
   },
   ru: {
+    'Watch Time — Last 30 Days': 'Время просмотра — последние 30 дней',
+    'Close watch time dashboard': 'Закрыть панель времени просмотра',
+    'Total (30d)': 'Всего (30 дн.)',
+    'Daily avg': 'В среднем за день',
+    'Active days': 'Активных дней',
+    'All time': 'За всё время',
+    '📊 Watch Stats': '📊 Статистика',
     'Published on {date}': 'Опубликовано: {date}',
     'Scheduled for {date}': 'Запланировано на {date}',
     'Nothing to remove': 'Нечего удалять',
@@ -1914,6 +1970,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'Сканирование…'
   },
   ja: {
+    'Watch Time — Last 30 Days': '視聴時間 — 過去30日',
+    'Close watch time dashboard': '視聴時間ダッシュボードを閉じる',
+    'Total (30d)': '合計（30日）',
+    'Daily avg': '1日平均',
+    'Active days': '視聴した日数',
+    'All time': '全期間',
+    '📊 Watch Stats': '📊 視聴統計',
     'Published on {date}': '{date} に公開',
     'Scheduled for {date}': '{date} に予定',
     'Nothing to remove': '削除するものはありません',
@@ -1927,6 +1990,13 @@ const WATCH_LATER_TRANSLATIONS = {
     'Scanning…': 'スキャン中…'
   },
   ko: {
+    'Watch Time — Last 30 Days': '시청 시간 — 최근 30일',
+    'Close watch time dashboard': '시청 시간 대시보드 닫기',
+    'Total (30d)': '합계(30일)',
+    'Daily avg': '일 평균',
+    'Active days': '시청한 날',
+    'All time': '전체 기간',
+    '📊 Watch Stats': '📊 시청 통계',
     'Published on {date}': '{date}에 게시됨',
     'Scheduled for {date}': '{date}에 예약됨',
     'Nothing to remove': '삭제할 항목 없음',
