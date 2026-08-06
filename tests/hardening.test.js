@@ -12372,3 +12372,65 @@ test('preset recipes build a next settings object instead of mutating appState i
     assert.match(ytkitSource, /this\._clearBackup\(\);[\s\S]{0,120}?commitPresetSettings\(next\)/,
         'the backup must be cleared before the restore is committed');
 });
+
+// ── Volume wheel must read the volume it is about to change ──
+// getVolume() is a MAIN-world expando on the player element, so from the
+// ISOLATED content-script world it is undefined and the old `?? 50` fallback
+// won every tick: volume snapped to ~50% on the first scroll and could never
+// leave the 45-55% band.
+test('volumeWheelMode baselines from the media element, not a hardcoded 50', () => {
+    const start = ytkitSource.indexOf("id: 'volumeWheelMode'");
+    assert.ok(start > -1, 'volumeWheelMode must exist');
+    const block = ytkitSource.slice(start, ytkitSource.indexOf('_attach() {', start));
+
+    assert.doesNotMatch(block, /current = movie\?\.getVolume\?\.\(\) \?\? 50/,
+        'the player API must not be the sole volume source in the isolated world');
+    assert.match(block, /Number\.isFinite\(video\?\.volume\)\s*\?\s*Math\.round\(video\.volume \* 100\)/,
+        'the media element volume must provide the baseline');
+    assert.match(block, /const reported = movie\?\.getVolume\?\.\(\);[\s\S]{0,120}?if \(Number\.isFinite\(reported\)\) current = reported;/,
+        'a genuinely answering player API must still win');
+    assert.match(block, /if \(next > 0 && video\.muted\) video\.muted = false;/,
+        'scrolling up past silence must unmute even without the player API');
+});
+
+// ── Auto-dismiss features must not click dialogs the user opened ──
+// `#confirm-button` / `#accept-button` / `#cancel-button` inside a generic
+// yt-confirm-dialog-renderer or tp-yt-paper-dialog are YouTube's shared
+// controls: clear watch history, delete playlist, discard comment, save to
+// playlist. Both features clicked whatever was open, within ~200ms of render.
+test('autoDismissStillWatching only accepts the you-there prompt', () => {
+    const start = ytkitSource.indexOf("id: 'autoDismissStillWatching'");
+    assert.ok(start > -1, 'autoDismissStillWatching must exist');
+    const block = ytkitSource.slice(start, ytkitSource.indexOf('_debounceTimer:', start));
+
+    assert.doesNotMatch(block, /\.ytd-popup-container tp-yt-paper-button#button/,
+        'the blanket popup-container button selector must be gone');
+    assert.match(block, /_isYouTherePrompt\(\)/,
+        'dismissal must be gated on the prompt being the you-there prompt');
+    assert.match(block, /ytmusic-you-there-renderer/,
+        'the structural you-there renderer must be recognised');
+    assert.match(block, /continue watching\|still watching\|video paused/,
+        'the English phrasing must be recognised directly');
+    assert.match(block, /video\.paused && !video\.ended/,
+        'the locale-independent gate is that playback is paused');
+});
+
+test('autoClosePopups targets named promo renderers, never generic dialog buttons', () => {
+    const start = ytkitSource.indexOf("id: 'autoClosePopups'");
+    assert.ok(start > -1, 'autoClosePopups must exist');
+    const block = ytkitSource.slice(start, ytkitSource.indexOf("id: 'autoDismissContentWarning'", start));
+
+    for (const forbidden of [
+        'tp-yt-paper-dialog #accept-button,',
+        'tp-yt-paper-dialog #cancel-button',
+        'tp-yt-paper-dialog #dismiss-button button',
+    ]) {
+        assert.ok(!block.includes(forbidden),
+            `autoClosePopups must not match the generic selector "${forbidden}"`);
+    }
+    assert.match(block, /ytd-mealbar-promo-renderer/, 'promo renderer must still be dismissed');
+    assert.match(block, /ytd-survey-renderer/, 'survey renderer must still be dismissed');
+    assert.match(block, /consent-bump-v2-lightbox/, 'consent bump must still be dismissed');
+    assert.match(block, /addMutationRule\('autoClosePopups', \(\) => this\._scheduleDismiss\(400\)\)/,
+        'the mutation path must be debounced rather than scanning every tick');
+});
