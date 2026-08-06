@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "Audio seul"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "Audio seul désactivé en direct"
-  },
   "audioOnlyLowest": {
     "message": "Mode audio · qualité minimale"
   },
@@ -1185,7 +1182,7 @@
     "message": "Normalisation audio"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "Réduit la vidéo et demande au lecteur le flux le moins coûteux dont il dispose, pour qu’une page de visionnage coûte à peu près autant qu’un podcast. YouTube n’expose aucun flux audio seul aux extensions : la pastille indique donc si vous en avez obtenu un ou seulement la qualité minimale. Les directs ne sont pas modifiés."
+    "message": "Réduit la vidéo et demande au lecteur le flux le moins coûteux dont il dispose, pour qu’une page de visionnage coûte à peu près autant qu’un podcast. YouTube n’expose aucun flux audio seul aux extensions : la pastille indique donc si vous en avez obtenu un ou seulement la qualité minimale. Fonctionne aussi sur les directs, où une session de plusieurs heures offre la plus grande économie."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "Mode audio seul"

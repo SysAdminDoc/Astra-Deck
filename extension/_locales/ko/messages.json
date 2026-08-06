@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "오디오 전용"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "실시간에서는 오디오 전용 꺼짐"
-  },
   "audioOnlyLowest": {
     "message": "오디오 모드 · 최저 화질"
   },
@@ -1185,7 +1182,7 @@
     "message": "오디오 정규화"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림은 변경되지 않습니다."
+    "message": "영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림에서도 작동하며, 몇 시간짜리 시청에서 절약 효과가 가장 큽니다."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "오디오 전용 모드"

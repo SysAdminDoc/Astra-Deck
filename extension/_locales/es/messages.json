@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "Solo audio"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "Solo audio desactivado en directo"
-  },
   "audioOnlyLowest": {
     "message": "Modo audio · calidad más baja"
   },
@@ -1185,7 +1182,7 @@
     "message": "Normalizacion de audio"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "Contrae el vídeo y pide al reproductor el flujo más barato que tenga, de modo que una página de vídeo cueste aproximadamente lo que un pódcast. YouTube no expone a las extensiones un flujo de solo audio real, por lo que la etiqueta indica si lo has obtenido o solo la calidad más baja. Las emisiones en directo no se modifican."
+    "message": "Contrae el vídeo y pide al reproductor el flujo más barato que tenga, de modo que una página de vídeo cueste aproximadamente lo que un pódcast. YouTube no expone a las extensiones un flujo de solo audio real, por lo que la etiqueta indica si lo has obtenido o solo la calidad más baja. También funciona en emisiones en directo, donde una sesión de varias horas da el mayor ahorro."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "Modo solo audio"

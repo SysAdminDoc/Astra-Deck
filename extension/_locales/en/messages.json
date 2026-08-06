@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "Audio only"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "Audio-only off for live"
-  },
   "audioOnlyLowest": {
     "message": "Audio mode · lowest quality"
   },
@@ -1185,7 +1182,7 @@
     "message": "Audio Normalization"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone."
+    "message": "Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "Audio-Only Mode"

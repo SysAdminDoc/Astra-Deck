@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "Nur Audio"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "Nur-Audio bei Live aus"
-  },
   "audioOnlyLowest": {
     "message": "Audiomodus · niedrigste Qualität"
   },
@@ -1185,7 +1182,7 @@
     "message": "Audio-Normalisierung"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "Blendet das Bild aus und fordert vom Player den günstigsten verfügbaren Stream an, sodass eine Videoseite etwa so viel kostet wie ein Podcast. YouTube stellt Erweiterungen keinen echten Nur-Audio-Stream bereit, daher zeigt die Plakette an, ob du einen bekommen hast oder nur die niedrigste Qualität. Livestreams bleiben unverändert."
+    "message": "Blendet das Bild aus und fordert vom Player den günstigsten verfügbaren Stream an, sodass eine Videoseite etwa so viel kostet wie ein Podcast. YouTube stellt Erweiterungen keinen echten Nur-Audio-Stream bereit, daher zeigt die Plakette an, ob du einen bekommen hast oder nur die niedrigste Qualität. Funktioniert auch bei Livestreams, wo eine mehrstündige Sitzung die größte Ersparnis bringt."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "Nur-Audio-Modus"

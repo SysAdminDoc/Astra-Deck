@@ -958,7 +958,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.54.0';
+    const YTKIT_VERSION = '4.54.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -32858,7 +32858,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'audioOnlyPlayback',
             name: t('feature_audioOnlyPlayback_name', 'Audio-Only Mode'),
-            description: t('feature_audioOnlyPlayback_desc', 'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.'),
+            description: t('feature_audioOnlyPlayback_desc', 'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.'),
             group: 'Video Player',
             icon: 'volume-2',
             pages: [PageTypes.WATCH],
@@ -32919,11 +32919,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const root = document.documentElement;
                 const status = root.getAttribute('data-ytkit-audio-only-status') || '';
                 const reason = root.getAttribute('data-ytkit-audio-only-reason') || '';
-                if (status === 'skipped') {
-                    this._renderPill(t('audioOnlyLiveSkipped', 'Audio-only off for live'), 'warn');
-                    setFeatureHealth(this.id, { status: 'initialized', source: 'audio-only', initialized: true, lastError: null });
-                    return;
-                }
                 if (status === 'degraded') {
                     this._renderPill(t('audioOnlyUnavailable', 'Audio-only unavailable'), 'warn');
                     setFeatureHealth(this.id, {
