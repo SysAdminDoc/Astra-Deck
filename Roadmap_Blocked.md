@@ -415,3 +415,21 @@ deleted from ROADMAP.md; what remains here is the coverage ledger.
   Acceptance: A fixture test drives the menu path on a non-English UI; the clamp still applies when the menu item is absent.
   Confidence: Verified (mechanism); menu shape needs a live check
   Effort: S
+
+- [ ] P3 — Userscript-tier competitive survey (Greasy Fork)
+  Blocker: two reasons, either sufficient. (1) Greasy Fork returns HTTP 403 to every
+  automated fetch, so install counts and script source cannot be read the way the
+  extension tier was read from GitHub. (2) It is research, not implementation — the
+  drain pass explicitly does not carry out research.
+  Needs: either a paste of the Greasy Fork youtube.com listing, or the survey run
+  against the scripts' own GitHub repos where they exist. Then diff against the
+  schema the same way the extension tier was diffed.
+- [ ] P3 — Userscript-tier survey (Greasy Fork) — not yet performed
+  Category: docs
+  Where: research scope record
+  Problem: The competitor diff above covers the EXTENSION tier only. The userscript tier is where experimental features appear first, and `RESEARCH.md` (2026-08-02) barely touches it. Greasy Fork returned HTTP 403 to every automated fetch during the 2026-08-06 pass, so install counts and source could not be read and no conclusion was drawn — this is an absence of evidence, not evidence of absence.
+  Evidence: Named but unverified candidates: "Better YouTube Shorts", "YouTube Improvements – Layout & Video Enhancer", "YouTube Enhancer" (several unrelated scripts share the name), h5player (3.7k stars, ~80% keyboard-shortcut driven and therefore mostly out of scope under this repo's no-shortcuts rule).
+  Fix: Survey via a route that is not blocked — the scripts' own GitHub repos where they exist, or a manual paste of the Greasy Fork listing. Diff against the 441-key schema the same way.
+  Acceptance: Either findings logged as roadmap items, or an explicit "surveyed, nothing new" note with the method used.
+  Confidence: Verified (the gap in coverage is real)
+  Effort: M

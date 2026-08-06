@@ -12,54 +12,14 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 - `Roadmap_Blocked.md` "P0 — Tag and publish the v4.51.1 release" is **version-stale as of 2026-08-06**: `gh release list` shows the latest published release is still v4.50.7 (2026-07-28), so the item itself is live, but the tree is now at v4.51.4 and the companion has moved to SysAdminDoc/AstraDownloader (a6bb685f) — the release must NOT carry `AstraDownloader.exe` (the `companion-not-republished` / `companion-not-manifested` readiness gates enforce this). Retarget the item to v4.51.4 (or current) with extension artifacts only. Note: several other `Roadmap_Blocked.md` items name `astra_downloader/*.py` paths that no longer exist in this repo — see the 2026-08-06 audit finding "Blocked-item tracker references files removed by the companion split" below.
 
-## Competitive Feature Additions — 2026-08-06
+## Status
 
-Sourced by diffing the top-voted OPEN feature requests of the three most
-active competitors (ImprovedTube, Enhancer for YouTube, Control Panel for
-YouTube — 52 issues) against Astra's 441 settings. Astra already ships ~90%
-of them; only the items below survived that diff, and each was verified
-absent in the tree rather than assumed. Extends the 2026-08-02 landscape in
-`RESEARCH.md`, which surveyed the projects but not their backlogs.
+No open items. The 2026-08-06 competitive-feature additions are drained
+(buffer target, audio-only mode, comment translation, cross-tab PiP,
+UI font) alongside the earlier research and audit backlogs — shipped work
+lives in git history and `CHANGELOG.md`.
 
-Deliberately NOT logged, having been checked and found already shipped:
-list/compact feed view, original audio track, hide watched, sub-1000-view
-filter, reverse playlist, A-B loop, Shorts-to-regular-video, scroll-wheel
-speed, disable hover previews, anti-translate (titles/descriptions/
-transcripts), Watch Later cleanup, per-context quality, settings
-import/export, popup search, Shorts scrubbing (`shortsAsRegularVideo`
-already sets `video.controls = true`). Old-UI restoration remains rejected
-per `RESEARCH.md` despite being ImprovedTube's #3 and #10 request — Control
-Panel's equivalent broke again on 2026-07-27.
-
-NEW-SETTING RECIPE (all 8 touchpoints or the gates fail — see repo
-`CLAUDE.md`): ytkit.js defaults + feature object; `settings-schema.js` entry;
-`default-settings.json`; `en/messages.json` feature_<id>_name/desc then
-`node scripts/generate-locales.js`; `check-userscript-drift.js`
-classification; fixture `expectedDefaulted`; the hardening SETTINGS_SCHEMA
-count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
-
-### P2 — Highest external demand
-
-### P3 — Smaller gaps
-
-- [ ] P3 — Decide whether embedded YouTube players on third-party pages are in scope
-  Category: docs
-  Where: extension/manifest.json content_scripts — matches are `*.youtube.com`, `*.youtube-nocookie.com`, `youtu.be`; `all_frames` is set ONLY on the live_chat block
-  Problem: Astra does nothing to an embedded player on a third-party page. The domains are already declared, so the gap is `all_frames`, not permissions — but flipping it would run the full ~80-file bundle in every embed on the web, which contradicts the deliberate deep-equal bundle invariant in `build-fixes.test.js:41` and the performance posture. h5player's headline capability is exactly this (iframe + shadow-DOM video). It is a product decision, not a defect, and should be recorded either way so the next audit stops re-finding it.
-  Evidence: Verified locally — manifest matches and `all_frames` enumerated above.
-  Fix: Decide. If yes, it needs a build-time slim bundle (already deferred once, see the 2026-07-14 perf note in `CLAUDE.md`) rather than a manifest edit. If no, record the rejection in `RESEARCH.md` next to the mobile-port entry.
-  Acceptance: A written decision; if rejected, a `RESEARCH.md` "Rejected Ideas" entry.
-  Confidence: Verified (scope question, not a bug)
-  Effort: S (decision) / L (if accepted)
-
-### Unmined — needs its own pass
-
-- [ ] P3 — Userscript-tier survey (Greasy Fork) — not yet performed
-  Category: docs
-  Where: research scope record
-  Problem: The competitor diff above covers the EXTENSION tier only. The userscript tier is where experimental features appear first, and `RESEARCH.md` (2026-08-02) barely touches it. Greasy Fork returned HTTP 403 to every automated fetch during the 2026-08-06 pass, so install counts and source could not be read and no conclusion was drawn — this is an absence of evidence, not evidence of absence.
-  Evidence: Named but unverified candidates: "Better YouTube Shorts", "YouTube Improvements – Layout & Video Enhancer", "YouTube Enhancer" (several unrelated scripts share the name), h5player (3.7k stars, ~80% keyboard-shortcut driven and therefore mostly out of scope under this repo's no-shortcuts rule).
-  Fix: Survey via a route that is not blocked — the scripts' own GitHub repos where they exist, or a manual paste of the Greasy Fork listing. Diff against the 441-key schema the same way.
-  Acceptance: Either findings logged as roadmap items, or an explicit "surveyed, nothing new" note with the method used.
-  Confidence: Verified (the gap in coverage is real)
-  Effort: M
+Still tracked in `Roadmap_Blocked.md`: the native Stable Volume toggle and
+the userscript-tier survey, plus the older operator-gated items and the two
+audit coverage records. Embedded-player support was decided and rejected —
+see "Rejected Ideas" in `RESEARCH.md`.
