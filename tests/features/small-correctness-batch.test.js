@@ -179,6 +179,6 @@ test('bufferPreload captures the player default and hands it back on disable', (
     assert.match(mainWorldSource, /goal-persists-until-next-load/,
         'when no getter exists the status must say so rather than claim a clean off');
     // The capture must happen BEFORE the first override or it records our own value.
-    assert.match(mainWorldSource, /captureDefaultGoal\(player\);\s*\n\s*try \{\s*\n\s*player\.setBufferingGoal\(TARGET_SECONDS\)/,
+    assert.match(mainWorldSource, /captureDefaultGoal\(player\);\s*\n\s*try \{\s*\n\s*player\.setBufferingGoal\(targetSeconds\)/,
         'the default must be read before the first write');
 });

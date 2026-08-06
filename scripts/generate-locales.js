@@ -2216,6 +2216,80 @@ const STRUCTURAL_MATCH_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(STRUCTURAL_MATCH_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const BUFFER_TARGET_TRANSLATIONS = {
+  de: {
+    'Buffer Target': 'Pufferziel',
+    '{count} min': '{count} Min.',
+    '{count}s': '{count} s',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'Wie viele Sekunden eines Abrufvideos im Voraus gepuffert werden. Höhere Werte überstehen längere Verbindungsabbrüche; der Player kann sehr große Ziele bei langen Videos trotzdem begrenzen.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'Bittet den YouTube-Player, für Abrufvideos einen größeren Puffer zu halten, damit ein kurzer Verbindungsabbruch die Wiedergabe nicht stoppt. Standardmäßig aus; Livestreams werden nie verändert.'
+  },
+  es: {
+    'Buffer Target': 'Objetivo de búfer',
+    '{count} min': '{count} min',
+    '{count}s': '{count} s',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'Cuántos segundos de un vídeo bajo demanda mantener en búfer por delante. Los valores altos resisten cortes de conexión más largos; el reproductor aún puede limitar objetivos muy grandes en vídeos largos.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'Pide al reproductor de YouTube que mantenga un búfer mayor para los vídeos bajo demanda, de modo que un corte breve de conexión no detenga la reproducción. Desactivado por defecto; las emisiones en directo nunca se modifican.'
+  },
+  fr: {
+    'Buffer Target': 'Objectif de mise en mémoire tampon',
+    '{count} min': '{count} min',
+    '{count}s': '{count} s',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'Combien de secondes d’une vidéo à la demande garder en mémoire tampon en avance. Des valeurs élevées absorbent des coupures plus longues ; le lecteur peut tout de même plafonner les objectifs très élevés sur les vidéos longues.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'Demande au lecteur YouTube de conserver une mémoire tampon plus grande pour les vidéos à la demande, afin qu’une brève coupure n’interrompe pas la lecture. Désactivé par défaut ; les directs ne sont jamais modifiés.'
+  },
+  it: {
+    'Buffer Target': 'Obiettivo di buffer',
+    '{count} min': '{count} min',
+    '{count}s': '{count} s',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'Quanti secondi di un video on demand mantenere nel buffer in anticipo. Valori più alti resistono a cadute di connessione più lunghe; il player può comunque limitare obiettivi molto grandi sui video lunghi.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'Chiede al player di YouTube di mantenere un buffer più ampio per i video on demand, così una breve caduta di connessione non interrompe la riproduzione. Disattivato per impostazione predefinita; le dirette non vengono mai modificate.'
+  },
+  pt_BR: {
+    'Buffer Target': 'Meta de buffer',
+    '{count} min': '{count} min',
+    '{count}s': '{count} s',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'Quantos segundos de um vídeo sob demanda manter em buffer à frente. Valores maiores resistem a quedas de conexão mais longas; o player ainda pode limitar metas muito grandes em vídeos longos.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'Pede ao player do YouTube para manter um buffer maior em vídeos sob demanda, para que uma queda breve de conexão não interrompa a reprodução. Desativado por padrão; transmissões ao vivo nunca são alteradas.'
+  },
+  ru: {
+    'Buffer Target': 'Целевой буфер',
+    '{count} min': '{count} мин',
+    '{count}s': '{count} с',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'Сколько секунд видео по запросу держать в буфере заранее. Большие значения переживают более длительные обрывы связи; плеер всё равно может ограничить очень большие значения на длинных видео.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'Просит плеер YouTube держать больший буфер для видео по запросу, чтобы кратковременный обрыв связи не останавливал воспроизведение. По умолчанию выключено; прямые трансляции никогда не изменяются.'
+  },
+  ja: {
+    'Buffer Target': 'バッファ目標',
+    '{count} min': '{count} 分',
+    '{count}s': '{count} 秒',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'オンデマンド動画を何秒先までバッファするか。値を大きくすると長い接続切断にも耐えられます。長時間の動画では、プレーヤーが大きな目標値を制限する場合があります。',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'オンデマンド動画で YouTube プレーヤーにより大きなバッファを保持させ、短い接続切断で再生が止まらないようにします。既定はオフで、ライブ配信は変更されません。'
+  },
+  ko: {
+    'Buffer Target': '버퍼 목표',
+    '{count} min': '{count}분',
+    '{count}s': '{count}초',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': '주문형 동영상을 몇 초 앞까지 버퍼링할지 정합니다. 값이 클수록 긴 연결 끊김을 견딥니다. 긴 동영상에서는 플레이어가 매우 큰 목표값을 제한할 수 있습니다.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': '주문형 동영상에서 YouTube 플레이어가 더 큰 버퍼를 유지하도록 요청해 짧은 연결 끊김으로 재생이 멈추지 않게 합니다. 기본값은 꺼짐이며 실시간 스트림은 변경되지 않습니다.'
+  },
+  ar: {
+    'Buffer Target': 'هدف التخزين المؤقت',
+    '{count} min': '{count} دقيقة',
+    '{count}s': '{count} ثانية',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': 'عدد الثواني التي يتم تخزينها مؤقتًا مسبقًا من فيديو عند الطلب. القيم الأعلى تتحمل انقطاعات اتصال أطول؛ وقد يظل المشغّل يحدّ من الأهداف الكبيرة جدًا في مقاطع الفيديو الطويلة.',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': 'يطلب من مشغّل YouTube الاحتفاظ بتخزين مؤقت أكبر لمقاطع الفيديو عند الطلب، حتى لا يوقف انقطاع الاتصال القصير التشغيل. مُعطّل افتراضيًا، ولا يتم تغيير البث المباشر أبدًا.'
+  },
+  zh_CN: {
+    'Buffer Target': '缓冲目标',
+    '{count} min': '{count} 分钟',
+    '{count}s': '{count} 秒',
+    'How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos.': '为点播视频提前缓冲多少秒。数值越大越能承受较长的断连；对于长视频，播放器仍可能限制过大的目标值。',
+    'Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed.': '请求 YouTube 播放器为点播视频保留更大的缓冲，使短暂断连不会中断播放。默认关闭，直播流不会被更改。'
+  }
+};
+for (const [locale, messages] of Object.entries(BUFFER_TARGET_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

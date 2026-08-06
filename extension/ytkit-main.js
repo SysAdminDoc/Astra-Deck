@@ -513,9 +513,18 @@
     if (typeof document === 'undefined' || !document.documentElement) return;
 
     var ENABLE_ATTR = 'data-ytkit-buffer-preload';
+    var SECONDS_ATTR = 'data-ytkit-buffer-seconds';
     var STATUS_ATTR = 'data-ytkit-buffer-status';
     var REASON_ATTR = 'data-ytkit-buffer-reason';
-    var TARGET_SECONDS = 20;
+    var DEFAULT_TARGET_SECONDS = 20;
+    // Ceiling, not a suggestion. ImprovedTube #581 asks to buffer the whole
+    // video, but the same thread records browsers failing on the largest ones:
+    // a media element handed an unbounded goal allocates until it is evicted or
+    // wedged. Ten minutes of VOD is past any realistic tunnel or uplink gap
+    // while staying inside what the buffer can actually hold.
+    var MAX_TARGET_SECONDS = 600;
+    var MIN_TARGET_SECONDS = 5;
+    var targetSeconds = DEFAULT_TARGET_SECONDS;
     var ON = false;
     var lastAppliedVideo = null;
     var defaultBufferingGoal = null;
@@ -603,9 +612,9 @@
 
         captureDefaultGoal(player);
         try {
-            player.setBufferingGoal(TARGET_SECONDS);
+            player.setBufferingGoal(targetSeconds);
             lastAppliedVideo = video;
-            writeStatus('applied', 'setBufferingGoal:' + TARGET_SECONDS);
+            writeStatus('applied', 'setBufferingGoal:' + targetSeconds);
             return true;
         } catch (_) {
             writeStatus('degraded', 'player-api-error');
@@ -621,7 +630,7 @@
         if (!player || typeof player.getBufferingGoal !== 'function') return;
         try {
             var current = player.getBufferingGoal();
-            if (typeof current === 'number' && isFinite(current) && current > 0 && current !== TARGET_SECONDS) {
+            if (typeof current === 'number' && isFinite(current) && current > 0 && current !== targetSeconds) {
                 defaultBufferingGoal = current;
             }
         } catch (_) {
@@ -676,8 +685,22 @@
         }, delay || 0);
     }
 
+    function readTargetSeconds() {
+        var raw = Number(document.documentElement.getAttribute(SECONDS_ATTR));
+        if (!isFinite(raw) || raw <= 0) return DEFAULT_TARGET_SECONDS;
+        return Math.min(MAX_TARGET_SECONDS, Math.max(MIN_TARGET_SECONDS, Math.round(raw)));
+    }
+
     function syncFromAttr() {
         var next = document.documentElement.getAttribute(ENABLE_ATTR) === 'on';
+        var nextSeconds = readTargetSeconds();
+        if (nextSeconds !== targetSeconds) {
+            targetSeconds = nextSeconds;
+            // The goal changed under a player we already applied to, so the
+            // per-video short-circuit has to be released or the new value only
+            // lands on the next navigation.
+            lastAppliedVideo = null;
+        }
         if (next === ON) {
             if (ON) schedule(0, 'attribute');
             return;
@@ -721,7 +744,7 @@
         });
     }
 
-    _obsRegister([ENABLE_ATTR], syncFromAttr);
+    _obsRegister([ENABLE_ATTR, SECONDS_ATTR], syncFromAttr);
     syncFromAttr();
 })();
 

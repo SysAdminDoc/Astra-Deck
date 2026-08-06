@@ -40,16 +40,6 @@ count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
 
 ### P2 — Highest external demand
 
-- [ ] P2 — Unbounded video prebuffering ("buffer the whole video")
-  Category: feature
-  Where: extension/ytkit-main.js:518 (`var TARGET_SECONDS = 20;`), consumed at :606 `player.setBufferingGoal(TARGET_SECONDS)`; setting `bufferPreload`
-  Problem: `bufferPreload` is a boolean that pins the player's buffering goal to a fixed 20 seconds. The most-upvoted open request on ImprovedTube (13 reactions, #581) is to buffer the ENTIRE video, which is what users on metered or unstable connections actually want — 20s does not survive a tunnel or a rural uplink. The issue also records that browsers fail this for the largest videos, so an unbounded goal needs a real ceiling rather than Infinity.
-  Evidence: ImprovedTube #581 (13 👍, open). Local: TARGET_SECONDS is a module constant with no setting behind it.
-  Fix: Turn the goal into a numeric setting (`bufferPreloadSeconds`, 0 = YouTube default, capped at a value that does not wedge the media element — start at 600s and measure). Keep 20 as the default so existing installs do not change behaviour. The capture/restore path added in v4.53.0 already hands the goal back on disable, so only the value needs to become configurable.
-  Acceptance: Setting the value re-applies without a reload; a long video reaches the requested buffer; disabling restores the captured default; `bench-startup` unaffected.
-  Confidence: Verified (gap); browser ceiling needs measuring
-  Effort: S
-
 - [ ] P2 — Audio-only playback (bandwidth saver)
   Category: feature
   Where: no such setting exists — the only `audio-only` string in the tree is `downloadAudioFormat`'s description (extension/ytkit.js:30606). Adjacent: `qualityProfileMatrix`, `codecSelector`, the MAIN-world player bridge in `extension/ytkit-main.js`

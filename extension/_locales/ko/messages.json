@@ -149,6 +149,14 @@
   "brandName": {
     "message": "Astra Deck"
   },
+  "bufferTargetMinutesTpl": {
+    "message": "{count}분",
+    "description": "Buffer target slider value rendered in minutes"
+  },
+  "bufferTargetSecondsTpl": {
+    "message": "{count}초",
+    "description": "Buffer target slider value rendered in seconds"
+  },
   "bulkActionsAria": {
     "message": "Bulk card actions"
   },
@@ -1278,8 +1286,14 @@
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
   },
+  "feature_bufferPreloadSeconds_desc": {
+    "message": "주문형 동영상을 몇 초 앞까지 버퍼링할지 정합니다. 값이 클수록 긴 연결 끊김을 견딥니다. 긴 동영상에서는 플레이어가 매우 큰 목표값을 제한할 수 있습니다."
+  },
+  "feature_bufferPreloadSeconds_name": {
+    "message": "버퍼 목표"
+  },
   "feature_bufferPreload_desc": {
-    "message": "Ask the YouTube player to keep a bounded 20-second buffer for on-demand videos. Off by default; live streams are never changed."
+    "message": "주문형 동영상에서 YouTube 플레이어가 더 큰 버퍼를 유지하도록 요청해 짧은 연결 끊김으로 재생이 멈추지 않게 합니다. 기본값은 꺼짐이며 실시간 스트림은 변경되지 않습니다."
   },
   "feature_bufferPreload_name": {
     "message": "Buffer / Preload"
