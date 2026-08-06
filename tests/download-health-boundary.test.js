@@ -249,7 +249,56 @@ test('all normal and recovery auto-start paths use the documented cold-start bud
         || arg === 'likelyNeverInstalled ? 2 : AUTO_START_RETRY_BUDGET'));
     assert.match(monolithSource, /const AUTO_START_RETRY_BUDGET = 8;/);
     assert.match(monolithSource, /MediaDLManager\.tryAutoStart\(AUTO_START_RETRY_BUDGET\)/);
-    assert.doesNotMatch(`${moduleSource}\n${monolithSource}`, /tryAutoStart\(\s*[45]\s*\)/);
+
+    // The userscript ships a SEPARATE GM downloader implementation, so this
+    // fix had to be hand-ported — and the pin that was supposed to protect it
+    // deliberately excluded the file, leaving the cold-start timeout live for
+    // every userscript user. A ~12s cold start of the one-file companion exe
+    // does not fit in a 4/5-retry budget, so the retry buttons reported "still
+    // not responding" on a perfectly healthy start.
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+    assert.match(userscriptSource, /const AUTO_START_RETRY_BUDGET = 8;/,
+        'the userscript must declare the same cold-start budget');
+
+    // The settings-panel module reinstated the short budget at its own
+    // "Start service" button while its ytkit.js twin had been fixed — the
+    // module is the shipping path, so the timeout was live.
+    const settingsPanelSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'settings-panel', 'index.js'),
+        'utf8'
+    );
+    assert.doesNotMatch(settingsPanelSource, /tryAutoStart\(\s*[45]\s*\)/,
+        'the settings panel must not pass a short retry budget');
+    assert.doesNotMatch(`${moduleSource}\n${monolithSource}\n${userscriptSource}`, /tryAutoStart\(\s*[45]\s*\)/);
+});
+
+test('userscript twins carry the shipped extension fixes', () => {
+    // The drift checker is feature-ID granular: a feature present in both files
+    // counts as "in parity" no matter how stale the userscript copy is. These
+    // four fixes shipped on the extension path and were never hand-ported.
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+
+    // 6ebf7403 — localized YouTube action hooks.
+    assert.ok(!userscriptSource.includes('_buttonAriaLabels'),
+        'exact English aria-label matching must be gone; it no-ops on every other locale');
+    assert.match(userscriptSource, /_buttonHookChains/,
+        'watch-page action hooks must resolve through structural selector chains');
+
+    // 2df33124 — resetting a channel to 1x must clear the stored speed.
+    assert.match(userscriptSource, /if \(video\.playbackRate === 1\) delete speeds\[channelId\];/,
+        'per-channel speed must be cleared when reset to 1x, not left stored');
+
+    // d2561495 — focused mode is a watch-page feature.
+    const focusedIdx = userscriptSource.indexOf("id: 'focusedMode'");
+    assert.ok(focusedIdx > -1, 'focusedMode must exist in the userscript');
+    assert.match(userscriptSource.slice(focusedIdx, focusedIdx + 400), /pages: \[PageTypes\.WATCH\]/,
+        'focused mode must not hide the masthead on every page type');
 });
 
 test('quality ladder rungs the companion cannot honor are rejected', () => {

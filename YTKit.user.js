@@ -25203,7 +25203,11 @@
                                 banner.dataset.state = 'checking';
                                 text.textContent = t('settingsDlTryingStart', 'Trying to start the Astra Downloader service…');
                                 MediaDLManager.resetAutoStart();
-                                const r = await MediaDLManager.tryAutoStart(5);
+                                // Omitting the argument uses the manager's own
+                                // documented cold-start budget (8). Passing 5 here
+                                // reinstated the ~7.5s timeout the budget bump
+                                // exists to avoid — a cold one-file exe needs ~12s.
+                                const r = await MediaDLManager.tryAutoStart();
                                 if (r.ok) {
                                     banner.dataset.state = 'ready';
                                     text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
@@ -30303,6 +30307,10 @@
     // ── MediaDL Server Manager ──
     // Caches server availability, provides install/status helpers, and auto-start logic.
     const USERSCRIPT_COMPANION_PORT_CATALOGUE = globalThis.YTKitCore?.companionPorts || null;
+    // A cold start of the one-file companion exe takes ~12s; the old 4/5
+    // retry budget (~6-7.5s) timed out and told the user it was not
+    // installed. Matches AUTO_START_RETRY_BUDGET in the extension.
+    const AUTO_START_RETRY_BUDGET = 8;
     const MediaDLManager = {
         _status: null, // null = unknown, 'running', 'not-installed'
         _token: null,
@@ -30404,7 +30412,7 @@
         // Attempts the protocol launch once per page load, then polls health up to
         // `retries` times. If the protocol handler isn't registered, the browser
         // silently ignores it — no error dialog.
-        async tryAutoStart(retries = 4) {
+        async tryAutoStart(retries = AUTO_START_RETRY_BUDGET) {
             if (this._autoStartAttempted) {
                 // Already tried this session — just do a single quick recheck
                 return this.check(true);
@@ -30503,7 +30511,7 @@
                     retryBtn.style.opacity = '0.7';
                     retryBtn.style.pointerEvents = 'none';
                     this.resetAutoStart();
-                    const result = await this.tryAutoStart(5);
+                    const result = await this.tryAutoStart(AUTO_START_RETRY_BUDGET);
                     if (result.ok) {
                         showToast('MediaDL server is running!', '#22c55e', { duration: 3 });
                         prompt.remove();
@@ -30532,7 +30540,7 @@
             const recheckBtn = makeBtn('I just installed it \u2014 check again', 'transparent', '1px solid #30363d', async () => {
                 recheckBtn.querySelector('span').textContent = 'Checking...';
                 this.resetAutoStart();
-                const result = await this.tryAutoStart(5);
+                const result = await this.tryAutoStart(AUTO_START_RETRY_BUDGET);
                 if (result.ok) {
                     showToast('MediaDL is ready! Downloads will now use 1080p+ quality.', '#22c55e', { duration: 4 });
                     prompt.remove();
@@ -30979,7 +30987,7 @@
         if (!mdl.ok) {
             // COLD start of the 40 MB one-file companion can take ~8-10s —
             // poll 8 x 1.5s like the extension instead of the 4-try default.
-            mdl = await MediaDLManager.tryAutoStart(8);
+            mdl = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
         }
 
         // ── Use MediaDL if available ──
@@ -32862,11 +32870,40 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 transcriptSection: 'ytd-video-description-transcript-section-renderer',
                 channelInfoCards: 'ytd-video-description-infocards-section-renderer'
             },
-            // Button aria-labels for JS-based hiding (find parent yt-button-view-model)
-            _buttonAriaLabels: {
-                askButton: 'Ask',
-                saveButton: 'Save to playlist',
-                moreActions: 'More actions'
+            // Structural selector chains first, English aria-label only as a
+            // final fallback. Exact aria-label matching is English-only, so on
+            // any other YouTube locale these hide-toggles silently did nothing.
+            // Chains mirror extension/core/selector-packs/watch.js — the
+            // userscript does not bundle the selector-pack runtime, so they are
+            // inlined here; update both when the pack changes.
+            _buttonHookChains: {
+                askButton: [
+                    'ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model button',
+                    'ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai]) button',
+                    'ytd-watch-metadata button[aria-label*="AI"]',
+                    'ytd-watch-metadata button[aria-label="Ask"]'
+                ],
+                saveButton: [
+                    'ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has(path[d^="M19 2H5"]) button',
+                    'ytd-watch-metadata button-view-model:has(path[d^="M19 2H5"]) button',
+                    'ytd-watch-metadata button[aria-label="Save to playlist"]'
+                ],
+                moreActions: [
+                    'ytd-watch-metadata #actions-inner #button-shape > button',
+                    'ytd-watch-metadata ytd-menu-renderer > yt-button-shape#button-shape > button',
+                    'ytd-watch-metadata button[aria-label="More actions"]'
+                ]
+            },
+
+            _findHookedButton(root, chain) {
+                for (const selector of chain) {
+                    try {
+                        const found = (root || document).querySelector(selector)
+                            || document.querySelector(selector);
+                        if (found) return found;
+                    } catch (_) { /* reason: :has() is unsupported on old engines; try the next selector */ }
+                }
+                return null;
             },
             _hideButtons() {
                 const hidden = appState.settings.hiddenWatchElements || [];
@@ -32874,10 +32911,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!metadata) return;
 
                 // Hide buttons by finding them via aria-label
-                Object.entries(this._buttonAriaLabels).forEach(([key, ariaLabel]) => {
+                Object.entries(this._buttonHookChains).forEach(([key, chain]) => {
                     if (hidden.includes(key)) {
                         try {
-                            const btn = metadata.querySelector(`button[aria-label="${ariaLabel}"]`);
+                            const btn = this._findHookedButton(metadata, chain);
                             if (btn) {
                                 const parent = btn.closest('yt-button-view-model') || btn.closest('yt-button-shape');
                                 // Validate parent is a real DOM element (YouTube's Polymer can return Symbol/Proxy objects)
@@ -32905,7 +32942,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 // Use mutation observer for button hiding (aria-label based)
-                const hasButtonsToHide = hidden.some(key => this._buttonAriaLabels[key]);
+                const hasButtonsToHide = hidden.some(key => this._buttonHookChains[key]);
                 if (hasButtonsToHide) {
                     // Initial hide attempt
                     this._hideButtons();
@@ -36705,9 +36742,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const channelId = this._getChannelId();
                 if (!channelId) return;
                 const video = document.querySelector('video.html5-main-video');
-                if (!video || video.playbackRate === 1) return;
+                if (!video) return;
                 const speeds = this._getSpeeds();
-                speeds[channelId] = video.playbackRate;
+                // Resetting to 1x must CLEAR the entry: leaving it stored
+                // meant the channel could never be returned to normal speed.
+                if (video.playbackRate === 1) delete speeds[channelId];
+                else speeds[channelId] = video.playbackRate;
                 // Prune to 500 channels max
                 const keys = Object.keys(speeds);
                 if (keys.length > 500) delete speeds[keys[0]];
@@ -39583,6 +39623,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'focusedMode',
             name: 'Focused Mode',
             description: 'Hides everything except the video player and comments for a distraction-free experience',
+            pages: [PageTypes.WATCH],
             group: 'Watch Page',
             icon: 'eye',
             _styleEl: null,
@@ -44916,7 +44957,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             startBtn.textContent = '...';
                             startBtn.style.pointerEvents = 'none';
                             MediaDLManager.resetAutoStart();
-                            const r = await MediaDLManager.tryAutoStart(5);
+                            const r = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
                             if (r.ok) {
                                 dot.style.background = '#22c55e';
                                 text.textContent = `Running${r.version ? ' (v' + r.version + ')' : ''} \u2014 1080p+ downloads with muxing`;

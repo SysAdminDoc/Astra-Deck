@@ -2087,7 +2087,11 @@ function buildSettingsPanel() {
                             banner.dataset.state = 'checking';
                             text.textContent = t('settingsDlTryingStart', 'Trying to start the Astra Downloader service…');
                             MediaDLManager.resetAutoStart();
-                            const r = await MediaDLManager.tryAutoStart(5);
+                            // Omitting the argument uses the manager's own
+                            // documented cold-start budget (8). Passing 5 here
+                            // reinstated the ~7.5s timeout the budget bump
+                            // exists to avoid — a cold one-file exe needs ~12s.
+                            const r = await MediaDLManager.tryAutoStart();
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
                                 text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
