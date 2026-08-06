@@ -42,16 +42,6 @@ count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
 
 ### P3 — Smaller gaps
 
-- [ ] P3 — Comment translation
-  Category: feature
-  Where: no such setting. Every existing language control is either ANTI-translate (`antiTranslate`, `antiTranslateTranscript`, `antiTranslateAudioTrack`) or track selection (`dualLanguageSubtitles`, `autoSubtitleLang`, `preferredAudioLang`, `commentLanguageAllowlist`)
-  Problem: Astra can hide comments in languages you do not read (`commentLanguageAllowlist`, shipped) but cannot translate them. Subtitles are already covered by `dualLanguageSubtitles`, so the gap is comments specifically. No competitor ships this either — MouseTooltipTranslator (1.3k stars) does hover-translation generically and is the closest prior art.
-  Evidence: Verified absent — `grep -ril translateComment extension/` returns nothing; the schema's language keys are enumerated above.
-  Fix: `commentTranslate` + a target-language select, translating on demand per comment (a hover or click affordance, not a bulk pass). Route through the existing EXT_FETCH allowlist; a new provider origin needs a data-flow entry and a store-profile decision. The local-AI path (`localAiSummary`) is the no-new-origin option and should be evaluated first.
-  Acceptance: A non-English comment translates in place and reverts; the original text is never destroyed; no new host permission in the store-safe profile.
-  Confidence: Verified (gap); provider choice is the open question
-  Effort: M
-
 - [ ] P3 — Cross-tab Picture-in-Picture handoff
   Category: feature
   Where: extension/ytkit.js `popOutPlayer` (:23053-23058, Document PiP + `requestPictureInPicture`), `pipButton`, `pauseOtherTabs` (BroadcastChannel)

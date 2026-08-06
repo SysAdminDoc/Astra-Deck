@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "ترجمة"
+  },
+  "commentTranslateAuto": {
+    "message": "تلقائي (لغة المتصفح)"
+  },
+  "commentTranslateFailed": {
+    "message": "فشلت الترجمة"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "عرض الأصل"
+  },
+  "commentTranslateUnavailable": {
+    "message": "الترجمة غير متاحة في هذا المتصفح"
+  },
+  "commentTranslating": {
+    "message": "جارٍ الترجمة…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "تطبيع الصوت"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "يطوي الفيديو ويطلب من المشغّل أرخص دفق متاح، لتصبح صفحة المشاهدة بتكلفة قريبة من البودكاست. لا يتيح YouTube للإضافات دفقًا صوتيًا خالصًا، لذلك توضح الشارة ما حصلت عليه فعلًا. لا يتم تغيير البث المباشر."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "وضع الصوت فقط"
+  },
   "feature_audioPan_desc": {
     "message": "إزاحة توازن الصوت يساراً أو يميناً. النطاق من -1 (يسار بالكامل) إلى 1 (يمين بالكامل)، 0 هو المركز."
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "لغة المسار الصوتي المفضلة"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "يطوي الفيديو ويطلب من المشغّل أرخص دفق متاح، لتصبح صفحة المشاهدة بتكلفة قريبة من البودكاست. لا يتيح YouTube للإضافات دفقًا صوتيًا خالصًا، لذلك توضح الشارة ما حصلت عليه فعلًا. لا يتم تغيير البث المباشر."
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "وضع الصوت فقط"
   },
   "feature_autoClosePopups_desc": {
     "message": "إغلاق تلقائي لنوافذ موافقة ملفات تعريف الارتباط، واستطلاعات الرأي، ونوافذ YouTube المنبثقة الأخرى"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "البحث في التعليقات"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "اللغة التي تُترجم إليها التعليقات. يتبع الوضع التلقائي لغة المتصفح."
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "ترجمة التعليقات إلى"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "يضيف رابط ترجمة أسفل التعليقات التي ليست بلغتك بالفعل، باستخدام المترجم المدمج في Chrome على الجهاز. لا يُرسَل شيء إلى خادم ولا حاجة لمفتاح API؛ وإذا لم يتوفر المترجم يوضّح الرابط ذلك بدل الفشل الصامت."
+  },
+  "feature_commentTranslate_name": {
+    "message": "ترجمة التعليقات"
   },
   "feature_compactLayout_desc": {
     "message": "تقليل التباعد والحشو لواجهة أكثر كثافة"
@@ -5431,7 +5461,7 @@
     "message": "Transcript"
   },
   "transcriptTranslate": {
-    "message": "Translate"
+    "message": "ترجمة"
   },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
@@ -5443,7 +5473,7 @@
     "message": "Translated to {language}"
   },
   "transcriptTranslating": {
-    "message": "Translating…"
+    "message": "جارٍ الترجمة…"
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"

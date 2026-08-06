@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "Перевести"
+  },
+  "commentTranslateAuto": {
+    "message": "Автоматически (язык браузера)"
+  },
+  "commentTranslateFailed": {
+    "message": "Не удалось перевести"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "Показать оригинал"
+  },
+  "commentTranslateUnavailable": {
+    "message": "Перевод недоступен в этом браузере"
+  },
+  "commentTranslating": {
+    "message": "Перевод…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "Нормализация звука"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Сворачивает видео и запрашивает у плеера самый дешёвый доступный поток, чтобы страница просмотра стоила примерно как подкаст. YouTube не предоставляет расширениям настоящий аудиопоток, поэтому плашка показывает, получили ли вы его или только минимальное качество. Прямые трансляции не изменяются."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Режим только звук"
+  },
   "feature_audioPan_desc": {
     "message": "Сместить баланс звука влево или вправо. Диапазон: от -1 (полностью влево) до 1 (полностью вправо), 0 — центр."
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Предпочтительный язык аудиодорожки"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "Сворачивает видео и запрашивает у плеера самый дешёвый доступный поток, чтобы страница просмотра стоила примерно как подкаст. YouTube не предоставляет расширениям настоящий аудиопоток, поэтому плашка показывает, получили ли вы его или только минимальное качество. Прямые трансляции не изменяются."
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "Режим только звук"
   },
   "feature_autoClosePopups_desc": {
     "message": "Автоматически закрывает согласие на cookie, опросы и другие всплывающие окна YouTube"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "Поиск в комментариях"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "Язык, на который переводить комментарии. «Автоматически» следует языку браузера."
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "Переводить комментарии на"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "Добавляет ссылку «Перевести» под комментариями, которые ещё не на вашем языке, используя встроенный переводчик Chrome на устройстве. Ничего не отправляется на сервер и ключ API не нужен; если переводчика нет, ссылка сообщает об этом, а не отказывает молча."
+  },
+  "feature_commentTranslate_name": {
+    "message": "Переводить комментарии"
   },
   "feature_compactLayout_desc": {
     "message": "Уменьшить отступы и поля для более плотного интерфейса"
@@ -5431,7 +5461,7 @@
     "message": "Transcript"
   },
   "transcriptTranslate": {
-    "message": "Translate"
+    "message": "Перевести"
   },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
@@ -5443,7 +5473,7 @@
     "message": "Translated to {language}"
   },
   "transcriptTranslating": {
-    "message": "Translating…"
+    "message": "Перевод…"
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"

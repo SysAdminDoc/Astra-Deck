@@ -627,6 +627,8 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "advancedLocalPredicateCode", category: "content-filter", type: "string", defaultValue: "", risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── comments ───
+    Object.freeze({ key: "commentTranslate", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.54.0" }),
+    Object.freeze({ key: "commentTranslateTarget", category: "comments", type: "string", defaultValue: "auto", risk: "safe", profile: "both", scope: "comments", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.54.0" }),
     Object.freeze({ key: "commentFilterManager", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "commentFilterRules", category: "comments", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "commentLanguageAllowlist", category: "comments", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),

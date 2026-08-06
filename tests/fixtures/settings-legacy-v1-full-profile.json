@@ -461,6 +461,8 @@
     "cleanUiPreset",
     "commentDuplicateCollapse",
     "commentLanguageAllowlist",
+    "commentTranslate",
+    "commentTranslateTarget",
     "deArrowVoting",
     "dualLanguageSubtitles",
     "dualSubtitleLanguage",

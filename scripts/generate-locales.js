@@ -2418,6 +2418,130 @@ const LOUDNESS_COPY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(LOUDNESS_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const COMMENT_TRANSLATE_TRANSLATIONS = {
+  de: {
+    'Translate': 'Übersetzen',
+    'Auto (browser language)': 'Automatisch (Browsersprache)',
+    'Translation failed': 'Übersetzung fehlgeschlagen',
+    'Show original': 'Original anzeigen',
+    'Translation unavailable in this browser': 'Übersetzung in diesem Browser nicht verfügbar',
+    'Translating…': 'Übersetze…',
+    'Translate Comments': 'Kommentare übersetzen',
+    'Translate Comments Into': 'Kommentare übersetzen in',
+    'Language to translate comments into. Auto follows your browser language.': 'Sprache, in die Kommentare übersetzt werden. Automatisch folgt der Browsersprache.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'Fügt unter Kommentaren, die nicht bereits in deiner Sprache sind, einen Übersetzen-Link hinzu — mit Chromes eingebautem Übersetzer auf dem Gerät. Es wird nichts an einen Server gesendet und kein API-Schlüssel benötigt; fehlt dem Browser der Übersetzer, sagt der Link das, statt still zu scheitern.'
+  },
+  es: {
+    'Translate': 'Traducir',
+    'Auto (browser language)': 'Automático (idioma del navegador)',
+    'Translation failed': 'Error de traducción',
+    'Show original': 'Ver original',
+    'Translation unavailable in this browser': 'Traducción no disponible en este navegador',
+    'Translating…': 'Traduciendo…',
+    'Translate Comments': 'Traducir comentarios',
+    'Translate Comments Into': 'Traducir comentarios a',
+    'Language to translate comments into. Auto follows your browser language.': 'Idioma al que traducir los comentarios. Automático sigue el idioma del navegador.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'Añade un enlace Traducir bajo los comentarios que no estén ya en tu idioma, usando el traductor integrado de Chrome en el dispositivo. No se envía nada a un servidor ni hace falta clave de API; si el navegador no tiene traductor, el enlace lo indica en lugar de fallar en silencio.'
+  },
+  fr: {
+    'Translate': 'Traduire',
+    'Auto (browser language)': 'Automatique (langue du navigateur)',
+    'Translation failed': 'Échec de la traduction',
+    'Show original': 'Afficher l’original',
+    'Translation unavailable in this browser': 'Traduction indisponible dans ce navigateur',
+    'Translating…': 'Traduction…',
+    'Translate Comments': 'Traduire les commentaires',
+    'Translate Comments Into': 'Traduire les commentaires en',
+    'Language to translate comments into. Auto follows your browser language.': 'Langue de traduction des commentaires. Automatique suit la langue du navigateur.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'Ajoute un lien Traduire sous les commentaires qui ne sont pas déjà dans votre langue, via le traducteur intégré de Chrome exécuté sur l’appareil. Rien n’est envoyé à un serveur et aucune clé d’API n’est requise ; si le navigateur n’a pas de traducteur, le lien le dit au lieu d’échouer en silence.'
+  },
+  it: {
+    'Translate': 'Traduci',
+    'Auto (browser language)': 'Automatico (lingua del browser)',
+    'Translation failed': 'Traduzione non riuscita',
+    'Show original': 'Mostra originale',
+    'Translation unavailable in this browser': 'Traduzione non disponibile in questo browser',
+    'Translating…': 'Traduzione…',
+    'Translate Comments': 'Traduci i commenti',
+    'Translate Comments Into': 'Traduci i commenti in',
+    'Language to translate comments into. Auto follows your browser language.': 'Lingua in cui tradurre i commenti. Automatico segue la lingua del browser.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'Aggiunge un link Traduci sotto i commenti che non sono già nella tua lingua, usando il traduttore integrato di Chrome sul dispositivo. Nulla viene inviato a un server e non serve una chiave API; se il browser non ha il traduttore, il link lo dice invece di fallire in silenzio.'
+  },
+  pt_BR: {
+    'Translate': 'Traduzir',
+    'Auto (browser language)': 'Automático (idioma do navegador)',
+    'Translation failed': 'Falha na tradução',
+    'Show original': 'Ver original',
+    'Translation unavailable in this browser': 'Tradução indisponível neste navegador',
+    'Translating…': 'Traduzindo…',
+    'Translate Comments': 'Traduzir comentários',
+    'Translate Comments Into': 'Traduzir comentários para',
+    'Language to translate comments into. Auto follows your browser language.': 'Idioma para o qual traduzir os comentários. Automático segue o idioma do navegador.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'Adiciona um link Traduzir sob os comentários que ainda não estão no seu idioma, usando o tradutor integrado do Chrome no dispositivo. Nada é enviado a um servidor e nenhuma chave de API é necessária; se o navegador não tiver o tradutor, o link avisa em vez de falhar silenciosamente.'
+  },
+  ru: {
+    'Translate': 'Перевести',
+    'Auto (browser language)': 'Автоматически (язык браузера)',
+    'Translation failed': 'Не удалось перевести',
+    'Show original': 'Показать оригинал',
+    'Translation unavailable in this browser': 'Перевод недоступен в этом браузере',
+    'Translating…': 'Перевод…',
+    'Translate Comments': 'Переводить комментарии',
+    'Translate Comments Into': 'Переводить комментарии на',
+    'Language to translate comments into. Auto follows your browser language.': 'Язык, на который переводить комментарии. «Автоматически» следует языку браузера.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'Добавляет ссылку «Перевести» под комментариями, которые ещё не на вашем языке, используя встроенный переводчик Chrome на устройстве. Ничего не отправляется на сервер и ключ API не нужен; если переводчика нет, ссылка сообщает об этом, а не отказывает молча.'
+  },
+  ja: {
+    'Translate': '翻訳',
+    'Auto (browser language)': '自動（ブラウザの言語）',
+    'Translation failed': '翻訳に失敗しました',
+    'Show original': '原文を表示',
+    'Translation unavailable in this browser': 'このブラウザでは翻訳を利用できません',
+    'Translating…': '翻訳中…',
+    'Translate Comments': 'コメントを翻訳',
+    'Translate Comments Into': 'コメントの翻訳先',
+    'Language to translate comments into. Auto follows your browser language.': 'コメントの翻訳先言語。自動はブラウザの言語に従います。',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'すでに自分の言語ではないコメントの下に翻訳リンクを追加します。Chrome の端末内蔵トランスレーターを使用するため、サーバーへの送信も API キーも不要です。トランスレーターがない場合は、静かに失敗せずリンクがその旨を表示します。'
+  },
+  ko: {
+    'Translate': '번역',
+    'Auto (browser language)': '자동(브라우저 언어)',
+    'Translation failed': '번역 실패',
+    'Show original': '원문 보기',
+    'Translation unavailable in this browser': '이 브라우저에서는 번역을 사용할 수 없음',
+    'Translating…': '번역 중…',
+    'Translate Comments': '댓글 번역',
+    'Translate Comments Into': '댓글 번역 언어',
+    'Language to translate comments into. Auto follows your browser language.': '댓글을 번역할 언어입니다. 자동은 브라우저 언어를 따릅니다.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': '아직 내 언어가 아닌 댓글 아래에 번역 링크를 추가합니다. Chrome의 기기 내장 번역기를 사용하므로 서버로 전송되는 데이터도, API 키도 없습니다. 브라우저에 번역기가 없으면 조용히 실패하지 않고 링크가 이를 알려줍니다.'
+  },
+  ar: {
+    'Translate': 'ترجمة',
+    'Auto (browser language)': 'تلقائي (لغة المتصفح)',
+    'Translation failed': 'فشلت الترجمة',
+    'Show original': 'عرض الأصل',
+    'Translation unavailable in this browser': 'الترجمة غير متاحة في هذا المتصفح',
+    'Translating…': 'جارٍ الترجمة…',
+    'Translate Comments': 'ترجمة التعليقات',
+    'Translate Comments Into': 'ترجمة التعليقات إلى',
+    'Language to translate comments into. Auto follows your browser language.': 'اللغة التي تُترجم إليها التعليقات. يتبع الوضع التلقائي لغة المتصفح.',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': 'يضيف رابط ترجمة أسفل التعليقات التي ليست بلغتك بالفعل، باستخدام المترجم المدمج في Chrome على الجهاز. لا يُرسَل شيء إلى خادم ولا حاجة لمفتاح API؛ وإذا لم يتوفر المترجم يوضّح الرابط ذلك بدل الفشل الصامت.'
+  },
+  zh_CN: {
+    'Translate': '翻译',
+    'Auto (browser language)': '自动（浏览器语言）',
+    'Translation failed': '翻译失败',
+    'Show original': '显示原文',
+    'Translation unavailable in this browser': '此浏览器不支持翻译',
+    'Translating…': '正在翻译…',
+    'Translate Comments': '翻译评论',
+    'Translate Comments Into': '将评论翻译为',
+    'Language to translate comments into. Auto follows your browser language.': '将评论翻译成的语言。自动跟随浏览器语言。',
+    'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.': '在尚未使用你的语言的评论下方添加“翻译”链接，使用 Chrome 内置的设备端翻译器。不会向服务器发送任何内容，也不需要 API 密钥；若浏览器没有翻译器，链接会明确说明，而不是悄然失败。'
+  }
+};
+for (const [locale, messages] of Object.entries(COMMENT_TRANSLATE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

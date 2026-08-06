@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "Traduci"
+  },
+  "commentTranslateAuto": {
+    "message": "Automatico (lingua del browser)"
+  },
+  "commentTranslateFailed": {
+    "message": "Traduzione non riuscita"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "Mostra originale"
+  },
+  "commentTranslateUnavailable": {
+    "message": "Traduzione non disponibile in questo browser"
+  },
+  "commentTranslating": {
+    "message": "Traduzione…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "Normalizzazione audio"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Le dirette non vengono modificate."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Modalità solo audio"
+  },
   "feature_audioPan_desc": {
     "message": "Sposta il bilanciamento audio a sinistra o destra. Intervallo da -1 (sinistra) a 1 (destra), 0 è il centro."
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Lingua traccia audio preferita"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Le dirette non vengono modificate."
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "Modalità solo audio"
   },
   "feature_autoClosePopups_desc": {
     "message": "Chiude automaticamente il consenso dei cookie, i sondaggi e altri popup di YouTube"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "Ricerca commenti"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "Lingua in cui tradurre i commenti. Automatico segue la lingua del browser."
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "Traduci i commenti in"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "Aggiunge un link Traduci sotto i commenti che non sono già nella tua lingua, usando il traduttore integrato di Chrome sul dispositivo. Nulla viene inviato a un server e non serve una chiave API; se il browser non ha il traduttore, il link lo dice invece di fallire in silenzio."
+  },
+  "feature_commentTranslate_name": {
+    "message": "Traduci i commenti"
   },
   "feature_compactLayout_desc": {
     "message": "Riduci spaziatura e padding per un'interfaccia piu densa"
@@ -5431,7 +5461,7 @@
     "message": "Transcript"
   },
   "transcriptTranslate": {
-    "message": "Translate"
+    "message": "Traduci"
   },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
@@ -5443,7 +5473,7 @@
     "message": "Translated to {language}"
   },
   "transcriptTranslating": {
-    "message": "Translating…"
+    "message": "Traduzione…"
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"

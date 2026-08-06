@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "Translate"
+  },
+  "commentTranslateAuto": {
+    "message": "Auto (browser language)"
+  },
+  "commentTranslateFailed": {
+    "message": "Translation failed"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "Show original"
+  },
+  "commentTranslateUnavailable": {
+    "message": "Translation unavailable in this browser"
+  },
+  "commentTranslating": {
+    "message": "Translating…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "Audio Normalization"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Audio-Only Mode"
+  },
   "feature_audioPan_desc": {
     "message": "Shift audio balance left or right. Range -1 (full left) to 1 (full right), 0 is center."
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Preferred Audio Track Language"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone."
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "Audio-Only Mode"
   },
   "feature_autoClosePopups_desc": {
     "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "Comment Search"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "Language to translate comments into. Auto follows your browser language."
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "Translate Comments Into"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly."
+  },
+  "feature_commentTranslate_name": {
+    "message": "Translate Comments"
   },
   "feature_compactLayout_desc": {
     "message": "Reduce spacing and padding for a denser interface"

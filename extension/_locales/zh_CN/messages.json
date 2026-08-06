@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "翻译"
+  },
+  "commentTranslateAuto": {
+    "message": "自动（浏览器语言）"
+  },
+  "commentTranslateFailed": {
+    "message": "翻译失败"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "显示原文"
+  },
+  "commentTranslateUnavailable": {
+    "message": "此浏览器不支持翻译"
+  },
+  "commentTranslating": {
+    "message": "正在翻译…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "音频标准化"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "收起画面并向播放器请求最便宜的流，使观看页面的流量开销接近播客。YouTube 未向扩展程序开放真正的纯音频流，因此标签会说明你实际获得的是哪一种。直播不会被修改。"
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "仅音频模式"
+  },
   "feature_audioPan_desc": {
     "message": "向左或向右移动音频平衡。范围：-1（全左）到 1（全右），0 为居中。"
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "首选音轨语言"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "收起画面并向播放器请求最便宜的流，使观看页面的流量开销接近播客。YouTube 未向扩展程序开放真正的纯音频流，因此标签会说明你实际获得的是哪一种。直播不会被修改。"
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "仅音频模式"
   },
   "feature_autoClosePopups_desc": {
     "message": "自动关闭 Cookie 同意、调查问卷等 YouTube 弹窗"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "评论搜索"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "将评论翻译成的语言。自动跟随浏览器语言。"
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "将评论翻译为"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "在尚未使用你的语言的评论下方添加“翻译”链接，使用 Chrome 内置的设备端翻译器。不会向服务器发送任何内容，也不需要 API 密钥；若浏览器没有翻译器，链接会明确说明，而不是悄然失败。"
+  },
+  "feature_commentTranslate_name": {
+    "message": "翻译评论"
   },
   "feature_compactLayout_desc": {
     "message": "减少间距和内边距，使界面更紧凑"
@@ -5431,7 +5461,7 @@
     "message": "Transcript"
   },
   "transcriptTranslate": {
-    "message": "Translate"
+    "message": "翻译"
   },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
@@ -5443,7 +5473,7 @@
     "message": "Translated to {language}"
   },
   "transcriptTranslating": {
-    "message": "Translating…"
+    "message": "正在翻译…"
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
