@@ -43,7 +43,7 @@ __all__ = (
     "cookie_domain_in_site", "parse_netscape_cookies",
     "build_browser_cookie_args", "describe_browser_cookie_failure",
     "SITE_LOGIN_BROWSERS", "MAX_SITE_LOGINS", "MAX_SITE_LOGIN_COOKIES",
-    "SITE_LOGIN_DIRNAME",
+    "SITE_LOGIN_DIRNAME", "SITE_LOGIN_INDEX_NAME",
 )
 
 MAX_CONCURRENT = 3
@@ -526,7 +526,15 @@ class SiteLoginStore:
             'sites': entries,
         }
         if self._writer is not None:
-            return bool(self._writer(self.index_path, payload))
+            # Injected writers signal failure by raising (atomic_write_json
+            # returns None on success), which is the same contract
+            # DownloadQueueStore.save relies on.
+            try:
+                self._writer(self.index_path, payload)
+                return True
+            except Exception as error:  # noqa: BLE001
+                self._log(f"WARNING: site-login index save failed: {error}")
+                return False
         try:
             self._ensure_root()
             self.index_path.write_text(
@@ -624,7 +632,20 @@ class SiteLoginStore:
                 'importedAt': int(self._clock()),
                 'earliestExpiry': min(expiries) if expiries else 0,
             }
-            self._save_index(index)
+            if not self._save_index(index):
+                # The jar is already on disk at this point. An unrecorded jar is
+                # invisible to entries() — no row, so no Remove button — while
+                # still holding a live session, so it must not survive a failed
+                # index write.
+                try:
+                    self._jar_path(key).unlink(missing_ok=True)
+                except OSError as error:
+                    self._log(f"WARNING: orphaned site-login jar cleanup failed: {error}")
+                return None, (
+                    'Astra Downloader stored the cookies but could not record '
+                    'the sign-in, so it was rolled back. Check disk space and '
+                    'permissions, then try again.'
+                )
         self._log(
             f"Stored a site sign-in for {key} ({len(scoped)} cookies, source={source})"
         )
@@ -1314,6 +1335,11 @@ class DownloadManagerCore:
         self.site_logins = SiteLoginStore(
             self._dependencies['INSTALL_DIR'](),
             logger=lambda message: self._dependencies['write_persistent_log'](message),
+            # Same durability contract as the queue, config, history and
+            # subscription stores: a torn index write fails closed and would
+            # otherwise drop every stored sign-in at once.
+            reader=lambda path, fallback: self._dependencies['load_json_file'](path, fallback),
+            writer=lambda path, data: self._dependencies['atomic_write_json'](path, data),
         )
         self._persistence_error = ""
         self._persistence_compatible = True
