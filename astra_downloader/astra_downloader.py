@@ -220,7 +220,7 @@ except ImportError:  # Direct script / flat source-path compatibility.
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.9.1"
+APP_VERSION = "1.10.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
@@ -2398,27 +2398,75 @@ def send_instance_command(command, host=INSTANCE_CONTROL_HOST, port=INSTANCE_CON
     return False
 
 
+SHORTCUT_NAME = "Astra Downloader.lnk"
+SHORTCUT_DESCRIPTION = "Astra Deck Download Server"
+
+
+def start_menu_programs_dir():
+    """Return the per-user Start Menu Programs folder.
+
+    Per-user rather than all-users: the companion installs into LOCALAPPDATA
+    without elevation, so an entry under ProgramData would be a shortcut the
+    installing user cannot remove.
+    """
+    appdata = os.environ.get('APPDATA')
+    base = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+    return base / "Microsoft" / "Windows" / "Start Menu" / "Programs"
+
+
+def build_shortcut_command(lnk_path, target, base_args, description=SHORTCUT_DESCRIPTION):
+    """Return the PowerShell that writes one .lnk via WScript.Shell."""
+    ico = str(ICON_PATH) if ICON_PATH.exists() else ""
+    arguments = command_line(base_args)
+    workdir = str(Path(target).parent if Path(target).parent.exists() else INSTALL_DIR)
+    return (
+        f'$ws = New-Object -ComObject WScript.Shell; '
+        f'$sc = $ws.CreateShortcut({ps_single_quote(lnk_path)}); '
+        f'$sc.TargetPath = {ps_single_quote(target)}; '
+        f'$sc.WorkingDirectory = {ps_single_quote(workdir)}; '
+        f'$sc.Arguments = {ps_single_quote(arguments)}; '
+        + (f'$sc.IconLocation = {ps_single_quote(ico)}; ' if ico else '')
+        + f'$sc.Description = {ps_single_quote(description)}; '
+        f'$sc.Save()'
+    )
+
+
+def _write_shortcut(lnk_path, target, base_args, label):
+    lnk_path = Path(lnk_path)
+    lnk_path.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ['powershell', '-NoProfile', '-Command',
+         build_shortcut_command(lnk_path, target, base_args)],
+        capture_output=True,
+        creationflags=CREATE_NO_WINDOW,
+    )
+    if not lnk_path.exists():
+        write_persistent_log(f"{label} shortcut was not created at {lnk_path}")
+        return False
+    return True
+
+
 def register_desktop_shortcut(target, base_args):
     try:
-        desktop = Path.home() / "Desktop"
-        lnk = desktop / "Astra Downloader.lnk"
-        ico = str(ICON_PATH) if ICON_PATH.exists() else ""
-        arguments = command_line(base_args)
-        workdir = str(Path(target).parent if Path(target).parent.exists() else INSTALL_DIR)
-        ps_cmd = (
-            f'$ws = New-Object -ComObject WScript.Shell; '
-            f'$sc = $ws.CreateShortcut({ps_single_quote(lnk)}); '
-            f'$sc.TargetPath = {ps_single_quote(target)}; '
-            f'$sc.WorkingDirectory = {ps_single_quote(workdir)}; '
-            f'$sc.Arguments = {ps_single_quote(arguments)}; '
-            + (f'$sc.IconLocation = {ps_single_quote(ico)}; ' if ico else '')
-            + f'$sc.Description = "Astra Deck Download Server"; '
-            f'$sc.Save()'
-        )
-        subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd],
-                       capture_output=True, creationflags=CREATE_NO_WINDOW)
+        _write_shortcut(Path.home() / "Desktop" / SHORTCUT_NAME,
+                        target, base_args, "Desktop")
     except Exception as e:
         write_persistent_log(f"Shortcut registration failed: {e}")
+
+
+def register_start_menu_shortcut(target, base_args):
+    """Publish the companion in the Start Menu so it is searchable by name.
+
+    The companion is otherwise reachable only from the tray, a desktop icon,
+    or the logon task, so a user who closes it has no obvious way to start it
+    again. Written on the same version-stamped path as the other integrations,
+    which means an upgrade refreshes the target automatically.
+    """
+    try:
+        _write_shortcut(start_menu_programs_dir() / SHORTCUT_NAME,
+                        target, base_args, "Start Menu")
+    except Exception as e:
+        write_persistent_log(f"Start Menu registration failed: {e}")
 
 
 def register_startup_task(target, base_args):
@@ -2579,6 +2627,7 @@ def ensure_system_integrations(prefer_installed=True, force=False):
         register_native_messaging_hosts(target, base_args, Config())
         return target, base_args
     register_desktop_shortcut(target, base_args)
+    register_start_menu_shortcut(target, base_args)
     register_startup_task(target, base_args)
     register_protocol_handlers(target, base_args)
     register_uninstall_entry(target, base_args)
@@ -3104,10 +3153,13 @@ def run_uninstall():
     if NATIVE_HOST_DIR.exists():
         shutil.rmtree(NATIVE_HOST_DIR, ignore_errors=True)
 
-    # Remove desktop shortcut
-    lnk = Path.home() / "Desktop" / "Astra Downloader.lnk"
-    if lnk.exists():
-        lnk.unlink()
+    # Remove desktop and Start Menu shortcuts
+    for lnk in (Path.home() / "Desktop" / SHORTCUT_NAME,
+                start_menu_programs_dir() / SHORTCUT_NAME):
+        try:
+            lnk.unlink(missing_ok=True)
+        except OSError as error:
+            write_persistent_log(f"Could not remove {lnk}: {error}")
 
     # Remove install directory
     if INSTALL_DIR.exists():
