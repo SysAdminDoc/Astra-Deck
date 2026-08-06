@@ -108,6 +108,14 @@ class FakeDocument {
         return null;
     }
 
+    // A real document has this, and the feature walks it whenever it
+    // reprocesses rendered cards (e.g. after Unblock). Returning an empty list
+    // keeps these focused tests DOM-free without the fake pretending the
+    // method is absent.
+    querySelectorAll() {
+        return [];
+    }
+
     getElementById(id) {
         return id === 'movie_player' ? this.player : null;
     }
@@ -255,8 +263,23 @@ test('Unblock removes the normalized channel, persists it, and resumes prior pla
     const harness = makeFeature();
     harness.feature._evaluateDirectWatchBlock();
 
-    harness.feature._directWatchDialog.querySelector('[data-action="unblock"]').click();
-    await Promise.resolve();
+    // Unblocking now reprocesses rendered cards so the channel's already-hidden
+    // rail entries come back in the same pageview, and that walks the document.
+    const previousDocument = globalThis.document;
+    globalThis.document = harness.documentRef;
+    try {
+        harness.feature._directWatchDialog.querySelector('[data-action="unblock"]').click();
+        await Promise.resolve();
+    } finally {
+        // The refresh is debounced, so cancel it before the fake document goes
+        // away — otherwise it fires after the test and walks a missing DOM.
+        if (harness.feature._processAllDebounceTimer) {
+            clearTimeout(harness.feature._processAllDebounceTimer);
+            harness.feature._processAllDebounceTimer = null;
+        }
+        if (previousDocument === undefined) delete globalThis.document;
+        else globalThis.document = previousDocument;
+    }
 
     assert.equal(harness.feature._directWatchDialog, null);
     assert.deepEqual(harness.getStoredChannels(), []);

@@ -59,15 +59,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Correctness / reliability edge cases
 
-- [ ] P3 — Video Hider: interstitial "Unblock" leaves the channel's already-hidden rail cards hidden
-  Category: correctness
-  Where: extension/features/video-hider/index.js:815-820 (_handleDirectWatchDecision 'unblock' branch)
-  Problem: The branch removes the channel and resumes playback but never reprocesses processed cards — related-rail cards from that channel keep .ytkit-video-hidden (with data-ytkit-hide-processed) until next navigation. The toast _undoHide path (:1451-1453) DOES call _processAllVideos(); this path is the outlier.
-  Fix: Call `this._processAllVideos()` in the 'unblock' branch.
-  Acceptance: Test: unblock via the interstitial → previously hidden cards for that channel are re-shown in the same pageview.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — parseCompactCount('') returns 0, violating its own missingValue contract and video-hider's "no data ≠ 0 views" guards
   Category: correctness
   Where: extension/core/text-metrics.js:150 (`if (!raw) return 0;`); consumers features/video-hider/index.js:1124-1133 (_extractViewCount), :1217 (`views !== null && views < threshold` guard), :1604-1609 (_extractSubsCount)
@@ -75,15 +66,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Fix: Return missingValue for empty input and update the test pin (or have the two extractors skip empty candidate text). Sweep other parseCompactCount callers for empty-string reliance first.
   Acceptance: parseCompactCount('', null) === null (pin updated); a pre-hydration empty-metadata card is not hidden by the low-view rule (test).
   Confidence: Verified (path); transient impact
-  Effort: S
-
-- [ ] P3 — Quick Links: deleting one link permanently discards all stored links beyond the 10-item cap
-  Category: correctness
-  Where: extension/ytkit.js:19111-19120 (del.onclick rebuilds from _parseItems(), which truncates to _QL_MAX_ITEMS=10); preservation contract comment at :18831-18838
-  Problem: With 12 stored entries, deleting one rewrites the setting with 9 — entries 11-12 destroyed, exactly what the v4.47.0 comment promises won't happen (it also normalizes full URLs to path form, lesser lossy side effect). quickLinkMenu is default-on; exposure limited to users with >10 stored links.
-  Fix: Splice against the un-capped parsed list (parse raw lines without the cap for mutations).
-  Acceptance: Test: 12 stored entries, delete #3 → 11 remain including the two over-cap entries.
-  Confidence: Verified
   Effort: S
 
 - [ ] P3 — Five features match English UI text only — inert or misbehaving on the 10 non-EN locales
@@ -142,15 +124,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
   Fix: Add html:not([dark]) lanes matching the sibling patterns; convert the two early.css blocks to border-inline-start/padding-inline-start.
   Acceptance: Light-theme fixture legibility for each control; RTL fixture shows accents on the correct side.
   Confidence: Verified (CSS)
-  Effort: S
-
-- [ ] P3 — Reduced Motion and Forced Colors sheets target a toast class that doesn't exist
-  Category: a11y
-  Where: extension/ytkit.js:42982 (reducedMotion sheet `.ytkit-toast`), :42028 + :42051 (forcedColorsSupport sheet)
-  Problem: The toast root class is ytkit-global-toast (ytkit.js:2681); nothing ever gets .ytkit-toast (repo-wide grep). With Reduced Motion (strong) on, the toast root's slide/fade still plays (the `[class*="ytkit-"] *` rule covers descendants only); in forced-colors mode the toast misses its Canvas/CanvasText carve-out.
-  Fix: Replace .ytkit-toast with .ytkit-global-toast in both sheets (incl. the `a` variant).
-  Acceptance: Grep shows no .ytkit-toast selectors; reduced-motion fixture asserts no animation on the toast root.
-  Confidence: Verified
   Effort: S
 
 - [ ] P3 — Settings overlay search placeholder renders clipped mid-word despite a wide input
