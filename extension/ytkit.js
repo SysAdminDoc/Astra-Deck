@@ -958,7 +958,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.54.1';
+    const YTKIT_VERSION = '4.55.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -9565,13 +9565,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     #ytkit-po-drop .ytkit-ql-bottom {
+                        display: flex !important;
+                        justify-content: flex-end !important;
+                        align-items: center !important;
                         gap: 4px !important;
-                        padding: 3px 0 0 !important;
+                        padding: 3px 2px 0 !important;
                     }
 
                     #ytkit-po-drop .ytkit-ql-bottom-btn {
-                        min-height: 28px !important;
+                        flex: 0 0 auto !important;
+                        width: 26px !important;
+                        height: 26px !important;
+                        min-width: 26px !important;
+                        min-height: 26px !important;
+                        padding: 0 !important;
                         border-radius: 8px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-bottom-btn:hover {
+                        background: rgba(255, 255, 255, 0.1) !important;
                     }
 
                     #ytkit-po-drop .ytkit-ql-add-form {
@@ -11272,9 +11284,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Scroll-up-over-video collapse: require 3 consecutive scroll-up
                 // ticks within 600ms to prevent accidental collapse from a single
                 // inertial gesture (mirrors the right-panel collapse guard).
-                let _playerCollapseCount = 0;
-                let _playerCollapseTimer = null;
-
                 this._wheelHandler = (e) => {
                     if (!this._isActive) return;
 
@@ -11292,24 +11301,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // right panel content.  No isInRightContent gate needed —
                     // any wheel event the user can physically generate is on
                     // one of these two surfaces.
-
-                    // Scroll UP over the video → collapse split (3-tick guard)
-                    if (isOverPlayer(e.target) && e.deltaY < 0) {
-                        e.stopPropagation();
-                        _playerCollapseCount++;
-                        clearTimeout(_playerCollapseTimer);
-                        _playerCollapseTimer = setTimeout(() => { _playerCollapseCount = 0; }, 600);
-                        if (_playerCollapseCount >= 3) {
-                            _playerCollapseCount = 0;
-                            this._collapseSplit(false);
-                        }
-                        return;
-                    }
-
-                    // Reset collapse counter on any downward scroll over player
-                    if (isOverPlayer(e.target) && e.deltaY > 0) {
-                        _playerCollapseCount = 0;
-                    }
+                    //
+                    // Scrolling over the VIDEO never collapses. It used to, on a
+                    // 3-tick guard, which meant nudging the wheel while the
+                    // pointer happened to rest over the player threw the split
+                    // away mid-read. Collapse is now owned solely by the
+                    // comments pane reaching its top — see _rightWheelHandler.
+                    // Wheel over the player still proxies to that pane, in both
+                    // directions, because the page scroller is disabled here.
 
                     // The positioned comments panel is a real overflow scroller.
                     // Let wheel events that originate inside it take the native
@@ -11341,21 +11340,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         // pull-to-collapse handler inside the comments panel.
                         if (isInRightContent(e.target)) return;
                         const delta = this._touchStartY - t.clientY;
-                        // Swipe down on video → collapse (pull-down gesture)
-                        if (isOverPlayer(e.target) && delta < -40) {
-                            e.stopPropagation();
-                            this._collapseSplit(false);
-                            return;
-                        }
-                        // Forward touch scroll to right panel (covers both
-                        // over-player and over-right-content targets)
+                        // Same rule as the wheel path: a gesture over the video
+                        // scrolls the comments pane and nothing else. The pull-
+                        // to-collapse gesture lives on the pane itself
+                        // (_rightTouchMoveHandler), so it still works — it just
+                        // cannot be triggered from the player any more.
                         const scrollEl = this._scrollTarget;
                         if (scrollEl) {
                             e.stopPropagation();
-                            if (delta < -40 && scrollEl.scrollTop <= 0) {
-                                this._collapseSplit(false);
-                                return;
-                            }
                             scrollEl.scrollTop += delta * 0.5;
                         }
                         this._touchStartY = t.clientY;
@@ -11567,9 +11559,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (this._entering) onExpanded();
                 }, 500);
 
-                // Scroll/wheel handlers on the primary scroll target
-                // Require 3 consecutive scroll-up ticks at top before collapsing
-                // to prevent accidental collapse from a single scroll gesture
+                // Collapse is owned entirely by this pane. The split stays up
+                // until the reader scrolls the comments column all the way back
+                // to the top — past the title card that sits above the comments
+                // — and keeps pulling up. The tick count is what makes "past
+                // the title" mean something: landing on the top edge does not
+                // collapse, continuing to scroll against it does.
                 const scrollEl = this._scrollTarget;
                 let _collapseScrollCount = 0;
                 let _collapseScrollTimer = null;
@@ -19829,19 +19824,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     .ytkit-ql-bottom {
-                        display: grid;
-                        grid-template-columns: repeat(2, minmax(0, 1fr));
-                        gap: 6px;
-                        padding: 4px 0 0;
-                        align-items: stretch;
+                        display: flex;
+                        justify-content: flex-end;
+                        align-items: center;
+                        gap: 4px;
+                        padding: 4px 2px 0;
                     }
 
                     .ytkit-ql-bottom-btn {
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        min-width: 0;
-                        min-height: 34px;
+                        /* Square icon button. The flex shorthand here is
+                           load-bearing: these also carry .ytkit-ql-item, whose
+                           own flex grow is what stretched them across half the
+                           menu. */
+                        flex: 0 0 auto;
+                        width: 28px;
+                        height: 28px;
+                        min-width: 28px;
+                        min-height: 28px;
+                        border-radius: 8px;
                         opacity: 0.72;
                         padding: 0;
                         font-size: 0;
@@ -19861,6 +19864,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     .ytkit-ql-bottom-btn:hover {
                         opacity: 1;
+                        background: rgba(255, 255, 255, 0.1);
+                    }
+
+                    html:not([dark]) .ytkit-ql-bottom-btn:hover {
+                        background: rgba(0, 0, 0, 0.07);
                     }
 
                     .ytkit-ql-editing .ytkit-ql-bottom-btn[title="Edit links"] {
@@ -51412,18 +51420,25 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         }
 
         .ytkit-ql-bottom {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 6px;
-            padding: 4px 0 0;
-            align-items: stretch;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 2px 0;
         }
 
         .ytkit-ql-bottom-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 34px;
+            /* See the note in the main sheet: .ytkit-ql-item's flex is what
+               stretched these icon-only controls into half-width slabs. */
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            min-height: 28px;
+            border-radius: 8px;
             padding: 0;
             line-height: 1;
         }

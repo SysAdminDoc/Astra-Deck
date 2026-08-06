@@ -509,13 +509,25 @@
                     }
 
                     #ytkit-po-drop .ytkit-ql-bottom {
+                        display: flex !important;
+                        justify-content: flex-end !important;
+                        align-items: center !important;
                         gap: 4px !important;
-                        padding: 3px 0 0 !important;
+                        padding: 3px 2px 0 !important;
                     }
 
                     #ytkit-po-drop .ytkit-ql-bottom-btn {
-                        min-height: 28px !important;
+                        flex: 0 0 auto !important;
+                        width: 26px !important;
+                        height: 26px !important;
+                        min-width: 26px !important;
+                        min-height: 26px !important;
+                        padding: 0 !important;
                         border-radius: 8px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-bottom-btn:hover {
+                        background: rgba(255, 255, 255, 0.1) !important;
                     }
 
                     #ytkit-po-drop .ytkit-ql-add-form {

@@ -355,3 +355,97 @@ test('fullscreen exit only pins a px player width while the resize observer is a
             `${label} collapsed branch must not pin the viewport width in pixels`);
     }
 });
+
+const STICKY_MODULE_SOURCE = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+
+// ── Collapse belongs to the comments pane, not the video ───────────────
+// Scrolling up while the pointer rested over the player used to throw the
+// split away on a 3-tick guard. Collapse is now owned solely by the comments
+// column reaching its top and being pushed past it.
+test('scrolling over the video never collapses the split', () => {
+    for (const [label, source] of [
+        ['module', STICKY_MODULE_SOURCE],
+        ['monolith fallback', sources.ytkit]
+    ]) {
+        const start = source.indexOf('this._wheelHandler = (e) => {');
+        assert.ok(start > -1, `${label} must define the document wheel handler`);
+        const handler = source.slice(start, start + 2600);
+
+        assert.ok(!/isOverPlayer\(e\.target\) && e\.deltaY < 0[\s\S]{0,400}_collapseSplit/.test(handler),
+            `${label}: an up-scroll over the player must not reach _collapseSplit`);
+        assert.ok(!handler.includes('_playerCollapseCount'),
+            `${label}: the player-side collapse counter must be gone entirely`);
+
+        // It still proxies the gesture, in both directions, because the page
+        // scroller is disabled while the split is open.
+        assert.match(handler, /scrollEl\.scrollTop \+= e\.deltaY;/,
+            `${label}: wheel over the player must still scroll the comments pane`);
+
+        // Same rule for touch: no pull-down-on-video collapse.
+        const touchStart = source.indexOf('this._touchMoveHandler = (e) => {');
+        const touchHandler = source.slice(touchStart, touchStart + 1800);
+        assert.ok(!/isOverPlayer\(e\.target\) && delta < -40[\s\S]{0,200}_collapseSplit/.test(touchHandler),
+            `${label}: a swipe over the player must not collapse the split`);
+        assert.ok(!/delta < -40 && scrollEl\.scrollTop <= 0/.test(touchHandler),
+            `${label}: the forwarded-touch path must not collapse either`);
+    }
+});
+
+test('the comments pane collapses only after being pushed past its top', () => {
+    for (const [label, source] of [
+        ['module', STICKY_MODULE_SOURCE],
+        ['monolith fallback', sources.ytkit]
+    ]) {
+        const start = source.indexOf('this._rightWheelHandler = (e) => {');
+        assert.ok(start > -1, `${label} must define the comments-pane wheel handler`);
+        const handler = source.slice(start, start + 900);
+
+        // Reaching the top is not enough — that is what "past the title" means.
+        assert.match(handler, /scrollEl\.scrollTop <= 0 && e\.deltaY < 0/,
+            `${label}: collapse must require being at the top AND still scrolling up`);
+        assert.match(handler, /_collapseScrollCount >= 3/,
+            `${label}: landing on the top edge must not collapse on its own`);
+        assert.match(handler, /_collapseScrollCount = 0;\s*\n\s*\}\s*\n\s*\};/,
+            `${label}: any downward scroll must reset the counter`);
+    }
+});
+
+// ── Quick Links dropdown footer ────────────────────────────────────────
+// The Edit and Settings controls are icon-only, but the footer was a
+// 2-column 1fr/1fr grid with align-items: stretch AND the buttons carry
+// .ytkit-ql-item (flex: 1 1 auto) — so each was drawn as a half-width,
+// 34px-tall slab holding a 12px glyph.
+test('the Quick Links footer renders compact icon buttons, not half-width slabs', () => {
+    const playerDock = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+
+    for (const [label, source] of [['monolith', sources.ytkit], ['player-dock', playerDock]]) {
+        // No footer row may still be a stretched two-column grid.
+        const rows = source.split('.ytkit-ql-bottom {').slice(1);
+        for (const row of rows) {
+            const decl = row.slice(0, row.indexOf('}'));
+            assert.ok(!/grid-template-columns:\s*repeat\(2/.test(decl),
+                `${label}: the footer must not lay two icon buttons out as equal columns`);
+            assert.ok(!/align-items:\s*stretch/.test(decl),
+                `${label}: stretching is what made them full-height slabs`);
+        }
+    }
+
+    // And the buttons must opt out of the .ytkit-ql-item flex grow they inherit.
+    const btnBlocks = sources.ytkit.split('.ytkit-ql-bottom-btn {').slice(1);
+    assert.ok(btnBlocks.length >= 2, 'both stylesheet copies must define the button');
+    for (const block of btnBlocks) {
+        const decl = block.slice(0, block.indexOf('}'));
+        assert.match(decl, /flex:\s*0 0 auto/,
+            'without this the .ytkit-ql-item flex grow stretches the button again');
+        // 28px in the base sheets, 26px in the denser po-drop override.
+        assert.match(decl, /width:\s*2[0-9]px/, 'the control should be a square, sized to its glyph');
+        assert.match(decl, /height:\s*2[0-9]px/);
+    }
+
+    // The override layer must not reintroduce the stretch.
+    const poStart = sources.ytkit.indexOf('#ytkit-po-drop .ytkit-ql-bottom-btn {');
+    const poBlock = sources.ytkit.slice(poStart, poStart + 400);
+    assert.match(poBlock, /flex:\s*0 0 auto !important/);
+});

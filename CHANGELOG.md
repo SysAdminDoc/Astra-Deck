@@ -6,6 +6,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.55.0] - 2026-08-06
+
+### Changed
+
+- **Theater Split now collapses only from the comments column.** Scrolling up
+  while the pointer happened to rest over the video threw the split away
+  mid-read — it had its own 3-tick collapse trigger on the player. That
+  trigger is gone, along with the equivalent swipe-down-on-video gesture and
+  the collapse hidden in the forwarded-touch path. A wheel or swipe over the
+  player still scrolls the comments column, in both directions; it just cannot
+  dismiss the split any more. Collapse is owned solely by the comments pane:
+  scroll it back to the top, past the title card, and keep pulling up.
+- **Quick Links dropdown footer redesigned.** Edit and Settings are icon-only
+  controls, but the footer was a two-column `1fr 1fr` grid with
+  `align-items: stretch`, and both buttons also carry `.ytkit-ql-item`
+  (`flex: 1 1 auto`) — so each was drawn as a half-width, 34px-tall slab
+  holding a 12px glyph. They are now 28px square icon buttons in a
+  right-aligned cluster, with a hover surface and a light-theme lane.
+
 ## [4.54.1] - 2026-08-06
 
 ### Changed
