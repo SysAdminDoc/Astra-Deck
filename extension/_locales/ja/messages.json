@@ -1707,10 +1707,10 @@
     "message": "スクロール制限"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "YouTube による新規読み込み動画のダイナミックレンジ圧縮を停止。ベストエフォート — YouTube は公式にはサポートされていない movie_player API でゲインを制限します。"
+    "message": "YouTube がプレーヤーの音量を 100% 未満に下げ戻すのを防ぎます。ラウドネス正規化は無効になりません。拡張機能が到達できない Web Audio ノードで動作するため、音の小さい動画は小さいままで、音量スライダーがずれなくなるだけです。"
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "ラウドネスノーマライゼーションを無効化"
+    "message": "音量を最大に保つ"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "ページ移動時にミニプレーヤーが表示されるのを防止"

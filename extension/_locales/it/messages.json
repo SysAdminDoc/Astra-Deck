@@ -1707,10 +1707,10 @@
     "message": "Limita scorrimento"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Impedisci a YouTube di comprimere la gamma dinamica dei video appena caricati. Approssimativo -- YouTube regola il guadagno tramite API movie_player non supportate ufficialmente."
+    "message": "Impedisce a YouTube di riportare il volume del player sotto il 100%. NON disattiva la normalizzazione del volume: gira in un nodo Web Audio irraggiungibile da un’estensione, quindi i video silenziosi restano tali; smette solo di muoversi il cursore del volume."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Disattiva normalizzazione volume"
+    "message": "Mantieni il volume al massimo"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "Impedisci la comparsa del mini player quando navighi altrove"

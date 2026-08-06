@@ -2374,6 +2374,50 @@ const AUDIO_ONLY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(AUDIO_ONLY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const LOUDNESS_COPY_TRANSLATIONS = {
+  de: {
+    'Keep Volume At Full': 'Lautstärke auf 100 % halten',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'Verhindert, dass YouTube die Player-Lautstärke unter 100 % zurückregelt. Die Lautheitsnormalisierung wird dadurch NICHT abgeschaltet — sie läuft in einem Web-Audio-Knoten, den eine Erweiterung nicht erreicht. Leise Videos bleiben also leise; nur der Lautstärkeregler wandert nicht mehr.'
+  },
+  es: {
+    'Keep Volume At Full': 'Mantener el volumen al máximo',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'Evita que YouTube baje el volumen del reproductor por debajo del 100 %. Esto NO desactiva la normalización de sonoridad: se ejecuta en un nodo de Web Audio al que una extensión no puede llegar, así que los vídeos silenciosos siguen siéndolo; solo deja de moverse el control de volumen.'
+  },
+  fr: {
+    'Keep Volume At Full': 'Garder le volume au maximum',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'Empêche YouTube de rabaisser le volume du lecteur sous 100 %. Cela ne désactive PAS la normalisation sonore : elle s’exécute dans un nœud Web Audio qu’une extension ne peut pas atteindre, donc les vidéos discrètes le restent ; seul le curseur de volume cesse de dériver.'
+  },
+  it: {
+    'Keep Volume At Full': 'Mantieni il volume al massimo',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'Impedisce a YouTube di riportare il volume del player sotto il 100%. NON disattiva la normalizzazione del volume: gira in un nodo Web Audio irraggiungibile da un’estensione, quindi i video silenziosi restano tali; smette solo di muoversi il cursore del volume.'
+  },
+  pt_BR: {
+    'Keep Volume At Full': 'Manter o volume no máximo',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'Impede que o YouTube reduza o volume do player abaixo de 100%. Isso NÃO desativa a normalização de volume: ela roda em um nó de Web Audio que uma extensão não alcança, então vídeos baixos continuam baixos; apenas o controle de volume para de se mover.'
+  },
+  ru: {
+    'Keep Volume At Full': 'Держать громкость на максимуме',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'Не даёт YouTube опускать громкость плеера ниже 100 %. Нормализацию громкости это НЕ отключает — она работает в узле Web Audio, недоступном расширению, поэтому тихие видео остаются тихими; перестаёт смещаться только ползунок.'
+  },
+  ja: {
+    'Keep Volume At Full': '音量を最大に保つ',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'YouTube がプレーヤーの音量を 100% 未満に下げ戻すのを防ぎます。ラウドネス正規化は無効になりません。拡張機能が到達できない Web Audio ノードで動作するため、音の小さい動画は小さいままで、音量スライダーがずれなくなるだけです。'
+  },
+  ko: {
+    'Keep Volume At Full': '볼륨을 최대로 유지',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'YouTube가 플레이어 볼륨을 100% 아래로 되돌리지 못하게 합니다. 음량 정규화가 꺼지는 것은 아닙니다. 확장 프로그램이 접근할 수 없는 Web Audio 노드에서 실행되므로 소리가 작은 영상은 그대로이며, 볼륨 슬라이더만 움직이지 않게 됩니다.'
+  },
+  ar: {
+    'Keep Volume At Full': 'إبقاء مستوى الصوت على الحد الأقصى',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': 'يمنع YouTube من خفض مستوى صوت المشغّل إلى أقل من 100%. هذا لا يعطّل تسوية مستوى الصوت، فهي تعمل في عقدة Web Audio لا تستطيع الإضافات الوصول إليها، لذا تبقى المقاطع الهادئة هادئة؛ يتوقف شريط الصوت فقط عن التحرك.'
+  },
+  zh_CN: {
+    'Keep Volume At Full': '将音量保持在最大',
+    'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.': '阻止 YouTube 把播放器音量调回 100% 以下。这不会关闭响度归一化：它运行在扩展程序无法访问的 Web Audio 节点中，因此音量偏小的视频仍然偏小，只是音量滑块不再漂移。'
+  }
+};
+for (const [locale, messages] of Object.entries(LOUDNESS_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

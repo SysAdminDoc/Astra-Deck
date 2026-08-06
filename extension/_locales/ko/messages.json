@@ -1707,10 +1707,10 @@
     "message": "스크롤 제한"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "YouTube가 새로 로드된 동영상의 다이내믹 레인지를 압축하는 것을 방지합니다. 최선의 노력 — YouTube가 공식 지원하지 않는 movie_player API를 통해 게인을 제한합니다."
+    "message": "YouTube가 플레이어 볼륨을 100% 아래로 되돌리지 못하게 합니다. 음량 정규화가 꺼지는 것은 아닙니다. 확장 프로그램이 접근할 수 없는 Web Audio 노드에서 실행되므로 소리가 작은 영상은 그대로이며, 볼륨 슬라이더만 움직이지 않게 됩니다."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "음량 정규화 비활성화"
+    "message": "볼륨을 최대로 유지"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "페이지를 떠날 때 미니 플레이어가 나타나지 않도록 방지"

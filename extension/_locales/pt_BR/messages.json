@@ -1707,10 +1707,10 @@
     "message": "Limitar rolagem"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Impedir o YouTube de comprimir a faixa dinâmica de vídeos recém-carregados. Melhor esforço — o YouTube limita o ganho através de APIs do movie_player que não são oficialmente suportadas."
+    "message": "Impede que o YouTube reduza o volume do player abaixo de 100%. Isso NÃO desativa a normalização de volume: ela roda em um nó de Web Audio que uma extensão não alcança, então vídeos baixos continuam baixos; apenas o controle de volume para de se mover."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Desativar Normalização de Volume"
+    "message": "Manter o volume no máximo"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "Impedir que o mini player apareça ao navegar para outra página"

@@ -1707,10 +1707,10 @@
     "message": "Disable Infinite Scroll"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren’t officially supported."
+    "message": "Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Disable Loudness Normalization"
+    "message": "Keep Volume At Full"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "Prevent the mini player from appearing when navigating away"
