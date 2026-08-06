@@ -425,6 +425,8 @@
   ],
   "advancedLocalPredicate": false,
   "advancedLocalPredicateCode": "",
+  "commentTranslate": false,
+  "commentTranslateTarget": "auto",
   "commentFilterManager": false,
   "commentFilterRules": "",
   "commentLanguageAllowlist": "",

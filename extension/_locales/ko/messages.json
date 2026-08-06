@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "번역"
+  },
+  "commentTranslateAuto": {
+    "message": "자동(브라우저 언어)"
+  },
+  "commentTranslateFailed": {
+    "message": "번역 실패"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "원문 보기"
+  },
+  "commentTranslateUnavailable": {
+    "message": "이 브라우저에서는 번역을 사용할 수 없음"
+  },
+  "commentTranslating": {
+    "message": "번역 중…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "오디오 정규화"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림은 변경되지 않습니다."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "오디오 전용 모드"
+  },
   "feature_audioPan_desc": {
     "message": "오디오 밸런스를 좌우로 조절합니다. 범위: -1(왼쪽)~1(오른쪽), 0이 중앙."
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "선호 오디오 트랙 언어"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림은 변경되지 않습니다."
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "오디오 전용 모드"
   },
   "feature_autoClosePopups_desc": {
     "message": "쿠키 동의, 설문 프롬프트 및 기타 YouTube 팝업을 자동으로 닫기"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "댓글 검색"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "댓글을 번역할 언어입니다. 자동은 브라우저 언어를 따릅니다."
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "댓글 번역 언어"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "아직 내 언어가 아닌 댓글 아래에 번역 링크를 추가합니다. Chrome의 기기 내장 번역기를 사용하므로 서버로 전송되는 데이터도, API 키도 없습니다. 브라우저에 번역기가 없으면 조용히 실패하지 않고 링크가 이를 알려줍니다."
+  },
+  "feature_commentTranslate_name": {
+    "message": "댓글 번역"
   },
   "feature_compactLayout_desc": {
     "message": "더 밀집된 인터페이스를 위해 간격과 여백 줄이기"
@@ -5431,7 +5461,7 @@
     "message": "Transcript"
   },
   "transcriptTranslate": {
-    "message": "Translate"
+    "message": "번역"
   },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
@@ -5443,7 +5473,7 @@
     "message": "Translated to {language}"
   },
   "transcriptTranslating": {
-    "message": "Translating…"
+    "message": "번역 중…"
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"

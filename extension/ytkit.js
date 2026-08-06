@@ -3606,6 +3606,8 @@ return response;
             advancedLocalPredicate: false,
             advancedLocalPredicateCode: '',
             // v3.25.0 — Content filtering superset (Phase 2 completion)
+            commentTranslate: false,
+            commentTranslateTarget: 'auto',
             commentFilterManager: false,
             commentFilterRules: '',
             commentLanguageAllowlist: '',
@@ -32840,6 +32842,203 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.documentElement.removeAttribute('data-ytkit-audio-only-status');
                 document.documentElement.removeAttribute('data-ytkit-audio-only-reason');
             }
+        },
+
+        {
+            id: 'commentTranslate',
+            name: t('feature_commentTranslate_name', 'Translate Comments'),
+            description: t('feature_commentTranslate_desc', 'Adds a Translate link under comments that are not already in your language, using Chrome’s built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly.'),
+            group: 'Comments',
+            icon: 'languages',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _scopedRuleActive: false,
+            _translator: null,
+            _translatorKey: '',
+            _COMMENT_SELECTOR: 'ytd-comment-view-model, ytd-comment-renderer',
+
+            _hasTranslatorApi() {
+                return typeof window.Translator !== 'undefined'
+                    || (typeof window.ai !== 'undefined' && typeof window.ai?.translator !== 'undefined');
+            },
+
+            _targetLanguage() {
+                const configured = String(appState.settings.commentTranslateTarget || 'auto');
+                if (configured && configured !== 'auto') return configured;
+                return String(navigator.language || 'en').split('-')[0];
+            },
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-ct-btn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:0;border:0;background:none;color:var(--yt-spec-text-secondary,#aaa);font:600 12px/1.4 'Roboto',system-ui;cursor:pointer;text-transform:none;}
+                    .ytkit-ct-btn:hover{color:var(--yt-spec-text-primary,#fff);text-decoration:underline;}
+                    html:not([dark]) .ytkit-ct-btn{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-ct-btn:hover{color:var(--yt-spec-text-primary,#0f0f0f);}
+                    .ytkit-ct-btn[disabled]{opacity:0.6;cursor:default;text-decoration:none;}
+                `, this.id, true);
+            },
+
+            // Reuse the comment filter's detector: it already distinguishes
+            // scripts and words locally and fails open on short text.
+            _detectLanguage(text) {
+                const filter = getFeatureById('commentFilterManager');
+                if (filter?._languageFromScript) {
+                    return filter._languageFromScript(text) || filter._languageFromWords?.(text) || '';
+                }
+                return '';
+            },
+
+            _contentNode(comment) {
+                return comment.querySelector('#content-text, yt-attributed-string#content-text, #comment-content #content-text');
+            },
+
+            async _translator_(sourceLanguage, targetLanguage) {
+                const key = `${sourceLanguage}>${targetLanguage}`;
+                if (this._translator && this._translatorKey === key) return this._translator;
+                // One instance per language pair, reused across comments: a
+                // per-comment instance downloads/holds a model each time.
+                this._translator?.destroy?.();
+                this._translator = null;
+                const factory = window.Translator || window.ai?.translator;
+                if (!factory?.create) return null;
+                const instance = await factory.create({ sourceLanguage, targetLanguage });
+                if (!instance) return null;
+                this._translator = instance;
+                this._translatorKey = key;
+                return instance;
+            },
+
+            async _toggle(comment, button) {
+                const node = this._contentNode(comment);
+                if (!node) return;
+                if (comment.dataset.ytkitCtShowing === '1') {
+                    node.textContent = comment.dataset.ytkitCtOriginal || node.textContent;
+                    comment.dataset.ytkitCtShowing = '0';
+                    button.textContent = t('commentTranslateAction', 'Translate');
+                    return;
+                }
+                if (comment.dataset.ytkitCtTranslated) {
+                    comment.dataset.ytkitCtShowing = '1';
+                    node.textContent = comment.dataset.ytkitCtTranslated;
+                    button.textContent = t('commentTranslateShowOriginal', 'Show original');
+                    return;
+                }
+                if (!this._hasTranslatorApi()) {
+                    button.textContent = t('commentTranslateUnavailable', 'Translation unavailable in this browser');
+                    button.disabled = true;
+                    return;
+                }
+                const original = node.textContent || '';
+                if (!original.trim()) return;
+                button.textContent = t('commentTranslating', 'Translating…');
+                button.disabled = true;
+                try {
+                    const target = this._targetLanguage();
+                    const source = this._detectLanguage(original) || 'auto';
+                    const translator = await this._translator_(source, target);
+                    if (!translator) throw new Error('Translator factory returned no instance');
+                    const result = String(await translator.translate(original) || '');
+                    if (!result) throw new Error('Empty translation');
+                    // The original is never destroyed — it is restored verbatim
+                    // by the toggle above.
+                    comment.dataset.ytkitCtOriginal = original;
+                    comment.dataset.ytkitCtTranslated = result;
+                    comment.dataset.ytkitCtShowing = '1';
+                    node.textContent = result;
+                    button.textContent = t('commentTranslateShowOriginal', 'Show original');
+                    button.disabled = false;
+                } catch (e) {
+                    button.textContent = t('commentTranslateFailed', 'Translation failed');
+                    button.disabled = true;
+                    DebugManager.log('CommentTranslate', `translate failed: ${e.message}`);
+                }
+            },
+
+            _decorate(comment) {
+                if (!(comment instanceof HTMLElement)) return;
+                if (comment.dataset.ytkitCtReady === '1') return;
+                const node = this._contentNode(comment);
+                if (!node) return;
+                const text = (node.textContent || '').trim();
+                if (text.length < 12) return;               // too short to detect reliably
+                comment.dataset.ytkitCtReady = '1';
+                // Only offer the link where it would do something: a comment
+                // already in the target language does not need translating.
+                const detected = this._detectLanguage(text);
+                if (detected && detected === this._targetLanguage()) return;
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'ytkit-ct-btn';
+                button.textContent = t('commentTranslateAction', 'Translate');
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this._toggle(comment, button);
+                });
+                node.parentElement?.insertBefore(button, node.nextSibling);
+            },
+
+            _scan(root = document) {
+                root.querySelectorAll?.(this._COMMENT_SELECTOR)?.forEach?.((c) => this._decorate(c));
+            },
+
+            init() {
+                this._ensureStyles();
+                this._scan();
+                if (typeof addScopedMutationRule === 'function') {
+                    addScopedMutationRule(this.id, this._COMMENT_SELECTOR, (_target, addedElements) => {
+                        (addedElements || []).forEach((el) => {
+                            if (el.matches?.(this._COMMENT_SELECTOR)) this._decorate(el);
+                            else this._scan(el);
+                        });
+                    });
+                    this._scopedRuleActive = true;
+                }
+                addNavigateRule(this.id, () => this._scan());
+            },
+            destroy() {
+                if (this._scopedRuleActive && typeof removeScopedMutationRule === 'function') {
+                    removeScopedMutationRule(this.id);
+                    this._scopedRuleActive = false;
+                }
+                removeNavigateRule(this.id);
+                this._translator?.destroy?.();
+                this._translator = null;
+                this._translatorKey = '';
+                document.querySelectorAll('.ytkit-ct-btn').forEach((el) => el.remove());
+                document.querySelectorAll('[data-ytkit-ct-ready]').forEach((comment) => {
+                    // Put every translated comment back before letting go.
+                    if (comment.dataset.ytkitCtShowing === '1' && comment.dataset.ytkitCtOriginal) {
+                        const node = this._contentNode(comment);
+                        if (node) node.textContent = comment.dataset.ytkitCtOriginal;
+                    }
+                    delete comment.dataset.ytkitCtReady;
+                    delete comment.dataset.ytkitCtShowing;
+                    delete comment.dataset.ytkitCtOriginal;
+                    delete comment.dataset.ytkitCtTranslated;
+                });
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        {
+            id: 'commentTranslateTarget',
+            name: t('feature_commentTranslateTarget_name', 'Translate Comments Into'),
+            description: t('feature_commentTranslateTarget_desc', 'Language to translate comments into. Auto follows your browser language.'),
+            group: 'Comments',
+            icon: 'languages',
+            type: 'select',
+            isSubFeature: true,
+            parentId: 'commentTranslate',
+            options: {
+                auto: t('commentTranslateAuto', 'Auto (browser language)'),
+                en: 'English', es: 'Español', fr: 'Français', de: 'Deutsch',
+                it: 'Italiano', pt: 'Português', ru: 'Русский', ja: '日本語',
+                ko: '한국어', zh: '中文', ar: 'العربية', hi: 'हिन्दी'
+            },
+            init() {}, destroy() {}
         },
 
         // ── Frame-by-Frame Buttons ──

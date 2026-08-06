@@ -265,6 +265,24 @@
   "commentDuplicateShowTpl": {
     "message": "Show {count} similar comments"
   },
+  "commentTranslateAction": {
+    "message": "翻訳"
+  },
+  "commentTranslateAuto": {
+    "message": "自動（ブラウザの言語）"
+  },
+  "commentTranslateFailed": {
+    "message": "翻訳に失敗しました"
+  },
+  "commentTranslateShowOriginal": {
+    "message": "原文を表示"
+  },
+  "commentTranslateUnavailable": {
+    "message": "このブラウザでは翻訳を利用できません"
+  },
+  "commentTranslating": {
+    "message": "翻訳中…"
+  },
   "commonActive": {
     "message": "Active"
   },
@@ -1166,6 +1184,12 @@
   "feature_audioNormalization_name": {
     "message": "オーディオ正規化"
   },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信は変更されません。"
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "音声のみモード"
+  },
   "feature_audioPan_desc": {
     "message": "オーディオバランスを左右に調整。範囲：-1（左）から1（右）、0が中央。"
   },
@@ -1189,12 +1213,6 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "優先音声トラック言語"
-  },
-  "feature_audioOnlyPlayback_desc": {
-    "message": "映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信は変更されません。"
-  },
-  "feature_audioOnlyPlayback_name": {
-    "message": "音声のみモード"
   },
   "feature_autoClosePopups_desc": {
     "message": "Cookie 同意、アンケート、その他の YouTube ポップアップを自動的に閉じる"
@@ -1543,6 +1561,18 @@
   },
   "feature_commentSearch_name": {
     "message": "コメント検索"
+  },
+  "feature_commentTranslateTarget_desc": {
+    "message": "コメントの翻訳先言語。自動はブラウザの言語に従います。"
+  },
+  "feature_commentTranslateTarget_name": {
+    "message": "コメントの翻訳先"
+  },
+  "feature_commentTranslate_desc": {
+    "message": "すでに自分の言語ではないコメントの下に翻訳リンクを追加します。Chrome の端末内蔵トランスレーターを使用するため、サーバーへの送信も API キーも不要です。トランスレーターがない場合は、静かに失敗せずリンクがその旨を表示します。"
+  },
+  "feature_commentTranslate_name": {
+    "message": "コメントを翻訳"
   },
   "feature_compactLayout_desc": {
     "message": "余白とパディングを縮小して、より密なインターフェースに"
@@ -5431,7 +5461,7 @@
     "message": "Transcript"
   },
   "transcriptTranslate": {
-    "message": "Translate"
+    "message": "翻訳"
   },
   "transcriptTranslateTitle": {
     "message": "Translate transcript on-device using Chrome Translator API"
@@ -5443,7 +5473,7 @@
     "message": "Translated to {language}"
   },
   "transcriptTranslating": {
-    "message": "Translating…"
+    "message": "翻訳中…"
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"

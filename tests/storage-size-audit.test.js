@@ -98,7 +98,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // layout adds one boolean preference for 40 bytes. Buffer / preload adds
     // one extension-only boolean preference for another 38 bytes.
     // Same default trim as above, less the extension-only keys: -23 bytes.
-    assert.equal(assessment.totalBytes, 184800);
+    assert.equal(assessment.totalBytes, 184857);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -203,6 +203,8 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     bufferPreload: 'intentional-extension-only',
     bufferPreloadSeconds: 'intentional-extension-only',
     audioOnlyPlayback: 'intentional-extension-only',
+    commentTranslate: 'intentional-extension-only',
+    commentTranslateTarget: 'intentional-extension-only',
     volumeWheelMode: 'not-yet-ported',
     watchHistoryAnalytics: 'intentional-extension-only',
     watchLaterCleanup: 'intentional-extension-only',
