@@ -35554,6 +35554,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return null;
             },
 
+            _threadSelectorGroup() {
+                return this._selectorChain('thread', [
+                    'ytd-comment-thread-renderer',
+                    'ytd-comment-view-model',
+                    'ytd-comment-renderer'
+                ]).join(', ');
+            },
+
             _findCommentThreads(root) {
                 const threads = [];
                 const seen = new Set();
@@ -35949,19 +35957,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!keys || keys.some((key) => relevant.includes(key))) this._scheduleScan(0);
                 };
                 document.addEventListener('ytkit-settings-changed', this._settingsHandler);
-                addMutationRule(this.id, (mutations) => {
+                // The shared dispatcher calls broad rules as rule(document.body)
+                // and scoped rules as rule(targetNode, addedElements). This rule
+                // needs the added nodes, so it must be scoped — a broad rule here
+                // threw on every mutation batch and silently killed incremental
+                // filtering of lazily-loaded threads.
+                const threadSelector = this._threadSelectorGroup();
+                addScopedMutationRule(this.id, threadSelector, (_targetNode, addedElements) => {
                     let hasCommentChange = false;
-                    for (const m of mutations) {
-                        if (m.type !== 'childList') continue;
-                        for (const node of m.addedNodes) {
-                            if (node.nodeType !== 1) continue;
-                            const directThread = node.matches?.('ytd-comment-thread-renderer, ytd-comment-view-model, ytd-comment-renderer');
-                            const nestedThreads = node.querySelectorAll?.('ytd-comment-thread-renderer, ytd-comment-view-model, ytd-comment-renderer') || [];
-                            if (directThread || nestedThreads.length) {
-                                hasCommentChange = true;
-                                if (directThread) this._processThread(node);
-                                nestedThreads.forEach((thread) => this._processThread(thread));
-                            }
+                    for (const node of addedElements) {
+                        let directThread = false;
+                        let nestedThreads = [];
+                        try {
+                            directThread = Boolean(node.matches?.(threadSelector));
+                            nestedThreads = node.querySelectorAll?.(threadSelector) || [];
+                        } catch (_) {
+                            // reason: a stale comments selector must not disable filtering
+                            continue;
+                        }
+                        if (directThread || nestedThreads.length) {
+                            hasCommentChange = true;
+                            if (directThread) this._processThread(node);
+                            nestedThreads.forEach((thread) => this._processThread(thread));
                         }
                     }
                     if (hasCommentChange) this._scheduleScan();
@@ -35980,7 +35997,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 clearTimeout(this._navigateTimer);
                 this._scanTimer = null;
                 this._navigateTimer = null;
-                removeMutationRule(this.id);
+                removeScopedMutationRule(this.id);
                 removeNavigateRule(this.id);
                 document.querySelectorAll('ytd-comment-thread-renderer[data-ytkit-comment-filter-hidden="1"], ytd-comment-view-model[data-ytkit-comment-filter-hidden="1"], ytd-comment-renderer[data-ytkit-comment-filter-hidden="1"], ytd-comment-thread-renderer[data-ytkit-comment-language-hidden="1"], ytd-comment-view-model[data-ytkit-comment-language-hidden="1"], ytd-comment-renderer[data-ytkit-comment-language-hidden="1"]').forEach((thread) => {
                     this._setVisibilityReason(thread, 'filter', false);

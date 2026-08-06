@@ -3343,15 +3343,20 @@ test('commentFilterManager processes mutation addedNodes only, never full-docume
         "\n        {\n            id: 'commentFilterManager'"
     );
     assert.ok(block, 'commentFilterManager object must be extractable');
-    // The mutation rule callback must loop addedNodes only — not call
-    // querySelectorAll on document.
-    assert.match(block, /addMutationRule\(this\.id/,
-        'commentFilterManager must register a mutation rule');
-    const mutBlock = block.slice(block.indexOf('addMutationRule'), block.indexOf('addNavigateRule'));
+    // The rule must be SCOPED: only scoped rules receive the added elements.
+    // Registering it broad passes rule(document.body), which this callback
+    // cannot consume — that shipped as a throw on every mutation batch.
+    assert.match(block, /addScopedMutationRule\(this\.id/,
+        'commentFilterManager must register a scoped mutation rule');
+    assert.doesNotMatch(block, /addMutationRule\(this\.id/,
+        'commentFilterManager must not register a broad mutation rule');
+    const mutBlock = block.slice(block.indexOf('addScopedMutationRule'), block.indexOf('addNavigateRule'));
     assert.ok(!/document\.querySelectorAll/.test(mutBlock),
         'commentFilterManager mutation rule must not call document.querySelectorAll on every tick');
-    assert.match(mutBlock, /m\.addedNodes/,
-        'commentFilterManager mutation rule must process addedNodes only');
+    assert.match(mutBlock, /addedElements/,
+        'commentFilterManager mutation rule must process the dispatcher-supplied added elements');
+    assert.match(block, /removeScopedMutationRule\(this\.id\)/,
+        'destroy() must remove the scoped rule it registered');
 });
 
 test('commentFilterManager destroy() restores hidden threads and clears compiled rule cache', () => {
