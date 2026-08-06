@@ -70,13 +70,20 @@
                 toast.removeEventListener('toggle', toast._popoverToggleHandler);
                 toast._popoverToggleHandler = null;
             }
-            if (typeof toast.hidePopover === 'function') {
-                try {
-                    toast.hidePopover();
-                } catch (_) {
-                    // reason: the toast may already have closed natively.
+            // Closing the popover FIRST made the exit animation unreachable:
+            // `[popover]:not(:popover-open)` is display:none, so the toast
+            // vanished instantly and the fade below never painted. Hide it as
+            // part of the removal instead.
+            const finishRemoval = () => {
+                if (typeof toast.hidePopover === 'function') {
+                    try {
+                        toast.hidePopover();
+                    } catch (_) {
+                        // reason: the toast may already have closed natively.
+                    }
                 }
-            }
+                toast.remove();
+            };
             toast.classList.remove('is-visible');
             // The reduced-motion branch matches ytkit.js's inline
             // fallback byte-for-byte so the parity test holds.
@@ -84,11 +91,11 @@
                 && window.matchMedia
                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (immediate || reduce) {
-                toast.remove();
+                finishRemoval();
                 return;
             }
             toast._removeTimer = setTimeout(() => {
-                if (toast.isConnected) toast.remove();
+                if (toast.isConnected) finishRemoval();
             }, 180);
         }
 
@@ -184,6 +191,14 @@
             if (usePopover) {
                 const toggleHandler = (event) => {
                     if (event.newState !== 'closed') return;
+                    // A programmatic re-stack (see raiseActiveToasts) closes and
+                    // reopens the popover; that must not read as a dismissal.
+                    // Counted rather than flagged because `toggle` is queued, so
+                    // the event can arrive after a boolean would have reset.
+                    if (toast._restackDepth > 0) {
+                        toast._restackDepth -= 1;
+                        return;
+                    }
                     toast.removeEventListener('toggle', toggleHandler);
                     toast._popoverToggleHandler = null;
                     dismissToast(toast);

@@ -515,6 +515,30 @@
             get isRunning() { return this._status === 'running'; },
             get token() { return this._token; },
 
+            // Raise an element into the top layer when the platform supports
+            // it, so it cannot be covered by the settings-panel popover. Falls
+            // back to its stylesheet z-index when the API is missing or the
+            // show call is rejected.
+            _raiseOverlay(el) {
+                if (!el) return false;
+                let usePopover = false;
+                try {
+                    usePopover = supportsPopover() === true;
+                } catch (_) {
+                    // reason: feature detection must never block the overlay.
+                }
+                if (!usePopover || typeof el.showPopover !== 'function') return false;
+                el.setAttribute('popover', 'manual');
+                try {
+                    el.showPopover();
+                    return true;
+                } catch (_) {
+                    // reason: a browser can expose the API and still reject the call.
+                    el.removeAttribute('popover');
+                    return false;
+                }
+            },
+
             // Show install / retry prompt panel.
             showInstallPrompt(mode) {
                 const existing = document.getElementById('ytkit-mediadl-install-prompt');
@@ -751,6 +775,7 @@
                 prompt.appendChild(steps);
                 prompt.appendChild(btnCol);
                 document.body.appendChild(prompt);
+                this._raiseOverlay(prompt);
             }
         };
 
@@ -869,6 +894,7 @@
             panel.appendChild(meta);
             panel.appendChild(actions);
             document.body.appendChild(panel);
+            MediaDLManager._raiseOverlay(panel);
 
             let pollTimer = null;
             let stopped = false;

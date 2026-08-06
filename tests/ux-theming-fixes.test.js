@@ -543,3 +543,60 @@ test('the injected download icon inherits its colour instead of hardcoding white
     assert.match(ytkitSource, /path\.setAttribute\('fill',\s*'currentColor'\)/,
         'the download glyph must inherit the button colour');
 });
+
+// ── Popover top-layer migration follow-ups (d4bebef5) ──
+// The top layer paints by SHOW ORDER, not z-index. Making the settings panel a
+// popover therefore silently undid the v4.50.1 fix that put panel-fired Undo
+// toasts above it, and left behind the two download overlays whose
+// z-index 2147483647 existed purely to beat the panel's 2147483646.
+test('an open toast is re-raised when the settings panel popover opens', () => {
+    const toastCore = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'toast.js'), 'utf8');
+    assert.match(toastCore, /function raiseActiveToasts\(\)/,
+        'the shared toast layer must expose a re-stacking helper');
+    assert.match(toastCore, /toast\._restackDepth = \(toast\._restackDepth \|\| 0\) \+ 1;[\s\S]{0,120}?hidePopover\(\);[\s\S]{0,40}?showPopover\(\);/,
+        're-stacking must close and reopen the popover under a restack counter');
+
+    // Both panel copies must trigger it.
+    assert.match(ytkitSource, /panel\.showPopover\(\);[\s\S]{0,260}?raiseActiveToasts\?\.\(\)/,
+        'the monolith panel must re-raise toasts after showing');
+    assert.match(settingsPanelModuleSource, /panel\.showPopover\(\);[\s\S]{0,260}?raiseActiveToasts\?\.\(\)/,
+        'the settings-panel module must re-raise toasts after showing');
+
+    // The close half of a re-stack must not be mistaken for a dismissal.
+    for (const [label, source] of [
+        ['monolith', ytkitSource],
+        ['toast-dom module', fs.readFileSync(
+            path.join(__dirname, '..', 'extension', 'core', 'toast-dom.js'), 'utf8')],
+    ]) {
+        assert.match(source, /if \(toast\._restackDepth > 0\) \{[\s\S]{0,80}?toast\._restackDepth -= 1;[\s\S]{0,40}?return;/,
+            `${label} popover toggle handler must ignore a programmatic re-stack`);
+    }
+});
+
+test('toast dismissal hides the popover only after the exit animation', () => {
+    // `[popover]:not(:popover-open)` is display:none, so calling hidePopover()
+    // before the fade meant popover-path toasts vanished instantly and the
+    // parity-pinned fade branch never painted.
+    const toastDom = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'toast-dom.js'), 'utf8');
+    for (const [label, source] of [['toast-dom', toastDom], ['monolith', ytkitSource]]) {
+        const idx = source.indexOf('const finishRemoval = () => {');
+        assert.ok(idx > -1, `${label} must remove the toast through finishRemoval`);
+        const region = source.slice(idx, idx + 1200);
+        assert.match(region, /hidePopover\(\)/, `${label} finishRemoval must hide the popover`);
+        assert.match(region, /setTimeout\(\(\) => \{[\s\S]{0,80}?finishRemoval\(\);[\s\S]{0,40}?\}, 180\)/,
+            `${label} must defer removal (and the hide) until the fade completes`);
+    }
+});
+
+test('the install prompt and download progress card enter the top layer', () => {
+    const downloadUi = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'), 'utf8');
+    assert.match(downloadUi, /_raiseOverlay\(el\) \{[\s\S]{0,600}?setAttribute\('popover', 'manual'\)[\s\S]{0,200}?showPopover\(\)/,
+        'a shared helper must raise an overlay into the top layer with a fallback');
+    assert.match(downloadUi, /this\._raiseOverlay\(prompt\)/,
+        'the install/repair prompt must be raised');
+    assert.match(downloadUi, /MediaDLManager\._raiseOverlay\(panel\)/,
+        'the download progress card must be raised');
+});

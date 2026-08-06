@@ -57,16 +57,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — UX / theming / product
 
-- [ ] P2 — Popover top-layer migration regressions: overlays stack by show-order, dl overlays left behind, dismiss animation defeated
-  Category: ux
-  Where: commit d4bebef5. Sites: extension/ytkit.js:43618-43631 + :5403-5406 (panel popover); #ytkit-mediadl-install-prompt z-index 2147483647 at ytkit.js:51448 created without popover in features/download-ui/index.js:519; .ytkit-dl-progress z 2147483647 at ytkit.js:51804; extension/core/toast-dom.js (dismissToast calls hidePopover() BEFORE the class-removal fade; CloseWatcher per toast)
-  Problem: (a) The two download overlays carry z 2147483647 specifically to beat the panel's 2147483646 (same rationale as the v4.50.1 Z.TOAST fix) — but the panel is now a `popover=manual` in the top layer, which paints above ANY z-index, so an active download progress card or install/repair prompt raised while the panel is open renders underneath it. (b) Toast-above-panel is now temporal: a toast shown before the panel opens sits below it for its remaining lifetime (undo toasts run seconds). (c) dismissToast() calls toast.hidePopover() before the fade — `[popover]:not(:popover-open)` is display:none, so popover-path toasts vanish instantly and the fade branch (pinned byte-for-byte for userscript parity) never paints. (d) Each toast creates a CloseWatcher — Esc now dismisses toasts, and watchers created without user activation are browser-grouped so one Esc can close several surfaces at once.
-  Evidence: Top-layer stacking semantics are spec behavior; all sites read directly; toasts and dl-popup were migrated to popovers while these two overlays were missed.
-  Fix: Give showInstallPrompt and the dl-progress card the same `popover="manual"` + showPopover() treatment with non-popover fallback; when the panel popover opens, re-show (hide+show) any visible toasts so they re-enter the top layer above it (or render panel-era toasts inside the panel's subtree); move hidePopover() after the exit transition completes; create toast CloseWatchers only for toasts with actions (or accept-and-document Esc dismissal).
-  Acceptance: With the settings panel open: a fired download progress card and an undo toast are both visible above the panel; toast dismiss visibly fades in popover mode; hardening/userscript-parity pins updated in the same change.
-  Confidence: Verified (semantics + sites); visual outcomes Needs-repro in a live browser
-  Effort: M
-
 - [ ] P2 — chatStyleComments paints white-alpha text over the page background — unreadable on YouTube light theme (both copies)
   Category: visual
   Where: extension/features/chat-style-comments/index.js:18 (buildCommentRestyleCss — #content-text rgba(255,255,255,0.78), timestamps 0.25, reply borders 0.035, container background = accent at 0.03 alpha) and :1316-1319 (styleReplyDialogs inline rgba(255,255,255,0.85) on rgba(255,255,255,0.04)); byte-identical fallback at extension/ytkit.js:7042

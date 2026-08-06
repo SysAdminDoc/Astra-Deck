@@ -113,8 +113,39 @@
         }
     }
 
+    // The top layer stacks by SHOW ORDER, not z-index. The settings panel
+    // became a popover in d4bebef5, which silently undid the v4.50.1 fix that
+    // put panel-fired Undo toasts above it — a toast shown before the panel
+    // opens now paints underneath it for the rest of its life (undo toasts run
+    // for seconds). Re-showing an open toast moves it back to the top.
+    //
+    // `_restackDepth` is read by the toast systems' popover `toggle` handlers:
+    // the close half of this cycle must not be mistaken for a dismissal. It is
+    // a counter rather than a boolean because `toggle` is queued, so the event
+    // can arrive after a boolean would already have been reset.
+    function raiseActiveToasts() {
+        if (typeof document === 'undefined') return 0;
+        let raised = 0;
+        document.querySelectorAll('.ytkit-global-toast[popover]').forEach((toast) => {
+            if (!toast.isConnected) return;
+            if (typeof toast.showPopover !== 'function' || typeof toast.hidePopover !== 'function') return;
+            try {
+                toast._restackDepth = (toast._restackDepth || 0) + 1;
+                toast.hidePopover();
+                toast.showPopover();
+                raised += 1;
+            } catch (_) {
+                // reason: the toast may have closed natively mid-restack; clear
+                // the debt so a genuine later close still dismisses it.
+                toast._restackDepth = 0;
+            }
+        });
+        return raised;
+    }
+
     core.toast = Object.freeze({
         inferToastTone,
+        raiseActiveToasts,
         normalizeToastTone,
         getToastRgb,
         getToastBadgeLabel,
@@ -128,7 +159,8 @@
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            inferToastTone, normalizeToastTone, getToastRgb, getToastBadgeLabel,
+            inferToastTone,
+            raiseActiveToasts, normalizeToastTone, getToastRgb, getToastBadgeLabel,
             getToastAriaDefaults, supportsPopover, createCloseWatcher,
             destroyCloseWatcher, TONE_RGB, TONE_BADGE
         };
