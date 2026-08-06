@@ -458,6 +458,17 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         ytkit.includes("input.setAttribute('aria-label', 'Group name')") &&
         ytkit.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
         'Subscription group modal must be labelled, modal, and close on Escape');
+    // The watch-time dashboard shipped with no dialog semantics, an unlabeled
+    // close button and no Escape handling — it was simply absent from this
+    // list, so nothing caught it.
+    add('Watch-time dashboard is modal, labelled, and Escape-closeable',
+        ytkit.includes("card.setAttribute('role', 'dialog')") &&
+        ytkit.includes("card.setAttribute('aria-modal', 'true')") &&
+        ytkit.includes("card.setAttribute('aria-labelledby', title.id)") &&
+        ytkit.includes("close.setAttribute('aria-label', t('whaCloseAria', 'Close watch time dashboard'))") &&
+        ytkit.includes("if (event.key === 'Escape')"),
+        'Watch-time dashboard must be labelled, modal, and close on Escape');
+
     add('Settings panel traps Tab and Shift+Tab in active dialogs',
         settingsPanel.includes("if (e.key === 'Tab' && activeDialog)") &&
         settingsPanel.includes('trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : [])') &&
