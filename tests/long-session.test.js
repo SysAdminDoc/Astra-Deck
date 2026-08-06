@@ -41,7 +41,10 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
     const navigation = navigationApi ? {
         addEventListener(type, callback) { addListener(navigationListeners, type, callback); },
         removeEventListener(type, callback) { removeListener(navigationListeners, type, callback); },
-        dispatchNavigate() { dispatch(navigationListeners, 'navigate'); }
+        dispatchNavigate() { dispatch(navigationListeners, 'navigatesuccess'); },
+        // The pre-commit event, which must NOT drive route dispatch: it also
+        // fires for downloads, cancelled navigations and replaceState.
+        dispatchPreCommitNavigate() { dispatch(navigationListeners, 'navigate'); }
     } : undefined;
 
     const body = { nodeType: 1, nodeName: 'BODY' };
@@ -169,6 +172,7 @@ function createLongSessionHarness({ navigationApi = false } = {}) {
         listenerCount,
         navigationListenerCount(type) { return (navigationListeners.get(type) || new Set()).size; },
         dispatchNavigation() { navigation?.dispatchNavigate(); },
+        dispatchPreCommitNavigation() { navigation?.dispatchPreCommitNavigate(); },
         location: context.location,
         viewTransitionCount: () => viewTransitions,
         setViewTransitionThrows(value) { viewTransitionThrows = !!value; },
@@ -305,8 +309,10 @@ test('Navigation API is the primary route signal and remains bounded over 1000 c
     core.addNavigateRule('navigation-api-primary', () => { navRuns += 1; });
     core.addScopedMutationRule('navigation-api-scoped', 'ytd-rich-item-renderer', () => {});
 
-    assert.equal(harness.navigationListenerCount('navigate'), 1,
+    assert.equal(harness.navigationListenerCount('navigatesuccess'), 1,
         'Navigation API should own route dispatch when available');
+    assert.equal(harness.navigationListenerCount('navigate'), 0,
+        'the pre-commit navigate event must not drive route dispatch');
     assert.equal(harness.listenerCount('document', 'yt-navigate-finish'), 0,
         'YouTube route events should remain dormant on the API path');
     assert.equal(harness.listenerCount('window', 'popstate'), 0,
@@ -330,7 +336,7 @@ test('Navigation API is the primary route signal and remains bounded over 1000 c
 
     core.removeScopedMutationRule('navigation-api-scoped');
     core.removeNavigateRule('navigation-api-primary');
-    assert.equal(harness.navigationListenerCount('navigate'), 0,
+    assert.equal(harness.navigationListenerCount('navigatesuccess'), 0,
         'Navigation API listener must be removed after the last rule');
     assert.equal(harness.activeObservers().length, 0);
 });
@@ -414,4 +420,34 @@ test('mutation-rule circuit diagnostics stay capped across repeated degraded rou
     assert.equal(diagnostics.length, 20);
     assert.equal(diagnostics[0].featureId, 'noisy-5');
     assert.equal(diagnostics.at(-1).featureId, 'noisy-24');
+});
+
+test('the pre-commit navigate event does not dispatch route rules', () => {
+    // `navigate` fires before the navigation commits, and also for downloads,
+    // cancelled navigations, replaceState and cross-document link clicks. The
+    // previous implementation dispatched from it and tried to await
+    // `event.committed` — a property NavigateEvent does not have ({committed,
+    // finished} is the result of navigation.navigate()), so the guard was dead
+    // in every browser and only this harness could enter it. Route rules must
+    // run on the platform's post-commit signal instead.
+    const harness = createLongSessionHarness({ navigationApi: true });
+    const { core } = harness;
+    core.configureNavigationRuntime({ navDebounce: 0 });
+
+    let navRuns = 0;
+    core.addNavigateRule('post-commit-only', () => { navRuns += 1; });
+    const atRegistration = navRuns;
+
+    harness.location.href = 'https://www.youtube.com/watch?v=precommit';
+    harness.dispatchPreCommitNavigation();
+    harness.flushTimers();
+    assert.equal(navRuns, atRegistration,
+        'a pre-commit navigate event must not run route rules');
+
+    harness.dispatchNavigation();
+    harness.flushTimers();
+    assert.equal(navRuns, atRegistration + 1,
+        'the post-commit signal must run route rules exactly once');
+
+    core.removeNavigateRule('post-commit-only');
 });

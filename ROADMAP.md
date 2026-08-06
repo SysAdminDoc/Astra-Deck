@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Navigation API adoption: `event.committed` doesn't exist on NavigateEvent — dead branch, pre-render dispatch timing, and unfiltered navigation types
-  Category: correctness
-  Where: extension/core/navigation.js:237-249, 277-284 (commit 971f886f); test harness: tests/long-session.test.js (fabricates the event shape)
-  Problem: Per spec, `{committed, finished}` is the return value of navigation.navigate()/traverseTo(), NOT a NavigateEvent property — `event?.committed` is always undefined in a real browser, so the "prefer the platform's commit promise" branch is dead code that only the test harness can exercise (a check-that-always-passes). Dispatch therefore always uses the synchronous fallback: rules run ~50ms after `navigate` — at/near URL commit, BEFORE YouTube renders the new page — whereas the replaced yt-navigate-finish fired after data load; yt-page-data-updated re-fires rules later but lastNavHref was already consumed, so per-URL-deduped rules latch onto pre-render DOM. Additionally `navigate` fires for cases yt-navigate-finish never signaled — history.replaceState, canceled navigations, downloads, cross-document link clicks — each now triggering pendingMutationRouteReset + a full navigate-rule pass.
-  Evidence: Spec semantics + code read; the harness dispatches no event object at all, so nothing tests hashChange/downloadRequest/cancel behavior.
-  Fix: Filter on `event.navigationType` / `event.destination?.sameDocument` / `event.downloadRequest` before dispatching; for timing, use `navigation.transition?.finished` or keep yt-navigate-finish as the dispatch signal with the Navigation API as a supplementary/fallback trigger; delete or rewrite the committed branch. Make the test harness dispatch a realistic NavigateEvent shape ({navigationType, hashChange, downloadRequest, destination}) and assert download/hash navigations don't reset route health.
-  Acceptance: tests/long-session.test.js passes with the realistic event fake; a new test asserts a downloadRequest navigate does not fire navigate rules; live behavior verified on a real SPA navigation (rules still fire once per route change).
-  Confidence: Verified (dead branch, spec); Likely (timing consequences)
-  Effort: M
-
 - [ ] P2 — Userscript twins missing four shipped extension fixes (localized action hooks, per-channel speed reset, auto-start budget, focused-mode scope)
   Category: correctness
   Where: YTKit.user.js:32799-32841 (pre-6ebf7403 `_buttonAriaLabels`/`aria-label="…"` English-only action hooks; also :31962 `button[aria-label="Create"]`, :34071 "Join this channel", :34166 "Share"); :36637-36648 (pre-2df33124 _saveCurrentSpeed — `if (!video || video.playbackRate === 1) return;` so resetting to 1x never clears the stored speed, and no _activeChannelId capture); :30340 (`tryAutoStart(retries = 4)`) with :30439, :30468, :25153, :44852 still passing 5 (9c10b46c raised the extension to 8 for the ~12s cold start; only :30915 was ported); :39516 (focusedMode feature object missing the `pages: [PageTypes.WATCH]` gate from d2561495 — masthead-hiding CSS applies on every page type)
