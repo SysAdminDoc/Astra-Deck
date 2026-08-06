@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "Заменяет шрифт интерфейса. Короткий подобранный список вместо свободного поля: произвольная font-family — это поверхность для CSS-инъекции, а для таких случаев уже есть пользовательский CSS."
+  },
+  "feature_uiFontFamily_name": {
+    "message": "Шрифт интерфейса"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "По умолчанию YouTube"
+  },
+  "uiFontMono": {
+    "message": "Моноширинный"
+  },
+  "uiFontReadable": {
+    "message": "Повышенная читаемость (для дислексии)"
+  },
+  "uiFontSerif": {
+    "message": "С засечками"
+  },
+  "uiFontSystem": {
+    "message": "Системный интерфейс"
   },
   "ui_rydCardRatioSuffix": {
     "message": "лайков · оценка Return YouTube Dislike"

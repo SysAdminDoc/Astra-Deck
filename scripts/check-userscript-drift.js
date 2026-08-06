@@ -215,6 +215,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     // cssFeature() toggles carry their id as a positional arg and are invisible
     // to the id-extractor, so they need no classification here).
     hiddenGuideElementsManager: 'intentional-extension-only',
+    uiFontFamily: 'intentional-extension-only',
     uiFontSize: 'intentional-extension-only',
 });
 

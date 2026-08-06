@@ -2542,6 +2542,100 @@ const COMMENT_TRANSLATE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(COMMENT_TRANSLATE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const UI_FONT_TRANSLATIONS = {
+  de: {
+    'UI Font': 'Oberflächenschrift',
+    'YouTube default': 'YouTube-Standard',
+    'System UI': 'System-UI',
+    'Serif': 'Serif',
+    'Monospace': 'Monospace',
+    'High-legibility (dyslexia-friendly)': 'Gut lesbar (Legasthenie-freundlich)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'Überschreibt die Schriftart der Oberfläche. Bewusst eine kurze kuratierte Liste statt eines Freitextfelds — eine beliebige font-family ist eine CSS-Injektionsfläche, und dafür gibt es bereits eigenes CSS.'
+  },
+  es: {
+    'UI Font': 'Fuente de la interfaz',
+    'YouTube default': 'Predeterminada de YouTube',
+    'System UI': 'Interfaz del sistema',
+    'Serif': 'Serif',
+    'Monospace': 'Monoespaciada',
+    'High-legibility (dyslexia-friendly)': 'Alta legibilidad (apta para dislexia)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'Cambia la tipografía de la interfaz. Es una lista breve y seleccionada en lugar de un campo libre: una font-family arbitraria es una superficie de inyección CSS, y para eso ya existe el CSS personalizado.'
+  },
+  fr: {
+    'UI Font': 'Police de l’interface',
+    'YouTube default': 'Par défaut YouTube',
+    'System UI': 'Interface système',
+    'Serif': 'Serif',
+    'Monospace': 'Chasse fixe',
+    'High-legibility (dyslexia-friendly)': 'Haute lisibilité (adaptée à la dyslexie)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'Remplace la police de l’interface. Une courte liste sélectionnée plutôt qu’un champ libre : une font-family arbitraire est une surface d’injection CSS, et le CSS personnalisé existe déjà pour cela.'
+  },
+  it: {
+    'UI Font': 'Carattere dell’interfaccia',
+    'YouTube default': 'Predefinito di YouTube',
+    'System UI': 'Interfaccia di sistema',
+    'Serif': 'Serif',
+    'Monospace': 'Monospaziato',
+    'High-legibility (dyslexia-friendly)': 'Alta leggibilità (adatto alla dislessia)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'Sostituisce il carattere dell’interfaccia. Un breve elenco curato invece di un campo libero: una font-family arbitraria è una superficie di injection CSS, e per quello esiste già il CSS personalizzato.'
+  },
+  pt_BR: {
+    'UI Font': 'Fonte da interface',
+    'YouTube default': 'Padrão do YouTube',
+    'System UI': 'Interface do sistema',
+    'Serif': 'Serif',
+    'Monospace': 'Monoespaçada',
+    'High-legibility (dyslexia-friendly)': 'Alta legibilidade (amigável à dislexia)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'Substitui a tipografia da interface. Uma lista curta e curada em vez de campo livre: uma font-family arbitrária é superfície de injeção de CSS, e o CSS personalizado já existe para isso.'
+  },
+  ru: {
+    'UI Font': 'Шрифт интерфейса',
+    'YouTube default': 'По умолчанию YouTube',
+    'System UI': 'Системный интерфейс',
+    'Serif': 'С засечками',
+    'Monospace': 'Моноширинный',
+    'High-legibility (dyslexia-friendly)': 'Повышенная читаемость (для дислексии)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'Заменяет шрифт интерфейса. Короткий подобранный список вместо свободного поля: произвольная font-family — это поверхность для CSS-инъекции, а для таких случаев уже есть пользовательский CSS.'
+  },
+  ja: {
+    'UI Font': 'UI フォント',
+    'YouTube default': 'YouTube の既定',
+    'System UI': 'システム UI',
+    'Serif': 'セリフ',
+    'Monospace': '等幅',
+    'High-legibility (dyslexia-friendly)': '高可読性（ディスレクシア対応）',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'インターフェースの書体を変更します。自由入力ではなく短い厳選リストです。任意の font-family は CSS インジェクションの入口になり、その用途にはカスタム CSS がすでにあります。'
+  },
+  ko: {
+    'UI Font': 'UI 글꼴',
+    'YouTube default': 'YouTube 기본값',
+    'System UI': '시스템 UI',
+    'Serif': '세리프',
+    'Monospace': '고정폭',
+    'High-legibility (dyslexia-friendly)': '고가독성(난독증 친화)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': '인터페이스 글꼴을 바꿉니다. 자유 입력 대신 짧은 선별 목록입니다. 임의의 font-family는 CSS 주입 표면이며, 그런 용도로는 이미 사용자 CSS가 있습니다.'
+  },
+  ar: {
+    'UI Font': 'خط الواجهة',
+    'YouTube default': 'افتراضي YouTube',
+    'System UI': 'واجهة النظام',
+    'Serif': 'بحروف مذيّلة',
+    'Monospace': 'أحادي المسافة',
+    'High-legibility (dyslexia-friendly)': 'عالي الوضوح (مناسب لعسر القراءة)',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': 'يغيّر خط الواجهة. قائمة قصيرة منتقاة بدل حقل نص حر: أي قيمة font-family عشوائية تمثل سطح حقن CSS، ولهذا الغرض يوجد CSS مخصص بالفعل.'
+  },
+  zh_CN: {
+    'UI Font': '界面字体',
+    'YouTube default': 'YouTube 默认',
+    'System UI': '系统界面',
+    'Serif': '衬线',
+    'Monospace': '等宽',
+    'High-legibility (dyslexia-friendly)': '高易读性（阅读障碍友好）',
+    'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.': '覆盖界面字体。这里是一份精选的短列表而非自由输入框：任意 font-family 是 CSS 注入面，而自定义 CSS 已经提供了这种能力。'
+  }
+};
+for (const [locale, messages] of Object.entries(UI_FONT_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

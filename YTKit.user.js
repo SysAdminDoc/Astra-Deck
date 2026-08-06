@@ -2601,6 +2601,7 @@
         Object.freeze({ key: "softBottomGradient", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
         Object.freeze({ key: "hideCommentComposer", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
         Object.freeze({ key: "hideCommentReplyButton", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
+        Object.freeze({ key: "uiFontFamily", category: "shell", type: "string", defaultValue: "default", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.54.0" }),
         Object.freeze({ key: "uiFontSize", category: "shell", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.49.0" }),
     ]);
 

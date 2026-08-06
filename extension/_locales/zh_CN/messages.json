@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "字幕侧边栏"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "覆盖界面字体。这里是一份精选的短列表而非自由输入框：任意 font-family 是 CSS 注入面，而自定义 CSS 已经提供了这种能力。"
+  },
+  "feature_uiFontFamily_name": {
+    "message": "界面字体"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "YouTube 默认"
+  },
+  "uiFontMono": {
+    "message": "等宽"
+  },
+  "uiFontReadable": {
+    "message": "高易读性（阅读障碍友好）"
+  },
+  "uiFontSerif": {
+    "message": "衬线"
+  },
+  "uiFontSystem": {
+    "message": "系统界面"
   },
   "ui_rydCardRatioSuffix": {
     "message": "点赞 · Return YouTube Dislike 估算"

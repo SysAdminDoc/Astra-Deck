@@ -42,16 +42,6 @@ count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
 
 ### P3 — Smaller gaps
 
-- [ ] P3 — Configurable UI font family
-  Category: feature
-  Where: `uiFontSize` exists (numeric, 0 = off); `fontFamily` appears only as `subStyleFontFamily` for subtitle styling
-  Problem: Font SIZE is configurable and font FAMILY is not, except for subtitles. Enhancer for YouTube #1060 asks for it; it is also an accessibility affordance for dyslexia-friendly faces.
-  Evidence: Verified locally — `grep -n fontFamily extension/core/settings-schema.js` returns nothing; the only hit is the subtitles module.
-  Fix: `uiFontFamily` as a constrained select (system / serif / mono / dyslexia-friendly), not a free-text field — arbitrary font-family strings are a CSS injection surface and this repo already routes user CSS through `customCssInjection` deliberately.
-  Acceptance: Applies to injected surfaces and YouTube chrome; no layout break in the six rendered smoke states; empty/off is the default.
-  Confidence: Verified (gap)
-  Effort: S
-
 - [ ] P3 — Decide whether embedded YouTube players on third-party pages are in scope
   Category: docs
   Where: extension/manifest.json content_scripts — matches are `*.youtube.com`, `*.youtube-nocookie.com`, `youtu.be`; `all_frames` is set ONLY on the live_chat block

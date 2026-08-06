@@ -122,3 +122,23 @@ test('PiP ownership does not ride on the pauseOtherTabs channel', () => {
     assert.match(block, /const CHANNEL_NAME = 'ytkit-pip-ownership';/,
         'pauseOtherTabs is independently toggleable — PiP handoff must not depend on it being on');
 });
+
+// ── UI font family ─────────────────────────────────────────────────────
+// A free-text font-family is a CSS injection surface. The setting only ever
+// selects a key; the stacks live in code.
+test('the UI font setting selects a curated stack, never user text', () => {
+    const start = sources.ytkit.indexOf("id: 'uiFontFamily'");
+    assert.ok(start > -1, 'the UI font feature must exist');
+    const block = sources.ytkit.slice(start, start + 2600);
+
+    assert.match(block, /type: 'select'/, 'a free-text field would put user input into CSS');
+    assert.match(block, /const stack = this\._STACKS\[choice\];/);
+    assert.match(block, /if \(!stack\) return;/,
+        'an unrecognised value must inject nothing at all, not a default guess');
+    assert.doesNotMatch(block, /font-family: \$\{choice\}/,
+        'the chosen KEY must never reach the stylesheet');
+
+    // The player chrome lays its controls out against Roboto metrics.
+    assert.doesNotMatch(block, /movie_player|html5-video-player/,
+        'the override must not touch the player');
+});

@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "Transkript-Seitenleiste"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "Überschreibt die Schriftart der Oberfläche. Bewusst eine kurze kuratierte Liste statt eines Freitextfelds — eine beliebige font-family ist eine CSS-Injektionsfläche, und dafür gibt es bereits eigenes CSS."
+  },
+  "feature_uiFontFamily_name": {
+    "message": "Oberflächenschrift"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "YouTube-Standard"
+  },
+  "uiFontMono": {
+    "message": "Monospace"
+  },
+  "uiFontReadable": {
+    "message": "Gut lesbar (Legasthenie-freundlich)"
+  },
+  "uiFontSerif": {
+    "message": "Serif"
+  },
+  "uiFontSystem": {
+    "message": "System-UI"
   },
   "ui_rydCardRatioSuffix": {
     "message": "gefällt · geschätzt durch Return YouTube Dislike"
