@@ -126,9 +126,74 @@ test('comment filtering preserves author rules and duplicate similarity is conse
     assert.match(block, /aria-controls/);
     assert.match(block, /data-ytkit-comment-duplicate-hidden/);
     assert.match(block, /commentDuplicateCollapse/);
-    assert.match(block, /addMutationRule\(this\.id/);
-    assert.match(block, /m\.addedNodes/);
-    const mutationBlock = block.slice(block.indexOf('addMutationRule'), block.indexOf('addNavigateRule'));
+    assert.match(block, /addScopedMutationRule\(this\.id/);
+    const mutationBlock = block.slice(block.indexOf('addScopedMutationRule'), block.indexOf('addNavigateRule'));
     assert.doesNotMatch(mutationBlock, /document\.querySelectorAll/,
         'mutation handling must not rescan the full document on every observer tick');
+});
+
+test('comment filter mutation rule is registered scoped and processes newly added threads', () => {
+    // Regression: the rule used to be registered with addMutationRule, whose
+    // dispatcher calls rule(document.body) — iterating that as MutationRecords
+    // threw on every batch, so lazily-loaded threads were never filtered.
+    // navigation.js is the contract of record for both call shapes.
+    const navigationSource = read('extension', 'core', 'navigation.js');
+    assert.match(navigationSource, /executeMutationRule\(id, 'broad', rule, \[targetNode\]\)/,
+        'broad rules receive only the target node');
+    assert.match(navigationSource, /executeMutationRule\(id, 'scoped', entry\.ruleFn, \[targetNode, addedElements\]\)/,
+        'scoped rules receive the target node and the added elements');
+
+    let scopedSelector = null;
+    let scopedRule = null;
+    let broadRuleRegistered = false;
+    const processed = [];
+
+    const manager = vm.runInNewContext(`(${managerBlock()})`, {
+        appState: { settings: { commentFilterRules: '@Spammer' } },
+        DebugManager: { log() {} },
+        PageTypes: { WATCH: 'watch' },
+        t: (_key, fallback) => fallback,
+        document: {
+            addEventListener() {},
+            removeEventListener() {},
+            querySelector() { return null; },
+            querySelectorAll() { return []; }
+        },
+        location: { pathname: '/watch' },
+        globalThis: {},
+        setTimeout: () => 0,
+        clearTimeout: () => {},
+        injectStyle: () => null,
+        addMutationRule: () => { broadRuleRegistered = true; },
+        addScopedMutationRule: (_id, selector, ruleFn) => { scopedSelector = selector; scopedRule = ruleFn; },
+        addNavigateRule: () => {},
+        removeScopedMutationRule: () => {},
+        removeNavigateRule: () => {},
+        isWatchPagePath: () => true
+    });
+
+    manager._processThread = (thread) => { processed.push(thread); };
+    manager.init();
+
+    assert.equal(broadRuleRegistered, false, 'the rule must not be registered as a broad mutation rule');
+    assert.ok(scopedRule, 'a scoped mutation rule must be registered');
+    assert.match(scopedSelector, /ytd-comment-thread-renderer/,
+        'the scoped selector must target comment threads so unrelated batches are skipped');
+
+    const directThread = makeThread({ author: 'Spammer' });
+    directThread.matches = (selector) => selector === scopedSelector;
+    const nestedThread = makeThread({ author: 'Nested' });
+    const container = {
+        matches: () => false,
+        querySelectorAll: (selector) => (selector === scopedSelector ? [nestedThread] : [])
+    };
+    const unrelated = { matches: () => false, querySelectorAll: () => [] };
+
+    // Exactly the argument shape the real dispatcher passes (targetNode is
+    // document.body in production; the rule must not depend on it).
+    const targetNode = { nodeName: 'BODY' };
+    scopedRule(targetNode, [directThread, container, unrelated]);
+
+    assert.deepEqual(processed, [directThread, nestedThread],
+        'direct and nested comment threads added by a mutation batch must be processed');
 });
