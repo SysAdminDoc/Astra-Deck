@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "インターフェースの書体を変更します。自由入力ではなく短い厳選リストです。任意の font-family は CSS インジェクションの入口になり、その用途にはカスタム CSS がすでにあります。"
+  },
+  "feature_uiFontFamily_name": {
+    "message": "UI フォント"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "YouTube の既定"
+  },
+  "uiFontMono": {
+    "message": "等幅"
+  },
+  "uiFontReadable": {
+    "message": "高可読性（ディスレクシア対応）"
+  },
+  "uiFontSerif": {
+    "message": "セリフ"
+  },
+  "uiFontSystem": {
+    "message": "システム UI"
   },
   "ui_rydCardRatioSuffix": {
     "message": "高評価 · Return YouTube Dislike による推定"

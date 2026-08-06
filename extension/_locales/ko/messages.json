@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "대본 사이드바"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "인터페이스 글꼴을 바꿉니다. 자유 입력 대신 짧은 선별 목록입니다. 임의의 font-family는 CSS 주입 표면이며, 그런 용도로는 이미 사용자 CSS가 있습니다."
+  },
+  "feature_uiFontFamily_name": {
+    "message": "UI 글꼴"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "YouTube 기본값"
+  },
+  "uiFontMono": {
+    "message": "고정폭"
+  },
+  "uiFontReadable": {
+    "message": "고가독성(난독증 친화)"
+  },
+  "uiFontSerif": {
+    "message": "세리프"
+  },
+  "uiFontSystem": {
+    "message": "시스템 UI"
   },
   "ui_rydCardRatioSuffix": {
     "message": "좋아요 · Return YouTube Dislike 추정"

@@ -3805,7 +3805,8 @@ return response;
             searchHideUnrelatedShelves: false,
             searchHideRelatedSearches: false,
             searchHideWatchedRecommended: false,
-            uiFontSize: 0,                      // 0 = YouTube default; else 8-20px base font
+            uiFontSize: 0,
+            uiFontFamily: 'default',                      // 0 = YouTube default; else 8-20px base font
 
             // v3.17.0 — userscript-inspired additions (all default OFF so existing
             // setups are untouched; users opt in one-by-one from Settings)
@@ -6271,6 +6272,54 @@ return response;
                 const px = Math.min(20, Math.max(8, Math.round(raw)));
                 this._styleElement = injectStyle(
                     `html { font-size: ${px}px !important; }`,
+                    this.id,
+                    true
+                );
+            },
+            init() { this._apply(); },
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+        },
+        {
+            id: 'uiFontFamily',
+            name: t('feature_uiFontFamily_name', 'UI Font'),
+            description: t('feature_uiFontFamily_desc', 'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.'),
+            group: 'Theme',
+            icon: 'type',
+            type: 'select',
+            settingKey: 'uiFontFamily',
+            options: {
+                default: t('uiFontDefault', 'YouTube default'),
+                system: t('uiFontSystem', 'System UI'),
+                serif: t('uiFontSerif', 'Serif'),
+                mono: t('uiFontMono', 'Monospace'),
+                readable: t('uiFontReadable', 'High-legibility (dyslexia-friendly)')
+            },
+            _styleElement: null,
+
+            // Every value is a fixed stack chosen here; the SETTING only ever
+            // selects one of these keys, so nothing user-supplied reaches CSS.
+            _STACKS: {
+                system: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                serif: 'Georgia, "Times New Roman", "Noto Serif", serif',
+                mono: '"Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace',
+                // Named first so a reader who has one installed gets it; the
+                // tail is a wide-aperture fallback for everyone else.
+                readable: '"Atkinson Hyperlegible", "OpenDyslexic", Verdana, Tahoma, sans-serif'
+            },
+
+            _apply() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+                const choice = String(getSetting('uiFontFamily', 'default'));
+                const stack = this._STACKS[choice];
+                if (!stack) return;
+                // Scoped to the app root and Astra's own surfaces, and it
+                // deliberately does NOT touch the player: the player chrome
+                // positions its controls against Roboto metrics.
+                this._styleElement = injectStyle(
+                    `ytd-app, ytd-app yt-formatted-string, ytd-app yt-attributed-string,` +
+                    ` ytd-app .yt-core-attributed-string, [class*="ytkit-"] {` +
+                    ` font-family: ${stack} !important; }`,
                     this.id,
                     true
                 );

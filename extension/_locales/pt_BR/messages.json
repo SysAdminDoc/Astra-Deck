@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "Barra lateral de transcrição"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "Substitui a tipografia da interface. Uma lista curta e curada em vez de campo livre: uma font-family arbitrária é superfície de injeção de CSS, e o CSS personalizado já existe para isso."
+  },
+  "feature_uiFontFamily_name": {
+    "message": "Fonte da interface"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "Padrão do YouTube"
+  },
+  "uiFontMono": {
+    "message": "Monoespaçada"
+  },
+  "uiFontReadable": {
+    "message": "Alta legibilidade (amigável à dislexia)"
+  },
+  "uiFontSerif": {
+    "message": "Serif"
+  },
+  "uiFontSystem": {
+    "message": "Interface do sistema"
   },
   "ui_rydCardRatioSuffix": {
     "message": "curtidas · estimativa do Return YouTube Dislike"

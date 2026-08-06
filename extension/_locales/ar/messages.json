@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "الشريط الجانبي للنص"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "يغيّر خط الواجهة. قائمة قصيرة منتقاة بدل حقل نص حر: أي قيمة font-family عشوائية تمثل سطح حقن CSS، ولهذا الغرض يوجد CSS مخصص بالفعل."
+  },
+  "feature_uiFontFamily_name": {
+    "message": "خط الواجهة"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "افتراضي YouTube"
+  },
+  "uiFontMono": {
+    "message": "أحادي المسافة"
+  },
+  "uiFontReadable": {
+    "message": "عالي الوضوح (مناسب لعسر القراءة)"
+  },
+  "uiFontSerif": {
+    "message": "بحروف مذيّلة"
+  },
+  "uiFontSystem": {
+    "message": "واجهة النظام"
   },
   "ui_rydCardRatioSuffix": {
     "message": "إعجاب · تقدير Return YouTube Dislike"

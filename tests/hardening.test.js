@@ -5396,8 +5396,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (440 → 441).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 445,
-        'SETTINGS_SCHEMA must cover all 445 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 446,
+        'SETTINGS_SCHEMA must cover all 446 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

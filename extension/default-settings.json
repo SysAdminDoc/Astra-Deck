@@ -565,5 +565,6 @@
   "softBottomGradient": false,
   "hideCommentComposer": false,
   "hideCommentReplyButton": false,
+  "uiFontFamily": "default",
   "uiFontSize": 0
 }

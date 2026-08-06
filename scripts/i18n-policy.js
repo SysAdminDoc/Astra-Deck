@@ -21,7 +21,12 @@ const REVIEWED_EXACT_MESSAGES = Object.freeze([
     'CPU Tamer',
     'Picture-in-Picture',
     'Return YouTube Dislike',
-    'Theater Split'
+    'Theater Split',
+    // Typographic classifications that are the same word in several
+    // target languages. Counting them as untranslated would push the
+    // placeholder ratchet up for a translation that is already correct.
+    'Serif',
+    'Monospace'
 ]);
 
 const DO_NOT_TRANSLATE_MESSAGES = new Set(REVIEWED_EXACT_MESSAGES);

@@ -3236,6 +3236,12 @@
   "feature_transcriptViewer_name": {
     "message": "Transcript Sidebar"
   },
+  "feature_uiFontFamily_desc": {
+    "message": "Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that."
+  },
+  "feature_uiFontFamily_name": {
+    "message": "UI Font"
+  },
   "feature_uiFontSize_desc": {
     "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
   },
@@ -5477,6 +5483,21 @@
   },
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
+  },
+  "uiFontDefault": {
+    "message": "YouTube default"
+  },
+  "uiFontMono": {
+    "message": "Monospace"
+  },
+  "uiFontReadable": {
+    "message": "High-legibility (dyslexia-friendly)"
+  },
+  "uiFontSerif": {
+    "message": "Serif"
+  },
+  "uiFontSystem": {
+    "message": "System UI"
   },
   "ui_rydCardRatioSuffix": {
     "message": "liked · estimated by Return YouTube Dislike"
