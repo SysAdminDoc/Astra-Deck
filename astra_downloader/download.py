@@ -687,6 +687,18 @@ class SiteLoginStore:
             self._log(f"Removed the stored site sign-in for {key}")
         return existed
 
+    def export_jar_for_site(self, url, target_path):
+        """Export the per-download jar and report which site it belongs to.
+
+        Returns `(path, site_key)` so a caller does not have to look the key up
+        again — `site_key_for_url` re-reads the index from disk on every call,
+        and the scheduler needs both values for each queued download.
+        """
+        key = self.site_key_for_url(url)
+        if not key:
+            return None, ''
+        return self._export_jar_for_key(key, target_path), key
+
     def export_jar_for(self, url, target_path):
         """Write a per-download copy of the stored jar, or None when unusable.
 
@@ -698,6 +710,9 @@ class SiteLoginStore:
         key = self.site_key_for_url(url)
         if not key:
             return None
+        return self._export_jar_for_key(key, target_path)
+
+    def _export_jar_for_key(self, key, target_path):
         try:
             text = self._jar_path(key).read_text(encoding='utf-8')
         except OSError as error:
@@ -1555,10 +1570,12 @@ class DownloadManagerCore:
             site_login_used = False
             if not cookies and not self._dependencies['is_youtube_url'](dl.url):
                 jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"
-                exported = self.site_logins.export_jar_for(dl.url, jar_path)
+                # One lookup, not two: this runs for every queued non-YouTube
+                # download and each site_key_for_url call re-reads the index.
+                exported, scope = self.site_logins.export_jar_for_site(dl.url, jar_path)
                 if exported:
                     dl.cookies_file = exported
-                    dl.cookies_scope = self.site_logins.site_key_for_url(dl.url)
+                    dl.cookies_scope = scope
                     site_login_used = True
             if cookies:
                 jar_path = self._dependencies['INSTALL_DIR']() / f".cookies.{dl.id}.txt"

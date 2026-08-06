@@ -9475,6 +9475,36 @@ class SiteLoginDurabilityTests(unittest.TestCase):
             )
             self.assertEqual(store.entries(), [])
 
+    def test_export_reports_its_site_without_a_second_index_read(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = ad.SiteLoginStore(tmpdir)
+            store.import_netscape_text("x.com", self.EXPORT)
+
+            reads = []
+            original = store._load_index
+
+            def counting():
+                reads.append(1)
+                return original()
+
+            store._load_index = counting
+            target = Path(tmpdir) / "per-download.txt"
+            path, key = store.export_jar_for_site("https://x.com/a/status/1", target)
+
+            self.assertTrue(path)
+            self.assertEqual(key, "x.com")
+            self.assertEqual(len(reads), 1,
+                             "the scheduler needs the key and the jar from one lookup")
+
+    def test_export_reports_no_site_when_none_is_stored(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = ad.SiteLoginStore(tmpdir)
+            path, key = store.export_jar_for_site(
+                "https://vimeo.com/1", Path(tmpdir) / "out.txt"
+            )
+            self.assertIsNone(path)
+            self.assertEqual(key, "")
+
     def test_successful_import_survives_a_reload(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
