@@ -257,8 +257,8 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
 6. If this release is intended to carry an Astra Downloader self-update payload
    or bumps `astra_downloader.APP_VERSION`, build and stage the companion EXE
    after the extension build has populated `build/`:
-   - `py -3.12 astra_downloader/build.py`
-   - `npm run release:stage-companion -- .\AstraDownloader.exe`
+   - Astra Downloader builds and releases from its own repository
+     (https://github.com/SysAdminDoc/AstraDownloader); no companion artifact is staged or published here.
    - `npm run release:manifest -- --require-companion`
    The companion updater currently downloads
    `/releases/latest/download/AstraDownloader.exe`, so the EXE and sidecar
@@ -284,13 +284,11 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
 
 User-facing companion setup docs must stay in sync with the live release:
 
-- If the latest public release lacks `AstraDownloader.exe` or
-  `AstraDownloader.exe.sha256`, README install copy must label the companion
-  release asset as pending and avoid promising that the in-page **Download
-  setup** prompt can complete from GitHub Releases.
-- If the release carries a companion self-update payload, README and release
-  notes may list the EXE only together with the `.sha256` sidecar and the dry-run
-  hash comparison from step 12.
+- Astra Downloader releases from SysAdminDoc/AstraDownloader. No Astra Deck
+  release may carry `AstraDownloader.exe` or its `.sha256` sidecar: a second,
+  independently versioned copy behind the same update check is how installs
+  previously ended up four versions stale. `npm run release:readiness` fails
+  if either is staged in `build/` or listed in the release manifest.
 - The signed installer/MSI roadmap item remains separate. A portable EXE plus
   sidecar can prove the updater path, but it does not satisfy the signed
   Windows installer trust milestone.

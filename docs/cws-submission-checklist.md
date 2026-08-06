@@ -93,7 +93,7 @@ must use Google's standardized vocabulary to declare data categories.
       a11y / contrast).
 - [ ] `npm test` passes (all `tests/*.test.js` + `tests/features/*.test.js`).
 - [ ] `npm audit --omit=dev` clean.
-- [ ] `npm run audit:python` clean for `astra_downloader/requirements.txt`;
+- [ ] Python dependency auditing is green in https://github.com/SysAdminDoc/AstraDownloader;
       attach or link `build/astra-downloader-pip-audit.json` for release review.
 - [ ] CHANGELOG entry for the new version.
 - [ ] Screenshots captured at the current popup dimensions (system DPI

@@ -97,7 +97,7 @@ Maintainer action:
 2. Enable Dependabot alerts and security updates if the UI offers them for this
    public repository.
 3. Rerun the dependency PR or open a throwaway PR that changes `package-lock.json`
-   or `astra_downloader/requirements.txt`.
+   or the Astra Downloader repository's Python requirements.
 4. Confirm `Validate / Dependency review` no longer fails with repository setup
    text. It should either pass or fail only on concrete vulnerable dependency
    findings.

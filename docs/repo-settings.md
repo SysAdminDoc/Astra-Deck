@@ -20,7 +20,7 @@ Local verification before pushing:
 
 - `npm test`
 - `npm run check`
-- `py -3.12 -m pytest astra_downloader/test_astra_downloader.py -q`
+- The companion's Python suite runs in https://github.com/SysAdminDoc/AstraDownloader
 - `ASTRA_CRX_KEY_MODE=ephemeral node build-extension.js --bump patch --with-userscript`
 
 Current policy:

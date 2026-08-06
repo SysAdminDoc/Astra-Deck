@@ -4,6 +4,14 @@
 // Keep every companion port consumer tied to the checked-in JSON catalogue.
 // A port mismatch is a functional failure: the downloader can bind on one
 // port while the extension probes or is permitted to contact another.
+//
+// This repository owns the CONSUMER half of that contract - the extension's
+// host permissions and CSP, the download UI, the background proxy, and the
+// userscript's fallback list. The server half lives in
+// SysAdminDoc/AstraDownloader, which checks its generated Python module
+// against its own copy of companion-port-catalogue.json. The two copies of
+// the JSON must stay byte-identical; changing the ports is a
+// two-repository change.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -42,18 +50,6 @@ sameArray(generated.cspOrigins, COMPANION_PORT_CATALOGUE.cspOrigins,
     'generated JavaScript CSP origins');
 check(generated.origin === COMPANION_PORT_CATALOGUE.origin,
     'generated JavaScript origin does not match the catalogue');
-
-const python = read('astra_downloader/companion_ports.py');
-check(python.includes(`PORT_HOST = "${COMPANION_PORT_CATALOGUE.host}"`),
-    'generated Python host does not match the catalogue');
-check(python.includes(`PORT_FALLBACKS = [${COMPANION_PORT_CATALOGUE.ports.join(', ')}]`),
-    'generated Python fallback ports do not match the catalogue');
-check(python.includes('SERVER_PORT = PORT_FALLBACKS[0]'),
-    'generated Python primary port must derive from PORT_FALLBACKS');
-check(!/^PORT_FALLBACKS\s*=/m.test(read('astra_downloader/astra_downloader.py')),
-    'astra_downloader.py must import, not redeclare, PORT_FALLBACKS');
-check(read('astra_downloader/config.py').includes('clamp_int(data.get("ServerPort"), SERVER_PORT'),
-    'config.py must use the generated primary port as its default');
 
 const manifest = JSON.parse(read('extension/manifest.json'));
 const loopbackHostPrefix = `http://${COMPANION_PORT_CATALOGUE.host}:`;
@@ -127,4 +123,4 @@ check(legacyUserscript.includes('USERSCRIPT_COMPANION_PORT_CATALOGUE'),
 check(!legacyUserscript.includes('_PORT_CANDIDATES: Object.freeze([9751, 9761, 9771, 9781, 9791, 9851])'),
     'userscript legacy companion manager must not redeclare fallback ports');
 
-console.log(`[check-companion-port-catalogue] OK — ${COMPANION_PORT_CATALOGUE.ports.length} ports align across Python, extension, profiles, and userscript`);
+console.log(`[check-companion-port-catalogue] OK — ${COMPANION_PORT_CATALOGUE.ports.length} ports align across the extension, both profiles, and the userscript`);

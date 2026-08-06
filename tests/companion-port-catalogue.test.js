@@ -24,10 +24,18 @@ test('companion port consumers equal the canonical generated modules', () => {
     assert.deepEqual([...generated.cspOrigins], COMPANION_PORT_CATALOGUE.cspOrigins);
     assert.equal(ORIGIN_CATALOGUE.find((entry) => entry.requiredByFeatures.includes('showLocalDownloadButton'))?.origin,
         COMPANION_PORT_CATALOGUE.origin);
+});
 
-    const python = read('astra_downloader/companion_ports.py');
-    assert.match(python, new RegExp(`PORT_FALLBACKS = \\[${COMPANION_PORT_CATALOGUE.ports.join(', ')}\\]`));
-    assert.match(python, /SERVER_PORT = PORT_FALLBACKS\[0\]/);
+test('the port catalogue is a stable cross-repository contract', () => {
+    // The server half of this contract lives in SysAdminDoc/AstraDownloader,
+    // which checks its generated Python module against its own copy of this
+    // JSON. Nothing here can see that copy, so the shape both sides depend on
+    // is pinned instead: a silently reordered or truncated list would still
+    // satisfy every consumer assertion above while breaking the probe order.
+    assert.deepEqual(COMPANION_PORT_CATALOGUE.ports, [9751, 9761, 9771, 9781, 9791, 9851]);
+    assert.equal(COMPANION_PORT_CATALOGUE.host, '127.0.0.1');
+    assert.equal(COMPANION_PORT_CATALOGUE.ports[0], 9751,
+        'the primary port is what the companion binds first and the extension probes first');
 });
 
 test('base and github-full manifests carry every canonical companion permission', () => {

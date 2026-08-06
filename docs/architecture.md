@@ -2,14 +2,14 @@
 
 This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.51.3), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.51.3. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the current research-backed rationale. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
 
-## The four moving parts
+## The moving parts
 
 1. **MV3 extension** — Chrome / Edge / Brave / Firefox 142+ — lives in `extension/`.
 2. **Userscript** — `YTKit.user.js` at the repo root — Tampermonkey / Violentmonkey targets. Built from `extension/ytkit.js` by `sync-userscript.js`.
-3. **Astra Downloader** (Python companion) — `astra_downloader/` — Flask + PyQt6 + yt-dlp + ffmpeg, packaged as `AstraDownloader.exe` via PyInstaller.
+3. **Astra Downloader** — a separate product in its own repository (https://github.com/SysAdminDoc/AstraDownloader). Flask + PyQt6 + yt-dlp + ffmpeg, packaged as `AstraDownloader.exe`. It is not built, tested, or released from this repository; only the HTTP contract below crosses the boundary.
 4. **Toolbar popup** — `extension/popup.html` + `popup.js` + `popup.css` — the *only* extension surface for settings management (the standalone options page was retired in v3.19.0).
 
-These four pieces communicate exclusively through three trust boundaries:
+These pieces communicate exclusively through three trust boundaries:
 
 - **Content script ↔ background service worker** — `chrome.runtime.sendMessage` (typed messages: `EXT_FETCH`, `DOWNLOAD_FILE`, `EXT_COOKIE_LIST`, `OPEN_URL`, `YTKIT_GET_SELECTOR_HEALTH`, `YTKIT_OPEN_PANEL`, `YTKIT_SETTING_CHANGED`, `YTKIT_SETTINGS_REPLACED`).
 - **Extension ↔ Astra Downloader** — HTTP on `127.0.0.1:9751` (with five fallback ports 9761/9771/9781/9791/9851), bearer-token authenticated via `X-Auth-Token`, DNS-rebinding-defended via a Host header allowlist.
@@ -122,9 +122,9 @@ User opens the popup:
 | Diagnostic log | `extension/core/diagnostic-log.js` | Bounded ring buffer (500 entries). Hooks console.error + window.onerror for ytkit-tagged messages. `window.__ytkitDiagnostics.download()` exports JSON. |
 | Runtime flags (internal) | `extension/core/runtime-flags.js` | Typed accessors for the three internal coordination primitives: `__ytkit_videoPopped` (popOutPlayer ↔ pipButton ↔ fullscreenOnDoubleClick), `__ytkit_cpu_tamer` (CPU Tamer re-entry guard), `__ytkit_debug` (Debug Mode marker). Storage stays on `window.__ytkit_*` for back-compat; the module owns the canonical read/write contract. `tests/hardening.test.js#NF12` pins that ytkit.js never writes the primitives directly. |
 | Build pipeline | `build-extension.js` + `sync-userscript.js` + `scripts/manifest-patch.js` | Emits Chrome ZIP + CRX3, Firefox ZIP + XPI, userscript copy. Release CRX3 signing requires `ASTRA_CRX_KEY_PATH` / the default local key store outside the repo; validation builds use ephemeral CRX signing without retaining key material. Firefox manifest auto-patched. |
-| Astra Downloader companion | `astra_downloader/astra_downloader.py` (single file, ~4500 lines) | Flask API + PyQt6 GUI + yt-dlp + ffmpeg. Single-file PyInstaller .exe at `%LOCALAPPDATA%\AstraDownloader\`. |
-| Test suites | `tests/*.test.js` (528 JS tests, `node --test`) + `astra_downloader/test_astra_downloader.py` (88 Python tests, pytest) | Hardening regressions, parity gates, selector regression, settings migration round-trip. |
-| Local release gates | `package.json` scripts + `build-extension.js` + release scripts | `npm test` -> `npm run check` -> `py -3.12 -m pytest astra_downloader/test_astra_downloader.py` -> `ASTRA_CRX_KEY_MODE=ephemeral node build-extension.js --bump patch --with-userscript` for validation artifacts -> optional maintainer-key rebuild for public CRX artifacts -> `npm sbom`, `npm run release:manifest`, and `npm run release:readiness`. GitHub Actions workflows are intentionally absent; public release publication stays maintainer-local per [signing-keys.md](signing-keys.md). |
+| Astra Downloader companion | Separate repository: https://github.com/SysAdminDoc/AstraDownloader | Flask API + PyQt6 GUI + yt-dlp + ffmpeg. Single-file PyInstaller .exe at `%LOCALAPPDATA%\AstraDownloader\`. Reached only over the loopback HTTP contract. |
+| Test suites | `tests/*.test.js` (1330 JS tests, `node --test`) | Hardening regressions, parity gates, selector regression, settings migration round-trip. The companion's Python suite runs in its own repository. |
+| Local release gates | `package.json` scripts + `build-extension.js` + release scripts | `npm test` -> `npm run check` -> `ASTRA_CRX_KEY_MODE=ephemeral node build-extension.js --bump patch --with-userscript` for validation artifacts -> optional maintainer-key rebuild for public CRX artifacts -> `npm sbom`, `npm run release:manifest`, and `npm run release:readiness`. GitHub Actions workflows are intentionally absent; public release publication stays maintainer-local per [signing-keys.md](signing-keys.md). |
 
 ## Trust boundaries (and what each is allowed to touch)
 
