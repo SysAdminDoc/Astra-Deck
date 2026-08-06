@@ -2295,6 +2295,7 @@
         Object.freeze({ key: "speedStep", category: "playback-audio", type: "number", defaultValue: 0.25, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── watch-player ───
+        Object.freeze({ key: "bufferPreload", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
         Object.freeze({ key: "preloadComments", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "playbackSpeedOSD", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
@@ -2383,7 +2384,7 @@
         Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "githubFullProfile", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "syncSafePrefs", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── content-filter ───
         Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -21148,21 +21149,57 @@
                     });
                 },
 
+                // `#confirm-button` is YouTube's GENERIC confirm id — clearing watch
+                // history, deleting a playlist and discarding a comment all use it.
+                // A staged session paces 25 removals over ~40s while the user can
+                // still interact, so the dialog is only ever confirmed when the
+                // dialog itself is about unsubscribing.
+                _dialogConfirmsUnsubscribe(dialog) {
+                    if (!dialog) return false;
+                    const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
+                    const text = String(dialog.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                    if (!text) return false;
+                    return (localizedLabel && text.includes(localizedLabel)) || /\bunsubscrib/i.test(text);
+                },
+
                 async _confirmUnsubscribeDialog() {
                     for (let attempt = 0; attempt < 3; attempt++) {
-                        const button = document.querySelector([
-                            'ytd-confirm-dialog-renderer #confirm-button',
-                            'ytd-confirm-dialog-renderer button[aria-label]',
-                            'ytd-confirm-dialog-renderer [role="button"]'
-                        ].join(','));
-                        if (button) {
-                            const label = this._getUnsubscribeControlLabel(button);
-                            const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
-                            if (button.id === 'confirm-button' || label.toLowerCase().includes(localizedLabel) || /\bunsubscrib/i.test(label)) {
+                        const dialog = document.querySelector('ytd-confirm-dialog-renderer');
+                        if (this._dialogConfirmsUnsubscribe(dialog)) {
+                            const button = dialog.querySelector([
+                                '#confirm-button',
+                                'button[aria-label]',
+                                '[role="button"]'
+                            ].join(','));
+                            if (button) {
                                 button.click?.();
                                 return true;
                             }
                         }
+                        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                    return false;
+                },
+
+                // The control was SELECTED because its label was unsubscribe-ish, so
+                // that same element losing that label is genuine positive evidence
+                // the unsubscribe landed. Tested by absence rather than by matching a
+                // localized "Subscribe" so it holds in every locale — note fr's
+                // "S'abonner" / "Se désabonner" share a stem, which is why the
+                // unsubscribe label is what gets excluded, never the subscribe one.
+                _labelIndicatesUnsubscribed(label) {
+                    const value = String(label || '').replace(/\s+/g, ' ').trim();
+                    if (!value) return false;
+                    if (/\bunsubscrib/i.test(value) || /\bsubscribed\b/i.test(value)) return false;
+                    const localizedUnsubscribe = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
+                    if (localizedUnsubscribe && value.toLowerCase().includes(localizedUnsubscribe)) return false;
+                    return true;
+                },
+
+                async _awaitUnsubscribedControl(control) {
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        if (!control?.isConnected) return false;
+                        if (this._labelIndicatesUnsubscribed(this._getUnsubscribeControlLabel(control))) return true;
                         if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 200));
                     }
                     return false;
@@ -21193,14 +21230,16 @@
                         return label.includes(localizedLabel) || /\bunsubscrib(?:e|ed|ing)\b|\bsubscribed\b/i.test(label);
                     });
                     if (control) {
-                        const before = this._getUnsubscribeControlLabel(control);
                         control.click?.();
+                        // Clicking the menu item is not evidence: YouTube still shows
+                        // a confirm dialog afterwards. Reporting success here deleted
+                        // the 30-day recovery record for a subscription that survived.
                         const menuClicked = await this._clickUnsubscribeMenuItem();
-                        const confirmed = await this._confirmUnsubscribeDialog();
-                        if (menuClicked || confirmed) return true;
-                        const after = this._getUnsubscribeControlLabel(control);
-                        if (/\bsubscribe\b/i.test(after) && !/\bunsubscrib|\bsubscribed\b/i.test(after)) return true;
-                        return /\bunsubscrib/i.test(before);
+                        const confirmed = menuClicked ? await this._confirmUnsubscribeDialog() : false;
+                        if (confirmed) return true;
+                        // No dialog in this flow (or it was missed) — the only other
+                        // acceptable evidence is the control flipping to "Subscribe".
+                        return await this._awaitUnsubscribedControl(control);
                     }
 
                     const menuButton = card.querySelector?.([
@@ -21212,8 +21251,18 @@
                     menuButton.click?.();
                     const menuClicked = await this._clickUnsubscribeMenuItem();
                     if (!menuClicked) return false;
-                    await this._confirmUnsubscribeDialog();
-                    return true;
+                    const confirmed = await this._confirmUnsubscribeDialog();
+                    if (confirmed) return true;
+                    // Fall back to positive evidence on the card's own subscribe
+                    // control rather than assuming the confirm landed.
+                    const stateControl = card.querySelector?.([
+                        'ytd-subscribe-button-renderer button',
+                        'ytd-subscribe-button-renderer tp-yt-paper-button',
+                        '#subscribe-button button',
+                        '#subscribe-button tp-yt-paper-button'
+                    ].join(',')) || null;
+                    if (!stateControl) return false;
+                    return await this._awaitUnsubscribedControl(stateControl);
                 },
 
                 async _runStagedUnsubscribeSession() {
