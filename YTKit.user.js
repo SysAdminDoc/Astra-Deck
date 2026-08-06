@@ -7169,22 +7169,26 @@
         function attachNavigationApi() {
             if (navigationApiHandler) return true;
             if (typeof window.navigation?.addEventListener !== 'function') return false;
-            navigationApiHandler = (event) => {
-                const dispatch = () => {
-                    pendingMutationRouteReset = true;
-                    debouncedRunNavigateRules({ type: 'navigate' });
-                };
-                // The navigate event can precede the committed URL. Prefer the
-                // platform's commit promise when it is available, while keeping
-                // a synchronous fallback for older implementations and tests.
-                if (event?.committed && typeof event.committed.then === 'function') {
-                    event.committed.then(dispatch, dispatch);
-                    return;
-                }
-                dispatch();
+            navigationApiHandler = () => {
+                pendingMutationRouteReset = true;
+                debouncedRunNavigateRules({ type: 'navigate' });
             };
             try {
-                window.navigation.addEventListener('navigate', navigationApiHandler);
+                // `navigatesuccess` — NOT `navigate`. The navigate event fires
+                // BEFORE the navigation commits, so rules ran against the outgoing
+                // page's DOM, and it also fires for things yt-navigate-finish never
+                // signalled: downloads, cancelled navigations, replaceState and
+                // cross-document link clicks, each of which forced a route-health
+                // reset for a route change that never happened. navigatesuccess is
+                // the platform's post-commit signal and the true analogue of the
+                // yt-navigate-finish this path replaces.
+                //
+                // (The previous code tried to await `event.committed`, but that
+                // property does not exist on NavigateEvent — {committed, finished}
+                // is the RESULT of navigation.navigate(). The branch was dead in
+                // every browser and only the test fake, which fabricated the
+                // property, could enter it.)
+                window.navigation.addEventListener('navigatesuccess', navigationApiHandler);
                 return true;
             } catch (_) {
                 // reason: Navigation API surface is experimental; some
@@ -7198,7 +7202,7 @@
         function detachNavigationApi() {
             if (!navigationApiHandler) return;
             try {
-                window.navigation.removeEventListener('navigate', navigationApiHandler);
+                window.navigation.removeEventListener('navigatesuccess', navigationApiHandler);
             } catch (_) {
                 // reason: removeEventListener mismatch is harmless; the
                 // listener will be GC'd when the page unloads.
