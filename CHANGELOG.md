@@ -6,6 +6,53 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.51.3] - 2026-08-05 (Astra Downloader v1.9.1)
+
+Audit-driven pass over the v1.8.0 any-site download work and the v1.9.0
+sign-in store.
+
+### Fixed
+- **A `skipped` download was invisible.** The companion bucketed "recent"
+  against a hardcoded status tuple, so a download that wrote no file appeared
+  in no section at all — the silent outcome the status exists to expose. It now
+  reads `DOWNLOAD_TERMINAL_STATES`, offers a Retry, and notifies from the tray
+  with the reason.
+- **The extension called every skipped result "Already Downloaded"** — copy
+  from the download-archive feature deleted in companion v1.3.0, which v1.8.0
+  gave the opposite meaning. Retired across all 11 locales in favour of
+  "Nothing Downloaded"; the progress bar no longer fills to 100% for a run that
+  produced nothing.
+- **The userscript poller never terminated on `skipped`** and polled forever.
+- **Keyboard focus was invisible** on ghost buttons, the primary button, and
+  every checkbox: Qt gives `QPushButton[class="…"]` the same specificity as
+  `QPushButton:focus`, so the class rules silently won. Measured at zero pixel
+  change before, visible after.
+- **Remote video titles rendered as rich text.** Qt's default AutoText parsed
+  metadata as HTML, so a title containing an `<img>` tag made the companion
+  fetch a remote URL. All labels now pin PlainText.
+- **The site-login index is written atomically** like every other companion
+  store, and a failed index write no longer strands a jar holding a live
+  session with no way to remove it.
+- **Single videos no longer land in a folder named `NA`** — playlist markers
+  match whole path segments, and the folder falls back through `playlist_id`.
+- `check-versions` now enforces `docs/architecture.md`'s version claims, which
+  it listed but never checked.
+- Rejected links in a multi-link paste are described in plain language
+  ("2 links rejected"), and two different causes are no longer reported as one.
+
+### Added
+- **Max file size** control in Settings. It gates every download and produced
+  the most common `skipped` result, but had no UI — the only way to change it
+  was editing `config.json`.
+- **Add sign-in** action on a blocked non-YouTube download, opening the
+  Sign-ins page with the site prefilled.
+
+### Changed
+- Dev-dependency advisories cleared (`brace-expansion` override 5.0.8 → 5.0.9
+  plus lockfile-only bumps); `npm audit` reports 0 vulnerabilities and
+  `npm run check` exits 0.
+- A stored sign-in resolves in one index read per download instead of two.
+
 ### Astra Downloader v1.9.0 — Site sign-ins for private and members-only video
 
 Downloading from any site (v1.8.0) only gets you as far as what a signed-out

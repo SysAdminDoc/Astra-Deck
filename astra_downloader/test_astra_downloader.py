@@ -5091,12 +5091,12 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_9_0(self):
+    def test_app_version_bumped_to_1_9_1(self):
         # v1.9.0 site sign-ins: a per-site cookie store (import a cookies.txt,
         # post extension-shaped records, or read a browser profile) so sites
         # that only serve media to signed-in viewers download. Each jar is
         # filtered to one registrable domain and attached to that site alone.
-        self.assertEqual(ad.APP_VERSION, "1.9.0")
+        self.assertEqual(ad.APP_VERSION, "1.9.1")
 
     def test_v1_8_0_any_site_download_surface_is_still_present(self):
         # v1.8.0 any-site downloads: the YouTube-only URL allowlist became a
