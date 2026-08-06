@@ -2986,6 +2986,68 @@ return response;
         tryInjectButton(id);
     }
 
+    // ── Cross-tab Picture-in-Picture ownership ────────────────────────
+    // `__ytkit_videoPopped` (RuntimeFlags) coordinates PiP between features in
+    // ONE page. Nothing coordinated ACROSS tabs, so popping out in a second tab
+    // left the first tab still playing into the same speakers with a stale
+    // popped flag.
+    //
+    // This announces ownership on its own BroadcastChannel — deliberately not
+    // the one pauseOtherTabs uses, because that feature is independently
+    // toggleable and PiP handoff must not depend on it being on. The losing tab
+    // tears down ITS OWN state: it pauses its video and clears its flag. What
+    // the browser does with the other PiP *window* is its business and varies
+    // by engine; this guarantees only that exactly one tab keeps playing.
+    const PipOwnership = (() => {
+        const CHANNEL_NAME = 'ytkit-pip-ownership';
+        let channel = null;
+        let releaseLocal = null;
+        let opened = false;
+
+        function open() {
+            if (opened) return channel;
+            opened = true;
+            try {
+                channel = new BroadcastChannel(CHANNEL_NAME);
+                channel.onmessage = (event) => {
+                    if (event?.data !== 'claim') return;
+                    const release = releaseLocal;
+                    releaseLocal = null;
+                    try { release?.(); }
+                    catch (e) { DebugManager.log('PipOwnership', `release failed: ${e.message}`); }
+                };
+            } catch (e) {
+                // Site-data APIs can be denied by browser privacy settings —
+                // same degradation posture as pauseOtherTabs.
+                channel = null;
+                DebugManager.log('PipOwnership', `channel unavailable: ${e.message}`);
+            }
+            return channel;
+        }
+
+        return {
+            // `onLoss` runs when ANOTHER tab claims PiP.
+            claim(onLoss) {
+                releaseLocal = typeof onLoss === 'function' ? onLoss : null;
+                const ch = open();
+                if (!ch) return false;
+                try { ch.postMessage('claim'); return true; }
+                catch (e) {
+                    DebugManager.log('PipOwnership', `claim failed: ${e.message}`);
+                    return false;
+                }
+            },
+            release() { releaseLocal = null; },
+            close() {
+                releaseLocal = null;
+                opened = false;
+                try { channel?.close(); } catch (_) { /* reason: already unusable */ }
+                channel = null;
+            },
+            _state() { return { open: opened, hasChannel: !!channel, holdsLocal: !!releaseLocal }; }
+        };
+    })();
+
     // ── Programmatic playback-rate writes ──────────────────────────────
     // perChannelSpeed persists whatever the user sets. Features that force a
     // rate themselves (music-video lock, live catch-up, Shorts teardown) must
@@ -23098,6 +23160,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         controls.appendChild(timeEl);
                         this._pipWindow.document.body.appendChild(controls);
                         RuntimeFlags.setVideoPopped(true);
+                        // Another tab taking PiP means this one stops playing:
+                        // two tabs feeding the same speakers is the actual
+                        // symptom, whatever the browser does with the windows.
+                        PipOwnership.claim(() => {
+                            try { this._pipWindow?.close(); } catch (_) { /* reason: window may already be gone */ }
+                            video.pause();
+                        });
                         // Single pagehide handler merges the three things that
                         // need to happen when the PiP window closes:
                         //   1. Stop the time-display interval that was polling
@@ -23115,6 +23184,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             if (origNext) origParent.insertBefore(video, origNext);
                             else origParent.appendChild(video);
                             RuntimeFlags.setVideoPopped(false);
+                            PipOwnership.release();
                             this._pipWindow = null;
                         });
                         showToast('Video popped out', '#22c55e');
@@ -23125,7 +23195,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     await video.requestPictureInPicture();
                     RuntimeFlags.setVideoPopped(true);
-                    video.addEventListener('leavepictureinpicture', () => { RuntimeFlags.setVideoPopped(false); }, { once: true });
+                    PipOwnership.claim(() => {
+                        try { document.exitPictureInPicture?.(); } catch (_) { /* reason: may not be the PiP element any more */ }
+                        video.pause();
+                    });
+                    video.addEventListener('leavepictureinpicture', () => {
+                        RuntimeFlags.setVideoPopped(false);
+                        PipOwnership.release();
+                    }, { once: true });
                     showToast('Picture-in-Picture active', '#22c55e');
                 } catch(e) {
                     if (isFirefox) {
@@ -25868,8 +25945,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     try {
                         if (document.pictureInPictureElement) {
                             await document.exitPictureInPicture();
+                            PipOwnership.release();
                         } else {
                             await video.requestPictureInPicture();
+                            // Same ownership announcement as popOutPlayer: both
+                            // entry points open PiP, so both must claim it or
+                            // the handoff depends on which button you used.
+                            PipOwnership.claim(() => {
+                                try { document.exitPictureInPicture?.(); } catch (_) { /* reason: may not be the PiP element any more */ }
+                                video.pause();
+                            });
+                            video.addEventListener('leavepictureinpicture',
+                                () => PipOwnership.release(), { once: true });
                         }
                     } catch(e) { DebugManager.log('PiP', `Failed: ${e.message}`); }
                 });
