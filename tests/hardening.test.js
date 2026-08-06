@@ -5203,10 +5203,12 @@ test('subscriptionGroups renders group digest counts and mark-read controls', ()
         'subscriptionGroups must track the digest panel for teardown and rerenders');
     assert.match(block, /_extractCardAgeMs\(text\)/,
         'digest/new-since logic must parse rendered relative age text to milliseconds');
-    assert.match(block, /_isCardNewSinceLastVisit\(card, channelId, lastVisit = this\._readLastVisit\(\)\)/,
-        'digest counts must use the shared new-since-last-visit predicate');
-    assert.match(block, /_collectRenderedCardSummaries\(lastVisit = this\._readLastVisit\(\)\)/,
-        'digest rendering must gather rendered video/channel summaries');
+    // The frozen per-pageview map (09b2d2d6) must be preferred, or the 8s
+    // lastVisit stamp collapses every NEW badge mid-visit on the next mutation.
+    assert.match(block, /_isCardNewSinceLastVisit\(card, channelId, lastVisit = this\._sessionLastVisit \|\| this\._readLastVisit\(\)\)/,
+        'digest counts must use the shared new-since-last-visit predicate against the frozen map');
+    assert.match(block, /_collectRenderedCardSummaries\(lastVisit = this\._sessionLastVisit \|\| this\._readLastVisit\(\)\)/,
+        'digest rendering must gather rendered video/channel summaries from the frozen map');
     assert.match(block, /_buildGroupDigestEntries\(groups = this\._readGroups\(\), lastVisit = this\._readLastVisit\(\)\)/,
         'digest must expose per-group count entries');
     assert.match(block, /ytkit-sub-digest-panel/,
@@ -12459,4 +12461,39 @@ test('hideCollaborations is page-scoped and hides reversibly', () => {
         'the modern rich-grid subscriptions feed must be recognised');
     assert.match(block, /document\.querySelectorAll\(`\.\$\{this\._HIDDEN_CLASS\}`\)[\s\S]{0,140}?classList\.remove/,
         'destroy() must reveal every card the feature hid');
+});
+
+// ── subscriptionGroups fallback parity with the module ──
+// 09b2d2d6 froze a per-pageview lastVisit map so NEW badges survive the 8s
+// stamp. The module and the userscript got it; the ytkit.js fallback did not,
+// so 8s after arriving on the subscriptions feed the next mutation collapsed
+// every badge and digest count to zero. No test pinned that pair.
+test('subscriptionGroups fallback freezes the per-pageview lastVisit map', () => {
+    const block = subscriptionGroupsBlock();
+    assert.match(block, /this\._sessionLastVisit = this\._readLastVisit\(\);/,
+        'the fallback must freeze the pre-stamp map on navigation');
+    assert.match(block, /this\._sessionLastVisit = null;/,
+        'the frozen map must be released on destroy');
+    assert.match(block, /if \(this\._sessionLastVisit\) \{[\s\S]{0,180}?this\._sessionLastVisit\[channelId\] = now;/,
+        'marking a digest read must update the frozen map too');
+});
+
+test('subscriptionGroups filters content type for lazily-loaded cards', () => {
+    // The scoped mutation rule re-applied the group filter and markers but not
+    // the live/streamed filter, so infinite-scroll cards stayed unfiltered
+    // until the next navigation while the group filter on the same cards
+    // worked — inconsistent by construction.
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'subscription-groups', 'index.js'),
+        'utf8'
+    );
+    for (const [label, source] of [['module', moduleSource], ['fallback', subscriptionGroupsBlock()]]) {
+        const idx = source.indexOf("addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer'");
+        assert.ok(idx > -1, `${label} must register the feed scoped mutation rule`);
+        const region = source.slice(idx, idx + 700);
+        assert.match(region, /this\._applyGroupFilter\(\)/,
+            `${label} scoped rule must re-apply the group filter`);
+        assert.match(region, /this\._applyContentTypeFilter\(\)/,
+            `${label} scoped mutation rule must also re-apply the content-type filter`);
+    }
 });
