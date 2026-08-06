@@ -511,6 +511,7 @@
     var TARGET_SECONDS = 20;
     var ON = false;
     var lastAppliedVideo = null;
+    var defaultBufferingGoal = null;
     var pendingTimer = null;
     var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
     var TASK_ID = 'ytkit-main:bufferPreload';
@@ -572,7 +573,7 @@
 
     function apply(ctx) {
         if (!ON) {
-            writeStatus('off');
+            restoreDefaultGoal();
             return true;
         }
         if (ctx && (ctx.reason === 'loadstart' || ctx.reason === 'navigate' || ctx.reason === 'page-data')) {
@@ -593,6 +594,7 @@
             return true;
         }
 
+        captureDefaultGoal(player);
         try {
             player.setBufferingGoal(TARGET_SECONDS);
             lastAppliedVideo = video;
@@ -601,6 +603,38 @@
         } catch (_) {
             writeStatus('degraded', 'player-api-error');
             return true;
+        }
+    }
+
+    // Read the player's own goal ONCE, before the first override, so turning
+    // the feature off can hand it back. Without this the forced goal stuck
+    // until the next video load.
+    function captureDefaultGoal(player) {
+        if (defaultBufferingGoal !== null) return;
+        if (!player || typeof player.getBufferingGoal !== 'function') return;
+        try {
+            var current = player.getBufferingGoal();
+            if (typeof current === 'number' && isFinite(current) && current > 0 && current !== TARGET_SECONDS) {
+                defaultBufferingGoal = current;
+            }
+        } catch (_) {
+            // reason: the goal getter is undocumented and may be absent
+        }
+    }
+
+    function restoreDefaultGoal() {
+        var player = getPlayer(null);
+        if (defaultBufferingGoal === null || !player || typeof player.setBufferingGoal !== 'function') {
+            // Nothing captured (no getter on this build) — the override lapses
+            // on the next load. Say so instead of claiming a clean 'off'.
+            writeStatus('off', defaultBufferingGoal === null ? 'goal-persists-until-next-load' : 'player-api-missing');
+            return;
+        }
+        try {
+            player.setBufferingGoal(defaultBufferingGoal);
+            writeStatus('off', 'restored:' + defaultBufferingGoal);
+        } catch (_) {
+            writeStatus('off', 'restore-failed');
         }
     }
 
@@ -648,7 +682,7 @@
             writeStatus('retry', 'waiting-for-player');
             schedule(0, 'attribute');
         } else {
-            writeStatus('off');
+            restoreDefaultGoal();
         }
     }
 
