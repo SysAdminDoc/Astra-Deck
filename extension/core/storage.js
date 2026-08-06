@@ -281,8 +281,22 @@
             clearTimeout(pendingStorageFlush);
             pendingStorageFlush = null;
         }
-        if (!core.hasExtensionContext() || !hasPendingStorageWrites()) {
+        if (!hasPendingStorageWrites()) {
             return storageFlushInFlight || Promise.resolve({ ok: true });
+        }
+        if (!core.hasExtensionContext()) {
+            // The extension was updated, reloaded or disabled while this tab
+            // stayed open. The panel keeps working against extensionStateCache,
+            // so without this branch every setSync/immediate write resolved
+            // { ok: true } and imports, undo/rollback confirmations and "Settings
+            // saved" toasts all claimed success for writes that could never
+            // reach disk. The { ok, error } contract exists precisely so a
+            // persistence failure cannot be reported as success — the messaging
+            // paths already reject with this same wording.
+            return storageFlushInFlight || Promise.resolve({
+                ok: false,
+                error: new Error('Extension context invalidated. Reload the page.')
+            });
         }
         if (storageFlushInFlight) {
             // Serialize flushes: with two set() calls in flight, an OLDER
