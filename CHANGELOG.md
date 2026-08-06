@@ -6,6 +6,47 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.56.0] - 2026-08-06
+
+### Changed
+
+- **The settings panel is no longer painted on near-black.** `--ytkit-v3-bg`
+  was `#090e14`, and the panel shell, the nav rail, the header, the content
+  column and the footer all used it. With no elevation anywhere and
+  `rgba(220,230,242,0.10)` hairlines between rows, a 57-item category read as
+  one undifferentiated slab. There are now three planes — the rail sits below
+  the content, the settings table sits above it — and the borders came up to
+  match, because a hairline tuned against black disappears against anything
+  lighter. The light theme gained the same two planes.
+- **An enabled setting looks enabled.** `.ytkit-card-enabled` was
+  `background: transparent; box-shadow: none` — the state had no visual
+  treatment at all, so in a 57-row category the only signal that a feature was
+  on was its switch, at the far right of a 1300px row. Enabled rows now carry a
+  tint and a leading accent rail, using the same idiom the active nav button
+  already uses. The rail is a `::before` with `inset-inline-start`, so it flips
+  in RTL, and it does not shift the row's contents.
+- **Every category shows its enabled/total count**, not only the open one.
+  The counts existed but were `display: none` on all but the active row, so
+  finding which category held your settings meant clicking through all ten.
+- Row hover went from `rgba(255,255,255,0.018)` to `0.045` — the old value was
+  not perceptible on the surface it sat on.
+
+### Added
+
+- `npm run probe:panel-colors` reports the computed background of each panel
+  surface from a real headless render, and which stylesheet supplied it. The
+  panel's CSS is spread across five `appendStyleSheet()` layers, two injected
+  lazily on first panel build, so source order in `ytkit.js` is not cascade
+  order at runtime and reading the file tells you nothing about what wins.
+
+### Fixed
+
+- Two source pins in `settings-visual-system.test.js` were written as lazy
+  `[\s\S]*?` scans over the whole file, so they matched text from unrelated
+  rules and passed whatever the enabled-card rule actually said. Both are now
+  bounded to their rule block, and both were verified to fail against the
+  previous design before being kept.
+
 ## [4.55.0] - 2026-08-06
 
 ### Changed

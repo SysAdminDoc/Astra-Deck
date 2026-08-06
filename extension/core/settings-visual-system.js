@@ -9,16 +9,23 @@
         #ytkit-settings-panel {
             inset: auto;
             margin: 0;
-            --ytkit-v3-bg: #090e14;
-            --ytkit-v3-surface: #0f1720;
-            --ytkit-v3-surface-raised: #141e29;
-            --ytkit-v3-hover: rgba(255,255,255,0.035);
-            --ytkit-v3-border: rgba(220,230,242,0.10);
-            --ytkit-v3-border-strong: rgba(220,230,242,0.16);
-            --ytkit-v3-control-stroke: rgba(220,230,242,0.055);
+            --ytkit-v3-bg: #171c25;
+            /* Three planes, not one. Everything used to paint --ytkit-v3-bg,
+               so the rail, the content and the settings table were the same
+               near-black slab with hairlines drawn on it. */
+            --ytkit-v3-rail: #11151d;
+            --ytkit-v3-panel: #1c222c;
+            --ytkit-v3-surface: #232a37;
+            --ytkit-v3-surface-raised: #2d3543;
+            --ytkit-v3-hover: rgba(255,255,255,0.055);
+            --ytkit-v3-border: rgba(220,230,242,0.15);
+            --ytkit-v3-border-strong: rgba(220,230,242,0.24);
+            --ytkit-v3-control-stroke: rgba(220,230,242,0.1);
             --ytkit-v3-text: #f3f5f7;
             --ytkit-v3-muted: #aab3bf;
-            --ytkit-v3-subtle: #7f8996;
+            /* #7f8996 was 4.5:1 against the old black and only just holds at
+               the lifted surface; #8b95a3 restores the margin (5.3:1). */
+            --ytkit-v3-subtle: #8b95a3;
             --ytkit-v3-accent: #ff5a4f;
             --ytkit-v3-accent-rgb: 255,90,79;
             /* Filled controls carrying white text need a darker coral than
@@ -262,7 +269,7 @@
             gap: 0 !important;
             border: 0 !important;
             border-right: 1px solid var(--ytkit-v3-border) !important;
-            background: var(--ytkit-v3-bg) !important;
+            background: var(--ytkit-v3-rail) !important;
             box-shadow: none !important;
             overflow: hidden !important;
         }
@@ -382,8 +389,11 @@
             white-space: nowrap !important;
         }
 
+        /* Every category shows its enabled/total count, not just the open one.
+           Hiding the rest meant the only way to find out where your settings
+           actually were was to click all ten. */
         #ytkit-settings-panel .ytkit-nav-count {
-            display: none !important;
+            display: inline !important;
             padding: 0 !important;
             border: 0 !important;
             border-radius: 0 !important;
@@ -391,11 +401,13 @@
             color: var(--ytkit-v3-subtle) !important;
             font-size: 11px !important;
             font-weight: 600 !important;
+            font-variant-numeric: tabular-nums !important;
             box-shadow: none !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active .ytkit-nav-count {
             display: inline !important;
+            color: var(--ytkit-v3-text) !important;
         }
 
         #ytkit-settings-panel .ytkit-sidebar-footer {
@@ -603,7 +615,7 @@
             padding: 0 !important;
             border: 1px solid var(--ytkit-v3-border) !important;
             border-radius: 10px !important;
-            background: transparent !important;
+            background: var(--ytkit-v3-panel) !important;
             overflow: hidden !important;
         }
 
@@ -636,15 +648,26 @@
 
         #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled {
             border-color: var(--ytkit-v3-border) !important;
-            background: transparent !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.055) !important;
             box-shadow: none !important;
             transform: none !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled::before {
+            content: "" !important;
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            inset-inline-start: 0 !important;
+            width: 3px !important;
+            background: var(--ytkit-v3-accent) !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-card:hover,
         #ytkit-settings-panel .ytkit-feature-card:focus-within {
             border-color: var(--ytkit-v3-border) !important;
-            background: rgba(255,255,255,0.018) !important;
+            background: rgba(255,255,255,0.045) !important;
             box-shadow: none !important;
             transform: none !important;
         }
@@ -1118,6 +1141,8 @@
 
         html:not([dark]) #ytkit-settings-panel {
             --ytkit-v3-bg: #f7f8fa;
+            --ytkit-v3-rail: #eceff4;
+            --ytkit-v3-panel: #ffffff;
             --ytkit-v3-surface: #eef1f5;
             --ytkit-v3-surface-raised: #e7ebf0;
             --ytkit-v3-hover: rgba(15,23,42,0.045);
@@ -1139,10 +1164,13 @@
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-header,
-        html:not([dark]) #ytkit-settings-panel .ytkit-sidebar,
         html:not([dark]) #ytkit-settings-panel .ytkit-content,
         html:not([dark]) #ytkit-settings-panel .ytkit-footer {
             background: var(--ytkit-v3-bg) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-sidebar {
+            background: var(--ytkit-v3-rail) !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-feature-card {
