@@ -50062,6 +50062,15 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         }
 
         .ytkit-search-input {
+            /* An input element has an intrinsic size (~20 characters) and nothing here
+               ever stretched it, so the field painted its background and focus
+               ring across the header while the input itself stayed ~240px
+               wide — the placeholder was cut mid-word ("...pages, co") in every
+               rendered state. The box-sizing keeps the large right padding,
+               which reserves room for the clear button and result count,
+               inside that width. */
+            width: 100%;
+            box-sizing: border-box;
             min-height: 36px;
             padding: 8px 120px 8px 34px;
             border-radius: 11px;
@@ -50105,9 +50114,18 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         }
 
         .ytkit-search-icon {
+            /* The icon only ever declared left, which does nothing on a
+               statically positioned element — so it sat IN FLOW, taking inline
+               space beside the input. That is why the input never grew past its
+               intrinsic ~20-character width and the placeholder was cut
+               mid-word in every rendered state. */
+            position: absolute;
             left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
             width: 13px;
             height: 13px;
+            pointer-events: none;
         }
 
         .ytkit-search-meta {

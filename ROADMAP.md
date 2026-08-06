@@ -61,16 +61,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Theming / a11y / polish residue
 
-- [ ] P3 — Settings overlay search placeholder renders clipped mid-word despite a wide input
-  Category: visual
-  Where: Placeholder string 'Search settings, pages, controls…' set at extension/ytkit.js:43735 and extension/features/settings-panel/index.js:405; observed in build/settings-overlay-smoke/*.png (all six states)
-  Problem: The rendered overlay shows "Search settings, pages, co" cut at roughly half the input's width in every smoke state (dark/light/RTL/tablet/mobile), with ample space remaining. Likely a width/mask/font-metric issue in the search-field styling rather than the string itself.
-  Evidence: npm run smoke:settings-overlay → inspect desktop-dark.png (this audit did; screenshot shows the clip).
-  Fix: Reproduce via the smoke, inspect the computed styles on the input/placeholder (look for a text-overflow/width constraint or a webkit-mask on the field), and let the full placeholder render or ellipsize at the actual input edge.
-  Acceptance: Smoke screenshots show the full placeholder (or a right-edge ellipsis); no layout regression in the six states.
-  Confidence: Needs-repro (observed in offscreen render; not yet root-caused)
-  Effort: S
-
 - [ ] P3 — Unaudited residue from this pass
   Category: docs
   Where: repo-wide
