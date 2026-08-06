@@ -513,3 +513,69 @@ test('#q carries aria-describedby pointing at the mini-DSL hint', () => {
     assert.match(popupHtmlSource, /id="search-hint"/,
         'the hint element #search-hint must exist');
 });
+
+// ── Schema overview must resolve schema defaults ──
+// The stored ytSuiteSettings bag is SPARSE: only changed keys are persisted.
+// The quick toggles and the sidepanel were fixed to fall back to the schema
+// default in v4.49.6; the schema-overview panel a few pixels away was not, so
+// on a fresh install every default-on feature read as Disabled, the category
+// roll-ups undercounted them, and every untouched key whose default was
+// false/0/'' grew a spurious "reset to default" button.
+function extractSchemaOverviewResolvers() {
+    const start = popupSource.indexOf('// A schema entry\'s effective value');
+    const end = popupSource.indexOf('// v4.47.0 NEW-6: short pretty-print');
+    assert.ok(start > -1 && end > start,
+        'popup.js must declare the effective-value resolver next to isDefaultValue');
+    const block = popupSource.slice(start, end);
+    return new Function(
+        block + '\nreturn { resolveEffectiveSettingValue, isDefaultValue };'
+    )();
+}
+
+function extractIsToggleEnabled() {
+    const start = popupSource.indexOf('function isToggleEnabled(entry, settings) {');
+    const end = popupSource.indexOf('\n}', start) + 2;
+    assert.ok(start > -1, 'popup.js must declare isToggleEnabled');
+    const helpers = popupSource.indexOf('// A schema entry\'s effective value');
+    const helpersEnd = popupSource.indexOf('function isDefaultValue');
+    return new Function(
+        popupSource.slice(helpers, helpersEnd)
+        + popupSource.slice(start, end)
+        + '\nreturn isToggleEnabled;'
+    )();
+}
+
+test('schema overview treats an unwritten key as its schema default', () => {
+    const { resolveEffectiveSettingValue, isDefaultValue } = extractSchemaOverviewResolvers();
+    const defaultOn = { key: 'sponsorBlock', type: 'boolean', defaultValue: true };
+    const defaultOff = { key: 'oledTheme', type: 'boolean', defaultValue: false };
+
+    // Fresh install: nothing written yet.
+    assert.equal(resolveEffectiveSettingValue(defaultOn, {}), true,
+        'a default-on feature with no stored value is on');
+    assert.equal(resolveEffectiveSettingValue(defaultOff, {}), false);
+    // An explicit stored value always wins, including an explicit false.
+    assert.equal(resolveEffectiveSettingValue(defaultOn, { sponsorBlock: false }), false,
+        'an explicit opt-out must not be overridden by the default');
+
+    // No reset affordance for a key that was never written.
+    assert.equal(isDefaultValue(undefined, false), true,
+        'an unwritten key with a false default is already at its default');
+    assert.equal(isDefaultValue(undefined, true), true);
+    assert.equal(isDefaultValue(undefined, ''), true);
+    assert.equal(isDefaultValue(undefined, 0), true);
+    // A genuine divergence still offers the reset.
+    assert.equal(isDefaultValue(false, true), false);
+    assert.equal(isDefaultValue('x', ''), false);
+});
+
+test('schema overview enabled counts include untouched default-on features', () => {
+    const isToggleEnabled = extractIsToggleEnabled();
+    assert.equal(isToggleEnabled({ key: 'sponsorBlock', type: 'boolean', defaultValue: true }, {}), true,
+        'a default-on boolean must count as enabled before it is ever written');
+    assert.equal(isToggleEnabled({ key: 'oledTheme', type: 'boolean', defaultValue: false }, {}), false);
+    assert.equal(isToggleEnabled({ key: 'sponsorBlock', type: 'boolean', defaultValue: true }, { sponsorBlock: false }), false,
+        'an explicit opt-out must count as disabled');
+    assert.equal(isToggleEnabled({ key: 'uiFontSize', type: 'number', defaultValue: 14 }, {}), true,
+        'a positive numeric default counts as enabled');
+});

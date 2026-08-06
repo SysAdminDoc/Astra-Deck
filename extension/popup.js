@@ -2861,7 +2861,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     if (optionalHostChip) row.appendChild(optionalHostChip);
 
     if (entry.type === 'boolean') {
-        const on = settings[entry.key] === true;
+        // Resolve through the schema default: an untouched default-on feature
+        // is on, and rendering it as off contradicted the quick toggles that
+        // sit a few pixels away in the same popup.
+        const on = resolveEffectiveSettingValue(entry, settings) === true;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'so-key-switch' + (on ? ' on' : '');
@@ -3194,8 +3197,21 @@ function buildSchemaOverviewKeyRow(entry, settings) {
 // is `hiddenChatElements` at ~10 short strings). Null / undefined
 // are treated as equivalent so a never-set storage slot doesn't
 // surface a reset button against the schema default.
+// A schema entry's effective value: what the feature actually behaves as,
+// which is the stored value when present and the schema default otherwise.
+function resolveEffectiveSettingValue(entry, settings) {
+    const raw = settings ? settings[entry.key] : undefined;
+    if (raw !== undefined) return raw;
+    return Object.prototype.hasOwnProperty.call(entry, 'defaultValue') ? entry.defaultValue : undefined;
+}
+
 function isDefaultValue(currentValue, defaultValue) {
     if (currentValue === defaultValue) return true;
+    // A key that was never written IS at its default — the comment above the
+    // reset affordance always claimed this, but it only held for null
+    // defaults, so every untouched key with a `false`/`0`/`''` default grew a
+    // spurious "reset to default" button.
+    if (currentValue === undefined) return true;
     if ((currentValue == null) && (defaultValue == null)) return true;
     if (currentValue == null || defaultValue == null) return false;
     if (typeof currentValue !== typeof defaultValue) return false;
@@ -3230,7 +3246,12 @@ function describeDefaultForTooltip(value) {
 // strings count, positive numbers count, objects/arrays count
 // when non-empty, null/undefined → off.
 function isToggleEnabled(entry, settings) {
-    const value = settings[entry.key];
+    // The stored bag is SPARSE — only changed keys are persisted — so a
+    // default-on feature that was never touched has no stored value. Treating
+    // that as "off" rendered default-on features as Disabled and undercounted
+    // every category roll-up on a fresh install. Same resolution the quick
+    // toggles and the sidepanel already use.
+    const value = resolveEffectiveSettingValue(entry, settings);
     if (value === undefined || value === null) return false;
     if (entry.type === 'boolean') return value === true;
     if (entry.type === 'string')  return typeof value === 'string' && value.length > 0;
