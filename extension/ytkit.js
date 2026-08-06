@@ -19930,9 +19930,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'play',
             _observer: null,
 
+            // `#confirm-button` inside yt-confirm-dialog-renderer is YouTube's
+            // GENERIC confirm control — clearing watch history, deleting a
+            // playlist and discarding a comment all render it, as does the bare
+            // `tp-yt-paper-button#button` in the popup container. Clicking any
+            // open confirm dialog ~200ms after it renders could auto-accept a
+            // destructive dialog the user had just opened. The "still watching"
+            // prompt is only ever raised while playback is PAUSED (pausing is
+            // the whole point of it), which is a locale-independent gate that
+            // unrelated dialogs — raised during playback — do not satisfy.
+            _isYouTherePrompt() {
+                const musicPrompt = document.querySelector('ytmusic-you-there-renderer');
+                if (musicPrompt) return true;
+                const dialog = document.querySelector('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
+                if (!dialog) return false;
+                const text = String(dialog.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                if (/continue watching|still watching|video paused/.test(text)) return true;
+                const video = getMainVideoElement();
+                return Boolean(video && video.paused && !video.ended);
+            },
+
             _dismiss() {
-                const btn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"], .yt-confirm-dialog-renderer #confirm-button, .ytd-popup-container tp-yt-paper-button#button');
-                if (btn) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                // Unambiguous, always safe: these are the player's own controls.
+                const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
+                if (playerBtn) { playerBtn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                else if (this._isYouTherePrompt()) {
+                    const btn = document.querySelector('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
+                    if (btn) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                }
                 const video = getMainVideoElement();
                 if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
                     video.play().catch(() => {});
@@ -27709,26 +27734,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
+            // Every selector here must name the specific promo/consent/survey
+            // renderer being dismissed. A bare `tp-yt-paper-dialog #accept-button`
+            // / `#cancel-button` also matches dialogs the USER opened (save to
+            // playlist, report, and other paper-dialog scaffolding), and this
+            // ran on every mutation tick, so those dialogs closed by themselves
+            // the instant they rendered.
             _dismiss() {
+                const clickIfVisible = (selector) => {
+                    const btn = document.querySelector(selector);
+                    if (btn && btn.offsetParent !== null) btn.click();
+                };
+
                 // Cookie consent / GDPR
-                const consentBtn = document.querySelector('tp-yt-paper-dialog #accept-button, tp-yt-paper-dialog #reject-button, tp-yt-paper-dialog #dismiss-button, .consent-bump-v2-lightbox button');
-                if (consentBtn && consentBtn.offsetParent !== null) consentBtn.click();
+                clickIfVisible('ytd-consent-bump-v2-lightbox #accept-button, ytd-consent-bump-v2-lightbox #reject-button, .consent-bump-v2-lightbox button, tp-yt-paper-dialog[id*="consent"] #accept-button');
 
-                // "No thanks" on various prompts
-                const noThanksBtn = document.querySelector('yt-button-renderer#dismiss-button button, tp-yt-paper-dialog #dismiss-button button, tp-yt-paper-dialog #cancel-button');
-                if (noThanksBtn && noThanksBtn.offsetParent !== null) noThanksBtn.click();
+                // Survey / feedback overlay
+                clickIfVisible('.ytd-enforcement-message-view-model button, ytd-survey-renderer #dismiss-button button, ytd-single-option-survey-renderer #dismiss-button button');
 
-                // Survey/feedback overlay
-                const surveyDismiss = document.querySelector('.ytd-enforcement-message-view-model button, ytd-survey-renderer #dismiss-button button');
-                if (surveyDismiss && surveyDismiss.offsetParent !== null) surveyDismiss.click();
-
-                // "YouTube Premium" popup
-                const premiumDismiss = document.querySelector('ytd-mealbar-promo-renderer #dismiss-button button, tp-yt-paper-dialog[id*="mealbar"] #dismiss-button button');
-                if (premiumDismiss && premiumDismiss.offsetParent !== null) premiumDismiss.click();
+                // "YouTube Premium" and other mealbar promos
+                clickIfVisible('ytd-mealbar-promo-renderer #dismiss-button button, tp-yt-paper-dialog[id*="mealbar"] #dismiss-button button, ytd-popup-container ytd-mealbar-promo-renderer yt-button-renderer#dismiss-button button');
             },
 
             init() {
-                addMutationRule('autoClosePopups', () => this._dismiss());
+                // Debounced: the old rule did four querySelector + offsetParent
+                // layout reads on every mutation batch, forever.
+                addMutationRule('autoClosePopups', () => this._scheduleDismiss(400));
                 addNavigateRule('autoClosePopups', () => this._scheduleDismiss(2000));
                 this._dismiss();
             },
@@ -36763,16 +36794,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 e.preventDefault();
                 e.stopPropagation();
                 const movie = window.movie_player || player;
-                let current = 50;
-                try { current = movie?.getVolume?.() ?? 50; } catch { /* reason: movie_player not ready; use default volume */ }
+                const video = document.querySelector('video.html5-main-video');
+                // getVolume() is a MAIN-world expando on the player element, so
+                // it is invisible from the ISOLATED content-script world and the
+                // `?? 50` fallback used to win every time: every tick computed
+                // 50 ± 5 and pinned volume to the 45-55% band, snapping to ~50%
+                // on the first scroll. The media element is readable from here,
+                // so it is the baseline; the player API is preferred only when
+                // it genuinely answers (userscript / page-world contexts).
+                let current = Number.isFinite(video?.volume)
+                    ? Math.round(video.volume * 100)
+                    : 50;
+                try {
+                    const reported = movie?.getVolume?.();
+                    if (Number.isFinite(reported)) current = reported;
+                } catch { /* reason: movie_player not ready; media-element baseline stands */ }
                 const delta = e.deltaY > 0 ? -5 : 5;
                 const next = Math.max(0, Math.min(100, current + delta));
                 try {
                     movie?.setVolume?.(next);
                     if (next > 0 && movie?.unMute) movie.unMute();
                 } catch { /* reason: movie_player volume API unavailable; HTMLMediaElement fallback still runs */ }
-                const video = document.querySelector('video.html5-main-video');
-                if (video) video.volume = Math.max(0, Math.min(1, next / 100));
+                if (video) {
+                    video.volume = Math.max(0, Math.min(1, next / 100));
+                    // Scrolling up past silence should be audible even when the
+                    // player API (which owns unMute) is out of reach.
+                    if (next > 0 && video.muted) video.muted = false;
+                }
                 this._showHud(next);
             },
             _attach() {

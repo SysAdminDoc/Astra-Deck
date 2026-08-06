@@ -55,26 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Volume Wheel reads volume from an inaccessible MAIN-world API — volume pinned to the 45-55% band
-  Category: correctness
-  Where: extension/ytkit.js:36685-36702 (volumeWheelMode._onWheel)
-  Problem: `current = movie?.getVolume?.() ?? 50` — `movie` is the #movie_player DOM element and getVolume is a MAIN-world expando invisible to the ISOLATED content script (the repo's own docs state this for Polymer .data), so `current` is always the literal 50. Each wheel tick computes next = 50 ± 5 and writes video.volume = 0.45/0.55: the user can never scroll below 45% or above 55%, and the first tick snaps volume to ~50%. There is a video.volume fallback for the WRITE but not the READ.
-  Evidence: World isolation semantics + code read; compare rememberVolume (:25394-25402) which correctly treats the player API as optional. Feature default-off.
-  Fix: Baseline from the media element: `const current = Math.round(((video && video.volume) ?? 0.5) * 100)` before computing, keeping setVolume as a best-effort mirror (or route the read through the existing MAIN-world bridge).
-  Acceptance: Test: with video.volume = 0.8 and no getVolume expando, one wheel-up tick yields 0.85 (not 0.55).
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — Two auto-dismiss features click generic confirm/accept buttons in ANY YouTube dialog
-  Category: correctness
-  Where: extension/ytkit.js:19873-19899 (autoDismissStillWatching._dismiss/_popupHandler — clicks first match of `.yt-confirm-dialog-renderer #confirm-button, .ytd-popup-container tp-yt-paper-button#button` on every popup-container mutation, debounced 200ms); extension/ytkit.js:27652-27673 (autoClosePopups._dismiss — clicks `tp-yt-paper-dialog #accept-button/#dismiss-button/#cancel-button` on every unthrottled broad mutation tick)
-  Problem: `yt-confirm-dialog-renderer #confirm-button` is YouTube's GENERIC confirmation dialog (clear watch history, delete playlist, discard comment…), and the paper-dialog button ids are equally generic. With either feature on, a user-opened destructive confirmation can be auto-accepted ~200ms after render, before the user can react — and dialogs the user opens "close by themselves." Both default-off, but autoDismissStillWatching is force-enabled by the Feed Triage recipe (_RECIPE at ytkit.js:36537), widening exposure. autoClosePopups also does 4 querySelector + offsetParent layout reads per mutation batch forever (perf).
-  Evidence: Observer/selector sites read; no text/intent discrimination anywhere in either _dismiss; the yt-popup-opened path triggers on any YT-CONFIRM-DIALOG-RENDERER.
-  Fix: Gate clicks on dialog intent: structural (ytmusic-you-there-renderer for you-there; specific renderers — consent bump, ytd-mealbar-promo-renderer, ytd-survey-renderer — for autoClosePopups) plus localized text match ("continue watching") as fallback, mirroring how hidePlannedLivestreams anchors its regexes. Drop the bare paper-dialog button arms; debounce autoClosePopups' mutation path.
-  Acceptance: Tests: a fabricated "clear watch history" confirm dialog is NOT clicked by either feature; the you-there renderer IS dismissed; no per-mutation layout reads without a candidate dialog present.
-  Confidence: Verified (selector overreach); Likely for specific destructive-dialog field instances
-  Effort: M
-
 - [ ] P2 — hideCollaborations (default ON) is inert after any SPA navigation to the subscriptions feed
   Category: correctness
   Where: extension/ytkit.js:16767-16804 (hideCollaborations.init); tracker subset at :54981 (`pageScopedFeatures = liveFeatureList.filter(f => !f._arrayKey && f.pages)`)
