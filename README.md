@@ -58,108 +58,39 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 
 ### Astra Downloader Companion Setup
 
-Astra Deck and Astra Downloader are separate installs. The browser extension can
-be installed from the release ZIP/XPI or userscript path above; video and audio
-downloads need the local Astra Downloader companion running on this device.
+Video and audio downloads are handled by **[Astra Downloader](https://github.com/SysAdminDoc/AstraDownloader)**,
+a separate program with its own repository, releases, and documentation. Astra
+Deck and Astra Downloader are separate installs: the extension above works on
+its own, and downloads need the companion running on this device.
 
-The in-page setup prompt and toolbar recovery action download
-[`AstraDownloader.exe`](https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.50.7/AstraDownloader.exe)
-directly from the newest GitHub release that carries the companion. This URL is
-pinned because newer extension-only releases do not carry the executable, so
-GitHub's `releases/latest/download` alias cannot resolve it.
+Download `AstraDownloader.exe` from the
+[latest Astra Downloader release](https://github.com/SysAdminDoc/AstraDownloader/releases/latest)
+and run it, or use the in-page **Download setup** prompt, which points at the
+same place. Then return to YouTube and choose **Check again**. The toolbar
+popup also has recovery actions to re-enable the setup prompt and request an
+on-demand companion update from a running service.
 
-For current source-checkout testing on Windows:
+Everything about the companion — installing from source, building the
+executable, the per-site sign-in store, subscriptions, the URL policy, and its
+security model — is documented in
+[its README](https://github.com/SysAdminDoc/AstraDownloader#readme). It
+downloads from any site yt-dlp supports, not only YouTube.
 
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --require-virtualenv -r astra_downloader/requirements.txt
-.\.venv\Scripts\python.exe astra_downloader/astra_downloader.py
-```
+Two details matter on this side of the boundary:
 
-Source imports never install or modify Python packages. If a dependency is
-missing, Astra Downloader exits with the virtual-environment setup command.
-
-Release packaging is stricter than source testing. Build only in a clean
-Windows x64 virtual environment on CPython 3.11 or 3.12, install the reviewed
-graph, then run the builder:
-
-```powershell
-py -3.12 -m venv .release-venv
-.\.release-venv\Scripts\python.exe -m pip install --require-virtualenv -r astra_downloader/requirements.txt -c astra_downloader/constraints-release.txt PyInstaller==6.21.0
-.\.release-venv\Scripts\python.exe astra_downloader/build.py
-```
-
-The builder fails before cleaning or packaging when any active dependency
-differs from `constraints-release.txt`, when an unreviewed dependency edge is
-present, or when the interpreter falls outside 3.11/3.12. Build metadata links
-the exact resolution graph and constraints digest into the companion SBOM; the
-bundled artifact retains the Windows 10 x64 platform floor.
-
-The companion stores its config, logs, downloaded `yt-dlp.exe`, and `ffmpeg.exe`
-under `%LOCALAPPDATA%\AstraDownloader`. When a release does carry the companion
-payload, it must attach both `AstraDownloader.exe` and
-`AstraDownloader.exe.sha256`; use the in-page **Download setup** prompt, then
-return to YouTube and choose **Check again**. The toolbar popup also has
-recovery actions to re-enable the setup prompt and request an on-demand
-companion update from a running service.
-
-The native companion opens to a local command center with live queue metrics,
-server actions, and a System Pulse for yt-dlp, FFmpeg, Deno, PO-provider, and
-SABR readiness. Its Settings page can follow the system language or select any
-of the extension's 11 bundled locales; a restart applies language changes.
-
-**Any site, not just YouTube (companion v1.8.0).** Paste any public video link
-into **Downloads → Quick download** — Reddit, X/Twitter, TikTok, Vimeo, Twitch
-clips, a direct `.mp4`, or anything else yt-dlp has an extractor for — and it
-downloads with the same queue, clip ranges, format and quality controls.
-Several links can be pasted at once, separated by spaces, and are queued as a
-batch. The clipboard grabber stages any copied video link, not only YouTube
-ones. Private, loopback, link-local, and single-label hosts (`127.0.0.1`,
-`192.168.x.x`, `169.254.169.254`, `nas`, `printer.local`) are refused with a
-reason: the companion downloads from the public internet only. Sign-in cookies
-stay YouTube-scoped and are never attached to another site's extraction, and
-the Deno / JavaScript-runtime requirement now applies only to YouTube, which is
-the only extractor that needs it.
-
-**Site sign-ins (companion v1.9.0).** Sites that only serve video to a
-signed-in viewer — X, Instagram, Facebook, members-only Vimeo, most paywalled
-video — need a session. The **Sign-ins** page stores one per site:
-
-1. Sign in to the site in your browser as usual.
-2. Give Astra Downloader that site's cookies, either by **Import cookies.txt**
-   (any browser extension that exports Netscape `cookies.txt` works) or by
-   **Read from browser**, which asks yt-dlp to read the browser's own cookie
-   store.
-3. Downloads for that site attach the stored session automatically. Nothing
-   else changes.
-
-Chrome, Edge, and Brave 127+ encrypt their cookie store with app-bound
-encryption, so **Read from browser** normally fails for them and says so —
-use the `cookies.txt` import for those. Firefox can usually be read directly.
-
-Each stored sign-in is filtered to one registrable domain on the way in and
-attached only to downloads for that domain, so importing a whole-browser export
-stores just the one site's cookies and discards the rest. Jars are written with
-an owner-only ACL under `%LOCALAPPDATA%\AstraDownloader\site-logins`, cookie
-values are never readable back through the API, the GUI, or the diagnostics
-bundle, and a per-download copy is what reaches yt-dlp so concurrent downloads
-cannot corrupt the stored session. YouTube keeps using the extension's cookie
-bridge and needs nothing here.
-Open **Subscriptions** to add a YouTube channel or playlist, choose a scan
-interval from 5 minutes to 7 days, and let the companion enqueue only uploads
-that are absent from its durable archive. The schedule and archive live in
-`%LOCALAPPDATA%\\AstraDownloader\\subscriptions.json` and survive restarts or
-companion updates; removing a subscription never deletes downloaded files.
-Contributors can render the Dashboard, Downloads, History, Subscriptions,
-Settings, and German localization views without activating a desktop window by running
-`npm run smoke:companion-gui`; captures are written under
-`build/companion-ui-smoke/`.
+- **Discovery is by port, not configuration.** The extension probes
+  `127.0.0.1` across the ports in `scripts/companion-port-catalogue.json`.
+  That file is duplicated byte-for-byte in the Astra Downloader repository and
+  checked in both, so changing the ports is a two-repository change.
+- **Releases here never carry `AstraDownloader.exe`.** Publishing a second,
+  independently versioned copy behind the same update check is how installs
+  previously ended up four versions stale, so `npm run release:readiness`
+  fails if the executable is staged in `build/` or listed in the release
+  manifest.
 
 The PO-token provider and Deno sections below are companion prerequisites. They
 improve downloader reliability after Astra Downloader itself is running; they
 are not browser extension install steps.
-
----
 
 ## Features
 
@@ -288,10 +219,9 @@ Node 22 or newer and select **Node 22+** in companion Settings.)
 
 Astra Downloader's `/health` endpoint surfaces `javascriptRuntime: { runtime, version, supported, ejsReady, reason }` while retaining `denoRuntime` as a compatibility alias. The download health panel names the selected runtime and offers one-click Deno provisioning only when Deno is an eligible choice. Unknown versions, probe failures, and unsupported runtimes stop with actionable errors; older pre-runtime yt-dlp builds remain allowed.
 
-The repo pins `yt-dlp==2026.7.4` and `curl_cffi==0.15.0` in
-`astra_downloader/requirements.txt` for local validation. Run the bounded media
-smoke locally with `py -3.12 scripts/yt-dlp-smoke.py` against the stable public
-YouTube fixture before accepting extractor dependency bumps.
+yt-dlp and its pins live in the
+[Astra Downloader repository](https://github.com/SysAdminDoc/AstraDownloader), which runs the bounded media smoke against a
+stable public fixture before accepting extractor dependency bumps.
 
 ### Comments
 
@@ -486,7 +416,7 @@ npm ci
 py -3.12 -m pip install --user pip-audit # One-time companion audit tool
 npm test
 npm run check
-npm run audit:python                     # Audits declared + minimum Python versions; writes JSON
+# Python dependency auditing runs in the Astra Downloader repositoryN
 npm run build                             # Build store-safe + GitHub-full artifacts
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run release:prepare                   # Build userscript artifacts and require readiness pass
@@ -562,7 +492,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | [docs/selector-fixture-workflow.md](docs/selector-fixture-workflow.md) | How to refresh MHTML captures when YouTube DOM changes |
 | [docs/screen-reader-smoke.md](docs/screen-reader-smoke.md) | NVDA / JAWS / VoiceOver release-gate checklist |
 | [docs/predicate-sandbox-investigation.md](docs/predicate-sandbox-investigation.md) | Threat model and design of the safe expression DSL for `advancedLocalPredicate` |
-| [docs/yt-dlp-cookie-threat-model.md](docs/yt-dlp-cookie-threat-model.md) | Cookie flow and redirect-leak mitigations for Astra Downloader / yt-dlp |
+| [Astra Downloader cookie threat model](https://github.com/SysAdminDoc/AstraDownloader/blob/main/docs/yt-dlp-cookie-threat-model.md) | Cookie flow and redirect-leak mitigations for Astra Downloader / yt-dlp |
 | [docs/signing-keys.md](docs/signing-keys.md) | CRX3 packaging key management |
 
 ---

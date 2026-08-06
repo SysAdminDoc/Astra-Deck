@@ -65,8 +65,8 @@ test('YTKit.user.js carries no irm|iex copy-paste install command', () => {
 
 test('YTKit.user.js MediaDL install flow points at a GitHub Release that carries AstraDownloader.exe', () => {
     assert.match(userscriptSource,
-        /INSTALLER_URL:\s*'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/download\/v4\.50\.7\/AstraDownloader\.exe'/,
-        'INSTALLER_URL must point at the newest GitHub Release that actually contains AstraDownloader.exe (parity with extension/ytkit.js)');
+        /INSTALLER_URL:\s*'https:\/\/github\.com\/SysAdminDoc\/AstraDownloader\/releases\/latest\/download\/AstraDownloader\.exe'/,
+        'INSTALLER_URL must resolve through /latest/ on the AstraDownloader repository, so it cannot go stale the way a pinned Astra Deck tag did (parity with extension/features/download-ui)');
     assert.match(userscriptSource, /INSTALLER_FILE_NAME:\s*'AstraDownloader\.exe'/,
         'INSTALLER_FILE_NAME must name the release exe');
     assert.match(userscriptSource, /Download Astra Downloader \(\.exe\)/,

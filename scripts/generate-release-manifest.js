@@ -11,7 +11,6 @@ const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const MANIFEST_NAME = 'release-manifest.json';
 const SHA256SUMS_NAME = 'SHA256SUMS';
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
-const { COMPANION_BUILD_METADATA_NAME } = require('./companion-license-inventory');
 // Local-only signing provenance marker written by build-extension.js.
 // Never listed as a release asset; its `mode` field is folded into the
 // manifest as `crxSigningMode` so release readiness can gate on it.
@@ -74,26 +73,6 @@ function parseAssetName(name, version) {
         };
     }
 
-    if (name === 'AstraDownloader.exe') {
-        return {
-            kind: 'companion',
-            profile: 'github-full',
-            browser: 'windows',
-            artifactType: 'exe',
-            version
-        };
-    }
-
-    if (name === 'AstraDownloader.exe.sha256') {
-        return {
-            kind: 'companion-checksum',
-            profile: 'github-full',
-            browser: 'windows',
-            artifactType: 'sha256',
-            version
-        };
-    }
-
     return {
         kind: 'auxiliary',
         profile: 'release',
@@ -114,10 +93,12 @@ function expectedReleaseNames(version, options = {}) {
     }
     names.push(`ytkit-v${version}.user.js`);
     names.push(SBOM_NAME);
-    if (options.requireCompanion) {
-        names.push('AstraDownloader.exe');
-        names.push('AstraDownloader.exe.sha256');
-    }
+    // Astra Downloader ships from its own repository
+    // (SysAdminDoc/AstraDownloader) as of companion v2.0.0. Its executable is
+    // deliberately absent from this list, so a stray AstraDownloader.exe in
+    // build/ is reported as an unexpected asset rather than published from
+    // here — a second, older copy on this release is exactly how installs got
+    // a four-versions-stale companion before.
     return names.sort();
 }
 
@@ -137,8 +118,7 @@ function listBuildAssets() {
         .map((entry) => entry.name)
         .filter((name) => name !== MANIFEST_NAME
             && name !== SHA256SUMS_NAME
-            && name !== CRX_SIGNING_PROVENANCE_NAME
-            && name !== COMPANION_BUILD_METADATA_NAME)
+            && name !== CRX_SIGNING_PROVENANCE_NAME)
         .sort();
 }
 
@@ -168,26 +148,12 @@ function assertExpectedAssets(assetNames, version, options = {}) {
     }
 }
 
-function writeCompanionSidecarIfPresent(assetNames) {
-    if (!assetNames.includes('AstraDownloader.exe')) return assetNames;
-    const exePath = path.join(BUILD_DIR, 'AstraDownloader.exe');
-    const sidecarPath = path.join(BUILD_DIR, 'AstraDownloader.exe.sha256');
-    fs.writeFileSync(sidecarPath, sha256(exePath) + '\n', 'utf8');
-    return Array.from(new Set([...assetNames, 'AstraDownloader.exe.sha256'])).sort();
-}
-
-function isCompanionReleaseRequired(argv = process.argv, env = process.env) {
-    return argv.includes('--require-companion') || env.ASTRA_REQUIRE_COMPANION_RELEASE === '1';
-}
-
 function main() {
     const version = readProductVersion();
     if (!version) throw new Error('package.json version is empty');
-    const requireCompanion = isCompanionReleaseRequired();
 
-    let assetNames = listBuildAssets();
-    assetNames = writeCompanionSidecarIfPresent(assetNames);
-    assertExpectedAssets(assetNames, version, { requireCompanion });
+    const assetNames = listBuildAssets();
+    assertExpectedAssets(assetNames, version);
 
     const commit = process.env.GITHUB_SHA || git(['rev-parse', 'HEAD']);
     const tag = process.env.GITHUB_REF_NAME || `v${version}`;
@@ -215,7 +181,6 @@ function main() {
         signingKeyPolicy: 'Public CRX artifacts must be built locally with ASTRA_CRX_KEY_PATH or the default external key store; CI build artifacts use ephemeral CRX signing for validation/provenance only.',
         crxSigningMode: readCrxSigningProvenance(),
         validationBuild: isValidationBuild(),
-        companionUpdateRequired: requireCompanion,
         assets
     };
 
@@ -244,7 +209,6 @@ if (require.main === module) {
 module.exports = {
     CRX_SIGNING_PROVENANCE_NAME,
     expectedReleaseNames,
-    isCompanionReleaseRequired,
     isValidationBuild,
     parseAssetName,
     readCrxSigningProvenance,

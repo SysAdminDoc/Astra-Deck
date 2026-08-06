@@ -30295,7 +30295,7 @@
         },
 
         // GitHub Release URL for the compiled installer exe
-        INSTALLER_URL: 'https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.50.7/AstraDownloader.exe',
+        INSTALLER_URL: 'https://github.com/SysAdminDoc/AstraDownloader/releases/latest/download/AstraDownloader.exe',
         INSTALLER_FILE_NAME: 'AstraDownloader.exe',
 
         // Quick health check — returns { ok, token, version, port } or { ok: false }.

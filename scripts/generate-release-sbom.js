@@ -3,7 +3,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { buildCompanionInventory } = require('./companion-license-inventory');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -76,8 +75,9 @@ function buildSbom(options = {}) {
 
     const npmComponents = components.slice();
     const dependencyRefs = new Set(npmComponents.map((component) => component['bom-ref']));
-    const companionInventory = buildCompanionInventory(repoRoot, buildDir);
-    components.push(...companionInventory.components);
+    // Astra Downloader's embedded Python components used to be folded in
+    // here. It releases from SysAdminDoc/AstraDownloader now and carries its
+    // own inventory, so this SBOM describes the npm dependency graph only.
 
     const dependencies = [
         {
@@ -88,9 +88,6 @@ function buildSbom(options = {}) {
                     return entry ? purlFor(name, entry.version) : null;
                 })
                 .filter(Boolean)
-                .concat(companionInventory.components.length
-                    ? [companionInventory.components[0]['bom-ref']]
-                    : [])
                 .sort((a, b) => a.localeCompare(b))
         }
     ];
@@ -109,7 +106,6 @@ function buildSbom(options = {}) {
             dependsOn
         });
     }
-    dependencies.push(...companionInventory.dependencies);
 
     return {
         bomFormat: 'CycloneDX',

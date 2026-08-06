@@ -1404,20 +1404,6 @@ test('SponsorBlock never auto-skips poi_highlight (API contract: marker, not ski
     );
 });
 
-test('_run_download no longer contains the dead "Downloading video" regex match', () => {
-    const downloaderSource = fs.readFileSync(
-        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'),
-        'utf8'
-    );
-    // The match target captured a group count but assigned it to `m` and
-    // never read it. Removing the dead line keeps `_run_download` focused
-    // on filename detection + progress parsing.
-    assert.doesNotMatch(
-        downloaderSource,
-        /m\s*=\s*re\.search\(r'\\\[download\\\] Downloading video/,
-        'Dead "Downloading video" regex must remain removed from _run_download'
-    );
-});
 
 // ── v3.20.2 H1: TrustedTypes createPolicy fallback is observable ──
 //
@@ -2049,20 +2035,16 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'generate-release-manifest.js'), 'utf8'
     );
-    const stageScriptSource = fs.readFileSync(
-        path.join(__dirname, '..', 'scripts', 'stage-companion-release.js'), 'utf8'
-    );
     const {
         expectedReleaseNames,
-        isCompanionReleaseRequired,
         parseAssetName,
         unexpectedReleaseNames
     } = require('../scripts/generate-release-manifest');
 
     assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/,
         'package.json must expose release:manifest for the local release recipe');
-    assert.match(pkg.scripts['release:stage-companion'] || '', /scripts\/stage-companion-release\.js/,
-        'package.json must expose a companion staging script for local release packaging');
+    assert.equal(pkg.scripts['release:stage-companion'], undefined,
+        'companion staging moved to the AstraDownloader repository');
     assert.equal(fs.existsSync(workflowPath), false,
         'GitHub build workflow must stay absent because releases are built and uploaded locally');
     assert.match(scriptSource, /SHA256SUMS_NAME = 'SHA256SUMS'/,
@@ -2071,48 +2053,22 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'release manifest script must write release-manifest.json');
     assert.match(scriptSource, /localSigningRequired:\s*true/,
         'release manifest must disclose the local signing requirement');
-    assert.match(scriptSource, /AstraDownloader\.exe\.sha256/,
-        'release manifest script must create the companion hash sidecar when the exe is present');
-    assert.match(scriptSource, /--require-companion/,
-        'release manifest script must have an explicit companion-release activation flag');
-    assert.match(scriptSource, /companionUpdateRequired:\s*requireCompanion/,
-        'release manifest must disclose whether companion update assets were required');
-    assert.match(stageScriptSource, /MZ/,
-        'companion staging must reject files without a Windows EXE header');
-    assert.match(stageScriptSource, /build\/AstraDownloader\.exe/,
-        'companion staging must stage the EXE into build/ for release manifest inclusion');
-    assert.match(stageScriptSource, /companion-build-metadata\.json|COMPANION_BUILD_METADATA_NAME/,
-        'companion staging must carry artifact-linked Python distribution metadata into the SBOM pipeline');
-    assert.match(stageScriptSource, /metadata\.artifact\.sha256 !== sha256\(companionExe\)/,
-        'companion staging must reject metadata for a different binary');
-    assert.match(stageScriptSource, /fs\.fstatSync\(fd\)/,
-        'companion staging must validate metadata from the opened descriptor');
-    assert.doesNotMatch(stageScriptSource, /fs\.existsSync/,
-        'companion staging must avoid existence-check races');
-    assert.doesNotMatch(stageScriptSource, /fs\.copyFileSync/,
-        'companion staging must not copy a path after validating a different opened handle');
-
+    // Astra Downloader releases from its own repository, so its executable
+    // is not an expected asset here and a staged copy is an error.
+    assert.equal(expectedReleaseNames('1.2.3').includes('AstraDownloader.exe'), false,
+        'the companion exe must not be an expected Astra Deck release asset');
+    assert.deepEqual(unexpectedReleaseNames(['AstraDownloader.exe'], '1.2.3'), ['AstraDownloader.exe'],
+        'a staged companion exe must be reported as an unexpected asset');
     const expected = expectedReleaseNames(pkg.version);
     assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 9,
         'expected release set must include eight extension artifacts plus userscript');
     assert.ok(expected.includes('astra-deck-npm-sbom.cdx.json'),
         'expected release set must include the npm SBOM asset');
-    const companionExpected = expectedReleaseNames(pkg.version, { requireCompanion: true });
-    assert.ok(companionExpected.includes('AstraDownloader.exe'),
-        'companion-required release set must include the Windows EXE');
-    assert.ok(companionExpected.includes('AstraDownloader.exe.sha256'),
-        'companion-required release set must include the EXE hash sidecar');
     assert.deepEqual(
         unexpectedReleaseNames([...expected, 'debug-extra.zip'], pkg.version),
         ['debug-extra.zip'],
         'release manifest generation must fail closed on top-level debug or auxiliary assets'
     );
-    assert.equal(
-        isCompanionReleaseRequired(['node', 'generate-release-manifest.js', '--require-companion'], {}),
-        true,
-        '--require-companion must activate companion asset enforcement'
-    );
-
     const parsed = parseAssetName(`astra-deck-store-safe-firefox-v${pkg.version}.xpi`, pkg.version);
     assert.deepEqual(
         {
@@ -2133,7 +2089,11 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     );
 });
 
-test('README documents the working Astra Downloader companion release asset', () => {
+test('README points at the Astra Downloader repository rather than a copy here', () => {
+    // Astra Downloader used to release from this repository, which forced a
+    // pinned tag in the README because newer extension-only releases did not
+    // carry the executable. It has its own repository now, so /latest/
+    // resolves and the pin - and the caveat explaining it - are gone.
     const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
     const signingDocs = fs.readFileSync(
         path.join(__dirname, '..', 'docs', 'signing-keys.md'), 'utf8'
@@ -2141,22 +2101,18 @@ test('README documents the working Astra Downloader companion release asset', ()
 
     assert.match(readme, /### Astra Downloader Companion Setup/,
         'README must give the companion its own setup section');
-    assert.match(readme, /releases\/download\/v4\.50\.7\/AstraDownloader\.exe/,
-        'README must link to the newest release that actually carries AstraDownloader.exe');
-    assert.match(readme, /GitHub's `releases\/latest\/download` alias cannot resolve it/,
-        'README must explain why the generic latest-release asset route is not used');
-    assert.match(readme, /py -3\.12 -m venv \.venv/,
-        'README must isolate source-checkout companion dependencies in a virtual environment');
-    assert.match(readme, /\.\\\.venv\\Scripts\\python\.exe -m pip install --require-virtualenv -r astra_downloader\/requirements\.txt/,
-        'README must require the current source-checkout companion dependencies inside the virtual environment');
-    assert.match(readme, /\.\\\.venv\\Scripts\\python\.exe astra_downloader\/astra_downloader\.py/,
-        'README must document how to launch the source-checkout companion from the virtual environment');
+    assert.match(readme, /github\.com\/SysAdminDoc\/AstraDownloader\/releases\/latest/,
+        'README must send users to the companion repository latest release');
+    assert.doesNotMatch(readme, /Astra-Deck\/releases\/download\/[^\s)]*AstraDownloader\.exe/,
+        'README must not link a companion executable published from this repository');
+    assert.doesNotMatch(readme, /releases\/latest\/download` alias cannot resolve it/,
+        'the pinned-tag caveat is obsolete now that the companion has its own releases');
+    assert.match(readme, /Releases here never carry `AstraDownloader\.exe`/,
+        'README must state that this repository does not republish the companion');
     assert.match(readme, /PO-token provider and Deno sections below are companion prerequisites/,
         'README must frame Deno and PO-token setup as companion prerequisites');
-    assert.match(readme, /AstraDownloader\.exe` and\s+`AstraDownloader\.exe\.sha256`/,
-        'README must name both companion release assets together');
-    assert.match(signingDocs, /If the latest public release lacks `AstraDownloader\.exe` or\s+`AstraDownloader\.exe\.sha256`/,
-        'release checklist must keep the README caveat tied to live assets');
+    assert.match(signingDocs, /Astra Downloader builds and releases from its own repository/,
+        'release checklist must route companion packaging to the companion repository');
     assert.match(signingDocs, /signed installer\/MSI roadmap item remains separate/,
         'release checklist must not collapse portable companion proof into signed installer work');
 });
@@ -2307,21 +2263,11 @@ test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity ord
         'i18n extractor must not return to chained multi-character escaping replacements');
 });
 
-test('branch CodeQL file-race and Python error disclosure guardrails stay fixed', () => {
+test('branch CodeQL file-race guardrails stay fixed', () => {
     const buildSource = fs.readFileSync(
         path.join(__dirname, '..', 'build-extension.js'),
         'utf8'
     );
-    const downloaderSource = [
-        'astra_downloader.py',
-        'gui.py',
-        'download.py',
-        'routes.py',
-    ].map((file) => fs.readFileSync(
-        path.join(__dirname, '..', 'astra_downloader', file),
-        'utf8'
-    )).join('\n');
-
     assert.match(buildSource, /function\s+readUtf8IfPresent\(filePath\)/,
         'version bump reads must use one read helper instead of existsSync/read races');
     assert.match(buildSource, /const originalUserscript = readUtf8IfPresent\(USERSCRIPT\)/,
@@ -2330,14 +2276,8 @@ test('branch CodeQL file-race and Python error disclosure guardrails stay fixed'
         'package.json version bump must read through readUtf8IfPresent');
     assert.match(buildSource, /const pkgLockRaw = readUtf8IfPresent\(pkgLockPath\)/,
         'package-lock version bump must read through readUtf8IfPresent');
-    assert.match(downloaderSource, /self\._logger\("FolderPickerService failed"\)/,
-        'FolderPickerService must log a local generic failure marker through its injected logger');
-    assert.match(downloaderSource, /'error': 'Folder picker failed\. Check Astra Downloader logs for details\.'/,
-        'FolderPickerService response must return a generic user-facing error');
-    assert.doesNotMatch(downloaderSource, /response_q\.put\(\{'error': str\(e\)\}\)/,
-        'FolderPickerService must not expose raw exception text to the UI response');
-    assert.doesNotMatch(downloaderSource, /dl\.error = str\(e\)/,
-        'download status payloads must not expose raw exception text');
+    // The Python error-disclosure half of this guardrail moved to
+    // SysAdminDoc/AstraDownloader with the companion source it pins.
 });
 
 test('CODEOWNERS protects security-sensitive repository paths', () => {
@@ -9374,37 +9314,14 @@ test('v4.46.0 popup.js export anchor fallback is attached to the document', () =
         'export anchor must be removed after click to keep the DOM clean');
 });
 
-test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
-    // pytest-asyncio 0.23+ deprecates the unset default. Setting it
-    // explicitly to "function" matches the upcoming 1.0 default and
-    // silences the PytestDeprecationWarning that otherwise pollutes
-    // every test run.
-    const ini = fs.readFileSync(
-        path.join(__dirname, '..', 'pytest.ini'), 'utf8'
-    );
-    assert.match(ini, /asyncio_default_fixture_loop_scope\s*=\s*function/,
-        'pytest.ini must set asyncio_default_fixture_loop_scope = function');
-});
 
-test('v4.46.0 downloader validation is local-only and pytest configuration is explicit', () => {
+test('v4.46.0 validation stays local-only with no CI workflow', () => {
     assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'validate.yml')), false,
         'validate workflow must stay absent under the local-build policy');
-    const pytestIni = fs.readFileSync(path.join(__dirname, '..', 'pytest.ini'), 'utf8');
-    assert.match(pytestIni, /asyncio_default_fixture_loop_scope\s*=\s*function/,
-        'pytest.ini must keep the asyncio fixture scope explicit for local runs');
-    const requirements = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'requirements.txt'), 'utf8');
-    assert.match(requirements, /^PyQt6>=6\.6\.0,<7$/m,
-        'local downloader tests must keep the PyQt runtime dependency bounded');
-    const constraints = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'constraints-release.txt'), 'utf8');
-    assert.match(constraints, /^PyQt6==6\.11\.0$/m,
-        'release builds must resolve PyQt from the reviewed exact graph');
-    assert.match(constraints, /^pyinstaller==6\.21\.0$/m,
-        'release builds must pin PyInstaller instead of using an ambient version');
-    const buildSource = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'build.py'), 'utf8');
-    assert.match(buildSource, /verify_release_environment\(\)/,
-        'the release builder must fail before packaging when the active graph drifts');
-    assert.match(buildSource, /SUPPORTED_RELEASE_PYTHONS\s*=\s*\{\(3, 11\), \(3, 12\)\}/,
-        'the release builder must stay bounded to the reviewed Python 3.11/3.12 matrix');
+    // The companion's pytest configuration and pinned release graph are
+    // pinned in SysAdminDoc/AstraDownloader, which owns those files.
+    assert.equal(fs.existsSync(path.join(__dirname, '..', 'pytest.ini')), false,
+        'pytest configuration moved with the companion');
 });
 
 test('v4.46.0 dependency auditing is enforced by local scripts', () => {
@@ -9417,15 +9334,9 @@ test('v4.46.0 dependency auditing is enforced by local scripts', () => {
     assert.equal(pkg.scripts['audit:deps:production'],
         'npm audit --omit=dev --audit-level=moderate',
         'production-only npm audit must fail moderate-or-higher vulnerabilities');
-    assert.match(pkg.scripts.check, /npm run audit:python/,
-        'npm run check must keep the local Python companion dependency audit');
-    assert.equal(pkg.scripts['audit:python'], 'node scripts/audit-python-deps.js',
-        'local Python audit must be a source-controlled script');
-    const requirements = fs.readFileSync(path.join(__dirname, '..', 'astra_downloader', 'requirements.txt'), 'utf8');
-    assert.match(requirements, /^yt-dlp==/m,
-        'companion Python dependencies must remain exactly pinned for local audit review');
-    assert.equal(fs.existsSync(path.join(__dirname, '..', 'scripts', 'audit-python-deps.js')), true,
-        'Python audit wrapper must exist for release-review artifacts');
+    // Python dependency auditing runs in SysAdminDoc/AstraDownloader now.
+    assert.equal(fs.existsSync(path.join(__dirname, '..', 'scripts', 'audit-python-deps.js')), false,
+        'the Python audit wrapper moved to the AstraDownloader repository');
 });
 
 test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
@@ -9566,7 +9477,7 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
         'updateCompanion must forward the per-install token');
     assert.match(updateBlock, /timeout:\s*180000/,
         'updateCompanion must allow enough time for exe download and scheduling');
-    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/download\/v4\.50\.7\/AstraDownloader\.exe'/,
+    assert.match(downloadUiSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/AstraDownloader\/releases\/latest\/download\/AstraDownloader\.exe'/,
         'installer paths must point at a GitHub Release that actually carries the exe, not the asset-less latest release or a raw-root file');
 
     const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_COMPANION'");
@@ -9603,30 +9514,9 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
     assert.match(popupHandlerBlock, /updateCompanionButton\.disabled\s*=\s*true/,
         'updateCompanionNow must disable the button while in flight');
 
-    const downloaderSource = ['astra_downloader.py', 'routes.py']
-        .map((file) => fs.readFileSync(
-            path.join(__dirname, '..', 'astra_downloader', file), 'utf8'
-        )).join('\n');
-    assert.match(downloaderSource, /@api\.route\(['"]\/update['"],\s*methods=\['POST'\]\)/,
-        'astra_downloader.py must declare /update as a POST route');
-    assert.match(downloaderSource, /def fetch_latest_companion_version/,
-        'downloader must fetch the latest companion APP_VERSION');
-    assert.match(downloaderSource, /COMPANION_UPDATE_EXE_URL = "https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe"/,
-        'downloader must download companion binaries from GitHub Releases');
-    assert.match(downloaderSource, /def _run_companion_self_update/,
-        'downloader must expose the companion self-update runner');
-    assert.match(downloaderSource, /def schedule_companion_update_restart/,
-        'downloader must schedule delayed replace and restart');
-    assert.match(downloaderSource, /MoveFileEx/,
-        'Windows delayed updater must use MoveFileEx for replace-existing semantics');
-    const endpointStart = downloaderSource.indexOf("@api.route('/update'");
-    const endpointBlock = downloaderSource.slice(endpointStart, endpointStart + 1700);
-    assert.match(endpointBlock, /in_flight = dl_manager\.active_count\(\)/,
-        '/update must consult dl_manager.active_count');
-    assert.match(endpointBlock, /409/,
-        '/update must return 409 when downloads are active');
-    assert.match(endpointBlock, /atomically replacing/,
-        '/update 409 message must explain the executable replacement race');
+    // The server half of this round-trip - the POST /update route, its
+    // 409-while-downloading gate, and the MoveFileEx delayed replace - is
+    // pinned in SysAdminDoc/AstraDownloader, which owns that source.
 });
 
 test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it', () => {
@@ -11423,24 +11313,8 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
     assert.match(popupHandlerBlock, /updateYtdlpButton\.disabled\s*=\s*true/,
         'updateYtdlpNow must disable the button while the update is in flight');
 
-    // 5. Python: /update-ytdlp endpoint exists in astra_downloader.py
-    // and gates on active_count > 0 with a 409 + actionable error.
-    const downloaderSource = ['astra_downloader.py', 'routes.py']
-        .map((file) => fs.readFileSync(
-            path.join(__dirname, '..', 'astra_downloader', file), 'utf8'
-        )).join('\n');
-    assert.match(downloaderSource, /@api\.route\(['"]\/update-ytdlp['"],\s*methods=\['POST'\]\)/,
-        'astra_downloader.py must declare /update-ytdlp as a POST route');
-    assert.match(downloaderSource, /def _run_ytdlp_self_update\(config,\s*source_tag\)/,
-        'astra_downloader.py must extract _run_ytdlp_self_update as the shared subprocess runner');
-    const endpointStart = downloaderSource.indexOf("@api.route('/update-ytdlp'");
-    const endpointBlock = downloaderSource.slice(endpointStart, endpointStart + 1800);
-    assert.match(endpointBlock, /in_flight = dl_manager\.active_count\(\)/,
-        '/update-ytdlp must consult dl_manager.active_count to gate against in-flight downloads');
-    assert.match(endpointBlock, /409/,
-        '/update-ytdlp must return 409 when active downloads block the update');
-    assert.match(endpointBlock, /atomically replaces/,
-        '/update-ytdlp 409 message must explain WHY (atomic replace race)');
+    // 5. The POST /update-ytdlp route and its 409-while-downloading gate are
+    // pinned in SysAdminDoc/AstraDownloader, which owns that source.
 });
 
 test('v4.47.0 NF9 — wheelSeek hooks the progress bar (not the player root) so volumeWheelMode does not conflict', () => {

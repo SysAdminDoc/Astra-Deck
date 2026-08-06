@@ -11,10 +11,6 @@ const {
     unexpectedReleaseNames
 } = require('./generate-release-manifest');
 const { findStrayProductTags } = require('./check-versions');
-const {
-    COMPANION_BUILD_METADATA_NAME,
-    inspectCompanionInventory
-} = require('./companion-license-inventory');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -296,34 +292,20 @@ function buildReadinessReport(options = {}) {
             : (sbomError ? `invalid build/${SBOM_NAME}: ${sbomError.message}` : `missing build/${SBOM_NAME}`)
     ));
 
-    const companionExePath = path.join(buildDir, 'AstraDownloader.exe');
-    if (fs.existsSync(companionExePath)) {
-        if (!sbom) {
-            checks.push(check(
-                'companion-license-inventory',
-                'Companion license inventory is complete and approved',
-                'fail',
-                'companion artifact is present but the release SBOM is unavailable'
-            ));
-        } else {
-            const inspection = inspectCompanionInventory(sbom, sha256(companionExePath));
-            checks.push(check(
-                'companion-license-inventory',
-                'Companion license inventory is complete and approved',
-                inspection.issues.length ? 'fail' : 'pass',
-                inspection.issues.length
-                    ? inspection.issues.join('; ')
-                    : `${inspection.components.length} artifact-linked component(s) have approved obligations`
-            ));
-        }
-    } else {
-        checks.push(check(
-            'companion-license-inventory',
-            'Companion license inventory is complete and approved',
-            'pass',
-            'not applicable: companion artifact omitted'
-        ));
-    }
+    // Astra Downloader ships from SysAdminDoc/AstraDownloader as of its
+    // v2.0.0. Publishing a copy from here would put a second, independently
+    // versioned executable behind the same update check, which is how
+    // installs previously ended up four versions stale.
+    const strayCompanionArtifacts = ['AstraDownloader.exe', 'AstraDownloader.exe.sha256']
+        .filter((name) => fs.existsSync(path.join(buildDir, name)));
+    checks.push(check(
+        'companion-not-republished',
+        'Astra Downloader is not republished from this repository',
+        strayCompanionArtifacts.length ? 'fail' : 'pass',
+        strayCompanionArtifacts.length
+            ? `remove ${strayCompanionArtifacts.join(', ')} from build/ - the companion releases from SysAdminDoc/AstraDownloader`
+            : 'no companion artifact staged'
+    ));
 
     const shaPath = path.join(buildDir, SHA256SUMS_NAME);
     const shaText = readFileIfExists(shaPath);
@@ -341,8 +323,7 @@ function buildReadinessReport(options = {}) {
 
     if (releaseManifest && Array.isArray(releaseManifest.assets) && buildFiles) {
         const manifestAssetNames = releaseManifest.assets.map((asset) => asset.name).sort();
-        const requireCompanion = releaseManifest.companionUpdateRequired === true;
-        const expectedAssets = expectedReleaseNames(packageVersion || releaseManifest.version || '', { requireCompanion });
+        const expectedAssets = expectedReleaseNames(packageVersion || releaseManifest.version || '');
         const fileSet = new Set(buildFiles);
         const missingExpected = expectedAssets.filter((name) => !fileSet.has(name));
         checks.push(check(
@@ -356,11 +337,10 @@ function buildReadinessReport(options = {}) {
             ...new Set([
                 ...buildFiles.filter((name) => name !== MANIFEST_NAME
                     && name !== SHA256SUMS_NAME
-                    && name !== CRX_SIGNING_PROVENANCE_NAME
-                    && name !== COMPANION_BUILD_METADATA_NAME),
+                    && name !== CRX_SIGNING_PROVENANCE_NAME),
                 ...manifestAssetNames
             ])
-        ], packageVersion || releaseManifest.version || '', { requireCompanion });
+        ], packageVersion || releaseManifest.version || '');
         checks.push(check(
             'unexpected-assets',
             'No unexpected release assets are present or manifest-listed',
@@ -372,8 +352,7 @@ function buildReadinessReport(options = {}) {
         const unmanifestedFiles = buildFiles
             .filter((name) => name !== MANIFEST_NAME
                 && name !== SHA256SUMS_NAME
-                && name !== CRX_SIGNING_PROVENANCE_NAME
-                && name !== COMPANION_BUILD_METADATA_NAME)
+                && name !== CRX_SIGNING_PROVENANCE_NAME)
             .filter((name) => !manifestSet.has(name));
         checks.push(check(
             'manifest-inventory',
@@ -382,22 +361,18 @@ function buildReadinessReport(options = {}) {
             unmanifestedFiles.length ? `not in manifest: ${unmanifestedFiles.join(', ')}` : `${manifestAssetNames.length} manifest asset(s)`
         ));
 
-        const hasCompanionExe = fileSet.has('AstraDownloader.exe') || manifestSet.has('AstraDownloader.exe');
-        const hasCompanionSidecar = fileSet.has('AstraDownloader.exe.sha256') || manifestSet.has('AstraDownloader.exe.sha256');
-        let companionStatus = 'pass';
-        let companionDetails = 'companion assets omitted by manifest';
-        if (requireCompanion) {
-            companionStatus = hasCompanionExe && hasCompanionSidecar ? 'pass' : 'fail';
-            companionDetails = `companionUpdateRequired=true; exe=${hasCompanionExe}; sidecar=${hasCompanionSidecar}`;
-        } else if (hasCompanionExe || hasCompanionSidecar) {
-            companionStatus = 'fail';
-            companionDetails = 'companion asset present but companionUpdateRequired is not true';
-        }
+        // The manifest is checked as well as build/, because a hand-edited
+        // manifest naming the companion would otherwise publish an asset the
+        // directory scan never saw.
+        const manifestedCompanion = ['AstraDownloader.exe', 'AstraDownloader.exe.sha256']
+            .filter((name) => manifestSet.has(name));
         checks.push(check(
-            'companion-assets',
-            'Companion asset truth matches release manifest',
-            companionStatus,
-            companionDetails
+            'companion-not-manifested',
+            'Release manifest does not list an Astra Downloader asset',
+            manifestedCompanion.length ? 'fail' : 'pass',
+            manifestedCompanion.length
+                ? `manifest lists ${manifestedCompanion.join(', ')}; the companion releases from SysAdminDoc/AstraDownloader`
+                : 'no companion asset listed'
         ));
 
         if (checksumEntries) {

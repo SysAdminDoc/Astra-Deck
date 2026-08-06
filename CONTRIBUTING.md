@@ -28,7 +28,8 @@ Astra-Deck/
     manifest.json      # MV3 manifest
     default-settings.json  # Auto-generated catalogue (don't hand-edit)
     settings-meta.json     # Auto-generated SETTINGS_VERSION pin
-  astra_downloader/    # Local Python/Flask + PyQt6 yt-dlp companion
+  # The Python/Flask + PyQt6 download companion lives in its own
+  # repository: https://github.com/SysAdminDoc/AstraDownloader
   build-extension.js   # Canonical packager for Chrome/Firefox/userscript artifacts
   tests/               # Focused Node-based verification (npm test)
   scripts/             # check-versions, check-i18n, audit-storage,
