@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "Solo audio"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "Solo audio disattivato in diretta"
+  },
+  "audioOnlyLowest": {
+    "message": "Modalità audio · qualità minima"
+  },
+  "audioOnlyUnavailable": {
+    "message": "Solo audio non disponibile"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Lingua traccia audio preferita"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Le dirette non vengono modificate."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Modalità solo audio"
   },
   "feature_autoClosePopups_desc": {
     "message": "Chiude automaticamente il consenso dei cookie, i sondaggi e altri popup di YouTube"

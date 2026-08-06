@@ -531,6 +531,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── watch-player ───
     Object.freeze({ key: "bufferPreload", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
     Object.freeze({ key: "bufferPreloadSeconds", category: "watch-player", type: "number", defaultValue: 20, min: 5, max: 600, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.54.0" }),
+    Object.freeze({ key: "audioOnlyPlayback", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.54.0" }),
     Object.freeze({ key: "preloadComments", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "playbackSpeedOSD", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 

@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "音声のみ"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "ライブでは音声のみを無効"
+  },
+  "audioOnlyLowest": {
+    "message": "音声モード · 最低画質"
+  },
+  "audioOnlyUnavailable": {
+    "message": "音声のみは利用できません"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "優先音声トラック言語"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信は変更されません。"
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "音声のみモード"
   },
   "feature_autoClosePopups_desc": {
     "message": "Cookie 同意、アンケート、その他の YouTube ポップアップを自動的に閉じる"

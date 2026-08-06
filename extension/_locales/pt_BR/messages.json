@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "Somente áudio"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "Somente áudio desativado ao vivo"
+  },
+  "audioOnlyLowest": {
+    "message": "Modo áudio · qualidade mais baixa"
+  },
+  "audioOnlyUnavailable": {
+    "message": "Somente áudio indisponível"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -759,7 +771,7 @@
     "message": "Salvar em"
   },
   "dlPopupTabAudioOnly": {
-    "message": "Apenas áudio"
+    "message": "Somente áudio"
   },
   "dlPopupTabVideo": {
     "message": "Vídeo"
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Idioma de Faixa de Áudio Preferido"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Recolhe o vídeo e pede ao player o fluxo mais barato disponível, para que uma página de exibição custe aproximadamente o mesmo que um podcast. O YouTube não expõe um fluxo somente áudio real às extensões, então o selo informa se você obteve um ou apenas a qualidade mais baixa. Transmissões ao vivo não são alteradas."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Modo somente áudio"
   },
   "feature_autoClosePopups_desc": {
     "message": "Fecha automaticamente consentimento de cookies, pesquisas e outros popups do YouTube"

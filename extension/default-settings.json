@@ -275,6 +275,7 @@
   "speedStep": 0.25,
   "bufferPreload": false,
   "bufferPreloadSeconds": 20,
+  "audioOnlyPlayback": false,
   "preloadComments": false,
   "playbackSpeedOSD": false,
   "enableCPU_Tamer": false,

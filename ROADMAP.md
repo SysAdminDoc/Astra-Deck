@@ -40,16 +40,6 @@ count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
 
 ### P2 — Highest external demand
 
-- [ ] P2 — Audio-only playback (bandwidth saver)
-  Category: feature
-  Where: no such setting exists — the only `audio-only` string in the tree is `downloadAudioFormat`'s description (extension/ytkit.js:30606). Adjacent: `qualityProfileMatrix`, `codecSelector`, the MAIN-world player bridge in `extension/ytkit-main.js`
-  Problem: There is no way to play a video without downloading video frames. ImprovedTube #566 asks for it as a bandwidth control; it is also the single most requested capability that Astra's 441 settings do not touch in any form. The download path can already fetch audio-only, but playback cannot.
-  Evidence: ImprovedTube #566 (open). Verified locally: `grep -ril audioOnly` hits only the download surface and locale files.
-  Fix: Add `audioOnlyPlayback`. Prefer forcing the player to an audio-only itag through the MAIN-world bridge (the same channel `qualityProfileMatrix` uses); fall back to hiding the video element and pinning the lowest quality if the player refuses. Must survive SPA navigation and be a no-op on live streams. Show a visible state pill so a black player is never mistaken for a broken one.
-  Acceptance: Toggling drops sustained bandwidth measurably on a long video; audio continues; a navigation keeps the mode; disabling restores video without a reload; live streams no-op cleanly.
-  Confidence: Verified (gap); the player-API route needs a live probe
-  Effort: M
-
 ### P3 — Smaller gaps
 
 - [ ] P3 — Drive YouTube's native "Stable Volume" instead of clamping video.volume

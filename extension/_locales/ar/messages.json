@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (انقر بزر الماوس الأيمن لإدارة بيانات اعتماد الموفر)"
   },
+  "audioOnlyActive": {
+    "message": "الصوت فقط"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "وضع الصوت فقط معطل للبث المباشر"
+  },
+  "audioOnlyLowest": {
+    "message": "وضع الصوت · أقل جودة"
+  },
+  "audioOnlyUnavailable": {
+    "message": "وضع الصوت فقط غير متاح"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -759,7 +771,7 @@
     "message": "حفظ في"
   },
   "dlPopupTabAudioOnly": {
-    "message": "صوت فقط"
+    "message": "الصوت فقط"
   },
   "dlPopupTabVideo": {
     "message": "فيديو"
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "لغة المسار الصوتي المفضلة"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "يطوي الفيديو ويطلب من المشغّل أرخص دفق متاح، لتصبح صفحة المشاهدة بتكلفة قريبة من البودكاست. لا يتيح YouTube للإضافات دفقًا صوتيًا خالصًا، لذلك توضح الشارة ما حصلت عليه فعلًا. لا يتم تغيير البث المباشر."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "وضع الصوت فقط"
   },
   "feature_autoClosePopups_desc": {
     "message": "إغلاق تلقائي لنوافذ موافقة ملفات تعريف الارتباط، واستطلاعات الرأي، ونوافذ YouTube المنبثقة الأخرى"

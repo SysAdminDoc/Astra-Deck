@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "오디오 전용"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "실시간에서는 오디오 전용 꺼짐"
+  },
+  "audioOnlyLowest": {
+    "message": "오디오 모드 · 최저 화질"
+  },
+  "audioOnlyUnavailable": {
+    "message": "오디오 전용을 사용할 수 없음"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -759,7 +771,7 @@
     "message": "저장 위치"
   },
   "dlPopupTabAudioOnly": {
-    "message": "오디오만"
+    "message": "오디오 전용"
   },
   "dlPopupTabVideo": {
     "message": "비디오"
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "선호 오디오 트랙 언어"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림은 변경되지 않습니다."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "오디오 전용 모드"
   },
   "feature_autoClosePopups_desc": {
     "message": "쿠키 동의, 설문 프롬프트 및 기타 YouTube 팝업을 자동으로 닫기"

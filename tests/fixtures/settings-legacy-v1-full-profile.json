@@ -448,6 +448,7 @@
     "audioEqMidGainDb",
     "audioHighPass",
     "audioNormalization",
+    "audioOnlyPlayback",
     "audioPan",
     "audioParametricEq",
     "audioSyncOffsetMs",

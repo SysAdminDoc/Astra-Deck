@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "Nur Audio"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "Nur-Audio bei Live aus"
+  },
+  "audioOnlyLowest": {
+    "message": "Audiomodus · niedrigste Qualität"
+  },
+  "audioOnlyUnavailable": {
+    "message": "Nur-Audio nicht verfügbar"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Bevorzugte Audiospursprache"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Blendet das Bild aus und fordert vom Player den günstigsten verfügbaren Stream an, sodass eine Videoseite etwa so viel kostet wie ein Podcast. YouTube stellt Erweiterungen keinen echten Nur-Audio-Stream bereit, daher zeigt die Plakette an, ob du einen bekommen hast oder nur die niedrigste Qualität. Livestreams bleiben unverändert."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Nur-Audio-Modus"
   },
   "feature_autoClosePopups_desc": {
     "message": "Schließt automatisch Cookie-Banner, Umfragen und andere YouTube-Popups"

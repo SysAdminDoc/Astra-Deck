@@ -3510,6 +3510,7 @@ return response;
             speedStep: 0.25,
             bufferPreload: false,
             bufferPreloadSeconds: 20,       // 5-600; how much VOD to keep buffered
+            audioOnlyPlayback: false,
             preloadComments: false,
             // autoExpandComments already defined above
             playbackSpeedOSD: false,
@@ -6009,6 +6010,12 @@ return response;
         forceH264: { conflicts: ['codecSelector'], reason: 'forceH264 silently overrides codecSelector — disabled for predictability' },
         codecSelector: { conflicts: ['forceH264'], reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' },
         fitPlayerToWindow: { conflicts: ['stickyVideo'], reason: 'Both control player positioning on watch pages' },
+        // Audio-only pins the CHEAPEST stream; every quality-raising
+        // feature pins the opposite through the same MAIN-world call, so
+        // whichever ran last silently won.
+        audioOnlyPlayback: { conflicts: ['autoMaxResolution', 'qualityProfileMatrix'], reason: 'Audio-only pins the lowest quality — a best-quality or per-context target would fight it through the same player API' },
+        autoMaxResolution: { conflicts: ['audioOnlyPlayback'], reason: 'Best quality and audio-only pin opposite ends of the same quality API' },
+        qualityProfileMatrix: { conflicts: ['audioOnlyPlayback'], reason: 'Per-context quality targets and audio-only pin opposite ends of the same quality API' },
         stickyVideo: { conflicts: ['fitPlayerToWindow'], reason: 'Both control player positioning on watch pages' },
         // The following pairs LOOK like conflicts but were intentionally
         // decoupled and now cooperate. Do not re-add to the map without
@@ -32708,6 +32715,131 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             init() { this._republish(); },
             destroy() { this._republish(); }
+        },
+
+        {
+            id: 'audioOnlyPlayback',
+            name: t('feature_audioOnlyPlayback_name', 'Audio-Only Mode'),
+            description: t('feature_audioOnlyPlayback_desc', 'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.'),
+            group: 'Video Player',
+            icon: 'volume-2',
+            pages: [PageTypes.WATCH],
+            _styleEl: null,
+            _pill: null,
+            _statusObserver: null,
+            _navRule: null,
+            _pillTimer: null,
+
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-audio-only', 'on');
+                this._syncStatus();
+            },
+
+            // The player keeps rendering; the video surface is collapsed to a
+            // short bar so the page does not read as a broken black player.
+            // `visibility` rather than `display: none` — detaching the surface
+            // makes some builds tear down the media element.
+            _injectStyles() {
+                if (this._styleEl) return;
+                const css = `
+                    html[data-ytkit-audio-only="on"] #movie_player video.html5-main-video { visibility: hidden !important; }
+                    html[data-ytkit-audio-only="on"] #movie_player .html5-video-container { background: #0f0f0f !important; }
+                    html:not([dark])[data-ytkit-audio-only="on"] #movie_player .html5-video-container { background: var(--yt-spec-general-background-a, #f9f9f9) !important; }
+                    html[data-ytkit-audio-only="on"] #movie_player .ytp-cued-thumbnail-overlay-image { filter: saturate(0.4) brightness(0.6) !important; }
+                    .ytkit-audio-only-pill {
+                        position: absolute; left: 12px; top: 12px; z-index: ${Z.HIDE_BTN};
+                        display: inline-flex; align-items: center; gap: 6px;
+                        padding: 4px 10px; border-radius: 6px;
+                        background: rgba(0,0,0,0.72); color: rgba(255,255,255,0.92);
+                        border: 1px solid rgba(255,255,255,0.16);
+                        font: 600 11px/1.4 system-ui, sans-serif; letter-spacing: 0.02em;
+                        pointer-events: none;
+                    }
+                    html:not([dark]) .ytkit-audio-only-pill {
+                        background: rgba(255,255,255,0.92); color: var(--yt-spec-text-primary, #0f0f0f);
+                        border-color: rgba(0,0,0,0.14);
+                    }
+                    .ytkit-audio-only-pill[data-tone="warn"] { border-color: rgba(245,158,11,0.6); }
+                `;
+                this._styleEl = injectStyle(css, this.id, true);
+            },
+
+            _renderPill(label, tone) {
+                const host = document.querySelector('#movie_player');
+                if (!host) return;
+                if (!this._pill) {
+                    this._pill = document.createElement('div');
+                    this._pill.className = 'ytkit-audio-only-pill';
+                    this._pill.setAttribute('role', 'status');
+                }
+                this._pill.dataset.tone = tone || 'ok';
+                this._pill.textContent = label;
+                if (this._pill.parentElement !== host) host.appendChild(this._pill);
+            },
+
+            _syncStatus() {
+                const root = document.documentElement;
+                const status = root.getAttribute('data-ytkit-audio-only-status') || '';
+                const reason = root.getAttribute('data-ytkit-audio-only-reason') || '';
+                if (status === 'skipped') {
+                    this._renderPill(t('audioOnlyLiveSkipped', 'Audio-only off for live'), 'warn');
+                    setFeatureHealth(this.id, { status: 'initialized', source: 'audio-only', initialized: true, lastError: null });
+                    return;
+                }
+                if (status === 'degraded') {
+                    this._renderPill(t('audioOnlyUnavailable', 'Audio-only unavailable'), 'warn');
+                    setFeatureHealth(this.id, {
+                        status: 'degraded',
+                        source: 'audio-only',
+                        initialized: true,
+                        lastError: reason || 'The page player does not expose a compatible quality API.'
+                    });
+                    DiagnosticLog?.record?.('audio-only', reason || 'player-api-missing');
+                    return;
+                }
+                if (status === 'applied') {
+                    // Say which of the two things actually happened.
+                    const audioStream = reason.startsWith('audio-stream');
+                    this._renderPill(audioStream
+                        ? t('audioOnlyActive', 'Audio only')
+                        : t('audioOnlyLowest', 'Audio mode · lowest quality'), 'ok');
+                    setFeatureHealth(this.id, { status: 'initialized', source: 'audio-only', initialized: true, lastError: null });
+                }
+            },
+
+            init() {
+                this._injectStyles();
+                this._statusObserver = new MutationObserver(() => this._syncStatus());
+                this._statusObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-ytkit-audio-only-status', 'data-ytkit-audio-only-reason']
+                });
+                this._apply();
+                this._navRule = () => {
+                    this._pill?.remove();
+                    this._apply();
+                    // The player node is replaced across navigations, so the
+                    // pill has to be re-hosted once the new one exists.
+                    clearTimeout(this._pillTimer);
+                    this._pillTimer = setTimeout(() => { this._pillTimer = null; this._syncStatus(); }, 1200);
+                };
+                addNavigateRule('audioOnlyPlayback', this._navRule);
+            },
+            destroy() {
+                removeNavigateRule('audioOnlyPlayback');
+                this._navRule = null;
+                clearTimeout(this._pillTimer);
+                this._pillTimer = null;
+                this._statusObserver?.disconnect();
+                this._statusObserver = null;
+                this._pill?.remove();
+                this._pill = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
+                document.documentElement.removeAttribute('data-ytkit-audio-only');
+                document.documentElement.removeAttribute('data-ytkit-audio-only-status');
+                document.documentElement.removeAttribute('data-ytkit-audio-only-reason');
+            }
         },
 
         // ── Frame-by-Frame Buttons ──
