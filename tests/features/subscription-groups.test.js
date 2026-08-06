@@ -382,3 +382,113 @@ test('staged unsubscribe is a no-op when review staging is empty', async () => {
     assert.equal(storage.has(feature._UNSUBSCRIBE_LOG_KEY), false);
     assert.match(toasts.at(-1)[0], /Nothing is staged/);
 });
+
+// ── Unsubscribe evidence ──
+// A staged session deletes the 30-day recovery record for every channel it
+// reports as removed, so "removed" must mean the unsubscribe actually landed.
+// Three paths used to report success without evidence: a clicked menu item, a
+// pre-click label, and any open #confirm-button (YouTube's generic confirm id).
+
+async function withFakeDocument(dialogNode, fn) {
+    const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+    globalThis.document = {
+        querySelector: (selector) => (selector === 'ytd-confirm-dialog-renderer' ? dialogNode : null),
+        querySelectorAll: () => [],
+        body: { click() {} },
+    };
+    try {
+        return await fn();
+    } finally {
+        if (previous) Object.defineProperty(globalThis, 'document', previous);
+        else delete globalThis.document;
+    }
+}
+
+function makeControl(labelRef) {
+    return {
+        isConnected: true,
+        dataset: {},
+        textContent: '',
+        getAttribute: (name) => (name === 'aria-label' ? labelRef.value : null),
+        click() {},
+    };
+}
+
+test('a foreign confirm dialog is never auto-confirmed by the unsubscribe session', async () => {
+    const { feature } = makeFeature();
+    let clicked = false;
+    const genericDialog = {
+        textContent: 'Clear all watch history? This cannot be undone.',
+        querySelector: () => ({ id: 'confirm-button', click() { clicked = true; } }),
+    };
+
+    const confirmed = await withFakeDocument(genericDialog, () => feature._confirmUnsubscribeDialog());
+
+    assert.equal(confirmed, false, 'a dialog that says nothing about unsubscribing must not be confirmed');
+    assert.equal(clicked, false, 'the generic #confirm-button must not be clicked');
+});
+
+test('the unsubscribe confirm dialog is confirmed when the dialog is about unsubscribing', async () => {
+    const { feature } = makeFeature();
+    let clicked = false;
+    const dialog = {
+        textContent: 'Unsubscribe from Example Channel?',
+        querySelector: () => ({ id: 'confirm-button', click() { clicked = true; } }),
+    };
+
+    const confirmed = await withFakeDocument(dialog, () => feature._confirmUnsubscribeDialog());
+
+    assert.equal(confirmed, true);
+    assert.equal(clicked, true);
+});
+
+test('clicking the unsubscribe menu item is not by itself evidence of removal', async () => {
+    const { feature } = makeFeature();
+    feature._clickUnsubscribeMenuItem = async () => true;
+    const label = { value: 'Unsubscribe from Example Channel' };
+    const control = makeControl(label);
+    const card = {
+        isConnected: true,
+        querySelectorAll: () => [control],
+        querySelector: () => null,
+    };
+
+    // Menu item clicked, but no confirm dialog appears and the control still
+    // offers to unsubscribe — the subscription survived.
+    const result = await withFakeDocument(null, () => feature._applyNativeUnsubscribeAction(card));
+
+    assert.equal(result, false, 'no confirmation and no label flip must report failure so staging is kept');
+});
+
+test('a control that flips away from its unsubscribe label counts as a removal', async () => {
+    const { feature } = makeFeature();
+    feature._clickUnsubscribeMenuItem = async () => true;
+    const label = { value: 'Unsubscribe from Example Channel' };
+    const control = makeControl(label);
+    control.click = () => { label.value = 'Subscribe'; };
+    const card = {
+        isConnected: true,
+        querySelectorAll: () => [control],
+        querySelector: () => null,
+    };
+
+    const result = await withFakeDocument(null, () => feature._applyNativeUnsubscribeAction(card));
+
+    assert.equal(result, true);
+});
+
+test('a pre-click unsubscribe label is not evidence of removal', async () => {
+    const { feature } = makeFeature();
+    feature._clickUnsubscribeMenuItem = async () => false;
+    const label = { value: 'Unsubscribe from Example Channel' };
+    const control = makeControl(label);
+    const card = {
+        isConnected: true,
+        querySelectorAll: () => [control],
+        querySelector: () => null,
+    };
+
+    const result = await withFakeDocument(null, () => feature._applyNativeUnsubscribeAction(card));
+
+    assert.equal(result, false, 'the label the control was selected by must never prove the click worked');
+});
