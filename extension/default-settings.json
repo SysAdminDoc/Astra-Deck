@@ -97,11 +97,9 @@
     "next",
     "autoplay",
     "subtitles",
-    "captions",
     "miniplayer",
     "pip",
-    "theater",
-    "fullscreen"
+    "theater"
   ],
   "hiddenWatchElementsManager": true,
   "hiddenWatchElements": [
@@ -248,7 +246,7 @@
   "customCssCode": "",
   "shareMenuCleaner": false,
   "autoClosePopups": false,
-  "autoDismissContentWarning": true,
+  "autoDismissContentWarning": false,
   "videoResolutionBadge": false,
   "likeViewRatio": false,
   "downloadThumbnail": false,
