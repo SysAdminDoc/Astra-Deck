@@ -840,15 +840,18 @@ def terminate_process_tree(proc, timeout=3, *, platform=None, runner=None,
         _log_warning(logger, f"process kill fallback failed: {error}")
 
 
-# Path markers that mean "this URL is a collection, not one video" on the
+# Path segments that mean "this URL is a collection, not one video" on the
 # non-YouTube sites yt-dlp supports (SoundCloud sets, Bandcamp/Vimeo albums,
-# PeerTube playlists, podcast series…). Deliberately narrow: anything not
-# matched here is treated as a single item and downloaded with --no-playlist,
-# so pasting a profile or subreddit link can never queue a hundred videos.
-_PLAYLIST_PATH_MARKERS = (
-    '/playlist', '/playlists/', '/sets/', '/album/', '/albums/',
-    '/series/', '/collection/', '/collections/',
-)
+# PeerTube playlists, podcast series…). Matched as whole segments, not
+# substrings: `/video/playlist-of-hits` is one video whose slug happens to
+# contain the word, and treating it as a playlist sent it into a folder named
+# after a missing field. Deliberately narrow — anything unmatched is a single
+# item downloaded with --no-playlist, so pasting a profile or subreddit link
+# can never queue a hundred videos.
+_PLAYLIST_PATH_SEGMENTS = frozenset({
+    'playlist', 'playlists', 'sets', 'album', 'albums',
+    'series', 'collection', 'collections',
+})
 _PLAYLIST_QUERY_KEYS = ('list', 'playlist', 'album', 'set')
 
 
@@ -866,8 +869,8 @@ def is_playlist_url(url):
             # A YouTube watch URL carrying &list= stays a single video; that
             # has been the contract since v1.2 and the extension relies on it.
             return not has_video
-        path = (parsed.path or '').lower()
-        if any(marker in path for marker in _PLAYLIST_PATH_MARKERS):
+        segments = [segment for segment in (parsed.path or '').lower().split('/') if segment]
+        if any(segment in _PLAYLIST_PATH_SEGMENTS for segment in segments):
             return True
         return any(
             bool(params.get(key, [''])[0]) for key in _PLAYLIST_QUERY_KEYS
@@ -2137,7 +2140,15 @@ class DownloadManagerCore:
         if custom_tpl:
             out_tpl = str(Path(dl.output_dir) / custom_tpl)
         elif is_playlist:
-            out_tpl = str(Path(dl.output_dir) / "%(playlist_title).200B" / "%(title).200B.%(ext)s")
+            # yt-dlp substitutes the literal string "NA" for a field it cannot
+            # resolve, so a collection with no title used to create a folder
+            # called NA and every such download piled into it. The alternation
+            # falls back to the playlist id and then to a plain word.
+            out_tpl = str(
+                Path(dl.output_dir)
+                / "%(playlist_title,playlist_id|Playlist).200B"
+                / "%(title).200B.%(ext)s"
+            )
         else:
             out_tpl = str(Path(dl.output_dir) / "%(title).200B.%(ext)s")
 
