@@ -187,3 +187,30 @@ test('SponsorBlock monitors for YouTube anti-adblock DOM elements', () => {
     assert.match(src, /clearInterval.*_antiAdblockTimer/,
         'destroy must clean up the anti-adblock timer');
 });
+
+// ── poi_highlight is a POINT marker, not a zero-length segment to discard ──
+// The API returns highlights as [t, t]. A strict `end > start` filter dropped
+// every one of them before they reached the cache or the progress bar, so the
+// "Jump to the highlight" sub-feature only ever widened the API query while
+// _checkSkip's comment claimed the marker was rendered on the bar.
+test('poi_highlight point markers survive normalization and render with a visible width', () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const feature = createSponsorBlockFeature({});
+    const normalized = feature._normalizeSegments([
+        { segment: [61.5, 61.5], category: 'poi_highlight', actionType: 'poi', UUID: 'poi-1' },
+        { segment: [10, 20], category: 'sponsor', actionType: 'skip', UUID: 'sponsor-1' },
+        { segment: [30, 30], category: 'sponsor', actionType: 'skip', UUID: 'bad-zero-length' },
+        { segment: [50, 40], category: 'poi_highlight', actionType: 'poi', UUID: 'bad-reversed' },
+    ]);
+
+    const categories = normalized.map(s => s.category);
+    assert.ok(categories.includes('poi_highlight'), 'the highlight marker must survive');
+    assert.ok(categories.includes('sponsor'), 'ordinary segments still survive');
+    assert.equal(normalized.length, 2,
+        'a zero-length non-POI segment and a reversed POI must still be rejected');
+
+    const poi = normalized.find(s => s.category === 'poi_highlight');
+    assert.deepEqual(poi.segment, [61.5, 61.5]);
+    assert.equal(feature._isPointSegment(poi), true);
+    assert.equal(feature._isPointSegment({ category: 'sponsor', actionType: 'skip' }), false);
+});

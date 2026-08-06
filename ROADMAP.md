@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — SponsorBlock "Highlight" (poi_highlight) is silently inert — zero-length POI segments are dropped by normalization
-  Category: correctness
-  Where: extension/features/sponsorblock/index.js:131-146 (_normalizeSegments — requires `s.segment[1] > s.segment[0]`); intent comment at :347-351; byte-identical twin at extension/ytkit.js:30275-30290
-  Problem: The SponsorBlock API returns poi_highlight entries as zero-length point markers (`segment: [t, t]`, actionType "poi"), so every POI entry is filtered out before reaching the cache or _renderBarSegments. The _checkSkip comment explicitly claims POI is "Render[ed] on the progress bar … but never auto-advance" — the never-skip half is test-pinned, the render half never happens. Enabling the "Jump to the highlight" sub-feature (sbCat_poi_highlight, ytkit.js:30721) only adds the category to the API query; nothing renders anywhere (bar or segment list).
-  Evidence: Both segment sources (_fetchSegments and _markCachedSegments) route through _normalizeSegments; tests pin only the never-skip half; no test feeds a [t,t] segment; git -S poi_highlight shows no prior fix.
-  Fix: Accept `s.segment[1] >= s.segment[0]` when actionType === 'poi' (or category poi_highlight) and give POI a synthetic minimum render width in _renderBarSegments (plus a distinct marker style). Fix the module, re-splice the pinned ytkit.js twin.
-  Acceptance: Test feeding a [t,t] poi_highlight segment asserts it survives normalization and renders a marker; skip behavior still never fires for POI.
-  Confidence: Likely (filter verified; depends on the documented SB API [t,t] POI shape)
-  Effort: S
-
 - [ ] P2 — Navigation API adoption: `event.committed` doesn't exist on NavigateEvent — dead branch, pre-render dispatch timing, and unfiltered navigation types
   Category: correctness
   Where: extension/core/navigation.js:237-249, 277-284 (commit 971f886f); test harness: tests/long-session.test.js (fabricates the event shape)
