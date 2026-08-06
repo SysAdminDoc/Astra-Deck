@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.54.1] - 2026-08-06
+
+### Changed
+
+- **Audio-only mode now works on live streams.** v4.54.0 excluded them, which
+  was doctrine inherited from the buffer-target feature rather than a reason
+  that applied here: that feature skips live because changing the buffering
+  goal breaks live latency, while pinning a quality has no such hazard —
+  YouTube offers quality selection on live streams itself. A multi-hour stream
+  is the longest, most expensive session a viewer has, so it is exactly where
+  a bandwidth saver earns its keep.
+
 ## [4.54.0] - 2026-08-06
 
 Five new features, sourced by diffing the top-voted open feature requests of

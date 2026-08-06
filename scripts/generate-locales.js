@@ -2294,82 +2294,72 @@ const AUDIO_ONLY_TRANSLATIONS = {
   de: {
     'Audio-Only Mode': 'Nur-Audio-Modus',
     'Audio only': 'Nur Audio',
-    'Audio-only off for live': 'Nur-Audio bei Live aus',
     'Audio mode · lowest quality': 'Audiomodus · niedrigste Qualität',
     'Audio-only unavailable': 'Nur-Audio nicht verfügbar',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'Blendet das Bild aus und fordert vom Player den günstigsten verfügbaren Stream an, sodass eine Videoseite etwa so viel kostet wie ein Podcast. YouTube stellt Erweiterungen keinen echten Nur-Audio-Stream bereit, daher zeigt die Plakette an, ob du einen bekommen hast oder nur die niedrigste Qualität. Livestreams bleiben unverändert.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'Blendet das Bild aus und fordert vom Player den günstigsten verfügbaren Stream an, sodass eine Videoseite etwa so viel kostet wie ein Podcast. YouTube stellt Erweiterungen keinen echten Nur-Audio-Stream bereit, daher zeigt die Plakette an, ob du einen bekommen hast oder nur die niedrigste Qualität. Funktioniert auch bei Livestreams, wo eine mehrstündige Sitzung die größte Ersparnis bringt.'
   },
   es: {
     'Audio-Only Mode': 'Modo solo audio',
     'Audio only': 'Solo audio',
-    'Audio-only off for live': 'Solo audio desactivado en directo',
     'Audio mode · lowest quality': 'Modo audio · calidad más baja',
     'Audio-only unavailable': 'Solo audio no disponible',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'Contrae el vídeo y pide al reproductor el flujo más barato que tenga, de modo que una página de vídeo cueste aproximadamente lo que un pódcast. YouTube no expone a las extensiones un flujo de solo audio real, por lo que la etiqueta indica si lo has obtenido o solo la calidad más baja. Las emisiones en directo no se modifican.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'Contrae el vídeo y pide al reproductor el flujo más barato que tenga, de modo que una página de vídeo cueste aproximadamente lo que un pódcast. YouTube no expone a las extensiones un flujo de solo audio real, por lo que la etiqueta indica si lo has obtenido o solo la calidad más baja. También funciona en emisiones en directo, donde una sesión de varias horas da el mayor ahorro.'
   },
   fr: {
     'Audio-Only Mode': 'Mode audio seul',
     'Audio only': 'Audio seul',
-    'Audio-only off for live': 'Audio seul désactivé en direct',
     'Audio mode · lowest quality': 'Mode audio · qualité minimale',
     'Audio-only unavailable': 'Audio seul indisponible',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'Réduit la vidéo et demande au lecteur le flux le moins coûteux dont il dispose, pour qu’une page de visionnage coûte à peu près autant qu’un podcast. YouTube n’expose aucun flux audio seul aux extensions : la pastille indique donc si vous en avez obtenu un ou seulement la qualité minimale. Les directs ne sont pas modifiés.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'Réduit la vidéo et demande au lecteur le flux le moins coûteux dont il dispose, pour qu’une page de visionnage coûte à peu près autant qu’un podcast. YouTube n’expose aucun flux audio seul aux extensions : la pastille indique donc si vous en avez obtenu un ou seulement la qualité minimale. Fonctionne aussi sur les directs, où une session de plusieurs heures offre la plus grande économie.'
   },
   it: {
     'Audio-Only Mode': 'Modalità solo audio',
     'Audio only': 'Solo audio',
-    'Audio-only off for live': 'Solo audio disattivato in diretta',
     'Audio mode · lowest quality': 'Modalità audio · qualità minima',
     'Audio-only unavailable': 'Solo audio non disponibile',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Le dirette non vengono modificate.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Funziona anche sulle dirette, dove una sessione di più ore dà il risparmio maggiore.'
   },
   pt_BR: {
     'Audio-Only Mode': 'Modo somente áudio',
     'Audio only': 'Somente áudio',
-    'Audio-only off for live': 'Somente áudio desativado ao vivo',
     'Audio mode · lowest quality': 'Modo áudio · qualidade mais baixa',
     'Audio-only unavailable': 'Somente áudio indisponível',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'Recolhe o vídeo e pede ao player o fluxo mais barato disponível, para que uma página de exibição custe aproximadamente o mesmo que um podcast. O YouTube não expõe um fluxo somente áudio real às extensões, então o selo informa se você obteve um ou apenas a qualidade mais baixa. Transmissões ao vivo não são alteradas.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'Recolhe o vídeo e pede ao player o fluxo mais barato disponível, para que uma página de exibição custe aproximadamente o mesmo que um podcast. O YouTube não expõe um fluxo somente áudio real às extensões, então o selo informa se você obteve um ou apenas a qualidade mais baixa. Funciona também em transmissões ao vivo, onde uma sessão de várias horas gera a maior economia.'
   },
   ru: {
     'Audio-Only Mode': 'Режим только звук',
     'Audio only': 'Только звук',
-    'Audio-only off for live': 'Только звук выключен для эфира',
     'Audio mode · lowest quality': 'Аудиорежим · минимальное качество',
     'Audio-only unavailable': 'Режим только звук недоступен',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'Сворачивает видео и запрашивает у плеера самый дешёвый доступный поток, чтобы страница просмотра стоила примерно как подкаст. YouTube не предоставляет расширениям настоящий аудиопоток, поэтому плашка показывает, получили ли вы его или только минимальное качество. Прямые трансляции не изменяются.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'Сворачивает видео и запрашивает у плеера самый дешёвый доступный поток, чтобы страница просмотра стоила примерно как подкаст. YouTube не предоставляет расширениям настоящий аудиопоток, поэтому плашка показывает, получили ли вы его или только минимальное качество. Работает и на прямых трансляциях, где многочасовой сеанс даёт наибольшую экономию.'
   },
   ja: {
     'Audio-Only Mode': '音声のみモード',
     'Audio only': '音声のみ',
-    'Audio-only off for live': 'ライブでは音声のみを無効',
     'Audio mode · lowest quality': '音声モード · 最低画質',
     'Audio-only unavailable': '音声のみは利用できません',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': '映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信は変更されません。'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': '映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信でも動作し、数時間に及ぶ視聴では節約効果が最も大きくなります。'
   },
   ko: {
     'Audio-Only Mode': '오디오 전용 모드',
     'Audio only': '오디오 전용',
-    'Audio-only off for live': '실시간에서는 오디오 전용 꺼짐',
     'Audio mode · lowest quality': '오디오 모드 · 최저 화질',
     'Audio-only unavailable': '오디오 전용을 사용할 수 없음',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': '영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림은 변경되지 않습니다.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': '영상을 접고 플레이어에 가장 저렴한 스트림을 요청해 시청 페이지 비용을 팟캐스트 수준으로 낮춥니다. YouTube는 확장 프로그램에 진짜 오디오 전용 스트림을 제공하지 않으므로, 배지가 실제로 무엇을 받았는지 알려줍니다. 실시간 스트림에서도 작동하며, 몇 시간짜리 시청에서 절약 효과가 가장 큽니다.'
   },
   ar: {
     'Audio-Only Mode': 'وضع الصوت فقط',
     'Audio only': 'الصوت فقط',
-    'Audio-only off for live': 'وضع الصوت فقط معطل للبث المباشر',
     'Audio mode · lowest quality': 'وضع الصوت · أقل جودة',
     'Audio-only unavailable': 'وضع الصوت فقط غير متاح',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': 'يطوي الفيديو ويطلب من المشغّل أرخص دفق متاح، لتصبح صفحة المشاهدة بتكلفة قريبة من البودكاست. لا يتيح YouTube للإضافات دفقًا صوتيًا خالصًا، لذلك توضح الشارة ما حصلت عليه فعلًا. لا يتم تغيير البث المباشر.'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': 'يطوي الفيديو ويطلب من المشغّل أرخص دفق متاح، لتصبح صفحة المشاهدة بتكلفة قريبة من البودكاست. لا يتيح YouTube للإضافات دفقًا صوتيًا خالصًا، لذلك توضح الشارة ما حصلت عليه فعلًا. يعمل أيضًا مع البث المباشر، حيث تحقق الجلسات الطويلة أكبر توفير.'
   },
   zh_CN: {
     'Audio-Only Mode': '仅音频模式',
     'Audio only': '仅音频',
-    'Audio-only off for live': '直播中已关闭仅音频',
     'Audio mode · lowest quality': '音频模式 · 最低画质',
     'Audio-only unavailable': '仅音频不可用',
-    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone.': '收起画面并向播放器请求最便宜的流，使观看页面的流量开销接近播客。YouTube 未向扩展程序开放真正的纯音频流，因此标签会说明你实际获得的是哪一种。直播不会被修改。'
+    'Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest.': '收起画面并向播放器请求最便宜的流，使观看页面的流量开销接近播客。YouTube 未向扩展程序开放真正的纯音频流，因此标签会说明你实际获得的是哪一种。直播同样适用，长达数小时的观看节省最多。'
   }
 };
 for (const [locale, messages] of Object.entries(AUDIO_ONLY_TRANSLATIONS)) Object.assign(T[locale], messages);

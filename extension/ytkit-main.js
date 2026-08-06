@@ -794,17 +794,11 @@
         return document.querySelector('.html5-main-video');
     }
 
-    function isLive(p, video) {
-        try {
-            if (p && typeof p.getVideoData === 'function') {
-                var data = p.getVideoData();
-                if (data && (data.isLive === true || data.isLivePlayback === true)) return true;
-            }
-        } catch (_) {
-            // reason: player metadata is optional during route changes
-        }
-        return !!(video && video.duration === Infinity);
-    }
+    // Live streams are NOT excluded. The buffer-target feature above skips
+    // them because changing the buffering goal breaks live latency; pinning a
+    // quality has no such hazard — YouTube offers quality selection on live
+    // streams itself — and a multi-hour stream is the longest, most expensive
+    // session a viewer has, which is exactly where this mode earns its keep.
 
     // Ordered worst-to-best. The player reports availability per video, so the
     // first entry it actually offers is the cheapest stream we can pin.
@@ -855,11 +849,6 @@
         var video = mainVideo();
         if (!p || !video) return false;
 
-        if (isLive(p, video)) {
-            appliedKey = 'live';
-            writeStatus('skipped', 'live-stream');
-            return true;
-        }
         if (typeof p.setPlaybackQualityRange !== 'function') {
             writeStatus('degraded', 'player-api-missing');
             return true;

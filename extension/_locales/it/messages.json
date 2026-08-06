@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "Solo audio"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "Solo audio disattivato in diretta"
-  },
   "audioOnlyLowest": {
     "message": "Modalità audio · qualità minima"
   },
@@ -1185,7 +1182,7 @@
     "message": "Normalizzazione audio"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Le dirette non vengono modificate."
+    "message": "Comprime il video e chiede al player il flusso più economico disponibile, così una pagina di visualizzazione costa all’incirca quanto un podcast. YouTube non espone alle estensioni un vero flusso solo audio, quindi l’etichetta indica se ne hai ottenuto uno o solo la qualità minima. Funziona anche sulle dirette, dove una sessione di più ore dà il risparmio maggiore."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "Modalità solo audio"

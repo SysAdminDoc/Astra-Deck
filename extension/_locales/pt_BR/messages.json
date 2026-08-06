@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "Somente áudio"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "Somente áudio desativado ao vivo"
-  },
   "audioOnlyLowest": {
     "message": "Modo áudio · qualidade mais baixa"
   },
@@ -1185,7 +1182,7 @@
     "message": "Normalizacao de audio"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "Recolhe o vídeo e pede ao player o fluxo mais barato disponível, para que uma página de exibição custe aproximadamente o mesmo que um podcast. O YouTube não expõe um fluxo somente áudio real às extensões, então o selo informa se você obteve um ou apenas a qualidade mais baixa. Transmissões ao vivo não são alteradas."
+    "message": "Recolhe o vídeo e pede ao player o fluxo mais barato disponível, para que uma página de exibição custe aproximadamente o mesmo que um podcast. O YouTube não expõe um fluxo somente áudio real às extensões, então o selo informa se você obteve um ou apenas a qualidade mais baixa. Funciona também em transmissões ao vivo, onde uma sessão de várias horas gera a maior economia."
   },
   "feature_audioOnlyPlayback_name": {
     "message": "Modo somente áudio"

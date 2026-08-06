@@ -131,9 +131,6 @@
   "audioOnlyActive": {
     "message": "音声のみ"
   },
-  "audioOnlyLiveSkipped": {
-    "message": "ライブでは音声のみを無効"
-  },
   "audioOnlyLowest": {
     "message": "音声モード · 最低画質"
   },
@@ -1185,7 +1182,7 @@
     "message": "オーディオ正規化"
   },
   "feature_audioOnlyPlayback_desc": {
-    "message": "映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信は変更されません。"
+    "message": "映像を折りたたみ、プレーヤーに最も安いストリームを要求します。YouTube は拡張機能に真の音声のみストリームを公開していないため、バッジには実際に取得できたか、単に最低画質なのかを表示します。ライブ配信でも動作し、数時間に及ぶ視聴では節約効果が最も大きくなります。"
   },
   "feature_audioOnlyPlayback_name": {
     "message": "音声のみモード"

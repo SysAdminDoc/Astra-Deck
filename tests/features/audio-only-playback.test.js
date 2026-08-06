@@ -94,8 +94,13 @@ test('the bridge publishes what it did, never an unearned audio-only claim', () 
 
     assert.match(block, /writeStatus\('applied', \(audioQuality \? 'audio-stream:' : 'lowest-quality:'\) \+ target\)/,
         'the reason string must distinguish a real audio stream from the fallback');
-    assert.match(block, /writeStatus\('skipped', 'live-stream'\)/,
-        'live streams must no-op with a stated reason');
+    // Live is NOT excluded. bufferPreload skips it because changing the
+    // buffering goal breaks live latency; pinning a quality has no such
+    // hazard, and a multi-hour stream is where the saving is largest.
+    assert.doesNotMatch(block, /writeStatus\('skipped'/,
+        'audio-only must apply to live streams, not skip them');
+    assert.doesNotMatch(block, /function isLive/,
+        'the live check was inherited from a sibling feature, not from a reason that applied here');
     assert.match(block, /writeStatus\('degraded', 'player-api-missing'\)/,
         'a player without the quality API must degrade, not pretend');
     assert.match(block, /p\.setPlaybackQualityRange\(restoreQuality, restoreQuality\)/,
@@ -128,10 +133,6 @@ test('the ISOLATED surface reports the fallback distinctly from a real audio str
     root.setAttribute('data-ytkit-audio-only-reason', 'audio-stream:audio');
     feature._syncStatus();
     assert.deepEqual(labels.pop(), ['Audio only', 'ok']);
-
-    root.setAttribute('data-ytkit-audio-only-status', 'skipped');
-    feature._syncStatus();
-    assert.deepEqual(labels.pop(), ['Audio-only off for live', 'warn']);
 
     root.setAttribute('data-ytkit-audio-only-status', 'degraded');
     feature._syncStatus();
