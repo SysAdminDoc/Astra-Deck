@@ -57,18 +57,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — UX / theming / product
 
-- [ ] P2 — Flagship injected controls are hardcoded English despite full i18n elsewhere
-  Category: ux
-  Where: extension/ytkit.js:18520-18536 (Download button 'Show local download options'/'Download' — no catalog keys), :18277-18287 ('Hide all visible videos on this page'/'Hide All'), :21406 ('Sleep timer' + hint), :2112-2113 (`'Dismiss ' + label` concatenation — can't localize grammatically), preset toasts at :42158/:42171 ('Low Power on…') and siblings; subscription dialog aria-labels that audit-overlays-a11y.js:457 pins AS English source strings
-  Problem: The most-clicked injected surfaces (download, hide-all) are English-only for 10 of 11 locales. All are sheltered by the 1297-entry ytkit.js allowance in scripts/i18n-ui-copy-baseline.json — the copy gate launders them.
-  Evidence: Grep-verified no t()/getMessage on the listed literals; baseline entry count read from the file.
-  Fix: Add locale keys for the listed strings (standard flow: en catalog + generate-locales + ar/zh_CN surgical backfill + i18n-coverage refresh + copy-gate baseline shrink), replace 'Dismiss ' concatenation with a {label} template key, and update the audit-overlays pin to accept localized aria-labels. Ratchet the ytkit.js baseline allowance down by the number of strings converted.
-  Acceptance: The listed controls render localized strings under a non-EN locale fixture; i18n-ui-copy-baseline.json entry count strictly decreases; all i18n gates green.
-  Confidence: Verified
-  Effort: M
-
-### P2 — Post-split documentation / process
-
 ### P3 — Correctness / reliability edge cases
 
 - [ ] P3 — Reaction Spammer ytkit.js twin doesn't enforce the configurable interval floor (module does)

@@ -608,6 +608,10 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlLocalOptionsTitle": {
+    "message": "显示本地下载选项",
+    "description": "Tooltip and label for the injected watch-page download button"
+  },
   "dlPopupAria": {
     "message": "下载选项"
   },
@@ -3449,6 +3453,14 @@
   "healthTitle": {
     "message": "诊断"
   },
+  "hideAllButtonLabel": {
+    "message": "全部隐藏",
+    "description": "Label of the Hide All button"
+  },
+  "hideAllButtonTitle": {
+    "message": "隐藏本页所有可见视频",
+    "description": "Tooltip for the Hide All button"
+  },
   "importBtn": {
     "message": "导入"
   },
@@ -3544,6 +3556,10 @@
   },
   "optionalHostUnknown": {
     "message": "optional host access"
+  },
+  "pageControlDismissTpl": {
+    "message": "关闭{label}",
+    "description": "Accessible label for dismissing an injected page control. {label} is the control name"
   },
   "panelCloseAria": {
     "message": "关闭设置"
@@ -3721,6 +3737,46 @@
   },
   "popupTitle": {
     "message": "Astra Deck"
+  },
+  "presetFocusOff": {
+    "message": "已关闭专注预设，此前的设置已还原。",
+    "description": "Toast when the Focus preset is disabled"
+  },
+  "presetFocusOn": {
+    "message": "已应用专注预设。关闭即可还原。",
+    "description": "Toast when the Focus preset is enabled"
+  },
+  "presetLowPowerOff": {
+    "message": "已关闭低功耗模式，此前的功能开关已还原。",
+    "description": "Toast when the Low Power preset is disabled"
+  },
+  "presetLowPowerOn": {
+    "message": "已开启低功耗模式。关闭即可还原此前的功能开关。",
+    "description": "Toast when the Low Power preset is enabled"
+  },
+  "presetPowerUserOff": {
+    "message": "已关闭高级用户预设，此前的设置已还原。",
+    "description": "Toast when the Power User preset is disabled"
+  },
+  "presetPowerUserOn": {
+    "message": "已应用高级用户预设。关闭即可还原。",
+    "description": "Toast when the Power User preset is enabled"
+  },
+  "presetPrivacyOff": {
+    "message": "已关闭隐私预设，此前的设置已还原。",
+    "description": "Toast when the Privacy preset is disabled"
+  },
+  "presetPrivacyOn": {
+    "message": "已应用隐私预设。关闭即可还原。",
+    "description": "Toast when the Privacy preset is enabled"
+  },
+  "presetResearcherOff": {
+    "message": "已关闭研究预设，此前的设置已还原。",
+    "description": "Toast when the Researcher preset is disabled"
+  },
+  "presetResearcherOn": {
+    "message": "已应用研究预设。关闭即可还原。",
+    "description": "Toast when the Researcher preset is enabled"
   },
   "qtGroup_Feed_Cleanup": {
     "message": "信息流清理"
@@ -4195,6 +4251,14 @@
   },
   "sidepanelDocTitle": {
     "message": "Astra Deck - 仪表盘"
+  },
+  "sleepTimerHint": {
+    "message": "在所选分钟数后暂停播放。",
+    "description": "Explains what the sleep timer does"
+  },
+  "sleepTimerTitle": {
+    "message": "睡眠定时器",
+    "description": "Heading of the sleep timer popover"
   },
   "spAgeNever": {
     "message": "从未"
