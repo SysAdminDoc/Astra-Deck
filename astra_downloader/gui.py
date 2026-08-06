@@ -1844,6 +1844,17 @@ class MainWindowCore(QMainWindow):
     def _site_login_store(self):
         return getattr(self.dl_manager, "site_logins", None)
 
+    def _open_site_login_for(self, url):
+        """Jump to Sign-ins with the blocked download's site already filled in."""
+        self._nav_click("Sign-ins")
+        if url:
+            self.site_login_url.setText(url)
+            self.site_login_url.setFocus()
+        self._show_site_login_status(
+            tr("Import this site's cookies to unblock the download waiting on it."),
+            "neutral",
+        )
+
     def _refresh_site_logins(self, force=False):
         store = self._site_login_store()
         entries = []
@@ -2262,6 +2273,29 @@ class MainWindowCore(QMainWindow):
         self.cfg_ratelimit.setFixedWidth(120)
         rate_row.addWidget(self.cfg_ratelimit)
         perf_l.addLayout(rate_row)
+        perf_l.addWidget(make_divider())
+        # MaxFileSizeMB blocks downloads outright — a run that trips it exits
+        # cleanly having written nothing and reports `skipped`, whose message
+        # tells the user to change this. It needs a control to change.
+        maxsize_row = QHBoxLayout()
+        maxsize_copy = QVBoxLayout()
+        maxsize_copy.setSpacing(2)
+        maxsize_copy.addWidget(make_label("Max file size", "fieldLabel"))
+        maxsize_copy.addWidget(make_label(
+            "Skip anything larger. 0 means no limit.", "fieldHint", word_wrap=True
+        ))
+        maxsize_row.addLayout(maxsize_copy, 1)
+        self.cfg_maxsize = QSpinBox()
+        self.cfg_maxsize.setAccessibleName("Max file size in megabytes")
+        self.cfg_maxsize.setRange(0, 102400)
+        self.cfg_maxsize.setSuffix(" MB")
+        self.cfg_maxsize.setSpecialValueText("No limit")
+        self.cfg_maxsize.setValue(self._dependencies['clamp_int'](
+            self.config.get("MaxFileSizeMB", 0), 0, 0, 102400
+        ))
+        self.cfg_maxsize.setFixedWidth(120)
+        maxsize_row.addWidget(self.cfg_maxsize)
+        perf_l.addLayout(maxsize_row)
         proxy_row = QHBoxLayout()
         proxy_copy = QVBoxLayout()
         proxy_copy.setSpacing(2)
@@ -2435,6 +2469,7 @@ class MainWindowCore(QMainWindow):
             self.cfg_fragments.valueChanged,
             self.cfg_maxconcurrent.valueChanged,
             self.cfg_retries.valueChanged,
+            self.cfg_maxsize.valueChanged,
             self.cfg_ratelimit.textChanged,
             self.cfg_proxy.textChanged,
             self.cfg_js_runtime.currentIndexChanged,
@@ -2783,6 +2818,19 @@ class MainWindowCore(QMainWindow):
                 btn_resume.setToolTip("Resume recovered, unauthenticated downloads explicitly.")
                 btn_resume.clicked.connect(self._resume_download_queue)
                 top.addWidget(btn_resume)
+            if (dl.status == 'needs-auth'
+                    and not self._dependencies['is_youtube_url'](dl.url)):
+                # The Sign-ins page is the fix for this state on every site the
+                # extension's YouTube cookie bridge cannot reach, so the row
+                # that reports it offers the way there instead of only Cancel.
+                btn_signin = self._make_tool_button("Add sign-in", "ghost")
+                btn_signin.setToolTip(
+                    "Store this site's signed-in session so the download can run."
+                )
+                btn_signin.clicked.connect(
+                    lambda checked=False, url=dl.url: self._open_site_login_for(url)
+                )
+                top.addWidget(btn_signin)
             btn_cancel = self._make_tool_button("Cancel", "ghost")
             btn_cancel.clicked.connect(lambda checked=False, dl_id=dl.id: self.dl_manager.cancel(dl_id))
             top.addWidget(btn_cancel)
@@ -3497,6 +3545,7 @@ class MainWindowCore(QMainWindow):
             "ConcurrentFragments": self.cfg_fragments.value(),
             "MaxConcurrentDownloads": self.cfg_maxconcurrent.value(),
             "DownloadRetries": self.cfg_retries.value(),
+            "MaxFileSizeMB": self.cfg_maxsize.value(),
             "RateLimit": rate,
             "Proxy": proxy,
             "JavaScriptRuntime": self.cfg_js_runtime.currentData(),

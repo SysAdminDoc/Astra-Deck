@@ -817,6 +817,7 @@ class CompanionGuiPolicyTests(unittest.TestCase):
         window.cfg_fragments = NumberField(4)
         window.cfg_maxconcurrent = NumberField(3)
         window.cfg_retries = NumberField(10)
+        window.cfg_maxsize = NumberField(0)
         window.cfg_autoupdate = CheckField()
         window.cfg_closetotray = CheckField()
         window.cfg_startmin = CheckField()
@@ -9279,6 +9280,129 @@ assert benign.sizeHint().height() == attack.sizeHint().height(), (
                 "setTextFormat(Qt.TextFormat.PlainText)", block,
                 "every text-carrying QLabel must pin PlainText near construction",
             )
+
+
+class BlockedDownloadRecoveryTests(unittest.TestCase):
+    """The states that block a download must offer the control that fixes them."""
+
+    def test_max_file_size_round_trips_and_needs_auth_reaches_sign_ins(self):
+        script = r'''
+import os
+import sys
+import tempfile
+
+temp_dir = tempfile.mkdtemp(prefix="astra-recovery-")
+os.environ["LOCALAPPDATA"] = temp_dir
+os.environ["ASTRA_DOWNLOADER_NO_BOOTSTRAP"] = "1"
+
+from astra_downloader import astra_downloader as app
+from PyQt6.QtTest import QTest
+from PyQt6.QtWidgets import QApplication, QPushButton
+
+qt = QApplication(["recovery-pin"])
+qt.setStyleSheet(app.STYLESHEET)
+app.MainWindow._start_instance_command_listener = lambda self: None
+app.MainWindow._stop_instance_command_listener = lambda self: None
+app.MainWindow._start_readiness_probe = lambda self: None
+app.MainWindow._refresh_tools_status = lambda self: None
+
+config = app.Config()
+config.update({
+    "CloseToTray": False,
+    "StartMinimized": False,
+    "DownloadPath": temp_dir,
+    "AudioDownloadPath": temp_dir,
+})
+manager = app.DownloadManager(config, app.History())
+manager.pause_intake()
+window = app.MainWindow(config, manager, app.History())
+window._animate_page = lambda: None
+window.update_timer.stop()
+window.cleanup_timer.stop()
+window.tools_status_timer.stop()
+window.show()
+qt.processEvents()
+
+# The `skipped` reason tells the user to change this, so it needs a control.
+window._nav_click("Settings")
+qt.processEvents()
+window.cfg_maxsize.setValue(250)
+window._save_settings()
+qt.processEvents()
+assert config.get("MaxFileSizeMB") == 250, "max file size must persist"
+assert window.cfg_maxsize.specialValueText() == "No limit", "0 needs plain-language copy"
+
+reloaded = app.MainWindow(config, manager, app.History())
+reloaded.update_timer.stop()
+reloaded.cleanup_timer.stop()
+reloaded.tools_status_timer.stop()
+assert reloaded.cfg_maxsize.value() == 250, "max file size must reload"
+reloaded.close()
+
+def row_actions():
+    window._nav_click("Downloads")
+    window._downloads_signature = None
+    window._update_ui()
+    qt.processEvents()
+    # Retired rows are released with deleteLater, so without letting the
+    # deferred deletions run findChildren still returns the previous row's
+    # buttons and the assertions below pass or fail for the wrong reason.
+    QTest.qWait(150)
+    return [b.text() for b in window.findChildren(QPushButton)
+            if b.isVisible() and b.text()]
+
+blocked = app.Download("dl_auth", "https://vimeo.com/ondemand/private", output_dir=temp_dir)
+blocked.status = "needs-auth"
+blocked.title = "Private film"
+manager.downloads["dl_auth"] = blocked
+assert "Add sign-in" in row_actions(), "a blocked non-YouTube download needs a way in"
+
+button = next(b for b in window.findChildren(QPushButton)
+              if b.isVisible() and b.text() == "Add sign-in")
+button.click()
+qt.processEvents()
+assert window._page_names[window.tabs.currentIndex()] == "Sign-ins"
+assert "vimeo.com" in window.site_login_url.text(), "the site should be prefilled"
+
+# YouTube keeps using the extension's cookie bridge, so no store prompt there.
+manager.downloads.clear()
+youtube = app.Download("dl_yt", "https://www.youtube.com/watch?v=abc", output_dir=temp_dir)
+youtube.status = "needs-auth"
+youtube.title = "Members video"
+manager.downloads["dl_yt"] = youtube
+assert "Add sign-in" not in row_actions(), "YouTube auth is the extension's job"
+window.close()
+'''
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_skipped_size_message_names_a_control_that_exists(self):
+        gui_source = Path(ad.__file__).resolve().parent.joinpath("gui.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('make_label("Max file size", "fieldLabel")', gui_source)
+        self.assertIn('"MaxFileSizeMB": self.cfg_maxsize.value()', gui_source)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+                "MaxFileSizeMB": 25,
+            })
+            manager = ad.DownloadManager(config, FakeHistory())
+            download = ad.Download("dl", "https://archive.org/details/x", output_dir=tmpdir)
+            reason = manager._empty_result_reason(download)
+            self.assertIn("Max file size", reason)
+            self.assertIn("25 MB", reason)
 
 
 if __name__ == "__main__":
