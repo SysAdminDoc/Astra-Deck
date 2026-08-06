@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Popup schema overview ignores schema defaults — default-on features show Disabled, counts undercount, spurious per-key Reset buttons
-  Category: correctness
-  Where: extension/popup.js:2864 (buildSchemaOverviewKeyRow — `const on = settings[entry.key] === true;`), :3232-3241 (isToggleEnabled — `undefined → false`), :3197-3208 (isDefaultValue) with the reset-button gate at :3155-3157
-  Problem: The stored ytSuiteSettings bag is SPARSE — the mutation controller persists only changed keys (core/settings-controller.js localMutateMany; ytkit.js save() diffs against baseline). The quick toggles and sidepanel were fixed for exactly this in v4.49.6 (`_settingsState[key] ?? entry.defaultValue`), but the schema-overview panel was not: (1) default-on booleans never explicitly written render OFF in their category rows; (2) the "X/total settings on" roll-up undercounts every default-enabled feature; (3) the per-key "↺ reset" affordance renders for every never-written key with a non-null default (`isDefaultValue(undefined, false)` hits the `currentValue == null || defaultValue == null → false` branch), contradicting the code comment at :3194-3196.
-  Evidence: All three code paths verified by direct read; sparse-bag precondition corroborated by the repo's own v4.49.6 fix note ("fresh installs showed default-on features as Disabled" for quick toggles — same storage shape, unfixed sibling surface).
-  Fix: Resolve `settings[key] ?? entry.defaultValue` in buildSchemaOverviewKeyRow and isToggleEnabled; make isDefaultValue treat undefined current as equal to any defaultValue.
-  Acceptance: With empty storage, the schema overview shows default-on features as On, the roll-up counts them, and no reset buttons render; tests added beside the existing popup quick-toggle default-resolution tests.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — Orphaned-tab settings writes report {ok:true} while persisting nothing
   Category: correctness
   Where: extension/core/storage.js:284-286 (flushPendingStorageWrites), fed by storageWriteMany :343-353 and storage-manager.js setSync :151
