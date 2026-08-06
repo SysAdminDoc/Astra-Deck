@@ -59,15 +59,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Correctness / reliability edge cases
 
-- [ ] P3 — Watched-video features mishandle Polymer element recycling / element swaps
-  Category: correctness
-  Where: extension/ytkit.js:21036-21058 (hideWatchedVideos._process — permanent ytkit-watched-check once-marker + inline display:none/opacity persists on recycled renderers now showing unwatched videos; also runs before the resume-overlay hydrates so watched items are missed); :36891-36922 (disableLoudnessNormalization — `if (!this._videoListener)` guard binds the volume listener to the FIRST video element forever; after YouTube swaps the <video> node the clamp stops and destroy() removes the listener from the wrong element); commit 876008b8's _processThread dataset cache (thread.dataset.ytkitCommentFilterChecked === rules hash) keeps a recycled comment node's previous verdict
-  Problem: Three sites, one class: state keyed to a DOM node that YouTube reuses for different content. titleNormalization._processTitle (:19710-19720) and remainingTimeDisplay._attach (:19984-19998) already handle this correctly in the same file.
-  Fix: hideWatchedVideos: re-evaluate idempotently per pass (add/remove based on current #progress presence) like videoResolutionBadge; loudness: track the bound element and detach/reattach on change (remainingTimeDisplay pattern); comment filter: include a content marker (text length/prefix) in the checked stamp.
-  Acceptance: Tests simulating node reuse: recycled card un-hides / un-dims; volume clamp survives a video-element swap; recycled comment re-evaluates.
-  Confidence: Verified (logic; recycling frequency varies by surface)
-  Effort: M
-
 - [ ] P3 — Grouped small-correctness batch (verified, one item each, S effort)
   Category: correctness
   Where / Problems:
