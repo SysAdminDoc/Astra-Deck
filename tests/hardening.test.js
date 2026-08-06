@@ -12434,3 +12434,31 @@ test('autoClosePopups targets named promo renderers, never generic dialog button
     assert.match(block, /addMutationRule\('autoClosePopups', \(\) => this\._scheduleDismiss\(400\)\)/,
         'the mutation path must be debounced rather than scanning every tick');
 });
+
+// ── hideCollaborations must survive SPA navigation and hide reversibly ──
+// It defaults ON, but declared no `pages` constraint while init() returned
+// early off the subscriptions feed, so the page-change tracker never
+// re-initialized it: landing on Home and clicking Subscriptions left the
+// feature inert for the entire session. It also .remove()d cards outright,
+// so a truncated subscription fetch permanently destroyed videos from
+// channels the user genuinely subscribes to.
+test('hideCollaborations is page-scoped and hides reversibly', () => {
+    const start = ytkitSource.indexOf("id: 'hideCollaborations'");
+    assert.ok(start > -1, 'hideCollaborations must exist');
+    const block = ytkitSource.slice(start, ytkitSource.indexOf('VIDEO HIDER', start));
+
+    assert.match(block, /pages: \[PageTypes\.SUBSCRIPTIONS\]/,
+        'the feature must declare its page scope so navigation re-initializes it');
+    assert.ok(!/cardNode\.remove\(\)/.test(block),
+        'cards must never be destroyed — a truncated subscription list would delete real videos');
+    assert.match(block, /_HIDDEN_CLASS: 'ytkit-collaboration-hidden'/,
+        'hiding must go through a class so it can be undone');
+    assert.match(block, /cardNode\.classList\.remove\(this\._HIDDEN_CLASS\)/,
+        'a card whose channel is subscribed must be revealed again');
+    assert.match(block, /if \(!channel \|\| \(!channel\.title && !channel\.handle\)\) return;/,
+        'an unresolvable card must fail open rather than be hidden on a guess');
+    assert.match(block, /ytd-rich-item-renderer/,
+        'the modern rich-grid subscriptions feed must be recognised');
+    assert.match(block, /document\.querySelectorAll\(`\.\$\{this\._HIDDEN_CLASS\}`\)[\s\S]{0,140}?classList\.remove/,
+        'destroy() must reveal every card the feature hid');
+});

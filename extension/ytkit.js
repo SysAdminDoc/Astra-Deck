@@ -16750,9 +16750,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Hide videos from channels you\'re not subscribed to in your subscriptions feed',
             group: 'Content',
             icon: 'users-x',
+            // Without a `pages` constraint the page-change tracker never
+            // re-initializes this feature, and init() returns immediately when
+            // the pathname is not the subscriptions feed. Landing on Home and
+            // clicking Subscriptions — the normal path — therefore left the
+            // feature inert for the whole session even though it defaults on.
+            pages: [PageTypes.SUBSCRIPTIONS],
+            _CARD_SELECTOR: 'ytd-item-section-renderer, ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
+            _HIDDEN_CLASS: 'ytkit-collaboration-hidden',
             _subscriptions: [],
             _observer: null,
             _navTimer: null,
+            _styleElement: null,
             _initialized: false,
 
             async _fetchSubscriptions() {
@@ -16798,19 +16807,62 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return this._subscriptions.some(s => s.title === channel);
             },
 
+            _resolveCardChannel(cardNode) {
+                // Legacy shelf layout.
+                const shelfLink = cardNode.querySelector('ytd-shelf-renderer #title-container a[title]');
+                if (shelfLink) {
+                    return {
+                        title: shelfLink.getAttribute('title'),
+                        handle: shelfLink.getAttribute('href')?.slice(1)
+                    };
+                }
+                // Modern rich-grid card: the byline carries the channel link.
+                const bylineLink = cardNode.querySelector(
+                    'ytd-channel-name a[href^="/@"], ytd-channel-name a[href^="/channel/"], '
+                    + '.yt-content-metadata-view-model-wiz__metadata-row a[href^="/@"], '
+                    + 'a.yt-core-attributed-string__link[href^="/@"], a[href^="/@"]'
+                );
+                if (!bylineLink) return null;
+                const href = bylineLink.getAttribute('href') || '';
+                return {
+                    title: (bylineLink.textContent || '').trim() || bylineLink.getAttribute('title'),
+                    handle: href.startsWith('/') ? href.slice(1).split('/')[0] : ''
+                };
+            },
+
             _validateFeedCard(cardNode) {
-                if (cardNode.tagName !== 'YTD-ITEM-SECTION-RENDERER') return;
-                const channelLink = cardNode.querySelector('ytd-shelf-renderer #title-container a[title]');
-                if (!channelLink) return;
-                const title = channelLink.getAttribute('title');
-                const handle = channelLink.getAttribute('href')?.slice(1);
-                if (!this._isSubscribed(title) && !this._isSubscribed(handle)) {
-                    DebugManager.log('Content', 'Hiding collaboration from:', title);
-                    cardNode.remove();
+                if (!cardNode?.matches?.(this._CARD_SELECTOR)) return;
+                const channel = this._resolveCardChannel(cardNode);
+                // Fail open: a card whose channel cannot be resolved is left
+                // alone rather than hidden on a guess.
+                if (!channel || (!channel.title && !channel.handle)) return;
+                const subscribed = this._isSubscribed(channel.title) || this._isSubscribed(channel.handle);
+                // Toggled BOTH ways, and by class rather than .remove(): the
+                // subscription list is parsed from a single /feed/channels
+                // batch, so a truncated list used to permanently delete videos
+                // from channels the user genuinely subscribes to.
+                if (!subscribed) {
+                    if (!cardNode.classList.contains(this._HIDDEN_CLASS)) {
+                        DebugManager.log('Content', 'Hiding collaboration from:', channel.title || channel.handle);
+                        cardNode.classList.add(this._HIDDEN_CLASS);
+                    }
+                } else {
+                    cardNode.classList.remove(this._HIDDEN_CLASS);
                 }
             },
 
+            _processVisibleCards() {
+                document.querySelectorAll(this._CARD_SELECTOR).forEach(card => this._validateFeedCard(card));
+            },
+
             async init() {
+                if (!this._styleElement) {
+                    this._styleElement = injectStyle(
+                        `.${this._HIDDEN_CLASS}{display:none !important}`,
+                        this.id,
+                        true
+                    );
+                }
                 if (window.location.pathname !== '/feed/subscriptions') return;
                 this._subscriptions = await this._fetchSubscriptions();
                 // Feature may have been destroyed during the async fetch
@@ -16819,7 +16871,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._subscriptions.length === 0) return;
 
                 // Process existing items
-                document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
+                this._processVisibleCards();
 
                 // Watch for new items
                 const feedSelector = 'ytd-section-list-renderer > div#contents';
@@ -16842,9 +16894,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addNavigateRule(this.id, () => {
                     if (window.location.pathname === '/feed/subscriptions') {
                         clearTimeout(this._navTimer);
-                        this._navTimer = setTimeout(() => {
-                            document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
-                        }, 1000);
+                        this._navTimer = setTimeout(() => this._processVisibleCards(), 1000);
                     }
                 });
             },
@@ -16855,6 +16905,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 clearTimeout(this._navTimer);
                 this._navTimer = null;
                 removeNavigateRule(this.id);
+                document.querySelectorAll(`.${this._HIDDEN_CLASS}`)
+                    .forEach(card => card.classList.remove(this._HIDDEN_CLASS));
+                this._styleElement?.remove();
+                this._styleElement = null;
             }
         },
         // ═══════════════════════════════════════════════════════════════════
