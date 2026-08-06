@@ -248,8 +248,7 @@
                 const link = el?.querySelector?.('a[href*="/channel/"], a[href*="/@"]');
                 if (!link) return null;
                 const href = link.getAttribute('href') || '';
-                const idMatch = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
-                const channelId = idMatch ? idMatch[1] : (href.match(/^\/@([A-Za-z0-9._-]+)/)?.[0] || '');
+                const channelId = globalThis.YTKitCore?.channelSettingsKey?.(href) || '';
                 if (!channelId) return null;
                 const entry = overrides[channelId];
                 return entry && typeof entry === 'object' ? entry.mode || null : null;
@@ -339,7 +338,11 @@
                     }
                     if (replaceThumbs) {
                         const thumb = branding.thumbnails?.[0];
-                        if (thumb?.timestamp !== undefined) {
+                        // The timestamp is remote data going straight into a URL:
+                        // a non-numeric value injected extra query parameters or
+                        // stringified to "[object Object]".
+                        const stamp = Number(thumb?.timestamp);
+                        if (Number.isFinite(stamp) && stamp >= 0) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
                             if (img && !img.src) {
                                 // Lazy img not hydrated yet — let the next
@@ -348,7 +351,7 @@
                                 delete el.dataset.daProcessed;
                             } else if (img && !img.classList.contains('da-replaced-thumb')) {
                                 img.dataset.daOrigSrc = img.src;
-                                img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${videoId}&time=${thumb.timestamp}`;
+                                img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${encodeURIComponent(videoId)}&time=${stamp}`;
                                 img.classList.add('da-replaced-thumb');
                                 img.onerror = () => { if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc; };
                             }

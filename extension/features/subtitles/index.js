@@ -276,14 +276,36 @@
                     : {};
             },
 
+            // The language the viewer is ALREADY reading on screen. "Auto"
+            // secondary selection has to avoid that track, and comparing the
+            // browser locale instead let the overlay duplicate the native
+            // captions whenever the two differed.
+            _activeCaptionLanguage() {
+                try {
+                    const player = doc?.querySelector?.('#movie_player');
+                    const option = player?.getOption?.('captions', 'track');
+                    const code = option?.languageCode || option?.vss_id || '';
+                    if (code) return String(code).replace(/^\.?a?\./, '');
+                } catch (_) {
+                    // reason: the captions module is absent until the player loads
+                }
+                return '';
+            },
+
             _primaryLanguage() {
                 const preferred = this._settings().transcriptPreferredLanguage;
                 if (preferred && preferred !== 'auto') return preferred;
-                return win?.navigator?.language
+                return this._activeCaptionLanguage()
+                    || win?.navigator?.language
                     || (typeof navigator !== 'undefined' ? navigator.language : '');
             },
 
             _playerResponse() {
+                // Off a watch route there is no current video id, so the
+                // id-mismatch guard below could not fire and the PREVIOUS watch
+                // page's response was accepted — one wasted timed-text fetch and
+                // an invisible overlay mount per navigation.
+                if (!String(getVideoId?.() || '')) return null;
                 const pageData = doc?.querySelector?.('ytd-watch-flexy');
                 const pageResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                 if (pageResponse) return pageResponse;
@@ -446,17 +468,20 @@
                     return;
                 }
 
-                this._retryCount = 0;
                 this._cues = cues;
-                if (!this._mountOverlay(track)) {
-                    this._scheduleLoad(700);
-                    return;
-                }
-                if (!this._attachVideo()) {
+                // Mount/attach failures used to re-schedule WITHOUT incrementing
+                // the retry count, so a page that resolved tracks but never
+                // produced a player node looped every 700ms forever. Only a
+                // fully successful render clears the budget.
+                if (!this._mountOverlay(track) || !this._attachVideo()) {
                     this._removeOverlay();
-                    this._scheduleLoad(700);
+                    if (this._retryCount < 6) {
+                        this._retryCount += 1;
+                        this._scheduleLoad(700);
+                    }
                     return;
                 }
+                this._retryCount = 0;
                 this._renderCue();
             },
 

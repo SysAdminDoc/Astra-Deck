@@ -136,7 +136,22 @@
         }
     }
 
+    // Canonical per-channel settings key. The DeArrow override reader
+    // truncated an owner href to `/@handle` while the watch-page writer stored
+    // the RAW href, so an owner link carrying `/featured` or a query string
+    // wrote a key no feed card could ever match and the override was silently
+    // ignored. Both sides now go through here.
+    function channelSettingsKey(hrefValue) {
+        const href = String(hrefValue || '').trim();
+        if (!href) return '';
+        const byId = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
+        if (byId) return byId[1];
+        const byHandle = href.match(/\/(@[A-Za-z0-9._-]+)/);
+        return byHandle ? '/' + byHandle[1] : '';
+    }
+
     Object.assign(core, {
+        channelSettingsKey,
         cleanYouTubeShareUrl,
         extractVideoIdFromUrl,
         getUrlParam,

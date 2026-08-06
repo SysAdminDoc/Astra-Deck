@@ -26847,11 +26847,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 );
                 const ariaPercent = Array.from(item.querySelectorAll('[aria-label]'))
                     .find((element) => /%/.test(element.getAttribute('aria-label') || ''));
+                // aria-valuenow is a bare number by contract, so it is read
+                // directly. Everything else MUST carry a % sign: the old
+                // optional-% pattern accepted a CSS width of "120px" as 120%,
+                // clamped it to 100, and reported an untouched video as fully
+                // watched — which gated the auto-skip click.
+                const ariaNow = progress?.getAttribute?.('aria-valuenow');
+                if (ariaNow !== null && ariaNow !== undefined && ariaNow !== '' && Number.isFinite(Number(ariaNow))) {
+                    return Math.max(0, Math.min(100, Number(ariaNow)));
+                }
                 const raw = progress?.style?.width
-                    || progress?.getAttribute?.('aria-valuenow')
                     || ariaPercent?.getAttribute('aria-label')
                     || '';
-                const match = String(raw).match(/(\d+(?:\.\d+)?)\s*%?/);
+                const match = String(raw).match(/(\d+(?:\.\d+)?)\s*%/);
                 const value = match ? Number(match[1]) : 0;
                 return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
             },
@@ -26953,7 +26961,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _orderedEntries(entries, mode = this._sortMode) {
                 const ordered = [...entries];
-                const nativeCompare = (left, right) => this._nativeOrder.get(left.item) - this._nativeOrder.get(right.item);
+                // An entry never seen at discovery has no recorded index;
+                // subtracting undefined produced a NaN comparator, which lets
+                // Array.sort return an arbitrary order for the whole list.
+                // Unknown items sort last instead.
+                const nativeIndex = (entry) => {
+                    const known = this._nativeOrder.get(entry.item);
+                    return Number.isFinite(known) ? known : Number.MAX_SAFE_INTEGER;
+                };
+                const nativeCompare = (left, right) => nativeIndex(left) - nativeIndex(right);
                 if (mode === 'none') return ordered.sort(nativeCompare);
                 return ordered.sort((left, right) => {
                     const leftKnown = Number.isFinite(left.durationSec);
@@ -30327,6 +30343,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _nameMap: null,
             _pendingAuthors: null,
             _requestControllers: null,
+            _lookupQueue: null,
+            _inflightLookups: 0,
             _cancelPageWait: null,
             _COMMENT_ROOT_SELECTOR: 'ytd-comment-view-model, ytd-comment-renderer, ytd-comment-thread-renderer',
 
@@ -30391,10 +30409,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 this._pendingAuthors?.set(authorKey, new Set([author]));
+                this._enqueueLookup(authorKey, author.href, decode);
+            },
+
+            // Scrolling a large thread discovers dozens of unique commenters at
+            // once, and each lookup is a full credentialed channel-page fetch.
+            // Firing them all in parallel hammered YouTube and starved the page;
+            // this keeps at most _MAX_INFLIGHT running, FIFO.
+            _MAX_INFLIGHT: 3,
+
+            _enqueueLookup(authorKey, href, decode) {
+                if (!this._lookupQueue) return;
+                this._lookupQueue.push({ authorKey, href, decode });
+                this._drainLookupQueue();
+            },
+
+            _drainLookupQueue() {
+                if (!this._lookupQueue) return;
+                while (this._inflightLookups < this._MAX_INFLIGHT && this._lookupQueue.length) {
+                    const next = this._lookupQueue.shift();
+                    this._inflightLookups += 1;
+                    this._runLookup(next).finally(() => {
+                        this._inflightLookups -= 1;
+                        this._drainLookupQueue();
+                    });
+                }
+            },
+
+            _runLookup({ authorKey, href, decode }) {
                 const requestController = new AbortController();
                 this._requestControllers?.add(requestController);
                 const timeoutId = setTimeout(() => requestController.abort(), 8000);
-                fetch(author.href, {
+                return fetch(href, {
                     credentials: 'same-origin',
                     signal: requestController.signal
                 }).then(async (resp) => {
@@ -30433,6 +30479,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._nameMap = new Map();
                 this._pendingAuthors = new Map();
                 this._requestControllers = new Set();
+                this._lookupQueue = [];
+                this._inflightLookups = 0;
                 const decode = (() => {
                     const ENTITIES = [['amp','&'],['apos',"'"],['quot','"'],['nbsp',' '],['lt','<'],['gt','>'],['#39',"'"]];
                     return s => ENTITIES.reduce((acc, [e, sym]) => acc.replaceAll(`&${e};`, sym), s);
@@ -30475,6 +30523,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._observer?.disconnect(); this._observer = null;
                 this._requestControllers?.forEach(controller => controller.abort());
                 this._requestControllers?.clear(); this._requestControllers = null;
+                this._lookupQueue = null;
+                this._inflightLookups = 0;
                 this._pendingAuthors?.clear(); this._pendingAuthors = null;
                 document.querySelectorAll('span[data-ytkit-name]').forEach(el => el.remove());
                 this._nameMap?.clear();
@@ -31222,14 +31272,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _currentChannelId() {
+                // One canonical key. Storing the RAW owner href here meant a
+                // suffixed link (/featured, ?si=…) produced a key the feed-card
+                // reader could never match, so the setting was accepted and then
+                // silently ignored. Shared with the SponsorBlock per-channel
+                // profiles, which key on the same href.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
-                if (link) {
-                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
-                    if (m) return m[1];
-                }
+                const key = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
+                if (key) return key;
                 const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
-                if (handleLink) return handleLink.getAttribute('href') || '';
-                return '';
+                return globalThis.YTKitCore?.channelSettingsKey?.(handleLink?.getAttribute('href')) || '';
             },
 
             _readProfile(channelId) {
@@ -31681,8 +31733,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const link = el?.querySelector?.('a[href*="/channel/"], a[href*="/@"]');
                 if (!link) return null;
                 const href = link.getAttribute('href') || '';
-                const idMatch = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
-                const channelId = idMatch ? idMatch[1] : (href.match(/^\/@([A-Za-z0-9._-]+)/)?.[0] || '');
+                const channelId = globalThis.YTKitCore?.channelSettingsKey?.(href) || '';
                 if (!channelId) return null;
                 const entry = overrides[channelId];
                 return entry && typeof entry === 'object' ? entry.mode || null : null;
@@ -31772,7 +31823,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     if (replaceThumbs) {
                         const thumb = branding.thumbnails?.[0];
-                        if (thumb?.timestamp !== undefined) {
+                        // The timestamp is remote data going straight into a URL:
+                        // a non-numeric value injected extra query parameters or
+                        // stringified to "[object Object]".
+                        const stamp = Number(thumb?.timestamp);
+                        if (Number.isFinite(stamp) && stamp >= 0) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
                             if (img && !img.src) {
                                 // Lazy img not hydrated yet — let the next
@@ -31781,7 +31836,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 delete el.dataset.daProcessed;
                             } else if (img && !img.classList.contains('da-replaced-thumb')) {
                                 img.dataset.daOrigSrc = img.src;
-                                img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${videoId}&time=${thumb.timestamp}`;
+                                img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${encodeURIComponent(videoId)}&time=${stamp}`;
                                 img.classList.add('da-replaced-thumb');
                                 img.onerror = () => { if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc; };
                             }
@@ -36216,8 +36271,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (/\p{Script=Devanagari}/u.test(text)) return 'hi';
                 if (/\p{Script=Thai}/u.test(text)) return 'th';
                 if (/\p{Script=Cyrillic}/u.test(text)) {
+                    // Both arms of the old ternary returned 'ru', so every
+                    // Cyrillic comment was classified Russian. Only claim a
+                    // language when a script marker actually distinguishes it;
+                    // otherwise return unknown, which the caller fails open on
+                    // rather than hiding a Bulgarian or Serbian comment.
                     if (/[іїєґ]/i.test(text)) return 'uk';
-                    return /[ыэъё]/i.test(text) ? 'ru' : 'ru';
+                    if (/[њљџћђ]/i.test(text)) return 'sr';
+                    if (/[ѓќѕ]/i.test(text)) return 'mk';
+                    // ъ is common to Russian AND Bulgarian, so it cannot
+                    // identify Russian on its own.
+                    if (/[ыэё]/i.test(text)) return 'ru';
+                    return '';
                 }
                 return '';
             },
@@ -38247,14 +38312,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _currentChannelId() {
+                // One canonical key. Storing the RAW owner href here meant a
+                // suffixed link (/featured, ?si=…) produced a key the feed-card
+                // reader could never match, so the setting was accepted and then
+                // silently ignored. Shared with the SponsorBlock per-channel
+                // profiles, which key on the same href.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
-                if (link) {
-                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
-                    if (m) return m[1];
-                }
+                const key = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
+                if (key) return key;
                 const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
-                if (handleLink) return handleLink.getAttribute('href') || '';
-                return '';
+                return globalThis.YTKitCore?.channelSettingsKey?.(handleLink?.getAttribute('href')) || '';
             },
 
             _readMode(channelId) {
