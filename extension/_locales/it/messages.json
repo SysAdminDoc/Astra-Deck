@@ -3738,6 +3738,10 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "preciseViewCountTpl": {
+    "message": "{count} visualizzazioni",
+    "description": "Full view count rendered in place of YouTube's truncated one"
+  },
   "presetFocusOff": {
     "message": "Preset Concentrazione disattivato. Valori precedenti ripristinati.",
     "description": "Toast when the Focus preset is disabled"
@@ -5681,6 +5685,9 @@
   },
   "videoNotesTitle": {
     "message": "Video Notes"
+  },
+  "watchLaterNotInMenu": {
+    "message": "«Guarda più tardi» non è stato trovato in questo menu. Usa l’azione Salva nativa di questa scheda."
   },
   "watchLaterNothingToRemove": {
     "message": "Niente da rimuovere"

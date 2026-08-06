@@ -3738,6 +3738,10 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "preciseViewCountTpl": {
+    "message": "{count} 次观看",
+    "description": "Full view count rendered in place of YouTube's truncated one"
+  },
   "presetFocusOff": {
     "message": "已关闭专注预设，此前的设置已还原。",
     "description": "Toast when the Focus preset is disabled"
@@ -5681,6 +5685,9 @@
   },
   "videoNotesTitle": {
     "message": "Video Notes"
+  },
+  "watchLaterNotInMenu": {
+    "message": "在此菜单中未找到“稍后观看”。请改用该卡片自带的保存操作。"
   },
   "watchLaterNothingToRemove": {
     "message": "没有可移除的内容"
