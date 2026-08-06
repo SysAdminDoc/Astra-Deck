@@ -21253,28 +21253,47 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
+            _restore(item) {
+                item.removeAttribute('ytkit-watched-check');
+                item.classList.remove('ytkit-watched');
+                item.style.opacity = '';
+                item.style.display = '';
+            },
+
+            _restoreAll() {
+                document.querySelectorAll('[ytkit-watched-check]').forEach(el => this._restore(el));
+            },
+
             _process() {
                 const mode = appState.settings.hideWatchedMode || 'dim';
-                document.querySelectorAll('ytd-rich-item-renderer:not([ytkit-watched-check]), ytd-video-renderer:not([ytkit-watched-check]), ytd-grid-video-renderer:not([ytkit-watched-check])').forEach(item => {
-                    item.setAttribute('ytkit-watched-check', '1');
-                    const progressBar = item.querySelector('#progress, ytd-thumbnail-overlay-resume-playback-renderer');
-                    if (progressBar) {
-                        if (mode === 'hide') item.style.display = 'none';
-                        else item.style.opacity = '0.4';
+                // Re-evaluate every card on every pass rather than stamping a
+                // permanent once-marker. YouTube recycles renderer nodes, so a
+                // dimmed element is routinely handed a different, unwatched
+                // video — and the marker also froze the verdict for any card
+                // read before its resume-playback overlay had hydrated, which
+                // is the common case on a fresh feed.
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer').forEach(item => {
+                    const watched = !!item.querySelector('#progress, ytd-thumbnail-overlay-resume-playback-renderer');
+                    if (watched) {
+                        item.setAttribute('ytkit-watched-check', '1');
                         item.classList.add('ytkit-watched');
+                        if (mode === 'hide') { item.style.display = 'none'; item.style.opacity = ''; }
+                        else { item.style.opacity = '0.4'; item.style.display = ''; }
+                    } else if (item.hasAttribute('ytkit-watched-check')) {
+                        // Only ever restore cards this feature marked, so a
+                        // card hidden by another feature keeps its state.
+                        this._restore(item);
                     }
                 });
             },
 
             init() {
                 this._process();
-                addMutationRule(this.id, () => this._process());
+                // Each pass now walks every card, so the mutation rule is
+                // debounced instead of scanning per batch.
+                addMutationRule(this.id, () => this._scheduleProcess(400));
                 addNavigateRule('hideWatched', () => {
-                    document.querySelectorAll('[ytkit-watched-check]').forEach(el => {
-                        el.removeAttribute('ytkit-watched-check');
-                        el.classList.remove('ytkit-watched');
-                        el.style.opacity = ''; el.style.display = '';
-                    });
+                    this._restoreAll();
                     this._scheduleProcess(1500);
                 });
             },
@@ -21283,11 +21302,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._processTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule('hideWatched');
-                document.querySelectorAll('[ytkit-watched-check]').forEach(el => {
-                    el.removeAttribute('ytkit-watched-check');
-                    el.classList.remove('ytkit-watched');
-                    el.style.opacity = ''; el.style.display = '';
-                });
+                this._restoreAll();
             }
         },
         {
@@ -36175,10 +36190,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return !!detected && !this._languageMatches(detected, allowlist);
             },
 
+            // The checked stamp must identify the rules AND the content they
+            // were evaluated against: Polymer reuses comment nodes, so a
+            // recycled thread carrying only the rules hash kept the previous
+            // comment's verdict — including staying hidden.
+            _threadCheckStamp(thread) {
+                const author = this._getCommentAuthor(thread);
+                const body = this._getCommentText(thread);
+                const fingerprint = author + ' ' + body.length + ' ' + body.slice(0, 120);
+                return this._lastRulesHash + ':' + this._shortHash(fingerprint);
+            },
+
             _processThread(thread) {
                 if (!(thread instanceof HTMLElement)) return;
-                if (thread.dataset.ytkitCommentFilterChecked !== this._lastRulesHash) {
-                    thread.dataset.ytkitCommentFilterChecked = this._lastRulesHash;
+                const stamp = this._threadCheckStamp(thread);
+                if (thread.dataset.ytkitCommentFilterChecked !== stamp) {
+                    thread.dataset.ytkitCommentFilterChecked = stamp;
                     this._setVisibilityReason(thread, 'filter', this._shouldHideThread(thread));
                 }
                 this._setVisibilityReason(thread, 'language', this._shouldHideForLanguage(thread));
@@ -37302,17 +37329,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
             _videoListener: null,
             _video: null,
+            _detachVideo() {
+                if (this._video && this._videoListener) {
+                    this._video.removeEventListener('volumechange', this._videoListener);
+                }
+                this._video = null;
+                this._videoListener = null;
+            },
+
             _apply() {
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) return;
-                this._video = video;
                 // Force the audio element gain to identity. YouTube routes loudness
                 // through a Web Audio gainNode in the MAIN world; we cannot reach
                 // that node from ISOLATED. Best we can do here is keep video.volume
                 // out of YouTube's hands by clamping it back any time it changes.
-                if (!this._videoListener) {
-                    this._videoListener = () => {
-                        if (video.volume < 1 && video.volume > 0.99) video.volume = 1;
+                //
+                // YouTube swaps the <video> element itself between watch pages,
+                // so the bound element is tracked: the previous `if
+                // (!this._videoListener)` guard bound the very first element
+                // forever, which stopped the clamp after the first swap and
+                // left teardown detaching from an element that no longer
+                // carried the listener.
+                if (this._video !== video) {
+                    this._detachVideo();
+                    this._video = video;
+                    this._videoListener = (event) => {
+                        const el = event.currentTarget;
+                        if (el && el.volume < 1 && el.volume > 0.99) el.volume = 1;
                     };
                     video.addEventListener('volumechange', this._videoListener);
                 }
@@ -37328,11 +37372,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
-                if (this._video && this._videoListener) {
-                    this._video.removeEventListener('volumechange', this._videoListener);
-                }
-                this._video = null;
-                this._videoListener = null;
+                this._detachVideo();
                 delete document.documentElement.dataset.ytkitDisableLoudness;
             }
         },

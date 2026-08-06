@@ -3606,10 +3606,15 @@ test('perChannelIntroOutro stores offsets keyed by channel ID and skips bidirect
 test('disableLoudnessNormalization flips the html data attribute for the MAIN-world bridge', () => {
     const start = ytkitSource.indexOf("id: 'disableLoudnessNormalization'");
     assert.ok(start > -1, 'disableLoudnessNormalization must exist');
-    const block = ytkitSource.slice(start, start + 4000);
+    const block = ytkitSource.slice(start, start + 5600);
     assert.match(block, /documentElement\.dataset\.ytkitDisableLoudness\s*=\s*'1'/,
         'must set data-ytkit-disable-loudness for future MAIN-world bridge');
-    const destroyIdx = block.indexOf('destroy()');
+    assert.match(block, /if \(this\._video !== video\)/,
+        'the volume clamp must rebind when YouTube swaps the <video> element');
+    // Anchor on the method definition, not the bare token — prose in the
+    // feature's own comments mentions it too.
+    const destroyIdx = block.search(/\n\s+destroy\(\) \{/);
+    assert.ok(destroyIdx > -1, 'destroy() must be defined inside the pinned window');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
     assert.match(destroyBlock, /delete document\.documentElement\.dataset\.ytkitDisableLoudness/,
         'destroy() must clear the html data attribute');

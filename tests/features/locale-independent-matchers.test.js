@@ -7,103 +7,11 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const vm = require('node:vm');
-const { sources } = require('../helpers/source');
+const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
 
 // The real shared parser — the structural view-count gate delegates to it.
 require('../../extension/core/text-metrics.js');
 const YTKitCore = globalThis.YTKitCore;
-
-// A feature literal closes at the array indent and is followed by a comma or
-// the array end — never by `)`, which belongs to a factory-built neighbour.
-const FEATURE_CLOSE = /\n {8}\}(?=,|\s*\]|\s*$|\n)/g;
-
-// Slice one feature object literal out of the monolith. Brace counting would
-// have to survive template literals and regex literals, so instead the slice
-// runs to the NEXT feature's `id:` line and then back to the last close brace
-// before it — which is this feature's own.
-function featureSource(id) {
-    const needle = `\n        {\n            id: '${id}'`;
-    const start = sources.ytkit.indexOf(needle);
-    assert.ok(start > 0, `feature '${id}' must exist in ytkit.js`);
-    const nextId = sources.ytkit.indexOf("\n            id: '", start + needle.length);
-    assert.ok(nextId > start, `feature '${id}' must be followed by another feature`);
-    const region = sources.ytkit.slice(start + 1, nextId);
-    FEATURE_CLOSE.lastIndex = 0;
-    let close = null;
-    for (let match = FEATURE_CLOSE.exec(region); match; match = FEATURE_CLOSE.exec(region)) close = match;
-    assert.ok(close, `feature '${id}' must close at the features-array indent`);
-    return region.slice(0, close.index + close[0].length);
-}
-
-function loadFeature(id, extraGlobals = {}) {
-    const sandbox = {
-        console,
-        setTimeout,
-        clearTimeout,
-        t: (_key, fallback) => fallback,
-        PageTypes: new Proxy({}, { get: (_target, prop) => String(prop) }),
-        Z: new Proxy({}, { get: () => 1 }),
-        ICONS: new Proxy({}, { get: () => () => fakeNode() }),
-        IMPORT_LIMITS: new Proxy({}, { get: () => 100 }),
-        createSVG: () => fakeNode(),
-        DebugManager: { log() {} },
-        showToast() {},
-        getVideoId: () => 'abc12345678',
-        ...extraGlobals
-    };
-    sandbox.globalThis = sandbox;
-    return vm.runInNewContext(`(${featureSource(id)})`, sandbox);
-}
-
-function fakeNode(options = {}) {
-    const {
-        tag = 'div',
-        text = '',
-        attributes = {},
-        data = undefined,
-        children = []
-    } = options;
-    const attrs = new Map(Object.entries(attributes));
-    const node = {
-        tagName: tag.toUpperCase(),
-        textContent: text,
-        data,
-        clicked: 0,
-        dataset: {},
-        style: {},
-        children,
-        hasAttribute: (name) => attrs.has(name),
-        getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
-        setAttribute: (name, value) => attrs.set(name, String(value)),
-        removeAttribute: (name) => attrs.delete(name),
-        matches: (selector) => selector.split(',').some(part => part.trim() === tag),
-        closest(selector) {
-            return this.matches(selector) ? this : (this.parentElement?.closest?.(selector) ?? null);
-        },
-        querySelector: () => null,
-        querySelectorAll: () => [],
-        click() { this.clicked += 1; },
-        appendChild() {},
-        replaceChildren() {}
-    };
-    children.forEach((child) => { child.parentElement = node; });
-    return node;
-}
-
-// A document whose queries are answered by a caller-supplied resolver, so a
-// fixture can model "this selector matches these nodes" without a real DOM.
-function fakeDocument(resolve) {
-    const doc = {
-        body: fakeNode({ tag: 'body' }),
-        querySelector(selector) { return this.querySelectorAll(selector)[0] || null; },
-        querySelectorAll(selector) {
-            const found = resolve(selector);
-            return Array.isArray(found) ? found : (found ? [found] : []);
-        }
-    };
-    return doc;
-}
 
 const flush = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
