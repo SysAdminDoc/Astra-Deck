@@ -522,7 +522,7 @@ test('studio comments preserve native text selection on watch pages', () => {
         'studio comments should use a text cursor for comment content');
     assert.ok(block.includes('#published-time-text a'),
         'studio comments should keep timestamp links in the interactive foreground');
-    assert.ok(block.includes("style.setProperty('display', 'none', 'important');"),
+    assert.ok(block.includes("setManagedStyle(hitbox, 'display', 'none')"),
         'studio comments should inline-hide legacy comment hitboxes when they appear');
     assert.ok(block.includes("window.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);"),
         'studio comments should protect selection before downstream handlers can cancel it');
