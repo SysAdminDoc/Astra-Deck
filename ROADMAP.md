@@ -53,16 +53,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P1
 
-- [ ] P1 — Default-ON injected chrome is white-on-white on YouTube light theme (watchPageRestyle, thinScrollbar, watch-action buttons, quick-link launcher)
-  Category: visual
-  Where: extension/ytkit.js:6643-6655 (watchPageRestyle CSS — title rgba(255,255,255,0.97), action buttons rgba(255,255,255,0.05)/0.7, description 0.55, info row 0.35, comments count 0.5, all !important, zero `html[dark]`/`html:not([dark])` scoping); :6636-6641 (thinScrollbar — thumb rgba(255,255,255,0.2) on transparent track); :50393-50419 (.ytkit-watch-action-btn base — rgba(255,255,255,0.045) bg / 0.82 text) and :18528 (`path.setAttribute('fill', 'white')` — the currentColor correction lives only inside watchPageRestyle's sheet at :6655, so it vanishes if that feature is off); :19290-19316 (quickLinkMenu launcher — rgba(255,255,255,0.06) bg / 0.84 text)
-  Problem: All four features are default ON (default-settings.json: watchPageRestyle=true, thinScrollbar=true, quickLinkMenu=true; the watch-action-btn group hosts the default-on Download/Hide-All buttons). On YouTube light theme, a fresh install renders the watch-page title/description/comments header as white-alpha text over the white page, an invisible scrollbar thumb site-wide, a near-invisible Download button with a white SVG icon, and an invisible masthead launcher. The repo's own fix pattern exists (`html:not([dark])` lanes were added for subscription-groups, RYD pill, DeArrow votes, AI summary in 3b2b62d6) but was never applied to the biggest default-ON surfaces. Root cause is systemic: no gate renders injected CSS against a light-theme fixture, so light-theme repair has only happened surface-by-surface as audits touch them.
-  Evidence: Static CSS verified per site; `grep "html:not(\[dark\]) ytd-watch-metadata" extension/ytkit.js` → 0; light lanes confirmed present for the other surfaces listed (ytkit.js:673, 34221, 37166+, 37839+). The dropdown interiors (.ytkit-ql-drop etc.) are opaque dark and fine — only the always-visible chrome breaks.
-  Fix: Add `html:not([dark])` override lanes (or route colors through `var(--yt-spec-text-primary/-secondary, <dark fallback>)`) for the four surfaces, matching the .ytkit-da-vote-btn / .ytkit-ryd-pill pattern already in the file; change the download SVG to `fill="currentColor"` at creation (ytkit.js:18528) instead of relying on watchPageRestyle's correction. Mind fixed-window hardening-test slices when blocks grow (widen the window, don't shrink code). Consider the systemic closure separately: a light-theme render lane in the smoke tooling (see P3 item below).
-  Acceptance: On a light-theme watch-page fixture, title/description/comment-header text, the scrollbar thumb, the Download button + icon, and the quick-link launcher are all legible (≥4.5:1); dark theme unchanged; `npm run check` + hardening pins green.
-  Confidence: Verified (static CSS; colors and missing scoping unambiguous)
-  Effort: M
-
 ### P2 — Correctness
 
 - [ ] P2 — Repeat Takeout imports double-count all previously imported watch time
