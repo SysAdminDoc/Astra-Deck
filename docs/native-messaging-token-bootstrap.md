@@ -24,7 +24,7 @@ channel:
 
 ## Implemented state
 
-In `astra_downloader/astra_downloader.py`:
+In the companion (SysAdminDoc/AstraDownloader, `astra_downloader.py`):
 
 - `read_native_message` and `write_native_message` implement Chrome's 4-byte
   little-endian length framing with a 1 MB bound.
@@ -79,10 +79,13 @@ UI health-pill assertions.
    set `LegacyHealthTokenEcho` false in the shipped companion defaults or
    installer-managed config, then remove the fallback branch after a compatibility
    window once legacy clients have migrated.
-4. **Release packaging.** The companion setup path still requires both
-   `AstraDownloader.exe` and `AstraDownloader.exe.sha256` on the GitHub release.
-   No published release attaches the companion asset pair yet — check
-   `gh release view --json assets` for the live state.
+4. **Release packaging.** The companion setup path requires both
+   `AstraDownloader.exe` and `AstraDownloader.exe.sha256`, and since the split
+   (a6bb685f) they ship from the companion's own repository,
+   SysAdminDoc/AstraDownloader — check `gh release view --repo
+   SysAdminDoc/AstraDownloader --json assets` for the live state. Astra Deck
+   releases must NOT carry that pair: `npm run release:readiness` fails on it
+   (`companion-not-republished` / `companion-not-manifested`).
 
 Until the legacy branch is removed, native-capable clients get the stronger
 browser-pinned token channel while controlled deployments can disable the

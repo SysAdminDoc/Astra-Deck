@@ -79,46 +79,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Post-split documentation / process
 
-- [ ] P2 — docs/signing-keys.md release checklist contains dead commands and self-contradictory companion steps
-  Category: docs
-  Where: docs/signing-keys.md:247-248 (step 2: `py -3.12 -m pytest astra_downloader` — directory deleted by a6bb685f, command errors), :257-265 (step 6: `npm run release:manifest -- --require-companion` — flag doesn't exist and is SILENTLY swallowed because generate-release-manifest.js has no strict argv validation; staging the exe in build/ is exactly what the companion-not-republished readiness gate now FAILS on), :271-272 and :279-283 (steps 9/12 still verify AstraDownloader.exe / companionUpdateRequired on this repo's releases)
-  Problem: This is the canonical release procedure; a maintainer following it hits a hard error at step 2 and executes a believed-gate no-op at step 6. check-versions.js's doc-truth gate scans this file but only for retired-workflow refs and "latest release vX" claims, so none of this trips it.
-  Evidence: Commands run/greped against the current tree; both readiness gates verified live at generate-release-readiness.js:299/:367.
-  Fix: Rewrite steps 2/6/9/12 for the two-repo world (the correct policy text at :287-291 already exists); add strict unknown-argv rejection to generate-release-manifest.js like the sibling gate scripts have.
-  Acceptance: Every command in the checklist executes successfully on a clean checkout; `npm run release:manifest -- --require-companion` exits non-zero with "unknown argument".
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — docs/native-messaging-token-bootstrap.md claims companion source lives here and that no release ever shipped the exe pair
-  Category: docs
-  Where: docs/native-messaging-token-bootstrap.md:27 ("In `astra_downloader/astra_downloader.py`:" — file moved repos), :82-85 ("The companion setup path still requires both AstraDownloader.exe and .sha256 on the GitHub release. No published release attaches the companion asset pair yet")
-  Problem: False twice over: v4.50.7 DID ship the pair from this repo, and post-split the pair ships from SysAdminDoc/AstraDownloader (v2.0.0+) — while this repo's gates now REJECT attaching it here. As written the doc instructs a future release step the gates will fail.
-  Evidence: gh release view v4.50.7 shows the assets; readiness gates verified; AstraDownloader repo carries its own releases.
-  Fix: Repoint the implemented-state section and the release-packaging note at the AstraDownloader repo; note the gates that forbid republishing here.
-  Acceptance: The doc contains no claim that companion source or release assets live in this repo; check-versions doc gate still green.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — CODEOWNERS pins three paths deleted by the companion split — and a hardening test enforces the staleness
-  Category: maintainability
-  Where: .github/CODEOWNERS:11 (/scripts/companion-license-inventory.js), :15 (/scripts/stage-companion-release.js), :35 (/astra_downloader/); pinned by tests/hardening.test.js:2280-2318 (protected-path list, incl. :2311)
-  Problem: All three paths were deleted in a6bb685f; the hardening test REQUIRES each entry to be present, so removing the dead lines fails the suite — the gate actively preserves stale state instead of catching it. Related comment staleness: hardening.test.js:1674 and :2390 still cite astra_downloader/astra_downloader.py:830-838 / test_astra_downloader.py as the cookie wire-format parity counterpart, which now lives in the AstraDownloader repo (that cross-repo contract is no longer verifiable from this suite — note it in the comment).
-  Evidence: Paths verified absent; CODEOWNERS lines and test list read directly.
-  Fix: Delete the three CODEOWNERS lines and the matching protected-path entries in the same commit; repoint the two test comments at the AstraDownloader repo.
-  Acceptance: CODEOWNERS references only existing paths; `npm test` green.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — Blocked-item tracker references files removed by the companion split
-  Category: docs
-  Where: Roadmap_Blocked.md:17-18, 25-26, 42-43, 69, 78 (items whose Touches/Where name astra_downloader/download.py, astra_downloader.py, health.py etc.)
-  Problem: ROADMAP/Roadmap_Blocked are the single task tracker; several blocked items point implementation at files that no longer exist in this repo. An agent draining them will chase missing files. The affected items (aria2c option, native-messaging LNA fallback, bgutil auto-provision, playlist bounding, /health token echo, etc.) are now AstraDownloader-repo work.
-  Evidence: Paths verified absent from this tree; items read in Roadmap_Blocked.md at HEAD.
-  Fix: Migrate the companion-scoped items to the AstraDownloader repo's roadmap (preserving their Blocker lines) and leave a one-line pointer under each here, or annotate each with "companion repo: SysAdminDoc/AstraDownloader" and the new file paths.
-  Acceptance: No Roadmap_Blocked item names a file absent from this repo without naming the repo that now owns it.
-  Confidence: Verified
-  Effort: S
-
 ### P3 — Correctness / reliability edge cases
 
 - [ ] P3 — Reaction Spammer ytkit.js twin doesn't enforce the configurable interval floor (module does)

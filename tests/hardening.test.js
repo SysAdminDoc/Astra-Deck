@@ -2295,11 +2295,9 @@ test('CODEOWNERS protects security-sensitive repository paths', () => {
         '/package.json',
         '/package-lock.json',
         '/build-extension.js',
-        '/scripts/companion-license-inventory.js',
         '/scripts/generate-release-manifest.js',
         '/scripts/generate-release-readiness.js',
         '/scripts/generate-release-sbom.js',
-        '/scripts/stage-companion-release.js',
         '/scripts/check-*.js',
         '/docs/signing-keys.md',
         '/docs/repo-settings.md',
@@ -2308,7 +2306,6 @@ test('CODEOWNERS protects security-sensitive repository paths', () => {
         '/extension/background.js',
         '/extension/core/',
         '/extension/ytkit.js',
-        '/astra_downloader/'
     ]) {
         assert.match(
             codeowners,
@@ -2387,7 +2384,8 @@ test('theater-split divider mousedown clears any pre-existing drag state defensi
 });
 
 test('normalizeCookieExpiry produces wire-compatible output with the Python downloader', () => {
-    // The Python downloader at astra_downloader/astra_downloader.py:830-838
+    // The Python downloader — now SysAdminDoc/AstraDownloader, split out of
+    // this repo in a6bb685f — parses raw_expiry at astra_downloader.py:830-838
     // parses raw_expiry as `int(float(x)) if x not in (None, "") else 0`,
     // clamping negatives to 0. The JS helper must produce values that
     // survive that round-trip identically. Test the boundary cases:
