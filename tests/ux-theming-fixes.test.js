@@ -502,3 +502,44 @@ test('fallback Takeout import exposes the same Undo toast contract as the module
     assert.match(settingsPanelModuleSource, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*'Undo'/,
         'module Takeout success must retain the same action-capable toast API');
 });
+
+// ── Default-ON injected chrome must be legible on YouTube's light theme ──
+// These four surfaces ship enabled on a fresh install and painted white-alpha
+// text/chrome straight onto the light page background: the watch-page restyle
+// (title, description, info row, comments header, compose placeholder), the
+// thin scrollbar thumb, the injected Download / Hide All buttons, and the
+// masthead quick-link launcher. Every other injected surface had already been
+// given an html:not([dark]) lane; these were missed because no gate renders
+// injected CSS against a light fixture.
+
+test('default-ON injected surfaces carry html:not([dark]) light-theme lanes', () => {
+    const required = [
+        // watchPageRestyle
+        ['ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string', 'watch-page title'],
+        ['ytd-watch-metadata #description-inline-expander #snippet', 'description snippet'],
+        ['ytd-watch-metadata #info-container', 'watch-page info row'],
+        ['ytd-comments-header-renderer #count', 'comments header count'],
+        ['ytd-comments-header-renderer ytd-comment-simplebox-renderer #placeholder-area', 'comment compose placeholder'],
+        // thinScrollbar
+        ['*::-webkit-scrollbar-thumb', 'scrollbar thumb'],
+        // injected action buttons + masthead launcher
+        ['.ytkit-watch-action-btn', 'watch action button'],
+        ['.ytkit-ql-launcher', 'quick-link launcher'],
+    ];
+    for (const [selector, label] of required) {
+        assert.ok(
+            ytkitSource.includes(`html:not([dark]) ${selector}`),
+            `${label} must have an html:not([dark]) light-theme override (selector: ${selector})`
+        );
+    }
+});
+
+test('the injected download icon inherits its colour instead of hardcoding white', () => {
+    // The fill:currentColor correction previously lived only inside
+    // watchPageRestyle's stylesheet, so disabling that feature left a white
+    // icon on a light-theme action row.
+    assert.doesNotMatch(ytkitSource, /setAttribute\('fill',\s*'white'\)/,
+        'injected SVG icons must not hardcode a white fill');
+    assert.match(ytkitSource, /path\.setAttribute\('fill',\s*'currentColor'\)/,
+        'the download glyph must inherit the button colour');
+});
