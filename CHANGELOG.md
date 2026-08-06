@@ -6,6 +6,92 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.53.0] - 2026-08-06
+
+Second half of the audit-backlog drain: every remaining P3 finding. ROADMAP.md
+is now empty — what is left is operator-gated and tracked in Roadmap_Blocked.md.
+
+### Fixed — features that were inert or wrong on 10 of 11 locales
+
+- **Five features identified YouTube's own controls by matching English words.**
+  Comment sort, auto-like, Watch Later quick-add, Not Interested and precise
+  view counts were inert everywhere else — and comment sort was worse than
+  inert, re-opening the sort dropdown every ~2 seconds for the whole session
+  because nothing matched and nothing closed it. Each now reads the Polymer
+  data YouTube exposes (iconType, playlistEditEndpoint, subscribed,
+  subMenuItems), with the text test kept as a fallback. Not Interested also
+  retries, because menu items render asynchronously and the old
+  next-animation-frame lookup usually missed even in English while the card
+  hid locally anyway.
+- **Every Cyrillic comment was classified as Russian** — both arms of the
+  language detector's ternary returned `'ru'`. Ukrainian, Serbian and
+  Macedonian are now distinguished and anything else reports unknown, which
+  the caller fails open on instead of hiding.
+- **The whole "search" scope of the list feed layout was inert**: search
+  results render under `ytd-search`, not `ytd-browse`.
+
+### Fixed — Polymer node recycling
+
+- Hide Watched Videos stamped a permanent marker, so a recycled card stayed
+  dimmed or hidden over an unwatched video, and a card read before its resume
+  overlay hydrated was never re-checked.
+- The loudness clamp bound the first `<video>` element forever, so it stopped
+  working after YouTube's first element swap and teardown detached from the
+  wrong node.
+- The comment filter's checked stamp carried only the rules hash, so a
+  recycled thread kept the previous comment's verdict.
+
+### Fixed — twenty-one small correctness defects
+
+Channel-page redirects mangled `?bp=` query strings and reassigned the same
+URL on every load; the settings-rollback toast asked for a colour named
+"error" and rendered a neutral, polite Notice instead of an alert; disabling a
+persistent control left its wrapper and a Restore chip behind; remaining-time
+double-counted overlapping SponsorBlock segments and could render "(--0:05)";
+the statistics dashboard credited a pinned background tab 24/7; per-channel
+speed memory recorded rate changes made by other features, so the music lock's
+forced 1× deleted the channel's saved speed; hovering a thumbnail paused
+playback in other tabs; "Load More" cleared inline styles but not the
+attribute that did the hiding; the buffering goal was never handed back on
+disable; a storage preload resurrected keys deleted mid-flight; a transcript
+snapshot restore could commit a wipe plus a partial restore; settings
+broadcasts skipped youtube-nocookie.com and youtu.be tabs; a DeArrow channel
+override was written under a key no feed card could match; the dislike pill
+never re-armed on a cold load; the playlist enhancer read a CSS pixel width as
+a watched percentage; the handle revealer fired one uncapped credentialed
+fetch per commenter; and dual captions accepted the previous page's response,
+looped forever on mount failure, and compared the browser locale instead of
+the caption track on screen.
+
+### Fixed — settings search
+
+The search field's icon declared a left offset while statically positioned, so
+it sat in flow beside an input that was never sized. The input stopped at its
+intrinsic width while the container painted its background across the header,
+and the placeholder read "Search settings, pages, co" in every rendered state.
+
+### Added — gates that can fail
+
+- **A light-theme lane for injected surfaces.** Every theming defect in this
+  audit shared one root cause: nothing checked injected CSS against YouTube's
+  light theme. `npm run check` now fails when a surface paints near-white text
+  with no `html:not([dark])` rule, and when a surface that had one loses it.
+- Release readiness cross-checks `release-manifest.json`'s own per-asset
+  hashes against the files and `SHA256SUMS`.
+- Five test pins asserted `indexOf(a) < indexOf(b)` without checking that `a`
+  existed, so each passed exactly when the code it guarded was deleted.
+- New coverage for the Navigation API's pre-commit event shapes and for the
+  Shorts daily limit's local-midnight rollover.
+
+### Changed
+
+- MAIN-world scripts no longer assign `module.exports` in the page's global
+  scope; the popup drives its companion-update buttons from one predicate
+  instead of two; the side panel honours its own bare-`chrome` fallback; three
+  `sidebar.html` i18n keys were realigned with their side-panel twin; and the
+  storage manager's unload guard is module-scoped, which is what its comment
+  always claimed.
+
 ## [4.52.0] - 2026-08-06
 
 Audit-backlog drain: every P0/P1/P2 finding from the 2026-08-06 deep audit,

@@ -350,3 +350,35 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: On playlists, [Deleted video] rows optionally resolve via Filmot with cache + rate budget; store-safe artifacts strip the host grant automatically.
   Complexity: M
   Blocker: Repository research names the userscript but contains no verified Filmot host, request/response schema, public API terms, or fallback contract. This development pass forbids fresh research, so implementing an endpoint would be speculative.
+
+## Audit scope records (not implementable work)
+
+These two entries are the honest scope records the 2026-08-05 and
+2026-08-06 audit passes left behind: they say which surfaces were NOT
+examined, so the next audit starts where the last one stopped. They are
+kept verbatim.
+
+Blocker: Not implementation work. Closing them means scheduling and
+running an audit pass over the listed surfaces, which is a research /
+planning activity rather than a roadmap item a coding agent can drain.
+Every actionable finding those passes produced has been implemented and
+deleted from ROADMAP.md; what remains here is the coverage ledger.
+
+- [ ] P3 — Unaudited — needs a pass
+  Category: docs
+  Where: repo-wide
+  Problem: This pass concentrated on the companion (Python, Qt GUI, HTTP routes) and the extension/userscript code paths that consume companion state. The following were not audited and should not be assumed clean: `extension/ytkit.js` feature internals beyond the download surface (~35k lines); the settings-panel, subscription-groups, video-hider, sponsorblock, dearrow and live-chat feature modules; `extension/popup.js` and `sidepanel.js` interaction flows; the MV3 background service-worker lifecycle; `build-extension.js` and the release/SBOM scripts; the extension's own theming across YouTube light/dark (its `audit:contrast` and `audit:a11y` gates pass, which is evidence but not a substitute for driving the surfaces); and Firefox-specific behaviour. The companion's own dark-only palette was checked for text contrast and passes (`muted`/`fieldHint` #8d97a4 → 6.57:1, `toolbarMeta` #aab2bd → 9.09:1 on the #0a0d12 window; disabled-state colours are below 4.5:1 but are WCAG-exempt), so no contrast finding is logged for it.
+  Evidence: Scope of this pass, recorded honestly so the next audit starts where this one stopped.
+  Fix: Schedule a pass per area, driving the extension surfaces in a real browser rather than reading them.
+  Acceptance: Each listed area has either findings or an explicit "audited, clean" note with the method used.
+  Confidence: Verified
+  Effort: L
+
+- [ ] P3 — Unaudited residue from this pass
+  Category: docs
+  Where: repo-wide
+  Problem: Honest scope record. Not line-audited this pass: ~1,800 lines of pure-CSS template literals in ytkit.js (watchPageRestyle interior detail, chat-style premium layers, popup/dropdown theming — surveyed structurally only); the settings-panel module's full 3.4k lines (repeatedly audited before; skimmed); sticky-video's full 5k lines (lifecycle spot-checked); download-ui's full 2.9k lines (spot-checked); Firefox-specific runtime behavior beyond the manifest-patch/static gates; live-browser verification of every finding marked Needs-repro (the blocked "Live-browser behavioral audit" item covers the vehicle). The companion (AstraDownloader repo) is out of scope here by design.
+  Fix: Fold the CSS-literal interiors into the light-theme lane work above; keep the rest on the existing blocked live-browser item.
+  Acceptance: Next audit starts from this record.
+  Confidence: Verified
+  Effort: S
