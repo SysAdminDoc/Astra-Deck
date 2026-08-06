@@ -3283,9 +3283,14 @@ return response;
                 'thanks', 'save', 'sponsor', 'moreActions'
             ],
             hiddenPlayerControlsManager: true,
+            // 'captions' hides `.caption-window` — the subtitle TEXT overlay,
+            // not a button — so shipping it hidden meant closed captions never
+            // rendered on a fresh install even with CC switched on. 'fullscreen'
+            // removed the control users reach for most. Both stay available as
+            // opt-in; the rest of the set is unchanged.
             hiddenPlayerControls: [
                 'next', 'autoplay', 'subtitles',
-                'captions', 'miniplayer', 'pip', 'theater', 'fullscreen'
+                'miniplayer', 'pip', 'theater'
             ],
             hiddenWatchElementsManager: true,
             hiddenWatchElements: [
@@ -3450,7 +3455,9 @@ return response;
             customCssCode: '',
             shareMenuCleaner: false,
             autoClosePopups: false,
-            autoDismissContentWarning: true,
+            // Auto-accepting "I understand and wish to proceed" answers an
+            // age/content interstitial on the user's behalf. Opt-in only.
+            autoDismissContentWarning: false,
             videoResolutionBadge: false,
             likeViewRatio: false,
             downloadThumbnail: false,

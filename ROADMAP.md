@@ -57,16 +57,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — UX / theming / product
 
-- [ ] P2 — Fresh-install defaults hide the caption overlay, core player controls, and auto-accept content warnings
-  Category: ux
-  Where: extension/default-settings.json:95-105 (hiddenPlayerControls default `["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"]` — `captions` maps to '.caption-window' at ytkit.js:16676-16693, i.e. the caption TEXT overlay), :85-94 (hiddenActionButtons hides Like/Share/Save), :251 (autoDismissContentWarning: true — auto-clicks "I understand and wish to proceed"), plus early.css:167-169 (all avatars hidden site-wide) and hiddenWatchElements hiding the transcript section
-  Problem: On first install, closed captions never render even with CC on (direct harm to deaf/hard-of-hearing users), and fullscreen/theater/PiP/miniplayer buttons are gone — reading as "the extension broke my player." autoDismissContentWarning auto-accepts an age/content interstitial the user never opted into. These page-level defaults apply before the popup welcome card (with its profile picks) is ever opened.
-  Evidence: Defaults and selector mapping verified by direct read; injectStyle wraps the list in display:none !important (core/styles.js:19).
-  Fix: PRODUCT DECISION — these are documented owner-canonical defaults, so confirm scope with the owner before changing. Minimum defensible change: remove `captions` and `fullscreen` from the default hidden set and default autoDismissContentWarning to false (keep everything available as opt-in). Alternative: ship neutral defaults in the store-safe profile only. Touching defaults requires the full 8-touchpoint recipe (schema/default-settings/fixture expectedDefaulted/storage-size pins etc. per CLAUDE.md).
-  Acceptance: Fresh-profile install: CC button shows captions, fullscreen button present, content warnings require a human click; existing users' stored settings unaffected (defaults only apply to unset keys).
-  Confidence: Verified (behavior); the "right" default is an owner call
-  Effort: S (plus pins)
-
 - [ ] P2 — watchHistoryAnalytics overlay: no dialog semantics, unlabeled close, hardcoded English, off-brand palette, overflow below ~700px
   Category: a11y
   Where: extension/ytkit.js:33592-33686
