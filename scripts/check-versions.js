@@ -35,11 +35,17 @@ const ACTIVE_DOC_TRUTH_FILES = Object.freeze([
     path.join('docs', 'signing-keys.md'),
     path.join('docs', 'native-messaging-token-bootstrap.md'),
 ]);
-// The current release claim is writable only in the README for this local
-// release workflow. Other tracked Markdown files may retain historical
-// architecture snapshots when the run's documentation hygiene forbids their
-// staging; retired-policy references remain checked in every active document.
-const CURRENT_VERSION_TRUTH_FILES = new Set(['README.md']);
+// Files whose present-tense version claims must match the product version.
+// The two patterns below ("today, at vX" / "currently agree at vX") only fire
+// on present-tense prose, so historical snapshots elsewhere in these documents
+// stay valid. docs/architecture.md is included because its opening paragraph
+// asserts the current version twice and the release recipe expects it kept in
+// step — without it the gate printed a pass while that line named the previous
+// release. Retired-policy references remain checked in every active document.
+const CURRENT_VERSION_TRUTH_FILES = new Set([
+    'README.md',
+    path.join('docs', 'architecture.md'),
+]);
 
 function readPackageVersion() {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
