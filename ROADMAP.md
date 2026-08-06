@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Repeat Takeout imports double-count all previously imported watch time
-  Category: correctness
-  Where: extension/ytkit.js:1389-1441 (mergeTakeoutWatchHistoryIntoStats), save site :4528-4530 (settingsManager.importYouTubeTakeoutWatchHistory)
-  Problem: The merge rebuilds `days` as `organicDays + all surviving imported-ledger entries`, where organicDays = `sanitizeWatchTimeStats(currentStats).days` (line 1423). But after the first import the persisted `days` already CONTAINS imported seconds (the merged result is what gets saved), so every later import that adds ≥1 new entry re-adds EVERY previously imported entry's seconds on top of days that already include them. Error compounds per import (ledger cap 5000 × 60s = up to ~83 phantom hours per import). The exact-same-file case is masked only because `result.imported === 0` skips the save — the normal workflow (importing a fresh, overlapping Takeout export) hits it every time.
-  Evidence: Verified by executable simulation of the extracted function: organic {2026-08-01:100} + import A(60s) → day 60, total 160; second import {A dup + new B} → day 120 (A counted twice), total 280 instead of 220.
-  Fix: Track imported contributions separately — either compute organicDays as storedDays minus the sum of the previous ledger before merging, or persist organic and imported day-maps as separate fields and derive `days` at read time.
-  Acceptance: A test importing overlapping ledgers twice asserts totals equal organic + union-of-imports (no double count); watch analytics render unchanged for single imports.
-  Confidence: Verified (simulation)
-  Effort: M
-
 - [ ] P2 — Preset/Low-Power recipes never apply their feature changes in the tab that toggles them
   Category: correctness
   Where: extension/ytkit.js:42150-42183 (lowPowerProfile._apply/_restore), :42188-42339 (presetPrivacy/presetResearcher/presetPowerUser/presetFocus — same pattern)
