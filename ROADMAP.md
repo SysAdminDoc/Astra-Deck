@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Userscript twins missing four shipped extension fixes (localized action hooks, per-channel speed reset, auto-start budget, focused-mode scope)
-  Category: correctness
-  Where: YTKit.user.js:32799-32841 (pre-6ebf7403 `_buttonAriaLabels`/`aria-label="…"` English-only action hooks; also :31962 `button[aria-label="Create"]`, :34071 "Join this channel", :34166 "Share"); :36637-36648 (pre-2df33124 _saveCurrentSpeed — `if (!video || video.playbackRate === 1) return;` so resetting to 1x never clears the stored speed, and no _activeChannelId capture); :30340 (`tryAutoStart(retries = 4)`) with :30439, :30468, :25153, :44852 still passing 5 (9c10b46c raised the extension to 8 for the ~12s cold start; only :30915 was ported); :39516 (focusedMode feature object missing the `pages: [PageTypes.WATCH]` gate from d2561495 — masthead-hiding CSS applies on every page type)
-  Problem: The userscript's hand-maintained twins retain four bugs the extension already fixed this wave. On non-English locales the userscript's action-hiding features silently no-op; per-channel speed can never be reset; healthy cold starts of the 40MB companion exe report "Still not responding"; focused mode hides the masthead everywhere. The regression pin for the auto-start budget deliberately excludes the userscript (tests/download-health-boundary.test.js:252 covers module + monolith only) even though tests/helpers/source.js already exposes sources.userscript.
-  Evidence: All four sites diffed against the extension counterparts by line; drift gate (check-userscript-drift.js) is feature-ID-granular so it reports parity regardless.
-  Fix: Hand-port each fix verbatim (structural hook selectors; `delete speeds[channelId]` + _activeChannelId; budget 8 everywhere; pages gate). Then widen the existing pins: include sources.userscript in the tryAutoStart doesNotMatch, and add parity pins for the other three sites in tests/userscript-parity.test.js. Longer-term gate improvement is covered by the P1 bundle-drift item.
-  Acceptance: grep 'aria-label="Save to playlist"' YTKit.user.js → 0; tryAutoStart(4|5) absent from all three sources (test-pinned); focusedMode carries the pages gate; per-channel speed reset test passes against the userscript source.
-  Confidence: Verified (line diffs)
-  Effort: M
-
 ### P2 — UX / theming / product
 
 - [ ] P2 — Popover top-layer migration regressions: overlays stack by show-order, dl overlays left behind, dismiss animation defeated
