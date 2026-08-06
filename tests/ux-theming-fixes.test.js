@@ -463,6 +463,28 @@ test('settings command search mirrors icon and actions without RTL overlap', () 
     assert.match(smoke, /RTL search icon overlaps its actions/);
 });
 
+test('the settings search field fills its row so the placeholder is not clipped', () => {
+    const monolith = read('extension/ytkit.js');
+    const start = monolith.search(/\.ytkit-search-input \{[^}]*min-height: 36px;/);
+    assert.ok(start > -1, 'the command-center search-input rule must exist');
+    const rule = monolith.slice(start, start + 600);
+    assert.match(rule, /width: 100%;/,
+        'an unsized input stops at its intrinsic ~20-character width');
+    assert.match(rule, /box-sizing: border-box;/,
+        'the large right padding reserving room for the clear button must stay inside that width');
+
+    // The icon declared `left` while statically positioned, so it did nothing
+    // except occupy inline space beside the input — that is what kept the input
+    // narrow and cut the placeholder mid-word in all six rendered states.
+    const iconStart = monolith.indexOf('.ytkit-search-icon {', start);
+    assert.ok(iconStart > -1);
+    const iconRule = monolith.slice(iconStart, iconStart + 700);
+    assert.match(iconRule, /position: absolute;/,
+        'left/right offsets require a positioned element');
+    assert.match(iconRule, /transform: translateY\(-50%\);/,
+        'the icon must be centred against the field it overlays');
+});
+
 test('blue light filter stays opt-in with a master toggle and nested intensity control', () => {
     assert.equal(defaultSettings.blueLightFilter, false,
         'Blue Light Filter must remain disabled on clean installs');
