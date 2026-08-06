@@ -1212,6 +1212,77 @@ test('digitalWellbeing enforces a Shorts budget with an inaccessible hard block 
     }
 });
 
+test('the Shorts daily ledger re-keys at the local midnight rollover', () => {
+    const mod = require('../../extension/features/digital-wellbeing/index.js');
+    const today = (() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    })();
+
+    const originalLocation = global.location;
+    const originalDocument = global.document;
+    const video = { paused: false, pause() { this.paused = true; }, play() { return Promise.resolve(); } };
+    const settings = {
+        dwDailyCapMin: 0,
+        dwBreakIntervalMin: 0,
+        shortsDailyLimitMin: 1,
+        shortsDailyLimitMode: 'snooze',
+        dwWatchTimeToday: { date: today, seconds: 0 },
+        // Yesterday's ledger: well past the limit AND holding a snooze that has
+        // not expired in wall-clock terms. Both must die with the old day.
+        shortsWatchTimeToday: { date: '2000-01-01', seconds: 9999, snoozeUntil: Date.now() + 3_600_000 }
+    };
+
+    try {
+        global.location = { pathname: '/shorts/abc12345678', assign() {} };
+        global.document = {
+            body: { appendChild() {}, removeChild() {} },
+            hidden: false,
+            visibilityState: 'visible',
+            querySelector: (selector) => (selector === 'video' ? video : null),
+            createElement: () => ({
+                dataset: {}, style: {}, classList: { add() {}, remove() {} },
+                setAttribute() {}, append() {}, appendChild() {}, remove() {},
+                addEventListener() {}, focus() {}
+            }),
+            addEventListener() {},
+            removeEventListener() {}
+        };
+
+        const feature = mod.createDigitalWellbeingFeature({
+            appState: { settings },
+            DebugManager: { log() {} }
+        });
+
+        // Reading the ledger must present a clean day, not yesterday's numbers.
+        const loaded = feature._loadShortsToday();
+        assert.equal(loaded.date, today, 'the ledger must re-key to the local day');
+        assert.equal(loaded.seconds, 0, "yesterday's seconds must not carry over");
+        assert.equal(loaded.snoozeUntil, 0,
+            'a stale snooze must not survive the rollover and silently suppress the new day limit');
+
+        // And a tick must therefore NOT block: one second of Shorts is under a
+        // one-minute limit once the day has rolled.
+        feature._tick();
+        assert.equal(feature._overlay, null, 'a fresh day must not open the limit overlay');
+
+        // The pending second merges into today's ledger, not yesterday's.
+        feature._pendingShortsSeconds = 5;
+        feature._flushShortsToday();
+        assert.equal(settings.shortsWatchTimeToday.date, today);
+        assert.equal(settings.shortsWatchTimeToday.seconds, 5,
+            'the flush must merge onto the re-keyed day, not resurrect the old total');
+        assert.equal(feature._pendingShortsSeconds, 0, 'a flush must drain the pending counter');
+
+        // A second flush with nothing pending must be a no-op, not a rewrite.
+        feature._flushShortsToday();
+        assert.equal(settings.shortsWatchTimeToday.seconds, 5);
+    } finally {
+        if (originalLocation === undefined) delete global.location; else global.location = originalLocation;
+        if (originalDocument === undefined) delete global.document; else global.document = originalDocument;
+    }
+});
+
 test('digitalWellbeing module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];

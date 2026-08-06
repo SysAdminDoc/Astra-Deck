@@ -871,6 +871,16 @@ test('split live chat gets a video info header and neutral divider hover', () =>
 
     const extensionRestoreStart = source.indexOf('_restoreSplitActionDock()');
     const extensionRestore = source.slice(extensionRestoreStart, source.indexOf('// Bulk set/remove style properties', extensionRestoreStart));
+    // Each anchor is asserted present first: indexOf returns -1 for a deleted
+    // line, and -1 < anyPositiveIndex, so a bare ordering pin passes exactly
+    // when the code it guards has been removed.
+    for (const anchor of [
+        'this._splitActionDockMoved = null;',
+        'this._restoreSplitLiveHeaderActionPins();',
+        'this._removeSplitLiveHeader();'
+    ]) {
+        assert.ok(extensionRestore.indexOf(anchor) > -1, `extension restore must still contain ${anchor}`);
+    }
     assert.ok(extensionRestore.indexOf('this._splitActionDockMoved = null;') < extensionRestore.indexOf('this._removeSplitLiveHeader();'),
         'extension should restore moved native controls before removing the live header');
     assert.ok(extensionRestore.indexOf('this._restoreSplitLiveHeaderActionPins();') < extensionRestore.indexOf('this._removeSplitLiveHeader();'),
@@ -878,6 +888,13 @@ test('split live chat gets a video info header and neutral divider hover', () =>
 
     const standaloneRestoreStart = theaterSplit.indexOf('function restoreActionDock()');
     const standaloneRestore = theaterSplit.slice(standaloneRestoreStart, theaterSplit.indexOf('// ── Chat helpers', standaloneRestoreStart));
+    for (const anchor of [
+        'actionDockMoved = null;',
+        'restoreLiveHeaderActionPins();',
+        'removeSplitLiveHeader();'
+    ]) {
+        assert.ok(standaloneRestore.indexOf(anchor) > -1, `standalone restore must still contain ${anchor}`);
+    }
     assert.ok(standaloneRestore.indexOf('actionDockMoved = null;') < standaloneRestore.indexOf('removeSplitLiveHeader();'),
         'standalone should restore moved native controls before removing the live header');
     assert.ok(standaloneRestore.indexOf('restoreLiveHeaderActionPins();') < standaloneRestore.indexOf('removeSplitLiveHeader();'),
