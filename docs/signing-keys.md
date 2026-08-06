@@ -244,8 +244,8 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
 
 1. Confirm the tree is clean and the version surfaces match:
    `node scripts/check-versions.js --tag vX.Y.Z`.
-2. Run the local gates: `npm test`, `npm run check`, and
-   `py -3.12 -m pytest astra_downloader`.
+2. Run the local gates: `npm test` and `npm run check`. (The companion's
+   Python suite lives in SysAdminDoc/AstraDownloader and is gated there.)
 3. Confirm the root worktree does not contain a private key:
    `test ! -f ytkit.pem` (PowerShell: `Test-Path ytkit.pem` should be
    `False`).
@@ -254,33 +254,24 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
    (or rely on the default local-key path above).
 5. Emit the release SBOM:
    `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`.
-6. If this release is intended to carry an Astra Downloader self-update payload
-   or bumps `astra_downloader.APP_VERSION`, build and stage the companion EXE
-   after the extension build has populated `build/`:
-   - Astra Downloader builds and releases from its own repository
-     (https://github.com/SysAdminDoc/AstraDownloader); no companion artifact is staged or published here.
-   - `npm run release:manifest -- --require-companion`
-   The companion updater currently downloads
-   `/releases/latest/download/AstraDownloader.exe`, so the EXE and sidecar
-   must attach to the same latest product release unless the update URLs change.
-7. Otherwise, generate checksums and manifest: `npm run release:manifest`.
-8. Generate the release-readiness report and require a pass:
+6. Generate checksums and manifest: `npm run release:manifest`.
+   Do NOT stage a companion EXE here.
+   Astra Downloader builds and releases from its own repository
+   (https://github.com/SysAdminDoc/AstraDownloader), and its updater reads
+   that repo's `/releases/latest`. Staging the exe in
+   `build/` fails the `companion-not-republished` readiness gate, and listing
+   it fails `companion-not-manifested`.
+7. Generate the release-readiness report and require a pass:
    `npm run release:readiness -- --require-pass`.
-9. Verify `build/SHA256SUMS` names every uploaded artifact and that
-   `build/release-manifest.json` marks `localSigningRequired: true`.
-   For companion releases, also verify `AstraDownloader.exe`,
-   `AstraDownloader.exe.sha256`, and `companionUpdateRequired: true`.
-10. Create or update the GitHub Release from local `build/*` assets.
-11. After upload, compare GitHub Release asset digests against the local
+8. Verify `build/SHA256SUMS` names every uploaded artifact and that
+   `build/release-manifest.json` marks `localSigningRequired: true`, and that
+   neither `AstraDownloader.exe` nor its `.sha256` sidecar appears in either.
+9. Create or update the GitHub Release from local `build/*` assets.
+10. After upload, compare GitHub Release asset digests against the local
    checksum file: `npm run release:verify-digests -- --tag vX.Y.Z`.
    Run this from the same maintainer-local build directory whose signed CRX/XPI
    files were uploaded; validation builds that use ephemeral CRX keys are not
    expected to match public CRX digests.
-12. Before merging or tagging a companion `APP_VERSION` bump, download
-    `AstraDownloader.exe` and `AstraDownloader.exe.sha256` from the target
-    release and compare the local hash to the sidecar. Do not advance
-    `APP_VERSION` above the deployed companion release until that dry-run
-    succeeds.
 
 User-facing companion setup docs must stay in sync with the live release:
 

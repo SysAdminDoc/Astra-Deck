@@ -2,12 +2,18 @@
 
 Items moved here from ROADMAP.md because they cannot be completed programmatically and require manual/external actions.
 
+> **Companion-scoped items:** paths beginning `astra_downloader/` and the
+> `scripts/*companion*` helpers left this repository in `a6bb685f` — the
+> downloader now lives in **SysAdminDoc/AstraDownloader**. Items below that
+> name those paths are implemented THERE, against that repo's tree; the paths
+> are kept verbatim because they still resolve inside the companion repo.
+
 ## P0 — Delivery
 
 - [ ] P0 — Tag and publish the v4.51.1 release
   Why: `CHANGELOG.md` declares `[4.51.1] - 2026-08-02` and all version sources agree, but the newest git tag and GitHub release is v4.50.7 (2026-07-28). Two versions of shipped work — durable scheduled subscriptions, the Firefox native-messaging bootstrap fix, resume-playback persistence, the download filename cap and ~33 further fixes — are undelivered on a hand-install channel with no auto-update.
   Evidence: `git tag --sort=-v:refname` tops out at v4.50.7; `gh release list` newest is v4.50.7; `package.json` / `extension/manifest.json` / `docs/architecture.md` all state 4.51.1. The v4.50.7 release carries the ZIP/XPI/userscript/SBOM/companion assets but no CRX artifacts.
-  Touches: `npm run release:prepare`, `scripts/generate-release-readiness.js`, `scripts/generate-release-manifest.js`, `scripts/stage-companion-release.js`, git tag, GitHub Release assets.
+  Touches: `npm run release:prepare`, `scripts/generate-release-readiness.js`, `scripts/generate-release-manifest.js`, git tag, GitHub Release assets.
   Acceptance: a `v4.51.1` tag exists on the release commit and a GitHub Release carries the full artifact set per the repo release policy (store-safe + GitHub-full Chrome ZIP/CRX and Firefox ZIP/XPI, userscript, SBOM, `release-manifest.json`, `SHA256SUMS`); `npm run release:verify-digests -- --tag v4.51.1` passes.
   Complexity: S
   Blocker: The external maintainer CRX key is absent (`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` does not exist and `ASTRA_CRX_KEY_PATH` is unset). This run's AGENTS contract also forbids signing software, so publishing the required CRX artifact set cannot be completed without a permitted signing-key decision and external key material.
@@ -66,7 +72,7 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 - [ ] P0 — Select and record the PyQt6/Qt companion redistribution route
   Why: the artifact-linked license inventory and readiness gate now identify the exact embedded/runtime components, but binary release remains blocked until the maintainer chooses GPL-compatible distribution with corresponding source or records a valid Riverbank commercial entitlement and completes the Qt notice/source obligations.
-  Where: `astra_downloader/license-policy.json`, `scripts/companion-license-inventory.js`, release SBOM/readiness output.
+  Where: `astra_downloader/license-policy.json`, the companion repo's license inventory, release SBOM/readiness output.
   Acceptance: `pyqt6` and `pyqt6-qt6` policy entries contain the selected license expressions, non-secret approval evidence, exact notice/source routes, and approved decisions; the companion license readiness check passes without suppressions after the exact helper versions/digests are also resolved.
   Complexity: S
   Blocker: Requires maintainer legal/commercial judgment and, for the commercial route, entitlement evidence unavailable to an autonomous coding agent.
@@ -144,8 +150,8 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 - [ ] P1 — Companion release EXE + SHA256 sidecar + clean-machine verification
   Why: The updater/setup flow requires both `AstraDownloader.exe` and `AstraDownloader.exe.sha256` on the latest GitHub release. The current latest release ships extension/userscript artifacts only, so users cannot complete the one-click companion setup path.
-  Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists; `gh release view --json assets` on the latest release lists no companion assets.
-  Touches: `astra_downloader/build.py`, GitHub Release assets, `scripts/stage-companion-release.js`
+  Evidence: README "Astra Downloader Companion Setup" section; the companion repo owns its build and release staging; `gh release view --json assets` on the latest release lists no companion assets.
+  Touches: the companion repo's build + GitHub Release assets (SysAdminDoc/AstraDownloader)
   Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
   Complexity: M
   Blocker: Requires maintainer GitHub authentication to upload the sidecar (`gh auth status` reports the SysAdminDoc token is invalid in this environment) plus manual clean Windows verification that the EXE runs standalone.

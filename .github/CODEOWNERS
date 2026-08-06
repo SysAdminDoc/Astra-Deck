@@ -8,11 +8,9 @@
 
 # Build, release, signing, and hardening gates.
 /build-extension.js @SysAdminDoc
-/scripts/companion-license-inventory.js @SysAdminDoc
 /scripts/generate-release-manifest.js @SysAdminDoc
 /scripts/generate-release-readiness.js @SysAdminDoc
 /scripts/generate-release-sbom.js @SysAdminDoc
-/scripts/stage-companion-release.js @SysAdminDoc
 /scripts/manifest-patch.js @SysAdminDoc
 /scripts/check-*.js @SysAdminDoc
 /scripts/eslint-rules/ @SysAdminDoc
@@ -31,5 +29,3 @@
 /extension/ytkit.js @SysAdminDoc
 /extension/ytkit-main.js @SysAdminDoc
 
-# Companion loopback server, update, and packaging code.
-/astra_downloader/ @SysAdminDoc
