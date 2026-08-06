@@ -2986,11 +2986,32 @@ return response;
         tryInjectButton(id);
     }
 
+    // ── Programmatic playback-rate writes ──────────────────────────────
+    // perChannelSpeed persists whatever the user sets. Features that force a
+    // rate themselves (music-video lock, live catch-up, Shorts teardown) must
+    // not be mistaken for the user, so they write through this helper and the
+    // resulting `ratechange` is ignored by the memoriser.
+    let programmaticRateUntil = 0;
+    function setProgrammaticPlaybackRate(video, rate) {
+        if (!video) return;
+        programmaticRateUntil = Date.now() + 250;
+        video.playbackRate = rate;
+    }
+    function isProgrammaticPlaybackRateChange() {
+        return Date.now() < programmaticRateUntil;
+    }
+
     function unregisterPersistentButton(id) {
         const config = persistentButtons.get(id);
         if (config) {
-            document.querySelector(config.checkSelector)?.remove();
+            const el = document.querySelector(config.checkSelector);
+            // Remove the whole decorated control, not just the button: the
+            // .ytkit-pc-wrap shell carries the dismiss X, and a dismissed
+            // control's .ytkit-pc-ghost "Restore" chip outlived the feature and
+            // restored a wrapper belonging to a torn-down button.
+            (el?.closest('.ytkit-pc-wrap') || el)?.remove();
         }
+        document.querySelectorAll(`.ytkit-pc-ghost[data-pc-id="${id}"]`).forEach(chip => chip.remove());
         persistentButtons.delete(id);
         // Clean up observer when no buttons remain
         if (persistentButtons.size === 0 && buttonObserver) {
@@ -4197,7 +4218,11 @@ return response;
                         });
                         const message = result.error?.message || 'Settings could not be saved.';
                         setPanelStatus(message, 'error');
-                        showToast(message, 'error');
+                        // 'error' is a TONE, not a colour: passed as the colour
+                        // argument it matched no hex, so inferToastTone fell back
+                        // to a neutral "Notice" with a polite live region instead
+                        // of role=alert.
+                        showToast(message, undefined, { tone: 'error' });
                     }
                 }
                 return result;
@@ -8654,21 +8679,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'folder-video',
             _mousedownListener: null,
             init() {
-                const RX_CHANNEL_HOME = /^(https?:\/\/www\.youtube\.com)((\/(user|channel|c)\/[^/]+)(\/?$|\/featured[^/])|(\/@(?!.*\/)[^/]+))/;
+                // `\/featured[^/]` CONSUMED the character after "featured", so
+                // /c/foo/featured?bp=x produced "/c/foo/featured?/videos" — and
+                // because the comparison was absolute href vs relative path it
+                // never matched, so every load reassigned the same URL. A bare
+                // /featured with no trailing character never matched at all.
+                const RX_CHANNEL_HOME = /^https?:\/\/www\.youtube\.com(?:(\/(?:user|channel|c)\/[^/?#]+)(?:\/?(?=$|[?#])|\/featured(?=$|[/?#]))|(\/@[^/?#]+)(?=$|[?#]))/;
                 const DEFAULT_TAB_HREF = "/videos";
+                const videosTabPath = (url) => {
+                    const match = RX_CHANNEL_HOME.exec(String(url || ''));
+                    if (!match) return null;
+                    const base = match[1] || match[2];
+                    return base ? base + DEFAULT_TAB_HREF : null;
+                };
                 const handleDirectNavigation = () => {
-                    if (RX_CHANNEL_HOME.test(location.href)) {
-                        const newUrl = RegExp.$2 + DEFAULT_TAB_HREF;
-                        if (location.href !== newUrl) location.href = newUrl;
-                    }
+                    const target = videosTabPath(location.href);
+                    // Compare against pathname: the target is relative, so an
+                    // href comparison is always unequal and loops.
+                    if (target && location.pathname !== target) location.href = target;
                 };
                 handleDirectNavigation();
                 addNavigateRule('channelRedirectorNav', handleDirectNavigation);
                 this._mousedownListener = (event) => {
                     const anchorTag = event.target.closest('a');
-                    if (anchorTag && RX_CHANNEL_HOME.test(anchorTag.href)) {
-                        anchorTag.href = RegExp.$2 + DEFAULT_TAB_HREF;
-                    }
+                    if (!anchorTag) return;
+                    const target = videosTabPath(anchorTag.href);
+                    if (target) anchorTag.href = target;
                 };
                 document.addEventListener('mousedown', this._mousedownListener, { passive: true, capture: true });
             },
@@ -20158,21 +20194,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return (neg ? '-' : '') + ts;
             },
 
+            _skippableSeconds(video) {
+                const sb = getFeatureById?.('sponsorBlock');
+                if (!sb?._segments?.length || !appState?.settings?.sponsorBlock) return 0;
+                const now = video.currentTime;
+                const ranges = [];
+                for (const seg of sb._segments) {
+                    if (!seg.segment || seg.segment.length < 2) continue;
+                    const [start, end] = seg.segment;
+                    if (!(end > now)) continue;
+                    ranges.push([Math.max(start, now), end]);
+                }
+                ranges.sort((a, b) => a[0] - b[0]);
+                let total = 0;
+                let cursor = -Infinity;
+                for (const [start, end] of ranges) {
+                    if (end <= cursor) continue;
+                    total += end - Math.max(start, cursor);
+                    cursor = end;
+                }
+                return total;
+            },
+
             _update() {
                 const video = getMainVideoElement();
                 if (!video || !video.duration) { if (this._el) this._el.textContent = ''; return; }
-                let skipDuration = 0;
-                const sb = getFeatureById?.('sponsorBlock');
-                if (sb?._segments?.length && appState?.settings?.sponsorBlock) {
-                    for (const seg of sb._segments) {
-                        if (!seg.segment || seg.segment.length < 2) continue;
-                        const [start, end] = seg.segment;
-                        if (end > video.currentTime) {
-                            skipDuration += end - Math.max(start, video.currentTime);
-                        }
-                    }
-                }
-                const remaining = (video.duration - video.currentTime - skipDuration) / (video.playbackRate || 1);
+                // Merge overlapping segments before summing: SponsorBlock
+                // regularly returns overlapping submissions, and adding them
+                // raw over-counted the skipped time — enough to drive the
+                // remaining number negative and render "(--0:05)".
+                const skipDuration = this._skippableSeconds(video);
+                const remaining = Math.max(0, video.duration - video.currentTime - skipDuration) / (video.playbackRate || 1);
                 if (!this._el) {
                     const timeDisplay = document.querySelector('.ytp-time-display');
                     if (!timeDisplay) return;
@@ -21187,7 +21239,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!savedSpeed) return;
                 const video = getMainVideoElement();
                 if (!video) return;
-                video.playbackRate = savedSpeed;
+                setProgrammaticPlaybackRate(video, savedSpeed);
                 this._applied = true;
                 DebugManager.log('ChannelSpeed', `Applied ${savedSpeed}x for ${channelId}`);
             },
@@ -21221,8 +21273,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearTimeout(this._applyTimer);
                     this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
                 });
-                // Observe speed changes via ratechange event
-                this._rateHandler = () => this._saveCurrentSpeed();
+                // Observe speed changes via ratechange event. Writes made BY
+                // other features (music-video lock, live catch-up reset, Shorts
+                // teardown) are tagged and skipped — persisting their forced 1x
+                // deleted the channel's saved speed.
+                this._rateHandler = () => {
+                    if (isProgrammaticPlaybackRateChange()) return;
+                    this._saveCurrentSpeed();
+                };
                 document.addEventListener('ratechange', this._rateHandler, true);
             },
             destroy() {
@@ -21472,7 +21530,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._channel = this._openChannel();
                 if (!this._channel) return;
-                this._playHandler = () => {
+                this._playHandler = (event) => {
+                    // Only the main player counts. Hovering a thumbnail starts a
+                    // muted preview player whose play event used to pause the
+                    // video actually playing in every other tab.
+                    const target = event?.target;
+                    if (target?.closest && !target.closest('#movie_player')) return;
                     // Clear broadcast-paused flag since user is playing in this tab now
                     const video = getMainVideoElement();
                     if (video) delete video.__ytkit_pausedByBroadcast;
@@ -22922,7 +22985,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     btn.className = 'ytkit-load-more-btn';
                     btn.textContent = 'Load More';
                     btn.onclick = () => {
-                        // Restore the continuation element so YouTube loads the next page
+                        // Restore the continuation element so YouTube loads the
+                        // next page. The attribute has to go too: the injected
+                        // `[ytkit-load-more]` rule is !important, so clearing the
+                        // inline styles alone left the element zero-area and the
+                        // next page loaded only because Chrome still reported it
+                        // as intersecting. The next continuation is re-hidden by
+                        // the mutation rule as soon as it renders.
+                        cont.removeAttribute('ytkit-load-more');
                         cont.style.visibility = '';
                         cont.style.height = '';
                         cont.style.overflow = '';
@@ -25996,7 +26066,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const latency = this._latency(v);
                 if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
                     this._priorRate = v.playbackRate;
-                    v.playbackRate = 1;
+                    setProgrammaticPlaybackRate(v, 1);
                     showToast('Caught up to live — speed reset to 1×', '#22c55e', { duration: 3 });
                 } else if (this._priorRate != null && latency > 15) {
                     v.playbackRate = this._priorRate;
@@ -29896,7 +29966,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeMutationRule(this.id);
                 removeNavigateRule('shortsSpeedControl');
                 const video = this._activeVideo();
-                if (video && this._speed != null && this._speed !== 1) video.playbackRate = 1;
+                if (video && this._speed != null && this._speed !== 1) setProgrammaticPlaybackRate(video, 1);
                 this._cornerCleanup?.(); this._cornerCleanup = null;
                 this._chip?.remove(); this._chip = null;
                 this._styleEl?.remove(); this._styleEl = null;
@@ -31778,7 +31848,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         increment('videosWatched');
                     }
                 });
-                this._timeInterval = setInterval(() => increment('totalTimeOnYouTube', 60), 60000);
+                // Only count minutes the user could actually have been watching.
+                // A pinned background tab used to add 60s every minute, 24/7.
+                this._timeInterval = setInterval(() => {
+                    if (document.visibilityState !== 'visible') return;
+                    const video = getMainVideoElement();
+                    if (video && video.paused) return;
+                    increment('totalTimeOnYouTube', 60);
+                }, 60000);
             },
             destroy() {
                 removeNavigateRule(this.id);
@@ -34983,7 +35060,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) return;
                 if (video.playbackRate !== 1) {
-                    video.playbackRate = 1;
+                    setProgrammaticPlaybackRate(video, 1);
                     DebugManager.log('MusicLock', 'Forced 1x speed on music video');
                 }
             },

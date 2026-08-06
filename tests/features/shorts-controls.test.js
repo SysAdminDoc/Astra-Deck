@@ -24,8 +24,8 @@ test('shortsSpeedControl targets the active reel and honors persistentSpeed', ()
         'speed cycle covers 0.5x through 2x');
     assert.match(block, /location\.pathname\.startsWith\('\/shorts\/'\)/,
         'must gate on the shorts route');
-    assert.match(block, /video\.playbackRate = 1/,
-        'destroy must restore 1x playback');
+    assert.match(block, /setProgrammaticPlaybackRate\(video, 1\)/,
+        'destroy must restore 1x playback WITHOUT perChannelSpeed persisting it');
 });
 
 test('shortsAutoAdvance unloops the reel and clicks the next-video control', () => {
