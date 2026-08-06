@@ -42,16 +42,6 @@ count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
 
 ### P3 — Smaller gaps
 
-- [ ] P3 — Cross-tab Picture-in-Picture handoff
-  Category: feature
-  Where: extension/ytkit.js `popOutPlayer` (:23053-23058, Document PiP + `requestPictureInPicture`), `pipButton`, `pauseOtherTabs` (BroadcastChannel)
-  Problem: `__ytkit_videoPopped` coordinates PiP between features in ONE page only. Opening a video in a second tab while a PiP window is live leaves two independent players; there is no handoff. h5player ships cross-tab PiP control and it is the one capability in that project not blocked by this repo's no-keyboard-shortcuts rule.
-  Evidence: Verified locally — `__ytkit_videoPopped` is documented at ytkit.js:67 as a same-page coordination flag.
-  Fix: Reuse the `pauseOtherTabs` BroadcastChannel (the transport already exists and already degrades gracefully when site-data APIs are denied) to announce PiP ownership, so a new tab can claim or decline it.
-  Acceptance: Two tabs; opening PiP in the second releases the first; closing either leaves no orphan window; channel-open failure degrades to today's behaviour.
-  Confidence: Verified (gap)
-  Effort: M
-
 - [ ] P3 — Configurable UI font family
   Category: feature
   Where: `uiFontSize` exists (numeric, 0 = off); `fontFamily` appears only as `subStyleFontFamily` for subtitle styling
