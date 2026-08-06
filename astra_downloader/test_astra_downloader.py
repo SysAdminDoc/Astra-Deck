@@ -8139,8 +8139,26 @@ class MediaSourcePolicyTests(unittest.TestCase):
             "https://www.reddit.com/r/videos/comments/abc/clip/",
             "https://x.com/someone/status/1",
             "https://cdn.example.com/clip.mp4",
+            # Whole segments only. A slug that merely contains the word is one
+            # video, and classifying it as a playlist filed it under a folder
+            # named after a field yt-dlp could not resolve.
+            "https://example.com/video/playlist-of-hits",
+            "https://cdn.example.com/albums-of-the-year.mp4",
+            "https://site.example/watch/series-finale",
         ):
             self.assertFalse(ad.is_playlist_url(single), single)
+
+    def test_playlist_folder_never_falls_back_to_a_literal_na(self):
+        # yt-dlp substitutes "NA" for an unresolved field, so a collection with
+        # no title used to create a folder called NA that every such download
+        # shared. Verified against the real binary: this template yields
+        # "Playlist/…" when the fields are missing and the real title when they
+        # are present.
+        source = Path(ad.__file__).resolve().parent.joinpath("download.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("%(playlist_title,playlist_id|Playlist).200B", source)
+        self.assertNotIn('"%(playlist_title).200B"', source)
 
     def test_recovered_queue_keeps_non_youtube_entries(self):
         # Before v1.8.0 the restore path dropped every non-YouTube row, so a
