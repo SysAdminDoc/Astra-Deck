@@ -3738,6 +3738,10 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "preciseViewCountTpl": {
+    "message": "{count} مشاهدة",
+    "description": "Full view count rendered in place of YouTube's truncated one"
+  },
   "presetFocusOff": {
     "message": "تم إيقاف إعداد التركيز. تمت استعادة القيم السابقة.",
     "description": "Toast when the Focus preset is disabled"
@@ -5681,6 +5685,9 @@
   },
   "videoNotesTitle": {
     "message": "Video Notes"
+  },
+  "watchLaterNotInMenu": {
+    "message": "تعذر العثور على «المشاهدة لاحقًا» في هذه القائمة. جرّب إجراء الحفظ الأصلي في هذه البطاقة."
   },
   "watchLaterNothingToRemove": {
     "message": "لا شيء لإزالته"

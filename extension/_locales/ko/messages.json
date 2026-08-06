@@ -3738,6 +3738,10 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "preciseViewCountTpl": {
+    "message": "조회수 {count}회",
+    "description": "Full view count rendered in place of YouTube's truncated one"
+  },
   "presetFocusOff": {
     "message": "집중 프리셋을 껐습니다. 이전 값을 복원했습니다.",
     "description": "Toast when the Focus preset is disabled"
@@ -5681,6 +5685,9 @@
   },
   "videoNotesTitle": {
     "message": "Video Notes"
+  },
+  "watchLaterNotInMenu": {
+    "message": "이 메뉴에서 ‘나중에 볼 동영상’을 찾지 못했습니다. 이 카드의 기본 저장 기능을 사용하세요."
   },
   "watchLaterNothingToRemove": {
     "message": "삭제할 항목 없음"

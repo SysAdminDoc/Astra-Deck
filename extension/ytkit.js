@@ -20715,9 +20715,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (infoEl && !infoEl.dataset.ytkitPrecise && viewCount) {
                         const formatted = Number(viewCount).toLocaleString();
                         const text = infoEl.textContent;
-                        if (text.includes('view')) {
+                        // Structural gate: ask the shared parser whether this
+                        // element renders a view/watching count at all. The
+                        // old `text.includes('view')` test was English-only,
+                        // so the view-count half of the feature was inert on
+                        // the other 10 locales while the date half still ran.
+                        const parseCount = globalThis.YTKitCore?.parseCompactCount;
+                        const carriesCount = parseCount
+                            ? parseCount(text, null) !== null
+                            : /view/i.test(text || '');
+                        if (carriesCount) {
                             infoEl.dataset.ytkitPreciseOriginal = text;
-                            infoEl.textContent = `${formatted} views`;
+                            infoEl.textContent = t('preciseViewCountTpl', '{count} views').replace('{count}', formatted);
                             infoEl.dataset.ytkitPrecise = '1';
                         }
                     }
@@ -22098,6 +22107,52 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Content',
             icon: 'x-circle',
             _styleEl: null,
+            _feedbackTimers: null,
+
+            // Open the card's three-dot menu and click YouTube's native
+            // "Not interested" item. Structural iconType match first (the
+            // English text test matched nothing on the other 10 locales),
+            // and the lookup retries because menu items render async — the
+            // old single next-animation-frame read usually fired before the
+            // menu existed, so even English users hid the card locally
+            // without ever sending YouTube the feedback signal.
+            _applyNativeFeedback(item) {
+                const menuBtn = item.querySelector('ytd-menu-renderer yt-icon-button, ytd-menu-renderer button');
+                if (!menuBtn) return;
+                if (!this._feedbackTimers) this._feedbackTimers = new Set();
+                menuBtn.click();
+                const tryClick = (attempt) => {
+                    for (const host of document.querySelectorAll('ytd-menu-service-item-renderer')) {
+                        if ((host?.data?.icon?.iconType || '') === 'NOT_INTERESTED') {
+                            host.click();
+                            return;
+                        }
+                    }
+                    const labels = document.querySelectorAll('ytd-menu-service-item-renderer yt-formatted-string, tp-yt-paper-listbox ytd-menu-service-item-renderer yt-formatted-string');
+                    for (const label of labels) {
+                        if ((label.textContent || '').toLowerCase().includes('not interested')) {
+                            label.closest('ytd-menu-service-item-renderer')?.click();
+                            return;
+                        }
+                    }
+                    if (attempt < 2) {
+                        const timer = setTimeout(() => {
+                            this._feedbackTimers?.delete(timer);
+                            tryClick(attempt + 1);
+                        }, 250);
+                        this._feedbackTimers.add(timer);
+                        return;
+                    }
+                    // Close the orphaned menu so the page isn't left with a
+                    // dangling dropdown when the item doesn't exist here.
+                    if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) document.body.click();
+                };
+                const opener = setTimeout(() => {
+                    this._feedbackTimers?.delete(opener);
+                    tryClick(0);
+                }, 250);
+                this._feedbackTimers.add(opener);
+            },
 
             _process() {
                 document.querySelectorAll('ytd-rich-item-renderer:not([ytkit-ni-btn]), ytd-video-renderer:not([ytkit-ni-btn])').forEach(item => {
@@ -22118,22 +22173,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         e.preventDefault();
                         e.stopPropagation();
                         // Try YouTube's native "Not Interested" via the three-dot menu
-                        const menuBtn = item.querySelector('ytd-menu-renderer yt-icon-button, ytd-menu-renderer button');
-                        if (menuBtn) {
-                            menuBtn.click();
-                            requestAnimationFrame(() => {
-                                const notIntItem = document.querySelector('ytd-menu-service-item-renderer:has(yt-formatted-string), tp-yt-paper-listbox ytd-menu-service-item-renderer');
-                                const items = document.querySelectorAll('ytd-menu-service-item-renderer yt-formatted-string, tp-yt-paper-listbox ytd-menu-service-item-renderer yt-formatted-string');
-                                for (const i of items) {
-                                    if (i.textContent.toLowerCase().includes('not interested')) {
-                                        i.closest('ytd-menu-service-item-renderer')?.click();
-                                        break;
-                                    }
-                                }
-                                // Close menu if it's still open
-                                if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) { document.body.click(); }
-                            });
-                        }
+                        this._applyNativeFeedback(item);
                         // Visually dismiss immediately
                         item.style.transition = 'opacity 0.3s, transform 0.3s';
                         item.style.opacity = '0';
@@ -22159,6 +22199,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
+                this._feedbackTimers = new Set();
                 this._process();
                 addMutationRule(this.id, () => this._process());
                 addNavigateRule('notInterested', () => this._process());
@@ -22166,6 +22207,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeMutationRule(this.id);
                 removeNavigateRule('notInterested');
+                this._feedbackTimers?.forEach(timer => clearTimeout(timer));
+                this._feedbackTimers = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 document.querySelectorAll('.ytkit-not-interested-btn').forEach(el => el.remove());
                 document.querySelectorAll('[ytkit-ni-btn]').forEach(el => el.removeAttribute('ytkit-ni-btn'));
@@ -23217,6 +23260,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'arrow-down',
             pages: [PageTypes.WATCH],
             _sortTimer: null,
+            _optionTimer: null,
 
             _scheduleSort(delay = 4000) {
                 if (this._sortTimer) clearTimeout(this._sortTimer);
@@ -23224,6 +23268,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._sortTimer = null;
                     this._sort();
                 }, delay);
+            },
+
+            // YouTube renders exactly two comment sort options in a fixed
+            // order — "Top comments" then "Newest first" — and marks the
+            // active one in the renderer's own Polymer data. Both signals are
+            // locale-independent; matching the English word 'newest' was not,
+            // so on the other 10 locales this opened the sort menu, matched
+            // nothing, left the dropdown hanging, and the mutation rule
+            // re-opened it every ~2 seconds for the whole session.
+            _NEWEST_INDEX: 1,
+
+            _sortSubMenu() {
+                return document.querySelector('#comments yt-sort-filter-sub-menu-renderer, ytd-comments yt-sort-filter-sub-menu-renderer');
+            },
+
+            _sortMenuItems() {
+                const items = this._sortSubMenu()?.data?.subMenuItems;
+                return Array.isArray(items) ? items : null;
+            },
+
+            _isAlreadyNewest(sortMenu) {
+                const items = this._sortMenuItems();
+                if (items) return items.findIndex(item => item?.selected === true) === this._NEWEST_INDEX;
+                return (sortMenu.textContent || '').trim().toLowerCase().includes('newest');
+            },
+
+            _openDropdownOptions() {
+                const dropdown = document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]') || document;
+                return Array.from(dropdown.querySelectorAll(
+                    'tp-yt-paper-listbox a, ' +
+                    'tp-yt-paper-listbox tp-yt-paper-item, ' +
+                    'ytd-menu-popup-renderer tp-yt-paper-item, ' +
+                    'ytd-menu-service-item-renderer tp-yt-paper-item'
+                ));
+            },
+
+            _pickNewestOption() {
+                const options = this._openDropdownOptions();
+                if (!options.length) return null;
+                // Positional pick only when the open dropdown demonstrably
+                // belongs to the sort menu (same item count as the renderer
+                // declares), so an unrelated dropdown can never be clicked.
+                const declared = this._sortMenuItems();
+                if (declared && declared.length === options.length) return options[this._NEWEST_INDEX] || null;
+                return options.find(opt => (opt.textContent || '').trim().toLowerCase().includes('newest')) || null;
             },
 
             _sort() {
@@ -23237,25 +23326,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     '#comments button[aria-label*="Sort comments"]'
                 );
                 if (!sortMenu) return;
-                // Check if already set to newest
-                const activeSort = sortMenu.textContent?.trim()?.toLowerCase();
-                if (activeSort?.includes('newest')) return;
+                if (this._isAlreadyNewest(sortMenu)) return;
                 sortMenu.click();
                 requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        const options = document.querySelectorAll(
-                            'tp-yt-paper-listbox a, ' +
-                            'tp-yt-paper-listbox tp-yt-paper-item, ' +
-                            'ytd-menu-popup-renderer tp-yt-paper-item, ' +
-                            'ytd-menu-service-item-renderer tp-yt-paper-item'
-                        );
-                        for (const opt of options) {
-                            if (opt.textContent?.trim()?.toLowerCase()?.includes('newest')) {
-                                opt.click();
-                                DebugManager.log('SortComments', 'Switched to newest first');
-                                break;
-                            }
+                    this._optionTimer = setTimeout(() => {
+                        this._optionTimer = null;
+                        const target = this._pickNewestOption();
+                        if (target) {
+                            target.click();
+                            DebugManager.log('SortComments', 'Switched to newest first');
+                            return;
                         }
+                        // Nothing matched: close the dropdown we opened rather
+                        // than leaving it over the comments until the user
+                        // clicks it away.
+                        if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) document.body.click();
                     }, 200);
                 });
             },
@@ -23267,6 +23352,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 if (this._sortTimer) { clearTimeout(this._sortTimer); this._sortTimer = null; }
+                if (this._optionTimer) { clearTimeout(this._optionTimer); this._optionTimer = null; }
                 removeNavigateRule('sortComments');
                 removeMutationRule('sortCommentsMutation');
             }
@@ -23754,12 +23840,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _liked: false,
 
             _isSubscribed() {
-                const subBtn = document.querySelector('ytd-subscribe-button-renderer button, #subscribe-button tp-yt-paper-button, ytd-watch-metadata ytd-subscribe-button-renderer');
+                // Structural state first: the Polymer renderer carries the
+                // subscription flag and reflects it as a `subscribed`
+                // attribute / aria-pressed. Reading 'subscribed' out of the
+                // button text only works on an English UI, so on the other 10
+                // locales this reported "not subscribed" for every channel and
+                // the feature never liked anything.
+                const renderer = document.querySelector('ytd-watch-metadata ytd-subscribe-button-renderer, ytd-subscribe-button-renderer, #subscribe-button');
+                if (renderer?.data?.subscribed === true) return true;
+                if (renderer?.hasAttribute?.('subscribed')) return true;
+                const subBtn = document.querySelector('ytd-subscribe-button-renderer button, subscribe-button-view-model button, #subscribe-button tp-yt-paper-button, ytd-watch-metadata ytd-subscribe-button-renderer');
                 if (!subBtn) return false;
-                // Check if the button says "Subscribed" (not "Subscribe")
+                if (subBtn.hasAttribute('subscribed')) return true;
+                if (subBtn.getAttribute?.('aria-pressed') === 'true') return true;
+                // Text fallback for shapes that expose no state attribute.
                 const text = subBtn.textContent?.trim()?.toLowerCase() || '';
                 const ariaLabel = subBtn.getAttribute('aria-label')?.toLowerCase() || '';
-                return text.includes('subscribed') || ariaLabel.includes('unsubscribe') || subBtn.hasAttribute('subscribed');
+                return text.includes('subscribed') || ariaLabel.includes('unsubscribe');
             },
 
             _like() {
@@ -26116,6 +26213,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _findWatchLaterMenuItem() {
                 const candidates = Array.from(document.querySelectorAll('ytd-menu-service-item-renderer tp-yt-paper-item, ytd-menu-service-item-renderer'));
+                // Structural match first: the Watch Later item's service
+                // endpoint edits playlist 'WL'. The "watch later" text test
+                // below is English-only, so on the other 10 locales every
+                // click on the quick-add button opened the menu, found
+                // nothing, and reported an error the user could not act on.
+                const structural = candidates.find((candidate) => {
+                    const host = candidate.matches?.('ytd-menu-service-item-renderer')
+                        ? candidate
+                        : candidate.closest?.('ytd-menu-service-item-renderer');
+                    const endpoint = host?.data?.serviceEndpoint?.playlistEditEndpoint;
+                    if (endpoint && String(endpoint.playlistId || '').toUpperCase() === 'WL') return true;
+                    const iconType = String(host?.data?.icon?.iconType || '');
+                    return iconType === 'WATCH_LATER' || iconType === 'ADD_TO_WATCH_LATER';
+                });
+                if (structural) return structural;
                 return candidates.find((candidate) => {
                     const text = [
                         candidate.getAttribute?.('aria-label'),
@@ -26181,7 +26293,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             } else {
                                 document.body.click();
                                 this._setButtonState(btn, 'error');
-                                showToast('Couldn’t find Watch Later in this menu. Try the native Save action on this card.', '#f59e0b', {
+                                showToast(t('watchLaterNotInMenu', 'Couldn’t find Watch Later in this menu. Try the native Save action on this card.'), '#f59e0b', {
                                     duration: 4,
                                     tone: 'warning'
                                 });

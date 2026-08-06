@@ -59,15 +59,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P3 — Correctness / reliability edge cases
 
-- [ ] P3 — Five features match English UI text only — inert or misbehaving on the 10 non-EN locales
-  Category: correctness
-  Where: extension/ytkit.js — sortCommentsNewest._sort :23018-23050 (matches 'newest'; on non-EN it opens the sort menu, finds nothing, never closes the dropdown, and the mutation rule re-opens it every ~2s — worst of the group); autoLikeSubscribed._isSubscribed :23545-23552 ('subscribed'/'unsubscribe' text); watchLaterQuickAdd._findWatchLaterMenuItem :25906-25917 ('watch later' → error toast every use); notInterestedButton :21906-21931 ('not interested' text, plus it queries menu items on the NEXT animation frame after menuBtn.click() — usually before the menu renders, so native feedback rarely lands even in English while the card still visually hides, silently diverging from YouTube's recommendation state); preciseViewCounts._process :20507 (text.includes('view') gate — the view-count half inert on non-EN)
-  Problem: Same class 6ebf7403 fixed for the action hooks; these five sites were missed. bulkCardActions (:36263-36304) already demonstrates the correct pattern in the same file: structural iconType match (NOT_INTERESTED/REMOVE, playlistEditEndpoint) first, text fallback, 250ms retries.
-  Fix: Port the bulkCardActions structural-first + delayed-retry pattern to all five; add document.body.click() menu-close fallbacks; for sortCommentsNewest prefer menu-item position (newest is the second item) over text.
-  Acceptance: Fixture tests with non-EN aria/labels: each feature acts (or no-ops cleanly without dangling menus); notInterestedButton lands the native feedback in the EN fixture too (retry present).
-  Confidence: Verified (code paths; behavior by inspection)
-  Effort: M
-
 - [ ] P3 — Watched-video features mishandle Polymer element recycling / element swaps
   Category: correctness
   Where: extension/ytkit.js:21036-21058 (hideWatchedVideos._process — permanent ytkit-watched-check once-marker + inline display:none/opacity persists on recycled renderers now showing unwatched videos; also runs before the resume-overlay hydrates so watched items are missed); :36891-36922 (disableLoudnessNormalization — `if (!this._videoListener)` guard binds the volume listener to the FIRST video element forever; after YouTube swaps the <video> node the clamp stops and destroy() removes the listener from the wrong element); commit 876008b8's _processThread dataset cache (thread.dataset.ytkitCommentFilterChecked === rules hash) keeps a recycled comment node's previous verdict

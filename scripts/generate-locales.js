@@ -2172,6 +2172,50 @@ const WATCH_LATER_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(WATCH_LATER_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const STRUCTURAL_MATCH_TRANSLATIONS = {
+  de: {
+    '{count} views': '{count} Aufrufe',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': '„Später ansehen“ wurde in diesem Menü nicht gefunden. Nutze die native Speichern-Aktion auf dieser Karte.'
+  },
+  es: {
+    '{count} views': '{count} visualizaciones',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': 'No se encontró «Ver más tarde» en este menú. Prueba la acción Guardar nativa de esta tarjeta.'
+  },
+  fr: {
+    '{count} views': '{count} vues',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': '« À regarder plus tard » est introuvable dans ce menu. Utilisez l’action Enregistrer native de cette carte.'
+  },
+  it: {
+    '{count} views': '{count} visualizzazioni',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': '«Guarda più tardi» non è stato trovato in questo menu. Usa l’azione Salva nativa di questa scheda.'
+  },
+  pt_BR: {
+    '{count} views': '{count} visualizações',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': 'Não foi possível encontrar “Assistir mais tarde” neste menu. Use a ação Salvar nativa deste card.'
+  },
+  ru: {
+    '{count} views': '{count} просмотров',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': 'Не удалось найти «Смотреть позже» в этом меню. Воспользуйтесь штатным действием «Сохранить» на этой карточке.'
+  },
+  ja: {
+    '{count} views': '{count} 回視聴',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': 'このメニューで「後で見る」を見つけられませんでした。このカードの標準の保存操作をお試しください。'
+  },
+  ko: {
+    '{count} views': '조회수 {count}회',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': '이 메뉴에서 ‘나중에 볼 동영상’을 찾지 못했습니다. 이 카드의 기본 저장 기능을 사용하세요.'
+  },
+  ar: {
+    '{count} views': '{count} مشاهدة',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': 'تعذر العثور على «المشاهدة لاحقًا» في هذه القائمة. جرّب إجراء الحفظ الأصلي في هذه البطاقة.'
+  },
+  zh_CN: {
+    '{count} views': '{count} 次观看',
+    'Couldn’t find Watch Later in this menu. Try the native Save action on this card.': '在此菜单中未找到“稍后观看”。请改用该卡片自带的保存操作。'
+  }
+};
+for (const [locale, messages] of Object.entries(STRUCTURAL_MATCH_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {
