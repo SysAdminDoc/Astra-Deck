@@ -19,16 +19,21 @@ body.ytkit-hideNotificationBadge .ytd-notification-topbar-button-renderer[aria-l
 /* hideAutoplayToggle */
 body.ytkit-hideAutoplayToggle .ytp-autonav-toggle-button-container { display: none !important; }
 
-/* creatorCommentHighlight */
+/* creatorCommentHighlight — logical inset so the accent sits on the reading
+   edge in RTL locales, matching the settings layer's logical-property pass. */
 body.ytkit-creatorCommentHighlight ytd-comment-view-model.ytd-comment-view-model[creator] #body {
-    border-left: 3px solid var(--yt-spec-call-to-action, #3ea6ff);
+    border-inline-start: 3px solid var(--yt-spec-call-to-action, #3ea6ff);
 }
 
-/* keyMoments highlight */
+/* keyMoments highlight — the white-alpha rule was invisible on light theme. */
 body.ytkit-keyMoments ytd-macro-markers-list-item-renderer.ytd-structured-description-content-renderer {
-    border-left: 3px solid rgba(255, 255, 255, 0.12);
-    padding-left: 8px;
+    border-inline-start: 3px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.12));
+    padding-inline-start: 8px;
     margin-bottom: 4px;
+}
+
+html:not([dark]) body.ytkit-keyMoments ytd-macro-markers-list-item-renderer.ytd-structured-description-content-renderer {
+    border-inline-start-color: rgba(0, 0, 0, 0.14);
 }
 
 /* removeAllShorts — prevent Shorts shelf flash on home/subscriptions */
