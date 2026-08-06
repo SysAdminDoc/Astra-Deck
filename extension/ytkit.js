@@ -1420,7 +1420,21 @@ return response;
         const sanitizedResult = sanitizeWatchTimeStats({ ...stats, imported: importedLedger }, nowDate);
         // Rebuild days + total from native organic tracking plus the
         // surviving imported entries.
-        const organicDays = sanitizeWatchTimeStats(currentStats, nowDate).days;
+        //
+        // The stored day map is NOT purely organic after the first import: the
+        // merged result (organic + ledger) is what gets persisted. Re-adding
+        // the whole surviving ledger on top of it counted every previously
+        // imported second again, compounding on each import. Recover the
+        // organic baseline by removing what the PREVIOUS ledger contributed
+        // (stats.imported is that ledger, as it was persisted) before the
+        // current ledger is added back below.
+        const organicDays = { ...sanitizeWatchTimeStats(currentStats, nowDate).days };
+        for (const entry of Object.values(stats.imported || {})) {
+            if (!entry || !entry.dayKey || !entry.seconds) continue;
+            const remaining = (Number(organicDays[entry.dayKey]) || 0) - entry.seconds;
+            if (remaining > 0) organicDays[entry.dayKey] = remaining;
+            else delete organicDays[entry.dayKey];
+        }
         const mergedDays = { ...organicDays };
         for (const entry of Object.values(sanitizedResult.imported)) {
             if (!entry || !entry.dayKey || !entry.seconds) continue;

@@ -12284,3 +12284,51 @@ test('digitalWellbeing merges per-tab watch time instead of overwriting it', () 
             `${label} must not keep the old absolute-total cache`);
     }
 });
+
+// ── Takeout re-import must not double-count previously imported watch time ──
+// The merge rebuilds `days` as organic + surviving ledger, but the persisted
+// day map already CONTAINS the previous import's seconds (the merged result is
+// what gets saved). Re-adding the whole ledger therefore counted every earlier
+// imported second again, compounding on every import — up to the 5000-entry
+// ledger cap x 60s of phantom watch time per run.
+function loadTakeoutMerge() {
+    const begin = ytkitSource.indexOf('    function formatLocalDateKey(date) {');
+    const end = ytkitSource.indexOf('    function estimateSerializedBytes(value) {');
+    assert.ok(begin > -1 && end > begin, 'Takeout helper region must be extractable');
+    const capsBegin = ytkitSource.indexOf('    const UNSAFE_OBJECT_KEYS =');
+    assert.ok(capsBegin > -1 && capsBegin < begin, 'shared constants must precede the Takeout helpers');
+    // The region from the shared constants through the Takeout helpers is
+    // contiguous and carries no side-effecting top-level initializers, so it
+    // can be evaluated wholesale rather than stitched together per helper.
+    const source = ytkitSource.slice(capsBegin, end)
+        + '\n; ({ mergeTakeoutWatchHistoryIntoStats, sanitizeWatchTimeStats })';
+    return require('node:vm').runInNewContext(source, { console });
+}
+
+test('re-importing an overlapping Takeout export does not double-count watch time', () => {
+    const { mergeTakeoutWatchHistoryIntoStats } = loadTakeoutMerge();
+    const now = new Date('2026-08-06T12:00:00');
+    const watchedAt = '2026-08-03T10:00:00.000Z';
+    const entryA = { titleUrl: 'https://www.youtube.com/watch?v=aaaaaaaaaaa', time: watchedAt, title: 'Watched A' };
+    const entryB = { titleUrl: 'https://www.youtube.com/watch?v=bbbbbbbbbbb', time: watchedAt, title: 'Watched B' };
+
+    const organic = { days: { '2026-08-01': 100 }, total: 100, imported: {} };
+
+    const first = mergeTakeoutWatchHistoryIntoStats(organic, [entryA], now);
+    assert.equal(first.imported, 1);
+    const afterFirstTotal = first.stats.total;
+    assert.equal(afterFirstTotal, 160, 'organic 100s + one 60s imported entry');
+
+    // The merged result is what the importer persists, so it is the input to
+    // the next import — exactly the workflow that compounded the error.
+    const second = mergeTakeoutWatchHistoryIntoStats(first.stats, [entryA, entryB], now);
+    assert.equal(second.imported, 1, 'only the new entry counts as imported');
+    assert.equal(second.duplicates, 1, 'the repeated entry is deduped by the ledger');
+    assert.equal(second.stats.total, 220,
+        'organic 100s + two 60s imported entries — the first entry must not be counted twice');
+    assert.equal(second.stats.days['2026-08-01'], 100, 'organic day must survive unchanged');
+
+    // A third pass with no new entries must be a no-op on the totals.
+    const third = mergeTakeoutWatchHistoryIntoStats(second.stats, [entryA, entryB], now);
+    assert.equal(third.stats.total, 220, 'a fully duplicate re-import must not change the total');
+});
