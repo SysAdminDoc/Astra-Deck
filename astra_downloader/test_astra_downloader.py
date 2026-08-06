@@ -5091,12 +5091,12 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_9_1(self):
+    def test_app_version_bumped_to_1_10_0(self):
         # v1.9.0 site sign-ins: a per-site cookie store (import a cookies.txt,
         # post extension-shaped records, or read a browser profile) so sites
         # that only serve media to signed-in viewers download. Each jar is
         # filtered to one registrable domain and attached to that site alone.
-        self.assertEqual(ad.APP_VERSION, "1.9.1")
+        self.assertEqual(ad.APP_VERSION, "1.10.0")
 
     def test_v1_8_0_any_site_download_surface_is_still_present(self):
         # v1.8.0 any-site downloads: the YouTube-only URL allowlist became a
@@ -9547,6 +9547,88 @@ class SiteLoginDurabilityTests(unittest.TestCase):
             self.assertIn("x.com", sites)
             self.assertEqual(reopened.site_logins.site_key_for_url("https://x.com/a"),
                              "x.com")
+
+
+class StartMenuIntegrationTests(unittest.TestCase):
+    """The companion publishes itself in the Start Menu and takes it back on
+    uninstall. Without it the only ways back in are the tray, a desktop icon,
+    and the logon task — none of them discoverable by searching the name."""
+
+    def test_start_menu_dir_is_per_user(self):
+        with mock.patch.dict(os.environ, {"APPDATA": r"C:\Users\tester\AppData\Roaming"}):
+            programs = ad.start_menu_programs_dir()
+        self.assertEqual(programs.name, "Programs")
+        self.assertIn("Start Menu", programs.parts)
+        self.assertIn("Roaming", programs.parts,
+                      "an unelevated install must not write an all-users entry")
+
+    def test_start_menu_dir_falls_back_without_appdata(self):
+        # Only APPDATA goes missing in practice; clearing the whole environment
+        # would also take USERPROFILE and test a state Windows never presents.
+        environment = {k: v for k, v in os.environ.items() if k != "APPDATA"}
+        with mock.patch.dict(os.environ, environment, clear=True):
+            programs = ad.start_menu_programs_dir()
+        self.assertEqual(programs.name, "Programs")
+        self.assertIn("Roaming", programs.parts)
+
+    def test_shortcut_command_carries_target_icon_and_arguments(self):
+        command = ad.build_shortcut_command(
+            Path(r"C:\Menu\Astra Downloader.lnk"),
+            r"C:\Install\AstraDownloader.exe",
+            ["-Background"],
+        )
+        self.assertIn("WScript.Shell", command)
+        self.assertIn("AstraDownloader.exe", command)
+        self.assertIn("-Background", command)
+        self.assertIn("Astra Downloader.lnk", command)
+        self.assertIn("$sc.Save()", command)
+
+    def test_shortcut_command_quotes_paths_containing_apostrophes(self):
+        # PowerShell single-quoted strings escape an apostrophe by doubling it;
+        # a naive interpolation would end the string early and change the
+        # command that runs.
+        command = ad.build_shortcut_command(
+            Path(r"C:\Users\O'Brien\Astra Downloader.lnk"),
+            r"C:\Users\O'Brien\AstraDownloader.exe",
+            [],
+        )
+        self.assertIn("O''Brien", command)
+        self.assertNotIn("'C:\\Users\\O'Brien", command)
+
+    def test_integrations_register_the_start_menu_entry(self):
+        calls = []
+        with mock.patch.object(ad, 'register_desktop_shortcut',
+                               lambda *a: calls.append('desktop')), \
+             mock.patch.object(ad, 'register_start_menu_shortcut',
+                               lambda *a: calls.append('start-menu')), \
+             mock.patch.object(ad, 'register_startup_task', lambda *a: calls.append('task')), \
+             mock.patch.object(ad, 'register_protocol_handlers', lambda *a: None), \
+             mock.patch.object(ad, 'register_uninstall_entry', lambda *a: None), \
+             mock.patch.object(ad, 'register_native_messaging_hosts', lambda *a: None), \
+             mock.patch.object(ad, '_get_integrations_stamp', lambda: ''), \
+             mock.patch.object(ad, '_set_integrations_stamp', lambda: None), \
+             mock.patch.object(ad, 'launch_command_parts',
+                               lambda prefer_installed=True: ("C:\\x.exe", [])):
+            ad.ensure_system_integrations()
+        self.assertIn('start-menu', calls,
+                      "the Start Menu entry must ride the same integration pass")
+
+    def test_start_menu_shortcut_is_written_and_removed(self):
+        if os.name != 'nt':
+            self.skipTest("Windows shortcut integration")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            programs = Path(tmpdir) / "Programs"
+            target = Path(tmpdir) / "AstraDownloader.exe"
+            target.write_bytes(b"MZ stub")
+
+            with mock.patch.object(ad, 'start_menu_programs_dir', lambda: programs):
+                ad.register_start_menu_shortcut(str(target), [])
+                lnk = programs / ad.SHORTCUT_NAME
+                self.assertTrue(lnk.exists(), "the .lnk should exist after registration")
+                self.assertGreater(lnk.stat().st_size, 0)
+
+                lnk.unlink()
+                self.assertFalse(lnk.exists())
 
 
 if __name__ == "__main__":

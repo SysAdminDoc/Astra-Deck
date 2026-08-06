@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Astra Downloader v1.10.0 — Start Menu entry
+
+#### Added
+- **Start Menu entry.** The companion now publishes "Astra Downloader" to the
+  per-user Start Menu on the same version-stamped integration pass that already
+  maintains the desktop shortcut, protocol handlers, logon task, and uninstall
+  entry — so an upgrade refreshes the target automatically and a user who
+  closes the app can find it by typing its name. Previously the only ways back
+  in were the tray icon, a desktop shortcut, or waiting for the logon task.
+  `--uninstall` removes it alongside the desktop shortcut.
+
 ## [4.51.3] - 2026-08-05 (Astra Downloader v1.9.1)
 
 Audit-driven pass over the v1.8.0 any-site download work and the v1.9.0
