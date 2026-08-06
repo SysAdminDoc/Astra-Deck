@@ -9099,5 +9099,110 @@ window.close()
             self.assertIn("retried", error)
 
 
+class FocusVisibilityTests(unittest.TestCase):
+    """Keyboard focus must render. Qt gives QPushButton[class="…"] the same
+    specificity as QPushButton:focus, so a class rule silently won the cascade
+    and focus drew no pixels at all on most controls."""
+
+    def test_focus_changes_pixels_on_ghost_primary_and_checkbox(self):
+        script = r'''
+import os
+import sys
+import tempfile
+
+temp_dir = tempfile.mkdtemp(prefix="astra-focus-pin-")
+os.environ["LOCALAPPDATA"] = temp_dir
+os.environ["ASTRA_DOWNLOADER_NO_BOOTSTRAP"] = "1"
+
+from astra_downloader import astra_downloader as app
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QCheckBox, QPushButton
+
+qt_app = QApplication(["focus-pin"])
+qt_app.setStyleSheet(app.STYLESHEET)
+app.MainWindow._start_instance_command_listener = lambda self: None
+app.MainWindow._stop_instance_command_listener = lambda self: None
+app.MainWindow._start_readiness_probe = lambda self: None
+app.MainWindow._refresh_tools_status = lambda self: None
+
+config = app.Config()
+config.update({
+    "CloseToTray": False,
+    "StartMinimized": False,
+    "DownloadPath": temp_dir,
+    "AudioDownloadPath": temp_dir,
+})
+manager = app.DownloadManager(config, app.History())
+window = app.MainWindow(config, manager, app.History())
+window._animate_page = lambda: None
+window.update_timer.stop()
+window.cleanup_timer.stop()
+window.tools_status_timer.stop()
+window.show()
+qt_app.processEvents()
+
+
+def focus_changes_pixels(widget):
+    widget.clearFocus()
+    qt_app.processEvents()
+    first = widget.grab().toImage()
+    before = bytes(first.constBits().asstring(first.sizeInBytes()))
+    widget.setFocus(Qt.FocusReason.TabFocusReason)
+    qt_app.processEvents()
+    second = widget.grab().toImage()
+    after = bytes(second.constBits().asstring(second.sizeInBytes()))
+    return before != after
+
+
+window._nav_click("Downloads")
+qt_app.processEvents()
+
+ghosts = [b for b in window.findChildren(QPushButton)
+          if b.property("class") == "ghost" and b.isVisible()]
+assert ghosts, "the downloads page should expose a ghost button"
+assert focus_changes_pixels(ghosts[0]), "ghost buttons must show keyboard focus"
+
+primaries = [b for b in window.findChildren(QPushButton)
+             if b.property("class") == "primary" and b.isVisible()]
+assert primaries, "the downloads page should expose a primary button"
+assert focus_changes_pixels(primaries[0]), "primary buttons must show keyboard focus"
+
+window._nav_click("Settings")
+qt_app.processEvents()
+boxes = [c for c in window.findChildren(QCheckBox) if c.isVisible()]
+assert boxes, "the settings page should expose checkboxes"
+assert focus_changes_pixels(boxes[0]), "checkboxes must show keyboard focus"
+
+assert focus_changes_pixels(window.nav_buttons[0]), "nav focus must keep working"
+window.close()
+'''
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(ad.__file__).resolve().parent.parent,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_every_button_variant_restates_its_focus_ring(self):
+        # Source pin: a bare QPushButton:focus rule cannot survive a later
+        # equally specific class rule, so each variant needs its own.
+        source = Path(ad.__file__).resolve().parent.joinpath(
+            "astra_downloader.py"
+        ).read_text(encoding="utf-8")
+        sheet = source.split('STYLESHEET = """', 1)[1].split('"""', 1)[0]
+        for variant in ("ghost", "primary", "secondary", "danger"):
+            self.assertIn(
+                f'QPushButton[class="{variant}"]:focus', sheet,
+                f"the {variant} button variant needs an explicit focus ring",
+            )
+        self.assertIn("QCheckBox::indicator:focus", sheet)
+        self.assertIn("QCheckBox::indicator:checked:focus", sheet)
+
+
 if __name__ == "__main__":
     unittest.main()
