@@ -19266,9 +19266,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     del.appendChild(delIcon);
                     del.onclick = (e) => {
                         e.preventDefault(); e.stopPropagation();
-                        const items = self._parseItems();
-                        items.splice(idx, 1);
-                        const newRaw = items.map(i => `${i.text} | ${i.url}`).join('\n');
+                        // Splice the RAW lines, not the capped/parsed view:
+                        // _parseItems() truncates to _QL_MAX_ITEMS, so rebuilding
+                        // the setting from it destroyed every stored entry past
+                        // the cap — the opposite of the preservation contract
+                        // documented on the cap itself. Rewriting from parsed
+                        // items also normalised full URLs into path form.
+                        const rawLines = String(appState.settings.quickLinkItems || '').split('\n');
+                        const validIndexes = [];
+                        rawLines.forEach((line, lineIdx) => {
+                            const sep = line.indexOf('|');
+                            if (sep === -1) return;
+                            const text = line.substring(0, sep).trim();
+                            const url = self._normalizeQuickLinkUrl(line.substring(sep + 1));
+                            if (text && url) validIndexes.push(lineIdx);
+                        });
+                        const target = validIndexes[idx];
+                        if (target === undefined) return;
+                        rawLines.splice(target, 1);
+                        const newRaw = rawLines.join('\n');
                         appState.settings.quickLinkItems = newRaw;
                         settingsManager.save(appState.settings);
                         self.rebuildMenus();
@@ -42328,7 +42344,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     [class*="ytkit-"] *,
                     [class*="ytkit-"]::before,
                     [class*="ytkit-"]::after,
-                    .ytkit-toast,
+                    .ytkit-global-toast,
                     .ytkit-volume-hud,
                     .ytkit-monet-pill,
                     .ytkit-speed-popup,
@@ -42374,7 +42390,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._styleElement?.isConnected) return;
                 this._styleElement = injectStyle(`
                     @media (forced-colors: active) {
-                        .ytkit-toast,
+                        .ytkit-global-toast,
                         .ytkit-volume-hud,
                         .ytkit-monet-pill,
                         .ytkit-speed-popup,
@@ -42397,7 +42413,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             border: 1px solid CanvasText !important;
                             forced-color-adjust: none;
                         }
-                        .ytkit-toast a,
+                        .ytkit-global-toast a,
                         [class*="ytkit-"] a {
                             color: LinkText !important;
                         }

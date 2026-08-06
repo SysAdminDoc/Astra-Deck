@@ -17864,6 +17864,13 @@
                         this._removeBlockedChannel(channelInfo);
                         this._closeDirectWatchInterstitial();
                         this._resumeDirectWatchPlayback();
+                        // Cards already processed for this channel (the watch-page
+                        // related rail) keep their hidden marker until something
+                        // re-runs the pass. The toast undo path does this; this one
+                        // did not, so unblocking left the rail hidden all pageview.
+                        // Debounced like the feature's other refresh triggers, so
+                        // the authoritative unblock above never waits on a DOM walk.
+                        this._processAllVideosDebounced(0);
                         return;
                     }
                     if (action === 'back') {

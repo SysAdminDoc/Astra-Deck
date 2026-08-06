@@ -12497,3 +12497,34 @@ test('subscriptionGroups filters content type for lazily-loaded cards', () => {
             `${label} scoped mutation rule must also re-apply the content-type filter`);
     }
 });
+
+// ── Quick Links must not lose entries stored beyond the display cap ──
+// _parseItems() truncates to _QL_MAX_ITEMS, so rebuilding the setting from it
+// destroyed every stored entry past the cap — the exact opposite of the
+// preservation contract documented on the cap itself.
+test('deleting a quick link splices the raw lines, not the capped parsed view', () => {
+    const start = ytkitSource.indexOf("id: 'quickLinkMenu'");
+    assert.ok(start > -1, 'quickLinkMenu must exist');
+    const block = ytkitSource.slice(start, start + 30000);
+    const idx = block.indexOf('del.onclick');
+    assert.ok(idx > -1, 'the delete handler must exist');
+    const handler = block.slice(idx, idx + 1600);
+
+    assert.ok(!/const items = self\._parseItems\(\);[\s\S]{0,120}?items\.splice\(idx, 1\)/.test(handler),
+        'the handler must not rebuild the setting from the capped parsed list');
+    assert.ok(handler.includes("String(appState.settings.quickLinkItems || '').split('\\n')"),
+        'the raw stored lines are the source of truth for deletion');
+    assert.match(handler, /rawLines\.splice\(target, 1\)/,
+        'exactly the targeted raw line must be removed');
+});
+
+// ── Reduced-motion / forced-colors sheets must name the real toast class ──
+// The toast root is .ytkit-global-toast; .ytkit-toast never existed, so the
+// toast kept animating under "Reduced Motion (strong)" and missed its
+// forced-colors carve-out.
+test('motion and forced-colors sheets target the real toast root class', () => {
+    assert.ok(!/\.ytkit-toast\b(?!-)/.test(ytkitSource),
+        'no sheet may select the non-existent .ytkit-toast class');
+    assert.match(ytkitSource, /\.ytkit-global-toast,\s*\n\s*\.ytkit-volume-hud/,
+        'the reduced-motion and forced-colors lists must include the toast root');
+});
