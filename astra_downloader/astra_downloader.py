@@ -2680,6 +2680,18 @@ QPushButton[class="secondary"] { background: transparent; color: #d8dde3; border
 QPushButton[class="danger"] { background: transparent; color: #ef9b93; border-color: #65403e; }
 QPushButton[class="ghost"] { background: transparent; border-color: transparent; color: #aeb6c1; padding-left: 9px; padding-right: 9px; }
 QPushButton[class="ghost"]:hover { background-color: #171d25; border-color: transparent; color: #f2f0ed; }
+/* Keyboard focus. The bare QPushButton:focus rule above is the same
+   specificity as every QPushButton[class="…"] rule, so those later rules won
+   the cascade and focus rendered no pixels at all on ghost, primary,
+   secondary and danger buttons. Each variant restates the ring after its own
+   class rule. #ffb2a5 holds 11.3:1 against the window (#0a0d12) and 9.8:1
+   against the hover fill (#171d25). The primary button is filled, so the ring
+   the eye compares against is its own #ff6552 face — a light ring only reaches
+   1.7:1 there, so it takes the dark #170806 (6.7:1) instead. */
+QPushButton[class="ghost"]:focus { border-color: #ffb2a5; background-color: #171d25; }
+QPushButton[class="primary"]:focus { border-color: #170806; }
+QPushButton[class="secondary"]:focus { border-color: #ffb2a5; }
+QPushButton[class="danger"]:focus { border-color: #ffb2a5; }
 QPushButton[class="nav"] {
     color: #a6afba;
     background: transparent;
@@ -2721,6 +2733,10 @@ QCheckBox { color: #d7dce2; font-size: 13px; spacing: 10px; min-height: 26px; }
 QCheckBox::indicator { width: 17px; height: 17px; border-radius: 4px; border: 1px solid #485362; background: transparent; }
 QCheckBox::indicator:hover { border-color: #718092; }
 QCheckBox::indicator:checked { background: #ff6552; border-color: #ff6552; }
+/* A styled indicator suppresses Qt's native focus rect, so the checked and
+   unchecked focus states have to draw their own. */
+QCheckBox::indicator:focus { border-color: #ffb2a5; }
+QCheckBox::indicator:checked:focus { border-color: #ffb2a5; background: #ff7867; }
 QCheckBox:disabled { color: #687381; }
 
 QFrame[class="sidebar"] { background-color: #080b0f; border-right: 1px solid #252c35; }
