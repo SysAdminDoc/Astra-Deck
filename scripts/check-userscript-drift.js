@@ -234,17 +234,72 @@ for (const js of manifestJsFiles) {
     }
 }
 
-// ── 5. Verify userscript has bundle markers ──
+// ── 5. Verify userscript bundle markers AND bundled module CONTENT ──
+//
+// Marker presence is not parity. The hardening test that claims to check
+// "verbatim contents" only matches one fingerprint substring per module, so a
+// module edit that misses that single line ships stale to every Tampermonkey
+// install via the raw-main @updateURL — v4.51.2's settings-schema.js did
+// exactly that through three releases. Recompute the bundle region with the
+// same transform sync-userscript.js uses and compare it byte for byte,
+// naming the stale module.
+
+let bundledModuleContentChecked = 0;
 
 try {
     const { resolveUserscriptPath } = require(path.join(REPO_ROOT, 'scripts', 'repo-paths'));
     const usPath = resolveUserscriptPath(REPO_ROOT);
     const usText = fs.readFileSync(usPath, 'utf8');
-    if (!usText.includes('// ── BEGIN v5.0.0 bundled core modules ──')) {
+    const hasBegin = usText.includes('// ── BEGIN v5.0.0 bundled core modules ──');
+    const hasEnd = usText.includes('// ── END v5.0.0 bundled core modules ──');
+    if (!hasBegin) {
         errors.push('Userscript is missing the BEGIN v5.0.0 bundled core modules marker');
     }
-    if (!usText.includes('// ── END v5.0.0 bundled core modules ──')) {
+    if (!hasEnd) {
         errors.push('Userscript is missing the END v5.0.0 bundled core modules marker');
+    }
+
+    if (hasBegin && hasEnd) {
+        const sync = require(SYNC_SCRIPT);
+        const actualMatch = usText.match(sync.BUNDLE_BEGIN_RE);
+        if (!actualMatch) {
+            errors.push('Userscript bundle region could not be extracted for content comparison');
+        } else {
+            const actual = actualMatch[0];
+            let expected;
+            try {
+                expected = sync.buildBundleRegion(REPO_ROOT);
+            } catch (buildError) {
+                errors.push(`Could not rebuild the expected bundle: ${buildError.message}`);
+            }
+            if (expected && expected !== actual) {
+                // Point at the specific stale module rather than the whole region.
+                const stale = [];
+                for (const rel of sync.V5_BUNDLE_MODULES) {
+                    const header = sync.bundledModuleHeader(rel);
+                    const sliceFrom = (text) => {
+                        const at = text.indexOf(header);
+                        if (at === -1) return null;
+                        const nextAt = text.indexOf('    // ── bundled module: ', at + header.length);
+                        const endAt = nextAt === -1
+                            ? text.indexOf('    // ── END v5.0.0 bundled core modules ──', at)
+                            : nextAt;
+                        return text.slice(at, endAt === -1 ? undefined : endAt);
+                    };
+                    const expectedSlice = sliceFrom(expected);
+                    const actualSlice = sliceFrom(actual);
+                    if (actualSlice === null) stale.push(`${rel} (absent from the bundle)`);
+                    else if (expectedSlice !== actualSlice) stale.push(rel);
+                }
+                if (stale.length) {
+                    errors.push(`Userscript bundle is stale for ${stale.length} module(s): ${stale.join(', ')}. Run \`node sync-userscript.js\`.`);
+                } else {
+                    errors.push('Userscript bundle region differs from the rebuilt bundle (header or ordering drift). Run `node sync-userscript.js`.');
+                }
+            } else if (expected) {
+                bundledModuleContentChecked = sync.V5_BUNDLE_MODULES.length;
+            }
+        }
     }
 } catch (e) {
     errors.push(`Could not read userscript: ${e.message}`);
@@ -323,7 +378,7 @@ if (errors.length === 0) {
     console.log(`[check-userscript-drift] OK — ${bundleModules.length} bundled module(s), all on disk`);
     const manifestFeatures = [...manifestJsFiles].filter(f => f.startsWith('features/'));
     console.log(`[check-userscript-drift] ${manifestFeatures.length} manifest feature module(s) covered by V5_BUNDLE_MODULES`);
-    console.log(`[check-userscript-drift] Userscript bundle markers present`);
+    console.log(`[check-userscript-drift] Userscript bundle markers present; ${bundledModuleContentChecked} bundled module(s) byte-identical to source`);
     console.log(`[check-userscript-drift] Feature-ID parity: ${usIds.size}/${extIds.size} (${parity}%) — ${extOnly.length} extension-only`);
     console.log(`[check-userscript-drift] Extension-only classifications: ${classSummary}`);
     process.exit(0);

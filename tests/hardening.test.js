@@ -7349,11 +7349,20 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
     }
 });
 
-test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', () => {
-    // Strongest parity check: for each bundled module, the unique
-    // function/constant signature inside the module must appear inside
-    // the userscript bundle block. If a sync goes stale, this fails
-    // loudly with the module name.
+test('v4.20.0 userscript bundles every v5.0.0 module byte-for-byte', () => {
+    // Real verbatim parity: rebuild the bundle region with the same transform
+    // sync-userscript.js applies and compare it to the shipped bundle. The
+    // fingerprint assertions below are kept as a fast, readable canary, but
+    // they are NOT the contract — a module edit that misses its one
+    // fingerprint line passed them while shipping stale to every Tampermonkey
+    // install (v4.51.2's settings-schema.js did, through three releases).
+    const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
+    const shipped = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    const region = shipped.match(sync.BUNDLE_BEGIN_RE);
+    assert.ok(region, 'bundle region must be extractable');
+    assert.equal(region[0], sync.buildBundleRegion(path.join(__dirname, '..')),
+        'YTKit.user.js bundle is stale — run `node sync-userscript.js`');
+
     const userscript = fs.readFileSync(
         path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
     );
@@ -7485,8 +7494,10 @@ test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the
         'sync-userscript.js must declare V5_BUNDLE_MODULES');
     assert.ok(sync.includes('const BUNDLE_BEGIN_RE = /^[ \\t]*\\/\\/ ── BEGIN v5\\.0\\.0 bundled core modules ──\\r?\\n[\\s\\S]*?^[ \\t]*\\/\\/ ── END v5\\.0\\.0 bundled core modules ──/m;'),
         'sync-userscript.js must define the BEGIN/END marker regex');
-    assert.match(sync, /userscriptText = userscriptText\.replace\(BUNDLE_BEGIN_RE,\s*\(\) => parts\.join\('\\n'\)\);/,
+    assert.match(sync, /userscriptText = userscriptText\.replace\(BUNDLE_BEGIN_RE,\s*\(\) => bundleRegion\);/,
         'bundle replacement must use a callback so literal $ sequences are preserved');
+    assert.match(sync, /module\.exports = \{[^}]*buildBundleRegion[^}]*\}/,
+        'buildBundleRegion must be exported so the drift gate can recompute the bundle');
 });
 
 // ── v4.21.0 NX1: theme-css extended with forceDark + accentColor builders ──

@@ -53,16 +53,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P1
 
-- [ ] P1 — Shipped userscript bundles a stale core module, and no gate can detect content drift in the bundle
-  Category: correctness
-  Where: YTKit.user.js (bundled `extension/core/settings-schema.js` region, ~offset 71103); sync-userscript.js:53-131 (manual-only refresh); build-extension.js:256-270 (`--bump` restamps headers only); tests/hardening.test.js:7347-7406 (the "verbatim contents" test); scripts/check-userscript-drift.js (names/markers/order only)
-  Problem: The bundled settings-schema.js in YTKit.user.js predates v4.51.2 — it lacks the `bufferPreload` entry (`grep -c bufferPreload YTKit.user.js` → 0 vs 2 in the on-disk module) and shipped stale through v4.51.2/3/4, live at the raw-main @updateURL that auto-updates every Tampermonkey install. The mechanism is the real finding: the test named "bundles the verbatim contents of each module" checks ONE fingerprint substring per module, and check-userscript-drift.js checks feature-ID existence only — so any module edit that misses its single fingerprint line ships stale behavior to all userscript users silently, through a full release pipeline (`release:prepare` never runs sync-userscript.js). Today's instance is benign-adjacent (bufferPreload is intentional-extension-only), but a stale video-hider/sponsorblock/settings-controller bundle would ship the same way.
-  Evidence: Byte-compared all 44 V5_BUNDLE_MODULES against the bundle region — 1 of 44 stale (settings-schema.js). `npm run check` exits 0 and 1330 tests pass against provably stale content. Same gate-blindness class as the prior DeArrow inert-feature drift (CLAUDE.md 2026-08-02).
-  Fix: (1) Run `node sync-userscript.js` to refresh the bundle now. (2) Close the gate: either have check-userscript-drift.js recompute the expected bundle content per module (same indent transform sync-userscript.js applies) and compare full text, or add `node sync-userscript.js && git diff --exit-code YTKit.user.js` to `npm run check` / release:prepare.
-  Acceptance: `grep -c bufferPreload YTKit.user.js` ≥ 1; deliberately editing one line of any bundled core module (not its fingerprint line) makes `npm run check` fail until sync is re-run.
-  Confidence: Verified (byte diff)
-  Effort: S
-
 - [ ] P1 — Default-ON injected chrome is white-on-white on YouTube light theme (watchPageRestyle, thinScrollbar, watch-action buttons, quick-link launcher)
   Category: visual
   Where: extension/ytkit.js:6643-6655 (watchPageRestyle CSS — title rgba(255,255,255,0.97), action buttons rgba(255,255,255,0.05)/0.7, description 0.55, info row 0.35, comments count 0.5, all !important, zero `html[dark]`/`html:not([dark])` scoping); :6636-6641 (thinScrollbar — thumb rgba(255,255,255,0.2) on transparent track); :50393-50419 (.ytkit-watch-action-btn base — rgba(255,255,255,0.045) bg / 0.82 text) and :18528 (`path.setAttribute('fill', 'white')` — the currentColor correction lives only inside watchPageRestyle's sheet at :6655, so it vanishes if that feature is off); :19290-19316 (quickLinkMenu launcher — rgba(255,255,255,0.06) bg / 0.84 text)

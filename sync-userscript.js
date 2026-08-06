@@ -11,37 +11,6 @@ const USERSCRIPT_SOURCE = resolveUserscriptPath(REPO_ROOT);
 const USERSCRIPT_BASENAME = getUserscriptBasename(REPO_ROOT);
 const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
 
-const extensionText = fs.readFileSync(EXTENSION_SOURCE, 'utf8');
-const versionMatch = extensionText.match(/const YTKIT_VERSION = '([^']+)'/);
-if (!versionMatch) {
-    console.error('Could not find YTKIT_VERSION in extension/ytkit.js');
-    process.exit(1);
-}
-
-const targetVersion = versionMatch[1];
-let userscriptText = fs.readFileSync(USERSCRIPT_SOURCE, 'utf8');
-const before = userscriptText;
-
-const headerEnd = userscriptText.indexOf('// ==/UserScript==');
-if (headerEnd === -1) {
-    console.error('Could not find userscript metadata header terminator');
-    process.exit(1);
-}
-const headerCloseEnd = headerEnd + '// ==/UserScript=='.length;
-let headerText = userscriptText.slice(0, headerCloseEnd);
-const bodyText = userscriptText.slice(headerCloseEnd);
-headerText = headerText.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m,
-    (_match, prefix) => `${prefix}YTKit v${targetVersion}`);
-headerText = headerText.replace(/^(\/\/ @version\s+)[\d.]+/m,
-    (_match, prefix) => `${prefix}${targetVersion}`);
-headerText = headerText.replace(/^(\/\/ @updateURL\s+).+$/m,
-    (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
-headerText = headerText.replace(/^(\/\/ @downloadURL\s+).+$/m,
-    (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
-userscriptText = headerText + bodyText;
-userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
-    () => `const YTKIT_VERSION = '${targetVersion}';`);
-
 // v4.20.0: bundle the v5.0.0 core modules into the userscript so the
 // userscript path reaches feature parity with the MV3 extension. Each
 // listed module is an IIFE that attaches to globalThis.YTKitCore or
@@ -99,7 +68,16 @@ const V5_BUNDLE_MODULES = [
 
 const BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
 
-if (BUNDLE_BEGIN_RE.test(userscriptText)) {
+function bundledModuleHeader(rel) {
+    return '    // ── bundled module: ' + rel + ' ──';
+}
+
+// Build the bundled-module region exactly as the userscript must contain it.
+// check-userscript-drift.js recomputes this and compares it against the
+// shipped bundle, so this function is the single source of truth for the
+// transform. A fingerprint-substring check cannot see a stale module body —
+// v4.51.2's settings-schema shipped stale through three releases that way.
+function buildBundleRegion(repoRoot = REPO_ROOT) {
     const parts = ['    // ── BEGIN v5.0.0 bundled core modules ──'];
     parts.push('    // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:');
     parts.push('    //     node sync-userscript.js');
@@ -108,35 +86,88 @@ if (BUNDLE_BEGIN_RE.test(userscriptText)) {
     parts.push('    // verbatim` pins the parity contract.');
     parts.push('');
     for (const rel of V5_BUNDLE_MODULES) {
-        const full = path.join(REPO_ROOT, rel);
+        const full = path.join(repoRoot, rel);
         if (!fs.existsSync(full)) {
-            console.error('Module not found:', rel);
-            process.exit(1);
+            const error = new Error('Module not found: ' + rel);
+            error.modulePath = rel;
+            throw error;
         }
-        const body = fs.readFileSync(full, 'utf8').replace(/\s+$/, '');
+        const moduleBody = fs.readFileSync(full, 'utf8').replace(/\s+$/, '');
         // A module containing either bundle marker would truncate the region
         // the next sync run's regex matches, silently corrupting the
         // userscript. Refuse to bundle rather than write a poisoned bundle.
-        if (/── (?:BEGIN|END) v5\.0\.0 bundled core modules ──/.test(body)) {
-            console.error('Refusing to bundle ' + rel + ': module source contains a v5.0.0 bundle marker, which would corrupt the next sync run.');
-            process.exit(1);
+        if (/── (?:BEGIN|END) v5\.0\.0 bundled core modules ──/.test(moduleBody)) {
+            const error = new Error('Refusing to bundle ' + rel + ': module source contains a v5.0.0 bundle marker, which would corrupt the next sync run.');
+            error.modulePath = rel;
+            throw error;
         }
-        parts.push('    // ── bundled module: ' + rel + ' ──');
+        parts.push(bundledModuleHeader(rel));
         // Indent each line by 4 spaces so the bundled module sits cleanly
         // inside the userscript's outer IIFE (cosmetic — JS doesn't care).
-        parts.push(body.split('\n').map((line) => line.length ? '    ' + line : line).join('\n'));
+        parts.push(moduleBody.split('\n').map((line) => line.length ? '    ' + line : line).join('\n'));
         parts.push('');
     }
     parts.push('    // ── END v5.0.0 bundled core modules ──');
-    userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, () => parts.join('\n'));
-} else {
-    console.warn('Userscript bundle markers not found — skipping bundle refresh.');
+    return parts.join('\n');
 }
 
-if (userscriptText === before) {
-    console.log(`Userscript already aligned to v${targetVersion}`);
-    process.exit(0);
+function main() {
+    const extensionText = fs.readFileSync(EXTENSION_SOURCE, 'utf8');
+    const versionMatch = extensionText.match(/const YTKIT_VERSION = '([^']+)'/);
+    if (!versionMatch) {
+        console.error('Could not find YTKIT_VERSION in extension/ytkit.js');
+        process.exit(1);
+    }
+
+    const targetVersion = versionMatch[1];
+    let userscriptText = fs.readFileSync(USERSCRIPT_SOURCE, 'utf8');
+    const before = userscriptText;
+
+    const headerEnd = userscriptText.indexOf('// ==/UserScript==');
+    if (headerEnd === -1) {
+        console.error('Could not find userscript metadata header terminator');
+        process.exit(1);
+    }
+    const headerCloseEnd = headerEnd + '// ==/UserScript=='.length;
+    let headerText = userscriptText.slice(0, headerCloseEnd);
+    const bodyText = userscriptText.slice(headerCloseEnd);
+    headerText = headerText.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m,
+        (_match, prefix) => `${prefix}YTKit v${targetVersion}`);
+    headerText = headerText.replace(/^(\/\/ @version\s+)[\d.]+/m,
+        (_match, prefix) => `${prefix}${targetVersion}`);
+    headerText = headerText.replace(/^(\/\/ @updateURL\s+).+$/m,
+        (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
+    headerText = headerText.replace(/^(\/\/ @downloadURL\s+).+$/m,
+        (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
+    userscriptText = headerText + bodyText;
+    userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
+        () => `const YTKIT_VERSION = '${targetVersion}';`);
+
+
+    if (BUNDLE_BEGIN_RE.test(userscriptText)) {
+        let bundleRegion;
+        try {
+            bundleRegion = buildBundleRegion(REPO_ROOT);
+        } catch (error) {
+            console.error(error.message);
+            process.exit(1);
+        }
+        userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, () => bundleRegion);
+    } else {
+        console.warn('Userscript bundle markers not found — skipping bundle refresh.');
+    }
+
+    if (userscriptText === before) {
+        console.log(`Userscript already aligned to v${targetVersion}`);
+        process.exit(0);
+    }
+
+    fs.writeFileSync(USERSCRIPT_SOURCE, userscriptText, 'utf8');
+    console.log(`Userscript metadata synced to v${targetVersion} (${path.basename(USERSCRIPT_SOURCE)})`);
 }
 
-fs.writeFileSync(USERSCRIPT_SOURCE, userscriptText, 'utf8');
-console.log(`Userscript metadata synced to v${targetVersion} (${path.basename(USERSCRIPT_SOURCE)})`);
+if (require.main === module) {
+    main();
+}
+
+module.exports = { V5_BUNDLE_MODULES, buildBundleRegion, bundledModuleHeader, BUNDLE_BEGIN_RE };
