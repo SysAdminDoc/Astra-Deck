@@ -30417,13 +30417,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return this._cache;
             },
 
+            // poi_highlight is a POINT marker: the API returns it as [t, t], so
+            // a strict end > start filter silently dropped every highlight
+            // before it reached the cache or the progress bar — the feature's
+            // own "render it on the bar" contract could never be met.
+            _isPointSegment(s) {
+                return s?.actionType === 'poi' || s?.category === 'poi_highlight';
+            },
+
             _normalizeSegments(segments) {
                 if (!Array.isArray(segments)) return [];
                 return segments.filter(s =>
                     s && typeof s === 'object'
                     && Array.isArray(s.segment) && s.segment.length === 2
                     && Number.isFinite(s.segment[0]) && Number.isFinite(s.segment[1])
-                    && s.segment[0] >= 0 && s.segment[1] > s.segment[0]
+                    && s.segment[0] >= 0
+                    && (this._isPointSegment(s) ? s.segment[1] >= s.segment[0] : s.segment[1] > s.segment[0])
                     && typeof s.category === 'string'
                 ).map(s => ({
                     segment: [s.segment[0], s.segment[1]],
@@ -30727,10 +30736,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!enabledCats.includes(seg.category)) continue;
                     const [start, end] = seg.segment;
                     const left = (start / duration) * 100;
-                    const width = ((end - start) / duration) * 100;
+                    // A point marker has zero duration, so a proportional width
+                    // renders nothing. Give it a fixed minimum so the highlight
+                    // is actually visible on the bar.
+                    const isPoint = this._isPointSegment(seg) || end <= start;
+                    const width = isPoint ? 0 : ((end - start) / duration) * 100;
                     const bar = document.createElement('div');
-                    bar.className = 'ytkit-sb-segment';
-                    bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;width:${width}%;background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:0.7;pointer-events:none;z-index:35;`;
+                    bar.className = isPoint ? 'ytkit-sb-segment ytkit-sb-point' : 'ytkit-sb-segment';
+                    const sizing = isPoint ? 'width:3px;min-width:3px;transform:translateX(-1px);' : `width:${width}%;`;
+                    bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;${sizing}background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:0.7;pointer-events:none;z-index:35;`;
                     const label = seg.category.replace(/_/g, ' ');
                     if (seg._ytkitCacheSource === 'stale') {
                         bar.dataset.ytkitCacheSource = 'stale';
