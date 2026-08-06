@@ -309,13 +309,13 @@
     "message": "تنزيل الصوت"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "تنزيل الصوت بصيغة …"
+    "message": "تنزيل الصوت بصيغة {format}"
   },
   "dlPopupCtaVideo": {
     "message": "تنزيل الفيديو"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "تنزيل الفيديو بصيغة … بجودة …"
+    "message": "تنزيل الفيديو بصيغة {format} بجودة {quality}"
   },
   "dlPopupDefault": {
     "message": "افتراضي"
@@ -360,10 +360,10 @@
     "message": "نوع التنزيل"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% مكتمل. … متبقٍّ."
+    "message": "{pct}% مكتمل. {eta} متبقٍّ."
   },
   "dlProgressActiveTpl": {
-    "message": "…% مكتمل. ابقَ على YouTube ريثما يُنهي Astra Downloader."
+    "message": "{pct}% مكتمل. ابقَ على YouTube ريثما يُنهي Astra Downloader."
   },
   "dlProgressAriaAudio": {
     "message": "تقدم تنزيل الصوت"
@@ -3066,10 +3066,10 @@
     "message": "تنزيل الفيديو"
   },
   "playerGearAriaTpl": {
-    "message": "فتح إعدادات …"
+    "message": "فتح إعدادات {brand}"
   },
   "playerGearTitleTpl": {
-    "message": "إعدادات …"
+    "message": "إعدادات {brand}"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "إعادة تعيين"
   },
   "resultsAllAvailableTpl": {
-    "message": "… عنصر تحكم سريع متاح في هذه النافذة"
+    "message": "{count} عنصر تحكم سريع متاح في هذه النافذة"
   },
   "resultsMatchTpl": {
-    "message": "… من … … يطابق هذا الفلتر"
+    "message": "{visible} من {total} {controls} يطابق هذا الفلتر"
   },
   "resultsMatching": {
     "message": "مطابق"
@@ -3762,10 +3762,10 @@
     "message": "إصدار الملحق"
   },
   "speedBtnAriaTpl": {
-    "message": "سرعة التشغيل الافتراضية …. انقر للتغيير."
+    "message": "سرعة التشغيل الافتراضية {speed}. انقر للتغيير."
   },
   "speedBtnTitleTpl": {
-    "message": "سرعة التشغيل الافتراضية: … — تُطبَّق على كل فيديو"
+    "message": "سرعة التشغيل الافتراضية: {speed} — تُطبَّق على كل فيديو"
   },
   "speedPopupAria": {
     "message": "سرعة التشغيل الافتراضية"
@@ -4002,7 +4002,7 @@
     "message": "مُفعَّل"
   },
   "toggleUpdateFailTpl": {
-    "message": "تعذّر تحديث …. حاول مرة أخرى."
+    "message": "تعذّر تحديث {name}. حاول مرة أخرى."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

@@ -309,13 +309,13 @@
     "message": "Baixar áudio"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Baixar áudio como …"
+    "message": "Baixar áudio como {format}"
   },
   "dlPopupCtaVideo": {
     "message": "Baixar vídeo"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Baixar vídeo como … em …"
+    "message": "Baixar vídeo como {format} em {quality}"
   },
   "dlPopupDefault": {
     "message": "Padrão"
@@ -360,10 +360,10 @@
     "message": "Tipo de download"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% concluído. … restante."
+    "message": "{pct}% concluído. {eta} restante."
   },
   "dlProgressActiveTpl": {
-    "message": "…% concluído. Permaneça no YouTube enquanto o Astra Downloader termina."
+    "message": "{pct}% concluído. Permaneça no YouTube enquanto o Astra Downloader termina."
   },
   "dlProgressAriaAudio": {
     "message": "Progresso do download de áudio"
@@ -3066,10 +3066,10 @@
     "message": "Baixar vídeo"
   },
   "playerGearAriaTpl": {
-    "message": "Abrir configurações de …"
+    "message": "Abrir configurações de {brand}"
   },
   "playerGearTitleTpl": {
-    "message": "Configurações de …"
+    "message": "Configurações de {brand}"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "Redefinir"
   },
   "resultsAllAvailableTpl": {
-    "message": "… controles rápidos estão disponíveis neste popup"
+    "message": "{count} controles rápidos estão disponíveis neste popup"
   },
   "resultsMatchTpl": {
-    "message": "… de … … correspondem a este filtro"
+    "message": "{visible} de {total} {controls} correspondem a este filtro"
   },
   "resultsMatching": {
     "message": "correspondentes"
@@ -3762,10 +3762,10 @@
     "message": "Versão da extensão"
   },
   "speedBtnAriaTpl": {
-    "message": "Velocidade de reprodução padrão …. Clique para alterar."
+    "message": "Velocidade de reprodução padrão {speed}. Clique para alterar."
   },
   "speedBtnTitleTpl": {
-    "message": "Velocidade de reprodução padrão: … — aplica-se a todos os vídeos"
+    "message": "Velocidade de reprodução padrão: {speed} — aplica-se a todos os vídeos"
   },
   "speedPopupAria": {
     "message": "Velocidade de reprodução padrão"
@@ -4002,7 +4002,7 @@
     "message": "ativados"
   },
   "toggleUpdateFailTpl": {
-    "message": "Não foi possível atualizar …. Tente novamente."
+    "message": "Não foi possível atualizar {name}. Tente novamente."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

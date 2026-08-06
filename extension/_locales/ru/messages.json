@@ -309,13 +309,13 @@
     "message": "Скачать аудио"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Скачать аудио как…"
+    "message": "Скачать аудио как{format}"
   },
   "dlPopupCtaVideo": {
     "message": "Скачать видео"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Скачать видео как… в…"
+    "message": "Скачать видео как{format} в{quality}"
   },
   "dlPopupDefault": {
     "message": "По умолчанию"
@@ -360,10 +360,10 @@
     "message": "Тип загрузки"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% завершено. Осталось …."
+    "message": "{pct}% завершено. Осталось {eta}."
   },
   "dlProgressActiveTpl": {
-    "message": "…% завершено. Оставайтесь на YouTube, пока Astra Downloader завершает загрузку."
+    "message": "{pct}% завершено. Оставайтесь на YouTube, пока Astra Downloader завершает загрузку."
   },
   "dlProgressAriaAudio": {
     "message": "Прогресс загрузки аудио"
@@ -3066,10 +3066,10 @@
     "message": "Скачать видео"
   },
   "playerGearAriaTpl": {
-    "message": "Открыть настройки …"
+    "message": "Открыть настройки {brand}"
   },
   "playerGearTitleTpl": {
-    "message": "Настройки …"
+    "message": "Настройки {brand}"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "Сбросить"
   },
   "resultsAllAvailableTpl": {
-    "message": "… быстрых элементов управления доступно во всплывающем окне"
+    "message": "{count} быстрых элементов управления доступно во всплывающем окне"
   },
   "resultsMatchTpl": {
-    "message": "… из … … соответствуют фильтру"
+    "message": "{visible} из {total} {controls} соответствуют фильтру"
   },
   "resultsMatching": {
     "message": "совпадает"
@@ -3762,10 +3762,10 @@
     "message": "Версия расширения"
   },
   "speedBtnAriaTpl": {
-    "message": "Скорость воспроизведения по умолчанию …. Нажмите, чтобы изменить."
+    "message": "Скорость воспроизведения по умолчанию {speed}. Нажмите, чтобы изменить."
   },
   "speedBtnTitleTpl": {
-    "message": "Скорость воспроизведения по умолчанию: … — применяется ко всем видео"
+    "message": "Скорость воспроизведения по умолчанию: {speed} — применяется ко всем видео"
   },
   "speedPopupAria": {
     "message": "Скорость воспроизведения по умолчанию"
@@ -4002,7 +4002,7 @@
     "message": "включено"
   },
   "toggleUpdateFailTpl": {
-    "message": "Не удалось обновить …. Попробуйте снова."
+    "message": "Не удалось обновить {name}. Попробуйте снова."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

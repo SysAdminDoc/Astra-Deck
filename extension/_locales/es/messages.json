@@ -309,13 +309,13 @@
     "message": "Descargar audio"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Descargar audio como …"
+    "message": "Descargar audio como {format}"
   },
   "dlPopupCtaVideo": {
     "message": "Descargar video"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Descargar video como … a …"
+    "message": "Descargar video como {format} a {quality}"
   },
   "dlPopupDefault": {
     "message": "Predeterminado"
@@ -360,10 +360,10 @@
     "message": "Tipo de descarga"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% completado. … restante."
+    "message": "{pct}% completado. {eta} restante."
   },
   "dlProgressActiveTpl": {
-    "message": "…% completado. Permanece en YouTube mientras Astra Downloader termina."
+    "message": "{pct}% completado. Permanece en YouTube mientras Astra Downloader termina."
   },
   "dlProgressAriaAudio": {
     "message": "Progreso de descarga de audio"
@@ -3066,10 +3066,10 @@
     "message": "Descargar video"
   },
   "playerGearAriaTpl": {
-    "message": "Abrir configuración de …"
+    "message": "Abrir configuración de {brand}"
   },
   "playerGearTitleTpl": {
-    "message": "Configuración de …"
+    "message": "Configuración de {brand}"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "Restablecer"
   },
   "resultsAllAvailableTpl": {
-    "message": "… controles rápidos están disponibles en este popup"
+    "message": "{count} controles rápidos están disponibles en este popup"
   },
   "resultsMatchTpl": {
-    "message": "… de … … coinciden con este filtro"
+    "message": "{visible} de {total} {controls} coinciden con este filtro"
   },
   "resultsMatching": {
     "message": "coincidencias"
@@ -3762,10 +3762,10 @@
     "message": "Versión de la extensión"
   },
   "speedBtnAriaTpl": {
-    "message": "Velocidad de reproducción predeterminada …. Haz clic para cambiar."
+    "message": "Velocidad de reproducción predeterminada {speed}. Haz clic para cambiar."
   },
   "speedBtnTitleTpl": {
-    "message": "Velocidad de reproducción predeterminada: … — se aplica a cada video"
+    "message": "Velocidad de reproducción predeterminada: {speed} — se aplica a cada video"
   },
   "speedPopupAria": {
     "message": "Velocidad de reproducción predeterminada"
@@ -4002,7 +4002,7 @@
     "message": "activado"
   },
   "toggleUpdateFailTpl": {
-    "message": "No se pudo actualizar …. Inténtalo de nuevo."
+    "message": "No se pudo actualizar {name}. Inténtalo de nuevo."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

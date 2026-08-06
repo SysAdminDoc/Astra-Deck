@@ -88,6 +88,42 @@ function findManifestMsgKeys(manifestText) {
     return keys;
 }
 
+// Match t('key', …) / t("key", …) call sites. The fallback argument is a
+// template literal in most call sites, so the call is not parsed — instead the
+// window between this key and the next t( call (bounded) is scanned for the
+// chained .replace('{token}', …) calls that belong to it.
+const T_CALL_RE = /\bt\(\s*(['"])([A-Za-z0-9_]+)\1/g;
+const REPLACE_TOKEN_RE = /\.replace\(\s*(['"])\{([A-Za-z0-9_]+)\}\1/g;
+const REPLACE_WINDOW = 600;
+
+function findReplaceTokenUsages(src) {
+    const usages = [];
+    const starts = [];
+    let m;
+    T_CALL_RE.lastIndex = 0;
+    while ((m = T_CALL_RE.exec(src)) !== null) starts.push({ key: m[2], index: m.index });
+
+    for (let i = 0; i < starts.length; i += 1) {
+        const { key, index } = starts[i];
+        const nextCall = i + 1 < starts.length ? starts[i + 1].index : src.length;
+        // A trailing `;` closes the statement the substitutions belong to.
+        const semicolon = src.indexOf(';', index);
+        const end = Math.min(
+            nextCall,
+            semicolon === -1 ? src.length : semicolon,
+            index + REPLACE_WINDOW,
+            src.length
+        );
+        const window = src.slice(index, end);
+        const tokens = [];
+        let r;
+        REPLACE_TOKEN_RE.lastIndex = 0;
+        while ((r = REPLACE_TOKEN_RE.exec(window)) !== null) tokens.push(r[2]);
+        if (tokens.length) usages.push({ key, tokens });
+    }
+    return usages;
+}
+
 function main() {
     const messages = loadMessages();
     const definedKeys = new Set(Object.keys(messages));
@@ -161,10 +197,70 @@ function main() {
         }
     }
 
+    // ── 4. Validate substitution tokens consumed via .replace('{token}', …) ──
+    // Audit pass: 11 *Tpl keys shipped a literal "…" where the token belonged.
+    // Because the key existed, t() returned the broken catalogue string and the
+    // caller's .replace() was a no-op — users saw "…% complete." for months.
+    // EN is the source of truth for which tokens a key must carry; no locale
+    // may fall back to a bare ellipsis, and none may drop substitution entirely.
+    const consumedTokens = new Map(); // key -> Set(token)
+    for (const filePath of jsFiles) {
+        let src;
+        try { src = fs.readFileSync(filePath, 'utf8'); } catch { continue; }
+        for (const found of findReplaceTokenUsages(src)) {
+            if (!consumedTokens.has(found.key)) consumedTokens.set(found.key, new Set());
+            for (const token of found.tokens) consumedTokens.get(found.key).add(token);
+        }
+    }
+
+    const localeCache = new Map();
+    const readLocale = (locale) => {
+        if (!localeCache.has(locale)) {
+            try {
+                localeCache.set(locale, JSON.parse(
+                    fs.readFileSync(path.join(LOCALES_DIR, locale, 'messages.json'), 'utf8')
+                ));
+            } catch { localeCache.set(locale, null); }
+        }
+        return localeCache.get(locale);
+    };
+
+    for (const [key, tokens] of consumedTokens) {
+        if (!definedKeys.has(key)) continue; // already reported by section 2
+        const enMessage = messages[key]?.message ?? '';
+        for (const token of tokens) {
+            if (!enMessage.includes(`{${token}}`)) {
+                errors.push(`_locales/en/messages.json: "${key}" is substituted with {${token}} in code but the message has no {${token}} placeholder`);
+            }
+        }
+        // A locale may legitimately omit a token English needs (zh_CN folds the
+        // plural noun into the sentence) and may legitimately END in an ellipsis
+        // (progress copy: "Removing 3 / 10…"). The defect signature is an
+        // ellipsis standing IN PLACE OF a token the locale never carries.
+        for (const locale of ['en', ...localeDirs]) {
+            const localeMessages = readLocale(locale);
+            if (!localeMessages) continue;
+            const message = localeMessages[key]?.message;
+            if (typeof message !== 'string') continue;
+            const present = [...tokens].filter((token) => message.includes(`{${token}}`));
+            const missing = [...tokens].filter((token) => !message.includes(`{${token}}`));
+            if (missing.length && /…|\.\.\./.test(message)) {
+                errors.push(`_locales/${locale}/messages.json: "${key}" uses an ellipsis where ${missing.map((t) => `{${t}}`).join(', ')} belongs`);
+            }
+            if (tokens.size > 0 && present.length === 0) {
+                errors.push(`_locales/${locale}/messages.json: "${key}" carries no substitution token (expected one of ${[...tokens].map((t) => `{${t}}`).join(', ')})`);
+            }
+        }
+    }
+
     if (errors.length === 0) {
         const totalKeys = definedKeys.size;
         const scannedFiles = jsFiles.length;
-        console.log(`[check-i18n] OK — ${totalKeys} message key(s) defined; ${manifestKeys.length} manifest ref(s) and 0 getMessage() calls all resolve`);
+        const getMessageCallCount = jsFiles.reduce((sum, filePath) => {
+            try { return sum + findGetMessageKeys(fs.readFileSync(filePath, 'utf8')).length; } catch { return sum; }
+        }, 0);
+        console.log(`[check-i18n] OK — ${totalKeys} message key(s) defined; ${manifestKeys.length} manifest ref(s) and ${getMessageCallCount} getMessage() call(s) all resolve`);
+        console.log(`[check-i18n] Substitution OK — ${consumedTokens.size} key(s) consumed via .replace() carry their tokens in every locale`);
         console.log(`[check-i18n] Scanned ${scannedFiles} JS file(s) under extension/`);
         console.log(`[check-i18n] Locale parity OK — ${localeDirs.length} non-EN locale(s) match EN key set`);
         process.exit(0);
@@ -186,4 +282,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { findGetMessageKeys, findManifestMsgKeys };
+module.exports = { findGetMessageKeys, findManifestMsgKeys, findReplaceTokenUsages };

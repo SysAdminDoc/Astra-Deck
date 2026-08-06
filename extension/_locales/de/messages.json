@@ -309,13 +309,13 @@
     "message": "Audio herunterladen"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Audio herunterladen als …"
+    "message": "Audio herunterladen als {format}"
   },
   "dlPopupCtaVideo": {
     "message": "Video herunterladen"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Video herunterladen als … in …"
+    "message": "Video herunterladen als {format} in {quality}"
   },
   "dlPopupDefault": {
     "message": "Standard"
@@ -360,10 +360,10 @@
     "message": "Download-Typ"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% abgeschlossen. … verbleibend."
+    "message": "{pct}% abgeschlossen. {eta} verbleibend."
   },
   "dlProgressActiveTpl": {
-    "message": "…% abgeschlossen. Bleibe auf YouTube, während Astra Downloader fertigstellt."
+    "message": "{pct}% abgeschlossen. Bleibe auf YouTube, während Astra Downloader fertigstellt."
   },
   "dlProgressAriaAudio": {
     "message": "Audio-Download-Fortschritt"
@@ -3066,10 +3066,10 @@
     "message": "Video herunterladen"
   },
   "playerGearAriaTpl": {
-    "message": "… Einstellungen öffnen"
+    "message": "{brand} Einstellungen öffnen"
   },
   "playerGearTitleTpl": {
-    "message": "… Einstellungen"
+    "message": "{brand} Einstellungen"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "Zurücksetzen"
   },
   "resultsAllAvailableTpl": {
-    "message": "… Schnellsteuerungen sind in diesem Popup verfügbar"
+    "message": "{count} Schnellsteuerungen sind in diesem Popup verfügbar"
   },
   "resultsMatchTpl": {
-    "message": "… von … … entsprechen diesem Filter"
+    "message": "{visible} von {total} {controls} entsprechen diesem Filter"
   },
   "resultsMatching": {
     "message": "übereinstimmend"
@@ -3762,10 +3762,10 @@
     "message": "Erweiterungsversion"
   },
   "speedBtnAriaTpl": {
-    "message": "Standard-Wiedergabegeschwindigkeit …. Zum Ändern klicken."
+    "message": "Standard-Wiedergabegeschwindigkeit {speed}. Zum Ändern klicken."
   },
   "speedBtnTitleTpl": {
-    "message": "Standard-Wiedergabegeschwindigkeit: … — gilt für jedes Video"
+    "message": "Standard-Wiedergabegeschwindigkeit: {speed} — gilt für jedes Video"
   },
   "speedPopupAria": {
     "message": "Standard-Wiedergabegeschwindigkeit"
@@ -4002,7 +4002,7 @@
     "message": "aktiviert"
   },
   "toggleUpdateFailTpl": {
-    "message": "… konnte nicht aktualisiert werden. Erneut versuchen."
+    "message": "{name} konnte nicht aktualisiert werden. Erneut versuchen."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

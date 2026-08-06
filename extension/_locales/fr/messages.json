@@ -309,13 +309,13 @@
     "message": "Télécharger l'audio"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Télécharger l'audio en tant que ..."
+    "message": "Télécharger l'audio en tant que {format}"
   },
   "dlPopupCtaVideo": {
     "message": "Télécharger la vidéo"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Télécharger la vidéo en tant que ... à ..."
+    "message": "Télécharger la vidéo en tant que {format} à {quality}"
   },
   "dlPopupDefault": {
     "message": "Par défaut"
@@ -360,10 +360,10 @@
     "message": "Type de téléchargement"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "...% terminé. ... restant."
+    "message": "{pct}% terminé. {eta} restant."
   },
   "dlProgressActiveTpl": {
-    "message": "...% terminé. Restez sur YouTube pendant qu'Astra Downloader finit."
+    "message": "{pct}% terminé. Restez sur YouTube pendant qu'Astra Downloader finit."
   },
   "dlProgressAriaAudio": {
     "message": "Progression du téléchargement audio"
@@ -3066,10 +3066,10 @@
     "message": "Télécharger la vidéo"
   },
   "playerGearAriaTpl": {
-    "message": "Ouvrir les paramètres ..."
+    "message": "Ouvrir les paramètres {brand}"
   },
   "playerGearTitleTpl": {
-    "message": "Paramètres ..."
+    "message": "Paramètres {brand}"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -3273,10 +3273,10 @@
     "message": "Réinitialiser"
   },
   "resultsAllAvailableTpl": {
-    "message": "... commandes rapides sont disponibles dans cette fenêtre"
+    "message": "{count} commandes rapides sont disponibles dans cette fenêtre"
   },
   "resultsMatchTpl": {
-    "message": "... sur ... ... correspondent à ce filtre"
+    "message": "{visible} sur {total} {controls} correspondent à ce filtre"
   },
   "resultsMatching": {
     "message": "correspondants"
@@ -3762,10 +3762,10 @@
     "message": "Version de l'extension"
   },
   "speedBtnAriaTpl": {
-    "message": "Vitesse de lecture par défaut .... Cliquez pour modifier."
+    "message": "Vitesse de lecture par défaut {speed}. Cliquez pour modifier."
   },
   "speedBtnTitleTpl": {
-    "message": "Vitesse de lecture par défaut : ... — s'applique à toutes les vidéos"
+    "message": "Vitesse de lecture par défaut : {speed} — s'applique à toutes les vidéos"
   },
   "speedPopupAria": {
     "message": "Vitesse de lecture par défaut"
@@ -4002,7 +4002,7 @@
     "message": "activés"
   },
   "toggleUpdateFailTpl": {
-    "message": "Impossible de mettre à jour .... Réessayez."
+    "message": "Impossible de mettre à jour {name}. Réessayez."
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
