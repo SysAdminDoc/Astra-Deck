@@ -1707,10 +1707,10 @@
     "message": "Limitar desplazamiento"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Evitar que YouTube comprima el rango dinámico de los videos recién cargados. Mejor esfuerzo — YouTube limita la ganancia mediante APIs de movie_player no soportadas oficialmente."
+    "message": "Evita que YouTube baje el volumen del reproductor por debajo del 100 %. Esto NO desactiva la normalización de sonoridad: se ejecuta en un nodo de Web Audio al que una extensión no puede llegar, así que los vídeos silenciosos siguen siéndolo; solo deja de moverse el control de volumen."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Desactivar normalización de volumen"
+    "message": "Mantener el volumen al máximo"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "Evitar que el mini reproductor aparezca al navegar fuera"

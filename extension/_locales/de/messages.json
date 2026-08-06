@@ -1707,10 +1707,10 @@
     "message": "Scrollen begrenzen"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Verhindert, dass YouTube den Dynamikbereich neu geladener Videos komprimiert. Best-Effort — YouTube regelt die Verstärkung über movie_player-APIs, die nicht offiziell unterstützt werden."
+    "message": "Verhindert, dass YouTube die Player-Lautstärke unter 100 % zurückregelt. Die Lautheitsnormalisierung wird dadurch NICHT abgeschaltet — sie läuft in einem Web-Audio-Knoten, den eine Erweiterung nicht erreicht. Leise Videos bleiben also leise; nur der Lautstärkeregler wandert nicht mehr."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Lautheitsnormalisierung deaktivieren"
+    "message": "Lautstärke auf 100 % halten"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "Verhindert, dass der Mini-Player beim Wegnavigieren erscheint"

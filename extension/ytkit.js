@@ -37630,8 +37630,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         {
             id: 'disableLoudnessNormalization',
-            name: 'Disable Loudness Normalization',
-            description: 'Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren\u2019t officially supported.',
+            name: t('feature_disableLoudnessNormalization_name', 'Keep Volume At Full'),
+            description: t('feature_disableLoudnessNormalization_desc', 'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.'),
             group: 'Video Player',
             icon: 'volume-x',
             pages: [PageTypes.WATCH],
@@ -37669,8 +37669,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     };
                     video.addEventListener('volumechange', this._videoListener);
                 }
-                // Also flip the data attribute so the MAIN-world bridge (future
-                // ytkit-main.js work) can disable the YT loudness gainNode there.
+                // Published for styling and diagnostics only. There is NO
+                // MAIN-world consumer: the gainNode that performs the actual
+                // normalization is not reachable from either world through any
+                // API YouTube exposes, so nothing here can switch it off. The
+                // earlier comment promised a bridge that was never built, which
+                // is what let the feature keep its overclaiming name.
                 document.documentElement.dataset.ytkitDisableLoudness = '1';
             },
             init() {

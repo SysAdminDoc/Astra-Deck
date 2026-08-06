@@ -42,16 +42,6 @@ count pin; the storage-size `totalBytes` pin. Then `npm run i18n:coverage`.
 
 ### P3 — Smaller gaps
 
-- [ ] P3 — Drive YouTube's native "Stable Volume" instead of clamping video.volume
-  Category: correctness
-  Where: extension/ytkit.js `disableLoudnessNormalization` (`_apply`/`_detachVideo`)
-  Problem: The feature name promises YouTube's loudness normalization is off; the implementation is a `volumechange` listener that clamps `video.volume` back to 1 when it lands between 0.99 and 1, plus a data attribute for a MAIN-world bridge that never consumed it. YouTube normalizes inside a Web Audio gainNode the ISOLATED world cannot reach, so the clamp does not disable normalization — it only stops one symptom. YouTube now exposes "Stable Volume" as a real toggle in the player settings menu, which is the actual control.
-  Evidence: Enhancer for YouTube #730 (open) asks for exactly this. Local: the feature's own comment concedes "Best effort — YouTube clamps the gain through movie_player APIs".
-  Fix: Drive the native Stable Volume menu item structurally (iconType / menu-item position, NOT English text — see the v4.53.0 locale-independence work), keep the clamp as a fallback, and correct the description to say what it does.
-  Acceptance: A fixture test drives the menu path on a non-English UI; the clamp still applies when the menu item is absent.
-  Confidence: Verified (mechanism); menu shape needs a live check
-  Effort: S
-
 - [ ] P3 — Comment translation
   Category: feature
   Where: no such setting. Every existing language control is either ANTI-translate (`antiTranslate`, `antiTranslateTranscript`, `antiTranslateAudioTrack`) or track selection (`dualLanguageSubtitles`, `autoSubtitleLang`, `preferredAudioLang`, `commentLanguageAllowlist`)

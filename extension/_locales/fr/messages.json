@@ -1707,10 +1707,10 @@
     "message": "Limiter défilement"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Empêcher YouTube de compresser la plage dynamique des vidéos nouvellement chargées. Meilleur effort — YouTube contrôle le gain via des API movie_player non officiellement prises en charge."
+    "message": "Empêche YouTube de rabaisser le volume du lecteur sous 100 %. Cela ne désactive PAS la normalisation sonore : elle s’exécute dans un nœud Web Audio qu’une extension ne peut pas atteindre, donc les vidéos discrètes le restent ; seul le curseur de volume cesse de dériver."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Désactiver la normalisation du volume"
+    "message": "Garder le volume au maximum"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "Empêcher le mini Player d'apparaître lors de la navigation"

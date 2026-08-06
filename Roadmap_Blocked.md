@@ -382,3 +382,36 @@ deleted from ROADMAP.md; what remains here is the coverage ledger.
   Acceptance: Next audit starts from this record.
   Confidence: Verified
   Effort: S
+
+## Browser-gated — 2026-08-06
+
+- [ ] P3 — Drive YouTube's native "Stable Volume" toggle
+  Blocker: The Stable Volume control lives in the player's gear menu, which
+  YouTube renders LAZILY on click. It is absent from every captured fixture in
+  this repo (`tests/fixtures/yt-watch.tokens.txt` has the `ytp-menuitem*`
+  classes but no menu contents), and the classic player chrome carries no
+  Polymer `data`, so there is no iconType or endpoint to match on the way the
+  feed menus offer. Writing a matcher without seeing the real markup would be
+  guesswork of exactly the kind this repo's audit rules forbid — and matching
+  the English label is what the v4.53.0 locale-independence pass just removed
+  everywhere else.
+  Needs: one live watch page with the settings menu open, capturing the
+  Stable Volume menuitem's outerHTML (its icon path `d`, `role`, `aria-checked`
+  and any stable class) in all of one LTR, one RTL and one CJK locale. With
+  that, the matcher is small and this returns to ROADMAP.md.
+  Shipped in the meantime (v4.54.0): the feature no longer CLAIMS to disable
+  loudness normalization. It was renamed "Keep Volume At Full" and its
+  description now states the limitation — the normalization gain runs in a Web
+  Audio node neither world can reach, and the "MAIN-world bridge" its comment
+  promised was never built. Pinned by
+  `tests/features/audio-only-playback.test.js`.
+
+- [ ] P3 — Drive YouTube's native "Stable Volume" instead of clamping video.volume
+  Category: correctness
+  Where: extension/ytkit.js `disableLoudnessNormalization` (`_apply`/`_detachVideo`)
+  Problem: The feature name promises YouTube's loudness normalization is off; the implementation is a `volumechange` listener that clamps `video.volume` back to 1 when it lands between 0.99 and 1, plus a data attribute for a MAIN-world bridge that never consumed it. YouTube normalizes inside a Web Audio gainNode the ISOLATED world cannot reach, so the clamp does not disable normalization — it only stops one symptom. YouTube now exposes "Stable Volume" as a real toggle in the player settings menu, which is the actual control.
+  Evidence: Enhancer for YouTube #730 (open) asks for exactly this. Local: the feature's own comment concedes "Best effort — YouTube clamps the gain through movie_player APIs".
+  Fix: Drive the native Stable Volume menu item structurally (iconType / menu-item position, NOT English text — see the v4.53.0 locale-independence work), keep the clamp as a fallback, and correct the description to say what it does.
+  Acceptance: A fixture test drives the menu path on a non-English UI; the clamp still applies when the menu item is absent.
+  Confidence: Verified (mechanism); menu shape needs a live check
+  Effort: S

@@ -1707,10 +1707,10 @@
     "message": "禁用无限滚动"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "阻止 YouTube 压缩新加载视频的动态范围。尽力而为 — YouTube 通过非官方支持的 movie_player API 限制增益。"
+    "message": "阻止 YouTube 把播放器音量调回 100% 以下。这不会关闭响度归一化：它运行在扩展程序无法访问的 Web Audio 节点中，因此音量偏小的视频仍然偏小，只是音量滑块不再漂移。"
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "禁用响度标准化"
+    "message": "将音量保持在最大"
   },
   "feature_disableMiniPlayer_desc": {
     "message": "导航离开时阻止迷你播放器出现"
