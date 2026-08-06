@@ -9405,5 +9405,70 @@ window.close()
             self.assertIn("25 MB", reason)
 
 
+class SiteLoginDurabilityTests(unittest.TestCase):
+    """The sign-in store gets the same durability contract as every other
+    companion store, and never leaves a live session in an unlisted jar."""
+
+    EXPORT = ".x.com\tTRUE\t/\tTRUE\t2000000000\tauth_token\tSECRET"
+
+    def test_manager_wires_the_atomic_writer(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            store = manager.site_logins
+            self.assertIsNotNone(store._writer,
+                                 "a torn index write must not be possible")
+            self.assertIsNotNone(store._reader)
+
+            calls = []
+            original = ad.atomic_write_json
+
+            def spy(path, data):
+                calls.append(Path(path).name)
+                return original(path, data)
+
+            with mock.patch.object(ad, 'atomic_write_json', spy):
+                result, error = store.import_netscape_text("x.com", self.EXPORT)
+            self.assertIsNone(error)
+            self.assertEqual(result["site"], "x.com")
+            self.assertIn(ad.SITE_LOGIN_INDEX_NAME, calls,
+                          "the index must be written through atomic_write_json")
+
+    def test_failed_index_write_rolls_back_the_jar(self):
+        def full_disk(path, data):
+            # atomic_write_json reports failure by raising, so the fake has to
+            # fail the same way or it proves nothing about the real writer.
+            raise OSError(28, "No space left on device")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = ad.SiteLoginStore(
+                tmpdir,
+                reader=lambda path, fallback: fallback,
+                writer=full_disk,
+            )
+            result, error = store.import_netscape_text("x.com", self.EXPORT)
+
+            self.assertIsNone(result)
+            self.assertIn("rolled back", error)
+            jar = Path(tmpdir) / ad.SITE_LOGIN_DIRNAME / "x.com.txt"
+            self.assertFalse(
+                jar.exists(),
+                "an unlisted jar has no Remove button, so it must not survive",
+            )
+            self.assertEqual(store.entries(), [])
+
+    def test_successful_import_survives_a_reload(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({"DownloadPath": tmpdir, "AudioDownloadPath": tmpdir})
+            manager = ad.DownloadManager(config, FakeHistory())
+            manager.site_logins.import_netscape_text("x.com", self.EXPORT)
+
+            reopened = ad.DownloadManager(config, FakeHistory())
+            sites = [entry["site"] for entry in reopened.site_logins.entries()]
+            self.assertIn("x.com", sites)
+            self.assertEqual(reopened.site_logins.site_key_for_url("https://x.com/a"),
+                             "x.com")
+
+
 if __name__ == "__main__":
     unittest.main()
