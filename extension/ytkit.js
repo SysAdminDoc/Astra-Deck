@@ -2122,8 +2122,9 @@ return response;
         const xBtn = document.createElement('button');
         xBtn.className = 'ytkit-pc-x';
         xBtn.type = 'button';
-        xBtn.title = 'Dismiss ' + label;
-        xBtn.setAttribute('aria-label', 'Dismiss ' + label);
+        const dismissLabel = t('pageControlDismissTpl', `Dismiss ${label}`).replace('{label}', label);
+        xBtn.title = dismissLabel;
+        xBtn.setAttribute('aria-label', dismissLabel);
         xBtn.textContent = '×';
         xBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -18425,7 +18426,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const hideAllBtn = document.createElement('button');
                 hideAllBtn.type = 'button';
                 hideAllBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-btn';
-                hideAllBtn.title = 'Hide all visible videos on this page';
+                hideAllBtn.title = t('hideAllButtonTitle', 'Hide all visible videos on this page');
                 const svg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
                 svg.appendChild(createSvgElement('path', { d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' }));
                 svg.appendChild(createSvgElement('line', { x1: '1', y1: '1', x2: '23', y2: '23' }));
@@ -18435,7 +18436,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 hideAllBtn.appendChild(iconWrap);
                 const text = document.createElement('span');
                 text.className = 'ytkit-watch-action-btn__label';
-                text.textContent = 'Hide All';
+                text.textContent = t('hideAllButtonLabel', 'Hide All');
                 hideAllBtn.appendChild(text);
                 hideAllBtn.addEventListener('click', () => this._hideAllVideos());
                 group.appendChild(restoreBtn);
@@ -18668,8 +18669,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'ytkit-watch-action-btn ytkit-local-dl-btn';
-                btn.title = 'Show local download options';
-                btn.setAttribute('aria-label', 'Show local download options');
+                btn.title = t('dlLocalOptionsTitle', 'Show local download options');
+                btn.setAttribute('aria-label', t('dlLocalOptionsTitle', 'Show local download options'));
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '20');
@@ -21592,11 +21593,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
 
                 const title = document.createElement('div');
-                title.textContent = 'Sleep timer';
+                title.textContent = t('sleepTimerTitle', 'Sleep timer');
                 title.style.cssText = 'font-size:13px;font-weight:700;color:#fff;';
 
                 const hint = document.createElement('div');
-                hint.textContent = 'Pause playback after the selected number of minutes.';
+                hint.textContent = t('sleepTimerHint', 'Pause playback after the selected number of minutes.');
                 hint.style.cssText = 'color:rgba(244,246,251,0.72);';
 
                 const label = document.createElement('label');
@@ -42483,7 +42484,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._writeBackup(backup);
                 commitPresetSettings(next);
                 if (typeof showToast === 'function') {
-                    showToast('Low Power on. Toggle off to restore your previous feature flags.', '#22c55e', { duration: 6 });
+                    showToast(t('presetLowPowerOn', 'Low Power on. Toggle off to restore your previous feature flags.'), '#22c55e', { duration: 6 });
                 }
             },
 
@@ -42495,7 +42496,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._clearBackup();
                 commitPresetSettings(next);
                 if (typeof showToast === 'function') {
-                    showToast('Low Power off. Previous feature flags restored.', '#6b7280', { duration: 4 });
+                    showToast(t('presetLowPowerOff', 'Low Power off. Previous feature flags restored.'), '#6b7280', { duration: 4 });
                 }
             },
 
@@ -42536,13 +42537,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
                 this._writeBackup(backup); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Privacy preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+                if (typeof showToast === 'function') showToast(t('presetPrivacyOn', 'Privacy preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
                 const next = { ...appState.settings, ...backup };
                 this._clearBackup(); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Privacy preset off. Previous values restored.', '#6b7280', { duration: 4 });
+                if (typeof showToast === 'function') showToast(t('presetPrivacyOff', 'Privacy preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
             init() { if (this._readBackup()) return; this._apply(); },
             destroy() { if (this._readBackup()) this._restore(); }
@@ -42572,13 +42573,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
                 this._writeBackup(backup); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Researcher preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+                if (typeof showToast === 'function') showToast(t('presetResearcherOn', 'Researcher preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
                 const next = { ...appState.settings, ...backup };
                 this._clearBackup(); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Researcher preset off. Previous values restored.', '#6b7280', { duration: 4 });
+                if (typeof showToast === 'function') showToast(t('presetResearcherOff', 'Researcher preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
             init() { if (this._readBackup()) return; this._apply(); },
             destroy() { if (this._readBackup()) this._restore(); }
@@ -42610,13 +42611,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
                 this._writeBackup(backup); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Power User preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+                if (typeof showToast === 'function') showToast(t('presetPowerUserOn', 'Power User preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
                 const next = { ...appState.settings, ...backup };
                 this._clearBackup(); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Power User preset off. Previous values restored.', '#6b7280', { duration: 4 });
+                if (typeof showToast === 'function') showToast(t('presetPowerUserOff', 'Power User preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
             init() { if (this._readBackup()) return; this._apply(); },
             destroy() { if (this._readBackup()) this._restore(); }
@@ -42648,13 +42649,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const { backup, next } = buildPresetRecipeUpdate(this._RECIPE);
                 this._writeBackup(backup); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Focus preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+                if (typeof showToast === 'function') showToast(t('presetFocusOn', 'Focus preset applied. Toggle off to restore.'), '#22c55e', { duration: 5 });
             },
             _restore() {
                 const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
                 const next = { ...appState.settings, ...backup };
                 this._clearBackup(); commitPresetSettings(next);
-                if (typeof showToast === 'function') showToast('Focus preset off. Previous values restored.', '#6b7280', { duration: 4 });
+                if (typeof showToast === 'function') showToast(t('presetFocusOff', 'Focus preset off. Previous values restored.'), '#6b7280', { duration: 4 });
             },
             init() { if (this._readBackup()) return; this._apply(); },
             destroy() { if (this._readBackup()) this._restore(); }

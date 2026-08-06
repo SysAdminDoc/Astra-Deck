@@ -608,6 +608,10 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlLocalOptionsTitle": {
+    "message": "Показать параметры локальной загрузки",
+    "description": "Tooltip and label for the injected watch-page download button"
+  },
   "dlPopupAria": {
     "message": "Параметры загрузки"
   },
@@ -3449,6 +3453,14 @@
   "healthTitle": {
     "message": "Диагностика"
   },
+  "hideAllButtonLabel": {
+    "message": "Скрыть все",
+    "description": "Label of the Hide All button"
+  },
+  "hideAllButtonTitle": {
+    "message": "Скрыть все видимые видео на этой странице",
+    "description": "Tooltip for the Hide All button"
+  },
   "importBtn": {
     "message": "Импорт"
   },
@@ -3544,6 +3556,10 @@
   },
   "optionalHostUnknown": {
     "message": "optional host access"
+  },
+  "pageControlDismissTpl": {
+    "message": "Скрыть «{label}»",
+    "description": "Accessible label for dismissing an injected page control. {label} is the control name"
   },
   "panelCloseAria": {
     "message": "Закрыть настройки"
@@ -3721,6 +3737,46 @@
   },
   "popupTitle": {
     "message": "Astra Deck"
+  },
+  "presetFocusOff": {
+    "message": "Пресет «Фокус» выключен. Прежние значения восстановлены.",
+    "description": "Toast when the Focus preset is disabled"
+  },
+  "presetFocusOn": {
+    "message": "Пресет «Фокус» применён. Выключите, чтобы восстановить.",
+    "description": "Toast when the Focus preset is enabled"
+  },
+  "presetLowPowerOff": {
+    "message": "Энергосбережение выключено. Прежние функции восстановлены.",
+    "description": "Toast when the Low Power preset is disabled"
+  },
+  "presetLowPowerOn": {
+    "message": "Энергосбережение включено. Выключите, чтобы восстановить прежние функции.",
+    "description": "Toast when the Low Power preset is enabled"
+  },
+  "presetPowerUserOff": {
+    "message": "Пресет «Опытный пользователь» выключен. Прежние значения восстановлены.",
+    "description": "Toast when the Power User preset is disabled"
+  },
+  "presetPowerUserOn": {
+    "message": "Пресет «Опытный пользователь» применён. Выключите, чтобы восстановить.",
+    "description": "Toast when the Power User preset is enabled"
+  },
+  "presetPrivacyOff": {
+    "message": "Пресет «Приватность» выключен. Прежние значения восстановлены.",
+    "description": "Toast when the Privacy preset is disabled"
+  },
+  "presetPrivacyOn": {
+    "message": "Пресет «Приватность» применён. Выключите, чтобы восстановить.",
+    "description": "Toast when the Privacy preset is enabled"
+  },
+  "presetResearcherOff": {
+    "message": "Пресет «Исследование» выключен. Прежние значения восстановлены.",
+    "description": "Toast when the Researcher preset is disabled"
+  },
+  "presetResearcherOn": {
+    "message": "Пресет «Исследование» применён. Выключите, чтобы восстановить.",
+    "description": "Toast when the Researcher preset is enabled"
   },
   "qtGroup_Feed_Cleanup": {
     "message": "Очистка ленты"
@@ -4195,6 +4251,14 @@
   },
   "sidepanelDocTitle": {
     "message": "Astra Deck — панель мониторинга"
+  },
+  "sleepTimerHint": {
+    "message": "Приостановить воспроизведение через выбранное число минут.",
+    "description": "Explains what the sleep timer does"
+  },
+  "sleepTimerTitle": {
+    "message": "Таймер сна",
+    "description": "Heading of the sleep timer popover"
   },
   "spAgeNever": {
     "message": "никогда"

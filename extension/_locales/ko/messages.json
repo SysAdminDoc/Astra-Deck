@@ -608,6 +608,10 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlLocalOptionsTitle": {
+    "message": "로컬 다운로드 옵션 표시",
+    "description": "Tooltip and label for the injected watch-page download button"
+  },
   "dlPopupAria": {
     "message": "다운로드 옵션"
   },
@@ -3449,6 +3453,14 @@
   "healthTitle": {
     "message": "진단"
   },
+  "hideAllButtonLabel": {
+    "message": "모두 숨기기",
+    "description": "Label of the Hide All button"
+  },
+  "hideAllButtonTitle": {
+    "message": "이 페이지에 보이는 동영상 모두 숨기기",
+    "description": "Tooltip for the Hide All button"
+  },
   "importBtn": {
     "message": "가져오기"
   },
@@ -3544,6 +3556,10 @@
   },
   "optionalHostUnknown": {
     "message": "optional host access"
+  },
+  "pageControlDismissTpl": {
+    "message": "{label} 닫기",
+    "description": "Accessible label for dismissing an injected page control. {label} is the control name"
   },
   "panelCloseAria": {
     "message": "설정 닫기"
@@ -3721,6 +3737,46 @@
   },
   "popupTitle": {
     "message": "Astra Deck"
+  },
+  "presetFocusOff": {
+    "message": "집중 프리셋을 껐습니다. 이전 값을 복원했습니다.",
+    "description": "Toast when the Focus preset is disabled"
+  },
+  "presetFocusOn": {
+    "message": "집중 프리셋을 적용했습니다. 끄면 되돌아갑니다.",
+    "description": "Toast when the Focus preset is enabled"
+  },
+  "presetLowPowerOff": {
+    "message": "절전 모드를 껐습니다. 이전 기능 설정을 복원했습니다.",
+    "description": "Toast when the Low Power preset is disabled"
+  },
+  "presetLowPowerOn": {
+    "message": "절전 모드를 켰습니다. 끄면 이전 기능 설정으로 돌아갑니다.",
+    "description": "Toast when the Low Power preset is enabled"
+  },
+  "presetPowerUserOff": {
+    "message": "파워 유저 프리셋을 껐습니다. 이전 값을 복원했습니다.",
+    "description": "Toast when the Power User preset is disabled"
+  },
+  "presetPowerUserOn": {
+    "message": "파워 유저 프리셋을 적용했습니다. 끄면 되돌아갑니다.",
+    "description": "Toast when the Power User preset is enabled"
+  },
+  "presetPrivacyOff": {
+    "message": "개인정보 프리셋을 껐습니다. 이전 값을 복원했습니다.",
+    "description": "Toast when the Privacy preset is disabled"
+  },
+  "presetPrivacyOn": {
+    "message": "개인정보 프리셋을 적용했습니다. 끄면 되돌아갑니다.",
+    "description": "Toast when the Privacy preset is enabled"
+  },
+  "presetResearcherOff": {
+    "message": "리서치 프리셋을 껐습니다. 이전 값을 복원했습니다.",
+    "description": "Toast when the Researcher preset is disabled"
+  },
+  "presetResearcherOn": {
+    "message": "리서치 프리셋을 적용했습니다. 끄면 되돌아갑니다.",
+    "description": "Toast when the Researcher preset is enabled"
   },
   "qtGroup_Feed_Cleanup": {
     "message": "피드 정리"
@@ -4195,6 +4251,14 @@
   },
   "sidepanelDocTitle": {
     "message": "Astra Deck - 대시보드"
+  },
+  "sleepTimerHint": {
+    "message": "선택한 시간(분)이 지나면 재생을 일시중지합니다.",
+    "description": "Explains what the sleep timer does"
+  },
+  "sleepTimerTitle": {
+    "message": "취침 타이머",
+    "description": "Heading of the sleep timer popover"
   },
   "spAgeNever": {
     "message": "없음"

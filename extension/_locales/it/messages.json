@@ -608,6 +608,10 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlLocalOptionsTitle": {
+    "message": "Mostra le opzioni di download locale",
+    "description": "Tooltip and label for the injected watch-page download button"
+  },
   "dlPopupAria": {
     "message": "Opzioni di download"
   },
@@ -3449,6 +3453,14 @@
   "healthTitle": {
     "message": "Diagnostica"
   },
+  "hideAllButtonLabel": {
+    "message": "Nascondi tutto",
+    "description": "Label of the Hide All button"
+  },
+  "hideAllButtonTitle": {
+    "message": "Nascondi tutti i video visibili in questa pagina",
+    "description": "Tooltip for the Hide All button"
+  },
   "importBtn": {
     "message": "Importa"
   },
@@ -3544,6 +3556,10 @@
   },
   "optionalHostUnknown": {
     "message": "optional host access"
+  },
+  "pageControlDismissTpl": {
+    "message": "Ignora {label}",
+    "description": "Accessible label for dismissing an injected page control. {label} is the control name"
   },
   "panelCloseAria": {
     "message": "Chiudi impostazioni"
@@ -3721,6 +3737,46 @@
   },
   "popupTitle": {
     "message": "Astra Deck"
+  },
+  "presetFocusOff": {
+    "message": "Preset Concentrazione disattivato. Valori precedenti ripristinati.",
+    "description": "Toast when the Focus preset is disabled"
+  },
+  "presetFocusOn": {
+    "message": "Preset Concentrazione applicato. Disattivalo per ripristinare.",
+    "description": "Toast when the Focus preset is enabled"
+  },
+  "presetLowPowerOff": {
+    "message": "Risparmio energetico disattivato. Funzioni precedenti ripristinate.",
+    "description": "Toast when the Low Power preset is disabled"
+  },
+  "presetLowPowerOn": {
+    "message": "Risparmio energetico attivo. Disattivalo per ripristinare le funzioni precedenti.",
+    "description": "Toast when the Low Power preset is enabled"
+  },
+  "presetPowerUserOff": {
+    "message": "Preset Avanzato disattivato. Valori precedenti ripristinati.",
+    "description": "Toast when the Power User preset is disabled"
+  },
+  "presetPowerUserOn": {
+    "message": "Preset Avanzato applicato. Disattivalo per ripristinare.",
+    "description": "Toast when the Power User preset is enabled"
+  },
+  "presetPrivacyOff": {
+    "message": "Preset Privacy disattivato. Valori precedenti ripristinati.",
+    "description": "Toast when the Privacy preset is disabled"
+  },
+  "presetPrivacyOn": {
+    "message": "Preset Privacy applicato. Disattivalo per ripristinare.",
+    "description": "Toast when the Privacy preset is enabled"
+  },
+  "presetResearcherOff": {
+    "message": "Preset Ricerca disattivato. Valori precedenti ripristinati.",
+    "description": "Toast when the Researcher preset is disabled"
+  },
+  "presetResearcherOn": {
+    "message": "Preset Ricerca applicato. Disattivalo per ripristinare.",
+    "description": "Toast when the Researcher preset is enabled"
   },
   "qtGroup_Feed_Cleanup": {
     "message": "Pulizia feed"
@@ -4195,6 +4251,14 @@
   },
   "sidepanelDocTitle": {
     "message": "Astra Deck - Pannello di controllo"
+  },
+  "sleepTimerHint": {
+    "message": "Mette in pausa la riproduzione dopo i minuti selezionati.",
+    "description": "Explains what the sleep timer does"
+  },
+  "sleepTimerTitle": {
+    "message": "Timer di spegnimento",
+    "description": "Heading of the sleep timer popover"
   },
   "spAgeNever": {
     "message": "mai"

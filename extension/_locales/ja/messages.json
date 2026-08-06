@@ -608,6 +608,10 @@
   "dlInstallStepStart": {
     "message": "Start the service again if the downloader is already installed."
   },
+  "dlLocalOptionsTitle": {
+    "message": "ローカルダウンロードのオプションを表示",
+    "description": "Tooltip and label for the injected watch-page download button"
+  },
   "dlPopupAria": {
     "message": "ダウンロードオプション"
   },
@@ -3449,6 +3453,14 @@
   "healthTitle": {
     "message": "診断"
   },
+  "hideAllButtonLabel": {
+    "message": "すべて非表示",
+    "description": "Label of the Hide All button"
+  },
+  "hideAllButtonTitle": {
+    "message": "このページの表示中の動画をすべて非表示",
+    "description": "Tooltip for the Hide All button"
+  },
   "importBtn": {
     "message": "インポート"
   },
@@ -3544,6 +3556,10 @@
   },
   "optionalHostUnknown": {
     "message": "optional host access"
+  },
+  "pageControlDismissTpl": {
+    "message": "{label} を閉じる",
+    "description": "Accessible label for dismissing an injected page control. {label} is the control name"
   },
   "panelCloseAria": {
     "message": "設定を閉じる"
@@ -3721,6 +3737,46 @@
   },
   "popupTitle": {
     "message": "Astra Deck"
+  },
+  "presetFocusOff": {
+    "message": "集中プリセットをオフにしました。以前の値を復元しました。",
+    "description": "Toast when the Focus preset is disabled"
+  },
+  "presetFocusOn": {
+    "message": "集中プリセットを適用しました。オフにすると元に戻ります。",
+    "description": "Toast when the Focus preset is enabled"
+  },
+  "presetLowPowerOff": {
+    "message": "低電力モードをオフにしました。以前の機能設定を復元しました。",
+    "description": "Toast when the Low Power preset is disabled"
+  },
+  "presetLowPowerOn": {
+    "message": "低電力モードをオンにしました。オフにすると以前の機能設定に戻ります。",
+    "description": "Toast when the Low Power preset is enabled"
+  },
+  "presetPowerUserOff": {
+    "message": "パワーユーザープリセットをオフにしました。以前の値を復元しました。",
+    "description": "Toast when the Power User preset is disabled"
+  },
+  "presetPowerUserOn": {
+    "message": "パワーユーザープリセットを適用しました。オフにすると元に戻ります。",
+    "description": "Toast when the Power User preset is enabled"
+  },
+  "presetPrivacyOff": {
+    "message": "プライバシープリセットをオフにしました。以前の値を復元しました。",
+    "description": "Toast when the Privacy preset is disabled"
+  },
+  "presetPrivacyOn": {
+    "message": "プライバシープリセットを適用しました。オフにすると元に戻ります。",
+    "description": "Toast when the Privacy preset is enabled"
+  },
+  "presetResearcherOff": {
+    "message": "リサーチプリセットをオフにしました。以前の値を復元しました。",
+    "description": "Toast when the Researcher preset is disabled"
+  },
+  "presetResearcherOn": {
+    "message": "リサーチプリセットを適用しました。オフにすると元に戻ります。",
+    "description": "Toast when the Researcher preset is enabled"
   },
   "qtGroup_Feed_Cleanup": {
     "message": "フィードクリーンアップ"
@@ -4195,6 +4251,14 @@
   },
   "sidepanelDocTitle": {
     "message": "Astra Deck - ダッシュボード"
+  },
+  "sleepTimerHint": {
+    "message": "選択した分数の経過後に再生を一時停止します。",
+    "description": "Explains what the sleep timer does"
+  },
+  "sleepTimerTitle": {
+    "message": "スリープタイマー",
+    "description": "Heading of the sleep timer popover"
   },
   "spAgeNever": {
     "message": "未実行"
