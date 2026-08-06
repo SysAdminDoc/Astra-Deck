@@ -55,16 +55,6 @@ ROADMAP/Roadmap_Blocked items — nothing below re-logs a tracked or previously 
 
 ### P2 — Correctness
 
-- [ ] P2 — Orphaned-tab settings writes report {ok:true} while persisting nothing
-  Category: correctness
-  Where: extension/core/storage.js:284-286 (flushPendingStorageWrites), fed by storageWriteMany :343-353 and storage-manager.js setSync :151
-  Problem: When the extension context is invalidated (extension updated/reloaded/disabled while a YouTube tab stays open), hasExtensionContext() goes false and flushPendingStorageWrites() returns `storageFlushInFlight || Promise.resolve({ ok: true })` even with pendingStorageWrites non-empty and unpersistable. Every setSync/immediate write then resolves {ok:true}. The whole point of the {ok,error} contract (9328b166; v4.49.6 "settings-import now awaits the aggregated setSync results") is that persistence failure cannot report success — but in an orphaned tab the settings panel keeps working against the in-memory cache, so imports, undo/rollback confirmations, and "Settings saved" toasts all claim success and everything is lost on next load. The messaging paths already reject with "Extension context invalidated. Reload the page." — the storage write path is the one surface that lies.
-  Evidence: Branch + both feeder paths verified by direct read; no test covers this branch with pending writes present.
-  Fix: When `!core.hasExtensionContext() && hasPendingStorageWrites()`, resolve `{ ok: false, error: new Error('Extension context invalidated') }` (keep quiet {ok:true} only for the truly-empty case) so the import transaction and setSync consumers surface the reload-the-page failure they already know how to render.
-  Acceptance: Test: invalidate the fake context, queue a write, flush → {ok:false}; settings-import surfaces the failure toast instead of "imported".
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — SponsorBlock "Highlight" (poi_highlight) is silently inert — zero-length POI segments are dropped by normalization
   Category: correctness
   Where: extension/features/sponsorblock/index.js:131-146 (_normalizeSegments — requires `s.segment[1] > s.segment[0]`); intent comment at :347-351; byte-identical twin at extension/ytkit.js:30275-30290

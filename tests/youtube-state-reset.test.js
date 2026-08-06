@@ -189,3 +189,51 @@ test('content bridge records reset diagnostics and exposes an in-page toast', ()
     assert.match(block, /showToast\(t\('youtubeStateResetToast'/);
     assert.match(block, /return true/);
 });
+
+// ── An orphaned tab must not report successful writes ──
+// When the extension is updated/reloaded/disabled while a YouTube tab stays
+// open, hasExtensionContext() goes false but the settings panel keeps working
+// against the in-memory cache. flushPendingStorageWrites() used to resolve
+// { ok: true } with writes still pending and no way to persist them, so
+// imports, undo/rollback confirmations and "Settings saved" toasts all claimed
+// success for data that was lost on the next page load. The { ok, error }
+// contract exists precisely to make that impossible.
+function loadStorageCoreWithContext(hasContext) {
+    const context = {
+        Blob,
+        CustomEvent: class CustomEvent {},
+        chrome: { storage: { local: {}, onChanged: { addListener() {} } } },
+        clearTimeout,
+        console,
+        document: { addEventListener() {}, visibilityState: 'visible' },
+        globalThis: null,
+        setTimeout,
+        window: { addEventListener() {}, dispatchEvent() {} }
+    };
+    context.globalThis = context;
+    context.YTKitCore = { hasExtensionContext: () => hasContext };
+    vm.createContext(context);
+    vm.runInContext(storageSource, context, { filename: 'extension/core/storage.js' });
+    return context.YTKitCore;
+}
+
+test('an invalidated extension context reports write failure instead of success', async () => {
+    const core = loadStorageCoreWithContext(false);
+
+    // Nothing pending: staying quiet is correct, there is nothing to lose.
+    const idle = await core.flushPendingStorageWrites();
+    assert.equal(idle.ok, true, 'an empty flush must not manufacture a failure');
+
+    // A real write with no way to reach disk must report failure.
+    const result = await core.storageWrite('ytSuiteSettings', { theme: 'dark' }, { immediate: true });
+    assert.equal(result.ok, false,
+        'a write that cannot be persisted must not resolve ok');
+    assert.match(String(result.error?.message || ''), /Extension context invalidated/,
+        'the failure must name the reload-the-page cause the UI already renders');
+});
+
+test('a live extension context still resolves writes successfully', async () => {
+    const core = loadStorageCoreWithContext(true);
+    const idle = await core.flushPendingStorageWrites();
+    assert.equal(idle.ok, true);
+});
