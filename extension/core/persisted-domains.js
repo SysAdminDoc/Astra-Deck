@@ -663,11 +663,23 @@
                 throw new Error('Transcript recovery snapshot is missing or expired');
             }
             const transcriptRows = rows.filter((row) => row?.snapshotMeta !== true);
-            records.clear();
-            for (const row of transcriptRows) {
-                const { snapshotId: _ignored, ...record } = row;
-                records.put(preparePageTranscriptRecord(record));
+            // Prepare EVERY record before queueing the clear, the way
+            // replaceTranscriptRecords does. A prepare throw after clear() left
+            // the function without aborting, so the transaction committed the
+            // wipe plus whatever partial restore had been queued.
+            let prepared;
+            try {
+                prepared = transcriptRows.map((row) => {
+                    const { snapshotId: _ignored, ...record } = row;
+                    return preparePageTranscriptRecord(record);
+                });
+            } catch (error) {
+                tx.abort();
+                await completion.catch(() => {});
+                throw error;
             }
+            records.clear();
+            for (const record of prepared) records.put(record);
             if (options.keepSnapshot !== true) rows.forEach((row) => snapshots.delete([snapshotId, row.videoId]));
             await completion;
             return transcriptRows.length;

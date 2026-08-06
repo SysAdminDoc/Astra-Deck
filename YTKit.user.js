@@ -9174,14 +9174,36 @@
                         : {};
                 },
 
+                // The language the viewer is ALREADY reading on screen. "Auto"
+                // secondary selection has to avoid that track, and comparing the
+                // browser locale instead let the overlay duplicate the native
+                // captions whenever the two differed.
+                _activeCaptionLanguage() {
+                    try {
+                        const player = doc?.querySelector?.('#movie_player');
+                        const option = player?.getOption?.('captions', 'track');
+                        const code = option?.languageCode || option?.vss_id || '';
+                        if (code) return String(code).replace(/^\.?a?\./, '');
+                    } catch (_) {
+                        // reason: the captions module is absent until the player loads
+                    }
+                    return '';
+                },
+
                 _primaryLanguage() {
                     const preferred = this._settings().transcriptPreferredLanguage;
                     if (preferred && preferred !== 'auto') return preferred;
-                    return win?.navigator?.language
+                    return this._activeCaptionLanguage()
+                        || win?.navigator?.language
                         || (typeof navigator !== 'undefined' ? navigator.language : '');
                 },
 
                 _playerResponse() {
+                    // Off a watch route there is no current video id, so the
+                    // id-mismatch guard below could not fire and the PREVIOUS watch
+                    // page's response was accepted — one wasted timed-text fetch and
+                    // an invisible overlay mount per navigation.
+                    if (!String(getVideoId?.() || '')) return null;
                     const pageData = doc?.querySelector?.('ytd-watch-flexy');
                     const pageResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     if (pageResponse) return pageResponse;
@@ -9344,17 +9366,20 @@
                         return;
                     }
 
-                    this._retryCount = 0;
                     this._cues = cues;
-                    if (!this._mountOverlay(track)) {
-                        this._scheduleLoad(700);
-                        return;
-                    }
-                    if (!this._attachVideo()) {
+                    // Mount/attach failures used to re-schedule WITHOUT incrementing
+                    // the retry count, so a page that resolved tracks but never
+                    // produced a player node looped every 700ms forever. Only a
+                    // fully successful render clears the budget.
+                    if (!this._mountOverlay(track) || !this._attachVideo()) {
                         this._removeOverlay();
-                        this._scheduleLoad(700);
+                        if (this._retryCount < 6) {
+                            this._retryCount += 1;
+                            this._scheduleLoad(700);
+                        }
                         return;
                     }
+                    this._retryCount = 0;
                     this._renderCue();
                 },
 
@@ -10114,8 +10139,8 @@
                 ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer,
                 ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer,
                 ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer,
-                ytd-browse[page-subtype="search"] ytd-video-renderer,
-                ytd-browse[page-subtype="search"] yt-lockup-view-model {
+                ytd-search[page-subtype="search"] ytd-video-renderer,
+                ytd-search[page-subtype="search"] yt-lockup-view-model {
                     display: block !important;
                     width: 100% !important;
                     max-width: none !important;
@@ -10123,10 +10148,10 @@
                 }
                 ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,
+                ytd-search[page-subtype="search"] ytd-video-renderer #dismissible,
                 ytd-browse[page-subtype="home"] yt-lockup-view-model,
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,
-                ytd-browse[page-subtype="search"] yt-lockup-view-model {
+                ytd-search[page-subtype="search"] yt-lockup-view-model {
                     display: grid !important;
                     grid-template-columns: minmax(180px, min(32vw, 360px)) minmax(0, 1fr) !important;
                     align-items: start !important;
@@ -10138,14 +10163,14 @@
                 ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > ytd-thumbnail,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > #thumbnail,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > ytd-thumbnail,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible > #thumbnail,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible > ytd-thumbnail,
+                ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > #thumbnail,
+                ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > ytd-thumbnail,
                 ytd-browse[page-subtype="home"] yt-lockup-view-model > yt-thumbnail-view-model,
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > yt-thumbnail-view-model,
-                ytd-browse[page-subtype="search"] yt-lockup-view-model > yt-thumbnail-view-model,
+                ytd-search[page-subtype="search"] yt-lockup-view-model > yt-thumbnail-view-model,
                 ytd-browse[page-subtype="home"] yt-lockup-view-model > a.yt-lockup-view-model__content-image,
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > a.yt-lockup-view-model__content-image,
-                ytd-browse[page-subtype="search"] yt-lockup-view-model > a.yt-lockup-view-model__content-image {
+                ytd-search[page-subtype="search"] yt-lockup-view-model > a.yt-lockup-view-model__content-image {
                     grid-column: 1 !important;
                     grid-row: 1 !important;
                     width: 100% !important;
@@ -10156,10 +10181,10 @@
                 }
                 ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > #details,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > #details,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible > #details,
+                ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > #details,
                 ytd-browse[page-subtype="home"] yt-lockup-view-model > yt-lockup-metadata-view-model,
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > yt-lockup-metadata-view-model,
-                ytd-browse[page-subtype="search"] yt-lockup-view-model > yt-lockup-metadata-view-model {
+                ytd-search[page-subtype="search"] yt-lockup-view-model > yt-lockup-metadata-view-model {
                     grid-column: 2 !important;
                     grid-row: 1 !important;
                     min-width: 0 !important;
@@ -10167,10 +10192,10 @@
                 }
                 ytd-browse[page-subtype="home"] ytd-rich-item-renderer #video-title,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #video-title,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #video-title,
+                ytd-search[page-subtype="search"] ytd-video-renderer #video-title,
                 ytd-browse[page-subtype="home"] yt-lockup-view-model a[title],
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model a[title],
-                ytd-browse[page-subtype="search"] yt-lockup-view-model a[title] {
+                ytd-search[page-subtype="search"] yt-lockup-view-model a[title] {
                     display: -webkit-box !important;
                     -webkit-box-orient: vertical !important;
                     -webkit-line-clamp: 3 !important;
@@ -10179,10 +10204,10 @@
                 }
                 ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #metadata-line,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #metadata-line,
+                ytd-search[page-subtype="search"] ytd-video-renderer #metadata-line,
                 ytd-browse[page-subtype="home"] yt-lockup-metadata-view-model,
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-metadata-view-model,
-                ytd-browse[page-subtype="search"] yt-lockup-metadata-view-model {
+                ytd-search[page-subtype="search"] yt-lockup-metadata-view-model {
                     min-width: 0 !important;
                     max-width: 100% !important;
                     overflow: hidden !important;
@@ -10190,10 +10215,10 @@
                 @media (max-width: 700px) {
                     ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,
                     ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,
-                    ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,
+                    ytd-search[page-subtype="search"] ytd-video-renderer #dismissible,
                     ytd-browse[page-subtype="home"] yt-lockup-view-model,
                     ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,
-                    ytd-browse[page-subtype="search"] yt-lockup-view-model {
+                    ytd-search[page-subtype="search"] yt-lockup-view-model {
                         grid-template-columns: minmax(128px, 38vw) minmax(0, 1fr) !important;
                         column-gap: 10px !important;
                     }
@@ -19308,7 +19333,15 @@
                         pendingMutationCards = [];
                         const handle = runBudgetedElementBatch(cards, (el) => {
                             const wasHidden = this._processVideoElementWithResult(el);
-                            batchBuffer.push({ element: el, hidden: wasHidden });
+                            // processBatch only drains the buffer while subs
+                            // auto-loading is UNBLOCKED, but the push site was
+                            // unguarded — so a blocked feed accumulated DOM
+                            // references without bound until Resume or a
+                            // navigation. The statistics these feed are only
+                            // meaningful while loading is running anyway.
+                            if (!this._subsLoadState.loadingBlocked) {
+                                batchBuffer.push({ element: el, hidden: wasHidden });
+                            }
                         }, {
                             label: 'video-hider:mutation-batch',
                             chunkSize: 80,
@@ -27392,6 +27425,9 @@
                 };
             }
 
+            // Bounded re-arm budget for a late-hydrating actions row.
+            const _RENDER_RETRIES = 3;
+
             async function _fetch(videoId) {
                 const cached = _readCache(videoId);
                 if (cached) {
@@ -27466,13 +27502,26 @@
                 return String(Math.round(n));
             }
 
-            async function _render() {
+            async function _render(attempt = 0) {
                 if (!isWatchPagePath()) return;
                 const videoId = getVideoId?.();
                 if (!videoId) return;
                 const generation = _rydGeneration;
                 const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
-                if (!dislikeButton) return;
+                if (!dislikeButton) {
+                    // The actions row can hydrate after the single post-navigation
+                    // timer fires — on a cold load it usually does. Without a
+                    // bounded retry the pill simply never appeared until the next
+                    // navigation.
+                    if (attempt < _RENDER_RETRIES) {
+                        clearTimeout(_renderTimer);
+                        _renderTimer = setTimeout(() => {
+                            _renderTimer = null;
+                            _render(attempt + 1);
+                        }, 1000);
+                    }
+                    return;
+                }
                 const data = await _fetch(videoId);
                 // The user can navigate during the fetch await. Bail if the active
                 // video changed (or we left the watch page) so we don't append the
@@ -27569,7 +27618,7 @@
                         // otherwise a navigation right before disable fires a
                         // zombie _render() ~1.5s later that re-injects a pill.
                         clearTimeout(_renderTimer);
-                        _renderTimer = setTimeout(() => { _renderTimer = null; _render(); }, 1500);
+                        _renderTimer = setTimeout(() => { _renderTimer = null; _render(0); }, 1500);
                     };
                     addNavigateRule('returnDislike', _navRule);
                     _navRule();
@@ -28932,8 +28981,7 @@
                     const link = el?.querySelector?.('a[href*="/channel/"], a[href*="/@"]');
                     if (!link) return null;
                     const href = link.getAttribute('href') || '';
-                    const idMatch = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
-                    const channelId = idMatch ? idMatch[1] : (href.match(/^\/@([A-Za-z0-9._-]+)/)?.[0] || '');
+                    const channelId = globalThis.YTKitCore?.channelSettingsKey?.(href) || '';
                     if (!channelId) return null;
                     const entry = overrides[channelId];
                     return entry && typeof entry === 'object' ? entry.mode || null : null;
@@ -29023,7 +29071,11 @@
                         }
                         if (replaceThumbs) {
                             const thumb = branding.thumbnails?.[0];
-                            if (thumb?.timestamp !== undefined) {
+                            // The timestamp is remote data going straight into a URL:
+                            // a non-numeric value injected extra query parameters or
+                            // stringified to "[object Object]".
+                            const stamp = Number(thumb?.timestamp);
+                            if (Number.isFinite(stamp) && stamp >= 0) {
                                 const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
                                 if (img && !img.src) {
                                     // Lazy img not hydrated yet — let the next
@@ -29032,7 +29084,7 @@
                                     delete el.dataset.daProcessed;
                                 } else if (img && !img.classList.contains('da-replaced-thumb')) {
                                     img.dataset.daOrigSrc = img.src;
-                                    img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${videoId}&time=${thumb.timestamp}`;
+                                    img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${encodeURIComponent(videoId)}&time=${stamp}`;
                                     img.classList.add('da-replaced-thumb');
                                     img.onerror = () => { if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc; };
                                 }

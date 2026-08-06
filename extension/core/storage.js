@@ -227,6 +227,10 @@
         }
     }
 
+    // Keys deleted while the initial get(null) is in flight. Cleared once the
+    // preload has resolved and the merge can no longer overwrite them.
+    const preloadWindowDeletions = new Set();
+
     async function preloadExtensionState() {
         if (extensionStateReady) return;
         if (extensionStateReadyPromise) return extensionStateReadyPromise;
@@ -240,6 +244,7 @@
                     // clobber a key the cache already holds.
                     const snapshot = await chrome.storage.local.get(null);
                     for (const k in snapshot) {
+                        if (preloadWindowDeletions.has(k)) continue;
                         if (!Object.prototype.hasOwnProperty.call(extensionStateCache, k)) {
                             extensionStateCache[k] = snapshot[k];
                         }
@@ -249,6 +254,7 @@
                 }
             }
             extensionStateReady = true;
+            preloadWindowDeletions.clear();
         })();
         try {
             await extensionStateReadyPromise;
@@ -408,8 +414,17 @@
             try {
                 const normalizedChanges = {};
                 for (const [key, change] of Object.entries(changes)) {
-                    if ('newValue' in change) extensionStateCache[key] = change.newValue;
-                    else delete extensionStateCache[key];
+                    if ('newValue' in change) {
+                        extensionStateCache[key] = change.newValue;
+                        preloadWindowDeletions.delete(key);
+                    } else {
+                        delete extensionStateCache[key];
+                        // The preload's skip-if-present merge only protects keys
+                        // the cache HOLDS; a key deleted during the get(null)
+                        // round-trip is absent, so the stale snapshot value used
+                        // to come straight back. Record it for the merge.
+                        if (!extensionStateReady) preloadWindowDeletions.add(key);
+                    }
                     normalizedChanges[key] = {
                         oldValue: change.oldValue,
                         newValue: change.newValue

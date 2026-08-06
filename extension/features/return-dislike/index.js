@@ -109,6 +109,9 @@
             };
         }
 
+        // Bounded re-arm budget for a late-hydrating actions row.
+        const _RENDER_RETRIES = 3;
+
         async function _fetch(videoId) {
             const cached = _readCache(videoId);
             if (cached) {
@@ -183,13 +186,26 @@
             return String(Math.round(n));
         }
 
-        async function _render() {
+        async function _render(attempt = 0) {
             if (!isWatchPagePath()) return;
             const videoId = getVideoId?.();
             if (!videoId) return;
             const generation = _rydGeneration;
             const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
-            if (!dislikeButton) return;
+            if (!dislikeButton) {
+                // The actions row can hydrate after the single post-navigation
+                // timer fires — on a cold load it usually does. Without a
+                // bounded retry the pill simply never appeared until the next
+                // navigation.
+                if (attempt < _RENDER_RETRIES) {
+                    clearTimeout(_renderTimer);
+                    _renderTimer = setTimeout(() => {
+                        _renderTimer = null;
+                        _render(attempt + 1);
+                    }, 1000);
+                }
+                return;
+            }
             const data = await _fetch(videoId);
             // The user can navigate during the fetch await. Bail if the active
             // video changed (or we left the watch page) so we don't append the
@@ -286,7 +302,7 @@
                     // otherwise a navigation right before disable fires a
                     // zombie _render() ~1.5s later that re-injects a pill.
                     clearTimeout(_renderTimer);
-                    _renderTimer = setTimeout(() => { _renderTimer = null; _render(); }, 1500);
+                    _renderTimer = setTimeout(() => { _renderTimer = null; _render(0); }, 1500);
                 };
                 addNavigateRule('returnDislike', _navRule);
                 _navRule();

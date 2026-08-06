@@ -69,8 +69,8 @@
             ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer,
             ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-item-renderer,
             ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer > ytd-rich-grid-row ytd-rich-item-renderer,
-            ytd-browse[page-subtype="search"] ytd-video-renderer,
-            ytd-browse[page-subtype="search"] yt-lockup-view-model {
+            ytd-search[page-subtype="search"] ytd-video-renderer,
+            ytd-search[page-subtype="search"] yt-lockup-view-model {
                 display: block !important;
                 width: 100% !important;
                 max-width: none !important;
@@ -78,10 +78,10 @@
             }
             ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,
             ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,
-            ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,
+            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible,
             ytd-browse[page-subtype="home"] yt-lockup-view-model,
             ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,
-            ytd-browse[page-subtype="search"] yt-lockup-view-model {
+            ytd-search[page-subtype="search"] yt-lockup-view-model {
                 display: grid !important;
                 grid-template-columns: minmax(180px, min(32vw, 360px)) minmax(0, 1fr) !important;
                 align-items: start !important;
@@ -93,14 +93,14 @@
             ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > ytd-thumbnail,
             ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > #thumbnail,
             ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > ytd-thumbnail,
-            ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible > #thumbnail,
-            ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible > ytd-thumbnail,
+            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > #thumbnail,
+            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > ytd-thumbnail,
             ytd-browse[page-subtype="home"] yt-lockup-view-model > yt-thumbnail-view-model,
             ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > yt-thumbnail-view-model,
-            ytd-browse[page-subtype="search"] yt-lockup-view-model > yt-thumbnail-view-model,
+            ytd-search[page-subtype="search"] yt-lockup-view-model > yt-thumbnail-view-model,
             ytd-browse[page-subtype="home"] yt-lockup-view-model > a.yt-lockup-view-model__content-image,
             ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > a.yt-lockup-view-model__content-image,
-            ytd-browse[page-subtype="search"] yt-lockup-view-model > a.yt-lockup-view-model__content-image {
+            ytd-search[page-subtype="search"] yt-lockup-view-model > a.yt-lockup-view-model__content-image {
                 grid-column: 1 !important;
                 grid-row: 1 !important;
                 width: 100% !important;
@@ -111,10 +111,10 @@
             }
             ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible > #details,
             ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible > #details,
-            ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible > #details,
+            ytd-search[page-subtype="search"] ytd-video-renderer #dismissible > #details,
             ytd-browse[page-subtype="home"] yt-lockup-view-model > yt-lockup-metadata-view-model,
             ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model > yt-lockup-metadata-view-model,
-            ytd-browse[page-subtype="search"] yt-lockup-view-model > yt-lockup-metadata-view-model {
+            ytd-search[page-subtype="search"] yt-lockup-view-model > yt-lockup-metadata-view-model {
                 grid-column: 2 !important;
                 grid-row: 1 !important;
                 min-width: 0 !important;
@@ -122,10 +122,10 @@
             }
             ytd-browse[page-subtype="home"] ytd-rich-item-renderer #video-title,
             ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #video-title,
-            ytd-browse[page-subtype="search"] ytd-video-renderer #video-title,
+            ytd-search[page-subtype="search"] ytd-video-renderer #video-title,
             ytd-browse[page-subtype="home"] yt-lockup-view-model a[title],
             ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model a[title],
-            ytd-browse[page-subtype="search"] yt-lockup-view-model a[title] {
+            ytd-search[page-subtype="search"] yt-lockup-view-model a[title] {
                 display: -webkit-box !important;
                 -webkit-box-orient: vertical !important;
                 -webkit-line-clamp: 3 !important;
@@ -134,10 +134,10 @@
             }
             ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line,
             ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #metadata-line,
-            ytd-browse[page-subtype="search"] ytd-video-renderer #metadata-line,
+            ytd-search[page-subtype="search"] ytd-video-renderer #metadata-line,
             ytd-browse[page-subtype="home"] yt-lockup-metadata-view-model,
             ytd-browse[page-subtype="subscriptions"] yt-lockup-metadata-view-model,
-            ytd-browse[page-subtype="search"] yt-lockup-metadata-view-model {
+            ytd-search[page-subtype="search"] yt-lockup-metadata-view-model {
                 min-width: 0 !important;
                 max-width: 100% !important;
                 overflow: hidden !important;
@@ -145,10 +145,10 @@
             @media (max-width: 700px) {
                 ytd-browse[page-subtype="home"] ytd-rich-item-renderer #dismissible,
                 ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer #dismissible,
-                ytd-browse[page-subtype="search"] ytd-video-renderer #dismissible,
+                ytd-search[page-subtype="search"] ytd-video-renderer #dismissible,
                 ytd-browse[page-subtype="home"] yt-lockup-view-model,
                 ytd-browse[page-subtype="subscriptions"] yt-lockup-view-model,
-                ytd-browse[page-subtype="search"] yt-lockup-view-model {
+                ytd-search[page-subtype="search"] yt-lockup-view-model {
                     grid-template-columns: minmax(128px, 38vw) minmax(0, 1fr) !important;
                     column-gap: 10px !important;
                 }

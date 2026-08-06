@@ -117,6 +117,16 @@ const _credentialMigrationReady = migrateLegacyAiCredential().catch((error) => {
     return false;
 });
 
+// Kept identical to popup.js's list — the manifest's content-script matches
+// are the source of truth for both.
+const YOUTUBE_TAB_URLS = [
+    '*://youtube.com/*',
+    '*://*.youtube.com/*',
+    '*://youtube-nocookie.com/*',
+    '*://*.youtube-nocookie.com/*',
+    '*://youtu.be/*'
+];
+
 async function broadcastSettingsMutation(result, source = '') {
     // The initiating in-page surface already holds an optimistic snapshot and
     // every tab receives the authoritative storage.onChanged event.
@@ -124,7 +134,11 @@ async function broadcastSettingsMutation(result, source = '') {
     // flashing over a newer optimistic change in the same tab.
     if (!result?.ok || source === 'in-page' || !ext.tabs?.query) return;
     try {
-        const tabs = await callExtensionApi(ext.tabs, 'query', { url: ['*://*.youtube.com/*'] });
+        // Content scripts also run on youtube-nocookie.com and youtu.be (see the
+        // manifest matches); querying only *.youtube.com left those tabs to
+        // converge later through storage.onChanged, and made this the second,
+        // divergent copy of the popup's own broadcast list.
+        const tabs = await callExtensionApi(ext.tabs, 'query', { url: YOUTUBE_TAB_URLS });
         const message = result.key
             ? { type: 'YTKIT_SETTING_CHANGED', key: result.key, value: result.value, settings: result.settings }
             : { type: 'YTKIT_SETTINGS_REPLACED', settings: result.settings };

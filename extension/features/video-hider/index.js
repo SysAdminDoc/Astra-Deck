@@ -2244,7 +2244,15 @@
                     pendingMutationCards = [];
                     const handle = runBudgetedElementBatch(cards, (el) => {
                         const wasHidden = this._processVideoElementWithResult(el);
-                        batchBuffer.push({ element: el, hidden: wasHidden });
+                        // processBatch only drains the buffer while subs
+                        // auto-loading is UNBLOCKED, but the push site was
+                        // unguarded — so a blocked feed accumulated DOM
+                        // references without bound until Resume or a
+                        // navigation. The statistics these feed are only
+                        // meaningful while loading is running anyway.
+                        if (!this._subsLoadState.loadingBlocked) {
+                            batchBuffer.push({ element: el, hidden: wasHidden });
+                        }
                     }, {
                         label: 'video-hider:mutation-batch',
                         chunkSize: 80,
