@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI 摘要（右键管理提供商凭据）"
   },
+  "audioOnlyActive": {
+    "message": "仅音频"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "直播中已关闭仅音频"
+  },
+  "audioOnlyLowest": {
+    "message": "音频模式 · 最低画质"
+  },
+  "audioOnlyUnavailable": {
+    "message": "仅音频不可用"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "首选音轨语言"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "收起画面并向播放器请求最便宜的流，使观看页面的流量开销接近播客。YouTube 未向扩展程序开放真正的纯音频流，因此标签会说明你实际获得的是哪一种。直播不会被修改。"
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "仅音频模式"
   },
   "feature_autoClosePopups_desc": {
     "message": "自动关闭 Cookie 同意、调查问卷等 YouTube 弹窗"

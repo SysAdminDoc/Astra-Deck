@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "Audio only"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "Audio-only off for live"
+  },
+  "audioOnlyLowest": {
+    "message": "Audio mode · lowest quality"
+  },
+  "audioOnlyUnavailable": {
+    "message": "Audio-only unavailable"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Preferred Audio Track Language"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Live streams are left alone."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Audio-Only Mode"
   },
   "feature_autoClosePopups_desc": {
     "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"

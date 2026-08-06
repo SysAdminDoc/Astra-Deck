@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "Только звук"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "Только звук выключен для эфира"
+  },
+  "audioOnlyLowest": {
+    "message": "Аудиорежим · минимальное качество"
+  },
+  "audioOnlyUnavailable": {
+    "message": "Режим только звук недоступен"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -759,7 +771,7 @@
     "message": "Сохранить в"
   },
   "dlPopupTabAudioOnly": {
-    "message": "Только аудио"
+    "message": "Только звук"
   },
   "dlPopupTabVideo": {
     "message": "Видео"
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Предпочтительный язык аудиодорожки"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Сворачивает видео и запрашивает у плеера самый дешёвый доступный поток, чтобы страница просмотра стоила примерно как подкаст. YouTube не предоставляет расширениям настоящий аудиопоток, поэтому плашка показывает, получили ли вы его или только минимальное качество. Прямые трансляции не изменяются."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Режим только звук"
   },
   "feature_autoClosePopups_desc": {
     "message": "Автоматически закрывает согласие на cookie, опросы и другие всплывающие окна YouTube"

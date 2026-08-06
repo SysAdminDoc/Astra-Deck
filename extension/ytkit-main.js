@@ -749,6 +749,229 @@
 })();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature 3.6: Audio-only / bandwidth saver
+    // ──────────────────────────────────────────────────────────────────
+    // Capability-gated exactly like the buffer target above. YouTube's
+    // page-owned movie_player does NOT expose an audio-only itag through any
+    // public or semi-public method, so this never claims to deliver an
+    // audio-only stream: it probes for one, and when the player has none it
+    // pins the lowest available quality and publishes `lowest-quality` as the
+    // reason so the ISOLATED surface can say what actually happened. Never
+    // emulate it by muting, seeking, or detaching the media element.
+(function() {
+    'use strict';
+    if (typeof document === 'undefined' || !document.documentElement) return;
+
+    var ENABLE_ATTR = 'data-ytkit-audio-only';
+    var STATUS_ATTR = 'data-ytkit-audio-only-status';
+    var REASON_ATTR = 'data-ytkit-audio-only-reason';
+    var ON = false;
+    var appliedKey = '';
+    var restoreQuality = null;
+    var pendingTimer = null;
+    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var TASK_ID = 'ytkit-main:audioOnly';
+    var TASK_EVENTS = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
+    var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
+
+    function writeStatus(status, reason) {
+        var root = document.documentElement;
+        var nextStatus = String(status || 'off');
+        var nextReason = reason ? String(reason).slice(0, 240) : '';
+        if (root.getAttribute(STATUS_ATTR) !== nextStatus) root.setAttribute(STATUS_ATTR, nextStatus);
+        if (nextReason) {
+            if (root.getAttribute(REASON_ATTR) !== nextReason) root.setAttribute(REASON_ATTR, nextReason);
+        } else {
+            root.removeAttribute(REASON_ATTR);
+        }
+    }
+
+    function player() {
+        return document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+    }
+
+    function mainVideo() {
+        return document.querySelector('.html5-main-video');
+    }
+
+    function isLive(p, video) {
+        try {
+            if (p && typeof p.getVideoData === 'function') {
+                var data = p.getVideoData();
+                if (data && (data.isLive === true || data.isLivePlayback === true)) return true;
+            }
+        } catch (_) {
+            // reason: player metadata is optional during route changes
+        }
+        return !!(video && video.duration === Infinity);
+    }
+
+    // Ordered worst-to-best. The player reports availability per video, so the
+    // first entry it actually offers is the cheapest stream we can pin.
+    var LADDER = ['tiny', 'small', 'medium', 'large', 'hd720'];
+
+    function cheapestQuality(p) {
+        var available = [];
+        try {
+            if (typeof p.getAvailableQualityLevels === 'function') {
+                available = p.getAvailableQualityLevels() || [];
+            }
+        } catch (_) {
+            // reason: the quality API is not part of the public IFrame surface
+        }
+        if (!available.length) return 'tiny';
+        for (var i = 0; i < LADDER.length; i++) {
+            if (available.indexOf(LADDER[i]) !== -1) return LADDER[i];
+        }
+        return available[available.length - 1];
+    }
+
+    // Probe for a genuine audio-only entry. No shipping player build exposes
+    // one today; this exists so the feature upgrades itself for free if one
+    // ever appears, rather than silently continuing to under-deliver.
+    function audioOnlyQuality(p) {
+        try {
+            if (typeof p.getAvailableQualityData !== 'function') return null;
+            var data = p.getAvailableQualityData() || [];
+            for (var i = 0; i < data.length; i++) {
+                var entry = data[i] || {};
+                var label = String(entry.qualityLabel || '');
+                if (entry.isAudioOnly === true || /audio\s*only/i.test(label)) {
+                    return entry.quality || null;
+                }
+            }
+        } catch (_) {
+            // reason: quality metadata shape is undocumented and build-specific
+        }
+        return null;
+    }
+
+    function apply(ctx) {
+        if (!ON) { release(); return true; }
+        if (ctx && (ctx.reason === 'loadstart' || ctx.reason === 'navigate' || ctx.reason === 'page-data')) {
+            appliedKey = '';
+        }
+        var p = player();
+        var video = mainVideo();
+        if (!p || !video) return false;
+
+        if (isLive(p, video)) {
+            appliedKey = 'live';
+            writeStatus('skipped', 'live-stream');
+            return true;
+        }
+        if (typeof p.setPlaybackQualityRange !== 'function') {
+            writeStatus('degraded', 'player-api-missing');
+            return true;
+        }
+
+        var audioQuality = audioOnlyQuality(p);
+        var target = audioQuality || cheapestQuality(p);
+        var key = target + ':' + (audioQuality ? 'audio' : 'video');
+        if (key === appliedKey) return true;
+
+        if (restoreQuality === null) {
+            try {
+                restoreQuality = (typeof p.getPlaybackQuality === 'function' && p.getPlaybackQuality()) || '';
+            } catch (_) {
+                restoreQuality = '';
+            }
+        }
+        try {
+            p.setPlaybackQualityRange(target, target);
+            if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(target);
+            appliedKey = key;
+            // The reason is the honest part: `audio-stream` only when the
+            // player really offered one, `lowest-quality` otherwise.
+            writeStatus('applied', (audioQuality ? 'audio-stream:' : 'lowest-quality:') + target);
+            return true;
+        } catch (_) {
+            writeStatus('degraded', 'player-api-error');
+            return true;
+        }
+    }
+
+    function release() {
+        appliedKey = '';
+        var p = player();
+        if (!p || typeof p.setPlaybackQualityRange !== 'function' || !restoreQuality) {
+            restoreQuality = null;
+            writeStatus('off');
+            return;
+        }
+        try {
+            // Hand the pin back rather than leaving the player stuck at 144p
+            // after the feature is switched off.
+            p.setPlaybackQualityRange(restoreQuality, restoreQuality);
+            writeStatus('off', 'restored:' + restoreQuality);
+        } catch (_) {
+            writeStatus('off', 'restore-failed');
+        }
+        restoreQuality = null;
+    }
+
+    function cancelTask() {
+        if (PlayerTaskManager && typeof PlayerTaskManager.cancel === 'function') {
+            PlayerTaskManager.cancel(TASK_ID);
+        }
+        if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+    }
+
+    function schedule(delay, reason) {
+        if (PlayerTaskManager && typeof PlayerTaskManager.schedule === 'function') {
+            PlayerTaskManager.schedule(TASK_ID, apply, {
+                owner: 'ytkit-main',
+                reason: reason || 'manual',
+                delay: delay || 0,
+                needsVideo: true,
+                needsPlayer: true,
+                maxAttempts: RETRY_DELAYS.length,
+                retryDelays: RETRY_DELAYS,
+                events: TASK_EVENTS
+            });
+            return;
+        }
+        if (pendingTimer) clearTimeout(pendingTimer);
+        pendingTimer = setTimeout(function() {
+            pendingTimer = null;
+            apply({ reason: reason || 'manual' });
+        }, delay || 0);
+    }
+
+    function syncFromAttr() {
+        var next = document.documentElement.getAttribute(ENABLE_ATTR) === 'on';
+        if (next === ON) {
+            if (ON) schedule(0, 'attribute');
+            return;
+        }
+        ON = next;
+        appliedKey = '';
+        cancelTask();
+        if (ON) {
+            writeStatus('retry', 'waiting-for-player');
+            schedule(0, 'attribute');
+        } else {
+            release();
+        }
+    }
+
+    if (!PlayerTaskManager) {
+        document.addEventListener('loadstart', function(e) {
+            if (ON && e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+                appliedKey = '';
+                schedule(0, 'loadstart');
+            }
+        }, true);
+        window.addEventListener('yt-navigate-finish', function() {
+            if (ON) { appliedKey = ''; schedule(0, 'navigate'); }
+        });
+    }
+
+    _obsRegister([ENABLE_ATTR], syncFromAttr);
+    syncFromAttr();
+})();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 4+5: Shared audio processing graph
     // ──────────────────────────────────────────────────────────────────
     // Single AudioContext for ALL audio features (mono-to-stereo,

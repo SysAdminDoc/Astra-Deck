@@ -128,6 +128,18 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "audioOnlyActive": {
+    "message": "Solo audio"
+  },
+  "audioOnlyLiveSkipped": {
+    "message": "Solo audio desactivado en directo"
+  },
+  "audioOnlyLowest": {
+    "message": "Modo audio · calidad más baja"
+  },
+  "audioOnlyUnavailable": {
+    "message": "Solo audio no disponible"
+  },
   "blockedWatchAllowOnce": {
     "message": "Allow once"
   },
@@ -1177,6 +1189,12 @@
   },
   "feature_audioTrackLanguage_name": {
     "message": "Idioma de pista de audio preferido"
+  },
+  "feature_audioOnlyPlayback_desc": {
+    "message": "Contrae el vídeo y pide al reproductor el flujo más barato que tenga, de modo que una página de vídeo cueste aproximadamente lo que un pódcast. YouTube no expone a las extensiones un flujo de solo audio real, por lo que la etiqueta indica si lo has obtenido o solo la calidad más baja. Las emisiones en directo no se modifican."
+  },
+  "feature_audioOnlyPlayback_name": {
+    "message": "Modo solo audio"
   },
   "feature_autoClosePopups_desc": {
     "message": "Cierra automáticamente consentimientos de cookies, encuestas y otros popups de YouTube"
