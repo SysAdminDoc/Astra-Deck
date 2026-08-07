@@ -7467,6 +7467,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
         'extension/core/settings-controller.js',
+        'extension/core/settings-import-transaction.js',
         'extension/core/transcript-service.js',
         'extension/core/transcript-index.js',
         'extension/core/ai-summary-artifacts.js',

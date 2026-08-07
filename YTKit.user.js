@@ -3648,6 +3648,151 @@
         }
     })();
 
+    // ── bundled module: extension/core/settings-import-transaction.js ──
+    (() => {
+        'use strict';
+
+        function createSettingsImportTransaction(options = {}) {
+            const now = typeof options.now === 'function' ? options.now : () => Date.now();
+            let checkpoint = null;
+
+            function validateOperation(operation) {
+                if (!operation || typeof operation !== 'object') throw new TypeError('Import operation is required');
+                for (const key of ['snapshot', 'apply', 'restore']) {
+                    if (typeof operation[key] !== 'function') throw new TypeError(`Import operation ${key}() is required`);
+                }
+            }
+
+            function run(operation) {
+                try {
+                    validateOperation(operation);
+                } catch (error) {
+                    return { ok: false, phase: 'validation', rolledBack: false, error };
+                }
+
+                let snapshot;
+                try {
+                    snapshot = operation.snapshot();
+                } catch (error) {
+                    return { ok: false, phase: 'snapshot', rolledBack: false, error };
+                }
+
+                const createdAt = now();
+                const finalize = (value) => {
+                    checkpoint = {
+                        snapshot,
+                        summary: operation.summary || null,
+                        restore: operation.restore,
+                        createdAt
+                    };
+                    return {
+                        ok: true,
+                        phase: 'applied',
+                        rolledBack: false,
+                        summary: operation.summary || null,
+                        createdAt,
+                        value
+                    };
+                };
+                const rollback = (error) => {
+                    // Retain a retryable checkpoint when rollback fails. A later
+                    // Undo attempt can still restore the exact pre-import snapshot
+                    // instead of losing the recovery path.
+                    const keepCheckpoint = (rollbackError) => {
+                        checkpoint = {
+                            snapshot,
+                            summary: operation.summary || null,
+                            restore: operation.restore,
+                            createdAt
+                        };
+                        return {
+                            ok: false,
+                            phase: 'rollback',
+                            rolledBack: false,
+                            error,
+                            rollbackError,
+                            canUndo: true
+                        };
+                    };
+                    const settle = () => {
+                        checkpoint = null;
+                        return { ok: false, phase: 'apply', rolledBack: true, error };
+                    };
+                    let restored;
+                    try {
+                        restored = operation.restore(snapshot);
+                    } catch (rollbackError) {
+                        return keepCheckpoint(rollbackError);
+                    }
+                    // restore() may surface its persistence promise. Reporting
+                    // rolledBack on the synchronous return would claim recovery
+                    // from the very storage failure that forced the rollback.
+                    if (restored && typeof restored.then === 'function') {
+                        return Promise.resolve(restored).then(settle, keepCheckpoint);
+                    }
+                    return settle();
+                };
+                try {
+                    const value = operation.apply(snapshot);
+                    if (value && typeof value.then === 'function') {
+                        // apply() surfaced its persistence promise — commit only
+                        // once the writes confirm, and roll back on rejection so a
+                        // real IO failure cannot report a successful import.
+                        return Promise.resolve(value).then(finalize, rollback);
+                    }
+                    return finalize(value);
+                } catch (error) {
+                    return rollback(error);
+                }
+            }
+
+            function undo() {
+                if (!checkpoint) return { ok: false, phase: 'undo', message: 'No import undo is available.' };
+                const active = checkpoint;
+                // The checkpoint is only cleared once the restore writes confirm;
+                // a failed undo must stay retryable.
+                const settle = () => {
+                    checkpoint = null;
+                    return {
+                        ok: true,
+                        phase: 'undone',
+                        restored: active.snapshot,
+                        summary: active.summary,
+                        createdAt: active.createdAt
+                    };
+                };
+                const fail = (error) => ({ ok: false, phase: 'undo', error, canRetry: true });
+                let restored;
+                try {
+                    restored = active.restore(active.snapshot);
+                } catch (error) {
+                    return fail(error);
+                }
+                if (restored && typeof restored.then === 'function') {
+                    return Promise.resolve(restored).then(settle, fail);
+                }
+                return settle();
+            }
+
+            return Object.freeze({
+                run,
+                undo,
+                hasUndo: () => checkpoint !== null,
+                inspect: () => checkpoint ? {
+                    summary: checkpoint.summary,
+                    createdAt: checkpoint.createdAt
+                } : null
+            });
+        }
+
+        const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+        core.createSettingsImportTransaction = createSettingsImportTransaction;
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = { createSettingsImportTransaction };
+        }
+    })();
+
     // ── bundled module: extension/core/transcript-service.js ──
     (() => {
         'use strict';
@@ -29322,8 +29467,14 @@
     const STORAGE_CAPS = Object.freeze({
         watchProgressVideos: 2000,
         watchProgressMaxAgeMs: 30 * 24 * 60 * 60 * 1000,
-        watchTimeDays: 90
+        watchTimeDays: 90,
+        watchTimeImportedEntries: 5000
     });
+
+    // Seconds credited per imported Takeout watch entry. Takeout records that a
+    // video was opened, never for how long, so this is a flat nominal figure —
+    // matches the extension.
+    const TAKEOUT_WATCH_SECONDS = 60;
 
     function isPlainObject(value) {
         return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -29431,15 +29582,95 @@
         return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     }
 
+    function normalizeTakeoutWatchTitle(value) {
+        const raw = String(value || '').replace(/\s+/g, ' ').trim();
+        const title = raw.replace(/^Watched\s+/i, '').trim();
+        return (title || 'Untitled YouTube video').slice(0, 180);
+    }
+
+    function extractTakeoutVideoId(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        if (VIDEO_ID_PATTERN.test(raw)) return raw;
+        try {
+            const url = new URL(raw, 'https://www.youtube.com');
+            const fromQuery = url.searchParams.get('v');
+            if (VIDEO_ID_PATTERN.test(fromQuery || '')) return fromQuery;
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            const youtuBeId = url.hostname === 'youtu.be' ? pathParts[0] : '';
+            if (VIDEO_ID_PATTERN.test(youtuBeId || '')) return youtuBeId;
+            for (const marker of ['shorts', 'embed', 'live']) {
+                const idx = pathParts.indexOf(marker);
+                if (idx > -1 && VIDEO_ID_PATTERN.test(pathParts[idx + 1] || '')) return pathParts[idx + 1];
+            }
+        } catch (_) {
+            // reason: fallback regex below covers raw Takeout-ish strings
+        }
+        const match = raw.match(/[?&]v=([a-zA-Z0-9_-]{11})\b|youtu\.be\/([a-zA-Z0-9_-]{11})\b|\/(?:shorts|embed|live)\/([a-zA-Z0-9_-]{11})\b/);
+        return match ? (match[1] || match[2] || match[3] || '') : '';
+    }
+
+    function getTakeoutWatchEntriesPayload(value) {
+        if (Array.isArray(value)) return value;
+        if (!isPlainObject(value)) return [];
+        for (const key of ['watchHistory', 'watch_history', 'history', 'items', 'entries']) {
+            if (Array.isArray(value[key])) return value[key];
+        }
+        return [];
+    }
+
+    function normalizeTakeoutWatchEntry(entry) {
+        if (!isPlainObject(entry)) return null;
+        const videoId = extractTakeoutVideoId(entry.titleUrl || entry.url || entry.href || entry.videoId || entry.id);
+        const timeMs = Date.parse(entry.time || entry.timestamp || entry.watchedAt || entry.date || '');
+        if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(timeMs)) return null;
+        const watchedAtDate = new Date(timeMs);
+        return {
+            videoId,
+            watchedAt: watchedAtDate.toISOString(),
+            dayKey: formatLocalDateKey(watchedAtDate),
+            title: normalizeTakeoutWatchTitle(entry.title || entry.name || entry.videoTitle || ''),
+            seconds: TAKEOUT_WATCH_SECONDS
+        };
+    }
+
+    function sanitizeWatchTimeImportedEntries(value, nowDate = new Date()) {
+        if (!isPlainObject(value)) return {};
+        const cutoff = new Date(nowDate);
+        cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
+        const cutoffKey = formatLocalDateKey(cutoff);
+        const todayKey = formatLocalDateKey(nowDate);
+        const entries = [];
+        for (const [rawKey, raw] of Object.entries(value)) {
+            if (!isSafeObjectKey(rawKey) || !isPlainObject(raw)) continue;
+            const videoId = extractTakeoutVideoId(raw.videoId || raw.id || rawKey);
+            const watchedMs = Date.parse(raw.watchedAt || raw.time || raw.timestamp || '');
+            if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(watchedMs)) continue;
+            const watchedAt = new Date(watchedMs).toISOString();
+            const dayKey = /^\d{4}-\d{2}-\d{2}$/.test(raw.dayKey || '')
+                ? raw.dayKey
+                : formatLocalDateKey(new Date(watchedMs));
+            // Reject days outside [cutoff, today]: future-dated entries (clock
+            // skew / malformed exports) would sort to the top and evict genuine
+            // recent days from the newest-90 slice below.
+            if (dayKey <= cutoffKey || dayKey > todayKey) continue;
+            const seconds = Math.max(1, Math.min(24 * 60 * 60, Math.floor(Number(raw.seconds) || TAKEOUT_WATCH_SECONDS)));
+            entries.push([`${videoId}@${watchedAt}`, { videoId, watchedAt, dayKey, title: normalizeTakeoutWatchTitle(raw.title), seconds }]);
+        }
+        entries.sort((left, right) => right[1].watchedAt.localeCompare(left[1].watchedAt) || left[0].localeCompare(right[0]));
+        return Object.fromEntries(entries.slice(0, STORAGE_CAPS.watchTimeImportedEntries));
+    }
+
     function sanitizeWatchTimeStats(value, nowDate = new Date()) {
         const stats = isPlainObject(value) ? value : {};
         const rawDays = isPlainObject(stats.days) ? stats.days : {};
         const cutoff = new Date(nowDate);
         cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
         const cutoffKey = formatLocalDateKey(cutoff);
+        const todayKey = formatLocalDateKey(nowDate);
         const days = [];
         for (const [dayKey, rawSeconds] of Object.entries(rawDays)) {
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || dayKey <= cutoffKey) continue;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || dayKey <= cutoffKey || dayKey > todayKey) continue;
             const seconds = Number(rawSeconds);
             if (!Number.isFinite(seconds) || seconds <= 0) continue;
             days.push([dayKey, seconds]);
@@ -29448,8 +29679,66 @@
         const total = Number(stats.total);
         return {
             days: Object.fromEntries(days.slice(0, STORAGE_CAPS.watchTimeDays)),
-            total: Number.isFinite(total) && total > 0 ? total : 0
+            total: Number.isFinite(total) && total > 0 ? total : 0,
+            imported: sanitizeWatchTimeImportedEntries(stats.imported, nowDate)
         };
+    }
+
+    function mergeTakeoutWatchHistoryIntoStats(currentStats, takeoutPayload, nowDate = new Date()) {
+        const stats = sanitizeWatchTimeStats(currentStats, nowDate);
+        const entries = getTakeoutWatchEntriesPayload(takeoutPayload).map(normalizeTakeoutWatchEntry).filter(Boolean);
+        const cutoff = new Date(nowDate);
+        cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
+        const cutoffKey = formatLocalDateKey(cutoff);
+        const todayKey = formatLocalDateKey(nowDate);
+        const importedLedger = { ...(stats.imported || {}) };
+        let imported = 0;
+        let duplicates = 0;
+        let skipped = 0;
+
+        for (const entry of entries) {
+            if (entry.dayKey <= cutoffKey || entry.dayKey > todayKey) {
+                skipped++;
+                continue;
+            }
+            const key = `${entry.videoId}@${entry.watchedAt}`;
+            if (importedLedger[key]) {
+                duplicates++;
+                continue;
+            }
+            importedLedger[key] = entry;
+            imported++;
+        }
+
+        // Sanitize the ledger BEFORE recomputing totals — this caps it at
+        // STORAGE_CAPS.watchTimeImportedEntries. Deriving days/total from the
+        // surviving entries stops a re-import double-counting seconds from
+        // entries that fell off the cap.
+        const sanitizedResult = sanitizeWatchTimeStats({ ...stats, imported: importedLedger }, nowDate);
+        // The stored day map is NOT purely organic after the first import — the
+        // merged result is what gets persisted. Re-adding the whole surviving
+        // ledger on top of it would count every previously imported second
+        // again, compounding per import. Recover the organic baseline by
+        // removing what the PREVIOUS ledger contributed before adding the
+        // current one back.
+        const organicDays = { ...sanitizeWatchTimeStats(currentStats, nowDate).days };
+        for (const entry of Object.values(stats.imported || {})) {
+            if (!entry || !entry.dayKey || !entry.seconds) continue;
+            const remaining = (Number(organicDays[entry.dayKey]) || 0) - entry.seconds;
+            if (remaining > 0) organicDays[entry.dayKey] = remaining;
+            else delete organicDays[entry.dayKey];
+        }
+        const mergedDays = { ...organicDays };
+        for (const entry of Object.values(sanitizedResult.imported)) {
+            if (!entry || !entry.dayKey || !entry.seconds) continue;
+            mergedDays[entry.dayKey] = (Number(mergedDays[entry.dayKey]) || 0) + entry.seconds;
+        }
+        let mergedTotal = 0;
+        for (const v of Object.values(mergedDays)) mergedTotal += Number(v) || 0;
+        sanitizedResult.days = mergedDays;
+        sanitizedResult.total = mergedTotal;
+
+        return { stats: sanitizedResult, imported, duplicates, skipped, parsed: entries.length };
     }
 
     function estimateSerializedBytes(value) {
@@ -30554,6 +30843,8 @@
         INSTALLER_URL: 'https://github.com/SysAdminDoc/AstraDownloader/releases/latest/download/AstraDownloader.exe',
         INSTALLER_FILE_NAME: 'AstraDownloader.exe',
 
+        INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
+
         // Quick health check — returns { ok, token, version, port } or { ok: false }.
         // Tries the cached port first, then probes the fallback list.
         async check(force) {
@@ -30618,6 +30909,53 @@
         // Reset auto-start flag so the next download re-attempts.
         // Called from the "Retry" button after user installs.
         resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._foreignServer = null; },
+
+        // Deliberately always false. The extension copies a PowerShell fallback
+        // command here; the userscript must NOT — its install flow is
+        // download-the-release-exe. Pinned by the copy-paste install command
+        // tests in tests/userscript-fixes.test.js, because piping a remote
+        // script straight into a shell is an unsafe install path.
+        //
+        // Returning false is the whole contract, not a stub: every caller in the
+        // bundled settings panel already branches to openExternalUrl(INSTALLER_URL)
+        // when the copy fails, which is exactly the flow we want. Defining the
+        // method at all is what stops the call throwing TypeError.
+        async copyInstallCommand() {
+            return false;
+        },
+
+        async downloadInstaller() {
+            try {
+                // The monolith's triggerDownload takes (url, filename) only —
+                // it has no showInFolder option, because a userscript cannot
+                // reach chrome.downloads. The extension passes one; do not
+                // copy that argument across.
+                await triggerDownload(this.INSTALLER_URL, this.INSTALLER_FILE_NAME);
+                return true;
+            } catch (_) {
+                // reason: anchor-click downloads fail silently on some
+                // managers; runInstallAssist opens the URL instead.
+                return false;
+            }
+        },
+
+        async runInstallAssist() {
+            const copied = await this.copyInstallCommand();
+            const downloaded = await this.downloadInstaller();
+            if (!downloaded) {
+                try {
+                    // openExternalWindow, not the extension's openExternalUrl —
+                    // the monolith's helper is synchronous and returns nothing.
+                    openExternalWindow(this.INSTALLER_URL);
+                } catch (_) {
+                    // reason: popup blockers are an expected outcome here.
+                }
+            }
+            // No "command was copied too" branch here — copyInstallCommand is
+            // always false in the userscript by design (see above).
+            showToast(`Setup file ready. ${this.INSTALLER_RUN_HINT}`, '#22c55e', { duration: 8 });
+            return { copied, downloaded };
+        },
 
         get isRunning() { return this._status === 'running'; },
         get token() { return this._token; },
@@ -31930,11 +32268,14 @@
             };
             return JSON.stringify(exportData, null, 2);
         },
-        importAllSettings(jsonString) {
+        async importAllSettingsDetailed(jsonString) {
+            const invalid = { ok: false, message: 'Invalid file format.' };
             try {
-                if (typeof jsonString !== 'string' || estimateSerializedBytes(jsonString) > 10 * 1024 * 1024) return false;
+                if (typeof jsonString !== 'string' || estimateSerializedBytes(jsonString) > 10 * 1024 * 1024) {
+                    return { ok: false, message: 'That file is not a valid Astra Deck backup, or is too large.' };
+                }
                 const importedData = JSON.parse(jsonString);
-                if (!isPlainObject(importedData)) return false;
+                if (!isPlainObject(importedData)) return invalid;
 
                 // Handle different export versions
                 let settings, hiddenVideos, blockedChannels, bookmarks;
@@ -31956,10 +32297,10 @@
                 }
 
                 const knownSettingKeys = new Set(Object.keys(this.defaults));
-                if (settings !== null && !isPlainObject(settings)) return false;
-                if (hiddenVideos !== null && !Array.isArray(hiddenVideos)) return false;
-                if (blockedChannels !== null && !Array.isArray(blockedChannels)) return false;
-                if (bookmarks !== null && !isPlainObject(bookmarks)) return false;
+                if (settings !== null && !isPlainObject(settings)) return invalid;
+                if (hiddenVideos !== null && !Array.isArray(hiddenVideos)) return invalid;
+                if (blockedChannels !== null && !Array.isArray(blockedChannels)) return invalid;
+                if (bookmarks !== null && !isPlainObject(bookmarks)) return invalid;
 
                 settings = sanitizeSettingsObject(settings, knownSettingKeys);
                 hiddenVideos = hiddenVideos === null ? null : sanitizeImportedHiddenVideos(hiddenVideos);
@@ -31971,8 +32312,14 @@
                     : importedData.exportVersion >= 2
                         ? ('settings' in importedData || 'hiddenVideos' in importedData || 'blockedChannels' in importedData)
                         : true;
-                if (!sawVersionedSection) return false;
-                if (importedData.exportVersion < 2 && Object.keys(settings).length === 0) return false;
+                if (!sawVersionedSection) return invalid;
+                // `exportVersion < 2` was dead for exactly the files it targets: a
+                // legacy v1 export has no exportVersion at all, and `undefined < 2`
+                // is false. So `{}` reached the apply path, spread over defaults,
+                // and silently reset every setting while reporting success.
+                if (!(importedData.exportVersion >= 2) && Object.keys(settings).length === 0) {
+                    return { ok: false, message: 'That backup contains no recognisable settings.' };
+                }
 
                 const importPayload = {
                     settings,
@@ -31980,35 +32327,127 @@
                     blockedChannels,
                     bookmarks
                 };
-                if (estimateSerializedBytes(importPayload) > IMPORT_LIMITS.totalBytes) return false;
+                if (estimateSerializedBytes(importPayload) > IMPORT_LIMITS.totalBytes) {
+                    return { ok: false, message: 'That backup is too large to import.' };
+                }
 
-                // Backup current state before applying
-                const backup = {
-                    settings: { ...appState.settings },
-                    hiddenVideos: sanitizeImportedHiddenVideos(StorageManager.get('ytkit-hidden-videos', [])),
-                    blockedChannels: sanitizeImportedBlockedChannels(StorageManager.get('ytkit-blocked-channels', [])),
-                    bookmarks: sanitizeImportedBookmarks(StorageManager.get('ytkit-bookmarks', {})),
-                };
-
-                try {
-                    const newSettings = { ...this.defaults, ...settings, _settingsVersion: this.SETTINGS_VERSION };
-                    this.save(newSettings);
-                    if (hiddenVideos !== null) StorageManager.set('ytkit-hidden-videos', hiddenVideos);
-                    if (blockedChannels !== null) StorageManager.set('ytkit-blocked-channels', blockedChannels);
-                    if (bookmarks !== null) StorageManager.set('ytkit-bookmarks', bookmarks);
-                    return true;
-                } catch (applyErr) {
-                    // Rollback on failure
-                    console.error('[YTKit] Import apply failed, rolling back:', applyErr);
+                const restore = (backup) => {
                     this.save(backup.settings);
                     StorageManager.set('ytkit-hidden-videos', backup.hiddenVideos);
                     StorageManager.set('ytkit-blocked-channels', backup.blockedChannels);
                     StorageManager.set('ytkit-bookmarks', backup.bookmarks);
-                    return false;
+                };
+
+                const outcome = await this._getSettingsImportTransaction()?.run({
+                    snapshot: () => ({
+                        settings: { ...appState.settings },
+                        hiddenVideos: sanitizeImportedHiddenVideos(StorageManager.get('ytkit-hidden-videos', [])),
+                        blockedChannels: sanitizeImportedBlockedChannels(StorageManager.get('ytkit-blocked-channels', [])),
+                        bookmarks: sanitizeImportedBookmarks(StorageManager.get('ytkit-bookmarks', {}))
+                    }),
+                    apply: () => {
+                        const newSettings = { ...this.defaults, ...settings, _settingsVersion: this.SETTINGS_VERSION };
+                        this.save(newSettings);
+                        if (hiddenVideos !== null) StorageManager.set('ytkit-hidden-videos', hiddenVideos);
+                        if (blockedChannels !== null) StorageManager.set('ytkit-blocked-channels', blockedChannels);
+                        if (bookmarks !== null) StorageManager.set('ytkit-bookmarks', bookmarks);
+                    },
+                    restore
+                });
+
+                if (!outcome) {
+                    return { ok: false, message: 'Import transaction unavailable. Reload the page and try again.' };
                 }
+                if (!outcome.ok) {
+                    console.error('[YTKit] Import apply failed:', outcome.error);
+                    return {
+                        ok: false,
+                        message: outcome.rolledBack
+                            ? 'Import failed and your previous settings were restored.'
+                            : 'Import failed. Use Undo to restore your previous settings.'
+                    };
+                }
+
+                const parts = [`${Object.keys(settings).length} setting${Object.keys(settings).length === 1 ? '' : 's'}`];
+                if (hiddenVideos !== null) parts.push(`${hiddenVideos.length} hidden video${hiddenVideos.length === 1 ? '' : 's'}`);
+                if (blockedChannels !== null) parts.push(`${blockedChannels.length} blocked channel${blockedChannels.length === 1 ? '' : 's'}`);
+                if (bookmarks !== null) parts.push(`${Object.keys(bookmarks).length} bookmarked video${Object.keys(bookmarks).length === 1 ? '' : 's'}`);
+                return { ok: true, changed: true, message: `Imported ${parts.join(', ')}.` };
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
-                return false;
+                return { ok: false, message: 'Import failed. Choose a valid Astra Deck settings export.' };
+            }
+        },
+        async importAllSettings(jsonString) {
+            return (await this.importAllSettingsDetailed(jsonString)).ok;
+        },
+        // Backed by core/settings-import-transaction.js, which the userscript
+        // bundles so both vehicles share one snapshot/rollback/undo engine.
+        _getSettingsImportTransaction() {
+            if (this._settingsImportTransaction) return this._settingsImportTransaction;
+            const factory = globalThis.YTKitCore?.createSettingsImportTransaction;
+            if (typeof factory !== 'function') return null;
+            this._settingsImportTransaction = factory();
+            return this._settingsImportTransaction;
+        },
+        async undoLastSettingsImport() {
+            const outcome = await this._getSettingsImportTransaction()?.undo();
+            if (!outcome?.ok) return { ok: false, message: outcome?.message || 'Import undo failed.' };
+            return {
+                ok: true,
+                message: 'Import undone. Previous settings and local data restored.',
+                restored: outcome.restored
+            };
+        },
+        importYouTubeTakeoutWatchHistory(jsonString) {
+            try {
+                const takeoutPayload = JSON.parse(jsonString);
+                const currentStats = StorageManager.get('ytkit-watch-time', { days: {}, total: 0 });
+                const result = mergeTakeoutWatchHistoryIntoStats(currentStats, takeoutPayload);
+                const fmt = (value) => new Intl.NumberFormat().format(Math.max(0, Number(value) || 0));
+                if (result.parsed === 0) {
+                    return {
+                        ok: false,
+                        toastTone: 'error',
+                        statusTone: 'error',
+                        message: 'No valid YouTube Takeout watch-history entries found.'
+                    };
+                }
+                if (result.imported > 0) {
+                    StorageManager.setSync('ytkit-watch-time', result.stats);
+                }
+                const duplicateCopy = result.duplicates > 0
+                    ? ` ${fmt(result.duplicates)} duplicate${result.duplicates === 1 ? '' : 's'} already existed.`
+                    : '';
+                const skippedCopy = result.skipped > 0
+                    ? ` ${fmt(result.skipped)} older entr${result.skipped === 1 ? 'y was' : 'ies were'} outside the ${STORAGE_CAPS.watchTimeDays}-day analytics window.`
+                    : '';
+                if (result.imported === 0) {
+                    return {
+                        ok: true,
+                        changed: false,
+                        toastTone: 'warning',
+                        statusTone: 'warn',
+                        ...result,
+                        message: `No new watch-history entries imported.${duplicateCopy}${skippedCopy}`
+                    };
+                }
+                return {
+                    ok: true,
+                    changed: true,
+                    toastTone: 'success',
+                    statusTone: 'success',
+                    ...result,
+                    message: `Imported ${fmt(result.imported)} Takeout watch entr${result.imported === 1 ? 'y' : 'ies'} into local watch analytics.${duplicateCopy}${skippedCopy}`
+                };
+            } catch (e) {
+                console.error('[YTKit] Failed to import YouTube Takeout watch history:', e);
+                return {
+                    ok: false,
+                    toastTone: 'error',
+                    statusTone: 'error',
+                    message: 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.'
+                };
             }
         }
     };
@@ -45915,7 +46354,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
             if (e.target.closest('#ytkit-import')) {
                 handleFileImport(async (content) => {
-                    const success = settingsManager.importAllSettings(content);
+                    // importAllSettings is async now — it delegates to
+                    // importAllSettingsDetailed, which awaits the import
+                    // transaction. Without await this is a Promise and always
+                    // truthy, so a failed import would report success.
+                    const success = await settingsManager.importAllSettings(content);
                     if (success) {
                         createToast('Settings imported! Reloading...', 'success');
                         setPanelStatus('Settings imported. Reloading to apply changes.', 'success');

@@ -37,9 +37,17 @@ if (!bundleMatch) {
     process.exit(2);
 }
 const bundleModules = [];
+// Strip comments before scanning for quoted paths. A bare quote regex over the
+// raw array body treats an apostrophe in a comment ("the monolith's manager") as
+// a string delimiter, swallowing everything to the next quote and silently
+// dropping real modules from the list — which surfaces as a pile of bogus
+// "manifest includes X but V5_BUNDLE_MODULES does not" errors.
+const bundleBody = bundleMatch[1]
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '');
 const lineRe = /['"]([^'"]+)['"]/g;
 let m;
-while ((m = lineRe.exec(bundleMatch[1])) !== null) {
+while ((m = lineRe.exec(bundleBody)) !== null) {
     bundleModules.push(m[1]);
 }
 const bundleSet = new Set(bundleModules);
