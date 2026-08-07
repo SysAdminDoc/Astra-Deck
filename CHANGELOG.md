@@ -38,6 +38,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   table no longer calls this "Fully supported". `INSTALL.md` was already
   correct.
 
+- **The store-safe build no longer asks for `cookies` or `nativeMessaging`.**
+  The profile split rewrote host permissions, optional host permissions, CSP and
+  web-accessible resources — but never `permissions`. So the store-safe artifact
+  declared two of Chrome's most review-sensitive permissions while stripping
+  every loopback origin that consumes them: it requested capability it could not
+  exercise, and the store rationale document justified both to reviewers on that
+  false premise. Both serve the local companion alone, whose origin is
+  GitHub-full. store-safe now ships `storage`, `unlimitedStorage`, `downloads`,
+  `sidePanel` and nothing else, pinned by a test; GitHub-full is unchanged.
+
 ### Added
 
 - **`--no-crx` — cut a release without a CRX, and without the maintainer key.**

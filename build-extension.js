@@ -443,6 +443,30 @@ function shouldUseRuntimeOptionalHostPermission(entry, profile) {
         && entry.hostGrant === 'runtime-optional';
 }
 
+// API permissions that exist solely to serve a `profile: 'github-full'` origin.
+//
+// The profile split rewrote host_permissions, optional_host_permissions, CSP and
+// web_accessible_resources but never `permissions`, so store-safe shipped two of
+// Chrome's most review-sensitive permissions while stripping the only origins
+// that consume them. The artifact asked for capability it could not exercise,
+// and docs/store-permission-rationale.md justified both to reviewers on that
+// false premise.
+//
+// Each value is the consumer chain, so a future reader can re-verify rather than
+// trust this list. Both terminate at the loopback companion, whose origin is
+// `profile: 'github-full'` in extension/core/data-flow.js.
+const GITHUB_FULL_ONLY_API_PERMISSIONS = Object.freeze({
+    cookies: 'EXT_COOKIE_LIST (background.js) -> browserCookies (ytkit.js) -> features/download-ui sends the YouTube jar to the companion',
+    nativeMessaging: "background.js connectNative('com.astra.deck.downloader') — companion token bootstrap"
+});
+
+function getManifestProfilePermissions(profile, declaredPermissions) {
+    const normalized = normalizeBuildProfile(profile);
+    const declared = Array.isArray(declaredPermissions) ? declaredPermissions.slice() : [];
+    if (normalized !== 'store-safe') return declared;
+    return declared.filter((name) => !Object.hasOwn(GITHUB_FULL_ONLY_API_PERMISSIONS, name));
+}
+
 function getManifestProfileHostPermissions(profile) {
     const normalized = normalizeBuildProfile(profile);
     const allowedCatalogueProfiles = new Set(BUILD_PROFILES[normalized].catalogueProfiles);
@@ -531,6 +555,7 @@ function getManifestWebAccessibleResources(browser = 'chromium') {
 
 function patchManifestForBuildProfile(profileManifest, profile, browser = 'chromium') {
     const normalized = normalizeBuildProfile(profile);
+    profileManifest.permissions = getManifestProfilePermissions(normalized, profileManifest.permissions);
     profileManifest.host_permissions = getManifestProfileHostPermissions(normalized);
     const optionalHostPermissions = getManifestProfileOptionalHostPermissions(normalized);
     if (optionalHostPermissions.length) {
@@ -809,6 +834,8 @@ module.exports = {
     getArtifactBaseName,
     getManifestProfileHostPermissions,
     getManifestProfileOptionalHostPermissions,
+    getManifestProfilePermissions,
+    GITHUB_FULL_ONLY_API_PERMISSIONS,
     getManifestWebAccessibleResources,
     getPageAccessibleResourceInventory,
     listFiles,

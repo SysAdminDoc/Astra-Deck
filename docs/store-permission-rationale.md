@@ -94,13 +94,19 @@ support bundle.
 
 ## Manifest Permissions
 
+The store-safe artifact strips the two permissions that exist solely to serve
+the local companion, because it also strips every loopback origin they would
+talk to. `build-extension.js` derives that from
+`GITHUB_FULL_ONLY_API_PERMISSIONS`, and `tests/build-fixes.test.js` pins the
+resulting store-safe array — so this table cannot drift from what ships.
+
 | Permission | Store justification |
 | --- | --- |
 | `storage` | Saves Astra Deck settings, local feature state, local caches, notes, watch-progress data, and user-created exports in the browser profile. |
 | `unlimitedStorage` | Prevents silent quota failure for local YouTube caches and long-term user data; bounded LRU cleanup still trims large stores. |
-| `cookies` | Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
+| `cookies` | **GitHub-full builds only — not present in the store-safe artifact.** Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
 | `downloads` | Saves user-requested exports, thumbnails, transcript files, diagnostic bundles, and media handoff files to the user's Downloads folder. |
-| `nativeMessaging` | Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe, replacing the HTTP `/health` token disclosure path. Only activates when the companion registers its native host manifest. |
+| `nativeMessaging` | **GitHub-full builds only — not present in the store-safe artifact.** Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe, replacing the HTTP `/health` token disclosure path. Only activates when the companion registers its native host manifest. |
 | `sidePanel` | Provides an optional persistent dashboard panel (Chrome only) for diagnostics, selector health, storage stats, and settings so the popup stays compact. |
 
 ## Store-Safe Host Permissions
