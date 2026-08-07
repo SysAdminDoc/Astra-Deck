@@ -5866,6 +5866,12 @@
     "message": "Cerrar panel de tiempo de visualización",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Activa el registro de tiempo de reproducción en los ajustes de Astra Deck y mira un vídeo. Tus últimos 30 días aparecerán aquí y los datos nunca salen de este dispositivo."
+  },
+  "whaEmptyTitle": {
+    "message": "Aún no hay tiempo de reproducción registrado"
+  },
   "whaOpenButton": {
     "message": "📊 Estadísticas",
     "description": "Watch-page button that opens the watch-time dashboard"

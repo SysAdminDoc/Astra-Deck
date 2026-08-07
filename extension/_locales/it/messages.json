@@ -5866,6 +5866,12 @@
     "message": "Chiudi il pannello del tempo di visione",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Attiva il monitoraggio del tempo di visione nelle impostazioni di Astra Deck, poi guarda un video. Gli ultimi 30 giorni compariranno qui e i dati non lasciano mai questo dispositivo."
+  },
+  "whaEmptyTitle": {
+    "message": "Nessun tempo di visione registrato"
+  },
   "whaOpenButton": {
     "message": "📊 Statistiche",
     "description": "Watch-page button that opens the watch-time dashboard"

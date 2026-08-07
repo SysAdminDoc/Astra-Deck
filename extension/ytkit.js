@@ -34649,7 +34649,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     col.append(bar, lab);
                     chart.appendChild(col);
                 }
-                card.append(head, statsRow, chart);
+                // Zero tracked data rendered 30 zero-height bars and four
+                // zeroes — a chart that reads as broken rather than empty.
+                // Every other data surface in this codebase has an explicit
+                // empty state; this one was skipped. Share the modal tail
+                // below so focus, Escape and teardown stay identical.
+                if (total <= 0 && !(stats.total > 0)) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-wha-empty';
+                    const emptyTitle = document.createElement('div');
+                    emptyTitle.className = 'ytkit-wha-empty-title';
+                    emptyTitle.textContent = t('whaEmptyTitle', 'No watch time tracked yet');
+                    const emptyCopy = document.createElement('div');
+                    emptyCopy.className = 'ytkit-wha-empty-copy';
+                    emptyCopy.textContent = t('whaEmptyCopy',
+                        'Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.');
+                    empty.append(emptyTitle, emptyCopy);
+                    card.append(head, empty);
+                } else {
+                    card.append(head, statsRow, chart);
+                }
                 overlay.appendChild(card);
                 document.body.appendChild(overlay);
                 this._modal = overlay;
@@ -34699,6 +34718,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wha-stat-v { font: 700 18px Roboto; color: var(--ytkit-accent-light, #ff9f87); }
                     .ytkit-wha-stat-l { color: rgba(244,246,251,0.72); font-size: 11px; margin-top: 2px; }
                     .ytkit-wha-chart { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; height: 240px; align-items: end; }
+                    .ytkit-wha-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 240px; text-align: center; padding: 0 24px; }
+                    .ytkit-wha-empty-title { color: #f4f6fb; font-size: 15px; font-weight: 600; }
+                    .ytkit-wha-empty-copy { color: rgba(244,246,251,0.72); font-size: 12px; line-height: 1.5; max-width: 46ch; }
+                    html:not([dark]) .ytkit-wha-empty-title { color: #0f1114; }
+                    html:not([dark]) .ytkit-wha-empty-copy { color: rgba(15,17,20,0.72); }
                     .ytkit-wha-col { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
                     .ytkit-wha-bar {
                         width: 100%; background: linear-gradient(180deg, rgba(var(--ytkit-accent-rgb,255,122,89),0.95), rgba(var(--ytkit-accent-rgb,255,122,89),0.45));

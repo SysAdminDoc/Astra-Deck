@@ -5866,6 +5866,12 @@
     "message": "Закрыть панель времени просмотра",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Включите отслеживание времени просмотра в настройках Astra Deck и посмотрите видео. Последние 30 дней появятся здесь, а данные никогда не покидают это устройство."
+  },
+  "whaEmptyTitle": {
+    "message": "Время просмотра ещё не отслеживается"
+  },
   "whaOpenButton": {
     "message": "📊 Статистика",
     "description": "Watch-page button that opens the watch-time dashboard"

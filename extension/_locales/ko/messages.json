@@ -5866,6 +5866,12 @@
     "message": "시청 시간 대시보드 닫기",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Astra Deck 설정에서 시청 시간 트래커를 켜고 동영상을 시청하세요. 최근 30일이 여기에 표시되며 데이터는 이 기기를 벗어나지 않습니다."
+  },
+  "whaEmptyTitle": {
+    "message": "아직 기록된 시청 시간이 없습니다"
+  },
   "whaOpenButton": {
     "message": "📊 시청 통계",
     "description": "Watch-page button that opens the watch-time dashboard"

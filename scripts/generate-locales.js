@@ -48,6 +48,8 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  "No watch time tracked yet": "Noch keine Wiedergabezeit erfasst",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Aktivieren Sie den Wiedergabezeit-Tracker in den Astra Deck-Einstellungen und sehen Sie sich ein Video an. Ihre letzten 30 Tage erscheinen hier, und die Daten verlassen dieses Gerät nie.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Diese Datei ist kein Astra Deck-Backup. Wählen Sie die von „Exportieren“ erzeugte .json-Datei — ein gültiges Backup enthält ein Feld \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Wählen Sie Raster-, Listen- oder Kompaktansicht für Abonnements und sortieren Sie optional die aktuell geladenen Karten nach den neuesten.',
   'Subscription View Controls': 'Ansicht für Abonnements', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Neueste zuerst sortiert nur die auf dieser Seite geladenen Videos. Scrollen Sie, um weitere zu laden.',
@@ -241,6 +243,8 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  "No watch time tracked yet": "Aún no hay tiempo de reproducción registrado",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Activa el registro de tiempo de reproducción en los ajustes de Astra Deck y mira un vídeo. Tus últimos 30 días aparecerán aquí y los datos nunca salen de este dispositivo.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Ese archivo no es una copia de seguridad de Astra Deck. Elige el archivo .json generado por Exportar: una copia válida contiene un campo \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Elige Cuadrícula, Lista o Compacta para las suscripciones y, opcionalmente, ordena primero las tarjetas cargadas más recientes.',
   'Subscription View Controls': 'Controles de vista de suscripciones', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Más recientes primero solo ordena los vídeos cargados en esta página. Desplázate para cargar más.',
@@ -422,6 +426,8 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  "No watch time tracked yet": "Время просмотра ещё не отслеживается",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Включите отслеживание времени просмотра в настройках Astra Deck и посмотрите видео. Последние 30 дней появятся здесь, а данные никогда не покидают это устройство.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Этот файл не является резервной копией Astra Deck. Выберите файл .json, созданный при экспорте, — в корректной копии есть поле \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Выберите сетку, список или компактный вид подписок и при необходимости отсортируйте загруженные карточки от новых к старым.',
   'Subscription View Controls': 'Вид подписок', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Сортировка по новизне применяется только к видео, загруженным на этой странице. Прокрутите, чтобы загрузить ещё.',
@@ -603,6 +609,8 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  "No watch time tracked yet": "Aucun temps de visionnage enregistré",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Activez le suivi du temps de visionnage dans les paramètres Astra Deck, puis regardez une vidéo. Vos 30 derniers jours apparaîtront ici et les données ne quittent jamais cet appareil.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Ce fichier n'est pas une sauvegarde Astra Deck. Choisissez le fichier .json généré par Exporter : une sauvegarde valide contient un champ \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Choisissez une vue Grille, Liste ou Compacte des abonnements et triez éventuellement les cartes chargées des plus récentes aux plus anciennes.',
   'Subscription View Controls': 'Affichage des abonnements', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Le tri par nouveauté ne concerne que les vidéos chargées sur cette page. Faites défiler pour en charger davantage.',
@@ -782,6 +790,8 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  "No watch time tracked yet": "Nessun tempo di visione registrato",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Attiva il monitoraggio del tempo di visione nelle impostazioni di Astra Deck, poi guarda un video. Gli ultimi 30 giorni compariranno qui e i dati non lasciano mai questo dispositivo.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Questo file non è un backup di Astra Deck. Scegli il file .json prodotto da Esporta: un backup valido contiene un campo \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Scegli la visualizzazione Griglia, Elenco o Compatta delle iscrizioni e, facoltativamente, ordina prima le schede caricate più recenti.',
   'Subscription View Controls': 'Visualizzazione iscrizioni', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Più recenti prima ordina solo i video caricati in questa pagina. Scorri per caricarne altri.',
@@ -954,6 +964,8 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  "No watch time tracked yet": "Nenhum tempo de exibição registrado ainda",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Ative o rastreador de tempo de exibição nas configurações do Astra Deck e assista a um vídeo. Seus últimos 30 dias aparecerão aqui, e os dados nunca saem deste dispositivo.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Esse arquivo não é um backup do Astra Deck. Escolha o arquivo .json gerado por Exportar — um backup válido contém um campo \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Escolha a visualização Grade, Lista ou Compacta das inscrições e, opcionalmente, ordene primeiro os cartões carregados mais recentes.',
   'Subscription View Controls': 'Visualização de inscrições', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Mais recentes primeiro ordena apenas os vídeos carregados nesta página. Role para carregar mais.',
@@ -1126,6 +1138,8 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  "No watch time tracked yet": "視聴時間はまだ記録されていません",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Astra Deck の設定で視聴時間トラッカーを有効にして動画を再生してください。直近 30 日間がここに表示され、データがこの端末から出ることはありません。",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "このファイルは Astra Deck のバックアップではありません。エクスポートで作成された .json ファイルを選択してください。有効なバックアップには \"exportVersion\" フィールドがあります。",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': '登録チャンネルをグリッド、リスト、コンパクト表示から選び、必要に応じて現在読み込まれているカードを新しい順に並べます。',
   'Subscription View Controls': '登録チャンネルの表示設定', 'Newest first sorts only videos loaded on this page. Scroll to load more.': '新しい順では、このページに読み込まれた動画のみを並べ替えます。スクロールしてさらに読み込んでください。',
@@ -1301,6 +1315,8 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  "No watch time tracked yet": "아직 기록된 시청 시간이 없습니다",
+  "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device.": "Astra Deck 설정에서 시청 시간 트래커를 켜고 동영상을 시청하세요. 최근 30일이 여기에 표시되며 데이터는 이 기기를 벗어나지 않습니다.",
   "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "이 파일은 Astra Deck 백업이 아닙니다. 내보내기로 만든 .json 파일을 선택하세요. 올바른 백업에는 \"exportVersion\" 필드가 있습니다.",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': '구독 피드를 그리드, 목록 또는 압축 보기로 선택하고 필요하면 현재 로드된 카드를 최신순으로 정렬합니다.',
   'Subscription View Controls': '구독 보기 설정', 'Newest first sorts only videos loaded on this page. Scroll to load more.': '최신순은 이 페이지에 로드된 동영상만 정렬합니다. 더 로드하려면 스크롤하세요.',

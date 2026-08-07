@@ -5866,6 +5866,12 @@
     "message": "Fechar painel de tempo de exibição",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Ative o rastreador de tempo de exibição nas configurações do Astra Deck e assista a um vídeo. Seus últimos 30 dias aparecerão aqui, e os dados nunca saem deste dispositivo."
+  },
+  "whaEmptyTitle": {
+    "message": "Nenhum tempo de exibição registrado ainda"
+  },
   "whaOpenButton": {
     "message": "📊 Estatísticas",
     "description": "Watch-page button that opens the watch-time dashboard"

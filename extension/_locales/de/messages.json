@@ -5866,6 +5866,12 @@
     "message": "Wiedergabezeit-Übersicht schließen",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Aktivieren Sie den Wiedergabezeit-Tracker in den Astra Deck-Einstellungen und sehen Sie sich ein Video an. Ihre letzten 30 Tage erscheinen hier, und die Daten verlassen dieses Gerät nie."
+  },
+  "whaEmptyTitle": {
+    "message": "Noch keine Wiedergabezeit erfasst"
+  },
   "whaOpenButton": {
     "message": "📊 Wiedergabestatistik",
     "description": "Watch-page button that opens the watch-time dashboard"

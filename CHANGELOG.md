@@ -8,6 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **The watch-time dashboard explains itself when there is nothing to show.**
+  With no tracked days it rendered 30 zero-height bars and four zeroes — a flat
+  axis that reads as a broken chart rather than an empty one. It now says the
+  tracker is off, points at the setting that turns it on, and notes the data
+  never leaves the device, in all 11 locales.
 - **Installing and never clicking the toolbar icon is no longer a silent
   no-op.** The whole onboarding flow ran only from the popup, so a user who
   installed Astra Deck and went straight to YouTube got nothing. A fresh

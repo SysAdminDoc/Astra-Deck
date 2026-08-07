@@ -1612,3 +1612,51 @@ test('subscriptionGroups import merges by default and only replaces on request',
     assert.deepEqual(Object.keys(replacedGroups), ['news'], 'explicit replace still wipes the rest');
     assert.equal(replaceResult.removedGroups, 1);
 });
+
+test('the watch-time dashboard renders an empty state instead of 30 zero-height bars', () => {
+    const ytkitSource = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const start = ytkitSource.indexOf("id: 'watchHistoryAnalytics'");
+    assert.ok(start > -1, 'watchHistoryAnalytics feature must exist');
+    const block = ytkitSource.slice(start, start + 9000);
+
+    // With nothing tracked, max clamps to 1 and every bar computes 0% height,
+    // so the modal rendered a flat axis and four zeroes — indistinguishable
+    // from a broken chart.
+    assert.match(block, /if \(total <= 0 && !\(stats\.total > 0\)\)/,
+        'the renderer must branch on having no tracked data at all');
+    assert.match(block, /ytkit-wha-empty/, 'the zero-data branch must render an empty state');
+    assert.match(block, /whaEmptyTitle/, 'the empty state must use a localised title');
+    assert.match(block, /whaEmptyCopy/, 'the empty state must use localised copy');
+    assert.match(block, /\} else \{\s*card\.append\(head, statsRow, chart\);/,
+        'the populated path must still render stats and the chart');
+
+    // The empty state shares the modal tail, so focus/Escape/teardown cannot
+    // diverge between the two branches.
+    const emptyBranch = block.slice(block.indexOf('if (total <= 0'), block.indexOf('overlay.appendChild(card)'));
+    assert.doesNotMatch(emptyBranch, /document\.body\.appendChild/,
+        'the empty branch must not mount its own overlay — it shares the tail below');
+
+    // Both surfaces must carry a light-theme lane; the audit ratchets on this.
+    // The stylesheet lives outside the feature block, so match the full source.
+    assert.match(ytkitSource, /html:not\(\[dark\]\) \.ytkit-wha-empty-title/,
+        'the empty state needs a light-theme lane like every other injected surface');
+    assert.match(ytkitSource, /\.ytkit-wha-empty \{/,
+        'the empty state needs its own layout rule');
+
+    const localesDir = path.join(__dirname, '..', '..', 'extension', '_locales');
+    const en = JSON.parse(fs.readFileSync(path.join(localesDir, 'en', 'messages.json'), 'utf8'));
+    for (const key of ['whaEmptyTitle', 'whaEmptyCopy']) {
+        assert.ok(en[key]?.message, `EN must declare ${key}`);
+        for (const locale of fs.readdirSync(localesDir)) {
+            if (locale === 'en') continue;
+            const messages = JSON.parse(
+                fs.readFileSync(path.join(localesDir, locale, 'messages.json'), 'utf8')
+            );
+            assert.ok(messages[key]?.message, `${locale} must declare ${key}`);
+            assert.notEqual(messages[key].message, en[key].message,
+                `${locale} ${key} is still English — it fell through instead of being translated`);
+        }
+    }
+});

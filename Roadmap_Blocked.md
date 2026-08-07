@@ -156,6 +156,30 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Requires maintainer GitHub authentication to upload the sidecar (`gh auth status` reports the SysAdminDoc token is invalid in this environment) plus manual clean Windows verification that the EXE runs standalone.
 
+## P2 — Product decision + browser-gated (2026-08-06)
+
+- [ ] P2 — Skip-once and per-playback segment override
+  Why: SponsorBlock categories are global booleans; the most-requested
+  ergonomic fix is a one-time override without changing settings.
+  Evidence: SponsorBlock #1997 (20 👍).
+  Where: `extension/features/sponsorblock/index.js` (`_checkSkip` ~`:348`).
+  Blocker: the item's stated acceptance — "the skip toast offers 'don't skip
+  this one'" — is written against a UI that DOES NOT EXIST and was removed on
+  purpose. `_checkSkip` carries the comment "Skip notification removed — toasts
+  over the video are distracting", and v3.23.0 replaced it with an `announceA11y`
+  aria-live announcement. Implementing the acceptance verbatim would reverse
+  that decision silently.
+  Unblock by deciding the surface first, then verifying it in a browser:
+    (a) reinstate a skip toast carrying the override button, reversing the
+        no-toast rule deliberately rather than by accident; or
+    (b) hang the override on the segment markers the progress bar already
+        renders (`_renderBarSegments`) — clicking a marker excludes that
+        segment for the current playback only. Non-intrusive and needs no new
+        surface, but it is a pointer interaction over the player, so it needs
+        live-browser verification alongside the other browser-gated items.
+  The per-playback state itself is trivial either way (a Set keyed by segment
+  UUID, cleared on navigation); the surface is the whole decision.
+
 ## P3 — Discovery (2026-08-06)
 
 - [ ] P3 — Set the repository social-preview image

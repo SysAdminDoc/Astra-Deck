@@ -5866,6 +5866,12 @@
     "message": "Fermer le tableau de bord du temps de visionnage",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Activez le suivi du temps de visionnage dans les paramètres Astra Deck, puis regardez une vidéo. Vos 30 derniers jours apparaîtront ici et les données ne quittent jamais cet appareil."
+  },
+  "whaEmptyTitle": {
+    "message": "Aucun temps de visionnage enregistré"
+  },
   "whaOpenButton": {
     "message": "📊 Statistiques",
     "description": "Watch-page button that opens the watch-time dashboard"
