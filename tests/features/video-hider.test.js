@@ -266,6 +266,16 @@ test('Video Hider type predicates recognize localized metadata rows', () => {
             upcoming: 'مجدول · تعيين تذكير',
             mix: 'ميكس',
             playlist: 'قائمة تشغيل'
+        },
+        {
+            // Korean was absent from this list, which is how all four predicates
+            // shipped dead on it: NFD decomposes Hangul into conjoining Jamo,
+            // so a precomposed literal could never match the normalized text.
+            locale: 'Korean',
+            live: '라이브 · 시청 중',
+            upcoming: '예정 · 알림 설정',
+            mix: '믹스',
+            playlist: '재생목록'
         }
     ];
 
@@ -628,5 +638,53 @@ test('hideVideosFromHome module loads before ytkit.js in content scripts', () =>
         const moduleIndex = scripts.indexOf('features/video-hider/index.js');
         assert.ok(moduleIndex > -1, 'manifest content script must include video-hider module');
         assert.ok(moduleIndex < ytkitIndex, 'video-hider module must load before ytkit.js');
+    }
+});
+
+test('isMovie and isAutoDubbed match localised metadata, not just English', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+
+    // These two predicates were the only members of their family still matching
+    // English alone, so they were permanently false on 10 of the 11 shipped
+    // locales — the filter silently did nothing for those users.
+    const fixtures = [
+        { locale: 'English', movie: 'Movie · Free with ads', autoDubbed: 'Auto-dubbed · Audio track' },
+        { locale: 'Spanish', movie: 'Película · Gratis con anuncios', autoDubbed: 'Doblado automáticamente · Pista de audio' },
+        { locale: 'German', movie: 'Film · Kostenlos mit Werbung', autoDubbed: 'Automatisch synchronisiert · Tonspur' },
+        { locale: 'French', movie: 'Film · Gratuit avec publicités', autoDubbed: 'Doublage · Piste audio' },
+        { locale: 'Italian', movie: 'Film · Gratis con annunci', autoDubbed: 'Doppiato automaticamente · Traccia audio' },
+        { locale: 'Portuguese', movie: 'Filme · Grátis com anúncios', autoDubbed: 'Dublado automaticamente · Faixa de áudio' },
+        { locale: 'Russian', movie: 'Фильм · Бесплатно с рекламой', autoDubbed: 'Автоматический дубляж · Аудиодорожка' },
+        { locale: 'Japanese', movie: '映画 · 広告付きで無料', autoDubbed: '自動吹き替え · 音声トラック' },
+        { locale: 'Korean', movie: '영화 · 광고 포함 무료', autoDubbed: '자동 더빙 · 오디오 트랙' },
+        { locale: 'Chinese', movie: '电影 · 含广告免费', autoDubbed: '自动配音 · 音轨' },
+        { locale: 'Arabic', movie: 'فيلم · مجاني مع الإعلانات', autoDubbed: 'مدبلج تلقائيًا · المسار الصوتي' }
+    ];
+
+    for (const fixture of fixtures) {
+        assert.equal(
+            feature._extractVideoMetadata(fakeVideoCard('Neutral title', fixture.movie)).isMovie, true,
+            `${fixture.locale} movie metadata should match`
+        );
+        assert.equal(
+            feature._extractVideoMetadata(fakeVideoCard('Neutral title', fixture.autoDubbed)).isAutoDubbed, true,
+            `${fixture.locale} auto-dubbed metadata should match`
+        );
+    }
+
+    // Both predicates read metadata rows only, never the title — matching titles
+    // hid videos called "movie review" or "how to mix audio". Keep that true.
+    const titled = feature._extractVideoMetadata(
+        fakeVideoCard('Movie review: the best dubbed film of the year', '1.2M views · 3 days ago')
+    );
+    assert.equal(titled.isMovie, false, 'a movie-ish TITLE must not set isMovie');
+    assert.equal(titled.isAutoDubbed, false, 'a dubbed-ish TITLE must not set isAutoDubbed');
+
+    // Ordinary metadata rows in each script must stay negative.
+    for (const row of ['1.2M views · 3 days ago', '120 k vues · il y a 3 jours', '10万回視聴 · 3 日前', '120 тыс. просмотров · 3 дня назад']) {
+        const plain = feature._extractVideoMetadata(fakeVideoCard('Neutral title', row));
+        assert.equal(plain.isMovie, false, `plain row must not match isMovie: ${row}`);
+        assert.equal(plain.isAutoDubbed, false, `plain row must not match isAutoDubbed: ${row}`);
     }
 });

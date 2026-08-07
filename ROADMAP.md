@@ -36,13 +36,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P1 — Trust, correctness, and distribution mechanics
 
-- [ ] P1 — Internationalise `isMovie` and `isAutoDubbed` detection
-  Why: their four siblings (`isLive`, `isUpcoming`, `isMix`, `isPlaylist`) gained 10-language alternations; these two still match English metadata only, so the predicates are permanently false on 10 of 11 shipped locales.
-  Evidence: `extension/features/video-hider/index.js` ~`:1211` and the mirrored copy at `extension/ytkit.js:17954` use `/\b(movie|free with ads|buy or rent|rent or buy)\b/` and `/\b(auto[-\s]?dubbed|dubbed|audio track)\b/`.
-  Touches: `extension/features/video-hider/index.js`, `extension/ytkit.js`, `YTKit.user.js` (via `node sync-userscript.js`), `tests/features/video-hider.test.js`
-  Acceptance: both predicates match the ES/DE/FR/IT/RU/JA/KO/ZH/AR strings their siblings already cover, pinned by tests driving localised fixture text.
-  Complexity: S
-
 - [ ] P1 — Clear the standing dev-dependency advisory and refresh exact pins
   Why: `npm audit` reports one HIGH that reaches the tree only through the toolchain, and two exact pins are one advisory away from stale.
   Evidence: `js-yaml` 4.3.0 (CVE-2026-59870, quadratic CPU) via `web-ext@10.4.0 → addons-linter → eslint@9.39.4`; `web-ext` 10.6.0 and `ws` 8.21.2 are published; the `brace-expansion` override pins exactly 5.0.9, which is the fix for an advisory published 2026-08-03 — the sixth in 14 months.

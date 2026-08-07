@@ -46,6 +46,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   table no longer calls this "Fully supported". `INSTALL.md` was already
   correct.
 
+- **Video Hider's Movies and Auto-dubbed filters now work outside English.**
+  `isMovie` and `isAutoDubbed` were the last two of the six type predicates
+  still matching English metadata only, so both were permanently false on 10 of
+  the 11 shipped locales — the toggles appeared to work and filtered nothing.
+  Both now carry the same ES/DE/FR/IT/PT/RU/JA/KO/ZH/AR alternations their
+  siblings have.
+- **All six Video Hider type predicates were dead on Korean.** The metadata
+  normaliser ran NFD and stripped combining marks so patterns could be written
+  unaccented — but NFD also decomposes every Hangul syllable into conjoining
+  Jamo, which are letters rather than marks, so `\p{M}` left them decomposed and
+  no precomposed Korean literal could ever match. `isLive`, `isUpcoming`,
+  `isMix` and `isPlaylist` had shipped this way since they were localised; the
+  fixture test simply had no Korean row. The normaliser now re-composes, which
+  cannot restore the stripped accents.
 - **The store-safe build no longer asks for `cookies` or `nativeMessaging`.**
   The profile split rewrote host permissions, optional host permissions, CSP and
   web-accessible resources — but never `permissions`. So the store-safe artifact
