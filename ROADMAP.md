@@ -50,13 +50,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Acceptance: the benchmark runs against a captured youtube.com watch and feed page, records heap delta and observer-callback time over a bounded session alongside parse/paint, and `npm run check:startup` gates all four.
   Complexity: M
 
-- [ ] P1 — Give the two largest feature modules dedicated behaviour tests
-  Why: `sticky-video` (5,016 lines) and `settings-panel` (3,419 lines) are the biggest feature files in the repo and have no test file of their own; the second is where all five broken userscript calls originate.
-  Evidence: `tests/features/` has no `sticky-video.test.js` or `settings-panel.test.js`; both are covered only indirectly via `theater-split.test.js` and `next-monolith-peel.test.js`.
-  Touches: `tests/features/settings-panel.test.js` (new), `tests/features/sticky-video.test.js` (new), `tests/helpers/monolith.js`
-  Acceptance: both modules have tests that drive real handlers through the existing fake-DOM harness — not source pins — and fail when a handler's dependency is removed.
-  Complexity: M
-
 - [ ] P1 — Make the extension discoverable where people actually look
   Why: 11 stars, 1 fork, 0 watchers, 22 repo views / 12 uniques in 14 days, 11 asset downloads on the newest release. The repo's own metadata is the cheapest lever and is currently stale and thin.
   Evidence: `gh api repos/SysAdminDoc/Astra-Deck` reports `description` claiming "150+ features" (README says 200+), empty `homepage`, and topics `[ad-free, dark-theme, javascript, userscript, youtube]` with no `chrome-extension`, `firefox-addon`, `manifest-v3`, `browser-extension`, `sponsorblock`, `dearrow`, or `privacy`; `traffic/popular/referrers` shows `github.com` and one portfolio link and nothing else.
