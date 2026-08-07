@@ -277,3 +277,69 @@ test('check-contrast rejects non-#rrggbb input and passes legitimately', () => {
     assert.equal(result.status, 0,
         'contrast audit must pass with the corrected composited button background: ' + String(result.stdout));
 });
+
+// ── 10. store-safe strips the companion-only API permissions ──
+
+test('store-safe manifest omits the API permissions that only serve the companion', () => {
+    const {
+        patchManifestForBuildProfile,
+        getManifestProfilePermissions,
+        GITHUB_FULL_ONLY_API_PERMISSIONS
+    } = require(path.join(REPO_ROOT, 'build-extension.js'));
+
+    const sourceManifest = JSON.parse(
+        fs.readFileSync(path.join(REPO_ROOT, 'extension', 'manifest.json'), 'utf8')
+    );
+
+    // The profile split rewrote hosts, CSP and web-accessible resources but not
+    // `permissions`, so store-safe declared cookies + nativeMessaging while
+    // stripping every loopback origin that consumes them.
+    const storeSafe = patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(sourceManifest)), 'store-safe', 'chromium'
+    );
+    assert.deepEqual(storeSafe.permissions, ['storage', 'unlimitedStorage', 'downloads', 'sidePanel'],
+        'store-safe permissions are pinned — adding one is a store-review decision, not a drive-by');
+    for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
+        assert.equal(storeSafe.permissions.includes(name), false,
+            `store-safe must not declare ${name}: it strips the github-full origins that consume it`);
+    }
+
+    // github-full is the profile that actually talks to the companion.
+    const githubFull = patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(sourceManifest)), 'github-full', 'chromium'
+    );
+    for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
+        assert.equal(githubFull.permissions.includes(name), true,
+            `github-full must keep ${name} — the companion path depends on it`);
+    }
+    assert.deepEqual(githubFull.permissions, sourceManifest.permissions,
+        'github-full permissions must match the source manifest exactly');
+
+    // Every stripped permission must be one the source manifest actually
+    // declares, so a rename cannot leave a silently-inert entry behind.
+    for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
+        assert.equal(sourceManifest.permissions.includes(name), true,
+            `GITHUB_FULL_ONLY_API_PERMISSIONS lists ${name}, which extension/manifest.json does not declare`);
+    }
+
+    // The helper is pure: it must not mutate the array it is handed.
+    const declared = ['storage', 'cookies'];
+    const filtered = getManifestProfilePermissions('store-safe', declared);
+    assert.deepEqual(declared, ['storage', 'cookies'], 'input array must not be mutated');
+    assert.deepEqual(filtered, ['storage']);
+});
+
+test('the store permission rationale scopes the companion-only permissions to github-full', () => {
+    const { GITHUB_FULL_ONLY_API_PERMISSIONS } = require(path.join(REPO_ROOT, 'build-extension.js'));
+    const doc = fs.readFileSync(
+        path.join(REPO_ROOT, 'docs', 'store-permission-rationale.md'), 'utf8'
+    );
+    // A reviewer reads this doc against the artifact they were sent. It must not
+    // justify a permission the store-safe build does not ship.
+    for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
+        const row = doc.split('\n').find((line) => line.startsWith(`| \`${name}\``));
+        assert.ok(row, `rationale doc must document ${name}`);
+        assert.match(row, /GitHub-full builds only/,
+            `the ${name} row must say it is absent from the store-safe artifact`);
+    }
+});

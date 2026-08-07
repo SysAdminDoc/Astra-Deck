@@ -36,14 +36,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P1 — Trust, correctness, and distribution mechanics
 
-- [ ] P1 — Strip `cookies` and `nativeMessaging` from the store-safe profile
-  Why: store-safe declares two of Chrome's most review-sensitive permissions while removing the only thing that consumes them, so the artifact requests capability it cannot exercise and the store rationale document justifies it on a false premise.
-  Evidence: `extension/manifest.json:25-32` declares both unconditionally; `build-extension.js:527-538` rewrites only `host_permissions`, `optional_host_permissions`, CSP and `web_accessible_resources`. Both serve the companion alone — `cookies` via `EXT_COOKIE_LIST` (`extension/background.js:1324`) → `browserCookies` (`extension/ytkit.js:812`) → `extension/features/download-ui/index.js:1302-1319`; `nativeMessaging` via `connectNative('com.astra.deck.downloader')` (`extension/background.js:1390`). The companion origin is `profile: 'github-full'` (`extension/core/data-flow.js:44-56`).
-  Touches: `build-extension.js`, `extension/core/data-flow.js`, `docs/store-permission-rationale.md:101,103`, `tests/build-fixes.test.js`
-  Acceptance: the store-safe manifest omits `cookies` and `nativeMessaging`; a test pins the store-safe `permissions` array; the rationale doc scopes both entries to the GitHub-full profile.
-  Note: this is the concrete defect inside the scope of `Roadmap_Blocked.md` "P1 — Make build profiles immutable capability ceilings with a verified permission matrix". Do this one first — it is the smallest true statement of that item and needs no matrix design; land it before attempting the ceiling work so the two do not conflict over `docs/store-permission-rationale.md`.
-  Complexity: M
-
 - [ ] P1 — Repair README claims that no longer hold
   Why: the public front door misstates locale count, points at a deleted document, instructs users to install a tool for a removed script, and promises a CRX the last two releases did not ship.
   Evidence: README:15 says "10 bundled UI locales" against 11 and cites a "competitive matrix in ROADMAP.md" that no longer exists; README:416 says `pip install pip-audit` for a companion that left the repo; README:419 has the typo `repositoryN`; README:447 references `npm run audit:python`, absent from `package.json`; README:43 describes an attached CRX that v4.50.2 and v4.50.7 do not carry; the Languages section does not say the 11 locales are extension-only (`YTKit.user.js` bundles no locale catalogue).
