@@ -4827,6 +4827,9 @@
   "statusImportFail": {
     "message": "فشل الاستيراد"
   },
+  "statusImportNotBackup": {
+    "message": "هذا الملف ليس نسخة احتياطية من Astra Deck. اختر ملف .json الذي أنشأه التصدير — النسخة الصحيحة تحتوي على حقل \"exportVersion\"."
+  },
   "statusImportPreviewApplyTpl": {
     "message": "معاينة الاستيراد: {preview}. يجري التطبيق مع إمكانية التراجع…"
   },

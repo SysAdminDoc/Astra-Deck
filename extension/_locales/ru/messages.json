@@ -4827,6 +4827,9 @@
   "statusImportFail": {
     "message": "Ошибка импорта"
   },
+  "statusImportNotBackup": {
+    "message": "Этот файл не является резервной копией Astra Deck. Выберите файл .json, созданный при экспорте, — в корректной копии есть поле \"exportVersion\"."
+  },
   "statusImportPreviewApplyTpl": {
     "message": "Предпросмотр импорта: {preview}. Применение с откатом…"
   },

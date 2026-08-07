@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **A corrupt settings backup no longer reports the JSON parser's own error.**
+  Picking the wrong file surfaced "Import failed: Unexpected token < in JSON at
+  position 0" — a byte offset, which tells you nothing about which file to
+  choose — while every other import failure path in the popup had hand-written
+  copy. It now says the file is not an Astra Deck backup and names the
+  `exportVersion` field a real one carries, in all 11 locales. The raw parser
+  error still goes to the console for diagnostics.
+
 ## [4.57.0] - 2026-08-06
 
 ### Fixed

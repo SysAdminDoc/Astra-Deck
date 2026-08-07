@@ -87,13 +87,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Acceptance: zero-data renders a localised explanation and a pointer to the tracker setting instead of an empty chart.
   Complexity: S
 
-- [ ] P2 — Replace the raw JSON parser error on settings import
-  Why: a corrupt backup surfaces `Unexpected token … in JSON at position N`, while every other import failure path has hand-written copy.
-  Evidence: `extension/popup.js:4071` parses unguarded; the generic catch at `:4158-4159` renders whatever it threw.
-  Touches: `extension/popup.js`, `extension/_locales/en/messages.json`
-  Acceptance: an unparseable file produces a localised "this file isn't a valid Astra Deck backup" message naming the expected shape; the raw error goes to the diagnostic log only.
-  Complexity: S
-
 - [ ] P2 — First-run handling on install, not on first popup open
   Why: the whole onboarding flow only runs if the user opens the toolbar popup; installing and never clicking the icon is a silent no-op.
   Evidence: `extension/background.js` has no `chrome.runtime.onInstalled` listener; `renderFirstRunSurfaces()` (`extension/popup.js:3518`) is the only trigger.

@@ -4827,6 +4827,9 @@
   "statusImportFail": {
     "message": "导入失败"
   },
+  "statusImportNotBackup": {
+    "message": "该文件不是 Astra Deck 备份。请选择由“导出”生成的 .json 文件——有效的备份包含 \"exportVersion\" 字段。"
+  },
   "statusImportPreviewApplyTpl": {
     "message": "导入预览:{preview}。正在应用并支持回滚…"
   },

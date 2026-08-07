@@ -4068,7 +4068,19 @@ async function importSettings(file) {
         if (!persistedDomains) throw new Error('Persisted-domain service unavailable');
         if (file.size > persistedDomains.MAX_BACKUP_BYTES) throw new Error('Import file exceeds the 512 MB safety limit');
         const text = await file.text();
-        const data = JSON.parse(text);
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            // A raw SyntaxError names a byte offset ("Unexpected token < in JSON
+            // at position 0"), which tells the user nothing about which file to
+            // pick. Every other import failure path here has hand-written copy;
+            // this one leaked the parser's. Keep the raw text for the console
+            // and the diagnostic bundle, and tell the user what a backup is.
+            console.warn('[Astra Deck popup] Settings import parse failed:', parseError);
+            throw new Error(t('statusImportNotBackup',
+                'That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an "exportVersion" field.'));
+        }
         // Version validation happens before any snapshot or write. A backup
         // from a future Astra version must be a strict no-op, not a best-effort
         // partial import that silently drops unknown domains.
