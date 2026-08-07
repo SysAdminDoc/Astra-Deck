@@ -5866,6 +5866,12 @@
     "message": "Close watch time dashboard",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Turn on Watch Time Tracker in Astra Deck settings, then watch a video. Your last 30 days appear here, and the data never leaves this device."
+  },
+  "whaEmptyTitle": {
+    "message": "No watch time tracked yet"
+  },
   "whaOpenButton": {
     "message": "📊 Watch Stats",
     "description": "Watch-page button that opens the watch-time dashboard"

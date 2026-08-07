@@ -5866,6 +5866,12 @@
     "message": "視聴時間ダッシュボードを閉じる",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "Astra Deck の設定で視聴時間トラッカーを有効にして動画を再生してください。直近 30 日間がここに表示され、データがこの端末から出ることはありません。"
+  },
+  "whaEmptyTitle": {
+    "message": "視聴時間はまだ記録されていません"
+  },
   "whaOpenButton": {
     "message": "📊 視聴統計",
     "description": "Watch-page button that opens the watch-time dashboard"

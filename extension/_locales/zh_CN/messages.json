@@ -5866,6 +5866,12 @@
     "message": "关闭观看时长面板",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "在 Astra Deck 设置中开启观看时长跟踪，然后观看一个视频。最近 30 天将显示在这里，数据绝不会离开此设备。"
+  },
+  "whaEmptyTitle": {
+    "message": "尚未记录观看时长"
+  },
   "whaOpenButton": {
     "message": "📊 观看统计",
     "description": "Watch-page button that opens the watch-time dashboard"

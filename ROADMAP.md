@@ -66,25 +66,11 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Acceptance: the base URL is a validated setting defaulting to the canonical host; a failed request falls back to a configured mirror once and surfaces which host answered in the API-health panel; a non-HTTPS or non-allowlisted host is rejected.
   Complexity: M
 
-- [ ] P2 — Skip-once and per-playback segment override
-  Why: SponsorBlock categories are global booleans; the most-requested ergonomic fix is a one-time override without changing settings.
-  Evidence: SponsorBlock #1997 (20 👍).
-  Touches: `extension/features/sponsorblock/index.js`
-  Acceptance: the skip toast offers "don't skip this one", the choice applies to that segment for the current playback only, and it does not persist across navigation.
-  Complexity: S
-
 - [ ] P2 — Show the original and the DeArrow title together
   Why: users want the crowdsourced title without losing the original, and the shipped behaviour is replacement-or-nothing.
   Evidence: DeArrow #232 and #264.
   Touches: `extension/features/dearrow/index.js`
   Acceptance: an opt-in mode renders both titles with a visual distinction, works on cards and the watch page, and reverts cleanly when the feature is toggled off.
-  Complexity: S
-
-- [ ] P2 — Give the watch-time dashboard an empty state
-  Why: with no tracked days it renders 30 zero-height bars and three zeroes, while every other data surface in the codebase has an explicit empty string.
-  Evidence: `extension/ytkit.js:34580-34638`; compare the two-variant empty states in `extension/features/download-ui/index.js:2645-2694`.
-  Touches: `extension/ytkit.js`, `extension/_locales/en/messages.json`
-  Acceptance: zero-data renders a localised explanation and a pointer to the tracker setting instead of an empty chart.
   Complexity: S
 
 ### P2 — Features with strong external demand

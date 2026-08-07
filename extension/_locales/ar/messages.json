@@ -5866,6 +5866,12 @@
     "message": "إغلاق لوحة وقت المشاهدة",
     "description": "Accessible label for the dashboard close button"
   },
+  "whaEmptyCopy": {
+    "message": "فعّل متتبع وقت المشاهدة في إعدادات Astra Deck ثم شاهد فيديو. ستظهر آخر 30 يومًا هنا، والبيانات لا تغادر هذا الجهاز أبدًا."
+  },
+  "whaEmptyTitle": {
+    "message": "لم يتم تسجيل أي وقت مشاهدة بعد"
+  },
   "whaOpenButton": {
     "message": "📊 إحصاءات المشاهدة",
     "description": "Watch-page button that opens the watch-time dashboard"
