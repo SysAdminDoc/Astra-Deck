@@ -44,11 +44,32 @@ The CRX is still attached for enterprise or tooling flows, but modern Chromium b
 
 ### Firefox
 
-1. Download `astra-deck-store-safe-firefox-v*.xpi` or `astra-deck-github-full-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
-2. Open `about:addons`, click the gear icon, select **Install Add-on From File**
-3. Select the `.xpi` file
+**The released `.xpi` is unsigned.** Firefox Release and Beta install only
+add-ons signed by Mozilla, and they reject an unsigned XPI with "This add-on
+could not be installed because it appears to be corrupt" — so `about:addons` →
+**Install Add-on From File** does not work on the Firefox most people run. Pick
+one of these instead:
 
-Requires Firefox 142+.
+**Easiest — the userscript.** Works on every Firefox edition, installs in one
+click, and auto-updates. See [Userscript](#userscript-tampermonkey--violentmonkey)
+below.
+
+**Temporary — any Firefox edition.** The add-on is removed when Firefox restarts.
+
+1. Download `astra-deck-store-safe-firefox-v*.xpi` or `astra-deck-github-full-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click **Load Temporary Add-on…** and select the `.xpi`
+
+**Permanent — Developer Edition, Nightly, or ESR only.** These builds can be
+told to accept unsigned add-ons; Release and Beta cannot.
+
+1. Open `about:config` and set `xpinstall.signatures.required` to `false`
+2. Open `about:addons` → gear icon → **Install Add-on From File**
+3. Select the `.xpi`
+
+Requires Firefox 142+ (set by `strict_min_version` in
+[`scripts/manifest-patch.js`](scripts/manifest-patch.js), so Firefox's built-in
+data-consent permissions cover the documented collection categories).
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
@@ -401,7 +422,7 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 | Browser | Method | Status |
 |---------|--------|--------|
 | Chrome / Edge / Brave | Extension (MV3) | Fully supported |
-| Firefox 142+ | Extension (MV3) | Fully supported |
+| Firefox 142+ | Extension (MV3) | Supported — but the XPI is unsigned, so a permanent install needs Developer Edition / Nightly / ESR; Release and Beta can only load it temporarily (see [Firefox](#firefox)) |
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 

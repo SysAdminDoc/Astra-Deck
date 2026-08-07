@@ -34,13 +34,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P0 — Shipped defects and delivery
 
-- [ ] P0 — Stop documenting a Firefox install path that cannot work
-  Why: `astra-deck-store-safe-firefox-v4.50.7.xpi` contains no `META-INF/`, no `mozilla.rsa` and no `manifest.mf` — it is an unsigned renamed ZIP. Firefox Release and Beta refuse unsigned XPIs, so README:45-51 ("Install Add-on From File") fails for every ordinary Firefox user.
-  Evidence: `unzip -l` on the published asset lists no `META-INF/` entry; `build-extension.js:764-765` copies the Firefox ZIP to `.xpi` with the comment "XPI is just a ZIP with .xpi extension" and no signing step exists anywhere in the build.
-  Touches: `README.md` (Firefox section), `INSTALL.md`, `docs/architecture.md`
-  Acceptance: the Firefox section states the signing requirement and the browsers where the unsigned XPI installs (Developer Edition / Nightly / ESR with `xpinstall.signatures.required=false`), or the XPI ships signed. Whether to pursue free AMO unlisted signing is an open policy question — see `RESEARCH.md`.
-  Complexity: S
-
 - [ ] P0 — Cut a release without a CRX
   Why: 174 commits and six minor versions are unreleased. The release is not actually key-gated — the last two published releases shipped no CRX, and self-hosted CRX only installs on Linux — but `build-extension.js` always produces one, and `generate-release-readiness.js` then fails the build as ephemeral-signed.
   Evidence: `build/crx-signing-provenance.json` reports `"mode": "ephemeral"`; `scripts/generate-release-readiness.js:238-243` fails unlabeled ephemeral CRX assets; `build-extension.js` exposes only `--with-userscript`, `--bump`, `--profile`, `--crx-key`, `--crx-key-mode`; `gh release view v4.50.7` lists ZIP/XPI/userscript/SBOM assets and no `.crx`.
