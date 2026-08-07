@@ -26,6 +26,12 @@ const V5_BUNDLE_MODULES = [
     'extension/core/feature-lifecycle.js',
     'extension/core/policy-profile.js',
     'extension/core/settings-controller.js',
+    // Bundled so the monolith settingsManager can run imports through the same
+    // snapshot/rollback/undo transaction the extension uses, instead of
+    // carrying a second implementation. Pure JS, no chrome.* and no DOM.
+    // NOTE: no apostrophes in comments inside this array — check-userscript-drift.js
+    // scans it with a bare quote regex and one stray quote truncates the list.
+    'extension/core/settings-import-transaction.js',
     'extension/core/transcript-service.js',
     'extension/core/transcript-index.js',
     'extension/core/ai-summary-artifacts.js',

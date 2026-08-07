@@ -6,6 +6,36 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **Five userscript controls no longer throw when clicked.** Import,
+  import-Undo, YouTube Takeout import, companion install-assist and
+  copy-install-command each called a method the userscript never defined, so
+  every one of them raised `TypeError` for every Tampermonkey/Violentmonkey
+  user from 2026-07-09 through the published v4.50.7. The bundled settings
+  panel was faithful to its extension source; the surrounding hand-maintained
+  monolith simply had no such methods. All five are now implemented against
+  the userscript's own storage and download helpers.
+- **Importing an empty or unrecognised backup no longer wipes your settings.**
+  The guard meant to reject a settings-less legacy import tested
+  `exportVersion < 2`, but a legacy export carries no `exportVersion` at all
+  and `undefined < 2` is false — so `{}` sailed through, spread over the
+  defaults, and reset every setting while reporting success.
+- **Settings import in the userscript is now transactional.** It shares the
+  extension's snapshot/rollback/undo engine rather than a second inline
+  implementation, so a failed import restores the previous state and Undo
+  works. Re-importing the same Takeout file no longer double-counts watch
+  seconds.
+
+### Added
+
+- `npm run check:userscript-symbols` — a gate that resolves every
+  `<singleton>.<method>()` call made from the userscript's bundled modules
+  against the monolith that has to define it. The byte-for-byte bundle parity
+  check could not catch the defect above, because the bundle was correct and
+  its callees were missing. The singleton scope is derived from the monolith
+  itself rather than hand-listed, so a new singleton is covered automatically.
+
 ## [4.56.0] - 2026-08-06
 
 ### Changed

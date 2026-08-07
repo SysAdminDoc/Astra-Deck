@@ -34,20 +34,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P0 — Shipped defects and delivery
 
-- [ ] P0 — Port the five monolith methods the bundled settings panel calls but the userscript does not define
-  Why: Import, import-Undo, Takeout import, companion install-assist and copy-install-command all throw `TypeError` on click for every Tampermonkey/Violentmonkey user, and have done since 2026-07-09.
-  Evidence: `YTKit.user.js` calls `settingsManager.importAllSettingsDetailed` (`:26085`), `settingsManager.undoLastSettingsImport` (`:26100`), `settingsManager.importYouTubeTakeoutWatchHistory` (`:26135`), `MediaDLManager.runInstallAssist` (`:25385`, `:25610`), `MediaDLManager.copyInstallCommand` (`:25406`) — each appears exactly once, at the call site, with no definition. Defined in `extension/ytkit.js:4414`, `:4630`, `:4639` and `extension/features/download-ui/index.js:481`, `:499`. Present in the published `v4.50.7` artifact. Introduced by `9d787b13`.
-  Touches: `YTKit.user.js` (monolith `settingsManager` ~`:31933`, `MediaDLManager` ~`:30495`), `extension/ytkit.js`, `extension/features/download-ui/index.js`, `sync-userscript.js`
-  Acceptance: a static resolver reports zero unresolved `<singleton>.<method>(` calls in `YTKit.user.js`; a test drives the settings-panel Import and install-assist handlers against the userscript's own `settingsManager`/`MediaDLManager` and asserts a result object rather than a throw.
-  Complexity: M
-
-- [ ] P0 — Gate cross-boundary symbol resolution between bundled modules and the userscript monolith
-  Why: `check-userscript-drift.js` proves the 44 bundled modules are byte-identical to source — which is exactly how five unresolvable calls shipped intact. Nothing verifies that what a bundled module calls, the userscript defines.
-  Evidence: the defect above survived a byte-for-byte parity gate, a 1,446-test suite and a 20-gate `npm run check`.
-  Touches: `scripts/check-userscript-drift.js` (or a new `scripts/check-userscript-symbols.js`), `package.json` `check` chain
-  Acceptance: the gate fails when a bundled module calls a method on a monolith singleton (`settingsManager`, `MediaDLManager`, `StorageManager`, `profileManager`, …) that `YTKit.user.js` does not define; verified by deleting one definition and observing the failure.
-  Complexity: S
-
 - [ ] P0 — Stop documenting a Firefox install path that cannot work
   Why: `astra-deck-store-safe-firefox-v4.50.7.xpi` contains no `META-INF/`, no `mozilla.rsa` and no `manifest.mf` — it is an unsigned renamed ZIP. Firefox Release and Beta refuse unsigned XPIs, so README:45-51 ("Install Add-on From File") fails for every ordinary Firefox user.
   Evidence: `unzip -l` on the published asset lists no `META-INF/` entry; `build-extension.js:764-765` copies the Firefox ZIP to `.xpi` with the comment "XPI is just a ZIP with .xpi extension" and no signing step exists anywhere in the build.
