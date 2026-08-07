@@ -10,9 +10,9 @@ Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 - `Roadmap_Blocked.md` "P2 — Competitor migration documentation" is **better supported now, not stale**: Iridium was archived 2026-01-31 (last real commit 2024-09-18) and its users are being routed to Enhancer, Unhook and Zenith — none of which is OSS-and-maintained, so there is no OSS successor. BlockTube is stalled (last push 2026-02-07, 484 open issues). A BlockTube migration guide plus an Iridium-successor note is the highest-yield addition to that item. No separate roadmap entry — extend the blocked one.
 
-- `Roadmap_Blocked.md` "P0 — Tag and publish the v4.51.1 release" is **version-stale and mis-blocked as of 2026-08-06**: the tree is at v4.56.0 with 174 commits since the newest published release (v4.50.7, 2026-07-28). Retarget it to v4.56.0. Its CRX-key framing is also wrong — self-hosted CRX installs are Linux-only on modern Chrome and the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, so the missing `ytkit.pem` does not gate a ZIP/XPI/userscript release. What actually failed on 2026-08-06 is `node scripts/generate-release-readiness.js`, on three checks only (missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json`, `build/SHA256SUMS`) — all produced by `npm run build:userscript`. See "Cut a release without a CRX" below for the code change that makes this a one-command path.
+- `Roadmap_Blocked.md` "P0 — Tag and publish the v4.51.1 release" was **version-stale and mis-blocked**. **Rewritten in place 2026-08-06** — retargeted to v4.56.0 and its blocker corrected. For the record: the CRX-key framing was wrong, because self-hosted CRX installs are Linux-only on modern Chrome and the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, so the missing `ytkit.pem` never gated a ZIP/XPI/userscript release. What actually fails is `node scripts/generate-release-readiness.js`, on three checks only (missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json`, `build/SHA256SUMS`) — all produced by `npm run build:userscript`, and the CRX check is not among them. See "Cut a release without a CRX" below for the code change that makes this a one-command path.
 
-- `Roadmap_Blocked.md` "P2 — Userscript bundle is stale; next sync will break Import" has **already materialised** — the bundle was resynced and the breakage shipped. The porting half is programmatic and is now tracked below as a P0; only the Tampermonkey browser verification remains blocked. Narrow or retire the blocked entry.
+- `Roadmap_Blocked.md` "P2 — Userscript bundle is stale; next sync will break Import" had **already materialised** — the bundle was resynced and the breakage shipped. **Narrowed in place 2026-08-06** to the Tampermonkey verification half and retitled; the porting half is programmatic and is tracked below as a P0. The two are no longer duplicates: do the P0 here, confirm it there.
 
 - `Roadmap_Blocked.md` "P2 — Audio auto-gain / high-pass chain" should **absorb multi-band EQ** rather than spawning a second item: `BiquadFilterNode` stages sit on the same MAIN-world audio graph the item already covers, and a 5-band EQ is the specific thing Enhancer's users ask for and Zenith paywalls. Its stated blocker is the stale "this run forbids staging Markdown" session constraint, which does not apply now.
 
@@ -69,6 +69,7 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Evidence: `extension/manifest.json:25-32` declares both unconditionally; `build-extension.js:527-538` rewrites only `host_permissions`, `optional_host_permissions`, CSP and `web_accessible_resources`. Both serve the companion alone — `cookies` via `EXT_COOKIE_LIST` (`extension/background.js:1324`) → `browserCookies` (`extension/ytkit.js:812`) → `extension/features/download-ui/index.js:1302-1319`; `nativeMessaging` via `connectNative('com.astra.deck.downloader')` (`extension/background.js:1390`). The companion origin is `profile: 'github-full'` (`extension/core/data-flow.js:44-56`).
   Touches: `build-extension.js`, `extension/core/data-flow.js`, `docs/store-permission-rationale.md:101,103`, `tests/build-fixes.test.js`
   Acceptance: the store-safe manifest omits `cookies` and `nativeMessaging`; a test pins the store-safe `permissions` array; the rationale doc scopes both entries to the GitHub-full profile.
+  Note: this is the concrete defect inside the scope of `Roadmap_Blocked.md` "P1 — Make build profiles immutable capability ceilings with a verified permission matrix". Do this one first — it is the smallest true statement of that item and needs no matrix design; land it before attempting the ceiling work so the two do not conflict over `docs/store-permission-rationale.md`.
   Complexity: M
 
 - [ ] P1 — Repair README claims that no longer hold
@@ -76,6 +77,7 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Evidence: README:15 says "10 bundled UI locales" against 11 and cites a "competitive matrix in ROADMAP.md" that no longer exists; README:416 says `pip install pip-audit` for a companion that left the repo; README:419 has the typo `repositoryN`; README:447 references `npm run audit:python`, absent from `package.json`; README:43 describes an attached CRX that v4.50.2 and v4.50.7 do not carry; the Languages section does not say the 11 locales are extension-only (`YTKit.user.js` bundles no locale catalogue).
   Touches: `README.md`
   Acceptance: every claim in the README resolves against the current tree and the newest published release; a reader following the install steps for any tier reaches a working install or an accurate limitation.
+  Note: this is the manual repair; `Roadmap_Blocked.md` "P1 — Generate volatile project facts and fail documentation drift" is the generator that would stop it recurring, and it names the same locale-count defect. Fix the text here, then let that item pin it. README is self-contradictory on this point — `:15` says 10 locales, `:374` says 11, and 11 is correct.
   Complexity: S
 
 - [ ] P1 — Internationalise `isMovie` and `isAutoDubbed` detection
@@ -137,14 +139,14 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Complexity: M
 
 - [ ] P2 — Skip-once and per-playback segment override
-  Why: SponsorBlock categories are global booleans today; the most-requested ergonomic fix is a one-time override without changing settings.
+  Why: SponsorBlock categories are global booleans; the most-requested ergonomic fix is a one-time override without changing settings.
   Evidence: SponsorBlock #1997 (20 👍).
   Touches: `extension/features/sponsorblock/index.js`
   Acceptance: the skip toast offers "don't skip this one", the choice applies to that segment for the current playback only, and it does not persist across navigation.
   Complexity: S
 
 - [ ] P2 — Show the original and the DeArrow title together
-  Why: users want the crowdsourced title without losing the original, and today it is replacement-or-nothing.
+  Why: users want the crowdsourced title without losing the original, and the shipped behaviour is replacement-or-nothing.
   Evidence: DeArrow #232 and #264.
   Touches: `extension/features/dearrow/index.js`
   Acceptance: an opt-in mode renders both titles with a visual distinction, works on cards and the watch page, and reverts cleanly when the feature is toggled off.
@@ -203,7 +205,7 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 - [ ] P2 — Subscribable and exportable filter lists
   Why: BlockTube is stalled with its users asking for exactly this, and it is the in-policy substitute for the cloud sync this project rejects.
-  Evidence: BlockTube #508, #384 (16 👍), #59 (11 👍); FilterTube #62. Astra's predicate DSL and keyword rules are strictly local today.
+  Evidence: BlockTube #508, #384 (16 👍), #59 (11 👍); FilterTube #62. Astra's predicate DSL and keyword rules are strictly local.
   Touches: `extension/core/persisted-domains.js`, `extension/features/video-hider/index.js`, `extension/popup.js`
   Acceptance: rules export to and import from a versioned file; an optional HTTPS list URL refreshes on a bounded schedule through the `EXT_FETCH` bridge with the origin under the existing allowlist; import is transactional and reversible through the existing undo path.
   Complexity: M
@@ -278,14 +280,8 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Evidence: Chrome 148 makes `browser` native and lets `runtime.onMessage` return a Promise; Firefox 153 adds `runtime.getDocumentId()` and content-script `adoptedStyleSheets`; Popover, `@scope`, `::highlight`, the Navigation API, `Intl.DurationFormat` and `RegExp.escape()` all reached Baseline in 2025–2026; Document Picture-in-Picture is Chrome 130+ and **Firefox 151+**.
   Touches: `extension/core/browser-api.js`, `extension/core/navigation.js`, `extension/core/toast-dom.js`, `extension/core/text-metrics.js`, `extension/core/date-time.js`, the transcript search path in `extension/ytkit.js`
   Acceptance: taken one API at a time behind `extension/core/capability-probe.js` — `@scope` around injected CSS, `::highlight` for transcript and segment marking (no DOM mutation), `Intl.DurationFormat` for durations across all 11 locales, `RegExp.escape()` on every user-supplied filter string. Each lands with a fallback and a test; none regresses `npm run check:startup`.
+  Note: `Roadmap_Blocked.md` already holds three items of this same family, blocked on live-browser verification — `appearance: base-select`, `@starting-style`, and `<details name>` exclusive accordion. Deliberately excluded here: the four APIs above are verifiable against the existing fixture and headless lanes, those three are not. Do not re-file them.
   Complexity: L
-
-- [ ] P2 — Audit `chrome.alarms` names against the Chrome 150 length limit
-  Why: Chrome 150 enforces a 1,024-byte alarm-name cap and throws `TypeError` above it; any per-video or per-channel dynamic alarm name is the risk.
-  Evidence: Chrome extensions "what's new", Chrome 150 (2026-06-10).
-  Touches: `extension/background.js`
-  Acceptance: every `alarms.create()` name is bounded and pinned by a test.
-  Complexity: S
 
 ### P3 — Debt burn-down and tooling honesty
 
@@ -308,6 +304,7 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Evidence: `scripts/audit-overlays-a11y.js:7` states "This is intentionally static"; `scripts/check-contrast.js:37-56` hardcodes six colour pairs from `popup.css` and reads no stylesheet; `docs/screen-reader-smoke.md` is a manual checklist outside `npm run check`.
   Touches: `scripts/audit-overlays-a11y.js`, `scripts/check-contrast.js`, `scripts/smoke-headless-a11y.js`
   Acceptance: contrast is computed from the actual custom-property values in `popup.css`/`sidepanel.css` rather than a literal list; the headless a11y smoke asserts focus order and focus-trap behaviour on at least the settings panel and one injected overlay against a real DOM.
+  Note: distinct from `Roadmap_Blocked.md` "P2 — Visual regression testing for popup" — that item compares screenshots against a committed baseline and is blocked on browser binaries; this one computes contrast and asserts focus behaviour, and runs in the headless lane `npm run smoke:settings-overlay` already uses. The rendered light-theme lane the P3 above wants is the natural place to host both.
   Complexity: M
 
 - [ ] P3 — Show which settings differ from their defaults

@@ -10,13 +10,13 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P0 — Delivery
 
-- [ ] P0 — Tag and publish the v4.51.1 release
-  Why: `CHANGELOG.md` declares `[4.51.1] - 2026-08-02` and all version sources agree, but the newest git tag and GitHub release is v4.50.7 (2026-07-28). Two versions of shipped work — durable scheduled subscriptions, the Firefox native-messaging bootstrap fix, resume-playback persistence, the download filename cap and ~33 further fixes — are undelivered on a hand-install channel with no auto-update.
-  Evidence: `git tag --sort=-v:refname` tops out at v4.50.7; `gh release list` newest is v4.50.7; `package.json` / `extension/manifest.json` / `docs/architecture.md` all state 4.51.1. The v4.50.7 release carries the ZIP/XPI/userscript/SBOM/companion assets but no CRX artifacts.
+- [ ] P0 — Tag and publish the v4.56.0 release
+  Why: RETARGETED 2026-08-06 (was v4.51.1). The tree is at v4.56.0 with 175 commits and six minor versions since the newest published release, v4.50.7 (2026-07-28), on a hand-install channel with no auto-update.
+  Evidence: `git tag --sort=-v:refname` and `gh release list` both top out at v4.50.7; `package.json` and `extension/manifest.json` state 4.56.0.
   Touches: `npm run release:prepare`, `scripts/generate-release-readiness.js`, `scripts/generate-release-manifest.js`, git tag, GitHub Release assets.
-  Acceptance: a `v4.51.1` tag exists on the release commit and a GitHub Release carries the full artifact set per the repo release policy (store-safe + GitHub-full Chrome ZIP/CRX and Firefox ZIP/XPI, userscript, SBOM, `release-manifest.json`, `SHA256SUMS`); `npm run release:verify-digests -- --tag v4.51.1` passes.
+  Acceptance: a `v4.56.0` tag exists on the release commit and a GitHub Release carries the artifact set the last two releases actually shipped (store-safe + GitHub-full Chrome ZIP and Firefox ZIP/XPI, userscript, SBOM, `release-manifest.json`, `SHA256SUMS`); `npm run release:verify-digests -- --tag v4.56.0` passes.
   Complexity: S
-  Blocker: The external maintainer CRX key is absent (`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` does not exist and `ASTRA_CRX_KEY_PATH` is unset). This run's AGENTS contract also forbids signing software, so publishing the required CRX artifact set cannot be completed without a permitted signing-key decision and external key material.
+  Blocker: CORRECTED 2026-08-06 — the previous blocker (missing `ytkit.pem`) was wrong on the facts. The CRX key does **not** gate this release: self-hosted CRX installs are Linux-only on modern Chrome, the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, and a live `node scripts/generate-release-readiness.js` fails on exactly three checks — missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json` and `build/SHA256SUMS` — all produced by `npm run build:userscript`, none key-gated. The CRX check is not among the failures. What actually remains is an operator action: creating the git tag and publishing the GitHub Release. The code change that makes the build a one-command path is tracked in `ROADMAP.md` as "P0 — Cut a release without a CRX"; land that first, then this becomes a publish step.
 
 - [ ] P3 — aria2c external-downloader option
   Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
@@ -267,21 +267,23 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: XL
   Blocker: All remaining extracted modules are bundled into the userscript. Resolve the stale userscript settings/import contract below and verify the regenerated bundle in a Tampermonkey browser session before removing any remaining shared fallback.
 
-- [ ] P2 — Userscript bundle is stale; next sync will break Import
-  Why: `YTKit.user.js` still bundles the pre-4.46.26 settings-panel and
-  pre-4.46.27 subscription-groups modules, so the shipped userscript lacks the
-  Takeout import, import summaries/undo, and group import counters it claims by
-  version. The module sources now call `settingsManager.importAllSettingsDetailed`
-  and `importYouTubeTakeoutWatchHistory`, which the userscript monolith's
-  `settingsManager` does not implement — so `node sync-userscript.js` will ship
-  an Import button that throws `TypeError` on click. Port both methods (plus
-  their dozen helper functions) into the monolith `settingsManager` and mirror the
-  `deno-runtime-unsupported` recovery copy before regenerating the bundle.
+- [ ] P2 — Verify the ported userscript settings/install-assist methods in Tampermonkey
+  Why: NARROWED 2026-08-06. This item previously predicted that regenerating the
+  bundle *would* break Import. That has already happened and shipped: the bundle
+  was resynced, and `YTKit.user.js` now calls five methods it does not define
+  (`importAllSettingsDetailed`, `undoLastSettingsImport`,
+  `importYouTubeTakeoutWatchHistory`, `runInstallAssist`, `copyInstallCommand`) —
+  each appearing exactly once, at the call site. The **porting work is programmatic
+  and is now tracked in `ROADMAP.md` as "P0 — Port the five monolith methods the
+  bundled settings panel calls but the userscript does not define"**; do not do it
+  from here. What remains blocked is only the confirmation half.
   Where: YTKit.user.js, extension/features/settings-panel/index.js, sync-userscript.js
-  Blocker: Porting requires adapting ~200 lines of extension-only storage API
-  calls (StorageManager.setSync, STORAGE_KEYS, IMPORT_LIMITS, estimateSerializedBytes,
-  etc.) to the userscript's GM_* storage shim, and verifying the result in a
-  Tampermonkey browser session. Cannot be verified without a running browser.
+  Acceptance: after the P0 lands, a real Tampermonkey (or Violentmonkey) session
+  drives Import, import-Undo, Takeout import, companion install-assist and
+  copy-install-command and each returns a result rather than throwing.
+  Blocker: Requires a running browser with a userscript manager installed. The
+  static half is covered by the P0's symbol-resolution gate; only the in-browser
+  behavioural confirmation needs the vehicle.
 
 - [ ] P2 — Side-panel toggles bypass optional-host permission + profile gating
   Why: side-panel `writeSetting` does not call `requestOptionalHostsForSetting`,

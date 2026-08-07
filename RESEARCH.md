@@ -321,7 +321,9 @@ Top opportunities, in priority order:
 - **[Likely] Platform capability now exceeds what the codebase uses.** Chrome 148
   makes the `browser` namespace native and lets `runtime.onMessage` return a
   Promise; Chrome 150 adds a `tab` context to `contextMenus` and a 1024-byte alarm
-  name limit; Firefox 153 adds `runtime.getDocumentId()` (stable per-document keys
+  name limit (no roadmap item follows from the alarm cap — the extension declares no
+  `alarms` permission and contains no `chrome.alarms` reference at all, verified
+  2026-08-06); Firefox 153 adds `runtime.getDocumentId()` (stable per-document keys
   for SPA navigation), `adoptedStyleSheets` access from content scripts, and
   `userScripts.execute()`. On the web-platform side, Popover, `@scope`,
   `::highlight`, Navigation API, `Intl.DurationFormat`, `RegExp.escape()` and
