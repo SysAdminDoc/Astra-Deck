@@ -165,3 +165,48 @@ Target policy:
 - Re-check `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq
   ".errors"` after the CODEOWNERS file lands on `main`.
 - Enable `require_code_owner_reviews` after CODEOWNERS exists on `main`.
+
+## Discovery Metadata (description, topics, homepage)
+
+Repository metadata is the cheapest discovery lever this project has and it had
+gone stale: the description advertised "150+ features" while the README said
+200+, `homepage` was empty, and the topic set named neither the primary
+distribution format nor any integration. Fourteen days of traffic showed 22
+views / 12 uniques and 11 asset downloads on the newest release.
+
+These are the intended values. They live here so drift is detectable — compare
+with `gh api repos/SysAdminDoc/Astra-Deck --jq '{description, homepage, topics}'`.
+
+**Description**
+
+```
+Astra Deck — Premium YouTube enhancement extension for Chrome & Firefox, plus a Tampermonkey userscript. 200+ features: SponsorBlock, DeArrow, theater split, feed/comment filtering, transcript viewer, downloads, and deep playback control. No telemetry, no accounts.
+```
+
+**Homepage**
+
+```
+https://github.com/SysAdminDoc/Astra-Deck/releases/latest
+```
+
+There is no project website; the releases page is where a visitor actually
+needs to land, so it is the honest target.
+
+**Topics**
+
+```
+youtube, chrome-extension, firefox-addon, browser-extension, manifest-v3,
+userscript, tampermonkey, sponsorblock, dearrow, privacy, ad-free, dark-theme,
+javascript, youtube-enhancement
+```
+
+Rationale for what was added: `chrome-extension`, `firefox-addon`,
+`browser-extension` and `manifest-v3` are how people actually search for this
+category and none were present; `sponsorblock` and `dearrow` catch users
+migrating from or pairing with those projects; `privacy` matches the
+no-telemetry posture that is this project's differentiator against Return
+YouTube Dislike's freemium turn. `userscript` and `tampermonkey` keep the
+second distribution tier findable.
+
+**Social preview image** — still unset. It is an upload-only setting with no
+REST endpoint, so it stays an operator action; see `Roadmap_Blocked.md`.
