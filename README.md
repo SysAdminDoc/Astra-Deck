@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 10 bundled UI locales. Beats every public-OSS competitor on at least one axis per the competitive matrix in ROADMAP.md.
+  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 11 bundled UI locales (extension only — the userscript ships no locale catalogues).
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 2. Open `chrome://extensions/`, enable **Developer mode**
 3. Click **Load unpacked** and select the `extension/` folder
 
-The CRX is still attached for enterprise or tooling flows, but modern Chromium blocks normal drag-and-drop installs from self-hosted CRX files.
+Releases ship the ZIP, not a CRX. Self-hosted CRX installs are Linux-only on modern Chrome, so the ZIP + **Load unpacked** is the supported Chromium path.
 
 ### Firefox
 
@@ -392,7 +392,8 @@ Use at your own risk.
 
 ## Languages
 
-Astra Deck ships with 11 bundled UI locales:
+Astra Deck ships with 11 bundled UI locales. These are **extension only** —
+`YTKit.user.js` bundles no locale catalogues, so the userscript tier is English:
 
 | Code | Language |
 |------|----------|
@@ -434,10 +435,9 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 
 ```bash
 npm ci
-py -3.12 -m pip install --user pip-audit # One-time companion audit tool
 npm test
 npm run check
-# Python dependency auditing runs in the Astra Downloader repositoryN
+# Python dependency auditing lives in the Astra Downloader repository
 npm run build                             # Build store-safe + GitHub-full artifacts
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run release:prepare                   # Build userscript artifacts and require readiness pass
@@ -482,7 +482,6 @@ Outputs in `build/` (the `.crx` files only when the build was not run with `--no
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript` / `npm run build:userscript`)
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
-- `astra-downloader-pip-audit.json` after `npm run audit:python` (declared and minimum-version resolutions)
 - `release-readiness/release-readiness.json` and
   `release-readiness/release-readiness.md` after `npm run release:readiness`
 
