@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **Installing and never clicking the toolbar icon is no longer a silent
+  no-op.** The whole onboarding flow ran only from the popup, so a user who
+  installed Astra Deck and went straight to YouTube got nothing. A fresh
+  install now stages an onboarding sentinel and badges the toolbar action, and
+  opening the popup clears it. Updates — extension or browser — deliberately do
+  not re-trigger it, and a reinstall over an already-onboarded profile is left
+  alone.
 - **A corrupt settings backup no longer reports the JSON parser's own error.**
   Picking the wrong file surfaced "Import failed: Unexpected token < in JSON at
   position 0" — a byte offset, which tells you nothing about which file to

@@ -87,13 +87,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Acceptance: zero-data renders a localised explanation and a pointer to the tracker setting instead of an empty chart.
   Complexity: S
 
-- [ ] P2 — First-run handling on install, not on first popup open
-  Why: the whole onboarding flow only runs if the user opens the toolbar popup; installing and never clicking the icon is a silent no-op.
-  Evidence: `extension/background.js` has no `chrome.runtime.onInstalled` listener; `renderFirstRunSurfaces()` (`extension/popup.js:3518`) is the only trigger.
-  Touches: `extension/background.js`, `extension/popup.js`
-  Acceptance: a fresh install sets the first-run sentinel and surfaces the welcome path on the next YouTube page or via the action badge; an update does not re-trigger it (the existing upgrade guard at `popup.js:3505-3564` still holds).
-  Complexity: S
-
 ### P2 — Features with strong external demand
 
 - [ ] P2 — Local photosensitive flash detection and auto-dim

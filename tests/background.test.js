@@ -26,8 +26,13 @@ function loadBackground({
     apiNamespace = 'chrome'
 } = {}) {
     let messageListener = null;
+    let installedListener = null;
     let settingsState = { ...initialSettings };
     const sessionState = {};
+    // Generic key/value half of storage.local, for keys that are not the
+    // settings bag (onboarding sentinels and friends).
+    const localState = {};
+    const badgeCalls = [];
     const persistentCredentials = new Map();
     const persistentStore = {
         async get(provider) { return persistentCredentials.get(provider); },
@@ -59,7 +64,16 @@ function loadBackground({
                 addListener(listener) {
                     messageListener = listener;
                 }
+            },
+            onInstalled: {
+                addListener(listener) {
+                    installedListener = listener;
+                }
             }
+        },
+        action: {
+            async setBadgeText(details) { badgeCalls.push({ method: 'setBadgeText', details }); },
+            async setBadgeBackgroundColor(details) { badgeCalls.push({ method: 'setBadgeBackgroundColor', details }); }
         },
         downloads: {
             download: downloadsDownloadImpl || ((opts, callback) => callback(1)),
@@ -84,10 +98,24 @@ function loadBackground({
         storage: {
             local: {
                 async get(key) {
+                    // An array request is a real multi-key read; the legacy
+                    // string form still answers with the settings bag so the
+                    // existing tests are unaffected.
+                    if (Array.isArray(key)) {
+                        const out = {};
+                        for (const name of key) {
+                            if (Object.hasOwn(localState, name)) out[name] = localState[name];
+                        }
+                        return out;
+                    }
                     return { [key]: settingsState };
                 },
                 async set(entries) {
                     if (entries.ytSuiteSettings) settingsState = { ...entries.ytSuiteSettings };
+                    Object.assign(localState, entries);
+                },
+                async remove(keys) {
+                    for (const name of (Array.isArray(keys) ? keys : [keys])) delete localState[name];
                 }
             },
             session: {
@@ -139,6 +167,9 @@ function loadBackground({
         chrome,
         context,
         messageListener,
+        installedListener,
+        badgeCalls,
+        getLocal: () => localState,
         getSettings: () => settingsState,
         persistentCredentials
     };
@@ -823,4 +854,60 @@ test('background EXT_FETCH rejects non-default ports on portless allowlist entri
 
     assert.ok(response.error, 'should reject non-standard port');
     assert.match(response.error, /not in allowlist/i);
+});
+
+// ── First-run onboarding on install ──
+
+test('a fresh install stages the onboarding sentinel and badges the action', async () => {
+    const bg = loadBackground();
+    assert.ok(bg.installedListener, 'background must register a runtime onInstalled listener');
+
+    bg.installedListener({ reason: 'install' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.equal(bg.getLocal().ytkit_first_run_pending, true,
+        'a fresh install must stage the pending sentinel so the popup can surface onboarding');
+    const badge = bg.badgeCalls.find((call) => call.method === 'setBadgeText');
+    assert.ok(badge, 'a fresh install must badge the toolbar action');
+    assert.equal(badge.details.text, '1');
+    assert.ok(bg.badgeCalls.some((call) => call.method === 'setBadgeBackgroundColor'),
+        'the badge must carry a colour so it is legible on both themes');
+});
+
+test('a browser or extension update does not re-trigger onboarding', async () => {
+    for (const reason of ['update', 'chrome_update', 'shared_module_update']) {
+        const bg = loadBackground();
+        bg.installedListener({ reason });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.equal(bg.getLocal().ytkit_first_run_pending, undefined,
+            `reason "${reason}" must not stage onboarding — the popup's What's New path owns version changes`);
+        assert.equal(bg.badgeCalls.length, 0, `reason "${reason}" must not badge the action`);
+    }
+});
+
+test('reinstalling over an onboarded profile does not onboard the user again', async () => {
+    const bg = loadBackground();
+    // The popup's upgrade guard stamps this for anyone who was already using
+    // Astra Deck. Overwriting it would re-onboard an established install.
+    bg.getLocal().ytkit_first_run_seen = true;
+
+    bg.installedListener({ reason: 'install' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.equal(bg.getLocal().ytkit_first_run_pending, undefined,
+        'an existing sentinel must suppress onboarding');
+    assert.equal(bg.badgeCalls.length, 0, 'and must leave the action unbadged');
+});
+
+test('the onboarding sentinel key names match between background and popup', () => {
+    // A mismatch makes onboarding fire twice or never, and neither side would
+    // fail on its own.
+    const popupSource = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
+    for (const key of ['ytkit_first_run_seen', 'ytkit_first_run_pending']) {
+        assert.ok(backgroundSource.includes(`'${key}'`), `background.js must declare ${key}`);
+        assert.ok(popupSource.includes(`'${key}'`), `popup.js must declare ${key}`);
+    }
+    assert.match(popupSource, /clearFirstRunPending/,
+        'the popup must clear the pending sentinel it consumes');
 });
