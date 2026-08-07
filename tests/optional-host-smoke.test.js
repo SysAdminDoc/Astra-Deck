@@ -18,7 +18,7 @@ test('optional-host Chromium smoke is exposed and exact-pins its CDP WebSocket d
         pkg.scripts['smoke:optional-hosts'],
         'node scripts/smoke-chromium-optional-hosts.js'
     );
-    assert.equal(pkg.devDependencies.ws, '8.21.0');
+    assert.equal(pkg.devDependencies.ws, '8.21.2');
 });
 
 test('optional-host Chromium smoke stages the store-safe manifest and falls back from Chrome policy blocks', () => {
