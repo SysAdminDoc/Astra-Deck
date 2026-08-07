@@ -46,6 +46,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   table no longer calls this "Fully supported". `INSTALL.md` was already
   correct.
 
+- **`npm audit` is clean at every severity again.** The one standing HIGH
+  (`js-yaml` 4.3.0, CVE-2026-59870 quadratic CPU) reached the tree only through
+  the lint toolchain — `web-ext` -> `addons-linter` -> `eslint`. Bumping
+  `web-ext` 10.4.0 -> 10.6.0 resolves it to the patched 4.3.1; `ws` moves
+  8.21.0 -> 8.21.2. The `brace-expansion` override also relaxes from an exact
+  `5.0.9` to `^5.0.9`, matching its two sibling overrides: that package has
+  taken six advisories in 14 months and an exact pin turns each new one into a
+  manual edit rather than an install.
 - **Video Hider's Movies and Auto-dubbed filters now work outside English.**
   `isMovie` and `isAutoDubbed` were the last two of the six type predicates
   still matching English metadata only, so both were permanently false on 10 of

@@ -36,13 +36,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P1 — Trust, correctness, and distribution mechanics
 
-- [ ] P1 — Clear the standing dev-dependency advisory and refresh exact pins
-  Why: `npm audit` reports one HIGH that reaches the tree only through the toolchain, and two exact pins are one advisory away from stale.
-  Evidence: `js-yaml` 4.3.0 (CVE-2026-59870, quadratic CPU) via `web-ext@10.4.0 → addons-linter → eslint@9.39.4`; `web-ext` 10.6.0 and `ws` 8.21.2 are published; the `brace-expansion` override pins exactly 5.0.9, which is the fix for an advisory published 2026-08-03 — the sixth in 14 months.
-  Touches: `package.json`, `package-lock.json`
-  Acceptance: `npm audit` reports zero advisories at every severity, or the residual is a documented dev-only accept with a stated reason; `npm run check` stays green.
-  Complexity: S
-
 - [ ] P1 — Thin bootstrap plus lazy per-feature injection
   Why: 96 files / 4,978,068 B are injected at `document_idle` on every YouTube page regardless of which of the 446 settings are enabled — and Chrome does **not** V8-code-cache content scripts, so that cost is re-paid on every navigation and every frame rather than amortised. This one change fixes startup cost, the Greasy Fork size cap and Chromium store review time at once, so it gates three other items below.
   Evidence: Chromium issue 40480216 — "extensions don't use the v8 compile cache (recompiling content scripts for every frame)", isolated-world creation ~30% of overhead. DebugBear measured Evernote Web Clipper's 2.9 MB content script at 140 ms parse/compile + 300 ms evaluate, already the worst ~1.7% of extensions; Astra's ISOLATED bundle is 1.7× that. SponsorBlock does full YouTube segment skipping in a 115 KB content script (`manifest/chrome-manifest-extra.json`). uBlock Origin Lite's `platform/mv3/extension/js/scripting-manager.js` (13 KB) is the reference implementation: it computes at runtime which per-ruleset scripts to `registerContentScripts`, with `matches`/`excludeMatches` derived from what is enabled.
