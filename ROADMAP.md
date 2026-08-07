@@ -34,13 +34,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P0 — Shipped defects and delivery
 
-- [ ] P0 — Cut a release without a CRX
-  Why: 174 commits and six minor versions are unreleased. The release is not actually key-gated — the last two published releases shipped no CRX, and self-hosted CRX only installs on Linux — but `build-extension.js` always produces one, and `generate-release-readiness.js` then fails the build as ephemeral-signed.
-  Evidence: `build/crx-signing-provenance.json` reports `"mode": "ephemeral"`; `scripts/generate-release-readiness.js:238-243` fails unlabeled ephemeral CRX assets; `build-extension.js` exposes only `--with-userscript`, `--bump`, `--profile`, `--crx-key`, `--crx-key-mode`; `gh release view v4.50.7` lists ZIP/XPI/userscript/SBOM assets and no `.crx`.
-  Touches: `build-extension.js`, `scripts/generate-release-readiness.js`, `package.json`, `README.md` (Building section)
-  Acceptance: `node build-extension.js --with-userscript --no-crx` produces ZIP/XPI/userscript/SBOM/manifest/SHA256SUMS with no CRX in `build/`, and `npm run release:readiness -- --require-pass` exits 0 with no maintainer key present.
-  Complexity: S
-
 ### P1 — Trust, correctness, and distribution mechanics
 
 - [ ] P1 — Strip `cookies` and `nativeMessaging` from the store-safe profile

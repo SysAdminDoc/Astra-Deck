@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 // build-extension.js -- Packages extension/ into profile-split Chrome + Firefox artifacts
-// Usage: node build-extension.js [--profile store-safe|github-full|both] [--bump patch|minor|major]
+// Usage: node build-extension.js [--profile store-safe|github-full|both] [--bump patch|minor|major] [--no-crx]
+//
+// --no-crx skips CRX production entirely. Self-hosted CRX installs are
+// Linux-only on modern Chrome and the last two published releases shipped no
+// CRX at all, so the maintainer key should not gate a ZIP/XPI/userscript
+// release — without this flag a release build with no key aborts in
+// resolveCrxSigningConfig before producing anything.
 
 const fs = require('fs');
 const path = require('path');
@@ -170,6 +176,7 @@ function resolveCrxSigningConfig(options = {}) {
 const IS_CLI = require.main === module;
 const args = IS_CLI ? process.argv.slice(2) : [];
 const INCLUDE_USERSCRIPT = args.includes('--with-userscript');
+const SKIP_CRX = args.includes('--no-crx') || process.env.ASTRA_SKIP_CRX === '1';
 const bumpIndex = args.indexOf('--bump');
 const profileIndex = args.indexOf('--profile');
 const crxKeyIndex = args.indexOf('--crx-key');
@@ -641,17 +648,24 @@ async function build() {
     if (fs.existsSync(BUILD_DIR)) fs.rmSync(BUILD_DIR, { recursive: true });
     fs.mkdirSync(BUILD_DIR, { recursive: true });
 
-    const baseCrxSigningConfig = resolveCrxSigningConfig({
-        keyPath: crxKeyPath,
-        mode: crxKeyMode,
-        releaseBuild: INCLUDE_USERSCRIPT || Boolean(bumpType)
-    });
+    // --no-crx short-circuits key resolution entirely. resolveCrxSigningConfig
+    // THROWS on a release build with no external key, so asking for the key
+    // first would abort the very release this flag exists to unblock.
+    const baseCrxSigningConfig = SKIP_CRX
+        ? { mode: 'none', keyPath: null, generatedKeyPath: null }
+        : resolveCrxSigningConfig({
+            keyPath: crxKeyPath,
+            mode: crxKeyMode,
+            releaseBuild: INCLUDE_USERSCRIPT || Boolean(bumpType)
+        });
     const crxSigningConfig = {
         ...baseCrxSigningConfig,
+        skip: SKIP_CRX,
         generatedKeyPath: baseCrxSigningConfig.mode === 'ephemeral'
             ? path.join(BUILD_DIR, '.validation-crx-key.pem')
             : null
     };
+    if (SKIP_CRX) console.log('Skipping CRX production (--no-crx): no maintainer key required');
 
     // Ephemeral mode: generate ONE throwaway RSA key up front and hand the
     // same key to every crx3() call in this run. (Previously keyPath was left
@@ -724,6 +738,9 @@ async function buildProfileArtifacts(profile, crxSigningConfig = resolveCrxSigni
             throw new Error(profile + ' Chrome ZIP failed: ' + e.message);
         }
 
+        if (crxSigningConfig.skip) {
+            console.log(profile + ' Chrome CRX: skipped (--no-crx)');
+        } else {
         const chromeCrxName = getArtifactBaseName(profile, 'chrome') + '.crx';
         const chromeCrxPath = path.join(BUILD_DIR, chromeCrxName);
 
@@ -745,6 +762,7 @@ async function buildProfileArtifacts(profile, crxSigningConfig = resolveCrxSigni
             console.log(profile + ' Chrome CRX: build/' + chromeCrxName + ' (' + formatSize(chromeCrxPath) + ' KB)');
         } catch (e) {
             throw new Error(profile + ' Chrome CRX failed: ' + e.message);
+        }
         }
 
         firefoxStageDir = path.join(BUILD_DIR, profile + '-firefox-stage');

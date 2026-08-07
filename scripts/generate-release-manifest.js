@@ -84,11 +84,17 @@ function parseAssetName(name, version) {
 
 function expectedReleaseNames(version, options = {}) {
     const names = [];
+    // A --no-crx build produces no CRX, so the CRX must not be expected either
+    // — otherwise every no-CRX release reports two missing assets. The mode is
+    // passed in rather than read from build/ here: this function is pure and
+    // is called from tests, and reading ambient build state would make its
+    // answer depend on whatever the last local build happened to be.
+    const includeCrx = (options.crxSigningMode || 'external') !== 'none';
     for (const profile of ['store-safe', 'github-full']) {
         for (const browser of ['chrome', 'firefox']) {
             names.push(`astra-deck-${profile}-${browser}-v${version}.zip`);
         }
-        names.push(`astra-deck-${profile}-chrome-v${version}.crx`);
+        if (includeCrx) names.push(`astra-deck-${profile}-chrome-v${version}.crx`);
         names.push(`astra-deck-${profile}-firefox-v${version}.xpi`);
     }
     names.push(`ytkit-v${version}.user.js`);
@@ -126,7 +132,8 @@ function readCrxSigningProvenance(buildDir = BUILD_DIR) {
     try {
         const raw = JSON.parse(fs.readFileSync(path.join(buildDir, CRX_SIGNING_PROVENANCE_NAME), 'utf8'));
         const mode = raw && typeof raw.mode === 'string' ? raw.mode : null;
-        return mode === 'external' || mode === 'ephemeral' ? mode : 'unknown';
+        // 'none' means the build ran with --no-crx and produced no CRX at all.
+        return mode === 'external' || mode === 'ephemeral' || mode === 'none' ? mode : 'unknown';
     } catch (_) {
         return 'unknown';
     }
@@ -166,7 +173,10 @@ function main() {
     if (!version) throw new Error('package.json version is empty');
 
     const assetNames = listBuildAssets();
-    assertExpectedAssets(assetNames, version);
+    // Read the provenance once and thread it through, so a --no-crx build does
+    // not report its (correctly) absent CRX assets as missing.
+    const crxSigningMode = readCrxSigningProvenance();
+    assertExpectedAssets(assetNames, version, { crxSigningMode });
 
     const commit = process.env.GITHUB_SHA || git(['rev-parse', 'HEAD']);
     const tag = process.env.GITHUB_REF_NAME || `v${version}`;
@@ -192,7 +202,7 @@ function main() {
         generatedAt,
         localSigningRequired: true,
         signingKeyPolicy: 'Public CRX artifacts must be built locally with ASTRA_CRX_KEY_PATH or the default external key store; CI build artifacts use ephemeral CRX signing for validation/provenance only.',
-        crxSigningMode: readCrxSigningProvenance(),
+        crxSigningMode,
         validationBuild: isValidationBuild(),
         assets
     };

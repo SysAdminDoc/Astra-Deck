@@ -232,7 +232,20 @@ function buildReadinessReport(options = {}) {
         const validationBuild = releaseManifest.validationBuild === true;
         let signingStatus;
         let signingDetails;
-        if (signingMode === 'external') {
+        if (signingMode === 'none') {
+            // A --no-crx release ships no CRX, so there is nothing to sign.
+            // Verify that against the build directory rather than trusting the
+            // provenance flag: a check that takes the build's word for it would
+            // wave through exactly the ephemeral-signed CRX this gate exists to
+            // stop, if the flag were ever wrong.
+            const strayCrx = fs.existsSync(buildDir)
+                ? fs.readdirSync(buildDir).filter((f) => f.endsWith('.crx'))
+                : [];
+            signingStatus = strayCrx.length === 0 ? 'pass' : 'fail';
+            signingDetails = strayCrx.length === 0
+                ? 'build declared --no-crx and build/ contains no CRX asset — nothing to sign'
+                : `build declared --no-crx but build/ still contains ${strayCrx.length} CRX asset(s): ${strayCrx.join(', ')}`;
+        } else if (signingMode === 'external') {
             signingStatus = 'pass';
             signingDetails = 'CRX assets signed with the external maintainer key';
         } else if (signingMode === 'ephemeral' && validationBuild) {
@@ -323,7 +336,10 @@ function buildReadinessReport(options = {}) {
 
     if (releaseManifest && Array.isArray(releaseManifest.assets) && buildFiles) {
         const manifestAssetNames = releaseManifest.assets.map((asset) => asset.name).sort();
-        const expectedAssets = expectedReleaseNames(packageVersion || releaseManifest.version || '');
+        // Honour the manifest's own signing mode: a --no-crx release ships no
+        // CRX, so expecting one would report two permanently missing assets.
+        const assetOptions = { crxSigningMode: releaseManifest.crxSigningMode };
+        const expectedAssets = expectedReleaseNames(packageVersion || releaseManifest.version || '', assetOptions);
         const fileSet = new Set(buildFiles);
         const missingExpected = expectedAssets.filter((name) => !fileSet.has(name));
         checks.push(check(
@@ -340,7 +356,7 @@ function buildReadinessReport(options = {}) {
                     && name !== CRX_SIGNING_PROVENANCE_NAME),
                 ...manifestAssetNames
             ])
-        ], packageVersion || releaseManifest.version || '');
+        ], packageVersion || releaseManifest.version || '', assetOptions);
         checks.push(check(
             'unexpected-assets',
             'No unexpected release assets are present or manifest-listed',
