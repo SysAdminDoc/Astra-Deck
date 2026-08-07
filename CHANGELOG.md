@@ -27,6 +27,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   works. Re-importing the same Takeout file no longer double-counts watch
   seconds.
 
+- **README claims now resolve against the tree.** It said 10 bundled UI locales
+  against 11 (and contradicted itself further down), cited a competitive matrix
+  in `ROADMAP.md` that no longer exists, told readers to `pip install pip-audit`
+  for a companion that moved to its own repository, referenced an
+  `npm run audit:python` script that is not in `package.json`, promised an
+  attached CRX the last two releases did not ship, and carried a `repositoryN`
+  typo. The Languages section now also says what it never did: the 11 locales
+  are extension-only, because the userscript bundles no locale catalogues.
 - **The README no longer documents a Firefox install that cannot work.** It
   told every reader to use `about:addons` → "Install Add-on From File", which
   Firefox Release and Beta reject outright because the released XPI is

@@ -36,14 +36,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
 
 ### P1 — Trust, correctness, and distribution mechanics
 
-- [ ] P1 — Repair README claims that no longer hold
-  Why: the public front door misstates locale count, points at a deleted document, instructs users to install a tool for a removed script, and promises a CRX the last two releases did not ship.
-  Evidence: README:15 says "10 bundled UI locales" against 11 and cites a "competitive matrix in ROADMAP.md" that no longer exists; README:416 says `pip install pip-audit` for a companion that left the repo; README:419 has the typo `repositoryN`; README:447 references `npm run audit:python`, absent from `package.json`; README:43 describes an attached CRX that v4.50.2 and v4.50.7 do not carry; the Languages section does not say the 11 locales are extension-only (`YTKit.user.js` bundles no locale catalogue).
-  Touches: `README.md`
-  Acceptance: every claim in the README resolves against the current tree and the newest published release; a reader following the install steps for any tier reaches a working install or an accurate limitation.
-  Note: this is the manual repair; `Roadmap_Blocked.md` "P1 — Generate volatile project facts and fail documentation drift" is the generator that would stop it recurring, and it names the same locale-count defect. Fix the text here, then let that item pin it. README is self-contradictory on this point — `:15` says 10 locales, `:374` says 11, and 11 is correct.
-  Complexity: S
-
 - [ ] P1 — Internationalise `isMovie` and `isAutoDubbed` detection
   Why: their four siblings (`isLive`, `isUpcoming`, `isMix`, `isPlaylist`) gained 10-language alternations; these two still match English metadata only, so the predicates are permanently false on 10 of 11 shipped locales.
   Evidence: `extension/features/video-hider/index.js` ~`:1211` and the mirrored copy at `extension/ytkit.js:17954` use `/\b(movie|free with ads|buy or rent|rent or buy)\b/` and `/\b(auto[-\s]?dubbed|dubbed|audio track)\b/`.
