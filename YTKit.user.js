@@ -18426,7 +18426,15 @@
                     const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
                         .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
                         .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
-                    const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '');
+                    // NFD splits Latin letters from their accents so the patterns
+                    // below can be written unaccented — but it ALSO decomposes each
+                    // Hangul syllable into conjoining Jamo, which are letters, not
+                    // marks, so \p{M} leaves them decomposed. A precomposed Korean
+                    // literal then never matches, which silently made every one of
+                    // the six type predicates below dead on Korean. Re-composing
+                    // restores the syllables; the accents cannot come back because
+                    // their marks are already gone.
+                    const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
                     const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                     const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
                     const hasDuration = this._extractDuration(element) > 0;
@@ -18455,8 +18463,14 @@
                             || /(?:start_radio=1|list=rd)/i.test(hrefText),
                         isPlaylist: hasPlaylistMarker
                             || /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
-                        isMovie: /\b(movie|free with ads|buy or rent|rent or buy)\b/.test(rowsText),
-                        isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(rowsText),
+                        // Localised like their four siblings above: Latin terms are
+                        // written WITHOUT diacritics because normalizedRowsText has
+                        // already stripped combining marks, and non-Latin scripts sit
+                        // outside \b, which only anchors on ASCII word characters.
+                        // French bare "double" (from "doublé") is deliberately absent
+                        // — it normalises onto a very common word.
+                        isMovie: /(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)/i.test(normalizedRowsText),
+                        isAutoDubbed: /(?:\b(?:auto[-\s]?dubbed|dubbed|audio track|doblado automaticamente|doblado|pista de audio|automatisch synchronisiert|synchronisiert|tonspur|audiospur|doublage|double automatiquement|piste audio|doppiato automaticamente|doppiato|traccia audio|dublado automaticamente|dublado|faixa de audio)\b|автоматический дубляж|дубляж|аудиодорожка|自動吹き替え|吹き替え|音声トラック|자동 더빙|더빙|오디오 트랙|自动配音|配音|音轨|مدبلج تلقائيا|مدبلج|المسار الصوتي)/i.test(normalizedRowsText),
                         isShort,
                         isMembersOnly
                     };
