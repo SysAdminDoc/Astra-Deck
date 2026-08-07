@@ -446,6 +446,55 @@ if (ext.runtime?.onUpdateAvailable?.addListener) {
     });
 }
 
+// ── First-run onboarding ──
+//
+// The welcome flow used to run only from renderFirstRunSurfaces() when the
+// toolbar popup opened, so installing and never clicking the icon was a silent
+// no-op — the user got no onboarding at all. onInstalled is the only event that
+// fires for an install the user has not interacted with.
+//
+// Sentinel key names are shared with extension/popup.js; a mismatch would make
+// onboarding fire twice or never, so they are pinned by a test.
+const FIRST_RUN_SEEN_KEY = 'ytkit_first_run_seen';
+const FIRST_RUN_PENDING_KEY = 'ytkit_first_run_pending';
+const FIRST_RUN_BADGE_TEXT = '1';
+
+async function _handleFirstInstall(details) {
+    // ONLY a genuine fresh install. 'update', 'chrome_update' and
+    // 'shared_module_update' must not re-trigger onboarding — the popup's
+    // What's New path already covers version changes, and re-badging on every
+    // browser update is exactly the nag this project does not ship.
+    if (details?.reason !== 'install') return false;
+
+    // A reinstall over live data is an existing user. The popup's upgrade guard
+    // stamps FIRST_RUN_SEEN_KEY for them; never overwrite it, or an established
+    // install gets onboarded again.
+    const stored = await callExtensionApi(ext.storage.local, 'get', [FIRST_RUN_SEEN_KEY]);
+    if (stored?.[FIRST_RUN_SEEN_KEY] === true) return false;
+
+    await callExtensionApi(ext.storage.local, 'set', { [FIRST_RUN_PENDING_KEY]: true });
+
+    // Badge the toolbar action so onboarding is discoverable without the user
+    // having to guess that the icon is worth clicking. The popup clears it.
+    try {
+        await callExtensionApi(ext.action, 'setBadgeText', { text: FIRST_RUN_BADGE_TEXT });
+        await callExtensionApi(ext.action, 'setBadgeBackgroundColor', { color: '#ff4e45' });
+    } catch (_) {
+        // reason: badge APIs are cosmetic and vary by browser; the pending
+        // sentinel alone still surfaces the welcome card on first popup open.
+    }
+    return true;
+}
+
+if (ext.runtime?.onInstalled?.addListener) {
+    ext.runtime.onInstalled.addListener((details) => {
+        void _handleFirstInstall(details).catch((error) => {
+            void error;
+            void _recordSwLifecycle('first-run-stage-failed');
+        });
+    });
+}
+
 // Fire once at module load — this IS the SW boot. Every fresh SW
 // process invocation hits this line; the resulting ring entry is
 // the signal that distinguishes "SW restarted between user actions"

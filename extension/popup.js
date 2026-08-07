@@ -535,6 +535,11 @@ const optionalHostGrantBtn = $('#optional-host-grant-btn');
 // opened against so the What's New banner only fires once per bump.
 const FIRST_RUN_SEEN_KEY = 'ytkit_first_run_seen';
 const LAST_SEEN_VERSION_KEY = 'ytkit_last_seen_version';
+// Set by the background worker's runtime onInstalled listener so a fresh
+// install can surface onboarding without the user first clicking the toolbar
+// icon. Opening the popup IS the acknowledgement, so this clears here. Name
+// must match background.js — pinned by a test.
+const FIRST_RUN_PENDING_KEY = 'ytkit_first_run_pending';
 // Anchor pattern documented in CHANGELOG.md: GitHub renders the
 // version inside ## brackets as #<lowercase-major-minor-patch>.
 const CHANGELOG_BASE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md';
@@ -3576,8 +3581,29 @@ async function renderFirstRunSurfaces() {
         if (firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion) {
             showWhatsNew(lastSeen);
         }
+
+        // Opening the popup is the acknowledgement of the install badge that
+        // background.js raised, whichever surface the user ends up seeing.
+        await clearFirstRunPending();
     } catch (err) {
         console.warn('[Astra Deck popup] first-run surface render failed:', err);
+    }
+}
+
+async function clearFirstRunPending() {
+    try {
+        const items = await storageGet([FIRST_RUN_PENDING_KEY]);
+        if (items[FIRST_RUN_PENDING_KEY] !== true) return;
+        await callExtensionApi(ext?.storage?.local, 'remove', [FIRST_RUN_PENDING_KEY]);
+    } catch (err) {
+        // reason: a stale pending flag only means the badge clears on the next
+        // open; it must never block the onboarding surfaces above.
+        console.warn('[Astra Deck popup] first-run pending clear failed:', err);
+    }
+    try {
+        await callExtensionApi(ext?.action, 'setBadgeText', { text: '' });
+    } catch (_) {
+        // reason: badge APIs are cosmetic and vary by browser.
     }
 }
 
