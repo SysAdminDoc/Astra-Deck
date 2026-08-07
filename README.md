@@ -441,6 +441,7 @@ npm run check
 npm run build                             # Build store-safe + GitHub-full artifacts
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run release:prepare                   # Build userscript artifacts and require readiness pass
+npm run release:prepare:no-crx            # Same, without any CRX — needs no maintainer key
 npm run release:sbom                      # Regenerate build/astra-deck-npm-sbom.cdx.json
 npm run release:manifest                  # Regenerate release-manifest.json + SHA256SUMS
 npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
@@ -458,7 +459,23 @@ must use the external maintainer key via `ASTRA_CRX_KEY_PATH`, the default
 `%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` location, or
 `node build-extension.js --crx-key <path>`.
 
-Outputs in `build/`:
+**Or skip the CRX entirely.** `--no-crx` (equivalently `ASTRA_SKIP_CRX=1`)
+produces the ZIP / XPI / userscript / SBOM / manifest / `SHA256SUMS` set with no
+CRX at all, and therefore needs no key — without it a release build with no key
+aborts before producing anything:
+
+```bash
+npm run release:prepare:no-crx            # one command: build + SBOM + manifest + readiness
+node build-extension.js --with-userscript --no-crx   # or just the build
+```
+
+This is the normal path for this project. Self-hosted CRX installs are
+Linux-only on modern Chrome, and the last two published releases (v4.50.2,
+v4.50.7) shipped no CRX at all — so the maintainer key does not gate a release.
+Release readiness records the build as `crxSigningMode: "none"` and verifies
+that `build/` really contains no CRX before accepting it.
+
+Outputs in `build/` (the `.crx` files only when the build was not run with `--no-crx`):
 - `astra-deck-store-safe-chrome-v*.zip` + `.crx` (Chrome Web Store posture)
 - `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
 - `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)

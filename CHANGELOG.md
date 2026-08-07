@@ -40,6 +40,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- **`--no-crx` — cut a release without a CRX, and without the maintainer key.**
+  A release build with no key aborted in `resolveCrxSigningConfig` before
+  producing anything, which made the key look like it gated the whole release.
+  It never did: self-hosted CRX installs are Linux-only on modern Chrome and
+  the last two published releases shipped no CRX at all.
+  `npm run release:prepare:no-crx` now builds ZIP / XPI / userscript / SBOM /
+  manifest / `SHA256SUMS` and passes readiness in one command with no key
+  present. The build records `crxSigningMode: "none"`, and the readiness gate
+  confirms `build/` really contains no CRX rather than taking the flag's word
+  for it.
 - `npm run check:userscript-symbols` — a gate that resolves every
   `<singleton>.<method>()` call made from the userscript's bundled modules
   against the monolith that has to define it. The byte-for-byte bundle parity
