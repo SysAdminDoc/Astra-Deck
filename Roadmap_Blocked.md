@@ -156,6 +156,20 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Requires maintainer GitHub authentication to upload the sidecar (`gh auth status` reports the SysAdminDoc token is invalid in this environment) plus manual clean Windows verification that the EXE runs standalone.
 
+## P3 — Discovery (2026-08-06)
+
+- [ ] P3 — Set the repository social-preview image
+  Why: the description, homepage and 14 topics were refreshed programmatically
+  on 2026-08-06 and are recorded in `docs/repo-settings.md`; the social-preview
+  image is the one remaining piece of discovery metadata still unset. It is what
+  renders when the repo is linked from anywhere outside GitHub.
+  Where: repository Settings -> General -> Social preview.
+  Acceptance: an image is set and `docs/repo-settings.md` records what it is.
+  Complexity: S
+  Blocker: Upload-only. GitHub exposes no REST endpoint for the social-preview
+  image, so it cannot be set from `gh api` — it needs a maintainer with the
+  Settings page open. Everything else in that roadmap item is done.
+
 ## P2 — Documentation
 
 - [ ] P2 — Competitor migration documentation

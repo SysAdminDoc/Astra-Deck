@@ -50,13 +50,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Acceptance: the benchmark runs against a captured youtube.com watch and feed page, records heap delta and observer-callback time over a bounded session alongside parse/paint, and `npm run check:startup` gates all four.
   Complexity: M
 
-- [ ] P1 — Make the extension discoverable where people actually look
-  Why: 11 stars, 1 fork, 0 watchers, 22 repo views / 12 uniques in 14 days, 11 asset downloads on the newest release. The repo's own metadata is the cheapest lever and is currently stale and thin.
-  Evidence: `gh api repos/SysAdminDoc/Astra-Deck` reports `description` claiming "150+ features" (README says 200+), empty `homepage`, and topics `[ad-free, dark-theme, javascript, userscript, youtube]` with no `chrome-extension`, `firefox-addon`, `manifest-v3`, `browser-extension`, `sponsorblock`, `dearrow`, or `privacy`; `traffic/popular/referrers` shows `github.com` and one portfolio link and nothing else.
-  Touches: repo settings (description, topics, homepage, social preview), `README.md` opening paragraph, `docs/repo-settings.md`
-  Acceptance: description and topics match the current feature set; a social-preview image is set; `docs/repo-settings.md` records the intended values so drift is detectable.
-  Complexity: S
-
 ### P2 — Quick wins with direct demand evidence
 
 - [ ] P2 — Show why a card was hidden
