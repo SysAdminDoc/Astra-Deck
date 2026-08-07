@@ -27,6 +27,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   works. Re-importing the same Takeout file no longer double-counts watch
   seconds.
 
+- **The README no longer documents a Firefox install that cannot work.** It
+  told every reader to use `about:addons` → "Install Add-on From File", which
+  Firefox Release and Beta reject outright because the released XPI is
+  unsigned — the build copies the Firefox ZIP to `.xpi` with no signing step,
+  and the shipped v4.56.0 artifacts contain zero `META-INF/` entries. The
+  Firefox section now names the three real options (userscript, temporary load
+  via `about:debugging`, or a permanent install on Developer Edition / Nightly
+  / ESR with `xpinstall.signatures.required=false`), and the compatibility
+  table no longer calls this "Fully supported". `INSTALL.md` was already
+  correct.
+
 ### Added
 
 - `npm run check:userscript-symbols` — a gate that resolves every
