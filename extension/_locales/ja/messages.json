@@ -4827,6 +4827,9 @@
   "statusImportFail": {
     "message": "インポート失敗"
   },
+  "statusImportNotBackup": {
+    "message": "このファイルは Astra Deck のバックアップではありません。エクスポートで作成された .json ファイルを選択してください。有効なバックアップには \"exportVersion\" フィールドがあります。"
+  },
   "statusImportPreviewApplyTpl": {
     "message": "インポートのプレビュー: {preview}。ロールバック付きで適用中…"
   },

@@ -48,6 +48,7 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Diese Datei ist kein Astra Deck-Backup. Wählen Sie die von „Exportieren“ erzeugte .json-Datei — ein gültiges Backup enthält ein Feld \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Wählen Sie Raster-, Listen- oder Kompaktansicht für Abonnements und sortieren Sie optional die aktuell geladenen Karten nach den neuesten.',
   'Subscription View Controls': 'Ansicht für Abonnements', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Neueste zuerst sortiert nur die auf dieser Seite geladenen Videos. Scrollen Sie, um weitere zu laden.',
   'Order': 'Reihenfolge', 'YouTube order': 'YouTube-Reihenfolge', 'Newest first (loaded only)': 'Neueste zuerst (nur geladen)',
@@ -240,6 +241,7 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Ese archivo no es una copia de seguridad de Astra Deck. Elige el archivo .json generado por Exportar: una copia válida contiene un campo \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Elige Cuadrícula, Lista o Compacta para las suscripciones y, opcionalmente, ordena primero las tarjetas cargadas más recientes.',
   'Subscription View Controls': 'Controles de vista de suscripciones', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Más recientes primero solo ordena los vídeos cargados en esta página. Desplázate para cargar más.',
   'Order': 'Orden', 'YouTube order': 'Orden de YouTube', 'Newest first (loaded only)': 'Más recientes primero (solo cargados)',
@@ -420,6 +422,7 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Этот файл не является резервной копией Astra Deck. Выберите файл .json, созданный при экспорте, — в корректной копии есть поле \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Выберите сетку, список или компактный вид подписок и при необходимости отсортируйте загруженные карточки от новых к старым.',
   'Subscription View Controls': 'Вид подписок', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Сортировка по новизне применяется только к видео, загруженным на этой странице. Прокрутите, чтобы загрузить ещё.',
   'Order': 'Порядок', 'YouTube order': 'Порядок YouTube', 'Newest first (loaded only)': 'Сначала новые (только загруженные)',
@@ -600,6 +603,7 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Ce fichier n'est pas une sauvegarde Astra Deck. Choisissez le fichier .json généré par Exporter : une sauvegarde valide contient un champ \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Choisissez une vue Grille, Liste ou Compacte des abonnements et triez éventuellement les cartes chargées des plus récentes aux plus anciennes.',
   'Subscription View Controls': 'Affichage des abonnements', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Le tri par nouveauté ne concerne que les vidéos chargées sur cette page. Faites défiler pour en charger davantage.',
   'Order': 'Ordre', 'YouTube order': 'Ordre YouTube', 'Newest first (loaded only)': 'Plus récentes d’abord (chargées uniquement)',
@@ -778,6 +782,7 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Questo file non è un backup di Astra Deck. Scegli il file .json prodotto da Esporta: un backup valido contiene un campo \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Scegli la visualizzazione Griglia, Elenco o Compatta delle iscrizioni e, facoltativamente, ordina prima le schede caricate più recenti.',
   'Subscription View Controls': 'Visualizzazione iscrizioni', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Più recenti prima ordina solo i video caricati in questa pagina. Scorri per caricarne altri.',
   'Order': 'Ordine', 'YouTube order': 'Ordine di YouTube', 'Newest first (loaded only)': 'Più recenti prima (solo caricati)',
@@ -949,6 +954,7 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "Esse arquivo não é um backup do Astra Deck. Escolha o arquivo .json gerado por Exportar — um backup válido contém um campo \"exportVersion\".",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': 'Escolha a visualização Grade, Lista ou Compacta das inscrições e, opcionalmente, ordene primeiro os cartões carregados mais recentes.',
   'Subscription View Controls': 'Visualização de inscrições', 'Newest first sorts only videos loaded on this page. Scroll to load more.': 'Mais recentes primeiro ordena apenas os vídeos carregados nesta página. Role para carregar mais.',
   'Order': 'Ordem', 'YouTube order': 'Ordem do YouTube', 'Newest first (loaded only)': 'Mais recentes primeiro (somente carregados)',
@@ -1120,6 +1126,7 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "このファイルは Astra Deck のバックアップではありません。エクスポートで作成された .json ファイルを選択してください。有効なバックアップには \"exportVersion\" フィールドがあります。",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': '登録チャンネルをグリッド、リスト、コンパクト表示から選び、必要に応じて現在読み込まれているカードを新しい順に並べます。',
   'Subscription View Controls': '登録チャンネルの表示設定', 'Newest first sorts only videos loaded on this page. Scroll to load more.': '新しい順では、このページに読み込まれた動画のみを並べ替えます。スクロールしてさらに読み込んでください。',
   'Order': '順序', 'YouTube order': 'YouTube の順序', 'Newest first (loaded only)': '新しい順（読み込み済みのみ）',
@@ -1294,6 +1301,7 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field.": "이 파일은 Astra Deck 백업이 아닙니다. 내보내기로 만든 .json 파일을 선택하세요. 올바른 백업에는 \"exportVersion\" 필드가 있습니다.",
   'Choose Grid, List, or Compact subscriptions layouts and optionally sort the currently loaded cards newest first.': '구독 피드를 그리드, 목록 또는 압축 보기로 선택하고 필요하면 현재 로드된 카드를 최신순으로 정렬합니다.',
   'Subscription View Controls': '구독 보기 설정', 'Newest first sorts only videos loaded on this page. Scroll to load more.': '최신순은 이 페이지에 로드된 동영상만 정렬합니다. 더 로드하려면 스크롤하세요.',
   'Order': '순서', 'YouTube order': 'YouTube 순서', 'Newest first (loaded only)': '최신순(로드된 항목만)',

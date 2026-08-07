@@ -4827,6 +4827,9 @@
   "statusImportFail": {
     "message": "Import failed"
   },
+  "statusImportNotBackup": {
+    "message": "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field."
+  },
   "statusImportPreviewApplyTpl": {
     "message": "Import preview: {preview}. Applying with rollback…"
   },

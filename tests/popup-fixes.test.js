@@ -579,3 +579,46 @@ test('schema overview enabled counts include untouched default-on features', () 
     assert.equal(isToggleEnabled({ key: 'uiFontSize', type: 'number', defaultValue: 14 }, {}), true,
         'a positive numeric default counts as enabled');
 });
+
+test('settings import reports a readable error instead of the raw JSON parser message', () => {
+    const popupSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const importStart = popupSource.indexOf('async function importSettings(file)');
+    const importEnd = popupSource.indexOf('\n}\n\nasync function undoImportSettings', importStart);
+    assert.ok(importStart > -1 && importEnd > importStart, 'importSettings block must be found');
+    const importBlock = popupSource.slice(importStart, importEnd);
+
+    // A bare `JSON.parse(text)` here surfaced "Unexpected token < in JSON at
+    // position 0" through the generic catch, which names a byte offset and
+    // tells the user nothing about which file to pick.
+    assert.doesNotMatch(importBlock, /^\s*const data = JSON\.parse\(text\);/m,
+        'the backup parse must be guarded, not left to the generic catch');
+    assert.match(importBlock, /try\s*\{\s*data = JSON\.parse\(text\);\s*\}\s*catch/,
+        'JSON.parse of the backup must have its own catch');
+    assert.match(importBlock, /statusImportNotBackup/,
+        'the parse failure must throw the localised backup-shape message');
+    assert.match(importBlock, /console\.warn\([^)]*parseError|console\.warn\([\s\S]{0,120}?parseError/,
+        'the raw parser error must still reach the console for diagnostics');
+
+    // The message has to survive into every shipped locale. This is the check
+    // that catches a key which generated but fell through to English: ar and
+    // zh_CN are proofed directly in their catalogs rather than through the
+    // generator tables, so they are exactly the two that silently regress.
+    const localesDir = path.join(__dirname, '..', 'extension', '_locales');
+    const en = JSON.parse(fs.readFileSync(path.join(localesDir, 'en', 'messages.json'), 'utf8'));
+    const enMessage = en.statusImportNotBackup?.message;
+    assert.ok(enMessage, 'EN locale must declare statusImportNotBackup');
+    assert.match(enMessage, /exportVersion/, 'the copy must name the field a real backup carries');
+
+    for (const locale of fs.readdirSync(localesDir)) {
+        if (locale === 'en') continue;
+        const messages = JSON.parse(
+            fs.readFileSync(path.join(localesDir, locale, 'messages.json'), 'utf8')
+        );
+        const message = messages.statusImportNotBackup?.message;
+        assert.ok(message, `${locale} must declare statusImportNotBackup`);
+        assert.notEqual(message, enMessage,
+            `${locale} statusImportNotBackup is still the English string — it fell through instead of being translated`);
+    }
+});
