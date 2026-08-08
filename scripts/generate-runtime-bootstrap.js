@@ -178,7 +178,7 @@ ${routesLiteral}
         const settingsPromise = readRuntimeSettings();
         await import(getURL('${LOADER_MODULE}'));
         const settings = await settingsPromise;
-        const pathname = String(globalThis.location?.pathname || '');
+        const pathname = String(globalThis.__ytkitRouteHint || globalThis.location?.pathname || '');
         const deferredFeatureModules = optionalFeatureModules.filter((modulePath) =>
             modulePath !== 'features/download-ui/index.js'
             && shouldLoadFeature(modulePath, settings, pathname)

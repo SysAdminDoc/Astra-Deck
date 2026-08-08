@@ -12,6 +12,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   document-idle content-script graph is loaded through a guarded dynamic module
   loader, with persisted-setting and route gates for deferred feature modules;
   live chat and the MAIN-world bridge keep their existing scoped bundles.
+- **Startup budgets now exercise captured YouTube surfaces.** The headless
+  benchmark prefers the local watch and feed MHTML captures, runs a bounded
+  navigation/DOM session, and gates heap growth and mutation-observer time
+  alongside parse and first-feature paint, with a deterministic fallback when
+  ignored captures are unavailable.
 
 ## [4.57.0] - 2026-08-06
 
