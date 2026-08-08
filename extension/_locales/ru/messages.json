@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Скрыто Video Hider: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "фильтр автоматической озвучки"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "правило блокировки канала"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "ваш список разрешённых каналов"
+  },
+  "videoHiderReasonDuration": {
+    "message": "правило минимальной длительности"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "правило ключевых слов"
+  },
+  "videoHiderReasonLive": {
+    "message": "фильтр прямых трансляций"
+  },
+  "videoHiderReasonLowView": {
+    "message": "фильтр малопросматриваемых видео"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "ваша локальная отметка просмотра"
+  },
+  "videoHiderReasonManual": {
+    "message": "ваш сохранённый список скрытых видео"
+  },
+  "videoHiderReasonMix": {
+    "message": "фильтр YouTube Mix"
+  },
+  "videoHiderReasonMovie": {
+    "message": "фильтр фильмов"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "фильтр плейлистов"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "ваше расширенное локальное правило"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "фильтр предстоящих премьер"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "фильтр доли просмотра"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "Показывать рядом с каждой скрытой карточкой небольшую заметку с объяснением, какое локальное правило сработало."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "Пояснять скрытые карточки"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

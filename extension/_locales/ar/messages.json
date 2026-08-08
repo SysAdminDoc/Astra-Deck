@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "مخفي بواسطة Video Hider: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "مرشح الدبلجة التلقائية"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "قاعدة قناة محظورة"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "قائمة القنوات المسموح بها لديك"
+  },
+  "videoHiderReasonDuration": {
+    "message": "قاعدة الحد الأدنى للمدة"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "قاعدة الكلمات المفتاحية"
+  },
+  "videoHiderReasonLive": {
+    "message": "مرشح البث المباشر"
+  },
+  "videoHiderReasonLowView": {
+    "message": "مرشح المشاهدات المنخفضة"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "علامة المشاهدة المحلية لديك"
+  },
+  "videoHiderReasonManual": {
+    "message": "قائمة الإخفاء المحفوظة لديك"
+  },
+  "videoHiderReasonMix": {
+    "message": "مرشح YouTube Mix"
+  },
+  "videoHiderReasonMovie": {
+    "message": "مرشح الأفلام"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "مرشح قوائم التشغيل"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "قاعدتك المحلية المتقدمة"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "مرشح العرض الأول القادم"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "مرشح نسبة المشاهدة"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "إظهار ملاحظة صغيرة بجانب كل بطاقة مخفية توضّح القاعدة المحلية التي طابقتها."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "توضيح البطاقات المخفية"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

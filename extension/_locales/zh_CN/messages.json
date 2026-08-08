@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "由 Video Hider 隐藏：{reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "自动配音过滤器"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "已屏蔽频道规则"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "你的频道允许列表"
+  },
+  "videoHiderReasonDuration": {
+    "message": "最短时长规则"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "关键词规则"
+  },
+  "videoHiderReasonLive": {
+    "message": "直播过滤器"
+  },
+  "videoHiderReasonLowView": {
+    "message": "低观看量过滤器"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "你的本地已观看标记"
+  },
+  "videoHiderReasonManual": {
+    "message": "你保存的隐藏列表"
+  },
+  "videoHiderReasonMix": {
+    "message": "YouTube Mix 过滤器"
+  },
+  "videoHiderReasonMovie": {
+    "message": "电影过滤器"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "播放列表过滤器"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "你的高级本地规则"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "即将首播过滤器"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "观看比例过滤器"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "在每张隐藏卡片旁显示一条小提示，说明匹配的是哪条本地规则。"
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "解释隐藏卡片"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

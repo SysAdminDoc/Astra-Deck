@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Video Hider により非表示: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "自動吹き替えフィルター"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "ブロックしたチャンネルのルール"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "チャンネル許可リスト"
+  },
+  "videoHiderReasonDuration": {
+    "message": "最小再生時間ルール"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "キーワードルール"
+  },
+  "videoHiderReasonLive": {
+    "message": "ライブ配信フィルター"
+  },
+  "videoHiderReasonLowView": {
+    "message": "低再生数フィルター"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "ローカルの視聴済みマーカー"
+  },
+  "videoHiderReasonManual": {
+    "message": "保存した非表示リスト"
+  },
+  "videoHiderReasonMix": {
+    "message": "YouTube Mix フィルター"
+  },
+  "videoHiderReasonMovie": {
+    "message": "映画フィルター"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "プレイリストフィルター"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "高度なローカルルール"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "近日公開フィルター"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "視聴割合フィルター"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "非表示カードの横に、どのローカルルールが一致したかを説明する短いメモを表示します。"
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "非表示カードの理由を表示"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

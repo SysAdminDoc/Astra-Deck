@@ -5401,10 +5401,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (435 → 439). List feed layout adds one more preference
     // (439 → 440). Buffer / preload adds one more extension preference
     // (440 → 441).
+    // Hidden-card filter explanations add one feed preference (446 → 447).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 446,
-        'SETTINGS_SCHEMA must cover all 446 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 447,
+        'SETTINGS_SCHEMA must cover all 447 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

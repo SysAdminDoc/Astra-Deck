@@ -478,6 +478,7 @@
     "hidePlannedLivestreams",
     "hideSearchSidebar",
     "hideVideosChannelAllowlist",
+    "hideVideosShowFilterReason",
     "listFeedLayout",
     "liveSpeedReset",
     "localAiTranscriptQa",

@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Hidden by Video Hider: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "the auto-dubbed filter"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "a blocked channel rule"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "your channel allowlist"
+  },
+  "videoHiderReasonDuration": {
+    "message": "the minimum-duration rule"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "a keyword rule"
+  },
+  "videoHiderReasonLive": {
+    "message": "the live-stream filter"
+  },
+  "videoHiderReasonLowView": {
+    "message": "the low-view filter"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "your local watched marker"
+  },
+  "videoHiderReasonManual": {
+    "message": "your saved hidden list"
+  },
+  "videoHiderReasonMix": {
+    "message": "the YouTube Mix filter"
+  },
+  "videoHiderReasonMovie": {
+    "message": "the movie filter"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "the playlist filter"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "your advanced local rule"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "the upcoming-premiere filter"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "the watched-ratio filter"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "Show a small note beside each hidden card explaining which local rule matched."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "Explain hidden cards"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"
