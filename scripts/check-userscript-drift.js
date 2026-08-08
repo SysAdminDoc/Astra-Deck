@@ -67,7 +67,8 @@ const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 const manifestJsFiles = new Set();
 for (const entry of (manifest.content_scripts || [])) {
     if (entry.world === 'MAIN') continue;
-    for (const js of (entry.js || [])) {
+    const scripts = entry['x-ytkit-runtime-modules'] || entry.js || [];
+    for (const js of scripts) {
         manifestJsFiles.add(js);
     }
 }

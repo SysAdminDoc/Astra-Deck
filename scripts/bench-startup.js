@@ -268,7 +268,12 @@ function checkAgainstBaseline(summary, baseline) {
 }
 
 function prepareFixture(stageDir) {
-    const fixturePath = buildFixture(stageDir);
+    const runtimeSettings = JSON.parse(fs.readFileSync(
+        path.join(REPO_ROOT, 'extension', 'default-settings.json'),
+        'utf8'
+    ));
+    runtimeSettings.transcriptViewer = true;
+    const fixturePath = buildFixture(stageDir, { runtimeSettings });
     fs.writeFileSync(path.join(stageDir, 'startup-bench-start.js'), START_DRIVER, 'utf8');
     fs.writeFileSync(path.join(stageDir, 'startup-bench-end.js'), END_DRIVER, 'utf8');
     let html = fs.readFileSync(fixturePath, 'utf8');

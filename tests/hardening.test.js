@@ -10,6 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
+const { runtimeModules } = require('./helpers/source');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'ytkit.js'),
@@ -1342,7 +1343,9 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     );
     assert.deepEqual(
         ffManifest.web_accessible_resources.flatMap((entry) => entry.resources),
-        ['icons/32.png', 'assets/cat.gif'],
+        ['icons/32.png', 'assets/cat.gif', 'runtime-core-loader.mjs', ...runtimeModules(
+            manifest.content_scripts.find((entry) => runtimeModules(entry).includes('ytkit.js'))
+        )],
         'Firefox must retain the exact page-resource allowlist'
     );
 
@@ -2937,8 +2940,10 @@ test('build-extension gates web_accessible_resources policy for every profile', 
         path.join(__dirname, '..', 'extension', 'manifest.json'),
         'utf8',
     ));
+    const runtimeResources = builder.getRuntimeModuleResources();
+    const expectedResources = ['icons/32.png', 'assets/cat.gif', 'runtime-core-loader.mjs', ...runtimeResources];
     const expectedChromiumWar = [{
-        resources: ['icons/32.png', 'assets/cat.gif'],
+        resources: expectedResources,
         matches: [
             'https://*.youtube.com/*',
             'https://*.youtube-nocookie.com/*',
@@ -2968,8 +2973,10 @@ test('build-extension gates web_accessible_resources policy for every profile', 
         const resources = manifest.web_accessible_resources.flatMap((entry) => entry.resources || []);
         assert.equal(resources.some((resource) => resource.includes('*')), false,
             `${profile} manifest must not expose directory wildcards`);
-        assert.equal(resources.some((resource) => /\.(?:js|mjs|css|html|map|json)$/i.test(resource)), false,
-            `${profile} manifest must not expose source, style, map, or data files`);
+        assert.equal(resources.some((resource) =>
+            (/\.(?:mjs|css|html|map|json)$/i.test(resource) && resource !== 'runtime-core-loader.mjs')
+            || (resource.endsWith('.js') && !runtimeResources.includes(resource))
+        ), false, `${profile} manifest must not expose unapproved source, style, map, or data files`);
 
         const firefoxManifest = builder.patchManifestForBuildProfile(
             JSON.parse(JSON.stringify(baseManifest)), profile, 'firefox');
@@ -6762,16 +6769,16 @@ test('v4.13.0 subtitles module loads before ytkit.js in both content_script entr
     ));
     let validated = 0;
     for (const cs of manifest.content_scripts) {
-        if (!Array.isArray(cs.js)) continue;
-        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        const scripts = runtimeModules(cs);
+        const ytkitIdx = scripts.indexOf('ytkit.js');
         if (ytkitIdx === -1) continue;
-        const subIdx = cs.js.indexOf('features/subtitles/index.js');
+        const subIdx = scripts.indexOf('features/subtitles/index.js');
         assert.notEqual(subIdx, -1, 'manifest must include features/subtitles/index.js');
         assert.ok(subIdx < ytkitIdx, 'features/subtitles/index.js must load before ytkit.js');
         // It should also load after the core/* modules (it consumes
         // settings via appState which is set up by ytkit.js, but loading
         // it adjacent to ytkit.js keeps the cognitive map simple).
-        const dataFlowIdx = cs.js.indexOf('core/data-flow.js');
+        const dataFlowIdx = scripts.indexOf('core/data-flow.js');
         assert.ok(dataFlowIdx < subIdx,
             'features/subtitles/index.js must load after the core/* modules');
         validated += 1;
@@ -7140,13 +7147,13 @@ test('v4.17.0 features/video-filters loads before ytkit.js in both content_scrip
     ));
     let validated = 0;
     for (const cs of manifest.content_scripts) {
-        if (!Array.isArray(cs.js)) continue;
-        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        const scripts = runtimeModules(cs);
+        const ytkitIdx = scripts.indexOf('ytkit.js');
         if (ytkitIdx === -1) continue;
-        const vfIdx = cs.js.indexOf('features/video-filters/index.js');
+        const vfIdx = scripts.indexOf('features/video-filters/index.js');
         assert.notEqual(vfIdx, -1, 'manifest must include features/video-filters/index.js');
         assert.ok(vfIdx < ytkitIdx, 'features/video-filters/index.js must load before ytkit.js');
-        const subIdx = cs.js.indexOf('features/subtitles/index.js');
+        const subIdx = scripts.indexOf('features/subtitles/index.js');
         assert.ok(subIdx < vfIdx,
             'features/video-filters/index.js must load after features/subtitles/index.js (alphabetical-adjacent grouping)');
         validated += 1;

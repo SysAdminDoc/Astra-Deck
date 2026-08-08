@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { runtimeModules } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'date-time.js'), 'utf8');
@@ -51,9 +52,10 @@ test('relative card ages become explicitly approximate locale-formatted calendar
 
 test('date-time core loads before ytkit and is bundled for userscript parity', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
-    for (const block of manifest.content_scripts.filter((item) => item.js?.includes('ytkit.js'))) {
-        const dateIndex = block.js.indexOf('core/date-time.js');
-        const ytkitIndex = block.js.indexOf('ytkit.js');
+    for (const block of manifest.content_scripts.filter((item) => runtimeModules(item).includes('ytkit.js'))) {
+        const scripts = runtimeModules(block);
+        const dateIndex = scripts.indexOf('core/date-time.js');
+        const ytkitIndex = scripts.indexOf('ytkit.js');
         assert.notEqual(dateIndex, -1);
         assert.ok(dateIndex < ytkitIndex);
     }

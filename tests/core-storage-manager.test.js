@@ -18,6 +18,7 @@ const repoRoot = path.join(__dirname, '..');
 const corePath = path.join(repoRoot, 'extension', 'core', 'storage-manager.js');
 const ytkitPath = path.join(repoRoot, 'extension', 'ytkit.js');
 const manifestPath = path.join(repoRoot, 'extension', 'manifest.json');
+const { runtimeModules } = require('./helpers/source');
 
 function loadFactoryIntoFreshGlobal() {
     globalThis.YTKitCore = {};
@@ -148,16 +149,17 @@ test('syncFromExternal with undefined deletes the cache entry', () => {
 
 test('manifest.json loads core/storage-manager.js BEFORE every ytkit.js entry', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const isoBlocks = manifest.content_scripts.filter(b => b.js?.includes('ytkit.js'));
+    const isoBlocks = manifest.content_scripts.filter(b => runtimeModules(b).includes('ytkit.js'));
     assert.ok(isoBlocks.length >= 1, 'expected a ytkit.js content_script entry');
     for (const block of isoBlocks) {
-        const idxCache = block.js.indexOf('core/storage-manager.js');
-        const idxYtkit = block.js.indexOf('ytkit.js');
+        const scripts = runtimeModules(block);
+        const idxCache = scripts.indexOf('core/storage-manager.js');
+        const idxYtkit = scripts.indexOf('ytkit.js');
         assert.notEqual(idxCache, -1, 'core/storage-manager.js missing from content_scripts.js');
         assert.ok(idxCache < idxYtkit, 'core/storage-manager.js must load before ytkit.js');
         // Must load AFTER core/storage.js because the factory accessors
         // resolve at first-call against the low-level functions.
-        const idxLowLevel = block.js.indexOf('core/storage.js');
+        const idxLowLevel = scripts.indexOf('core/storage.js');
         assert.notEqual(idxLowLevel, -1, 'core/storage.js (low-level) missing from content_scripts.js');
         assert.ok(idxLowLevel < idxCache,
             'core/storage.js must load BEFORE core/storage-manager.js so the high-level cache can reach the low-level functions');

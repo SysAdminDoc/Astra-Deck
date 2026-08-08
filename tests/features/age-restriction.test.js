@@ -8,6 +8,7 @@ const path = require('node:path');
 const repoRoot = path.join(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
+const { runtimeModules } = require('../helpers/source');
 
 function featureBlock(id, nextId) {
     const start = source.indexOf(`id: '${id}'`);
@@ -45,10 +46,11 @@ test('settings cards expose runtime degradation as an accessible warning badge',
 });
 
 test('playability classifier loads before the ytkit runtime only on normal pages', () => {
-    const normal = manifest.content_scripts.find((entry) => entry.js?.includes('ytkit.js'));
+    const normal = manifest.content_scripts.find((entry) => runtimeModules(entry).includes('ytkit.js'));
     const chat = manifest.content_scripts.find((entry) => entry.js?.includes('live-chat.js'));
-    assert.ok(normal.js.indexOf('core/playability.js') > normal.js.indexOf('core/video-type.js'));
-    assert.ok(normal.js.indexOf('core/playability.js') < normal.js.indexOf('ytkit.js'));
+    const normalScripts = runtimeModules(normal);
+    assert.ok(normalScripts.indexOf('core/playability.js') > normalScripts.indexOf('core/video-type.js'));
+    assert.ok(normalScripts.indexOf('core/playability.js') < normalScripts.indexOf('ytkit.js'));
     assert.equal(chat.js.includes('core/playability.js'), false,
         'scope-minimal live chat must not inherit normal-player canaries');
 });

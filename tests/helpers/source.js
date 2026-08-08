@@ -41,6 +41,18 @@ const config = Object.freeze({
     manifest: JSON.parse(readUtf8('extension', 'manifest.json')),
 });
 
+function runtimeModules(entry) {
+    return Array.isArray(entry?.['x-ytkit-runtime-modules'])
+        ? entry['x-ytkit-runtime-modules']
+        : (entry?.js || []);
+}
+
+function findNormalRuntimeEntry(manifest = config.manifest) {
+    return (manifest.content_scripts || []).find((entry) =>
+        runtimeModules(entry).includes('ytkit.js')
+    );
+}
+
 /**
  * Extract the source-text block corresponding to a feature object
  * literal so per-area tests don't have to compute start/end indices.
@@ -67,5 +79,7 @@ function extractFeatureBlock(source, featureId) {
 module.exports = {
     sources,
     config,
+    runtimeModules,
+    findNormalRuntimeEntry,
     extractFeatureBlock,
 };

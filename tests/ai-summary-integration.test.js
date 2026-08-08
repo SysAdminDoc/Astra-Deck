@@ -11,12 +11,16 @@ const ytkit = read('extension/ytkit.js');
 const userscriptFeature = read('extension/core/userscript-ai-summary.js');
 const manifest = JSON.parse(read('extension/manifest.json'));
 const defaults = JSON.parse(read('extension/default-settings.json'));
+const { runtimeModules } = require('./helpers/source');
 
 test('AI artifact core loads before every summary consumer and is bundled for userscripts', () => {
-    const isolated = manifest.content_scripts.find((entry) => entry.world === 'ISOLATED' && entry.js?.includes('ytkit.js'));
+    const isolated = manifest.content_scripts.find((entry) =>
+        entry.world === 'ISOLATED' && runtimeModules(entry).includes('ytkit.js')
+    );
     assert.ok(isolated);
-    assert.ok(isolated.js.indexOf('core/ai-summary-artifacts.js') > isolated.js.indexOf('core/transcript-service.js'));
-    assert.ok(isolated.js.indexOf('core/ai-summary-artifacts.js') < isolated.js.indexOf('ytkit.js'));
+    const scripts = runtimeModules(isolated);
+    assert.ok(scripts.indexOf('core/ai-summary-artifacts.js') > scripts.indexOf('core/transcript-service.js'));
+    assert.ok(scripts.indexOf('core/ai-summary-artifacts.js') < scripts.indexOf('ytkit.js'));
     assert.match(read('sync-userscript.js'), /extension\/core\/ai-summary-artifacts\.js/);
 });
 

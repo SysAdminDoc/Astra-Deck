@@ -13,6 +13,7 @@ const repoRoot = path.join(__dirname, '..');
 const corePath = path.join(repoRoot, 'extension', 'core', 'icons.js');
 const ytkitPath = path.join(repoRoot, 'extension', 'ytkit.js');
 const manifestPath = path.join(repoRoot, 'extension', 'manifest.json');
+const { runtimeModules } = require('./helpers/source');
 
 // Minimal DOM shim — the icons module needs only createElementNS for SVG.
 function installSvgDom() {
@@ -106,11 +107,12 @@ test('createSVG honors options.fill / options.stroke = false', () => {
 
 test('manifest.json loads core/icons.js BEFORE every ytkit.js entry', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const isoBlocks = manifest.content_scripts.filter(b => b.js?.includes('ytkit.js'));
+    const isoBlocks = manifest.content_scripts.filter(b => runtimeModules(b).includes('ytkit.js'));
     assert.ok(isoBlocks.length >= 1, 'expected a ytkit.js content_script entry');
     for (const block of isoBlocks) {
-        const idxIcons = block.js.indexOf('core/icons.js');
-        const idxYtkit = block.js.indexOf('ytkit.js');
+        const scripts = runtimeModules(block);
+        const idxIcons = scripts.indexOf('core/icons.js');
+        const idxYtkit = scripts.indexOf('ytkit.js');
         assert.notEqual(idxIcons, -1, 'core/icons.js missing from content_scripts.js');
         assert.ok(idxIcons < idxYtkit, 'core/icons.js must load before ytkit.js');
     }

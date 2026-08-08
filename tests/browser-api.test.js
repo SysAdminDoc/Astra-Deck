@@ -12,6 +12,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { runtimeModules } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const wrapperSource = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'browser-api.js'), 'utf8');
@@ -141,7 +142,7 @@ test('browser-api call resolves void no-callback APIs instead of reporting false
 test('browser-api loads first in every content-script group and every extension page', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
     for (const group of manifest.content_scripts) {
-        const scripts = group.js || [];
+        const scripts = runtimeModules(group);
         if (!scripts.length) continue;
         if (!scripts.includes('ytkit.js')) continue; // MAIN-world bridge group stays wrapper-free
         assert.equal(scripts[0], 'core/browser-api.js',

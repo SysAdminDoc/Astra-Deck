@@ -102,10 +102,13 @@ check(background.includes('...COMPANION_ORIGINS'),
 check(read('extension/core/data-flow.js').includes('companionPorts.hostPermissions'),
     'data-flow host aliases must consume the shared companion permissions');
 
-const contentScript = manifest.content_scripts.find((entry) => (entry.js || []).includes('core/data-flow.js'));
+const contentScript = manifest.content_scripts.find((entry) =>
+    (entry['x-ytkit-runtime-modules'] || entry.js || []).includes('core/data-flow.js')
+);
 check(contentScript, 'manifest must load a content script containing data-flow.js');
-const companionIndex = contentScript.js.indexOf('core/companion-ports.js');
-const dataFlowIndex = contentScript.js.indexOf('core/data-flow.js');
+const contentScripts = contentScript['x-ytkit-runtime-modules'] || contentScript.js || [];
+const companionIndex = contentScripts.indexOf('core/companion-ports.js');
+const dataFlowIndex = contentScripts.indexOf('core/data-flow.js');
 check(companionIndex !== -1 && companionIndex < dataFlowIndex,
     'manifest must load companion-ports.js before data-flow.js');
 for (const page of ['extension/popup.html', 'extension/sidepanel.html', 'extension/sidebar.html']) {

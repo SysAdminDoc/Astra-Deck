@@ -9,11 +9,12 @@ const REPO_ROOT = path.join(__dirname, '..');
 const EXTENSION_ROOT = path.join(REPO_ROOT, 'extension');
 const manifest = JSON.parse(fs.readFileSync(path.join(EXTENSION_ROOT, 'manifest.json'), 'utf8'));
 const liveChatModule = require('../extension/features/live-chat/index.js');
+const { runtimeModules } = require('./helpers/source');
 
 function getScriptGroups() {
     const groups = manifest.content_scripts.filter((entry) => entry.world === 'ISOLATED' && entry.js);
     return {
-        normal: groups.find((entry) => entry.js.includes('ytkit.js')),
+        normal: groups.find((entry) => runtimeModules(entry).includes('ytkit.js')),
         chat: groups.find((entry) => entry.matches?.includes('https://*.youtube.com/live_chat*'))
     };
 }
@@ -45,7 +46,7 @@ test('live-chat staged script bytes and count remain materially below normal pag
         (total, script) => total + fs.statSync(path.join(EXTENSION_ROOT, script)).size,
         0
     );
-    const normalBytes = bytes([...(normal.css || []), ...normal.js]);
+    const normalBytes = bytes([...(normal.css || []), ...runtimeModules(normal)]);
     const chatBytes = bytes([...(chat.css || []), ...chat.js]);
     assert.ok(chat.js.length <= 10, `live chat loads ${chat.js.length} scripts; expected at most 10`);
     assert.ok(chatBytes < normalBytes * 0.1,

@@ -10,6 +10,7 @@ const WebSocket = require('ws');
 const {
     copyDir,
     getPageAccessibleResourceInventory,
+    getRuntimeModuleResources,
     patchManifestForBuildProfile,
     shouldStageEntry,
     WEB_ACCESSIBLE_RESOURCE_POLICY,
@@ -20,7 +21,11 @@ const EXT_DIR = path.join(REPO_ROOT, 'extension');
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const DEVTOOLS_FETCH_TIMEOUT_MS = 2000;
 const PAGE_ACCESSIBLE_RESOURCES = Object.freeze(
-    getPageAccessibleResourceInventory().map((entry) => entry.resource)
+    [
+        ...getPageAccessibleResourceInventory().map((entry) => entry.resource),
+        'runtime-core-loader.mjs',
+        ...getRuntimeModuleResources(),
+    ]
 );
 const POPUP_BOOT_SETTINGS = Object.freeze({
     sponsorBlock: true,

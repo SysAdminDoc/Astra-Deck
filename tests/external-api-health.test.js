@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { sources, config } = require('./helpers/source');
+const { sources, config, runtimeModules } = require('./helpers/source');
 
 function loadFeatureModule(modulePath, namespaceKey) {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -18,7 +18,7 @@ function loadFeatureModule(modulePath, namespaceKey) {
 
 test('external API health core module loads before crowd API feature modules', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
-        const scripts = scriptGroup.js || [];
+        const scripts = runtimeModules(scriptGroup);
         const coreIndex = scripts.indexOf('core/external-api-health.js');
         if (coreIndex === -1) continue;
         for (const featurePath of [

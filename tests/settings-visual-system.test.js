@@ -9,6 +9,7 @@ const repoRoot = path.join(__dirname, '..');
 const visualSystemPath = path.join(repoRoot, 'extension', 'core', 'settings-visual-system.js');
 const visualSystemSource = fs.readFileSync(visualSystemPath, 'utf8');
 const manifest = require('../extension/manifest.json');
+const { runtimeModules } = require('./helpers/source');
 const syncUserscript = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
 const settingsPanel = fs.readFileSync(
     path.join(repoRoot, 'extension', 'features', 'settings-panel', 'index.js'),
@@ -192,9 +193,9 @@ test('settings version is passive text without a dismiss-only notification badge
 });
 
 test('extension and userscript load the shared settings visual system before the panel', () => {
-    const mainScripts = manifest.content_scripts.find((entry) =>
-        entry.js?.includes('features/settings-panel/index.js')
-    ).js;
+    const mainScripts = runtimeModules(manifest.content_scripts.find((entry) =>
+        runtimeModules(entry).includes('features/settings-panel/index.js')
+    ));
     const stylesIndex = mainScripts.indexOf('core/styles.js');
     const visualIndex = mainScripts.indexOf('core/settings-visual-system.js');
     const panelIndex = mainScripts.indexOf('features/settings-panel/index.js');

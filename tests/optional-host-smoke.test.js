@@ -7,6 +7,7 @@ const path = require('path');
 const repoRoot = path.join(__dirname, '..');
 const pkg = require('../package.json');
 const smoke = require('../scripts/smoke-chromium-optional-hosts.js');
+const { runtimeModules } = require('./helpers/source');
 
 const smokeSource = fs.readFileSync(
     path.join(repoRoot, 'scripts', 'smoke-chromium-optional-hosts.js'),
@@ -37,7 +38,14 @@ test('optional-host Chromium smoke gates the exact dynamic page-resource invento
         path.join(repoRoot, 'extension', 'manifest.json'),
         'utf8'
     ));
-    assert.deepEqual(smoke.PAGE_ACCESSIBLE_RESOURCES, ['icons/32.png', 'assets/cat.gif']);
+    assert.deepEqual(smoke.PAGE_ACCESSIBLE_RESOURCES, [
+        'icons/32.png',
+        'assets/cat.gif',
+        'runtime-core-loader.mjs',
+        ...runtimeModules(manifest.content_scripts.find((entry) =>
+            runtimeModules(entry).includes('ytkit.js')
+        ))
+    ]);
     assert.doesNotThrow(() => smoke.validateDynamicWebAccessibleResourceManifest(manifest));
     assert.match(smokeSource, /chrome\.runtime\.getURL\(resource\)/,
         'package smoke must resolve page assets through the runtime API');

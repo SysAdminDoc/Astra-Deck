@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createSettingsImportTransaction } = require('../extension/core/settings-import-transaction');
+const { runtimeModules } = require('./helpers/source');
 
 function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -12,12 +13,13 @@ function clone(value) {
 
 test('settings import transaction loads before every in-page settings consumer', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
-    const consumers = manifest.content_scripts.filter((entry) => Array.isArray(entry.js) && entry.js.includes('ytkit.js'));
+    const consumers = manifest.content_scripts.filter((entry) => runtimeModules(entry).includes('ytkit.js'));
     assert.ok(consumers.length > 0);
     for (const entry of consumers) {
-        const transactionIndex = entry.js.indexOf('core/settings-import-transaction.js');
+        const scripts = runtimeModules(entry);
+        const transactionIndex = scripts.indexOf('core/settings-import-transaction.js');
         assert.ok(transactionIndex > -1);
-        assert.ok(transactionIndex < entry.js.indexOf('ytkit.js'));
+        assert.ok(transactionIndex < scripts.indexOf('ytkit.js'));
     }
 });
 

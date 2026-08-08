@@ -17,6 +17,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { runtimeModules } = require('./helpers/source');
 
 const REPO_ROOT = path.join(__dirname, '..');
 
@@ -39,12 +40,14 @@ test('ISOLATED content_scripts blocks keep normal pages and live chat isolated',
     );
     assert.equal(isolatedJsBlocks.length, 2,
         'expected exactly two ISOLATED content_scripts blocks with js bundles');
-    const normal = isolatedJsBlocks.find((block) => block.js.includes('ytkit.js'));
+    const normal = isolatedJsBlocks.find((block) => runtimeModules(block).includes('ytkit.js'));
     const chat = isolatedJsBlocks.find((block) => block.js.includes('live-chat.js'));
-    assert.ok(normal, 'normal pages must retain the full ytkit.js entry');
+    assert.ok(normal, 'normal pages must retain the runtime module catalogue');
     assert.ok(chat, 'live chat must use the dedicated entry');
     assert.ok(!chat.js.includes('ytkit.js'), 'live chat must not load the normal-page monolith');
-    assert.ok(chat.js.length < normal.js.length / 4,
+    assert.deepEqual(normal.js, ['runtime-bootstrap.js'],
+        'normal pages must inject only the thin runtime bootstrap statically');
+    assert.ok(chat.js.length < runtimeModules(normal).length / 4,
         'live-chat script count must remain materially below the normal-page entry');
 });
 

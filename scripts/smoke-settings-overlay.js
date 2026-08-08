@@ -124,7 +124,7 @@ const CHROME_STUB = `'use strict';
     globalThis.chrome = {
         runtime: {
             id: 'ytkit-smoke-fixture',
-            getURL: (p) => p,
+            getURL: (p) => new URL(p, document.baseURI).href,
             getManifest: () => ({ version: '0.0.0-smoke' }),
             sendMessage: (_msg, cb) => settle({}, cb),
             onMessage: {
@@ -397,35 +397,52 @@ const SCROLLED_HEADER_CHECKS = `(() => {
     return JSON.stringify({ failures });
 })()`;
 
-function buildFixture(stageDir, { fallbackOnly = false } = {}) {
+function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null } = {}) {
     copyDir(EXT_DIR, stageDir);
-    fs.writeFileSync(path.join(stageDir, 'chrome-stub.js'), CHROME_STUB, 'utf8');
+    const chromeStub = runtimeSettings
+        ? CHROME_STUB.replace(
+            'store.ytSuiteSettings = { transcriptViewer: true };',
+            `store.ytSuiteSettings = ${JSON.stringify(runtimeSettings)};`
+        )
+        : CHROME_STUB;
+    fs.writeFileSync(path.join(stageDir, 'chrome-stub.js'), chromeStub, 'utf8');
     const manifest = JSON.parse(fs.readFileSync(path.join(stageDir, 'manifest.json'), 'utf8'));
-    const isolatedGroup = (manifest.content_scripts || []).find((group) =>
-        Array.isArray(group.js) && group.js.includes('ytkit.js') && !group.js.includes('ytkit-main.js') && !group.all_frames);
+    const isolatedGroup = (manifest.content_scripts || []).find((group) => {
+        const scripts = group['x-ytkit-runtime-modules'] || group.js || [];
+        return Array.isArray(scripts) && scripts.includes('ytkit.js')
+            && !scripts.includes('ytkit-main.js') && !group.all_frames;
+    });
     if (!isolatedGroup) throw new Error('could not locate the ISOLATED-world content-script group in manifest.json');
+    const runtimeScripts = isolatedGroup['x-ytkit-runtime-modules'] || isolatedGroup.js;
     const isolatedScripts = fallbackOnly
-        ? isolatedGroup.js.filter((src) => src !== 'features/settings-panel/index.js')
-        : isolatedGroup.js;
+        ? runtimeScripts.filter((src) => src !== 'features/settings-panel/index.js')
+        : ['runtime-bootstrap.js'];
     const scriptTags = ['chrome-stub.js', ...isolatedScripts, 'a11y-fixture-driver.js']
         .map((src) => `    <script src="${src}"></script>`)
         .join('\n');
     fs.writeFileSync(path.join(stageDir, 'a11y-fixture-driver.js'), `'use strict';
 (() => {
     const anchor = document.getElementById('fixture-download-anchor');
-    const factory = globalThis.YTKitFeatures?.createDownloadUIFeature;
-    const downloadUi = typeof factory === 'function' ? factory({
-        appState: { settings: {} },
-        extensionFetchJson: async () => ({ data: null }),
-        supportsPopover: () => globalThis.YTKitCore?.toast?.supportsPopover?.() === true,
-        createCloseWatcher: (onClose) => globalThis.YTKitCore?.toast?.createCloseWatcher?.(onClose) || null,
-        destroyCloseWatcher: (watcher) => globalThis.YTKitCore?.toast?.destroyCloseWatcher?.(watcher),
-        t: (_key, fallback) => fallback
-    }) : null;
+    let downloadUi = null;
+    const ensureDownloadUi = () => {
+        if (downloadUi) return downloadUi;
+        const factory = globalThis.YTKitFeatures?.createDownloadUIFeature;
+        if (typeof factory !== 'function') return null;
+        downloadUi = factory({
+            appState: { settings: {} },
+            extensionFetchJson: async () => ({ data: null }),
+            supportsPopover: () => globalThis.YTKitCore?.toast?.supportsPopover?.() === true,
+            createCloseWatcher: (onClose) => globalThis.YTKitCore?.toast?.createCloseWatcher?.(onClose) || null,
+            destroyCloseWatcher: (watcher) => globalThis.YTKitCore?.toast?.destroyCloseWatcher?.(watcher),
+            t: (_key, fallback) => fallback
+        });
+        return downloadUi;
+    };
     globalThis.__ytkitA11y = {
         openDownload() {
-            if (!downloadUi) return false;
-            downloadUi.showDownloadPopup(anchor);
+            const ui = ensureDownloadUi();
+            if (!ui) return false;
+            ui.showDownloadPopup(anchor);
             return Boolean(document.querySelector('.ytkit-dl-popup'));
         },
         closeDownload() {
@@ -603,6 +620,7 @@ async function main() {
             opts.timeoutMs,
             'the content-script stack to register its message listener'
         );
+        await client.evaluate('globalThis.__ytkitRuntimePromise || true');
 
         for (const state of STATES) {
             await client.send('Emulation.setDeviceMetricsOverride', {
