@@ -2,12 +2,16 @@
 'use strict';
 
 // Headless startup benchmark for the real isolated-world content-script
-// fixture. The benchmark deliberately measures only the extension stack:
+// fixture. Captured YouTube watch/feed DOM is preferred when the local MHTML
+// captures are available; the small synthetic fixture remains a portable
+// fallback for clean checkouts that do not carry ignored captures. The
+// benchmark deliberately measures only the extension stack:
 // `startup-bench-start.js` runs immediately before the manifest's isolated
 // scripts, and the ready mark is taken after the real YTKIT message listener
 // is registered. The first-feature-paint metric is the first observed
 // Astra-managed DOM/style node (or the first animation frame that observes
-// one), which is stable and available without a live YouTube page.
+// one), and the steady-state metrics are collected during a bounded,
+// pointer-free DOM/event session.
 
 const fs = require('fs');
 const http = require('http');
@@ -30,8 +34,36 @@ const REPO_ROOT = path.join(__dirname, '..');
 const BASELINE_PATH = path.join(__dirname, 'startup-performance-baseline.json');
 const DEFAULT_ITERATIONS = 3;
 const DEFAULT_TIMEOUT_MS = 30000;
-const DEFAULT_TOLERANCE = Object.freeze({ relative: 0.35, absoluteMs: 25 });
-const METRIC_KEYS = Object.freeze(['parseInitMs', 'firstFeaturePaintMs']);
+const BOUNDED_SESSION_MS = 750;
+const DEFAULT_TOLERANCE = Object.freeze({
+    relative: 0.35,
+    absoluteMs: 25,
+    absoluteBytes: 512 * 1024,
+});
+const METRIC_KEYS = Object.freeze([
+    'parseInitMs',
+    'firstFeaturePaintMs',
+    'heapDeltaBytes',
+    'observerCallbackMs',
+]);
+const METRIC_FIELDS = Object.freeze({
+    parseInitMs: 'Ms',
+    firstFeaturePaintMs: 'Ms',
+    heapDeltaBytes: 'Bytes',
+    observerCallbackMs: 'Ms',
+});
+const CAPTURED_SURFACES = Object.freeze([
+    Object.freeze({
+        id: 'watch',
+        routeHint: '/watch?v=jNQXAC9IVRw',
+        mhtmlPath: path.join(REPO_ROOT, 'mhtml', 'WatchPage.mhtml'),
+    }),
+    Object.freeze({
+        id: 'feed',
+        routeHint: '/',
+        mhtmlPath: path.join(REPO_ROOT, 'mhtml', 'YouTube.mhtml'),
+    }),
+]);
 
 class BenchmarkDevtoolsClient {
     constructor(ws) {
@@ -92,7 +124,11 @@ const START_DRIVER = `'use strict';
         scriptEndAt: null,
         initReadyAt: null,
         firstFeaturePaintAt: null,
-        firstFeatureNode: ''
+        firstFeatureNode: '',
+        sessionStartAt: null,
+        sessionEndAt: null,
+        observerCallbackMs: 0,
+        observerCallbackCount: 0,
     };
     const isFeatureNode = (node) => {
         if (!(node instanceof Element)) return false;
@@ -106,16 +142,22 @@ const START_DRIVER = `'use strict';
         state.firstFeatureNode = source || node.id || node.className || node.nodeName;
     };
     const observer = new MutationObserver((records) => {
-        for (const record of records) {
-            for (const node of record.addedNodes) {
-                markFeaturePaint(node, 'mutation');
-                if (state.firstFeaturePaintAt !== null) return;
-                if (node.querySelector) {
-                    const child = node.querySelector('[id^="ytkit" i], [class*="ytkit" i], style[data-ytkit], style[id^="ytkit" i]');
-                    if (child) markFeaturePaint(child, 'mutation-descendant');
-                    if (state.firstFeaturePaintAt !== null) return;
+        const callbackStartAt = performance.now();
+        try {
+            for (const record of records) {
+                for (const node of record.addedNodes) {
+                    if (state.firstFeaturePaintAt === null) {
+                        markFeaturePaint(node, 'mutation');
+                        if (node.querySelector) {
+                            const child = node.querySelector('[id^="ytkit" i], [class*="ytkit" i], style[data-ytkit], style[id^="ytkit" i]');
+                            if (child) markFeaturePaint(child, 'mutation-descendant');
+                        }
+                    }
                 }
             }
+        } finally {
+            state.observerCallbackMs += performance.now() - callbackStartAt;
+            state.observerCallbackCount += 1;
         }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -197,30 +239,46 @@ function summarize(samples) {
     for (const key of METRIC_KEYS) {
         const values = samples.map((sample) => Number(sample[key])).filter(Number.isFinite);
         if (!values.length) throw new Error(`No finite ${key} samples were collected`);
+        const field = METRIC_FIELDS[key];
         metrics[key] = {
-            medianMs: roundMs(median(values)),
-            p95Ms: roundMs(percentile(values, 0.95)),
-            minMs: roundMs(Math.min(...values)),
-            maxMs: roundMs(Math.max(...values)),
+            [`median${field}`]: roundMetric(key, median(values)),
+            [`p95${field}`]: roundMetric(key, percentile(values, 0.95)),
+            [`min${field}`]: roundMetric(key, Math.min(...values)),
+            [`max${field}`]: roundMetric(key, Math.max(...values)),
         };
     }
     return metrics;
 }
 
-function roundMs(value) {
+function roundMetric(key, value) {
+    if (key === 'heapDeltaBytes') return Math.round(Number(value));
     return Math.round(Number(value) * 100) / 100;
 }
 
-function buildBaseline(summary, options, browserPath) {
+function metricMedian(summary, key) {
+    return Number(summary?.[key]?.[`median${METRIC_FIELDS[key]}`]);
+}
+
+function metricUnit(key) {
+    return METRIC_FIELDS[key] === 'Bytes' ? 'bytes' : 'ms';
+}
+
+function buildBaseline(summary, options, browserPath, fallbackSummary = summary) {
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         recordedAt: new Date().toISOString(),
-        fixture: 'scripts/smoke-settings-overlay.js::buildFixture',
-        metricOrigin: 'performance.now() from the marker before the isolated-world stack',
+        fixture: 'mhtml/WatchPage.mhtml + mhtml/YouTube.mhtml',
+        fallbackFixture: 'scripts/smoke-settings-overlay.js::buildFixture',
+        surfaces: CAPTURED_SURFACES.map((surface) => ({
+            id: surface.id,
+            mhtml: path.relative(REPO_ROOT, surface.mhtmlPath).replace(/\\/g, '/'),
+        })),
+        metricOrigin: 'performance.now() plus Runtime.getHeapUsage() around the isolated-world stack',
         browser: path.basename(browserPath),
         iterations: options.iterations,
         tolerance: { ...DEFAULT_TOLERANCE },
         metrics: summary,
+        fallbackMetrics: fallbackSummary,
     };
 }
 
@@ -234,16 +292,25 @@ function readBaseline(filePath = BASELINE_PATH) {
     } catch (error) {
         throw new Error(`could not parse startup baseline: ${error.message}`);
     }
-    if (baseline?.schemaVersion !== 1 || baseline?.fixture !== 'scripts/smoke-settings-overlay.js::buildFixture') {
+    if (baseline?.schemaVersion !== 2
+            || baseline?.fixture !== 'mhtml/WatchPage.mhtml + mhtml/YouTube.mhtml'
+            || !Array.isArray(baseline.surfaces)
+            || !CAPTURED_SURFACES.every((surface) => baseline.surfaces.some((entry) => entry.id === surface.id))) {
         throw new Error('startup baseline schema or fixture identity is invalid');
     }
     for (const key of METRIC_KEYS) {
-        if (!Number.isFinite(Number(baseline.metrics?.[key]?.medianMs))) {
-            throw new Error(`startup baseline is missing metrics.${key}.medianMs`);
+        const field = `median${METRIC_FIELDS[key]}`;
+        if (!Number.isFinite(Number(baseline.metrics?.[key]?.[field]))) {
+            throw new Error(`startup baseline is missing metrics.${key}.${field}`);
+        }
+        if (!Number.isFinite(Number(baseline.fallbackMetrics?.[key]?.[field]))) {
+            throw new Error(`startup fallback baseline is missing metrics.${key}.${field}`);
         }
     }
     const tolerance = baseline.tolerance || {};
-    if (!Number.isFinite(Number(tolerance.relative)) || !Number.isFinite(Number(tolerance.absoluteMs))) {
+    if (!Number.isFinite(Number(tolerance.relative))
+            || !Number.isFinite(Number(tolerance.absoluteMs))
+            || !Number.isFinite(Number(tolerance.absoluteBytes))) {
         throw new Error('startup baseline tolerance is invalid');
     }
     return baseline;
@@ -253,21 +320,113 @@ function checkAgainstBaseline(summary, baseline) {
     const tolerance = baseline.tolerance;
     const failures = [];
     for (const key of METRIC_KEYS) {
-        const baselineMs = Number(baseline.metrics[key].medianMs);
-        const observedMs = Number(summary[key].medianMs);
-        const allowance = Math.max(Number(tolerance.absoluteMs), baselineMs * Number(tolerance.relative));
-        const limitMs = baselineMs + allowance;
-        if (observedMs > limitMs) {
+        const baselineValue = metricMedian(baseline.metrics, key);
+        const observedValue = metricMedian(summary, key);
+        const absoluteTolerance = METRIC_FIELDS[key] === 'Bytes'
+            ? Number(tolerance.absoluteBytes)
+            : Number(tolerance.absoluteMs);
+        const allowance = Math.max(absoluteTolerance, Math.max(0, baselineValue) * Number(tolerance.relative));
+        const limit = baselineValue + allowance;
+        if (observedValue > limit) {
             failures.push(
-                `${key} median ${observedMs.toFixed(2)} ms exceeds ${limitMs.toFixed(2)} ms `
-                + `(baseline ${baselineMs.toFixed(2)} ms + ${allowance.toFixed(2)} ms tolerance)`
+                `${key} median ${observedValue.toFixed(2)} ${metricUnit(key)} exceeds ${limit.toFixed(2)} ${metricUnit(key)} `
+                + `(baseline ${baselineValue.toFixed(2)} ${metricUnit(key)} + ${allowance.toFixed(2)} ${metricUnit(key)} tolerance)`
             );
         }
     }
     return failures;
 }
 
-function prepareFixture(stageDir) {
+function decodeQuotedPrintable(value) {
+    const binary = String(value)
+        .replace(/=\r?\n/g, '')
+        .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    return Buffer.from(binary, 'latin1').toString('utf8');
+}
+
+function decodeMhtmlPart(body, headers) {
+    const encoding = String(headers.match(/^Content-Transfer-Encoding:\s*([^\r\n]+)/im)?.[1] || '')
+        .trim()
+        .toLowerCase();
+    if (encoding === 'base64') return Buffer.from(body.replace(/\s+/g, ''), 'base64').toString('utf8');
+    if (encoding === 'quoted-printable') return decodeQuotedPrintable(body);
+    return body;
+}
+
+function extractCapturedHtml(mhtmlPath) {
+    const raw = fs.readFileSync(mhtmlPath, 'utf8');
+    const headerEnd = raw.search(/\r?\n\r?\n/);
+    const headerBlock = headerEnd === -1 ? raw : raw.slice(0, headerEnd);
+    const boundary = headerBlock.match(/boundary\s*=\s*"?([^";\r\n]+)"?/i)?.[1];
+    if (!boundary) throw new Error('MHTML multipart boundary is missing');
+    for (const part of raw.split(`--${boundary}`)) {
+        if (!/Content-Type:\s*text\/html\b/i.test(part)) continue;
+        const separator = part.match(/\r?\n\r?\n/);
+        if (!separator || separator.index === undefined) continue;
+        const headerEnd = separator.index + separator[0].length;
+        const headers = part.slice(0, separator.index);
+        const body = part.slice(headerEnd).replace(/\r?\n$/, '');
+        return decodeMhtmlPart(body, headers);
+    }
+    throw new Error('MHTML has no text/html part');
+}
+
+function sanitizeCapturedBody(html) {
+    const bodyMatch = String(html).match(/<body\b[^>]*>([\s\S]*?)<\/body\s*>/i);
+    let body = bodyMatch ? bodyMatch[1] : String(html);
+    body = body
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
+        .replace(/<script\b[^>]*\/?>/gi, '')
+        .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe\s*>/gi, '')
+        .replace(/<iframe\b[^>]*\/?>/gi, '')
+        .replace(/\s(on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\s(src|srcset|poster)\s*=\s*("[^"]*"|'[^']*')/gi, (match, name, quoted) => {
+            const quote = quoted[0];
+            const value = quoted.slice(1, -1);
+            return /^(?:https?:|\/\/)/i.test(value)
+                ? ` ${name}=${quote}data:,${quote}`
+                : match;
+        });
+    if (body.trim().length < 100) throw new Error('captured HTML body is unexpectedly empty');
+    return body;
+}
+
+function renderCapturedFixture(surface, bodyMarkup) {
+    return `<!DOCTYPE html>
+<html lang="en" dark>
+<head>
+<meta charset="utf-8">
+<title>Astra Deck captured ${surface.id} startup fixture</title>
+<script>globalThis.__ytkitRouteHint=${JSON.stringify(surface.routeHint)};</script>
+<style>body{margin:0;font-family:Roboto,system-ui,sans-serif;}</style>
+</head>
+<body>
+${bodyMarkup}
+<div id="fixture-download-anchor" aria-hidden="true"></div>
+${surface.id === 'watch' ? '<ytd-watch-flexy><div id="top-level-buttons-computed"></div><div id="secondary"></div></ytd-watch-flexy>' : ''}
+    <script src="chrome-stub.js"></script>
+    <script src="startup-bench-start.js"></script>
+    <script src="runtime-bootstrap.js"></script>
+    <script src="startup-bench-end.js"></script>
+    <script src="a11y-fixture-driver.js"></script>
+</body>
+</html>
+`;
+}
+
+function injectSyntheticBenchmarkScripts(html, surface) {
+    return html
+        .replace(
+            '    <script src="chrome-stub.js"></script>',
+            `    <script>globalThis.__ytkitRouteHint=${JSON.stringify(surface.routeHint)};</script>\n    <script src="chrome-stub.js"></script>\n    <script src="startup-bench-start.js"></script>`
+        )
+        .replace(
+            '    <script src="a11y-fixture-driver.js"></script>',
+            '    <script src="startup-bench-end.js"></script>\n    <script src="a11y-fixture-driver.js"></script>'
+        );
+}
+
+function prepareFixtureDetails(stageDir, surface = CAPTURED_SURFACES[0], { forceSynthetic = false } = {}) {
     const runtimeSettings = JSON.parse(fs.readFileSync(
         path.join(REPO_ROOT, 'extension', 'default-settings.json'),
         'utf8'
@@ -277,16 +436,29 @@ function prepareFixture(stageDir) {
     fs.writeFileSync(path.join(stageDir, 'startup-bench-start.js'), START_DRIVER, 'utf8');
     fs.writeFileSync(path.join(stageDir, 'startup-bench-end.js'), END_DRIVER, 'utf8');
     let html = fs.readFileSync(fixturePath, 'utf8');
-    html = html.replace(
-        '    <script src="chrome-stub.js"></script>',
-        '    <script src="chrome-stub.js"></script>\n    <script src="startup-bench-start.js"></script>'
-    );
-    html = html.replace(
-        '    <script src="a11y-fixture-driver.js"></script>',
-        '    <script src="startup-bench-end.js"></script>\n    <script src="a11y-fixture-driver.js"></script>'
-    );
+    let fixtureMode = 'synthetic-fallback';
+    if (!forceSynthetic && fs.existsSync(surface.mhtmlPath)) {
+        try {
+            html = renderCapturedFixture(surface, sanitizeCapturedBody(extractCapturedHtml(surface.mhtmlPath)));
+            fixtureMode = 'captured-mhtml';
+            console.log(`[bench-startup] using captured ${path.relative(REPO_ROOT, surface.mhtmlPath).replace(/\\/g, '/')}`);
+        } catch (error) {
+            console.warn(`[bench-startup] could not use ${path.relative(REPO_ROOT, surface.mhtmlPath).replace(/\\/g, '/')}: ${error.message}`);
+            console.warn('[bench-startup] using the deterministic synthetic fixture for this surface');
+            html = injectSyntheticBenchmarkScripts(html, surface);
+        }
+    } else {
+        if (!forceSynthetic) {
+            console.warn(`[bench-startup] missing ${path.relative(REPO_ROOT, surface.mhtmlPath).replace(/\\/g, '/')}; using the deterministic synthetic fixture`);
+        }
+        html = injectSyntheticBenchmarkScripts(html, surface);
+    }
     fs.writeFileSync(fixturePath, html, 'utf8');
-    return fixturePath;
+    return { fixturePath, fixtureMode };
+}
+
+function prepareFixture(stageDir, surface = CAPTURED_SURFACES[0], options = {}) {
+    return prepareFixtureDetails(stageDir, surface, options).fixturePath;
 }
 
 function httpGetJson(url, timeoutMs) {
@@ -338,6 +510,59 @@ async function waitForDevtoolsUrl(browser, timeoutMs) {
     });
 }
 
+async function readHeapBytes(client) {
+    const usage = await client.send('Runtime.getHeapUsage').catch(() => null);
+    if (Number.isFinite(Number(usage?.usedSize))) return Number(usage.usedSize);
+    const pageHeap = await client.evaluate('performance.memory?.usedJSHeapSize ?? null').catch(() => null);
+    if (Number.isFinite(Number(pageHeap))) return Number(pageHeap);
+    throw new Error('browser did not expose a readable JavaScript heap size');
+}
+
+async function runBoundedSession(client) {
+    const result = await client.evaluate(`(async () => {
+        const state = globalThis.__ytkitStartupBenchmark;
+        if (!state) throw new Error('startup benchmark state is missing');
+        state.observerCallbackMs = 0;
+        state.observerCallbackCount = 0;
+        state.sessionStartAt = performance.now();
+        const root = document.querySelector('ytd-app, #content, main') || document.body || document.documentElement;
+        const marker = document.createElement('div');
+        marker.id = 'ytkit-benchmark-session-marker';
+        marker.hidden = true;
+        state.sessionMarkerId = marker.id;
+        for (let index = 0; index < 32; index += 1) {
+            const item = document.createElement('div');
+            item.className = 'ytkit-benchmark-session-record';
+            item.innerHTML = '<span data-ytkit-benchmark-record="' + index + '"></span>';
+            marker.appendChild(item);
+        }
+        root.appendChild(marker);
+        document.dispatchEvent(new CustomEvent('yt-navigate-start', { detail: { page: 'benchmark' } }));
+        document.dispatchEvent(new CustomEvent('yt-page-data-updated', { detail: { page: 'benchmark' } }));
+        document.dispatchEvent(new CustomEvent('yt-navigate-finish', { detail: { page: 'benchmark' } }));
+        await new Promise((resolve) => setTimeout(resolve, ${BOUNDED_SESSION_MS}));
+        await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+        state.sessionEndAt = performance.now();
+        return {
+            sessionMs: state.sessionEndAt - state.sessionStartAt,
+            observerCallbackMs: state.observerCallbackMs,
+            observerCallbackCount: state.observerCallbackCount,
+        };
+    })()`);
+    if (!result || !Number.isFinite(Number(result.sessionMs))) {
+        throw new Error(`bounded benchmark session returned invalid state: ${JSON.stringify(result)}`);
+    }
+    return result;
+}
+
+async function waitForProcessExit(proc, timeoutMs = 3000) {
+    if (!proc || proc.exitCode !== null) return;
+    await Promise.race([
+        new Promise((resolve) => proc.once('exit', resolve)),
+        new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+    ]);
+}
+
 async function runIteration(browserPath, fixturePath, timeoutMs) {
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-startup-bench-profile-'));
     const fixtureUrl = pathToFileURL(fixturePath).href;
@@ -347,6 +572,7 @@ async function runIteration(browserPath, fixturePath, timeoutMs) {
         '--no-first-run',
         '--no-default-browser-check',
         '--allow-file-access-from-files',
+        '--enable-precise-memory-info',
         '--remote-debugging-port=0',
         `--user-data-dir=${profileDir}`,
         fixtureUrl,
@@ -384,25 +610,66 @@ async function runIteration(browserPath, fixturePath, timeoutMs) {
         if (!Number.isFinite(result.parseInitMs) || !Number.isFinite(result.firstFeaturePaintMs)) {
             throw new Error(`benchmark returned invalid metrics: ${JSON.stringify(result)}`);
         }
-        return result;
+        const heapStartBytes = await readHeapBytes(client);
+        const session = await runBoundedSession(client);
+        const heapEndBytes = await readHeapBytes(client);
+        const heapDeltaBytes = Math.max(0, heapEndBytes - heapStartBytes);
+        const steadyState = await client.evaluate(`(() => {
+            const state = globalThis.__ytkitStartupBenchmark;
+            const marker = state?.sessionMarkerId && document.getElementById(state.sessionMarkerId);
+            const result = state ? {
+                observerCallbackMs: state.observerCallbackMs,
+                observerCallbackCount: state.observerCallbackCount,
+                sessionMs: state.sessionEndAt - state.sessionStartAt,
+            } : null;
+            marker?.remove();
+            if (state) state.sessionMarkerId = null;
+            return result;
+        })()`);
+        if (!Number.isFinite(Number(heapDeltaBytes))
+                || !Number.isFinite(Number(steadyState?.observerCallbackMs))) {
+            throw new Error(`benchmark returned invalid steady-state metrics: ${JSON.stringify({ heapDeltaBytes, session, steadyState })}`);
+        }
+        return {
+            ...result,
+            heapDeltaBytes,
+            observerCallbackMs: Number(steadyState.observerCallbackMs),
+            observerCallbackCount: Number(steadyState.observerCallbackCount),
+            boundedSessionMs: Number(steadyState.sessionMs),
+        };
     } finally {
         client?.close();
         killProcessTree(browser);
+        await waitForProcessExit(browser);
         await removeDirWithRetries(profileDir);
     }
 }
 
-async function runBenchmark(options, browserPath) {
+async function runBenchmark(options, browserPath, { forceSynthetic = false } = {}) {
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-startup-bench-stage-'));
     try {
-        const fixturePath = prepareFixture(stageDir);
         const samples = [];
-        for (let index = 0; index < options.iterations; index += 1) {
-            const sample = await runIteration(browserPath, fixturePath, options.timeoutMs);
-            samples.push(sample);
-            console.log(`[bench-startup] sample ${index + 1}/${options.iterations}: parse+init ${sample.parseInitMs.toFixed(2)} ms; first-feature-paint ${sample.firstFeaturePaintMs.toFixed(2)} ms (${sample.firstFeatureNode})`);
+        for (const surface of CAPTURED_SURFACES) {
+            const prepared = prepareFixtureDetails(stageDir, surface, { forceSynthetic });
+            const fixturePath = prepared.fixturePath;
+            for (let index = 0; index < options.iterations; index += 1) {
+                const sample = await runIteration(browserPath, fixturePath, options.timeoutMs);
+                const taggedSample = {
+                    ...sample,
+                    surface: surface.id,
+                    fixtureMode: prepared.fixtureMode,
+                };
+                samples.push(taggedSample);
+                console.log(`[bench-startup] ${surface.id} sample ${index + 1}/${options.iterations}: parse+init ${sample.parseInitMs.toFixed(2)} ms; first-feature-paint ${sample.firstFeaturePaintMs.toFixed(2)} ms; heap +${sample.heapDeltaBytes} bytes; observer ${sample.observerCallbackMs.toFixed(2)} ms/${sample.observerCallbackCount} callbacks`);
+            }
         }
-        return { samples, metrics: summarize(samples) };
+        return {
+            samples,
+            metrics: summarize(samples),
+            fixtureMode: samples.every((sample) => sample.fixtureMode === 'captured-mhtml')
+                ? 'captured-mhtml'
+                : 'synthetic-fallback',
+        };
     } finally {
         await removeDirWithRetries(stageDir);
     }
@@ -415,18 +682,26 @@ async function main(argv = process.argv.slice(2)) {
         throw new Error('no Chromium-family browser found; set CHROME_PATH/EDGE_PATH or pass --browser');
     }
     const result = await runBenchmark(options, browserPath);
-    console.log(`[bench-startup] median parse+init: ${result.metrics.parseInitMs.medianMs.toFixed(2)} ms`);
-    console.log(`[bench-startup] median first-feature-paint: ${result.metrics.firstFeaturePaintMs.medianMs.toFixed(2)} ms`);
+    console.log(`[bench-startup] fixture mode: ${result.fixtureMode}`);
+    for (const key of METRIC_KEYS) {
+        console.log(`[bench-startup] median ${key}: ${metricMedian(result.metrics, key).toFixed(2)} ${metricUnit(key)}`);
+    }
 
     if (options.updateBaseline) {
-        const baseline = buildBaseline(result.metrics, options, browserPath);
+        const fallbackResult = result.fixtureMode === 'captured-mhtml'
+            ? await runBenchmark(options, browserPath, { forceSynthetic: true })
+            : result;
+        const baseline = buildBaseline(result.metrics, options, browserPath, fallbackResult.metrics);
         fs.writeFileSync(BASELINE_PATH, `${JSON.stringify(baseline, null, 2)}\n`, 'utf8');
         console.log(`[bench-startup] wrote ${path.relative(REPO_ROOT, BASELINE_PATH).replace(/\\/g, '/')}`);
         return { result, baseline, failures: [] };
     }
 
     const baseline = readBaseline();
-    const failures = checkAgainstBaseline(result.metrics, baseline);
+    const baselineMetrics = result.fixtureMode === 'captured-mhtml'
+        ? baseline.metrics
+        : baseline.fallbackMetrics;
+    const failures = checkAgainstBaseline(result.metrics, { ...baseline, metrics: baselineMetrics });
     if (failures.length) {
         // `--check` gates (that is `npm run check:startup`); a bare bench run
         // REPORTS. The flag was parsed but never read, so both modes were
@@ -451,10 +726,13 @@ if (require.main === module) {
 
 module.exports = {
     BASELINE_PATH,
+    BOUNDED_SESSION_MS,
+    CAPTURED_SURFACES,
     DEFAULT_TOLERANCE,
     METRIC_KEYS,
     buildBaseline,
     checkAgainstBaseline,
+    extractCapturedHtml,
     median,
     parseArgs,
     prepareFixture,

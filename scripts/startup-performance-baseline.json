@@ -1,26 +1,76 @@
 {
-  "schemaVersion": 1,
-  "recordedAt": "2026-08-04T01:37:11.321Z",
-  "fixture": "scripts/smoke-settings-overlay.js::buildFixture",
-  "metricOrigin": "performance.now() from the marker before the isolated-world stack",
+  "schemaVersion": 2,
+  "recordedAt": "2026-08-08T23:20:48.387Z",
+  "fixture": "mhtml/WatchPage.mhtml + mhtml/YouTube.mhtml",
+  "fallbackFixture": "scripts/smoke-settings-overlay.js::buildFixture",
+  "surfaces": [
+    {
+      "id": "watch",
+      "mhtml": "mhtml/WatchPage.mhtml"
+    },
+    {
+      "id": "feed",
+      "mhtml": "mhtml/YouTube.mhtml"
+    }
+  ],
+  "metricOrigin": "performance.now() plus Runtime.getHeapUsage() around the isolated-world stack",
   "browser": "chrome.exe",
-  "iterations": 5,
+  "iterations": 3,
   "tolerance": {
     "relative": 0.35,
-    "absoluteMs": 25
+    "absoluteMs": 25,
+    "absoluteBytes": 524288
   },
   "metrics": {
     "parseInitMs": {
-      "medianMs": 97.2,
-      "p95Ms": 107.9,
-      "minMs": 78.4,
-      "maxMs": 107.9
+      "medianMs": 134,
+      "p95Ms": 232.1,
+      "minMs": 61.6,
+      "maxMs": 232.1
     },
     "firstFeaturePaintMs": {
-      "medianMs": 57.3,
-      "p95Ms": 64,
-      "minMs": 50.6,
-      "maxMs": 64
+      "medianMs": 63.8,
+      "p95Ms": 120.5,
+      "minMs": 61.7,
+      "maxMs": 120.5
+    },
+    "heapDeltaBytes": {
+      "medianBytes": 13766,
+      "p95Bytes": 27556,
+      "minBytes": 0,
+      "maxBytes": 27556
+    },
+    "observerCallbackMs": {
+      "medianMs": 0,
+      "p95Ms": 0,
+      "minMs": 0,
+      "maxMs": 0
+    }
+  },
+  "fallbackMetrics": {
+    "parseInitMs": {
+      "medianMs": 105.3,
+      "p95Ms": 154.8,
+      "minMs": 79.6,
+      "maxMs": 154.8
+    },
+    "firstFeaturePaintMs": {
+      "medianMs": 75.85,
+      "p95Ms": 87.6,
+      "minMs": 61.8,
+      "maxMs": 87.6
+    },
+    "heapDeltaBytes": {
+      "medianBytes": 30264,
+      "p95Bytes": 30560,
+      "minBytes": 30040,
+      "maxBytes": 30560
+    },
+    "observerCallbackMs": {
+      "medianMs": 0,
+      "p95Ms": 0.1,
+      "minMs": 0,
+      "maxMs": 0.1
     }
   }
 }
