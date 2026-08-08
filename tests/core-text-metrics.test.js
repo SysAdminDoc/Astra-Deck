@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { runtimeModules } = require('./helpers/source');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'text-metrics.js'), 'utf8');
@@ -72,8 +73,8 @@ test('text-metrics loads before ytkit.js in the manifest content scripts', () =>
     const manifest = JSON.parse(
         fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8')
     );
-    for (const block of manifest.content_scripts.filter((b) => b.js?.includes('ytkit.js'))) {
-        const scripts = block.js || [];
+    for (const block of manifest.content_scripts.filter((b) => runtimeModules(b).includes('ytkit.js'))) {
+        const scripts = runtimeModules(block);
         const idxYtkit = scripts.indexOf('ytkit.js');
         if (idxYtkit === -1) continue;
         const idxMetrics = scripts.indexOf('core/text-metrics.js');

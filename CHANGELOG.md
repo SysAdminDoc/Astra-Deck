@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Performance
+
+- **Normal YouTube pages now inject a thin runtime bootstrap.** The former
+  document-idle content-script graph is loaded through a guarded dynamic module
+  loader, with persisted-setting and route gates for deferred feature modules;
+  live chat and the MAIN-world bridge keep their existing scoped bundles.
+
 ## [4.57.0] - 2026-08-06
 
 ### Fixed

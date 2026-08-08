@@ -37,6 +37,8 @@ const SCAN_FILES = [
     'extension/ytkit-main.js',
     'extension/background.js',
     'extension/popup.js',
+    'extension/runtime-bootstrap.js',
+    'extension/runtime-core-loader.mjs',
     'extension/sidepanel.js',
     'extension/sidebar.js',
     'extension/live-chat.js',

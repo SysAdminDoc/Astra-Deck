@@ -16,6 +16,7 @@ const repoRoot = path.join(__dirname, '..');
 const corePath = path.join(repoRoot, 'extension', 'core', 'transcript-service.js');
 const ytkitPath = path.join(repoRoot, 'extension', 'ytkit.js');
 const manifestPath = path.join(repoRoot, 'extension', 'manifest.json');
+const { runtimeModules } = require('./helpers/source');
 
 function loadFactoryIntoFreshGlobal() {
     // Pretend we're at content-script load time: YTKitCore namespace exists,
@@ -147,11 +148,12 @@ test('_sanitizeFilename strips fs-unsafe chars and clamps length', () => {
 
 test('manifest.json loads core/transcript-service.js BEFORE every ytkit.js entry', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const isoBlocks = manifest.content_scripts.filter(b => b.js?.includes('ytkit.js'));
+    const isoBlocks = manifest.content_scripts.filter(b => runtimeModules(b).includes('ytkit.js'));
     assert.ok(isoBlocks.length >= 1, 'expected a ytkit.js content_script entry');
     for (const block of isoBlocks) {
-        const idxTranscript = block.js.indexOf('core/transcript-service.js');
-        const idxYtkit = block.js.indexOf('ytkit.js');
+        const scripts = runtimeModules(block);
+        const idxTranscript = scripts.indexOf('core/transcript-service.js');
+        const idxYtkit = scripts.indexOf('ytkit.js');
         assert.notEqual(idxTranscript, -1, 'core/transcript-service.js missing from content_scripts.js');
         assert.notEqual(idxYtkit, -1, 'ytkit.js missing from content_scripts.js');
         assert.ok(idxTranscript < idxYtkit, 'core/transcript-service.js must load before ytkit.js');

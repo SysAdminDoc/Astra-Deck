@@ -544,9 +544,42 @@ function getPageAccessibleResourceInventory(repoRoot = __dirname) {
     });
 }
 
-function getManifestWebAccessibleResources(browser = 'chromium') {
+function getRuntimeModuleResources(repoRoot = __dirname) {
+    const manifestPath = path.join(repoRoot, 'extension', 'manifest.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const runtimeEntry = (manifest.content_scripts || []).find((entry) => {
+        const scripts = entry['x-ytkit-runtime-modules'] || entry.js || [];
+        return scripts.includes('ytkit.js');
+    });
+    const modules = runtimeEntry?.['x-ytkit-runtime-modules'];
+    if (!Array.isArray(modules) || modules.length === 0) {
+        throw new Error('Normal YouTube runtime module catalogue is missing from manifest.json');
+    }
+
+    const seen = new Set();
+    for (const resource of modules) {
+        if (!resource.endsWith('.js') || path.isAbsolute(resource)
+                || resource.includes('..') || resource.includes('*')) {
+            throw new Error(`Invalid runtime module resource path: ${resource}`);
+        }
+        if (seen.has(resource)) throw new Error(`Duplicate runtime module resource: ${resource}`);
+        seen.add(resource);
+        const fullPath = path.join(repoRoot, 'extension', resource);
+        if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+            throw new Error(`Runtime module resource is missing: ${resource}`);
+        }
+    }
+    return modules.slice();
+}
+
+function getManifestWebAccessibleResources(browser = 'chromium', repoRoot = __dirname) {
+    const resources = unique([
+        ...getPageAccessibleResourceInventory(repoRoot).map((entry) => entry.resource),
+        'runtime-core-loader.mjs',
+        ...getRuntimeModuleResources(repoRoot),
+    ]);
     const entry = {
-        resources: getPageAccessibleResourceInventory().map((consumer) => consumer.resource),
+        resources,
         matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
     };
     if (browser !== 'firefox') entry.use_dynamic_url = true;
@@ -838,6 +871,7 @@ module.exports = {
     GITHUB_FULL_ONLY_API_PERMISSIONS,
     getManifestWebAccessibleResources,
     getPageAccessibleResourceInventory,
+    getRuntimeModuleResources,
     listFiles,
     patchManifestForBuildProfile,
     resolveCrxSigningConfig,

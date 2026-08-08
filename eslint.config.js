@@ -75,6 +75,7 @@ module.exports = [
     {
         files: [
             'extension/popup.js',
+            'extension/runtime-bootstrap.js',
             'extension/core/*.js',
             'extension/core/selector-packs/*.js',
             'extension/features/**/*.js',

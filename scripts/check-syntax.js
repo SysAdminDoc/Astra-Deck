@@ -14,7 +14,7 @@ function listJsFiles(dir) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
             out.push(...listJsFiles(fullPath));
-        } else if (entry.isFile() && entry.name.endsWith('.js')) {
+        } else if (entry.isFile() && /\.(?:m?js)$/.test(entry.name)) {
             out.push(fullPath);
         }
     }

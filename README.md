@@ -329,12 +329,15 @@ document_start
   ytkit-main.js      MAIN world — canPlayType patching for codec/format filtering
 
 document_idle
-  core/*.js          ISOLATED world — env, storage, styles, url, page, navigation, player
-  ytkit.js           ISOLATED world — all features, DOM manipulation, settings UI
+  runtime-bootstrap.js  ISOLATED world — reads settings and starts the guarded loader (<150 KB)
+  runtime-core-loader.mjs  dynamic module graph — core + download bootstrap + ytkit
+  features/*           dynamic, settings- and route-gated feature modules
   background.js      Service worker — fetch proxy, downloads, cookie bridge
 ```
 
 - **Split-context model** — MAIN world for page API interception, ISOLATED world for extension APIs and DOM
+- **Lazy runtime graph** — normal YouTube pages inject only the small bootstrap; the module catalogue is exposed through a per-session dynamic URL and loaded idempotently after the bootstrap turn
+- **Settings and route gates** — persisted settings and existing selector-pack route boundaries decide which deferred feature modules are fetched; inline fallbacks preserve startup and userscript parity
 - **SPA-aware** — hooks `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, and `video-id` attribute changes
 - **Tiered feature init** — critical features load synchronously, normal features in `requestAnimationFrame`, lazy features in `requestIdleCallback`
 - **Crash recovery** — features that crash 3 times auto-disable with console warning

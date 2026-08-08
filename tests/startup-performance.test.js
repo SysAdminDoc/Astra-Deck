@@ -54,7 +54,7 @@ test('startup benchmark CLI and check gate are wired to the real fixture', () =>
     assert.equal(packageJson.scripts['bench:startup'], 'node scripts/bench-startup.js');
     assert.equal(packageJson.scripts['check:startup'], 'node scripts/bench-startup.js --check');
     assert.match(packageJson.scripts.check, /npm run check:startup/);
-    assert.match(source, /buildFixture\(stageDir\)/);
+    assert.match(source, /buildFixture\(stageDir(?:,\s*\{\s*runtimeSettings\s*\})?\)/);
     assert.match(source, /--headless=new/);
     assert.match(source, /windowsHide: true/);
     assert.match(source, /__ytkitSmoke\?\.listenerCount\?\.\(\) > 0/);

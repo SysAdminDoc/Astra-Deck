@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const repoRoot = path.join(__dirname, '..', '..');
 const modulePath = path.join(repoRoot, 'extension', 'features', 'video-insights', 'index.js');
+const { runtimeModules } = require('../helpers/source');
 const {
     createVideoInsightsFeature,
     extractVideoInsights,
@@ -143,10 +144,11 @@ test('video insights module is loaded before ytkit and registered in data-flow p
         path.join(repoRoot, 'extension', 'manifest.json'),
         'utf8'
     ));
-    const normal = manifest.content_scripts.find((entry) => entry.js?.includes('ytkit.js'));
-    const featureIndex = normal.js.indexOf('features/video-insights/index.js');
+    const normal = manifest.content_scripts.find((entry) => runtimeModules(entry).includes('ytkit.js'));
+    const scripts = runtimeModules(normal);
+    const featureIndex = scripts.indexOf('features/video-insights/index.js');
     assert.notEqual(featureIndex, -1);
-    assert.ok(featureIndex < normal.js.indexOf('ytkit.js'));
+    assert.ok(featureIndex < scripts.indexOf('ytkit.js'));
 
     const { ORIGIN_CATALOGUE } = require('../../extension/core/data-flow.js');
     const youtube = ORIGIN_CATALOGUE.find((entry) => entry.origin === 'https://*.youtube.com');
