@@ -18,6 +18,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   alongside parse and first-feature paint, with a deterministic fallback when
   ignored captures are unavailable.
 
+### Features
+
+- **Video Hider can explain hidden cards.** An opt-in setting leaves a localized
+  placeholder beside each hidden card naming the local rule that matched, while
+  preserving remove/restore behavior and userscript parity across all 11 locales.
+
 ## [4.57.0] - 2026-08-06
 
 ### Fixed

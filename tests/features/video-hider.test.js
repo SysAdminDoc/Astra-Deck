@@ -33,6 +33,7 @@ function fakeVideoCard(title, rowText = '') {
         getAttribute: () => null
     }] : [];
     return {
+        dataset: {},
         querySelector(selector) {
             if (selector.includes('#video-title') || selector.includes('.title')) return titleNode;
             return null;
@@ -153,6 +154,145 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
     }
 });
 
+test('Video Hider records explainable reasons for automatic hide rules in both runtimes', () => {
+    const { mod } = loadModule();
+    const appState = {
+        settings: {
+            hideVideosChannelAllowlist: false,
+            hideVideosKeywordFilter: 'spoiler',
+            hideVideosHideLive: false,
+            hideVideosHideUpcoming: false,
+            hideVideosHideMixes: false,
+            hideVideosHidePlaylists: false,
+            hideVideosHideMovies: false,
+            hideVideosHideAutoDubbed: false,
+            hideVideosLowViewFilter: false,
+            hideVideosWatchedRatio: 0,
+            advancedLocalPredicate: false,
+            hideVideosDurationFilter: 0
+        }
+    };
+    const feature = mod.createHideVideosFromHomeFeature({ appState });
+    const keywordCard = fakeVideoCard('Spoiler review');
+    assert.equal(feature._shouldHide(keywordCard), true);
+    assert.equal(keywordCard.dataset.ytkitFilterReason, 'keyword');
+
+    appState.settings.hideVideosKeywordFilter = '';
+    appState.settings.hideVideosHideLive = true;
+    const liveCard = fakeVideoCard('Neutral title', 'LIVE · 1,234 watching now');
+    assert.equal(feature._shouldHide(liveCard), true);
+    assert.equal(liveCard.dataset.ytkitFilterReason, 'live');
+
+    appState.settings.hideVideosHideLive = false;
+    appState.settings.hideVideosDurationFilter = 2;
+    feature._extractDuration = () => 30;
+    const shortCard = fakeVideoCard('Short video');
+    assert.equal(feature._shouldHide(shortCard), true);
+    assert.equal(shortCard.dataset.ytkitFilterReason, 'duration');
+
+    appState.settings.hideVideosDurationFilter = 0;
+    assert.equal(feature._shouldHide(keywordCard), false);
+    assert.equal(keywordCard.dataset.ytkitFilterReason, undefined);
+
+    for (const [label, source] of [['module', MODULE_SOURCE], ['monolith', sources.ytkit], ['userscript', sources.userscript]]) {
+        assert.match(source, /hideVideosShowFilterReason/, `${label} should include the explain-hidden-cards setting`);
+        assert.match(source, /ytkit-video-hidden-placeholder/, `${label} should include the hidden-card placeholder`);
+        assert.match(source, /videoHiderHiddenReason/, `${label} should localize the hidden-card reason copy`);
+    }
+});
+
+test('Video Hider placeholder follows the opt-in setting and hidden-card lifecycle', () => {
+    const { mod } = loadModule();
+    const originalHTMLElement = globalThis.HTMLElement;
+
+    class FakeElement {
+        constructor() {
+            this.dataset = {};
+            this.parentNode = null;
+            this.children = [];
+            this.classList = {
+                values: new Set(),
+                add: (...names) => names.forEach(name => this.classList.values.add(name)),
+                remove: (...names) => names.forEach(name => this.classList.values.delete(name)),
+                toggle: (name, enabled) => enabled ? this.classList.values.add(name) : this.classList.values.delete(name),
+                contains: name => this.classList.values.has(name)
+            };
+            this.attributes = {};
+        }
+
+        get nextSibling() {
+            if (!this.parentNode) return null;
+            const index = this.parentNode.children.indexOf(this);
+            return index > -1 ? this.parentNode.children[index + 1] || null : null;
+        }
+
+        get isConnected() {
+            return !!this.parentNode;
+        }
+
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        }
+
+        remove() {
+            if (!this.parentNode) return;
+            const index = this.parentNode.children.indexOf(this);
+            if (index > -1) this.parentNode.children.splice(index, 1);
+            this.parentNode = null;
+        }
+    }
+
+    class FakeParent {
+        constructor() {
+            this.children = [];
+            this.isConnected = true;
+        }
+
+        appendChild(element) {
+            element.parentNode = this;
+            this.children.push(element);
+            return element;
+        }
+
+        insertBefore(element, reference) {
+            element.parentNode = this;
+            const index = reference ? this.children.indexOf(reference) : -1;
+            if (index > -1) this.children.splice(index, 0, element);
+            else this.children.push(element);
+            return element;
+        }
+    }
+
+    globalThis.HTMLElement = FakeElement;
+    try {
+        const appState = { settings: { hideVideosShowFilterReason: true, hideVideosRemoveHiddenCards: false } };
+        const parent = new FakeParent();
+        const card = new FakeElement();
+        card.dataset.ytkitVideoId = 'abc12345678';
+        parent.appendChild(card);
+        const feature = mod.createHideVideosFromHomeFeature({
+            appState,
+            documentRef: { createElement: () => new FakeElement() },
+            t: (key, fallback) => key === 'videoHiderReasonKeyword' ? 'a keyword rule' : fallback
+        });
+
+        assert.equal(feature._applyVideoHiddenState(card, true, 'keyword'), true);
+        assert.equal(parent.children.length, 2);
+        assert.equal(parent.children[0], card);
+        assert.equal(parent.children[1].className, 'ytkit-video-hidden-placeholder');
+        assert.equal(parent.children[1].textContent, 'Hidden by Video Hider: a keyword rule');
+        assert.equal(card.classList.contains('ytkit-video-hidden'), true);
+
+        appState.settings.hideVideosShowFilterReason = false;
+        feature._applyVideoHiddenState(card, false);
+        assert.equal(parent.children.length, 1);
+        assert.equal(card.classList.contains('ytkit-video-hidden'), false);
+        assert.equal(card.dataset.ytkitFilterReason, undefined);
+    } finally {
+        globalThis.HTMLElement = originalHTMLElement;
+    }
+});
+
 test('Video Hider extracts every credited channel and applies blocked/allowed decisions across the card', () => {
     const { mod } = loadModule();
     const storage = new Map();
@@ -197,6 +337,7 @@ test('Video Hider extracts every credited channel and applies blocked/allowed de
     feature._setBlockedChannels([{ id: '@second', name: 'Second uploader' }]);
     assert.equal(feature._isChannelBlocked(infos), true, 'any blocked participant must match the card');
     assert.equal(feature._shouldHide(card), true, 'a blocked participant must hide the collaboration card');
+    assert.equal(card.dataset.ytkitFilterReason, 'blockedChannel');
 
     appState.settings.hideVideosChannelAllowlist = true;
     feature._setBlockedChannels([{ id: '@first', name: 'First uploader' }]);
@@ -382,6 +523,7 @@ test('Video Hider channel allowlist is fail-open when empty and isolated from th
     feature._addAllowedChannel({ id: '@allowed', name: 'Allowed Channel', source: 'settings' });
     assert.equal(feature._shouldHide(allowedCard), false, 'listed channels must remain visible');
     assert.equal(feature._shouldHide(otherCard), true, 'unlisted channels must be hidden when the allowlist is populated');
+    assert.equal(otherCard.dataset.ytkitFilterReason, 'channelNotAllowed');
     assert.deepEqual(storage.get('ytkit-allowed-channels'), [{ id: '@allowed', name: 'Allowed Channel', source: 'settings' }]);
 
     appState.settings.hideVideosChannelAllowlist = false;

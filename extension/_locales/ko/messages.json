@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Video Hider가 숨김: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "자동 더빙 필터"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "차단된 채널 규칙"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "채널 허용 목록"
+  },
+  "videoHiderReasonDuration": {
+    "message": "최소 길이 규칙"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "키워드 규칙"
+  },
+  "videoHiderReasonLive": {
+    "message": "라이브 스트림 필터"
+  },
+  "videoHiderReasonLowView": {
+    "message": "낮은 조회수 필터"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "로컬 시청 완료 표시"
+  },
+  "videoHiderReasonManual": {
+    "message": "저장한 숨김 목록"
+  },
+  "videoHiderReasonMix": {
+    "message": "YouTube Mix 필터"
+  },
+  "videoHiderReasonMovie": {
+    "message": "영화 필터"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "재생목록 필터"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "고급 로컬 규칙"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "예정된 공개 필터"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "시청 비율 필터"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "각 숨긴 카드 옆에 어떤 로컬 규칙이 일치했는지 설명하는 짧은 메모를 표시합니다."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "숨긴 카드 이유 표시"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

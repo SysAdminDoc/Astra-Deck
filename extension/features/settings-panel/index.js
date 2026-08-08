@@ -764,6 +764,7 @@ function buildSettingsPanel() {
                     || appState.settings.hideVideosSubsLoadLimit === false
                     || (appState.settings.hideVideosSubsLoadThreshold || 3) !== 3
                     || appState.settings.hideVideosRemoveHiddenCards === true
+                    || appState.settings.hideVideosShowFilterReason === true
                     || appState.settings.hideVideosShowQuickHideButton === false
                     || appState.settings.markWatchedVideos === true
                     || appState.settings.hideVideosAllowChannelBlock === false
@@ -1450,6 +1451,12 @@ function buildSettingsPanel() {
                         key: 'hideVideosRemoveHiddenCards',
                         title: 'Remove hidden cards automatically',
                         description: 'When enabled, matching videos are removed from the feed DOM instead of only being hidden with CSS.',
+                        defaultChecked: false
+                    }));
+                    behaviorSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosShowFilterReason',
+                        title: t('videoHiderShowFilterReasonTitle', 'Explain hidden cards'),
+                        description: t('videoHiderShowFilterReasonDesc', 'Show a small note beside each hidden card explaining which local rule matched.'),
                         defaultChecked: false
                     }));
                     const removeCurrentPageBtn = document.createElement('button');

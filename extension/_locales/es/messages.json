@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Oculto por Video Hider: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "el filtro de doblaje automático"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "una regla de canal bloqueado"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "tu lista de canales permitidos"
+  },
+  "videoHiderReasonDuration": {
+    "message": "la regla de duración mínima"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "una regla de palabras clave"
+  },
+  "videoHiderReasonLive": {
+    "message": "el filtro de directos"
+  },
+  "videoHiderReasonLowView": {
+    "message": "el filtro de pocas visualizaciones"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "tu marca local de visto"
+  },
+  "videoHiderReasonManual": {
+    "message": "tu lista de vídeos ocultos"
+  },
+  "videoHiderReasonMix": {
+    "message": "el filtro de YouTube Mix"
+  },
+  "videoHiderReasonMovie": {
+    "message": "el filtro de películas"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "el filtro de listas de reproducción"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "tu regla local avanzada"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "el filtro de estrenos"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "el filtro de proporción vista"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "Mostrar una nota breve junto a cada tarjeta oculta que explique qué regla local coincidió."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "Explicar las tarjetas ocultas"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

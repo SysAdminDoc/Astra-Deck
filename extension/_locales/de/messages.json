@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Vom Video Hider ausgeblendet: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "der Filter für automatisch synchronisierte Videos"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "eine Regel für blockierte Kanäle"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "Ihre Kanalliste"
+  },
+  "videoHiderReasonDuration": {
+    "message": "die Mindestlängenregel"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "eine Schlüsselwortregel"
+  },
+  "videoHiderReasonLive": {
+    "message": "der Livestream-Filter"
+  },
+  "videoHiderReasonLowView": {
+    "message": "der Filter für Videos mit wenigen Aufrufen"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "Ihre lokale Gesehen-Markierung"
+  },
+  "videoHiderReasonManual": {
+    "message": "Ihre gespeicherte Ausblendliste"
+  },
+  "videoHiderReasonMix": {
+    "message": "der YouTube-Mix-Filter"
+  },
+  "videoHiderReasonMovie": {
+    "message": "der Filmfilter"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "der Playlist-Filter"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "Ihre erweiterte lokale Regel"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "der Filter für bevorstehende Premieren"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "der Filter für das Wiedergabeverhältnis"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "Eine kurze Notiz neben jeder ausgeblendeten Karte anzeigen, die erklärt, welche lokale Regel zutraf."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "Ausgeblendete Karten erklären"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

@@ -5640,6 +5640,9 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
+  "videoHiderHiddenReason": {
+    "message": "Nascosto da Video Hider: {reason}"
+  },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
   },
@@ -5658,8 +5661,59 @@
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
   },
+  "videoHiderReasonAutoDubbed": {
+    "message": "il filtro dei doppiaggi automatici"
+  },
+  "videoHiderReasonBlockedChannel": {
+    "message": "una regola per i canali bloccati"
+  },
+  "videoHiderReasonChannelNotAllowed": {
+    "message": "il tuo elenco di canali consentiti"
+  },
+  "videoHiderReasonDuration": {
+    "message": "la regola della durata minima"
+  },
+  "videoHiderReasonKeyword": {
+    "message": "una regola per parole chiave"
+  },
+  "videoHiderReasonLive": {
+    "message": "il filtro delle dirette"
+  },
+  "videoHiderReasonLowView": {
+    "message": "il filtro dei video con poche visualizzazioni"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "il tuo contrassegno locale di video guardato"
+  },
+  "videoHiderReasonManual": {
+    "message": "il tuo elenco salvato di video nascosti"
+  },
+  "videoHiderReasonMix": {
+    "message": "il filtro YouTube Mix"
+  },
+  "videoHiderReasonMovie": {
+    "message": "il filtro dei film"
+  },
+  "videoHiderReasonPlaylist": {
+    "message": "il filtro delle playlist"
+  },
+  "videoHiderReasonPredicate": {
+    "message": "la tua regola locale avanzata"
+  },
+  "videoHiderReasonUpcoming": {
+    "message": "il filtro delle anteprime imminenti"
+  },
+  "videoHiderReasonWatchedRatio": {
+    "message": "il filtro della percentuale guardata"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
+  },
+  "videoHiderShowFilterReasonDesc": {
+    "message": "Mostra una breve nota accanto a ogni scheda nascosta per spiegare quale regola locale ha trovato una corrispondenza."
+  },
+  "videoHiderShowFilterReasonTitle": {
+    "message": "Spiega le schede nascoste"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

@@ -405,6 +405,8 @@ test('video hider exposes split hide-all and restore-page controls', () => {
     const block = source.slice(start, end);
     assert.equal(defaults.hideVideosRemoveHiddenCards, false,
         'video hider should preserve CSS hiding by default');
+    assert.equal(defaults.hideVideosShowFilterReason, false,
+        'video hider should keep hidden-card explanations opt-in by default');
     assert.equal(defaults.hideVideosShowQuickHideButton, true,
         'video hider should keep quick hide controls enabled by default');
     assert.equal(defaults.hideVideosAllowChannelBlock, true,
@@ -465,6 +467,8 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should expose metadata-based content filters');
     assert.ok(block.includes('hideVideosRemoveHiddenCards'),
         'video hider should expose the remove-hidden-cards setting');
+    assert.ok(block.includes('hideVideosShowFilterReason'),
+        'video hider should expose the hidden-card explanation setting');
     assert.ok(block.includes('hideVideosShowQuickHideButton'),
         'video hider should expose the quick-hide button setting');
     assert.ok(block.includes('hideVideosAllowChannelBlock'),
