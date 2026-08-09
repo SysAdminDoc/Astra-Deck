@@ -315,6 +315,25 @@
                             });
                             return segments;
                         } catch (error) {
+                            // A 404 from the hash-prefix endpoint is the API
+                            // saying "nothing submitted for this prefix" — the
+                            // normal answer for most videos, not a failure.
+                            // Treating it as one failed over to the mirror,
+                            // burned a second request, and surfaced the mirror
+                            // reply as a degraded-state pill on every ordinary
+                            // video. Answer it as an empty result and stop.
+                            if (Number(error?.response?.status ?? error?.status ?? 0) === 404) {
+                                if (gen === this._generation) this._rememberSegments(videoId, cats, []);
+                                ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                                    source: 'network',
+                                    cacheState: 'refreshed',
+                                    fallbackState: hostIndex > 0 ? 'mirror' : '',
+                                    endpoint: 'skipSegments',
+                                    host,
+                                    itemCount: 0
+                                });
+                                return [];
+                            }
                             lastError = error;
                             if (hostIndex + 1 < apiOrigins.length) {
                                 DiagnosticLog?.record?.('sponsorBlock', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);

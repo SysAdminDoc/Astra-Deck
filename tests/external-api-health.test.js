@@ -350,3 +350,123 @@ test('Return Dislike reports invalid payload and request-budget exhaustion', asy
     assert.equal(last[3].errorClass, 'rate-limited');
     assert.equal(last[3].requestBudget.used, 100);
 });
+
+// ── SponsorBlock 404 = "nothing submitted", not a failure ──
+// The hash-prefix endpoint answers 404 for any prefix with no submissions,
+// which is most videos. Treating it as an error failed over to the mirror,
+// spent a second request, and surfaced the mirror's reply as an in-page
+// "SponsorBlock: unexpected response" pill on ordinary watch pages.
+test('SponsorBlock treats HTTP 404 as an empty segment list, not a failure', async () => {
+    const { mod } = loadFeatureModule(
+        '../extension/features/sponsorblock/index.js',
+        'createSponsorBlockFeature'
+    );
+    const health = [];
+    const hosts = [];
+    const notFound = new Error('HTTP 404');
+    notFound.response = { status: 404 };
+    const feature = mod.createSponsorBlockFeature({
+        appState: {
+            settings: {
+                sbCat_sponsor: true,
+                sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+                sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks'
+            }
+        },
+        storageReadJSON: (_key, fallback) => fallback,
+        storageWriteJSON() {},
+        extensionFetchJson: async ({ url }) => {
+            hosts.push(new URL(url).origin);
+            throw notFound;
+        },
+        ExternalApiHealth: {
+            recordSuccess: (...args) => health.push(['success', ...args]),
+            recordFailure: (...args) => health.push(['failure', ...args]),
+            recordCacheFallback: (...args) => health.push(['fallback', ...args])
+        },
+        DiagnosticLog: { record() {} },
+        VIDEO_ID_PATTERN: /^[A-Za-z0-9_-]{11}$/
+    });
+
+    const segments = await feature._fetchSegments('dQw4w9WgXcQ');
+
+    assert.deepEqual(segments, [], 'a 404 answers as no segments');
+    assert.equal(hosts.length, 1,
+        'a 404 must not fail over to the mirror — there is nothing there to find either');
+    assert.equal(health.some(([kind]) => kind !== 'success'), false,
+        'a 404 must never be recorded as a failure or a cache fallback');
+    assert.equal(health[0][2].itemCount, 0);
+});
+
+test('SponsorBlock still fails over and reports when a host genuinely errors', async () => {
+    const { mod } = loadFeatureModule(
+        '../extension/features/sponsorblock/index.js',
+        'createSponsorBlockFeature'
+    );
+    const health = [];
+    const hosts = [];
+    const serverError = new Error('HTTP 503');
+    serverError.response = { status: 503 };
+    const feature = mod.createSponsorBlockFeature({
+        appState: {
+            settings: {
+                sbCat_sponsor: true,
+                sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+                sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks'
+            }
+        },
+        storageReadJSON: (_key, fallback) => fallback,
+        storageWriteJSON() {},
+        extensionFetchJson: async ({ url }) => {
+            hosts.push(new URL(url).origin);
+            throw serverError;
+        },
+        ExternalApiHealth: {
+            recordSuccess: (...args) => health.push(['success', ...args]),
+            recordFailure: (...args) => health.push(['failure', ...args]),
+            recordCacheFallback: (...args) => health.push(['fallback', ...args])
+        },
+        DiagnosticLog: { record() {} },
+        VIDEO_ID_PATTERN: /^[A-Za-z0-9_-]{11}$/
+    });
+
+    const segments = await feature._fetchSegments('dQw4w9WgXcQ');
+
+    assert.deepEqual(segments, []);
+    assert.equal(hosts.length, 2, 'a real error still tries the mirror');
+    assert.equal(health.filter(([kind]) => kind === 'failure').length, 1,
+        'a real error is still reported');
+});
+
+// ── Only actionable degradation earns an in-page pill ──
+test('describeDegradation marks only user-fixable states actionable', () => {
+    const core = loadHealthCore();
+    const health = core.createExternalApiHealth({ now: () => 1000000 });
+
+    const permissionError = new Error('Runtime host permission not granted: https://sponsor.ajay.app/*');
+    assert.equal(health.describeDegradation(health.recordFailure('sponsorBlock', permissionError)).actionable,
+        true, 'a revoked host permission is fixed by the user in Settings');
+
+    for (const [label, detail] of [
+        ['rate limit', { errorClass: 'rate-limited' }],
+        ['server error', { errorClass: 'server-error' }],
+        ['invalid payload', { errorClass: 'invalid-payload' }],
+        ['network error', { errorClass: 'network-error' }]
+    ]) {
+        const record = health.recordFailure('deArrow', null, detail);
+        const desc = health.describeDegradation(record);
+        assert.equal(desc.actionable, false, `${label} is not something the reader can act on`);
+        assert.ok(desc.text, 'the copy is still produced for the diagnostic surfaces');
+    }
+});
+
+test('the in-page strip renders only actionable degradation unless debugMode is on', () => {
+    const src = sources.ytkit;
+    const start = src.indexOf('const ServiceStateStrip');
+    assert.ok(start > -1, 'the strip must exist');
+    const block = src.slice(start, src.indexOf('return { update, remove };', start));
+    assert.match(block, /!desc\.actionable && appState\?\.settings\?\.debugMode !== true/,
+        'non-actionable states must be suppressed unless debugMode is enabled');
+    assert.match(block, /remove\(record\.id\);/,
+        'a suppressed state must also clear any pill it had already shown');
+});

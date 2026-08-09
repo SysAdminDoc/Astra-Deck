@@ -8,6 +8,32 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [4.58.2] - 2026-08-09
+
+### Fixed
+
+- **"SponsorBlock: unexpected response" no longer appears over ordinary
+  videos.** The hash-prefix `skipSegments` endpoint answers `404` for any
+  prefix with no submissions — the normal result for most videos, not an
+  error. It was treated as a failed request, so the lookup failed over to the
+  mirror host, spent a second request, and surfaced the mirror's reply as an
+  in-page degraded-state pill. A 404 is now answered as an empty segment list,
+  cached, recorded as a success, and does not trigger failover. Genuine errors
+  still fail over and still report.
+
+### Changed
+
+- **The in-page degraded-state strip only shows states you can act on.**
+  A revoked host permission ("host access needed — re-enable in Settings")
+  still surfaces immediately. Rate limits, transient server errors, stale-cache
+  fallbacks and malformed payloads recover on their own, so pinning them to the
+  corner of every watch page was noise — they now go to the diagnostic log and
+  the popup's External API Health card only. Enabling **Debug Mode** restores
+  the full strip for triage. `describeDegradation()` carries a new `actionable`
+  flag so every surface makes the same call.
+
+---
+
 ## [4.58.1] - 2026-08-09
 
 ### Fixed

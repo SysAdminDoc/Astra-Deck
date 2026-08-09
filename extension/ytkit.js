@@ -708,6 +708,18 @@
                     remove(record.id);
                     return;
                 }
+                // Only states the reader can act on earn a pill over their
+                // video. A third-party API that is rate limited, briefly
+                // erroring, or serving stale cache recovers on its own, and
+                // pinning that to the corner of every watch page is noise —
+                // SponsorBlock alone produced one per video whose hash prefix
+                // had nothing submitted. Everything still lands in the
+                // diagnostic log and the popup's External API Health card, and
+                // debugMode puts the full strip back for triage.
+                if (!desc.actionable && appState?.settings?.debugMode !== true) {
+                    remove(record.id);
+                    return;
+                }
                 const host = ensureContainer();
                 let pill = pills.get(desc.id);
                 if (!pill) {
@@ -958,7 +970,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.58.1';
+    const YTKIT_VERSION = '4.58.2';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -31151,6 +31163,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             });
                             return segments;
                         } catch (error) {
+                            // A 404 from the hash-prefix endpoint is the API
+                            // saying "nothing submitted for this prefix" — the
+                            // normal answer for most videos, not a failure.
+                            // Treating it as one failed over to the mirror,
+                            // burned a second request, and surfaced the mirror
+                            // reply as a degraded-state pill on every ordinary
+                            // video. Answer it as an empty result and stop.
+                            if (Number(error?.response?.status ?? error?.status ?? 0) === 404) {
+                                if (gen === this._generation) this._rememberSegments(videoId, cats, []);
+                                ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                                    source: 'network',
+                                    cacheState: 'refreshed',
+                                    fallbackState: hostIndex > 0 ? 'mirror' : '',
+                                    endpoint: 'skipSegments',
+                                    host,
+                                    itemCount: 0
+                                });
+                                return [];
+                            }
                             lastError = error;
                             if (hostIndex + 1 < apiOrigins.length) {
                                 DiagnosticLog?.record?.('sponsorBlock', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
