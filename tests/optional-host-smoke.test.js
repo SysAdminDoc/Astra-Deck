@@ -33,7 +33,7 @@ test('optional-host Chromium smoke stages the store-safe manifest and falls back
         'smoke must include Edge as a Chromium-family fallback when Chrome is policy-blocked');
 });
 
-test('optional-host Chromium smoke gates the exact dynamic page-resource inventory', () => {
+test('optional-host Chromium smoke gates dynamic assets and stable runtime modules separately', () => {
     const manifest = JSON.parse(fs.readFileSync(
         path.join(repoRoot, 'extension', 'manifest.json'),
         'utf8'
@@ -41,6 +41,13 @@ test('optional-host Chromium smoke gates the exact dynamic page-resource invento
     assert.deepEqual(smoke.PAGE_ACCESSIBLE_RESOURCES, [
         'icons/32.png',
         'assets/cat.gif',
+        'runtime-core-loader.mjs',
+        ...runtimeModules(manifest.content_scripts.find((entry) =>
+            runtimeModules(entry).includes('ytkit.js')
+        ))
+    ]);
+    assert.deepEqual(smoke.DYNAMIC_PAGE_RESOURCES, ['icons/32.png', 'assets/cat.gif']);
+    assert.deepEqual(smoke.STABLE_RUNTIME_RESOURCES, [
         'runtime-core-loader.mjs',
         ...runtimeModules(manifest.content_scripts.find((entry) =>
             runtimeModules(entry).includes('ytkit.js')
@@ -63,23 +70,32 @@ test('optional-host Chromium smoke gates the exact dynamic page-resource invento
     delete stableManifest.web_accessible_resources[0].use_dynamic_url;
     assert.throws(
         () => smoke.validateDynamicWebAccessibleResourceManifest(stableManifest),
-        /per-session dynamic URL/
+        /one per-session asset entry and one stable runtime-module entry/
+    );
+
+    const dynamicRuntimeManifest = structuredClone(manifest);
+    dynamicRuntimeManifest.web_accessible_resources[1].use_dynamic_url = true;
+    assert.throws(
+        () => smoke.validateDynamicWebAccessibleResourceManifest(dynamicRuntimeManifest),
+        /one per-session asset entry and one stable runtime-module entry/
     );
 });
 
-test('optional-host Chromium smoke validates loaded resources use a dynamic host', () => {
+test('optional-host Chromium smoke validates dynamic asset and stable module hosts', () => {
     const results = smoke.PAGE_ACCESSIBLE_RESOURCES.map((resource) => ({
         resource,
-        url: `chrome-extension://dynamic-session-id/${resource}`,
+        url: `chrome-extension://${smoke.DYNAMIC_PAGE_RESOURCES.includes(resource)
+            ? 'dynamic-session-id'
+            : 'stable-extension-id'}/${resource}`,
         ok: true,
         status: 200,
         bytes: 16,
         contentType: 'application/octet-stream',
         error: '',
     }));
-    assert.equal(
+    assert.deepEqual(
         smoke.validateDynamicWebAccessibleResourceResults(results, 'stable-extension-id'),
-        'dynamic-session-id'
+        { dynamicHost: 'dynamic-session-id', stableHost: 'stable-extension-id' }
     );
 
     const stableResults = structuredClone(results);
@@ -90,6 +106,19 @@ test('optional-host Chromium smoke validates loaded resources use a dynamic host
             'stable-extension-id'
         ),
         /per-session dynamic host/
+    );
+
+    const dynamicRuntimeResults = structuredClone(results);
+    const loaderIndex = dynamicRuntimeResults.findIndex((entry) =>
+        entry.resource === 'runtime-core-loader.mjs');
+    dynamicRuntimeResults[loaderIndex].url =
+        'chrome-extension://dynamic-session-id/runtime-core-loader.mjs';
+    assert.throws(
+        () => smoke.validateDynamicWebAccessibleResourceResults(
+            dynamicRuntimeResults,
+            'stable-extension-id'
+        ),
+        /stable extension host/
     );
 
     const emptyResults = structuredClone(results);

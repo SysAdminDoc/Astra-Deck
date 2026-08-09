@@ -20,13 +20,17 @@ const REPO_ROOT = path.join(__dirname, '..');
 const EXT_DIR = path.join(REPO_ROOT, 'extension');
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const DEVTOOLS_FETCH_TIMEOUT_MS = 2000;
-const PAGE_ACCESSIBLE_RESOURCES = Object.freeze(
-    [
-        ...getPageAccessibleResourceInventory().map((entry) => entry.resource),
-        'runtime-core-loader.mjs',
-        ...getRuntimeModuleResources(),
-    ]
+const DYNAMIC_PAGE_RESOURCES = Object.freeze(
+    getPageAccessibleResourceInventory().map((entry) => entry.resource)
 );
+const STABLE_RUNTIME_RESOURCES = Object.freeze([
+    'runtime-core-loader.mjs',
+    ...getRuntimeModuleResources(),
+]);
+const PAGE_ACCESSIBLE_RESOURCES = Object.freeze([
+    ...DYNAMIC_PAGE_RESOURCES,
+    ...STABLE_RUNTIME_RESOURCES,
+]);
 const POPUP_BOOT_SETTINGS = Object.freeze({
     sponsorBlock: true,
     returnDislike: true,
@@ -51,27 +55,38 @@ function createChromiumStage(stageRoot) {
 
 function validateDynamicWebAccessibleResourceManifest(manifest) {
     const entries = manifest.web_accessible_resources || [];
-    if (entries.length !== 1) {
-        throw new Error(`Expected one web-accessible resource entry; found ${entries.length}.`);
+    if (entries.length !== 2) {
+        throw new Error(`Expected two web-accessible resource entries; found ${entries.length}.`);
     }
-    const [entry] = entries;
-    const actualResources = [...(entry.resources || [])].sort();
-    const expectedResources = [...PAGE_ACCESSIBLE_RESOURCES].sort();
-    if (JSON.stringify(actualResources) !== JSON.stringify(expectedResources)) {
+    const dynamicEntry = entries.find((entry) => entry.use_dynamic_url === true);
+    const stableEntry = entries.find((entry) => entry.use_dynamic_url === undefined);
+    if (!dynamicEntry || !stableEntry) {
+        throw new Error('Expected one per-session asset entry and one stable runtime-module entry.');
+    }
+    const actualDynamicResources = [...(dynamicEntry.resources || [])].sort();
+    const expectedDynamicResources = [...DYNAMIC_PAGE_RESOURCES].sort();
+    const actualStableResources = [...(stableEntry.resources || [])].sort();
+    const expectedStableResources = [...STABLE_RUNTIME_RESOURCES].sort();
+    if (JSON.stringify(actualDynamicResources) !== JSON.stringify(expectedDynamicResources)
+            || JSON.stringify(actualStableResources) !== JSON.stringify(expectedStableResources)) {
         throw new Error(
-            `Web-accessible resources exceed the generated consumer inventory: ${actualResources.join(', ')}`
+            'Web-accessible resources exceed the generated consumer inventory: '
+            + [...actualDynamicResources, ...actualStableResources].join(', ')
         );
     }
-    if (actualResources.some((resource) => resource.includes('*'))) {
+    if ([...actualDynamicResources, ...actualStableResources]
+            .some((resource) => resource.includes('*'))) {
         throw new Error('Web-accessible resource paths must not contain wildcards.');
     }
-    if (entry.use_dynamic_url !== true) {
+    if (dynamicEntry.use_dynamic_url !== true) {
         throw new Error('Chromium web-accessible resources must use a per-session dynamic URL.');
     }
-    const actualMatches = [...(entry.matches || [])].sort();
     const expectedMatches = [...WEB_ACCESSIBLE_RESOURCE_POLICY.matches].sort();
-    if (JSON.stringify(actualMatches) !== JSON.stringify(expectedMatches)) {
-        throw new Error(`Unexpected web-accessible resource matches: ${actualMatches.join(', ')}`);
+    for (const entry of entries) {
+        const actualMatches = [...(entry.matches || [])].sort();
+        if (JSON.stringify(actualMatches) !== JSON.stringify(expectedMatches)) {
+            throw new Error(`Unexpected web-accessible resource matches: ${actualMatches.join(', ')}`);
+        }
     }
 }
 
@@ -335,6 +350,8 @@ function validateDynamicWebAccessibleResourceResults(results, extensionId) {
     }
 
     const dynamicHosts = new Set();
+    const dynamicResources = new Set(DYNAMIC_PAGE_RESOURCES);
+    const stableResources = new Set(STABLE_RUNTIME_RESOURCES);
     for (const result of results) {
         if (!result.ok || result.status !== 200 || !Number.isFinite(result.bytes) || result.bytes <= 0) {
             throw new Error(
@@ -349,15 +366,26 @@ function validateDynamicWebAccessibleResourceResults(results, extensionId) {
         if (decodeURIComponent(url.pathname.replace(/^\//, '')) !== result.resource) {
             throw new Error(`Dynamic resource URL did not preserve its path: ${result.url}`);
         }
-        if (!url.hostname || url.hostname === extensionId) {
-            throw new Error(`Resource URL did not use a per-session dynamic host: ${result.url}`);
+        if (dynamicResources.has(result.resource)) {
+            if (!url.hostname || url.hostname === extensionId) {
+                throw new Error(`Resource URL did not use a per-session dynamic host: ${result.url}`);
+            }
+            dynamicHosts.add(url.hostname);
+        } else if (stableResources.has(result.resource)) {
+            if (url.hostname !== extensionId) {
+                throw new Error(`Runtime module did not use the stable extension host: ${result.url}`);
+            }
+        } else {
+            throw new Error(`Unexpected web-accessible resource result: ${result.resource}`);
         }
-        dynamicHosts.add(url.hostname);
     }
     if (dynamicHosts.size !== 1) {
         throw new Error('Web-accessible resources did not share one per-session dynamic host.');
     }
-    return [...dynamicHosts][0];
+    return {
+        dynamicHost: [...dynamicHosts][0],
+        stableHost: extensionId,
+    };
 }
 
 async function probeDynamicWebAccessibleResources(backgroundTarget, extensionId) {
@@ -391,8 +419,8 @@ async function probeDynamicWebAccessibleResources(backgroundTarget, extensionId)
                 };
             }
         })))()`);
-        const dynamicHost = validateDynamicWebAccessibleResourceResults(results, extensionId);
-        return { dynamicHost, resources: results };
+        const hosts = validateDynamicWebAccessibleResourceResults(results, extensionId);
+        return { ...hosts, resources: results };
     } finally {
         client.close();
     }
@@ -850,8 +878,8 @@ async function main(argv = process.argv.slice(2)) {
     }
     console.log(`[smoke-chromium-optional-hosts] ${result.browser}: loaded store-safe MV3 ${result.extensionId}`);
     console.log(
-        `[smoke-chromium-optional-hosts] dynamic page resources loaded from ${result.webAccessibleResources.dynamicHost}: `
-        + result.webAccessibleResources.resources.map((entry) => entry.resource).join(', ')
+        `[smoke-chromium-optional-hosts] dynamic page assets loaded from ${result.webAccessibleResources.dynamicHost}; `
+        + `runtime modules loaded from ${result.webAccessibleResources.stableHost}`
     );
     console.log(`[smoke-chromium-optional-hosts] optional hosts before grant: ${result.expectedOptionalOrigins.length} missing`);
     console.log(`[smoke-chromium-optional-hosts] banner: ${result.promptState.bannerText}`);
@@ -876,7 +904,9 @@ if (require.main === module) {
 
 module.exports = {
     POPUP_BOOT_SETTINGS,
+    DYNAMIC_PAGE_RESOURCES,
     PAGE_ACCESSIBLE_RESOURCES,
+    STABLE_RUNTIME_RESOURCES,
     browserCandidates,
     buildIsolatedHeadedCommand,
     chromiumArgs,
