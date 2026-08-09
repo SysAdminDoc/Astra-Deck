@@ -20,6 +20,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Features
 
+- **Photosensitive Flash Protection can now dim flashing video locally.** An
+  opt-in requestVideoFrameCallback sampler compares tiny frame-luminance
+  readbacks against a bounded threshold, shows an in-player warning, and
+  fails closed after repeated readback or CPU-budget failures.
 - **Video Hider can explain hidden cards.** An opt-in setting leaves a localized
   placeholder beside each hidden card naming the local rule that matched, while
   preserving remove/restore behavior and userscript parity across all 11 locales.

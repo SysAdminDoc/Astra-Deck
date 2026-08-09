@@ -5415,10 +5415,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Hidden-card filter explanations add one feed preference (446 → 447).
     // Configurable SponsorBlock hosts plus paired DeArrow titles add three
     // enrichment preferences (447 → 450).
+    // Photosensitive flash protection adds a master toggle and two bounded
+    // player preferences (450 → 453).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 450,
-        'SETTINGS_SCHEMA must cover all 450 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 453,
+        'SETTINGS_SCHEMA must cover all 453 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

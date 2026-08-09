@@ -86,6 +86,8 @@ test('startup benchmark CLI and check gate are wired to the real fixture', () =>
     assert.match(source, /BOUNDED_SESSION_MS/);
     assert.match(source, /observerCallbackMs/);
     assert.match(source, /startup-performance-baseline\.json/);
+    assert.equal(benchmark.PHOTOSENSITIVE_FRAME_BUDGET_MS, 1);
+    assert.match(source, /photosensitive frame budget/);
 });
 
 test('startup benchmark extracts folded-boundary quoted-printable captures', () => {

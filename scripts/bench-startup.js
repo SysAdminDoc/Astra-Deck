@@ -35,6 +35,11 @@ const BASELINE_PATH = path.join(__dirname, 'startup-performance-baseline.json');
 const DEFAULT_ITERATIONS = 3;
 const DEFAULT_TIMEOUT_MS = 30000;
 const BOUNDED_SESSION_MS = 750;
+// Photosensitive protection gets one millisecond per presented frame for its
+// 2x2 luminance readback. The shared frame sampler disables itself after three
+// consecutive over-budget callbacks; keep this contract visible beside the
+// startup budget so performance changes are reviewed with the same gate.
+const PHOTOSENSITIVE_FRAME_BUDGET_MS = 1;
 const DEFAULT_TOLERANCE = Object.freeze({
     relative: 0.35,
     absoluteMs: 25,
@@ -683,6 +688,7 @@ async function main(argv = process.argv.slice(2)) {
     }
     const result = await runBenchmark(options, browserPath);
     console.log(`[bench-startup] fixture mode: ${result.fixtureMode}`);
+    console.log(`[bench-startup] photosensitive frame budget: ${PHOTOSENSITIVE_FRAME_BUDGET_MS.toFixed(2)} ms/sample`);
     for (const key of METRIC_KEYS) {
         console.log(`[bench-startup] median ${key}: ${metricMedian(result.metrics, key).toFixed(2)} ${metricUnit(key)}`);
     }
@@ -729,6 +735,7 @@ module.exports = {
     BOUNDED_SESSION_MS,
     CAPTURED_SURFACES,
     DEFAULT_TOLERANCE,
+    PHOTOSENSITIVE_FRAME_BUDGET_MS,
     METRIC_KEYS,
     buildBaseline,
     checkAgainstBaseline,

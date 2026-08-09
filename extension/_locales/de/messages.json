@@ -1319,6 +1319,24 @@
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
   },
+  "feature_photosensitiveDimPercent_desc": {
+    "message": "How strongly to dim the player while flashing content is detected."
+  },
+  "feature_photosensitiveDimPercent_name": {
+    "message": "Dim Strength"
+  },
+  "feature_photosensitiveFlashProtection_desc": {
+    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+  },
+  "feature_photosensitiveFlashProtection_name": {
+    "message": "Photosensitive Flash Protection"
+  },
+  "feature_photosensitiveFlashThreshold_desc": {
+    "message": "Minimum frame luminance change that triggers protection."
+  },
+  "feature_photosensitiveFlashThreshold_name": {
+    "message": "Flash Sensitivity"
+  },
   "feature_bufferPreloadSeconds_desc": {
     "message": "Wie viele Sekunden eines Abrufvideos im Voraus gepuffert werden. Höhere Werte überstehen längere Verbindungsabbrüche; der Player kann sehr große Ziele bei langen Videos trotzdem begrenzen."
   },
@@ -3826,6 +3844,9 @@
   },
   "playlistVideoCountTpl": {
     "message": "{count} videos"
+  },
+  "photosensitiveFlashDetected": {
+    "message": "Flashing content detected — dimmed"
   },
   "popupTitle": {
     "message": "Astra Deck"

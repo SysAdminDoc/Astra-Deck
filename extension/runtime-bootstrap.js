@@ -114,7 +114,8 @@
             "subtitlesOnRewind"
         ],
         "features/video-filters/index.js": [
-            "videoVisualFilters"
+            "videoVisualFilters",
+            "photosensitiveFlashProtection"
         ],
         "features/blue-light-filter/index.js": [
             "blueLightFilter"

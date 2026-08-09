@@ -37,6 +37,14 @@
         vvfSepia:      { min: 0,    max: 100, fallback: 0 }
     });
 
+    const PHOTOSENSITIVE_BOUNDS = Object.freeze({
+        photosensitiveFlashThreshold: { min: 0.05, max: 0.8, fallback: 0.2 },
+        photosensitiveDimPercent: { min: 10, max: 80, fallback: 35 }
+    });
+    const PHOTOSENSITIVE_FRAME_BUDGET_MS = 1;
+    const PHOTOSENSITIVE_FLASH_HOLD_MS = 900;
+    const PHOTOSENSITIVE_EVENT_COOLDOWN_MS = 250;
+
     function readField(settings, key) {
         const bounds = FIELD_BOUNDS[key];
         const raw = settings && settings[key];
@@ -72,6 +80,80 @@
         return true;
     }
 
+    function readPhotosensitiveSetting(settings, key) {
+        const bounds = PHOTOSENSITIVE_BOUNDS[key];
+        const raw = settings && settings[key];
+        if (raw === undefined || raw === null) return bounds.fallback;
+        return clamp(raw, bounds.min, bounds.max);
+    }
+
+    function computeFrameLuminance(pixels) {
+        if (!pixels || typeof pixels.length !== 'number' || pixels.length < 4) return null;
+        let total = 0;
+        let count = 0;
+        for (let index = 0; index + 2 < pixels.length; index += 4) {
+            total += (0.2126 * Number(pixels[index])
+                + 0.7152 * Number(pixels[index + 1])
+                + 0.0722 * Number(pixels[index + 2])) / 255;
+            count += 1;
+        }
+        return count > 0 && Number.isFinite(total) ? total / count : null;
+    }
+
+    function sampleVideoLuminance(video, canvas, context) {
+        if (!video || !canvas || !context) return null;
+        if (canvas.width !== 2) canvas.width = 2;
+        if (canvas.height !== 2) canvas.height = 2;
+        context.drawImage(video, 0, 0, 2, 2);
+        return computeFrameLuminance(context.getImageData(0, 0, 2, 2).data);
+    }
+
+    function detectPhotosensitiveFlash(previousLuminance, currentLuminance, threshold) {
+        const current = Number(currentLuminance);
+        if (!Number.isFinite(current)) return { luminance: null, delta: null, triggered: false };
+        const previous = Number(previousLuminance);
+        if (!Number.isFinite(previous)) return { luminance: current, delta: 0, triggered: false };
+        const delta = Math.abs(current - previous);
+        return {
+            luminance: current,
+            delta,
+            triggered: delta >= readPhotosensitiveSetting({ photosensitiveFlashThreshold: threshold }, 'photosensitiveFlashThreshold')
+        };
+    }
+
+    function buildPhotosensitiveOverlayCss() {
+        return `
+            .ytkit-photosensitive-alert {
+                position: absolute;
+                inset: 0;
+                z-index: 2147483000;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+                box-sizing: border-box;
+                background: rgba(0, 0, 0, var(--ytkit-photosensitive-dim, 0.35));
+                color: #fff;
+                font: 600 14px/1.4 Roboto, system-ui, sans-serif;
+                text-align: center;
+                text-shadow: 0 1px 3px #000;
+                pointer-events: none;
+            }
+            .ytkit-photosensitive-alert[hidden] { display: none !important; }
+            .ytkit-photosensitive-alert__label {
+                max-width: min(90%, 420px);
+                padding: 8px 12px;
+                border: 1px solid rgba(255, 255, 255, 0.35);
+                border-radius: 6px;
+                background: rgba(0, 0, 0, 0.52);
+            }
+            html:not([dark]) .ytkit-photosensitive-alert {
+                background: rgba(15, 23, 42, var(--ytkit-photosensitive-dim, 0.35));
+                color: #f8fafc;
+                text-shadow: 0 1px 3px #000;
+            }
+        `;
+    }
+
     const featureSpec = Object.freeze({
         id: 'videoVisualFilters',
         category: 'playback-audio',
@@ -87,6 +169,15 @@
     features.videoFilters = Object.freeze({
         buildVideoFilterCss,
         isVideoFilterIdentity,
+        readPhotosensitiveSetting,
+        computeFrameLuminance,
+        sampleVideoLuminance,
+        detectPhotosensitiveFlash,
+        buildPhotosensitiveOverlayCss,
+        PHOTOSENSITIVE_BOUNDS,
+        PHOTOSENSITIVE_FRAME_BUDGET_MS,
+        PHOTOSENSITIVE_FLASH_HOLD_MS,
+        PHOTOSENSITIVE_EVENT_COOLDOWN_MS,
         featureSpec,
         FIELD_BOUNDS
     });
@@ -103,7 +194,11 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             buildVideoFilterCss, isVideoFilterIdentity,
-            featureSpec, FIELD_BOUNDS
+            readPhotosensitiveSetting, computeFrameLuminance,
+            sampleVideoLuminance, detectPhotosensitiveFlash,
+            buildPhotosensitiveOverlayCss, PHOTOSENSITIVE_BOUNDS,
+            PHOTOSENSITIVE_FRAME_BUDGET_MS, PHOTOSENSITIVE_FLASH_HOLD_MS,
+            PHOTOSENSITIVE_EVENT_COOLDOWN_MS, featureSpec, FIELD_BOUNDS
         };
     }
 })();

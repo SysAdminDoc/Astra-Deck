@@ -2,10 +2,12 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.__playerCoreVersion >= 2) return;
+    if (core.__playerCoreVersion >= 3) return;
 
     const DEFAULT_RETRY_DELAYS = Object.freeze([0, 150, 400, 1000, 1800, 3000]);
     const DEFAULT_EVENTS = Object.freeze(['loadedmetadata', 'canplay', 'player-state', 'navigate', 'page-data']);
+    const DEFAULT_VIDEO_FRAME_BUDGET_MS = 1;
+    const MAX_CONSECUTIVE_OVER_BUDGET_FRAMES = 3;
 
     function getDefaultDocument() {
         return typeof document !== 'undefined' ? document : null;
@@ -47,6 +49,124 @@
     function toEventSet(events) {
         const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
         return new Set(list);
+    }
+
+    function computeFrameLuminance(pixels) {
+        if (!pixels || typeof pixels.length !== 'number' || pixels.length < 4) return null;
+        let total = 0;
+        let count = 0;
+        for (let index = 0; index + 2 < pixels.length; index += 4) {
+            total += (0.2126 * Number(pixels[index])
+                + 0.7152 * Number(pixels[index + 1])
+                + 0.0722 * Number(pixels[index + 2])) / 255;
+            count += 1;
+        }
+        return count > 0 && Number.isFinite(total) ? total / count : null;
+    }
+
+    function createVideoFrameSampler(options = {}) {
+        const getVideo = options.getVideo || (() => getMainVideoElement(options.document || getDefaultDocument()));
+        const onFrame = typeof options.onFrame === 'function' ? options.onFrame : () => {};
+        const onError = typeof options.onError === 'function' ? options.onError : () => {};
+        const onUnsupported = typeof options.onUnsupported === 'function' ? options.onUnsupported : () => {};
+        const onBudgetExceeded = typeof options.onBudgetExceeded === 'function' ? options.onBudgetExceeded : () => {};
+        const readNow = typeof options.now === 'function'
+            ? options.now
+            : () => (typeof performance !== 'undefined' && typeof performance.now === 'function'
+                ? performance.now()
+                : Date.now());
+        const budgetMs = Number.isFinite(Number(options.budgetMs))
+            ? Math.max(0, Number(options.budgetMs))
+            : DEFAULT_VIDEO_FRAME_BUDGET_MS;
+        let active = false;
+        let currentVideo = null;
+        let callbackId = null;
+        let generation = 0;
+        let lastSampleMs = 0;
+        let overBudgetFrames = 0;
+
+        function cancelPending() {
+            if (callbackId === null || callbackId === undefined) return;
+            try { currentVideo?.cancelVideoFrameCallback?.(callbackId); }
+            catch (_) { /* reason: a replaced video may no longer own the callback */ }
+            callbackId = null;
+        }
+
+        function stop() {
+            active = false;
+            generation += 1;
+            cancelPending();
+            currentVideo = null;
+            lastSampleMs = 0;
+            overBudgetFrames = 0;
+        }
+
+        function requestNext(token) {
+            if (!active || !currentVideo || token !== generation) return false;
+            if (typeof currentVideo.requestVideoFrameCallback !== 'function') {
+                active = false;
+                onUnsupported(currentVideo);
+                return false;
+            }
+            const video = currentVideo;
+            try {
+                callbackId = video.requestVideoFrameCallback((metadataNow, metadata) => {
+                    callbackId = null;
+                    if (!active || currentVideo !== video || token !== generation) return;
+                    const startedAt = readNow();
+                    try {
+                        onFrame(video, metadataNow, metadata);
+                    } catch (error) {
+                        stop();
+                        onError(error, video);
+                        return;
+                    }
+                    lastSampleMs = Math.max(0, Number(readNow()) - Number(startedAt));
+                    if (lastSampleMs > budgetMs) {
+                        overBudgetFrames += 1;
+                        if (overBudgetFrames >= MAX_CONSECUTIVE_OVER_BUDGET_FRAMES) {
+                            stop();
+                            onBudgetExceeded(lastSampleMs, video);
+                            return;
+                        }
+                    } else {
+                        overBudgetFrames = 0;
+                    }
+                    requestNext(token);
+                });
+                return true;
+            } catch (error) {
+                stop();
+                onError(error, video);
+                return false;
+            }
+        }
+
+        function start(video = null) {
+            stop();
+            currentVideo = video || getVideo();
+            if (!currentVideo) return false;
+            active = true;
+            return requestNext(generation);
+        }
+
+        function sync() {
+            if (!active) return start();
+            const nextVideo = getVideo();
+            if (nextVideo !== currentVideo) return start(nextVideo);
+            return true;
+        }
+
+        return {
+            start,
+            stop,
+            sync,
+            isRunning: () => active,
+            getVideo: () => currentVideo,
+            getLastSampleMs: () => lastSampleMs,
+            getOverBudgetFrames: () => overBudgetFrames,
+            budgetMs
+        };
     }
 
     function createPlayerTaskManager(options = {}) {
@@ -284,8 +404,10 @@
     const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 
     Object.assign(core, {
-        __playerCoreVersion: 2,
+        __playerCoreVersion: 3,
         createPlayerTaskManager,
+        createVideoFrameSampler,
+        computeFrameLuminance,
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,

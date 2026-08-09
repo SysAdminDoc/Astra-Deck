@@ -1457,4 +1457,201 @@
     });
 })();
 
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 7: local photosensitive flash protection
+    // ──────────────────────────────────────────────────────────────────
+    // The isolated feature owns the warning surface and settings. This
+    // MAIN-world half owns only the frame sampler, where YouTube's live
+    // HTMLVideoElement is available. It deliberately reads a 2x2 canvas on
+    // each requestVideoFrameCallback frame: one frame, one tiny readback,
+    // and no network or crowd-sourced classification.
+(function() {
+    'use strict';
+    if (typeof document === 'undefined' || !document.documentElement) return;
+
+    var root = document.documentElement;
+    var ENABLE_ATTR = 'data-ytkit-photosensitive';
+    var THRESHOLD_ATTR = 'data-ytkit-photosensitive-threshold';
+    var EVENT_ATTR = 'data-ytkit-photosensitive-event';
+    var STATUS_ATTR = 'data-ytkit-photosensitive-status';
+    var FAILURE_ATTR = 'data-ytkit-photosensitive-failure';
+    var TASK_ID = 'ytkit-main:photosensitiveFlashProtection';
+    var TASK_EVENTS = ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'];
+    var RETRY_DELAYS = [0, 150, 400, 1000, 1800, 3000];
+    var FRAME_BUDGET_MS = 1;
+    var FLASH_COOLDOWN_MS = 250;
+    var ALERT_STATUS_MS = 900;
+    var MAX_LUMINANCE_DELTA = 0.8;
+    var PlayerTaskManager = globalThis.YTKitCore && globalThis.YTKitCore.playerTaskManager;
+    var createSampler = globalThis.YTKitCore && globalThis.YTKitCore.createVideoFrameSampler;
+    var computeLuminance = globalThis.YTKitCore && globalThis.YTKitCore.computeFrameLuminance;
+    var sampler = null;
+    var canvas = null;
+    var context = null;
+    var enabled = false;
+    var previousLuminance = null;
+    var lastEventAt = -Infinity;
+    var eventSequence = 0;
+    var statusTimer = null;
+
+    function numberAttr(name, fallback, min, max) {
+        var value = parseFloat(root.getAttribute(name));
+        if (!isFinite(value)) value = fallback;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function writeStatus(value) {
+        var next = String(value || 'off');
+        if (root.getAttribute(STATUS_ATTR) !== next) root.setAttribute(STATUS_ATTR, next);
+    }
+
+    function resetFrameState() {
+        previousLuminance = null;
+        lastEventAt = -Infinity;
+        if (statusTimer !== null) {
+            clearTimeout(statusTimer);
+            statusTimer = null;
+        }
+    }
+
+    function stopSampler() {
+        if (sampler && typeof sampler.stop === 'function') sampler.stop();
+        sampler = null;
+        resetFrameState();
+        if (PlayerTaskManager && typeof PlayerTaskManager.cancel === 'function') {
+            PlayerTaskManager.cancel(TASK_ID);
+        }
+    }
+
+    function failClosed(kind, error) {
+        stopSampler();
+        writeStatus('disabled');
+        var detail = error && error.message ? String(error.message).slice(0, 120) : String(kind || 'runtime');
+        root.setAttribute(FAILURE_ATTR, String(kind || 'runtime') + ':' + Date.now() + ':' + detail);
+    }
+
+    function getVideo(ctx) {
+        return (ctx && ctx.video)
+            || document.querySelector('video.html5-main-video')
+            || document.querySelector('#movie_player video')
+            || null;
+    }
+
+    function readLuminance(video) {
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.width = 2;
+            canvas.height = 2;
+            context = canvas.getContext('2d', { willReadFrequently: true });
+        }
+        if (!context) throw new Error('photosensitive canvas readback unavailable');
+        context.drawImage(video, 0, 0, 2, 2);
+        var pixels = context.getImageData(0, 0, 2, 2).data;
+        if (typeof computeLuminance === 'function') return computeLuminance(pixels);
+        var total = 0;
+        for (var i = 0; i + 2 < pixels.length; i += 4) {
+            total += (0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]) / 255;
+        }
+        return total / 4;
+    }
+
+    function signalFlash(delta) {
+        var now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+        if (now - lastEventAt < FLASH_COOLDOWN_MS) return;
+        lastEventAt = now;
+        eventSequence += 1;
+        root.setAttribute(EVENT_ATTR, String(eventSequence) + ':' + String(Math.round(delta * 1000) / 1000));
+        writeStatus('alert');
+        if (statusTimer !== null) clearTimeout(statusTimer);
+        statusTimer = setTimeout(function() {
+            statusTimer = null;
+            if (enabled && sampler && sampler.isRunning && sampler.isRunning()) writeStatus('monitoring');
+        }, ALERT_STATUS_MS);
+    }
+
+    function handleFrame(video) {
+        var luminance = readLuminance(video);
+        if (!isFinite(luminance)) return;
+        if (previousLuminance !== null) {
+            var delta = Math.abs(luminance - previousLuminance);
+            var threshold = numberAttr(THRESHOLD_ATTR, 0.2, 0.05, MAX_LUMINANCE_DELTA);
+            if (delta >= threshold) signalFlash(delta);
+        }
+        previousLuminance = luminance;
+    }
+
+    function startSampler(video) {
+        if (!enabled) return true;
+        if (typeof createSampler !== 'function') {
+            writeStatus('unsupported');
+            return true;
+        }
+        if (sampler && sampler.isRunning && sampler.isRunning() && sampler.getVideo() === video) return true;
+        if (sampler && typeof sampler.stop === 'function') sampler.stop();
+        resetFrameState();
+        sampler = createSampler({
+            getVideo: function() { return getVideo(); },
+            budgetMs: FRAME_BUDGET_MS,
+            onFrame: function(frameVideo) { handleFrame(frameVideo); },
+            onUnsupported: function() { writeStatus('unsupported'); },
+            onError: function(error) { failClosed('sample', error); },
+            onBudgetExceeded: function(duration) { failClosed('budget', new Error('frame sample took ' + duration.toFixed(2) + 'ms')); }
+        });
+        if (!sampler.start(video)) {
+            writeStatus('unsupported');
+            return true;
+        }
+        writeStatus('monitoring');
+        return true;
+    }
+
+    function scheduleSampler(reason) {
+        if (!enabled) return;
+        if (PlayerTaskManager && typeof PlayerTaskManager.schedule === 'function') {
+            PlayerTaskManager.schedule(TASK_ID, function(ctx) {
+                return startSampler(getVideo(ctx));
+            }, {
+                owner: 'ytkit-main',
+                reason: reason || 'manual',
+                delay: 0,
+                needsVideo: true,
+                events: TASK_EVENTS,
+                retryDelays: RETRY_DELAYS,
+                maxAttempts: RETRY_DELAYS.length
+            });
+            return;
+        }
+        setTimeout(function() {
+            if (enabled) startSampler(getVideo());
+        }, 0);
+    }
+
+    function syncFromAttributes() {
+        var next = root.getAttribute(ENABLE_ATTR) === 'on';
+        if (next === enabled) {
+            if (enabled) scheduleSampler('attribute-refresh');
+            return;
+        }
+        enabled = next;
+        if (!enabled) {
+            stopSampler();
+            writeStatus('off');
+            return;
+        }
+        scheduleSampler('attribute');
+    }
+
+    _obsRegister([ENABLE_ATTR, THRESHOLD_ATTR], syncFromAttributes);
+    syncFromAttributes();
+
+    window.addEventListener('yt-navigate-start', function() {
+        if (!enabled) return;
+        stopSampler();
+        writeStatus('waiting');
+    });
+    window.addEventListener('yt-navigate-finish', function() {
+        if (enabled) scheduleSampler('navigate');
+    });
+})();
+
 })();  // outer N9 IIFE closes here
