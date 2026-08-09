@@ -2160,7 +2160,7 @@
     "message": "Ocultar botón Unirse del canal"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Ocultar videos de canales a los que no estás suscrito en tu feed de suscripciones"
+    "message": "Ocultar videos en colaboración de varios creadores en tu feed de suscripciones"
   },
   "feature_hideCollaborations_name": {
     "message": "Ocultar colaboraciones"

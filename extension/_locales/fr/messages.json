@@ -2160,7 +2160,7 @@
     "message": "Masquer le bouton Rejoindre la chaîne"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Masquer les vidéos des chaînes auxquelles vous n'êtes pas abonné dans votre flux d'abonnements"
+    "message": "Masquer les vidéos en collaboration entre plusieurs créateurs dans votre flux d'abonnements"
   },
   "feature_hideCollaborations_name": {
     "message": "Masquer les collaborations"

@@ -2160,7 +2160,7 @@
     "message": "チャンネル参加ボタンを非表示"
   },
   "feature_hideCollaborations_desc": {
-    "message": "登録チャンネルフィードで未登録チャンネルの動画を非表示"
+    "message": "登録チャンネルフィードで複数クリエイターのコラボ動画を非表示"
   },
   "feature_hideCollaborations_name": {
     "message": "コラボ動画を非表示"

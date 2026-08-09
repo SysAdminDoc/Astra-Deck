@@ -2160,7 +2160,7 @@
     "message": "Nascondi pulsante iscrizione canale"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Nascondi i video dai canali a cui non sei iscritto nel feed delle iscrizioni"
+    "message": "Nascondi i video in collaborazione tra più creator nel feed delle iscrizioni"
   },
   "feature_hideCollaborations_name": {
     "message": "Nascondi collaborazioni"

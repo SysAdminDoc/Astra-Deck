@@ -2160,7 +2160,7 @@
     "message": "Hide Channel Join Button"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you’re not subscribed to in your subscriptions feed"
+    "message": "Hide multi-creator collaboration uploads from your subscriptions feed"
   },
   "feature_hideCollaborations_name": {
     "message": "Hide Collaborations"
