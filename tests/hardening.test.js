@@ -12519,7 +12519,8 @@ test('autoClosePopups targets named promo renderers, never generic dialog button
 // re-initialized it: landing on Home and clicking Subscriptions left the
 // feature inert for the entire session. It also .remove()d cards outright,
 // so a truncated subscription fetch permanently destroyed videos from
-// channels the user genuinely subscribes to.
+// channels the user genuinely subscribes to. The subscription fetch itself is
+// retired — behaviour is pinned in tests/features/hide-collaborations.test.js.
 test('hideCollaborations is page-scoped and hides reversibly', () => {
     const start = ytkitSource.indexOf("id: 'hideCollaborations'");
     assert.ok(start > -1, 'hideCollaborations must exist');
@@ -12527,14 +12528,12 @@ test('hideCollaborations is page-scoped and hides reversibly', () => {
 
     assert.match(block, /pages: \[PageTypes\.SUBSCRIPTIONS\]/,
         'the feature must declare its page scope so navigation re-initializes it');
-    assert.ok(!/cardNode\.remove\(\)/.test(block),
-        'cards must never be destroyed — a truncated subscription list would delete real videos');
+    assert.ok(!/cardNode\.remove\(\)|card\.remove\(\)/.test(block),
+        'cards must never be destroyed — a misfiring verdict would delete real videos');
     assert.match(block, /_HIDDEN_CLASS: 'ytkit-collaboration-hidden'/,
         'hiding must go through a class so it can be undone');
-    assert.match(block, /cardNode\.classList\.remove\(this\._HIDDEN_CLASS\)/,
-        'a card whose channel is subscribed must be revealed again');
-    assert.match(block, /if \(!channel \|\| \(!channel\.title && !channel\.handle\)\) return;/,
-        'an unresolvable card must fail open rather than be hidden on a guess');
+    assert.match(block, /classList\.toggle\(this\._HIDDEN_CLASS, /,
+        'the verdict must be applied both ways so a re-judged card is revealed again');
     assert.match(block, /ytd-rich-item-renderer/,
         'the modern rich-grid subscriptions feed must be recognised');
     assert.match(block, /document\.querySelectorAll\(`\.\$\{this\._HIDDEN_CLASS\}`\)[\s\S]{0,140}?classList\.remove/,

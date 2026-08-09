@@ -2160,7 +2160,7 @@
     "message": "隐藏频道加入按钮"
   },
   "feature_hideCollaborations_desc": {
-    "message": "在订阅信息流中隐藏来自未订阅频道的视频"
+    "message": "在订阅信息流中隐藏多位创作者的合作视频"
   },
   "feature_hideCollaborations_name": {
     "message": "隐藏协作视频"

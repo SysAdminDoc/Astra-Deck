@@ -958,7 +958,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.58.0';
+    const YTKIT_VERSION = '4.58.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -17010,7 +17010,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'hideCollaborations',
             name: 'Hide Collaborations',
-            description: 'Hide videos from channels you\'re not subscribed to in your subscriptions feed',
+            description: 'Hide multi-creator collaboration uploads from your subscriptions feed',
             group: 'Content',
             icon: 'users-x',
             // Without a `pages` constraint the page-change tracker never
@@ -17019,106 +17019,75 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // clicking Subscriptions — the normal path — therefore left the
             // feature inert for the whole session even though it defaults on.
             pages: [PageTypes.SUBSCRIPTIONS],
-            _CARD_SELECTOR: 'ytd-item-section-renderer, ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
+            // `ytd-item-section-renderer` is deliberately absent: it wraps a
+            // whole feed section, and one bad verdict on it took every card
+            // inside down with it.
+            _CARD_SELECTOR: 'ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
             _HIDDEN_CLASS: 'ytkit-collaboration-hidden',
-            _subscriptions: [],
+            // YouTube marks a multi-creator upload with the stacked-avatar
+            // cluster and nothing else does. Structural and locale-free — the
+            // aria-label on it reads "Collaboration channels" in English only,
+            // so it is not part of the match.
+            //
+            // This replaced a subscription-list scrape: the feature used to
+            // fetch /feed/channels, read `contents[0]...expandedShelfContents`
+            // — the FIRST SHELF OF THE FIRST SECTION, with no continuation
+            // handling — and hide every card whose byline was missing from that
+            // truncated list. On a real account it hid 32 of 102 cards across
+            // 21 subscribed channels while leaving both genuine collaborations
+            // visible, because a collaboration byline ("X and 2 more") carries
+            // no /@handle link and so failed open. The scrape is gone; do not
+            // reintroduce a network-derived subscription list here.
+            _COLLAB_SELECTOR: 'yt-avatar-stack-view-model, .ytAvatarStackViewModelHost',
+            // Failing open is always the safe direction: at worst the feature
+            // does nothing and the user sees their whole feed. Collaborations
+            // are a small minority of any real subscriptions feed, so a pass
+            // that wants to hide more than this is misfiring and must not be
+            // trusted. The absence of this guard is what let the old
+            // implementation run at 31% of the feed with no visible symptom.
+            _MAX_HIDDEN_RATIO: 0.25,
+            _RATIO_GUARD_MIN_CARDS: 8,
             _observer: null,
             _navTimer: null,
+            _scanTimer: null,
             _styleElement: null,
-            _initialized: false,
 
-            async _fetchSubscriptions() {
+            _isCollaborationCard(cardNode) {
                 try {
-                    const { text: html } = await extensionFetchText({
-                        url: 'https://www.youtube.com/feed/channels'
-                    });
-                    const dataMarker = 'ytInitialData = ';
-                    let startIdx = html.indexOf(dataMarker);
-                    if (startIdx === -1) return [];
-                    let jsonStr = html.substring(startIdx + dataMarker.length);
-                    const endIdx = jsonStr.indexOf('</script>');
-                    if (endIdx === -1) return [];
-                    jsonStr = jsonStr.substring(0, endIdx);
-                    const start = jsonStr.indexOf('{');
-                    const end = jsonStr.lastIndexOf('}');
-                    const ytInitialData = JSON.parse(jsonStr.substring(start, end + 1));
-                    const tabs = ytInitialData?.contents?.twoColumnBrowseResultsRenderer?.tabs;
-                    if (!tabs || !tabs[0]) return [];
-                    const sectionList = tabs[0]?.tabRenderer?.content?.sectionListRenderer;
-                    if (!sectionList) return [];
-                    const items = sectionList?.contents?.[0]?.itemSectionRenderer?.contents?.[0]?.shelfRenderer?.content?.expandedShelfContentsRenderer?.items;
-                    if (!items) return [];
-                    return items.map(({ channelRenderer }) => {
-                        if (!channelRenderer) return null;
-                        const title = channelRenderer?.title?.simpleText;
-                        const navUrl = channelRenderer?.navigationEndpoint?.browseEndpoint?.canonicalBaseUrl ||
-                                       channelRenderer?.navigationEndpoint?.commandMetadata?.webCommandMetadata?.url || '';
-                        const handle = navUrl.startsWith('/@') ? navUrl.slice(1) : navUrl.replace(/^\//, '');
-                        return { title, handle };
-                    }).filter(s => s && s.title);
+                    return !!cardNode?.querySelector?.(this._COLLAB_SELECTOR);
                 } catch (e) {
-                    console.error('[YTKit] Failed to fetch subscriptions:', e);
-                    return [];
-                }
-            },
-
-            _isSubscribed(channel) {
-                if (!channel) return true;
-                if (channel.startsWith('@')) {
-                    return this._subscriptions.some(s => s.handle === channel);
-                }
-                return this._subscriptions.some(s => s.title === channel);
-            },
-
-            _resolveCardChannel(cardNode) {
-                // Legacy shelf layout.
-                const shelfLink = cardNode.querySelector('ytd-shelf-renderer #title-container a[title]');
-                if (shelfLink) {
-                    return {
-                        title: shelfLink.getAttribute('title'),
-                        handle: shelfLink.getAttribute('href')?.slice(1)
-                    };
-                }
-                // Modern rich-grid card: the byline carries the channel link.
-                const bylineLink = cardNode.querySelector(
-                    'ytd-channel-name a[href^="/@"], ytd-channel-name a[href^="/channel/"], '
-                    + '.yt-content-metadata-view-model-wiz__metadata-row a[href^="/@"], '
-                    + 'a.yt-core-attributed-string__link[href^="/@"], a[href^="/@"]'
-                );
-                if (!bylineLink) return null;
-                const href = bylineLink.getAttribute('href') || '';
-                return {
-                    title: (bylineLink.textContent || '').trim() || bylineLink.getAttribute('title'),
-                    handle: href.startsWith('/') ? href.slice(1).split('/')[0] : ''
-                };
-            },
-
-            _validateFeedCard(cardNode) {
-                if (!cardNode?.matches?.(this._CARD_SELECTOR)) return;
-                const channel = this._resolveCardChannel(cardNode);
-                // Fail open: a card whose channel cannot be resolved is left
-                // alone rather than hidden on a guess.
-                if (!channel || (!channel.title && !channel.handle)) return;
-                const subscribed = this._isSubscribed(channel.title) || this._isSubscribed(channel.handle);
-                // Toggled BOTH ways, and by class rather than .remove(): the
-                // subscription list is parsed from a single /feed/channels
-                // batch, so a truncated list used to permanently delete videos
-                // from channels the user genuinely subscribes to.
-                if (!subscribed) {
-                    if (!cardNode.classList.contains(this._HIDDEN_CLASS)) {
-                        DebugManager.log('Content', 'Hiding collaboration from:', channel.title || channel.handle);
-                        cardNode.classList.add(this._HIDDEN_CLASS);
-                    }
-                } else {
-                    cardNode.classList.remove(this._HIDDEN_CLASS);
+                    // reason: a detached or non-element node must not stop the pass
+                    void e;
+                    return false;
                 }
             },
 
             _processVisibleCards() {
-                document.querySelectorAll(this._CARD_SELECTOR).forEach(card => this._validateFeedCard(card));
+                const cards = Array.from(document.querySelectorAll(this._CARD_SELECTOR));
+                if (cards.length === 0) return;
+                const collaborations = cards.filter(card => this._isCollaborationCard(card));
+                if (cards.length >= this._RATIO_GUARD_MIN_CARDS
+                    && collaborations.length / cards.length > this._MAX_HIDDEN_RATIO) {
+                    cards.forEach(card => card.classList.remove(this._HIDDEN_CLASS));
+                    DiagnosticLog?.record(
+                        'hideCollaborations',
+                        `refused to hide ${collaborations.length}/${cards.length} feed cards`
+                    );
+                    DebugManager.log('Content', `Collaboration filter bailed: ${collaborations.length}/${cards.length}`);
+                    return;
+                }
+                const hide = new Set(collaborations);
+                // Toggled BOTH ways rather than removed, so turning the feature
+                // off or a card being re-judged restores it immediately.
+                cards.forEach(card => card.classList.toggle(this._HIDDEN_CLASS, hide.has(card)));
             },
 
-            async init() {
+            _scheduleScan(delay = 250) {
+                clearTimeout(this._scanTimer);
+                this._scanTimer = setTimeout(() => this._processVisibleCards(), delay);
+            },
+
+            init() {
                 if (!this._styleElement) {
                     this._styleElement = injectStyle(
                         `.${this._HIDDEN_CLASS}{display:none !important}`,
@@ -17127,32 +17096,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     );
                 }
                 if (window.location.pathname !== '/feed/subscriptions') return;
-                this._subscriptions = await this._fetchSubscriptions();
-                // Feature may have been destroyed during the async fetch
-                if (!this._initialized) return;
-                DebugManager.log('Content', `Loaded ${this._subscriptions.length} subscriptions`);
-                if (this._subscriptions.length === 0) return;
 
-                // Process existing items
                 this._processVisibleCards();
 
-                // Watch for new items
-                const feedSelector = 'ytd-section-list-renderer > div#contents';
-                const feed = document.querySelector(feedSelector);
+                // Batches are re-scanned whole rather than per added node, so
+                // the ratio guard sees the real feed every time.
+                const feed = document.querySelector('ytd-section-list-renderer > div#contents');
                 if (feed) {
-                    this._observer = new MutationObserver((mutations) => {
-                        for (const m of mutations) {
-                            if (m.type === 'childList' && m.addedNodes.length > 0) {
-                                m.addedNodes.forEach(node => {
-                                    if (node.nodeType === 1) this._validateFeedCard(node);
-                                });
-                            }
-                        }
-                    });
-                    this._observer.observe(feed, { childList: true });
+                    this._observer = new MutationObserver(() => this._scheduleScan(250));
+                    this._observer.observe(feed, { childList: true, subtree: true });
                 }
 
-                // Re-run on navigation
                 this._navTimer = null;
                 addNavigateRule(this.id, () => {
                     if (window.location.pathname === '/feed/subscriptions') {
@@ -17167,6 +17121,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._observer = null;
                 clearTimeout(this._navTimer);
                 this._navTimer = null;
+                clearTimeout(this._scanTimer);
+                this._scanTimer = null;
                 removeNavigateRule(this.id);
                 document.querySelectorAll(`.${this._HIDDEN_CLASS}`)
                     .forEach(card => card.classList.remove(this._HIDDEN_CLASS));

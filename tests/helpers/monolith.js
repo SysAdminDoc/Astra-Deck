@@ -85,7 +85,15 @@ function fakeNode(options = {}) {
         classList: {
             add: (name) => classes.add(name),
             remove: (name) => classes.delete(name),
-            contains: (name) => classes.has(name)
+            contains: (name) => classes.has(name),
+            // Features toggle hide-classes both ways so a card can be revealed
+            // again; a fake without `toggle` silently no-ops that whole path.
+            toggle: (name, force) => {
+                const next = force === undefined ? !classes.has(name) : !!force;
+                if (next) classes.add(name);
+                else classes.delete(name);
+                return next;
+            }
         },
         hasAttribute: (name) => attrs.has(name),
         getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),

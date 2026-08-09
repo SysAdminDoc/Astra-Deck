@@ -2160,7 +2160,7 @@
     "message": "إخفاء زر الانضمام للقناة"
   },
   "feature_hideCollaborations_desc": {
-    "message": "إخفاء فيديوهات القنوات غير المشترك بها من خلاصة الاشتراكات"
+    "message": "إخفاء مقاطع الفيديو التعاونية متعددة المنشئين من خلاصة الاشتراكات"
   },
   "feature_hideCollaborations_name": {
     "message": "إخفاء التعاونات"

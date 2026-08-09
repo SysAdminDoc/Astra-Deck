@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.58.0
+// @name         YTKit v4.58.1
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.58.0
+// @version      4.58.1
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -30810,7 +30810,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.58.0';
+    const YTKIT_VERSION = '4.58.1';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -36472,107 +36472,120 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'hideCollaborations',
             name: 'Hide Collaborations',
-            description: 'Hide videos from channels you\'re not subscribed to in your subscriptions feed',
+            description: 'Hide multi-creator collaboration uploads from your subscriptions feed',
             group: 'Content',
             icon: 'users-x',
-            _subscriptions: [],
+            // Without a `pages` constraint the page-change tracker never
+            // re-initializes this feature, and init() returns immediately when
+            // the pathname is not the subscriptions feed. Landing on Home and
+            // clicking Subscriptions — the normal path — therefore left the
+            // feature inert for the whole session even though it defaults on.
+            pages: [PageTypes.SUBSCRIPTIONS],
+            // `ytd-item-section-renderer` is deliberately absent: it wraps a
+            // whole feed section, and one bad verdict on it took every card
+            // inside down with it.
+            _CARD_SELECTOR: 'ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer',
+            _HIDDEN_CLASS: 'ytkit-collaboration-hidden',
+            // YouTube marks a multi-creator upload with the stacked-avatar
+            // cluster and nothing else does. Structural and locale-free — the
+            // aria-label on it reads "Collaboration channels" in English only,
+            // so it is not part of the match.
+            //
+            // This replaced a subscription-list scrape: the feature used to
+            // fetch /feed/channels, read `contents[0]...expandedShelfContents`
+            // — the FIRST SHELF OF THE FIRST SECTION, with no continuation
+            // handling — and hide every card whose byline was missing from that
+            // truncated list. On a real account it hid 32 of 102 cards across
+            // 21 subscribed channels while leaving both genuine collaborations
+            // visible, because a collaboration byline ("X and 2 more") carries
+            // no /@handle link and so failed open. The scrape is gone; do not
+            // reintroduce a network-derived subscription list here.
+            _COLLAB_SELECTOR: 'yt-avatar-stack-view-model, .ytAvatarStackViewModelHost',
+            // Failing open is always the safe direction: at worst the feature
+            // does nothing and the user sees their whole feed. Collaborations
+            // are a small minority of any real subscriptions feed, so a pass
+            // that wants to hide more than this is misfiring and must not be
+            // trusted. The absence of this guard is what let the old
+            // implementation run at 31% of the feed with no visible symptom.
+            _MAX_HIDDEN_RATIO: 0.25,
+            _RATIO_GUARD_MIN_CARDS: 8,
             _observer: null,
-            _initialized: false,
+            _navTimer: null,
+            _scanTimer: null,
+            _styleElement: null,
 
-            async _fetchSubscriptions() {
+            _isCollaborationCard(cardNode) {
                 try {
-                    const response = await fetch('https://www.youtube.com/feed/channels');
-                    const html = await response.text();
-                    const dataMarker = 'ytInitialData = ';
-                    let startIdx = html.indexOf(dataMarker);
-                    if (startIdx === -1) return [];
-                    let jsonStr = html.substring(startIdx + dataMarker.length);
-                    const endIdx = jsonStr.indexOf('</script>');
-                    if (endIdx === -1) return [];
-                    jsonStr = jsonStr.substring(0, endIdx);
-                    const start = jsonStr.indexOf('{');
-                    const end = jsonStr.lastIndexOf('}');
-                    const ytInitialData = JSON.parse(jsonStr.substring(start, end + 1));
-                    const tabs = ytInitialData?.contents?.twoColumnBrowseResultsRenderer?.tabs;
-                    if (!tabs || !tabs[0]) return [];
-                    const sectionList = tabs[0]?.tabRenderer?.content?.sectionListRenderer;
-                    if (!sectionList) return [];
-                    const items = sectionList?.contents?.[0]?.itemSectionRenderer?.contents?.[0]?.shelfRenderer?.content?.expandedShelfContentsRenderer?.items;
-                    if (!items) return [];
-                    return items.map(({ channelRenderer }) => {
-                        if (!channelRenderer) return null;
-                        const title = channelRenderer?.title?.simpleText;
-                        const navUrl = channelRenderer?.navigationEndpoint?.browseEndpoint?.canonicalBaseUrl ||
-                                       channelRenderer?.navigationEndpoint?.commandMetadata?.webCommandMetadata?.url || '';
-                        const handle = navUrl.startsWith('/@') ? navUrl.slice(1) : navUrl.replace(/^\//, '');
-                        return { title, handle };
-                    }).filter(s => s && s.title);
+                    return !!cardNode?.querySelector?.(this._COLLAB_SELECTOR);
                 } catch (e) {
-                    console.error('[YTKit] Failed to fetch subscriptions:', e);
-                    return [];
+                    // reason: a detached or non-element node must not stop the pass
+                    void e;
+                    return false;
                 }
             },
 
-            _isSubscribed(channel) {
-                if (!channel) return true;
-                if (channel.startsWith('@')) {
-                    return this._subscriptions.some(s => s.handle === channel);
+            _processVisibleCards() {
+                const cards = Array.from(document.querySelectorAll(this._CARD_SELECTOR));
+                if (cards.length === 0) return;
+                const collaborations = cards.filter(card => this._isCollaborationCard(card));
+                if (cards.length >= this._RATIO_GUARD_MIN_CARDS
+                    && collaborations.length / cards.length > this._MAX_HIDDEN_RATIO) {
+                    cards.forEach(card => card.classList.remove(this._HIDDEN_CLASS));
+                    DebugManager.log('Content', `Collaboration filter bailed: ${collaborations.length}/${cards.length}`);
+                    return;
                 }
-                return this._subscriptions.some(s => s.title === channel);
+                const hide = new Set(collaborations);
+                // Toggled BOTH ways rather than removed, so turning the feature
+                // off or a card being re-judged restores it immediately.
+                cards.forEach(card => card.classList.toggle(this._HIDDEN_CLASS, hide.has(card)));
             },
 
-            _validateFeedCard(cardNode) {
-                if (cardNode.tagName !== 'YTD-ITEM-SECTION-RENDERER') return;
-                const channelLink = cardNode.querySelector('ytd-shelf-renderer #title-container a[title]');
-                if (!channelLink) return;
-                const title = channelLink.getAttribute('title');
-                const handle = channelLink.getAttribute('href')?.slice(1);
-                if (!this._isSubscribed(title) && !this._isSubscribed(handle)) {
-                    DebugManager.log('Content', 'Hiding collaboration from:', title);
-                    cardNode.remove();
-                }
+            _scheduleScan(delay = 250) {
+                clearTimeout(this._scanTimer);
+                this._scanTimer = setTimeout(() => this._processVisibleCards(), delay);
             },
 
-            async init() {
+            init() {
+                if (!this._styleElement) {
+                    this._styleElement = injectStyle(
+                        `.${this._HIDDEN_CLASS}{display:none !important}`,
+                        this.id,
+                        true
+                    );
+                }
                 if (window.location.pathname !== '/feed/subscriptions') return;
-                this._subscriptions = await this._fetchSubscriptions();
-                // Feature may have been destroyed during the async fetch
-                if (!this._initialized) return;
-                DebugManager.log('Content', `Loaded ${this._subscriptions.length} subscriptions`);
-                if (this._subscriptions.length === 0) return;
 
-                // Process existing items
-                document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
+                this._processVisibleCards();
 
-                // Watch for new items
-                const feedSelector = 'ytd-section-list-renderer > div#contents';
-                const feed = document.querySelector(feedSelector);
+                // Batches are re-scanned whole rather than per added node, so
+                // the ratio guard sees the real feed every time.
+                const feed = document.querySelector('ytd-section-list-renderer > div#contents');
                 if (feed) {
-                    this._observer = new MutationObserver((mutations) => {
-                        for (const m of mutations) {
-                            if (m.type === 'childList' && m.addedNodes.length > 0) {
-                                m.addedNodes.forEach(node => {
-                                    if (node.nodeType === 1) this._validateFeedCard(node);
-                                });
-                            }
-                        }
-                    });
-                    this._observer.observe(feed, { childList: true });
+                    this._observer = new MutationObserver(() => this._scheduleScan(250));
+                    this._observer.observe(feed, { childList: true, subtree: true });
                 }
 
-                // Re-run on navigation
+                this._navTimer = null;
                 addNavigateRule(this.id, () => {
                     if (window.location.pathname === '/feed/subscriptions') {
-                        setTimeout(() => {
-                            document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
-                        }, 1000);
+                        clearTimeout(this._navTimer);
+                        this._navTimer = setTimeout(() => this._processVisibleCards(), 1000);
                     }
                 });
             },
 
             destroy() {
                 this._observer?.disconnect();
+                this._observer = null;
+                clearTimeout(this._navTimer);
+                this._navTimer = null;
+                clearTimeout(this._scanTimer);
+                this._scanTimer = null;
                 removeNavigateRule(this.id);
+                document.querySelectorAll(`.${this._HIDDEN_CLASS}`)
+                    .forEach(card => card.classList.remove(this._HIDDEN_CLASS));
+                this._styleElement?.remove();
+                this._styleElement = null;
             }
         },
         // ═══════════════════════════════════════════════════════════════════

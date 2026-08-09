@@ -2160,7 +2160,7 @@
     "message": "Ocultar Botão Participar do Canal"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Ocultar vídeos de canais em que você não é inscrito no feed de inscrições"
+    "message": "Ocultar vídeos em colaboração de vários criadores no feed de inscrições"
   },
   "feature_hideCollaborations_name": {
     "message": "Ocultar Colaborações"

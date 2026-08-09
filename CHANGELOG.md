@@ -8,6 +8,43 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [4.58.1] - 2026-08-09
+
+### Fixed
+
+- **Hide Collaborations no longer hides a third of the subscriptions feed.**
+  The feature decided which cards were collaborations by scraping
+  `youtube.com/feed/channels` for the subscription list and hiding every card
+  whose byline was missing from it. It read only the first shelf of the first
+  section of that page and never followed a continuation, so on any account
+  with more subscriptions than the first batch the rest were treated as
+  unsubscribed. On a real feed it hid **32 of 102 cards across 21 subscribed
+  channels** — ordinary uploads — while leaving both genuine collaborations
+  visible, because a collaboration byline ("X and 2 more") carries no `/@handle`
+  link and so failed open. The feature defaults ON, is scoped to the
+  subscriptions feed, and is independent of Video Hider, so turning Video Hider
+  off did not stop it.
+
+  The scrape is retired. Detection now keys on `yt-avatar-stack-view-model` —
+  the stacked-avatar cluster YouTube puts on multi-creator uploads — which is
+  structural, locale-free, local, and needs no network request. Verified
+  against a captured feed: exactly the 2 collaboration cards hide, the other
+  100 stay.
+
+- **A misfiring feed filter can no longer hide the feed silently.** The
+  collaboration pass now refuses to act when it would hide more than 25% of a
+  feed of 8 or more cards, reveals everything it had hidden, and records the
+  refusal to the diagnostic log. Failing open is the safe direction: at worst
+  the feature does nothing. The absence of that guard is what let the previous
+  implementation run at 31% of the feed with no visible symptom.
+
+- The userscript copy of the feature called `cardNode.remove()`, destroying
+  cards outright with no way to restore them. It now shares the extension's
+  class-toggle behaviour and its whole-section (`ytd-item-section-renderer`)
+  hide target is gone.
+
+---
+
 ## [4.58.0] - 2026-08-09
 
 ### Fixed

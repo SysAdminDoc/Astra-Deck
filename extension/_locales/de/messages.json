@@ -2160,7 +2160,7 @@
     "message": "Kanal-Beitreten-Schaltfläche ausblenden"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Videos von nicht abonnierten Kanälen im Abonnement-Feed ausblenden"
+    "message": "Videos mit mehreren Creatorn (Kollaborationen) im Abonnement-Feed ausblenden"
   },
   "feature_hideCollaborations_name": {
     "message": "Kollaborationen ausblenden"

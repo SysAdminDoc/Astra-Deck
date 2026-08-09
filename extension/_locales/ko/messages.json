@@ -2160,7 +2160,7 @@
     "message": "채널 가입 버튼 숨기기"
   },
   "feature_hideCollaborations_desc": {
-    "message": "구독 피드에서 구독하지 않은 채널의 동영상 숨기기"
+    "message": "구독 피드에서 여러 크리에이터의 합동 동영상 숨기기"
   },
   "feature_hideCollaborations_name": {
     "message": "콜라보 숨기기"
