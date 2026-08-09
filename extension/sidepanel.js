@@ -443,6 +443,9 @@ function externalDetail(service) {
     if (service.lastSuccessTs) {
         parts.push(t('spExternalOkAgoTpl', 'ok {age} ago').replace('{age}', externalAge(service.lastSuccessTs)));
     }
+    if (service.lastHost) {
+        parts.push(t('spExternalHostTpl', 'host {host}').replace('{host}', String(service.lastHost)));
+    }
     if (service.lastErrorClass) parts.push(service.lastErrorClass);
     if (service.cacheState && service.cacheState !== 'unknown') {
         parts.push(t('spExternalCacheTpl', 'cache {state}').replace('{state}', String(service.cacheState)));

@@ -501,6 +501,8 @@
     "restoreNativeYouTubeUi",
     "sbPerChannelProfiles",
     "sbPerChannelProfilesData",
+    "sponsorBlockBaseUrl",
+    "sponsorBlockMirrorUrl",
     "searchHideRelatedSearches",
     "searchHideUnrelatedShelves",
     "searchHideWatchedRecommended",

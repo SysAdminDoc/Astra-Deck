@@ -3592,6 +3592,8 @@ return response;
             daShowOriginalHover: true,
             daCacheTTL: '4',
             sponsorBlock: true,
+            sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+            sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks',
             sbCat_sponsor: true,
             sbCat_intro: true,
             sbCat_outro: true,
@@ -3661,7 +3663,8 @@ return response;
                 'hideVideosWatchedRatio',
                 'hiddenActionButtonsManager', 'hiddenActionButtons', 'hiddenPlayerControlsManager',
                 'hiddenPlayerControls', 'hiddenWatchElementsManager', 'hiddenWatchElements',
-                'sponsorBlock', 'sbCat_sponsor', 'sbCat_intro', 'sbCat_outro',
+                'sponsorBlock', 'sponsorBlockBaseUrl', 'sponsorBlockMirrorUrl',
+                'sbCat_sponsor', 'sbCat_intro', 'sbCat_outro',
                 'sbCat_selfpromo', 'sbCat_interaction', 'sbCat_music_offtopic',
                 'sbCat_preview', 'sbCat_filler', 'sbCat_poi_highlight',
                 'sbPerChannelProfiles'
@@ -6142,6 +6145,31 @@ return response;
         markedWatched: ['videoHiderReasonMarkedWatched', 'your local watched marker'],
         predicate: ['videoHiderReasonPredicate', 'your advanced local rule']
     });
+
+    const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
+        'https://sponsor.ajay.app',
+        'https://sponsorblock.kavin.rocks'
+    ]);
+
+    function resolveSponsorBlockApiOrigins(settings = {}) {
+        const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
+        if (typeof sharedResolver === 'function') return sharedResolver(settings);
+        const allowed = new Set(SPONSORBLOCK_API_FALLBACK_ORIGINS);
+        const normalize = (value) => {
+            if (typeof value !== 'string' || !value.trim()) return null;
+            try {
+                const parsed = new URL(value.trim());
+                if (parsed.protocol !== 'https:' || parsed.username || parsed.password
+                    || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+                return allowed.has(parsed.origin) ? parsed.origin : null;
+            } catch (_) {
+                return null;
+            }
+        };
+        const primary = normalize(settings.sponsorBlockBaseUrl) || SPONSORBLOCK_API_FALLBACK_ORIGINS[0];
+        const mirror = normalize(settings.sponsorBlockMirrorUrl);
+        return Array.from(new Set([primary, mirror].filter(Boolean)));
+    }
 
     const features = [
         // ─── Interface ───
@@ -31122,6 +31150,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     });
                     return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
                 }
+                const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
                 try {
                     // Privacy-preserving hash-prefix lookup: only send the first
                     // 4 chars of the SHA-256 hash so the server never sees the
@@ -31130,50 +31159,48 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const hashArray = Array.from(new Uint8Array(hashBuffer));
                     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                     const prefix = hashHex.substring(0, 4);
-                    const { data } = await extensionFetchJson({
-                        method: 'GET',
-                        url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
-                        timeout: 8000,
-                    });
-                    if (!Array.isArray(data)) {
-                        const payloadError = new Error('invalid SponsorBlock skipSegments payload');
-                        const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
-                        if (stale) {
-                            ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', payloadError, {
-                                errorClass: 'invalid-payload',
-                                endpoint: 'skipSegments',
-                                cacheState: 'stale',
-                                fallbackState: 'stale-cache'
+                    let lastError = null;
+                    for (let hostIndex = 0; hostIndex < apiOrigins.length; hostIndex++) {
+                        const host = apiOrigins[hostIndex];
+                        try {
+                            const { data } = await extensionFetchJson({
+                                method: 'GET',
+                                url: `${host}/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
+                                timeout: 8000,
                             });
-                            return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                            if (!Array.isArray(data)) throw new Error('invalid SponsorBlock skipSegments payload');
+                            // Filter for exact video ID match from hash-prefix results
+                            const match = data.find(entry => entry.videoID === videoId);
+                            const segments = match && Array.isArray(match.segments)
+                                ? this._normalizeSegments(match.segments)
+                                : [];
+                            // Don't resurrect the destroy()-nulled cache or arm a persist
+                            // timer if the feature was torn down while this was in flight.
+                            if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
+                            ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                                source: 'network',
+                                cacheState: 'refreshed',
+                                fallbackState: hostIndex > 0 ? 'mirror' : '',
+                                endpoint: 'skipSegments',
+                                host,
+                                itemCount: segments.length
+                            });
+                            return segments;
+                        } catch (error) {
+                            lastError = error;
+                            if (hostIndex + 1 < apiOrigins.length) {
+                                DiagnosticLog?.record?.('sponsorBlock', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
+                            }
                         }
-                        ExternalApiHealth?.recordFailure?.('sponsorBlock', payloadError, {
-                            errorClass: 'invalid-payload',
-                            endpoint: 'skipSegments',
-                            cacheState: 'miss'
-                        });
-                        return [];
                     }
-                    // Filter for exact video ID match from hash-prefix results
-                    const match = data.find(entry => entry.videoID === videoId);
-                    const segments = match && Array.isArray(match.segments)
-                        ? this._normalizeSegments(match.segments)
-                        : [];
-                    // Don't resurrect the destroy()-nulled cache or arm a persist
-                    // timer if the feature was torn down while this was in flight.
-                    if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
-                    ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
-                        source: 'network',
-                        cacheState: 'refreshed',
-                        endpoint: 'skipSegments',
-                        itemCount: segments.length
-                    });
-                    return segments;
+                    throw lastError || new Error('SponsorBlock API host list is empty');
                 } catch (error) {
                     const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                    const lastHost = apiOrigins[apiOrigins.length - 1] || '';
                     if (stale) {
                         ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', error, {
                             endpoint: 'skipSegments',
+                            host: lastHost,
                             cacheState: 'stale',
                             fallbackState: 'stale-cache'
                         });
@@ -31182,6 +31209,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     ExternalApiHealth?.recordFailure?.('sponsorBlock', error, {
                         endpoint: 'skipSegments',
+                        host: lastHost,
                         cacheState: 'miss'
                     });
                     DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
@@ -31449,6 +31477,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         }),
         // SponsorBlock category sub-features
+        { id: 'sponsorBlockBaseUrl', name: t('feature_sponsorBlockBaseUrl_name', 'SponsorBlock API Host'), description: t('feature_sponsorBlockBaseUrl_desc', 'Choose the primary HTTPS host used by SponsorBlock and DeArrow.'), group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsor.ajay.app',label:t('feature_sponsorBlockCanonicalHost_label', 'Canonical — sponsor.ajay.app')},{value:'https://sponsorblock.kavin.rocks',label:t('feature_sponsorBlockMirrorHost_label', 'Mirror — sponsorblock.kavin.rocks')}], init(){}, destroy(){} },
+        { id: 'sponsorBlockMirrorUrl', name: t('feature_sponsorBlockMirrorUrl_name', 'SponsorBlock Fallback Host'), description: t('feature_sponsorBlockMirrorUrl_desc', 'Try this approved mirror once when the primary API host fails.'), group: 'Content', icon: 'git-branch', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsorblock.kavin.rocks',label:t('feature_sponsorBlockMirrorHost_label', 'Mirror — sponsorblock.kavin.rocks')},{value:'https://sponsor.ajay.app',label:t('feature_sponsorBlockCanonicalHost_label', 'Canonical — sponsor.ajay.app')},{value:'',label:t('feature_sponsorBlockDisabled_label', 'Disabled')}], init(){}, destroy(){} },
         { id: 'sbCat_sponsor', name: 'Skip Sponsors', description: 'Paid promotions and sponsorship segments', group: 'Content', icon: 'dollar-sign', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_intro', name: 'Skip Intros', description: 'Intro animations and branding', group: 'Content', icon: 'skip-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_outro', name: 'Skip Outros', description: 'Endcards and outro sequences', group: 'Content', icon: 'skip-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
@@ -31907,30 +31937,60 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const gen = this._generation;
                 let data;
                 let expectedMiss = false;
-                try {
-                    ({ data } = await extensionFetchJson({
-                        method: 'GET',
-                        url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
-                        timeout: 8000,
-                    }));
-                } catch (error) {
-                    // DeArrow uses HTTP 404 for a valid video with no submitted
-                    // title or thumbnail. It still returns an empty branding
-                    // object, so this is a normal negative lookup rather than
-                    // a rejected request or service outage.
-                    if (Number(error?.response?.status) === 404) {
-                        expectedMiss = true;
-                        data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
-                            ? error.data
-                            : { titles: [], thumbnails: [], casualVotes: [] };
-                    } else {
-                        ExternalApiHealth?.recordFailure?.('deArrow', error, {
-                            endpoint: 'branding',
-                            cacheState: 'miss'
-                        });
-                        DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
-                        return null;
+                const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
+                let answeredHost = '';
+                let lastError = null;
+                for (let hostIndex = 0; hostIndex < apiOrigins.length; hostIndex++) {
+                    const host = apiOrigins[hostIndex];
+                    expectedMiss = false;
+                    try {
+                        ({ data } = await extensionFetchJson({
+                            method: 'GET',
+                            url: `${host}/api/branding?videoID=${encodeURIComponent(videoId)}`,
+                            timeout: 8000,
+                        }));
+                        answeredHost = host;
+                    } catch (error) {
+                        // DeArrow uses HTTP 404 for a valid video with no submitted
+                        // title or thumbnail. It still returns an empty branding
+                        // object, so this is a normal negative lookup rather than
+                        // a rejected request or service outage.
+                        if (Number(error?.response?.status) === 404) {
+                            expectedMiss = true;
+                            answeredHost = host;
+                            data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
+                                ? error.data
+                                : { titles: [], thumbnails: [], casualVotes: [] };
+                            break;
+                        }
+                        lastError = error;
+                        if (hostIndex + 1 < apiOrigins.length) {
+                            DiagnosticLog?.record?.('deArrow', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
+                            continue;
+                        }
+                        break;
                     }
+
+                    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                        lastError = new Error('invalid DeArrow branding payload');
+                        if (hostIndex + 1 < apiOrigins.length) {
+                            DiagnosticLog?.record?.('deArrow', `API host ${host} returned an invalid payload; trying ${apiOrigins[hostIndex + 1]}`);
+                            continue;
+                        }
+                    }
+                    if (answeredHost) break;
+                }
+                if (!answeredHost || !data || typeof data !== 'object' || Array.isArray(data)) {
+                    const error = lastError || new Error('DeArrow API host list is empty');
+                    const failureDetail = {
+                        endpoint: 'branding',
+                        host: apiOrigins[apiOrigins.length - 1] || '',
+                        cacheState: 'miss'
+                    };
+                    if (/invalid.*payload/i.test(error?.message || '')) failureDetail.errorClass = 'invalid-payload';
+                    ExternalApiHealth?.recordFailure?.('deArrow', error, failureDetail);
+                    DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                    return null;
                 }
                 // Feature was torn down while this request was in flight —
                 // do not resurrect the freshly-cleared cache or arm a persist
@@ -31941,6 +32001,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
                         errorClass: 'invalid-payload',
                         endpoint: 'branding',
+                        host: answeredHost,
                         cacheState: 'miss'
                     });
                     DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
@@ -31964,7 +32025,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 ExternalApiHealth?.recordSuccess?.('deArrow', {
                     source: expectedMiss ? 'network-miss' : 'network',
                     cacheState: 'refreshed',
-                    endpoint: 'branding'
+                    fallbackState: answeredHost !== apiOrigins[0] ? 'mirror' : '',
+                    endpoint: 'branding',
+                    host: answeredHost
                 });
                 return data;
             },

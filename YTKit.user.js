@@ -20,6 +20,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @connect      sponsor.ajay.app
+// @connect      sponsorblock.kavin.rocks
 // @connect      returnyoutubedislikeapi.com
 // @connect      api.openai.com
 // @connect      api.anthropic.com
@@ -2350,6 +2351,8 @@
         Object.freeze({ key: "daShowOriginalHover", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "daCacheTTL", category: "enrichment", type: "string", defaultValue: "4", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "sponsorBlock", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "sponsorBlockBaseUrl", category: "enrichment", type: "string", defaultValue: "https://sponsor.ajay.app", enum: Object.freeze(["https://sponsor.ajay.app", "https://sponsorblock.kavin.rocks"]), risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.57.0", labelKey: "SponsorBlock API host", descriptionKey: "Primary HTTPS host used by SponsorBlock and DeArrow." }),
+        Object.freeze({ key: "sponsorBlockMirrorUrl", category: "enrichment", type: "string", defaultValue: "https://sponsorblock.kavin.rocks", enum: Object.freeze(["", "https://sponsor.ajay.app", "https://sponsorblock.kavin.rocks"]), risk: "api", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.57.0", labelKey: "SponsorBlock fallback host", descriptionKey: "Approved HTTPS mirror tried once when the primary host fails." }),
         Object.freeze({ key: "sbCat_sponsor", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "sbCat_intro", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "sbCat_outro", category: "enrichment", type: "boolean", defaultValue: true, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -2415,7 +2418,7 @@
         Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "githubFullProfile", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "syncSafePrefs", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","bufferPreloadSeconds","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowFilterReason","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","bufferPreloadSeconds","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowFilterReason","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sponsorBlockBaseUrl","sponsorBlockMirrorUrl","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── content-filter ───
         Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -5868,6 +5871,7 @@
                 state: 'unknown',
                 lastSuccessTs: 0,
                 lastSuccessSource: '',
+                lastHost: '',
                 lastErrorTs: 0,
                 lastErrorClass: '',
                 lastErrorMessage: '',
@@ -5951,6 +5955,7 @@
                 rec.state = 'ok';
                 rec.lastSuccessTs = Number.isFinite(ts) && ts > 0 ? ts : now();
                 rec.lastSuccessSource = cleanText(detail.source || 'network');
+                if (detail.host) rec.lastHost = cleanText(detail.host);
                 rec.cacheState = cleanText(detail.cacheState || (detail.source === 'cache' ? 'fresh' : 'refreshed'), 'unknown');
                 rec.fallbackState = cleanText(detail.fallbackState || '');
                 rec.requestBudget = normalizeBudget(detail.requestBudget);
@@ -5970,6 +5975,7 @@
                 rec.lastErrorTs = now();
                 rec.lastErrorClass = errorClass;
                 rec.lastErrorMessage = message;
+                if (detail.host) rec.lastHost = cleanText(detail.host);
                 rec.cacheState = cleanText(detail.cacheState || rec.cacheState || 'none', 'none');
                 rec.fallbackState = cleanText(detail.fallbackState || '');
                 rec.requestBudget = normalizeBudget(detail.requestBudget);
@@ -6378,6 +6384,40 @@
         const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
         if (core.createDataFlow) return;
 
+        const SPONSORBLOCK_CANONICAL_ORIGIN = 'https://sponsor.ajay.app';
+        // The maintained TeamPiped mirror implements the hash-prefix endpoint
+        // Astra uses, so it is a safe bounded failover for segment lookups. Keep
+        // this list explicit: arbitrary user-supplied origins must never become
+        // extension host permissions or background proxy targets.
+        const SPONSORBLOCK_MIRROR_ORIGIN = 'https://sponsorblock.kavin.rocks';
+        const SPONSORBLOCK_ALLOWED_ORIGINS = Object.freeze([
+            SPONSORBLOCK_CANONICAL_ORIGIN,
+            SPONSORBLOCK_MIRROR_ORIGIN
+        ]);
+
+        function normalizeSponsorBlockOrigin(value) {
+            if (typeof value !== 'string' || !value.trim()) return null;
+            try {
+                const parsed = new URL(value.trim());
+                if (parsed.protocol !== 'https:'
+                    || parsed.username || parsed.password
+                    || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+                    return null;
+                }
+                const origin = parsed.origin;
+                return SPONSORBLOCK_ALLOWED_ORIGINS.includes(origin) ? origin : null;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function getSponsorBlockApiOrigins(settings = {}) {
+            const primary = normalizeSponsorBlockOrigin(settings.sponsorBlockBaseUrl)
+                || SPONSORBLOCK_CANONICAL_ORIGIN;
+            const mirror = normalizeSponsorBlockOrigin(settings.sponsorBlockMirrorUrl);
+            return Array.from(new Set([primary, mirror].filter(Boolean)));
+        }
+
         let companionPorts = core.companionPorts || null;
         if (!companionPorts && typeof module !== 'undefined' && module.exports
             && typeof require === 'function') {
@@ -6428,8 +6468,17 @@
                 riskBand: 'safe'
             }),
             Object.freeze({
-                origin: 'https://sponsor.ajay.app',
-                purpose: 'SponsorBlock segments and DeArrow titles/thumbnails.',
+                origin: SPONSORBLOCK_CANONICAL_ORIGIN,
+                purpose: 'SponsorBlock segments and DeArrow branding API; primary host.',
+                requiredByFeatures: ['sponsorBlock', 'deArrow'],
+                credentialsPolicy: 'no-cookies',
+                profile: 'store-safe',
+                hostGrant: 'runtime-optional',
+                riskBand: 'api'
+            }),
+            Object.freeze({
+                origin: SPONSORBLOCK_MIRROR_ORIGIN,
+                purpose: 'Configured SponsorBlock/DeArrow API failover mirror.',
                 requiredByFeatures: ['sponsorBlock', 'deArrow'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
@@ -6540,6 +6589,8 @@
             sbCat_poi_highlight: 'sponsorBlock',
             sbPerChannelProfiles: 'sponsorBlock',
             sbPerChannelProfilesData: 'sponsorBlock',
+            sponsorBlockBaseUrl: 'sponsorBlock',
+            sponsorBlockMirrorUrl: 'sponsorBlock',
             // DeArrow shape/format sub-toggles
             daReplaceTitles: 'deArrow',
             daReplaceThumbs: 'deArrow',
@@ -6719,6 +6770,11 @@
         core.createDataFlow = createDataFlow;
         core.ORIGIN_CATALOGUE = ORIGIN_CATALOGUE;
         core.PARENT_FEATURE = PARENT_FEATURE;
+        core.SPONSORBLOCK_CANONICAL_ORIGIN = SPONSORBLOCK_CANONICAL_ORIGIN;
+        core.SPONSORBLOCK_MIRROR_ORIGIN = SPONSORBLOCK_MIRROR_ORIGIN;
+        core.SPONSORBLOCK_ALLOWED_ORIGINS = SPONSORBLOCK_ALLOWED_ORIGINS;
+        core.normalizeSponsorBlockOrigin = normalizeSponsorBlockOrigin;
+        core.getSponsorBlockApiOrigins = getSponsorBlockApiOrigins;
         core.findDataFlowCoverageGaps = findCoverageGaps;
         core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
         core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;
@@ -6730,7 +6786,12 @@
                 getOptionalHostPermissionsForFeature,
                 hostPermissionsForOrigin,
                 ORIGIN_CATALOGUE,
-                PARENT_FEATURE
+                PARENT_FEATURE,
+                SPONSORBLOCK_CANONICAL_ORIGIN,
+                SPONSORBLOCK_MIRROR_ORIGIN,
+                SPONSORBLOCK_ALLOWED_ORIGINS,
+                normalizeSponsorBlockOrigin,
+                getSponsorBlockApiOrigins
             };
         }
     })();
@@ -28433,6 +28494,31 @@
         // sponsorBlock runtime/state object; ytkit.js keeps the inline object
         // as a compatibility fallback and delegates to the factory when present.
 
+        const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
+            'https://sponsor.ajay.app',
+            'https://sponsorblock.kavin.rocks'
+        ]);
+
+        function resolveSponsorBlockApiOrigins(settings = {}) {
+            const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
+            if (typeof sharedResolver === 'function') return sharedResolver(settings);
+            const allowed = new Set(SPONSORBLOCK_API_FALLBACK_ORIGINS);
+            const normalize = (value) => {
+                if (typeof value !== 'string' || !value.trim()) return null;
+                try {
+                    const parsed = new URL(value.trim());
+                    if (parsed.protocol !== 'https:' || parsed.username || parsed.password
+                        || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+                    return allowed.has(parsed.origin) ? parsed.origin : null;
+                } catch (_) {
+                    return null;
+                }
+            };
+            const primary = normalize(settings.sponsorBlockBaseUrl) || SPONSORBLOCK_API_FALLBACK_ORIGINS[0];
+            const mirror = normalize(settings.sponsorBlockMirrorUrl);
+            return Array.from(new Set([primary, mirror].filter(Boolean)));
+        }
+
         function createSponsorBlockFeature(deps = {}) {
             const {
                 appState = { settings: {} },
@@ -28679,6 +28765,7 @@
                         });
                         return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
                     }
+                    const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
                     try {
                         // Privacy-preserving hash-prefix lookup: only send the first
                         // 4 chars of the SHA-256 hash so the server never sees the
@@ -28687,50 +28774,48 @@
                         const hashArray = Array.from(new Uint8Array(hashBuffer));
                         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                         const prefix = hashHex.substring(0, 4);
-                        const { data } = await extensionFetchJson({
-                            method: 'GET',
-                            url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
-                            timeout: 8000,
-                        });
-                        if (!Array.isArray(data)) {
-                            const payloadError = new Error('invalid SponsorBlock skipSegments payload');
-                            const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
-                            if (stale) {
-                                ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', payloadError, {
-                                    errorClass: 'invalid-payload',
-                                    endpoint: 'skipSegments',
-                                    cacheState: 'stale',
-                                    fallbackState: 'stale-cache'
+                        let lastError = null;
+                        for (let hostIndex = 0; hostIndex < apiOrigins.length; hostIndex++) {
+                            const host = apiOrigins[hostIndex];
+                            try {
+                                const { data } = await extensionFetchJson({
+                                    method: 'GET',
+                                    url: `${host}/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
+                                    timeout: 8000,
                                 });
-                                return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                                if (!Array.isArray(data)) throw new Error('invalid SponsorBlock skipSegments payload');
+                                // Filter for exact video ID match from hash-prefix results
+                                const match = data.find(entry => entry.videoID === videoId);
+                                const segments = match && Array.isArray(match.segments)
+                                    ? this._normalizeSegments(match.segments)
+                                    : [];
+                                // Don't resurrect the destroy()-nulled cache or arm a persist
+                                // timer if the feature was torn down while this was in flight.
+                                if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
+                                ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                                    source: 'network',
+                                    cacheState: 'refreshed',
+                                    fallbackState: hostIndex > 0 ? 'mirror' : '',
+                                    endpoint: 'skipSegments',
+                                    host,
+                                    itemCount: segments.length
+                                });
+                                return segments;
+                            } catch (error) {
+                                lastError = error;
+                                if (hostIndex + 1 < apiOrigins.length) {
+                                    DiagnosticLog?.record?.('sponsorBlock', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
+                                }
                             }
-                            ExternalApiHealth?.recordFailure?.('sponsorBlock', payloadError, {
-                                errorClass: 'invalid-payload',
-                                endpoint: 'skipSegments',
-                                cacheState: 'miss'
-                            });
-                            return [];
                         }
-                        // Filter for exact video ID match from hash-prefix results
-                        const match = data.find(entry => entry.videoID === videoId);
-                        const segments = match && Array.isArray(match.segments)
-                            ? this._normalizeSegments(match.segments)
-                            : [];
-                        // Don't resurrect the destroy()-nulled cache or arm a persist
-                        // timer if the feature was torn down while this was in flight.
-                        if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
-                        ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
-                            source: 'network',
-                            cacheState: 'refreshed',
-                            endpoint: 'skipSegments',
-                            itemCount: segments.length
-                        });
-                        return segments;
+                        throw lastError || new Error('SponsorBlock API host list is empty');
                     } catch (error) {
                         const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                        const lastHost = apiOrigins[apiOrigins.length - 1] || '';
                         if (stale) {
                             ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', error, {
                                 endpoint: 'skipSegments',
+                                host: lastHost,
                                 cacheState: 'stale',
                                 fallbackState: 'stale-cache'
                             });
@@ -28739,6 +28824,7 @@
                         }
                         ExternalApiHealth?.recordFailure?.('sponsorBlock', error, {
                             endpoint: 'skipSegments',
+                            host: lastHost,
                             cacheState: 'miss'
                         });
                         DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
@@ -29025,6 +29111,31 @@
         // deArrow runtime/state object; ytkit.js keeps the inline object
         // as a compatibility fallback and delegates to the factory when present.
 
+        const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
+            'https://sponsor.ajay.app',
+            'https://sponsorblock.kavin.rocks'
+        ]);
+
+        function resolveSponsorBlockApiOrigins(settings = {}) {
+            const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
+            if (typeof sharedResolver === 'function') return sharedResolver(settings);
+            const allowed = new Set(SPONSORBLOCK_API_FALLBACK_ORIGINS);
+            const normalize = (value) => {
+                if (typeof value !== 'string' || !value.trim()) return null;
+                try {
+                    const parsed = new URL(value.trim());
+                    if (parsed.protocol !== 'https:' || parsed.username || parsed.password
+                        || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+                    return allowed.has(parsed.origin) ? parsed.origin : null;
+                } catch (_) {
+                    return null;
+                }
+            };
+            const primary = normalize(settings.sponsorBlockBaseUrl) || SPONSORBLOCK_API_FALLBACK_ORIGINS[0];
+            const mirror = normalize(settings.sponsorBlockMirrorUrl);
+            return Array.from(new Set([primary, mirror].filter(Boolean)));
+        }
+
         function createDeArrowFeature(deps = {}) {
             const {
                 appState = { settings: {} },
@@ -29179,30 +29290,60 @@
                     const gen = this._generation;
                     let data;
                     let expectedMiss = false;
-                    try {
-                        ({ data } = await extensionFetchJson({
-                            method: 'GET',
-                            url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
-                            timeout: 8000,
-                        }));
-                    } catch (error) {
-                        // DeArrow uses HTTP 404 for a valid video with no submitted
-                        // title or thumbnail. It still returns an empty branding
-                        // object, so this is a normal negative lookup rather than
-                        // a rejected request or service outage.
-                        if (Number(error?.response?.status) === 404) {
-                            expectedMiss = true;
-                            data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
-                                ? error.data
-                                : { titles: [], thumbnails: [], casualVotes: [] };
-                        } else {
-                            ExternalApiHealth?.recordFailure?.('deArrow', error, {
-                                endpoint: 'branding',
-                                cacheState: 'miss'
-                            });
-                            DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
-                            return null;
+                    const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
+                    let answeredHost = '';
+                    let lastError = null;
+                    for (let hostIndex = 0; hostIndex < apiOrigins.length; hostIndex++) {
+                        const host = apiOrigins[hostIndex];
+                        expectedMiss = false;
+                        try {
+                            ({ data } = await extensionFetchJson({
+                                method: 'GET',
+                                url: `${host}/api/branding?videoID=${encodeURIComponent(videoId)}`,
+                                timeout: 8000,
+                            }));
+                            answeredHost = host;
+                        } catch (error) {
+                            // DeArrow uses HTTP 404 for a valid video with no submitted
+                            // title or thumbnail. It still returns an empty branding
+                            // object, so this is a normal negative lookup rather than
+                            // a rejected request or service outage.
+                            if (Number(error?.response?.status) === 404) {
+                                expectedMiss = true;
+                                answeredHost = host;
+                                data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
+                                    ? error.data
+                                    : { titles: [], thumbnails: [], casualVotes: [] };
+                                break;
+                            }
+                            lastError = error;
+                            if (hostIndex + 1 < apiOrigins.length) {
+                                DiagnosticLog?.record?.('deArrow', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
+                                continue;
+                            }
+                            break;
                         }
+
+                        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                            lastError = new Error('invalid DeArrow branding payload');
+                            if (hostIndex + 1 < apiOrigins.length) {
+                                DiagnosticLog?.record?.('deArrow', `API host ${host} returned an invalid payload; trying ${apiOrigins[hostIndex + 1]}`);
+                                continue;
+                            }
+                        }
+                        if (answeredHost) break;
+                    }
+                    if (!answeredHost || !data || typeof data !== 'object' || Array.isArray(data)) {
+                        const error = lastError || new Error('DeArrow API host list is empty');
+                        const failureDetail = {
+                            endpoint: 'branding',
+                            host: apiOrigins[apiOrigins.length - 1] || '',
+                            cacheState: 'miss'
+                        };
+                        if (/invalid.*payload/i.test(error?.message || '')) failureDetail.errorClass = 'invalid-payload';
+                        ExternalApiHealth?.recordFailure?.('deArrow', error, failureDetail);
+                        DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                        return null;
                     }
                     // Feature was torn down while this request was in flight —
                     // do not resurrect the freshly-cleared cache or arm a persist
@@ -29213,6 +29354,7 @@
                         ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
                             errorClass: 'invalid-payload',
                             endpoint: 'branding',
+                            host: answeredHost,
                             cacheState: 'miss'
                         });
                         DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
@@ -29236,7 +29378,9 @@
                     ExternalApiHealth?.recordSuccess?.('deArrow', {
                         source: expectedMiss ? 'network-miss' : 'network',
                         cacheState: 'refreshed',
-                        endpoint: 'branding'
+                        fallbackState: answeredHost !== apiOrigins[0] ? 'mirror' : '',
+                        endpoint: 'branding',
+                        host: answeredHost
                     });
                     return data;
                 },
@@ -32279,6 +32423,8 @@
             subscriptionFilterLive: false,
             subscriptionFilterStreamed: false,
             sponsorBlock: true,
+            sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+            sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks',
             sbCat_sponsor: true,
             sbCat_intro: true,
             sbCat_outro: true,
@@ -32635,6 +32781,36 @@
         _cachedVid = _extractVideoIdFromUrl(href);
         return _cachedVid;
     }
+
+    const USER_SCRIPT_SPONSORBLOCK_ORIGINS = Object.freeze([
+        'https://sponsor.ajay.app',
+        'https://sponsorblock.kavin.rocks'
+    ]);
+
+    function getUserscriptSponsorBlockApiOrigins() {
+        const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
+        if (typeof sharedResolver === 'function') {
+            const resolved = sharedResolver(appState.settings);
+            if (Array.isArray(resolved) && resolved.length) return resolved;
+        }
+        const allowed = new Set(USER_SCRIPT_SPONSORBLOCK_ORIGINS);
+        const normalize = (value) => {
+            if (typeof value !== 'string' || !value.trim()) return null;
+            try {
+                const parsed = new URL(value.trim());
+                if (parsed.protocol !== 'https:'
+                    || parsed.username || parsed.password
+                    || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+                return allowed.has(parsed.origin) ? parsed.origin : null;
+            } catch (_) {
+                return null;
+            }
+        };
+        const primary = normalize(appState.settings?.sponsorBlockBaseUrl) || USER_SCRIPT_SPONSORBLOCK_ORIGINS[0];
+        const mirror = normalize(appState.settings?.sponsorBlockMirrorUrl);
+        return Array.from(new Set([primary, mirror].filter(Boolean)));
+    }
+
     // Centralized detection: 'live' | 'vod' | 'standard' | 'premiere'
     // Used by Theater Split to decide what goes in the right panel,
     // and by other features to skip irrelevant operations.
@@ -43671,28 +43847,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(videoId));
                     const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
                     const prefix = hashHex.substring(0, 4);
-                    const url = `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`;
-                    const data = await new Promise((resolve, reject) => {
-                        GM_xmlhttpRequest({
-                            method: 'GET',
-                            url,
-                            timeout: 8000,
-                            responseType: 'json',
-                            onload(resp) {
-                                try { resolve(typeof resp.response === 'string' ? JSON.parse(resp.response) : resp.response); }
-                                catch (_) { resolve(null); }
-                            },
-                            onerror() { reject(new Error('SB fetch failed')); },
-                            ontimeout() { reject(new Error('SB fetch timeout')); }
-                        });
-                    });
-                    if (!Array.isArray(data)) return [];
-                    const match = data.find(entry => entry.videoID === videoId);
-                    const segments = match && Array.isArray(match.segments)
-                        ? this._normalizeSegments(match.segments)
-                        : [];
-                    this._rememberSegments(videoId, cats, segments);
-                    return segments;
+                    let lastError = null;
+                    const apiOrigins = getUserscriptSponsorBlockApiOrigins();
+                    for (const host of apiOrigins) {
+                        try {
+                            const data = await new Promise((resolve, reject) => {
+                                GM_xmlhttpRequest({
+                                    method: 'GET',
+                                    url: `${host}/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
+                                    timeout: 8000,
+                                    responseType: 'json',
+                                    onload(resp) {
+                                        const status = Number(resp?.status);
+                                        if (status > 0 && (status < 200 || status >= 300)) {
+                                            reject(new Error(`SB HTTP ${status}`));
+                                            return;
+                                        }
+                                        try { resolve(typeof resp.response === 'string' ? JSON.parse(resp.response) : resp.response); }
+                                        catch (_) { resolve(null); }
+                                    },
+                                    onerror() { reject(new Error('SB fetch failed')); },
+                                    ontimeout() { reject(new Error('SB fetch timeout')); }
+                                });
+                            });
+                            if (!Array.isArray(data)) throw new Error('invalid SponsorBlock skipSegments payload');
+                            const match = data.find(entry => entry.videoID === videoId);
+                            const segments = match && Array.isArray(match.segments)
+                                ? this._normalizeSegments(match.segments)
+                                : [];
+                            this._rememberSegments(videoId, cats, segments);
+                            return segments;
+                        } catch (error) {
+                            lastError = error;
+                            DebugManager.log('SponsorBlock', `API host ${host} failed; trying next host: ${error?.message}`);
+                        }
+                    }
+                    throw lastError || new Error('SponsorBlock API host list is empty');
                 } catch (e) {
                     DebugManager.log('SponsorBlock', `Fetch failed: ${e?.message}`);
                     return [];
@@ -43916,27 +44106,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _fetchBranding(videoId) {
                 if (this._cache[videoId]) return this._cache[videoId];
-                const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(videoId));
-                const prefix = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('').substring(0, 4);
-                return new Promise((resolve) => {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
-                        timeout: 8000,
-                        onload: (resp) => {
-                            try {
-                                const data = JSON.parse(resp.responseText);
-                                data._ts = Date.now();
-                                this._cache[videoId] = data;
-                                this._cacheMeta[videoId] = data._ts;
-                                this._schedulePersist();
-                                resolve(data);
-                            } catch(e) { resolve(null); }
-                        },
-                        onerror: () => resolve(null),
-                        ontimeout: () => resolve(null)
-                    });
-                });
+                let lastError = null;
+                for (const host of getUserscriptSponsorBlockApiOrigins()) {
+                    try {
+                        const result = await new Promise((resolve, reject) => {
+                            GM_xmlhttpRequest({
+                                method: 'GET',
+                                url: `${host}/api/branding?videoID=${encodeURIComponent(videoId)}`,
+                                timeout: 8000,
+                                onload: (resp) => {
+                                    const status = Number(resp?.status);
+                                    if (status === 404) {
+                                        resolve({ miss: true });
+                                        return;
+                                    }
+                                    if (status > 0 && (status < 200 || status >= 300)) {
+                                        reject(new Error(`DeArrow HTTP ${status}`));
+                                        return;
+                                    }
+                                    try {
+                                        resolve({ data: JSON.parse(resp.responseText) });
+                                    } catch (_) {
+                                        reject(new Error('invalid DeArrow branding payload'));
+                                    }
+                                },
+                                onerror: () => reject(new Error('DeArrow fetch failed')),
+                                ontimeout: () => reject(new Error('DeArrow fetch timeout'))
+                            });
+                        });
+                        if (result.miss) return null;
+                        if (!result.data || typeof result.data !== 'object' || Array.isArray(result.data)) {
+                            throw new Error('invalid DeArrow branding payload');
+                        }
+                        const data = result.data;
+                        data._ts = Date.now();
+                        this._cache[videoId] = data;
+                        this._cacheMeta[videoId] = data._ts;
+                        this._schedulePersist();
+                        return data;
+                    } catch (error) {
+                        lastError = error;
+                        DebugManager.log('DeArrow', `API host ${host} failed; trying next host: ${error?.message}`);
+                    }
+                }
+                DebugManager.log('DeArrow', `Fetch failed: ${lastError?.message || 'API host list is empty'}`);
+                return null;
             },
             _schedulePersist() {
                 clearTimeout(this._persistTimer);
@@ -44033,6 +44247,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
             }
         },
+        // SponsorBlock host controls
+        { id: 'sponsorBlockBaseUrl', name: 'SponsorBlock API Host', description: 'Primary HTTPS host used by SponsorBlock and DeArrow', group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsor.ajay.app',label:'Canonical host'},{value:'https://sponsorblock.kavin.rocks',label:'TeamPiped mirror'}], init(){}, destroy(){} },
+        { id: 'sponsorBlockMirrorUrl', name: 'SponsorBlock Fallback Host', description: 'Approved HTTPS mirror tried once when the primary host fails', group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsorblock.kavin.rocks',label:'TeamPiped mirror'},{value:'https://sponsor.ajay.app',label:'Canonical host'},{value:'',label:'Disabled'}], init(){}, destroy(){} },
         // DeArrow sub-features
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },

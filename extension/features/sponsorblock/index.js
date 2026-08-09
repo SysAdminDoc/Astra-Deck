@@ -7,6 +7,31 @@
     // sponsorBlock runtime/state object; ytkit.js keeps the inline object
     // as a compatibility fallback and delegates to the factory when present.
 
+    const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
+        'https://sponsor.ajay.app',
+        'https://sponsorblock.kavin.rocks'
+    ]);
+
+    function resolveSponsorBlockApiOrigins(settings = {}) {
+        const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
+        if (typeof sharedResolver === 'function') return sharedResolver(settings);
+        const allowed = new Set(SPONSORBLOCK_API_FALLBACK_ORIGINS);
+        const normalize = (value) => {
+            if (typeof value !== 'string' || !value.trim()) return null;
+            try {
+                const parsed = new URL(value.trim());
+                if (parsed.protocol !== 'https:' || parsed.username || parsed.password
+                    || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+                return allowed.has(parsed.origin) ? parsed.origin : null;
+            } catch (_) {
+                return null;
+            }
+        };
+        const primary = normalize(settings.sponsorBlockBaseUrl) || SPONSORBLOCK_API_FALLBACK_ORIGINS[0];
+        const mirror = normalize(settings.sponsorBlockMirrorUrl);
+        return Array.from(new Set([primary, mirror].filter(Boolean)));
+    }
+
     function createSponsorBlockFeature(deps = {}) {
         const {
             appState = { settings: {} },
@@ -253,6 +278,7 @@
                     });
                     return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
                 }
+                const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
                 try {
                     // Privacy-preserving hash-prefix lookup: only send the first
                     // 4 chars of the SHA-256 hash so the server never sees the
@@ -261,50 +287,48 @@
                     const hashArray = Array.from(new Uint8Array(hashBuffer));
                     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                     const prefix = hashHex.substring(0, 4);
-                    const { data } = await extensionFetchJson({
-                        method: 'GET',
-                        url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
-                        timeout: 8000,
-                    });
-                    if (!Array.isArray(data)) {
-                        const payloadError = new Error('invalid SponsorBlock skipSegments payload');
-                        const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
-                        if (stale) {
-                            ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', payloadError, {
-                                errorClass: 'invalid-payload',
-                                endpoint: 'skipSegments',
-                                cacheState: 'stale',
-                                fallbackState: 'stale-cache'
+                    let lastError = null;
+                    for (let hostIndex = 0; hostIndex < apiOrigins.length; hostIndex++) {
+                        const host = apiOrigins[hostIndex];
+                        try {
+                            const { data } = await extensionFetchJson({
+                                method: 'GET',
+                                url: `${host}/api/skipSegments/${prefix}?categories=${encodeURIComponent(JSON.stringify(cats))}`,
+                                timeout: 8000,
                             });
-                            return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                            if (!Array.isArray(data)) throw new Error('invalid SponsorBlock skipSegments payload');
+                            // Filter for exact video ID match from hash-prefix results
+                            const match = data.find(entry => entry.videoID === videoId);
+                            const segments = match && Array.isArray(match.segments)
+                                ? this._normalizeSegments(match.segments)
+                                : [];
+                            // Don't resurrect the destroy()-nulled cache or arm a persist
+                            // timer if the feature was torn down while this was in flight.
+                            if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
+                            ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
+                                source: 'network',
+                                cacheState: 'refreshed',
+                                fallbackState: hostIndex > 0 ? 'mirror' : '',
+                                endpoint: 'skipSegments',
+                                host,
+                                itemCount: segments.length
+                            });
+                            return segments;
+                        } catch (error) {
+                            lastError = error;
+                            if (hostIndex + 1 < apiOrigins.length) {
+                                DiagnosticLog?.record?.('sponsorBlock', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
+                            }
                         }
-                        ExternalApiHealth?.recordFailure?.('sponsorBlock', payloadError, {
-                            errorClass: 'invalid-payload',
-                            endpoint: 'skipSegments',
-                            cacheState: 'miss'
-                        });
-                        return [];
                     }
-                    // Filter for exact video ID match from hash-prefix results
-                    const match = data.find(entry => entry.videoID === videoId);
-                    const segments = match && Array.isArray(match.segments)
-                        ? this._normalizeSegments(match.segments)
-                        : [];
-                    // Don't resurrect the destroy()-nulled cache or arm a persist
-                    // timer if the feature was torn down while this was in flight.
-                    if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
-                    ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
-                        source: 'network',
-                        cacheState: 'refreshed',
-                        endpoint: 'skipSegments',
-                        itemCount: segments.length
-                    });
-                    return segments;
+                    throw lastError || new Error('SponsorBlock API host list is empty');
                 } catch (error) {
                     const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                    const lastHost = apiOrigins[apiOrigins.length - 1] || '';
                     if (stale) {
                         ExternalApiHealth?.recordCacheFallback?.('sponsorBlock', error, {
                             endpoint: 'skipSegments',
+                            host: lastHost,
                             cacheState: 'stale',
                             fallbackState: 'stale-cache'
                         });
@@ -313,6 +337,7 @@
                     }
                     ExternalApiHealth?.recordFailure?.('sponsorBlock', error, {
                         endpoint: 'skipSegments',
+                        host: lastHost,
                         cacheState: 'miss'
                     });
                     DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);

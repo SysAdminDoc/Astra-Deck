@@ -7,6 +7,31 @@
     // deArrow runtime/state object; ytkit.js keeps the inline object
     // as a compatibility fallback and delegates to the factory when present.
 
+    const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
+        'https://sponsor.ajay.app',
+        'https://sponsorblock.kavin.rocks'
+    ]);
+
+    function resolveSponsorBlockApiOrigins(settings = {}) {
+        const sharedResolver = globalThis.YTKitCore?.getSponsorBlockApiOrigins;
+        if (typeof sharedResolver === 'function') return sharedResolver(settings);
+        const allowed = new Set(SPONSORBLOCK_API_FALLBACK_ORIGINS);
+        const normalize = (value) => {
+            if (typeof value !== 'string' || !value.trim()) return null;
+            try {
+                const parsed = new URL(value.trim());
+                if (parsed.protocol !== 'https:' || parsed.username || parsed.password
+                    || parsed.pathname !== '/' || parsed.search || parsed.hash) return null;
+                return allowed.has(parsed.origin) ? parsed.origin : null;
+            } catch (_) {
+                return null;
+            }
+        };
+        const primary = normalize(settings.sponsorBlockBaseUrl) || SPONSORBLOCK_API_FALLBACK_ORIGINS[0];
+        const mirror = normalize(settings.sponsorBlockMirrorUrl);
+        return Array.from(new Set([primary, mirror].filter(Boolean)));
+    }
+
     function createDeArrowFeature(deps = {}) {
         const {
             appState = { settings: {} },
@@ -161,30 +186,60 @@
                 const gen = this._generation;
                 let data;
                 let expectedMiss = false;
-                try {
-                    ({ data } = await extensionFetchJson({
-                        method: 'GET',
-                        url: `https://sponsor.ajay.app/api/branding?videoID=${videoId}`,
-                        timeout: 8000,
-                    }));
-                } catch (error) {
-                    // DeArrow uses HTTP 404 for a valid video with no submitted
-                    // title or thumbnail. It still returns an empty branding
-                    // object, so this is a normal negative lookup rather than
-                    // a rejected request or service outage.
-                    if (Number(error?.response?.status) === 404) {
-                        expectedMiss = true;
-                        data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
-                            ? error.data
-                            : { titles: [], thumbnails: [], casualVotes: [] };
-                    } else {
-                        ExternalApiHealth?.recordFailure?.('deArrow', error, {
-                            endpoint: 'branding',
-                            cacheState: 'miss'
-                        });
-                        DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
-                        return null;
+                const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
+                let answeredHost = '';
+                let lastError = null;
+                for (let hostIndex = 0; hostIndex < apiOrigins.length; hostIndex++) {
+                    const host = apiOrigins[hostIndex];
+                    expectedMiss = false;
+                    try {
+                        ({ data } = await extensionFetchJson({
+                            method: 'GET',
+                            url: `${host}/api/branding?videoID=${encodeURIComponent(videoId)}`,
+                            timeout: 8000,
+                        }));
+                        answeredHost = host;
+                    } catch (error) {
+                        // DeArrow uses HTTP 404 for a valid video with no submitted
+                        // title or thumbnail. It still returns an empty branding
+                        // object, so this is a normal negative lookup rather than
+                        // a rejected request or service outage.
+                        if (Number(error?.response?.status) === 404) {
+                            expectedMiss = true;
+                            answeredHost = host;
+                            data = error?.data && typeof error.data === 'object' && !Array.isArray(error.data)
+                                ? error.data
+                                : { titles: [], thumbnails: [], casualVotes: [] };
+                            break;
+                        }
+                        lastError = error;
+                        if (hostIndex + 1 < apiOrigins.length) {
+                            DiagnosticLog?.record?.('deArrow', `API host ${host} failed; trying ${apiOrigins[hostIndex + 1]}`);
+                            continue;
+                        }
+                        break;
                     }
+
+                    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                        lastError = new Error('invalid DeArrow branding payload');
+                        if (hostIndex + 1 < apiOrigins.length) {
+                            DiagnosticLog?.record?.('deArrow', `API host ${host} returned an invalid payload; trying ${apiOrigins[hostIndex + 1]}`);
+                            continue;
+                        }
+                    }
+                    if (answeredHost) break;
+                }
+                if (!answeredHost || !data || typeof data !== 'object' || Array.isArray(data)) {
+                    const error = lastError || new Error('DeArrow API host list is empty');
+                    const failureDetail = {
+                        endpoint: 'branding',
+                        host: apiOrigins[apiOrigins.length - 1] || '',
+                        cacheState: 'miss'
+                    };
+                    if (/invalid.*payload/i.test(error?.message || '')) failureDetail.errorClass = 'invalid-payload';
+                    ExternalApiHealth?.recordFailure?.('deArrow', error, failureDetail);
+                    DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
+                    return null;
                 }
                 // Feature was torn down while this request was in flight —
                 // do not resurrect the freshly-cleared cache or arm a persist
@@ -195,6 +250,7 @@
                     ExternalApiHealth?.recordFailure?.('deArrow', payloadError, {
                         errorClass: 'invalid-payload',
                         endpoint: 'branding',
+                        host: answeredHost,
                         cacheState: 'miss'
                     });
                     DiagnosticLog?.record?.('deArrow', `branding payload invalid for ${videoId}`);
@@ -218,7 +274,9 @@
                 ExternalApiHealth?.recordSuccess?.('deArrow', {
                     source: expectedMiss ? 'network-miss' : 'network',
                     cacheState: 'refreshed',
-                    endpoint: 'branding'
+                    fallbackState: answeredHost !== apiOrigins[0] ? 'mirror' : '',
+                    endpoint: 'branding',
+                    host: answeredHost
                 });
                 return data;
             },

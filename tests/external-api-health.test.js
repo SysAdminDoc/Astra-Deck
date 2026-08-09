@@ -43,8 +43,10 @@ test('popup and sidepanel expose external API health snapshots and diagnostics e
     assert.match(popupHtml, /id="external-health"/, 'popup must declare the external API health section');
     assert.match(popupJs, /YTKIT_GET_EXTERNAL_API_HEALTH/, 'popup must request the external API health snapshot');
     assert.match(popupJs, /externalApiHealth/, 'diagnostics save payload must include externalApiHealth');
+    assert.match(popupJs, /lastHost/, 'popup health detail must expose the host that answered');
     assert.match(sidepanelHtml, /id="sp-external"/, 'sidepanel must declare the external API health section');
     assert.match(sidepanelJs, /YTKIT_GET_EXTERNAL_API_HEALTH/, 'sidepanel must request the external API health snapshot');
+    assert.match(sidepanelJs, /spExternalHostTpl/, 'sidepanel health detail must expose the host that answered');
 });
 
 test('ytkit exposes external API health message handler and passes tracker into crowd modules', () => {
@@ -135,6 +137,23 @@ test('health subscribers are notified on every record mutation and recovery', ()
     // A throwing subscriber must never poison the fetch path.
     health.subscribe(() => { throw new Error('bad listener'); });
     assert.doesNotThrow(() => health.recordFailure('sponsorBlock', new Error('boom')));
+});
+
+test('external API health records the host that answered or failed', () => {
+    const core = loadHealthCore();
+    const health = core.createExternalApiHealth({ now: () => 5000 });
+
+    const success = health.recordSuccess('sponsorBlock', {
+        host: 'https://sponsorblock.kavin.rocks',
+        fallbackState: 'mirror'
+    });
+    assert.equal(success.lastHost, 'https://sponsorblock.kavin.rocks');
+    assert.equal(success.fallbackState, 'mirror');
+
+    const failure = health.recordFailure('deArrow', new Error('offline'), {
+        host: 'https://sponsor.ajay.app'
+    });
+    assert.equal(failure.lastHost, 'https://sponsor.ajay.app');
 });
 
 test('ytkit renders the in-page degraded-state strip with theme and motion safeguards', () => {
@@ -251,6 +270,46 @@ test('DeArrow treats HTTP 404 as an expected cached no-branding result', async (
     assert.equal(calls.some(([kind]) => kind === 'failure'), false);
     assert.equal(calls[0][0], 'success');
     assert.equal(calls[0][2].source, 'network-miss');
+});
+
+test('DeArrow retries a failed primary API host through the configured mirror', async () => {
+    const { mod } = loadFeatureModule(
+        '../extension/features/dearrow/index.js',
+        'createDeArrowFeature'
+    );
+    const calls = [];
+    const health = [];
+    const serviceUnavailable = new Error('HTTP 503');
+    serviceUnavailable.response = { status: 503 };
+    const feature = mod.createDeArrowFeature({
+        appState: {
+            settings: {
+                daCacheTTL: '4',
+                sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+                sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks'
+            }
+        },
+        extensionFetchJson: async (request) => {
+            calls.push(request);
+            if (calls.length === 1) throw serviceUnavailable;
+            return { data: { titles: [], thumbnails: [], casualVotes: [] } };
+        },
+        storageWriteJSON() {},
+        ExternalApiHealth: {
+            recordSuccess: (...args) => health.push(args)
+        },
+        DiagnosticLog: { record() {} }
+    });
+    feature._schedulePersist = () => {};
+
+    const result = await feature._doFetch('dQw4w9WgXcQ');
+
+    assert.deepEqual(result.titles, []);
+    assert.match(calls[0].url, /^https:\/\/sponsor\.ajay\.app\/api\/branding/);
+    assert.match(calls[1].url, /^https:\/\/sponsorblock\.kavin\.rocks\/api\/branding/);
+    const success = health.find(([id]) => id === 'deArrow');
+    assert.equal(success[1].host, 'https://sponsorblock.kavin.rocks');
+    assert.equal(success[1].fallbackState, 'mirror');
 });
 
 test('Return Dislike reports invalid payload and request-budget exhaustion', async () => {

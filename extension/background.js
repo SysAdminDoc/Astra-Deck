@@ -519,6 +519,7 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://www.youtube-nocookie.com',
     'https://i.ytimg.com',
     'https://sponsor.ajay.app',
+    'https://sponsorblock.kavin.rocks',
     'https://returnyoutubedislikeapi.com',
     'https://api.openai.com',
     'https://api.anthropic.com',

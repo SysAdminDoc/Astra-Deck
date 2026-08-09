@@ -77,6 +77,7 @@
             state: 'unknown',
             lastSuccessTs: 0,
             lastSuccessSource: '',
+            lastHost: '',
             lastErrorTs: 0,
             lastErrorClass: '',
             lastErrorMessage: '',
@@ -160,6 +161,7 @@
             rec.state = 'ok';
             rec.lastSuccessTs = Number.isFinite(ts) && ts > 0 ? ts : now();
             rec.lastSuccessSource = cleanText(detail.source || 'network');
+            if (detail.host) rec.lastHost = cleanText(detail.host);
             rec.cacheState = cleanText(detail.cacheState || (detail.source === 'cache' ? 'fresh' : 'refreshed'), 'unknown');
             rec.fallbackState = cleanText(detail.fallbackState || '');
             rec.requestBudget = normalizeBudget(detail.requestBudget);
@@ -179,6 +181,7 @@
             rec.lastErrorTs = now();
             rec.lastErrorClass = errorClass;
             rec.lastErrorMessage = message;
+            if (detail.host) rec.lastHost = cleanText(detail.host);
             rec.cacheState = cleanText(detail.cacheState || rec.cacheState || 'none', 'none');
             rec.fallbackState = cleanText(detail.fallbackState || '');
             rec.requestBudget = normalizeBudget(detail.requestBudget);
