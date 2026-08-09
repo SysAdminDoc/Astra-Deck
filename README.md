@@ -310,12 +310,19 @@ Toggle individual elements on/off through the settings panel:
 
 Click the gear icon in the YouTube masthead or player controls, or use the toolbar popup's **Open Full Settings** action.
 
-- Searchable sidebar with categorized feature groups
+<p align="center">
+  <img src="outputs/astra-deck-settings-command-deck-video-player-v5.png" alt="Astra Deck Command Deck settings workspace" width="900">
+</p>
+
+- Command Deck workspace with a mission card and three live preference summaries on every category
+- Searchable sidebar with enabled/total counts across all ten categorized pages
+- Full-width semantic control sections with dependency rails for nested settings
 - Toggle switches with instant apply
 - Sub-feature controls for granular element hiding
 - Textarea editors for keyword filters, quick links, custom CSS
 - Schema-validated Export / Import / Reset with credential scrub
 - Conflict detection (auto-disables conflicting features with toast notification)
+- Responsive dark/light and RTL layouts for desktop, tablet, and narrow windows
 
 The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection.
 
