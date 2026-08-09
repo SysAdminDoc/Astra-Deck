@@ -64,17 +64,33 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
     // The watch-page-gated aria-live announcement lives in the title-
     // replace path. Pin both the announce call and the page gate so a
     // refactor can't silently regress the assistive-tech surface.
-    // Anchored on the code that builds the replacement title node, not on a
-    // comment: the module and the ytkit.js fallback are kept identical, and a
-    // comment-only anchor made the pin drift with prose.
+    // Anchor on the shared title renderer rather than a prose comment: the
+    // module and the ytkit.js fallback are kept identical.
     for (const [label, source] of [['ytkit.js', sources.ytkit], ['module', dearrowModuleSource]]) {
-        const start = source.indexOf("clone.className = 'daCustomTitle '");
+        const start = source.indexOf('_renderTitle(titleEl, formatted');
         assert.ok(start > -1, `DeArrow primary-title path must exist in ${label}`);
-        const region = source.slice(start, start + 2400);
+        const region = source.slice(start, start + 4200);
         assert.match(region, /announceA11y\(/,
             `DeArrow primary-title replacement must call announceA11y (${label})`);
-        assert.match(region, /isWatchPagePath\(\)/,
-            `DeArrow announcement must be gated on isWatchPagePath() — grid spam would be unacceptable (${label})`);
+        assert.match(source, /announce:\s*isWatchPagePath\(\)/,
+            `DeArrow card announcement must be gated on isWatchPagePath() — grid spam would be unacceptable (${label})`);
+        assert.match(region, /daTogether/,
+            `DeArrow title renderer must mark the opt-in paired-title mode (${label})`);
+    }
+});
+
+test('DeArrow paired-title mode covers cards, the watch title, and teardown', () => {
+    for (const [label, source] of [['ytkit.js', sources.ytkit], ['module', dearrowModuleSource]]) {
+        assert.match(source, /daShowOriginalTitle/,
+            `paired-title mode must read daShowOriginalTitle (${label})`);
+        assert.match(source, /_WATCH_TITLE_SELECTORS:[\s\S]*?not\(\.daCustomTitle\)/,
+            `watch title lookup must ignore an already-rendered DeArrow clone (${label})`);
+        assert.match(source, /if \(isWatchPagePath\(\) && replaceTitles\)/,
+            `paired-title mode must process the primary watch title (${label})`);
+        assert.match(source, /data-da-original-display/,
+            `paired-title mode must remember original display state for teardown (${label})`);
+        assert.match(source, /removeAttribute\('data-da-original-title'\)/,
+            `paired-title teardown must remove its marker (${label})`);
     }
 });
 

@@ -292,6 +292,7 @@
   "deArrowCasualMode": false,
   "daFallbackFormat": true,
   "daShowOriginalHover": true,
+  "daShowOriginalTitle": false,
   "daCacheTTL": "4",
   "sponsorBlock": true,
   "sponsorBlockBaseUrl": "https://sponsor.ajay.app",

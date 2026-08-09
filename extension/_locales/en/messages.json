@@ -1661,6 +1661,12 @@
   "feature_daShowOriginalHover_name": {
     "message": "Show Original on Hover"
   },
+  "feature_daShowOriginalTitle_desc": {
+    "message": "Show the original title beneath the DeArrow replacement"
+  },
+  "feature_daShowOriginalTitle_name": {
+    "message": "Show Original Title"
+  },
   "feature_daTitleFormat_desc": {
     "message": "How to format replacement titles"
   },

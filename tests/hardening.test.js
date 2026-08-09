@@ -2772,14 +2772,14 @@ test('DeArrow watch-page title replacement announces via aria-live', () => {
     // Only the watch-page primary title gets announced — grid thumbnails
     // would spam the screen reader. Pin both the announcement and the
     // gating condition.
-    // Anchored on the replacement-node code, not a comment: the fallback is
-    // kept identical to features/dearrow/index.js, whose prose differs.
-    const deArrowStart = ytkitSource.indexOf("clone.className = 'daCustomTitle '");
+    // Anchored on the shared title renderer rather than a prose comment: the
+    // fallback is kept identical to features/dearrow/index.js.
+    const deArrowStart = ytkitSource.indexOf('_renderTitle(titleEl, formatted');
     assert.ok(deArrowStart > -1, 'DeArrow primary-title block must exist');
-    const block = ytkitSource.slice(deArrowStart, deArrowStart + 2400);
+    const block = ytkitSource.slice(deArrowStart, deArrowStart + 4200);
     assert.match(block, /announceA11y\(/,
         'DeArrow watch-page replacement must announce via announceA11y');
-    assert.match(block, /isWatchPagePath\(\)/,
+    assert.match(ytkitSource, /announce:\s*isWatchPagePath\(\)/,
         'DeArrow announcement must be gated on isWatchPagePath() to avoid grid spam');
 });
 
@@ -5413,11 +5413,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (439 → 440). Buffer / preload adds one more extension preference
     // (440 → 441).
     // Hidden-card filter explanations add one feed preference (446 → 447).
-    // Configurable SponsorBlock hosts add two enrichment preferences (447 → 449).
+    // Configurable SponsorBlock hosts plus paired DeArrow titles add three
+    // enrichment preferences (447 → 450).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 449,
-        'SETTINGS_SCHEMA must cover all 449 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 450,
+        'SETTINGS_SCHEMA must cover all 450 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

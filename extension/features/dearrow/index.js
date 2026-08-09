@@ -42,6 +42,7 @@
             storageReadJSON = (_key, fallback) => fallback,
             storageWriteJSON = () => {},
             isWatchPagePath = () => false,
+            getVideoId = () => null,
             addNavigateRule = () => {},
             removeNavigateRule = () => {},
             injectStyle = () => null,
@@ -68,7 +69,7 @@
             _processTimer: null,
             _resetTimer: null,
             _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
-            _WATCH_TITLE_SELECTORS: 'ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string, ytd-watch-metadata h1 yt-formatted-string',
+            _WATCH_TITLE_SELECTORS: 'ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string:not(.daCustomTitle), ytd-watch-metadata h1 yt-formatted-string:not(.daCustomTitle)',
             _persistTimer: null,
             init() {
                 const self = this;
@@ -96,7 +97,18 @@
                 }
                 const css = `
                     .daCustomTitle { display: block !important; }
-                    .daCustomTitle + [id="video-title"], .daCustomTitle + a#video-title-link { display: none !important; }
+                    .daCustomTitle:not([data-da-together="1"]) + [id="video-title"], .daCustomTitle:not([data-da-together="1"]) + a#video-title-link { display: none !important; }
+                    .daCustomTitle[data-da-together="1"] { margin-bottom: 2px !important; }
+                    .daOriginalTitle[data-da-original-title="1"] {
+                        display: block !important;
+                        margin-top: 2px !important;
+                        padding-inline-start: 6px !important;
+                        border-inline-start: 2px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.2)) !important;
+                        color: var(--yt-spec-text-secondary, #aaa) !important;
+                        font-size: 0.86em !important;
+                        font-weight: 400 !important;
+                        opacity: 0.74 !important;
+                    }
                     /* v4.47.0 EI-NEW4: locally-formatted fallback titles
                        (sentence/title-case applied when DeArrow has no
                        submission) dim slightly so power users see the
@@ -110,8 +122,12 @@
                     clearTimeout(self._resetTimer);
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
                     document.querySelectorAll('[data-da-processed]').forEach(el => {
+                        const originalDisplay = el.getAttribute('data-da-original-display');
+                        el.style.display = originalDisplay === null ? '' : originalDisplay;
+                        el.removeAttribute('data-da-original-display');
+                        el.classList.remove('daOriginalTitle');
+                        el.removeAttribute('data-da-original-title');
                         delete el.dataset.daProcessed;
-                        el.style.display = '';
                     });
                     document.querySelectorAll('.da-replaced-thumb').forEach(el => {
                         if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
@@ -300,6 +316,36 @@
                 }
                 return title;
             },
+            _renderTitle(titleEl, formatted, { fallback = false, uuid = '', announce = false } = {}) {
+                if (!titleEl || !formatted) return false;
+                const originalTitle = titleEl.textContent.trim();
+                const clone = titleEl.cloneNode(false);
+                clone.className = `daCustomTitle${fallback ? ' da-formatted-title' : ''} ${titleEl.className}`;
+                clone.removeAttribute('id');
+                clone.textContent = formatted;
+                clone.title = appState.settings.daShowOriginalHover ? originalTitle : formatted;
+                clone.setAttribute('data-ytkit-dearrow-title', '1');
+                clone.setAttribute('data-ytkit-orig-title', originalTitle);
+                if (uuid) clone.setAttribute('data-ytkit-dearrow-uuid', uuid);
+                if (fallback) clone.dataset.daFallback = '1';
+                if (appState.settings.daShowOriginalTitle) {
+                    clone.dataset.daTogether = '1';
+                    if (!titleEl.hasAttribute('data-da-original-display')) {
+                        titleEl.setAttribute('data-da-original-display', titleEl.style.display || '');
+                    }
+                    titleEl.classList.add('daOriginalTitle');
+                    titleEl.setAttribute('data-da-original-title', '1');
+                    titleEl.style.display = '';
+                } else {
+                    titleEl.style.display = 'none';
+                }
+                titleEl.dataset.daProcessed = '1';
+                titleEl.parentNode.insertBefore(clone, titleEl);
+                if (announce) {
+                    try { announceA11y(`Title replaced by DeArrow: ${formatted}`); } catch (_) { /* reason: optional accessibility announcement must not interrupt title rendering. */ }
+                }
+                return true;
+            },
             _channelOverrideMode(el) {
                 const overrides = appState?.settings?.deArrowChannelOverrides;
                 if (!overrides || typeof overrides !== 'object') return null;
@@ -345,51 +391,15 @@
                             const casualMode = appState.settings.deArrowCasualMode;
                             if (submission?.title) {
                                 const formatted = this._formatTitle(submission.title, format);
-                                const clone = titleEl.cloneNode(false);
-                                clone.className = 'daCustomTitle ' + titleEl.className;
-                                clone.removeAttribute('id');
-                                clone.textContent = formatted;
-                                const originalTitle = titleEl.textContent.trim();
-                                clone.title = appState.settings.daShowOriginalHover ? originalTitle : formatted;
-                                // Consumed by two other features, both of which
-                                // silently did nothing while these attributes
-                                // were only written by the ytkit.js fallback
-                                // copy: deArrowVoting needs the submission UUID
-                                // to find a votable title, and dearrowPeekButton
-                                // renders data-ytkit-orig-title from CSS.
-                                clone.setAttribute('data-ytkit-dearrow-title', '1');
-                                clone.setAttribute('data-ytkit-orig-title', originalTitle);
-                                if (submission.UUID) clone.setAttribute('data-ytkit-dearrow-uuid', submission.UUID);
-                                titleEl.style.display = 'none';
-                                titleEl.dataset.daProcessed = '1';
-                                titleEl.parentNode.insertBefore(clone, titleEl);
-                                try {
-                                    if (isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')) {
-                                        announceA11y(`Title replaced by DeArrow: ${formatted}`);
-                                    }
-                                } catch (_) {
-                                    // reason: a11y announce is best-effort
-                                }
+                                this._renderTitle(titleEl, formatted, {
+                                    uuid: submission.UUID || '',
+                                    announce: isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')
+                                });
                             } else if (fallback && !casualMode) {
                                 const original = titleEl.textContent.trim();
                                 const formatted = this._formatTitle(original, format);
                                 if (formatted !== original) {
-                                    const clone = titleEl.cloneNode(false);
-                                    clone.className = 'daCustomTitle da-formatted-title ' + titleEl.className;
-                                    clone.removeAttribute('id');
-                                    clone.textContent = formatted;
-                                    clone.title = formatted;
-                                    clone.setAttribute('data-ytkit-dearrow-title', '1');
-                                    clone.setAttribute('data-ytkit-orig-title', original);
-                                    // v4.47.0 EI-NEW4: mark locally-formatted
-                                    // fallbacks distinct from real DeArrow
-                                    // submissions; the CSS rule at init time
-                                    // dims these slightly so power users can
-                                    // tell the difference at a glance.
-                                    clone.dataset.daFallback = '1';
-                                    titleEl.style.display = 'none';
-                                    titleEl.dataset.daProcessed = '1';
-                                    titleEl.parentNode.insertBefore(clone, titleEl);
+                                    this._renderTitle(titleEl, formatted, { fallback: true });
                                 }
                             }
                         }
@@ -416,6 +426,27 @@
                         }
                     }
                 }
+                if (isWatchPagePath() && replaceTitles) {
+                    const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
+                    const videoId = getVideoId();
+                    if (titleEl && videoId && VIDEO_ID_PATTERN.test(videoId) && !titleEl.dataset.daProcessed) {
+                        const branding = await this._fetchBranding(videoId);
+                        if (branding && gen === this._generation && route === this._routeToken) {
+                            const submission = branding.titles?.[0];
+                            const casualMode = appState.settings.deArrowCasualMode;
+                            if (submission?.title) {
+                                this._renderTitle(titleEl, this._formatTitle(submission.title, format), {
+                                    uuid: submission.UUID || '',
+                                    announce: true
+                                });
+                            } else if (fallback && !casualMode) {
+                                const original = titleEl.textContent.trim();
+                                const formatted = this._formatTitle(original, format);
+                                if (formatted !== original) this._renderTitle(titleEl, formatted, { fallback: true });
+                            }
+                        }
+                    }
+                }
             },
             destroy() {
                 this._generation++;
@@ -433,7 +464,14 @@
                 this._observing = false;
                 this._styleEl?.remove();
                 document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
-                document.querySelectorAll('[data-da-processed]').forEach(el => { delete el.dataset.daProcessed; el.style.display = ''; });
+                document.querySelectorAll('[data-da-processed]').forEach(el => {
+                    const originalDisplay = el.getAttribute('data-da-original-display');
+                    el.style.display = originalDisplay === null ? '' : originalDisplay;
+                    el.removeAttribute('data-da-original-display');
+                    el.classList.remove('daOriginalTitle');
+                    el.removeAttribute('data-da-original-title');
+                    delete el.dataset.daProcessed;
+                });
                 document.querySelectorAll('.da-replaced-thumb').forEach(el => {
                     if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                     el.classList.remove('da-replaced-thumb');
