@@ -2298,6 +2298,7 @@ function formatExternalHealthBudget(budget) {
 function formatExternalHealthDetail(service) {
     const parts = [];
     if (service.lastSuccessTs) parts.push(`success ${formatExternalHealthAge(service.lastSuccessTs)}`);
+    if (service.lastHost) parts.push(`host ${service.lastHost}`);
     if (service.lastErrorClass) parts.push(`last error ${service.lastErrorClass}`);
     if (service.cacheState && service.cacheState !== 'unknown') parts.push(`cache ${service.cacheState}`);
     if (service.fallbackState) parts.push(`fallback ${service.fallbackState}`);
@@ -2379,6 +2380,7 @@ function formatExternalApiHealthReport(services, meta = {}) {
     for (const service of services || []) {
         lines.push(`${service.label || service.id}: ${service.state || 'unknown'}`);
         lines.push(`  origin: ${service.origin || 'unknown'}`);
+        lines.push(`  host: ${service.lastHost || 'unknown'}`);
         lines.push(`  lastSuccess: ${formatExternalHealthAge(service.lastSuccessTs)}`);
         lines.push(`  lastError: ${service.lastErrorClass || 'none'}`);
         if (service.lastErrorMessage) lines.push(`  message: ${service.lastErrorMessage}`);

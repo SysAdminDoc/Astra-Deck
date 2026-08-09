@@ -2939,6 +2939,27 @@
   "feature_sbPerChannelProfiles_name": {
     "message": "SponsorBlock 채널별 프로필"
   },
+  "feature_sponsorBlockBaseUrl_desc": {
+    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+  },
+  "feature_sponsorBlockBaseUrl_name": {
+    "message": "SponsorBlock API Host"
+  },
+  "feature_sponsorBlockCanonicalHost_label": {
+    "message": "Canonical — sponsor.ajay.app"
+  },
+  "feature_sponsorBlockDisabled_label": {
+    "message": "비활성화됨"
+  },
+  "feature_sponsorBlockMirrorHost_label": {
+    "message": "Mirror — sponsorblock.kavin.rocks"
+  },
+  "feature_sponsorBlockMirrorUrl_desc": {
+    "message": "Try this approved mirror once when the primary API host fails."
+  },
+  "feature_sponsorBlockMirrorUrl_name": {
+    "message": "SponsorBlock Fallback Host"
+  },
   "feature_scrollToPlayer_desc": {
     "message": "새 동영상으로 이동할 때 자동으로 페이지 상단으로 스크롤"
   },
@@ -4412,6 +4433,9 @@
   },
   "spExternalFallbackTpl": {
     "message": "대체 {state}"
+  },
+  "spExternalHostTpl": {
+    "message": "host {host}"
   },
   "spExternalKicker": {
     "message": "통합"

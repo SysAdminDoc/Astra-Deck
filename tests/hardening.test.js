@@ -882,9 +882,9 @@ test('sponsorBlock caches segments before network and serves stale cache on fail
 
     const fetchStart = block.indexOf('async _fetchSegments');
     assert.ok(fetchStart > -1, '_fetchSegments must exist');
-    // Window widened when the fallback copy absorbed the module's
+    // Window widened when the fallback copy absorbed host failover and
     // ExternalApiHealth reporting — this slice is length-sensitive.
-    const fetchBody = block.slice(fetchStart, fetchStart + 4400);
+    const fetchBody = block.slice(fetchStart, fetchStart + 6200);
     const cacheReadIdx = fetchBody.indexOf('_getCachedSegments(videoId, cats)');
     const networkIdx = fetchBody.indexOf('extensionFetchJson');
     assert.ok(cacheReadIdx > -1 && networkIdx > cacheReadIdx,
@@ -2826,6 +2826,7 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
         'https://youtu.be',
         'https://i.ytimg.com',
         'https://sponsor.ajay.app',
+        'https://sponsorblock.kavin.rocks',
         'https://returnyoutubedislikeapi.com',
         'https://www.reddit.com',
         'https://old.reddit.com',
@@ -2922,6 +2923,8 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         'store-safe CSP must keep optional thumbnail host connect-src eligible');
     assert.ok(cspAllowsConnect(storeCsp, 'https://sponsor.ajay.app'),
         'store-safe CSP must keep optional SponsorBlock/DeArrow host connect-src eligible');
+    assert.ok(cspAllowsConnect(storeCsp, 'https://sponsorblock.kavin.rocks'),
+        'store-safe CSP must keep optional SponsorBlock mirror connect-src eligible');
     assert.ok(cspAllowsConnect(storeCsp, 'https://returnyoutubedislikeapi.com'),
         'store-safe CSP must keep optional RYD host connect-src eligible');
     assert.ok(cspAllowsConnect(storeCsp, 'https://www.reddit.com'),
@@ -3845,10 +3848,18 @@ test('store-safe manifest makes SponsorBlock and DeArrow a runtime optional host
         (manifest.optional_host_permissions || []).includes('https://sponsor.ajay.app/*'),
         'store-safe manifest must declare the SponsorBlock/DeArrow API as runtime optional'
     );
+    assert.ok(
+        (manifest.optional_host_permissions || []).includes('https://sponsorblock.kavin.rocks/*'),
+        'store-safe manifest must declare the SponsorBlock mirror as runtime optional'
+    );
     const csp = manifest.content_security_policy?.extension_pages || '';
     assert.ok(
         cspAllowsConnect(csp, 'https://sponsor.ajay.app'),
         'CSP connect-src must include the SponsorBlock/DeArrow API'
+    );
+    assert.ok(
+        cspAllowsConnect(csp, 'https://sponsorblock.kavin.rocks'),
+        'CSP connect-src must include the SponsorBlock mirror'
     );
 });
 
@@ -5402,10 +5413,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (439 → 440). Buffer / preload adds one more extension preference
     // (440 → 441).
     // Hidden-card filter explanations add one feed preference (446 → 447).
+    // Configurable SponsorBlock hosts add two enrichment preferences (447 → 449).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 447,
-        'SETTINGS_SCHEMA must cover all 447 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 449,
+        'SETTINGS_SCHEMA must cover all 449 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -6270,6 +6282,34 @@ test('v4.10.0 data-flow catalogue enumerates every external origin', () => {
         assert.ok(originStrings.includes(expected),
             'catalogue must include ' + expected);
     }
+});
+
+test('SponsorBlock API origins accept only the canonical host and approved HTTPS mirror', () => {
+    const core = loadDataFlowModule();
+    assert.equal(core.normalizeSponsorBlockOrigin('https://sponsor.ajay.app'),
+        'https://sponsor.ajay.app');
+    assert.equal(core.normalizeSponsorBlockOrigin('https://sponsorblock.kavin.rocks/'),
+        'https://sponsorblock.kavin.rocks');
+    for (const invalid of [
+        'http://sponsor.ajay.app',
+        'https://sponsor.ajay.app/api',
+        'https://sponsor.ajay.app/?x=1',
+        'https://evil.example',
+        'https://sponsor.ajay.app@evil.example'
+    ]) {
+        assert.equal(core.normalizeSponsorBlockOrigin(invalid), null, invalid);
+    }
+    assert.deepEqual(core.getSponsorBlockApiOrigins({
+        sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+        sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks'
+    }), [
+        'https://sponsor.ajay.app',
+        'https://sponsorblock.kavin.rocks'
+    ]);
+    assert.deepEqual(core.getSponsorBlockApiOrigins({
+        sponsorBlockBaseUrl: 'https://evil.example',
+        sponsorBlockMirrorUrl: 'https://evil.example'
+    }), ['https://sponsor.ajay.app']);
 });
 
 test('v4.10.0 data-flow currentlyActive flips based on driving-feature toggles', () => {

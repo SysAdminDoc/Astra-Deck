@@ -30,6 +30,40 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createDataFlow) return;
 
+    const SPONSORBLOCK_CANONICAL_ORIGIN = 'https://sponsor.ajay.app';
+    // The maintained TeamPiped mirror implements the hash-prefix endpoint
+    // Astra uses, so it is a safe bounded failover for segment lookups. Keep
+    // this list explicit: arbitrary user-supplied origins must never become
+    // extension host permissions or background proxy targets.
+    const SPONSORBLOCK_MIRROR_ORIGIN = 'https://sponsorblock.kavin.rocks';
+    const SPONSORBLOCK_ALLOWED_ORIGINS = Object.freeze([
+        SPONSORBLOCK_CANONICAL_ORIGIN,
+        SPONSORBLOCK_MIRROR_ORIGIN
+    ]);
+
+    function normalizeSponsorBlockOrigin(value) {
+        if (typeof value !== 'string' || !value.trim()) return null;
+        try {
+            const parsed = new URL(value.trim());
+            if (parsed.protocol !== 'https:'
+                || parsed.username || parsed.password
+                || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+                return null;
+            }
+            const origin = parsed.origin;
+            return SPONSORBLOCK_ALLOWED_ORIGINS.includes(origin) ? origin : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function getSponsorBlockApiOrigins(settings = {}) {
+        const primary = normalizeSponsorBlockOrigin(settings.sponsorBlockBaseUrl)
+            || SPONSORBLOCK_CANONICAL_ORIGIN;
+        const mirror = normalizeSponsorBlockOrigin(settings.sponsorBlockMirrorUrl);
+        return Array.from(new Set([primary, mirror].filter(Boolean)));
+    }
+
     let companionPorts = core.companionPorts || null;
     if (!companionPorts && typeof module !== 'undefined' && module.exports
         && typeof require === 'function') {
@@ -80,8 +114,17 @@
             riskBand: 'safe'
         }),
         Object.freeze({
-            origin: 'https://sponsor.ajay.app',
-            purpose: 'SponsorBlock segments and DeArrow titles/thumbnails.',
+            origin: SPONSORBLOCK_CANONICAL_ORIGIN,
+            purpose: 'SponsorBlock segments and DeArrow branding API; primary host.',
+            requiredByFeatures: ['sponsorBlock', 'deArrow'],
+            credentialsPolicy: 'no-cookies',
+            profile: 'store-safe',
+            hostGrant: 'runtime-optional',
+            riskBand: 'api'
+        }),
+        Object.freeze({
+            origin: SPONSORBLOCK_MIRROR_ORIGIN,
+            purpose: 'Configured SponsorBlock/DeArrow API failover mirror.',
             requiredByFeatures: ['sponsorBlock', 'deArrow'],
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
@@ -192,6 +235,8 @@
         sbCat_poi_highlight: 'sponsorBlock',
         sbPerChannelProfiles: 'sponsorBlock',
         sbPerChannelProfilesData: 'sponsorBlock',
+        sponsorBlockBaseUrl: 'sponsorBlock',
+        sponsorBlockMirrorUrl: 'sponsorBlock',
         // DeArrow shape/format sub-toggles
         daReplaceTitles: 'deArrow',
         daReplaceThumbs: 'deArrow',
@@ -371,6 +416,11 @@
     core.createDataFlow = createDataFlow;
     core.ORIGIN_CATALOGUE = ORIGIN_CATALOGUE;
     core.PARENT_FEATURE = PARENT_FEATURE;
+    core.SPONSORBLOCK_CANONICAL_ORIGIN = SPONSORBLOCK_CANONICAL_ORIGIN;
+    core.SPONSORBLOCK_MIRROR_ORIGIN = SPONSORBLOCK_MIRROR_ORIGIN;
+    core.SPONSORBLOCK_ALLOWED_ORIGINS = SPONSORBLOCK_ALLOWED_ORIGINS;
+    core.normalizeSponsorBlockOrigin = normalizeSponsorBlockOrigin;
+    core.getSponsorBlockApiOrigins = getSponsorBlockApiOrigins;
     core.findDataFlowCoverageGaps = findCoverageGaps;
     core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
     core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;
@@ -382,7 +432,12 @@
             getOptionalHostPermissionsForFeature,
             hostPermissionsForOrigin,
             ORIGIN_CATALOGUE,
-            PARENT_FEATURE
+            PARENT_FEATURE,
+            SPONSORBLOCK_CANONICAL_ORIGIN,
+            SPONSORBLOCK_MIRROR_ORIGIN,
+            SPONSORBLOCK_ALLOWED_ORIGINS,
+            normalizeSponsorBlockOrigin,
+            getSponsorBlockApiOrigins
         };
     }
 })();

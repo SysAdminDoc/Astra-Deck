@@ -2939,6 +2939,27 @@
   "feature_sbPerChannelProfiles_name": {
     "message": "SponsorBlock 按频道配置"
   },
+  "feature_sponsorBlockBaseUrl_desc": {
+    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+  },
+  "feature_sponsorBlockBaseUrl_name": {
+    "message": "SponsorBlock API Host"
+  },
+  "feature_sponsorBlockCanonicalHost_label": {
+    "message": "Canonical — sponsor.ajay.app"
+  },
+  "feature_sponsorBlockDisabled_label": {
+    "message": "Disabled"
+  },
+  "feature_sponsorBlockMirrorHost_label": {
+    "message": "Mirror — sponsorblock.kavin.rocks"
+  },
+  "feature_sponsorBlockMirrorUrl_desc": {
+    "message": "Try this approved mirror once when the primary API host fails."
+  },
+  "feature_sponsorBlockMirrorUrl_name": {
+    "message": "SponsorBlock Fallback Host"
+  },
   "feature_scrollToPlayer_desc": {
     "message": "导航到新视频时自动滚动到页面顶部"
   },
@@ -4412,6 +4433,9 @@
   },
   "spExternalFallbackTpl": {
     "message": "回退 {state}"
+  },
+  "spExternalHostTpl": {
+    "message": "host {host}"
   },
   "spExternalKicker": {
     "message": "集成"

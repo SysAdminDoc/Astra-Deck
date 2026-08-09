@@ -94,6 +94,110 @@ test('SponsorBlock pauses scheduling when video is paused', () => {
         '_scheduleNextSkip must early-return on a missing / paused video element');
 });
 
+test('SponsorBlock retries a failed primary API host through the validated mirror', async () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const videoId = 'dQw4w9WgXcQ';
+    const calls = [];
+    const health = [];
+    const originalCrypto = globalThis.crypto;
+    if (!globalThis.crypto) globalThis.crypto = require('node:crypto').webcrypto;
+    try {
+        const feature = createSponsorBlockFeature({
+            appState: {
+                settings: {
+                    sbCat_sponsor: true,
+                    sponsorBlockBaseUrl: 'https://sponsor.ajay.app',
+                    sponsorBlockMirrorUrl: 'https://sponsorblock.kavin.rocks'
+                }
+            },
+            storageReadJSON: () => ({}),
+            storageWriteJSON() {},
+            extensionFetchJson: async (request) => {
+                calls.push(request);
+                if (calls.length === 1) throw new Error('primary offline');
+                return {
+                    data: [{
+                        videoID: videoId,
+                        segments: [{ segment: [1, 4], category: 'sponsor', actionType: 'skip' }]
+                    }]
+                };
+            },
+            ExternalApiHealth: {
+                recordSuccess: (...args) => health.push(args)
+            },
+            DiagnosticLog: { record() {} }
+        });
+        feature._scheduleCachePersist = () => {};
+
+        const segments = await feature._fetchSegments(videoId);
+
+        assert.equal(segments.length, 1);
+        assert.match(calls[0].url, /^https:\/\/sponsor\.ajay\.app\/api\/skipSegments\//);
+        assert.match(calls[1].url, /^https:\/\/sponsorblock\.kavin\.rocks\/api\/skipSegments\//);
+        const success = health.find(([id]) => id === 'sponsorBlock');
+        assert.equal(success[1].host, 'https://sponsorblock.kavin.rocks');
+        assert.equal(success[1].fallbackState, 'mirror');
+    } finally {
+        if (!originalCrypto) delete globalThis.crypto;
+    }
+});
+
+test('SponsorBlock rejects unallowlisted API settings and stays on the canonical host', async () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const calls = [];
+    const originalCrypto = globalThis.crypto;
+    if (!globalThis.crypto) globalThis.crypto = require('node:crypto').webcrypto;
+    try {
+        const feature = createSponsorBlockFeature({
+            appState: {
+                settings: {
+                    sbCat_sponsor: true,
+                    sponsorBlockBaseUrl: 'http://evil.example/api',
+                    sponsorBlockMirrorUrl: 'https://evil.example'
+                }
+            },
+            storageReadJSON: () => ({}),
+            storageWriteJSON() {},
+            extensionFetchJson: async (request) => {
+                calls.push(request);
+                return { data: [] };
+            },
+            ExternalApiHealth: { recordSuccess() {} },
+            DiagnosticLog: { record() {} }
+        });
+        feature._scheduleCachePersist = () => {};
+        await feature._fetchSegments('dQw4w9WgXcQ');
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /^https:\/\/sponsor\.ajay\.app\//);
+    } finally {
+        if (!originalCrypto) delete globalThis.crypto;
+    }
+});
+
+test('userscript legacy SponsorBlock and DeArrow copies use the validated host resolver', () => {
+    const sponsorStart = sources.userscript.lastIndexOf("id: 'sponsorBlock'");
+    const sponsorEnd = sources.userscript.indexOf("id: 'deArrow'", sponsorStart);
+    assert.ok(sponsorStart > -1 && sponsorEnd > sponsorStart,
+        'userscript legacy SponsorBlock block should exist');
+    const sponsorBlock = sources.userscript.slice(sponsorStart, sponsorEnd);
+    assert.match(sponsorBlock, /getUserscriptSponsorBlockApiOrigins\(\)/,
+        'userscript SponsorBlock must resolve the configured allowlisted origins');
+    assert.match(sponsorBlock, /\$\{host\}\/api\/skipSegments\//,
+        'userscript SponsorBlock must build requests from the resolved host');
+    assert.doesNotMatch(sponsorBlock, /https:\/\/sponsor\.ajay\.app\/api\/skipSegments\//,
+        'userscript SponsorBlock must not retain a canonical-only endpoint');
+
+    const deArrowStart = sources.userscript.lastIndexOf("id: 'deArrow'");
+    const deArrowEnd = sources.userscript.indexOf("id: 'showStatisticsDashboard'", deArrowStart);
+    assert.ok(deArrowStart > -1 && deArrowEnd > deArrowStart,
+        'userscript legacy DeArrow block should exist');
+    const deArrowBlock = sources.userscript.slice(deArrowStart, deArrowEnd);
+    assert.match(deArrowBlock, /getUserscriptSponsorBlockApiOrigins\(\)/,
+        'userscript DeArrow must use the same host resolver');
+    assert.match(deArrowBlock, /status === 404/,
+        'userscript DeArrow must treat a 404 as a valid no-branding response');
+});
+
 test('SponsorBlock skip detection ignores element visibility', () => {
     // The match condition for "should skip now" reads video.currentTime
     // against segment bounds — it does NOT consult IntersectionObserver,

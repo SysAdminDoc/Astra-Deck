@@ -23,6 +23,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Video Hider can explain hidden cards.** An opt-in setting leaves a localized
   placeholder beside each hidden card naming the local rule that matched, while
   preserving remove/restore behavior and userscript parity across all 11 locales.
+- **SponsorBlock and DeArrow can fail over between approved API hosts.** The
+  canonical HTTPS host and a bounded mirror are selectable in settings; one
+  failed or malformed response triggers a single mirror attempt, and external
+  API health now identifies the host that answered.
 
 ## [4.57.0] - 2026-08-06
 

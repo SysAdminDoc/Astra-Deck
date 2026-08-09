@@ -30,10 +30,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // default (closed captions never rendered on a fresh install) trims 24 bytes.
     // Hidden-card filter explanations add the setting and safe-sync allowlist
     // entry for another 93 bytes.
-    assert.equal(assessment.totalBytes, 6063);
+    // Configurable SponsorBlock primary + mirror hosts add 200 bytes across
+    // the two bounded URL values and their safe-sync allowlist entries.
+    assert.equal(assessment.totalBytes, 6263);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 6063);
+    assert.equal(assessment.largestItem.bytes, 6263);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -102,7 +104,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Same default trim as above, less the extension-only keys: -23 bytes.
     // Hidden-card filter explanations add another 64 bytes to this local
     // settings payload.
-    assert.equal(assessment.totalBytes, 184946);
+    // The two SponsorBlock host values add 154 bytes to the typical fixture.
+    assert.equal(assessment.totalBytes, 185100);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -130,8 +133,8 @@ test('storage audit report handles arbitrary --file payloads without the built-i
 test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
-    assert.match(report, /Safe-store profile sync candidate: viable \(5\.\d KB/);
-    assert.match(report, /Full UI preferences payload: not viable for sync \(13\.\d KB/);
+    assert.match(report, /Safe-store profile sync candidate: viable \(6\.\d KB/);
+    assert.match(report, /Full UI preferences payload: not viable for sync \(14\.\d KB/);
     assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(18[0-9]\.\d KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });

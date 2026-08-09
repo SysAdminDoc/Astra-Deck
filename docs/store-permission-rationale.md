@@ -129,6 +129,7 @@ before proxying requests to these optional origins.
 | Optional host permission | Store justification |
 | --- | --- |
 | `https://sponsor.ajay.app/*` | Fetches SponsorBlock segments and DeArrow metadata only for enabled SponsorBlock/DeArrow features. No cookies are sent. |
+| `https://sponsorblock.kavin.rocks/*` | Fetches SponsorBlock-compatible hash-prefix segment data when configured as the approved fallback mirror. No cookies are sent. |
 | `https://i.ytimg.com/*` | Loads and saves YouTube thumbnail images for thumbnail upgrade and explicit thumbnail-download features. |
 | `https://returnyoutubedislikeapi.com/*` | Fetches estimated Return YouTube Dislike counts for the optional dislike-count restoration feature. |
 | `https://www.reddit.com/*` | Fetches Reddit search results for the optional Reddit discussion panel under a YouTube video. |
