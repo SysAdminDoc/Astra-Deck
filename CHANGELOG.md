@@ -27,6 +27,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   canonical HTTPS host and a bounded mirror are selectable in settings; one
   failed or malformed response triggers a single mirror attempt, and external
   API health now identifies the host that answered.
+- **DeArrow can show both title sources.** An opt-in paired-title mode keeps
+  the original title visible beneath the crowdsourced replacement on cards and
+  watch pages, with teardown restoring YouTube's native title state.
 
 ## [4.57.0] - 2026-08-06
 

@@ -1661,6 +1661,12 @@
   "feature_daShowOriginalHover_name": {
     "message": "Mostrar original al pasar el cursor"
   },
+  "feature_daShowOriginalTitle_desc": {
+    "message": "Show the original title beneath the DeArrow replacement"
+  },
+  "feature_daShowOriginalTitle_name": {
+    "message": "Show Original Title"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Cómo formatear los títulos de reemplazo"
   },
