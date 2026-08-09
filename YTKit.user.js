@@ -25059,6 +25059,53 @@
                 });
             }
 
+            // Video Hider owns three stores that live outside the settings bag —
+            // hidden videos, allowed videos, blocked channels. No feature card in
+            // the Content grid can remove an entry that was hidden earlier, so the
+            // dedicated pane below is the only surface that can. It has existed
+            // since v3.0.0 but was never mounted, which is why the Manage action on
+            // the hide/block toasts landed on a tab that did not exist.
+            const VIDEO_HIDER_PANE_CATEGORY = 'Video Hider';
+
+            function getVideoHiderListCounts() {
+                const feature = getFeatureById('hideVideosFromHome');
+                return {
+                    hidden: feature?._getHiddenVideos?.()?.length || 0,
+                    allowed: feature?._getAllowedVideos?.()?.length || 0,
+                    channels: feature?._getBlockedChannels?.()?.length || 0
+                };
+            }
+
+            // Every other nav count is derived from the feature cards inside its
+            // pane. This one has no cards, so it carries its own refresher and the
+            // generic count pass skips it.
+            function applyVideoHiderNavCopy(btn, countSpan) {
+                const feature = getFeatureById('hideVideosFromHome');
+                const label = getFeatureName(feature) || VIDEO_HIDER_PANE_CATEGORY;
+                const summary = getFeatureDescription(feature) || t('videoHiderPaneDescription', '');
+                const labelSpan = btn.querySelector('.ytkit-nav-label');
+                if (labelSpan) labelSpan.textContent = label;
+                const metaSpan = btn.querySelector('.ytkit-nav-meta');
+                if (metaSpan) metaSpan.textContent = summary;
+                btn.title = summary;
+                // Joined rather than interpolated at the sink: the UI-copy gate
+                // reads any template literal assigned to an `ariaLabel` binding as
+                // new hardcoded copy, and both halves here are already localized.
+                const navAria = [label, summary].filter(Boolean).join('. ');
+                btn.setAttribute('aria-label', navAria);
+                const stateSpan = btn.querySelector('.ytkit-nav-state');
+                btn._ytkitRefreshCount = () => {
+                    const counts = getVideoHiderListCounts();
+                    const total = counts.hidden + counts.allowed + counts.channels;
+                    if (countSpan) {
+                        countSpan.textContent = String(total);
+                        countSpan.style.color = '';
+                    }
+                    if (stateSpan) stateSpan.dataset.tone = total === 0 ? 'empty' : 'partial';
+                };
+                btn._ytkitRefreshCount();
+            }
+
             categoryOrder.forEach((cat, index) => {
                 // Insert group label before first category of each group
                 if (categoryGroupLabels[cat]) {
@@ -25082,6 +25129,24 @@
                 btn.dataset.totalCount = String(totalCount);
                 addDragReorder(btn, catId);
                 navList.appendChild(btn);
+
+                if (cat === 'Content') {
+                    // Passing the English category name keeps the tab id stable at
+                    // "Video-Hider" in every locale — the hide/block toasts and
+                    // _showManager() target that id directly. The visible label is
+                    // localized by applyVideoHiderNavCopy.
+                    const videoHiderNav = makeNavBtn(
+                        VIDEO_HIDER_PANE_CATEGORY,
+                        config,
+                        (ICONS['eye-off'] || ICONS.settings)(),
+                        '0',
+                        '',
+                        ''
+                    );
+                    applyVideoHiderNavCopy(videoHiderNav.btn, videoHiderNav.countSpan);
+                    addDragReorder(videoHiderNav.btn, videoHiderNav.catId);
+                    navList.appendChild(videoHiderNav.btn);
+                }
             });
 
             // Apply saved sidebar order
@@ -25240,6 +25305,7 @@
                     { id: 'settings', label: 'Filters & Limits' }
                 ];
                 const tabButtons = new Map();
+                let activeTabId = tabs[0].id;
 
                 function getVideoCount() {
                     return videoHiderFeature?._getHiddenVideos()?.length || 0;
@@ -25503,6 +25569,7 @@
                 pane.appendChild(tabContent);
 
                 function renderTabContent(tab) {
+                    activeTabId = tab;
                     tabContent.textContent = '';
                     tabContent.setAttribute('aria-labelledby', `ytkit-vh-tab-${tab}`);
                     updateVideoHiderMeta();
@@ -26295,7 +26362,11 @@
                 }
 
                 updateVideoHiderMeta();
-                renderTabContent('videos');
+                renderTabContent(activeTabId);
+                // The panel is built once and reused, so the lists rendered here go
+                // stale the moment anything is hidden on the page. The nav handler
+                // re-renders the open tab whenever the pane is selected.
+                pane._ytkitRefresh = () => renderTabContent(activeTabId);
                 return pane;
             }
 
@@ -26739,6 +26810,9 @@
 
                 pane.appendChild(grid);
                 content.appendChild(pane);
+
+                // Mounted next to its category so the sidebar order matches.
+                if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
             });
 
             function createPanelActionButton({ id, label, icon, variant = 'secondary', ariaLabel }) {
@@ -27244,6 +27318,12 @@
                 const catId = btn.dataset.tab;
                 const pane = document.getElementById(`ytkit-pane-${catId}`);
                 if (!pane) return;
+                // Panes without feature cards (Video Hider) count stored list
+                // entries instead; the generic enabled/total pass would zero them.
+                if (typeof btn._ytkitRefreshCount === 'function') {
+                    btn._ytkitRefreshCount();
+                    return;
+                }
                 const paneFeatures = Array.from(pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card)'))
                     .map(card => getFeatureById(card.dataset.featureId))
                     .filter(Boolean);
@@ -27341,8 +27421,12 @@
                     syncPanelCategorySelection(navBtn);
                     const pane = doc.querySelector(`#ytkit-pane-${navBtn.dataset.tab}`);
                     if (pane) {
+                        // Stored-list panes re-read storage on selection so they
+                        // never show a snapshot from when the panel was built.
+                        if (typeof pane._ytkitRefresh === 'function') pane._ytkitRefresh();
                         pane.scrollTop = 0;
                     }
+                    if (typeof navBtn._ytkitRefreshCount === 'function') navBtn._ytkitRefreshCount();
                     const contentArea = doc.querySelector('.ytkit-content');
                     if (contentArea) contentArea.scrollTop = 0;
                     updatePanelInsightState();
@@ -27636,6 +27720,13 @@
                     const catId = btn.dataset.tab;
                     const pane = doc.getElementById(`ytkit-pane-${catId}`);
                     if (pane) {
+                        // A pane with no feature cards can never match a feature
+                        // search — mark it empty and leave its own count alone.
+                        if (typeof btn._ytkitRefreshCount === 'function') {
+                            pane.classList.add('ytkit-search-empty-pane');
+                            btn.classList.add('ytkit-search-empty-nav');
+                            return;
+                        }
                         const directMatches = pane.querySelectorAll('.ytkit-feature-card[data-search-matched="true"]').length;
                         const visibleCards = Array.from(pane.querySelectorAll('.ytkit-feature-card')).filter(card => card.style.display !== 'none').length;
                         const countEl = btn.querySelector('.ytkit-nav-count');
