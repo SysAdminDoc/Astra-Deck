@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+---
+
+## [4.58.0] - 2026-08-09
+
 ### Fixed
 
 - **The Video Hider list manager is reachable.** Settings now carries a Video
