@@ -129,6 +129,13 @@
             label: record.label,
             feature: record.feature,
             state: record.state,
+            // Whether the user can DO anything about it. A revoked host
+            // permission is fixed in Settings; a third-party API being rate
+            // limited, briefly 5xx-ing, or serving a stale cache is not
+            // something the reader can act on, and putting it on screen over
+            // their video is noise. Callers decide what to render; the health
+            // record and the diagnostic log keep every state either way.
+            actionable: record.lastErrorClass === 'permission-denied',
             text: `${record.label}: ${parts.join(' · ')}`
         };
     }
