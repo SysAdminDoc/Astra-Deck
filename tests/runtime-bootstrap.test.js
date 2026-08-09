@@ -56,7 +56,15 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
     assert.equal(generatedModules.includes('runtime-bootstrap.js'), false,
         'bootstrap must not recursively import itself');
 
-    const warResources = new Set(manifest.web_accessible_resources[0].resources);
+    const warResources = new Set(
+        manifest.web_accessible_resources.flatMap((entry) => entry.resources || [])
+    );
+    const runtimeResourceEntry = manifest.web_accessible_resources.find((entry) =>
+        (entry.resources || []).includes('runtime-core-loader.mjs')
+    );
+    assert.ok(runtimeResourceEntry, 'runtime module resources must have a manifest entry');
+    assert.equal(runtimeResourceEntry.use_dynamic_url, undefined,
+        'relative ES-module imports require the stable extension origin');
     assert.ok(warResources.has('runtime-core-loader.mjs'),
         'the static module graph loader must be exposed for the dynamic import URL');
     assert.match(loaderSource, /import '\.\/core\/browser-api\.js';/);

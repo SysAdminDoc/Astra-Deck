@@ -2944,16 +2944,22 @@ test('build-extension gates web_accessible_resources policy for every profile', 
         'utf8',
     ));
     const runtimeResources = builder.getRuntimeModuleResources();
-    const expectedResources = ['icons/32.png', 'assets/cat.gif', 'runtime-core-loader.mjs', ...runtimeResources];
-    const expectedChromiumWar = [{
-        resources: expectedResources,
-        matches: [
-            'https://*.youtube.com/*',
-            'https://*.youtube-nocookie.com/*',
-            'https://youtu.be/*'
-        ],
-        use_dynamic_url: true
-    }];
+    const matches = [
+        'https://*.youtube.com/*',
+        'https://*.youtube-nocookie.com/*',
+        'https://youtu.be/*'
+    ];
+    const expectedChromiumWar = [
+        {
+            resources: ['icons/32.png', 'assets/cat.gif'],
+            matches,
+            use_dynamic_url: true
+        },
+        {
+            resources: ['runtime-core-loader.mjs', ...runtimeResources],
+            matches
+        }
+    ];
     const expectedFirefoxWar = expectedChromiumWar.map(({ use_dynamic_url: _ignored, ...entry }) => entry);
     const inventory = builder.getPageAccessibleResourceInventory();
 
@@ -2962,7 +2968,7 @@ test('build-extension gates web_accessible_resources policy for every profile', 
     assert.ok(inventory.every((entry) => entry.source && entry.anchor && entry.consumer),
         'every page resource must carry a source anchor and named consumer');
     assert.deepEqual(builder.getManifestWebAccessibleResources(), expectedChromiumWar,
-        'Chromium build policy must expose only reviewed resources through a dynamic ID');
+        'Chromium build policy must keep assets dynamic and the relative module graph stable');
     assert.deepEqual(builder.getManifestWebAccessibleResources('firefox'), expectedFirefoxWar,
         'Firefox build policy must omit the Chromium-only dynamic URL key');
     assert.deepEqual(baseManifest.web_accessible_resources, expectedChromiumWar,

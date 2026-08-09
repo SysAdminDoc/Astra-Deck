@@ -573,17 +573,29 @@ function getRuntimeModuleResources(repoRoot = __dirname) {
 }
 
 function getManifestWebAccessibleResources(browser = 'chromium', repoRoot = __dirname) {
-    const resources = unique([
-        ...getPageAccessibleResourceInventory(repoRoot).map((entry) => entry.resource),
+    const pageResources = unique(
+        getPageAccessibleResourceInventory(repoRoot).map((entry) => entry.resource)
+    );
+    const runtimeResources = unique([
         'runtime-core-loader.mjs',
         ...getRuntimeModuleResources(repoRoot),
     ]);
-    const entry = {
-        resources,
-        matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
-    };
-    if (browser !== 'firefox') entry.use_dynamic_url = true;
-    return [entry];
+    const entries = [
+        {
+            resources: pageResources,
+            matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
+        },
+        {
+            resources: runtimeResources,
+            matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
+        }
+    ];
+    // Chromium's rotating WAR host cannot anchor the loader's relative ES-module
+    // imports: descendants resolve to chrome-extension://invalid. Keep only
+    // standalone page assets dynamic and serve the reviewed module graph from
+    // the stable extension origin.
+    if (browser !== 'firefox') entries[0].use_dynamic_url = true;
+    return entries;
 }
 
 function patchManifestForBuildProfile(profileManifest, profile, browser = 'chromium') {

@@ -44,6 +44,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   The modular extension and userscript fallback share the same responsive,
   light-theme, and RTL visual contract.
 
+### Fixed
+
+- **Chrome unpacked builds initialize on YouTube again.** Runtime modules now
+  use the stable extension origin required by their relative ES-module imports,
+  while ordinary page assets retain per-session dynamic URLs.
+
 ## [4.57.0] - 2026-08-06
 
 ### Fixed
