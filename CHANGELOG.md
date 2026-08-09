@@ -6,6 +6,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Video Hider list manager is reachable.** Settings now carries a Video
+  Hider destination in the sidebar, next to Content, holding the pane that
+  restores or deletes individual hidden videos, drops allowed-video exceptions,
+  and unblocks channels — with per-entry and clear-all actions, each undoable
+  from a toast. The pane itself has existed since v3.0.0 but was never mounted
+  in either the peeled settings-panel module or the ytkit.js fallback, so the
+  three stores it manages (`ytkit-hidden-videos`,
+  `ytkit-video-hider-allowed-videos`, `ytkit-blocked-channels`) had no removal
+  surface at all, and the Manage action on the hide/block toasts navigated to a
+  tab that did not exist. Its sidebar count reflects stored entries rather than
+  enabled toggles, and selecting it re-reads storage so the lists cannot show a
+  snapshot from when the panel was built.
+- **The settings-overlay smoke covers the list pane.** `CATEGORY_PARITY_CHECKS`
+  measured every pane against the feature-grid contract, which a stored-list
+  pane can never satisfy; it now applies a header/tablist/rendered-content
+  contract to that pane instead of exempting it. Verified by baiting the pane
+  to render nothing and confirming the gate fails.
+
 ### Performance
 
 - **Normal YouTube pages now inject a thin runtime bootstrap.** The former

@@ -410,6 +410,36 @@ const CATEGORY_PARITY_CHECKS = `(() => {
     const pane = document.querySelector('#ytkit-settings-panel .ytkit-pane.active');
     if (!pane) return JSON.stringify({ failures: ['active category pane is missing'] });
     const paneId = pane.id.replace('ytkit-pane-', '');
+    // The Video Hider pane manages stored lists (hidden videos, allowed videos,
+    // blocked channels) instead of feature toggles, so there is no feature grid
+    // to measure. It gets its own contract rather than an exemption.
+    if (pane.classList.contains('ytkit-vh-pane')) {
+        const header = pane.querySelector(':scope > .ytkit-pane-header');
+        const title = header?.querySelector('.ytkit-pane-title h2');
+        const chips = Array.from(header?.querySelectorAll('.ytkit-pane-chip') || []);
+        const tabs = Array.from(pane.querySelectorAll('.ytkit-vh-tab'));
+        const body = pane.querySelector('#ytkit-vh-content');
+        if (!header || !title?.textContent?.trim()) failures.push('list pane is missing its header title');
+        if (chips.length < 3) failures.push('list pane expected state + list-count chips, found ' + chips.length);
+        if (chips.some((chip) => !chip.textContent.trim())) failures.push('list pane has an empty header chip');
+        if (tabs.length < 3) failures.push('list pane expected a tablist, found ' + tabs.length + ' tabs');
+        if (tabs.some((tab) => !tab.querySelector('.ytkit-vh-tab__badge')?.textContent?.trim())) {
+            failures.push('a list-pane tab is missing its count badge');
+        }
+        if (!tabs.some((tab) => tab.getAttribute('aria-selected') === 'true')) {
+            failures.push('list pane has no selected tab');
+        }
+        if (!body || !body.children.length) failures.push('list pane rendered no content for the selected tab');
+        if (body && body.getBoundingClientRect().height < 40) failures.push('list pane content collapsed to no height');
+        return JSON.stringify({
+            failures,
+            paneId,
+            title: title?.textContent?.trim() || '',
+            sections: tabs.map((tab) => tab.querySelector('.ytkit-vh-tab__label')?.textContent?.trim() || ''),
+            contextItems: chips.length,
+            parentCards: 0
+        });
+    }
     const mission = pane.querySelector(':scope > .ytkit-pane-header');
     const lead = mission?.querySelector('.ytkit-pane-lead');
     const icon = mission?.querySelector('.ytkit-pane-icon');
