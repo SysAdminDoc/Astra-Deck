@@ -195,3 +195,74 @@ test('player task manager reapplies registered tasks on media and player-state e
     assert.deepEqual(calls, ['manual', 'loadedmetadata', 'player-state']);
     manager.destroy();
 });
+
+test('video frame sampler follows requestVideoFrameCallback and rebinds on stop', () => {
+    const core = loadPlayerCore();
+    const pending = new Map();
+    let nextId = 0;
+    let frameCalls = 0;
+    const video = {
+        requestVideoFrameCallback(callback) {
+            const id = ++nextId;
+            pending.set(id, callback);
+            return id;
+        },
+        cancelVideoFrameCallback(id) {
+            pending.delete(id);
+        }
+    };
+    const sampler = core.createVideoFrameSampler({
+        getVideo: () => video,
+        now: () => 0,
+        onFrame: () => { frameCalls += 1; }
+    });
+
+    assert.equal(sampler.start(), true);
+    assert.equal(pending.size, 1);
+    const first = pending.values().next().value;
+    pending.clear();
+    first(0, { presentedFrames: 1 });
+    assert.equal(frameCalls, 1);
+    assert.equal(pending.size, 1, 'a successful frame must schedule the next frame');
+    sampler.stop();
+    assert.equal(pending.size, 0, 'stop must cancel the pending frame callback');
+    assert.equal(sampler.isRunning(), false);
+});
+
+test('video frame sampler fails closed after three consecutive over-budget callbacks', () => {
+    const core = loadPlayerCore();
+    const pending = new Map();
+    let nextId = 0;
+    let clock = 0;
+    let budgetFailures = 0;
+    const video = {
+        requestVideoFrameCallback(callback) {
+            const id = ++nextId;
+            pending.set(id, callback);
+            return id;
+        },
+        cancelVideoFrameCallback(id) {
+            pending.delete(id);
+        }
+    };
+    const sampler = core.createVideoFrameSampler({
+        getVideo: () => video,
+        budgetMs: 1,
+        now: () => clock,
+        onFrame: () => { clock += 2; },
+        onBudgetExceeded: () => { budgetFailures += 1; }
+    });
+    const deliver = () => {
+        const callback = pending.values().next().value;
+        pending.clear();
+        callback(0, {});
+    };
+
+    sampler.start();
+    deliver();
+    deliver();
+    deliver();
+    assert.equal(budgetFailures, 1);
+    assert.equal(sampler.isRunning(), false);
+    assert.equal(pending.size, 0);
+});

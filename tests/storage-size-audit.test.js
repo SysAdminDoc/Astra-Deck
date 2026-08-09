@@ -105,7 +105,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // Hidden-card filter explanations add another 64 bytes to this local
     // settings payload.
     // The two SponsorBlock host values add 154 bytes to the typical fixture.
-    assert.equal(assessment.totalBytes, 185128);
+    // Photosensitive protection adds 103 bytes for its toggle and two bounded
+    // local controls.
+    assert.equal(assessment.totalBytes, 185231);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

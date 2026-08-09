@@ -3762,6 +3762,9 @@ return response;
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
+            photosensitiveFlashProtection: false,
+            photosensitiveFlashThreshold: 0.2,
+            photosensitiveDimPercent: 35,
             vvfBrightness: 100,              // 0-200%
             vvfContrast: 100,                // 0-200%
             vvfSaturation: 100,              // 0-200%
@@ -4907,6 +4910,10 @@ return response;
     // App state - declared before features so feature closures can reference it
     let appState = {};
     let _extensionBridgeAttached = false;
+    // Runtime-only failures (for example a tainted canvas or a slow frame
+    // readback) feed the same persisted feature crash counter used by startup
+    // initialization. It is assigned once main() has hydrated storage.
+    let _recordFeatureRuntimeFailure = () => {};
 
 
     // Download UI is extension-only and preloaded by every normal-page manifest
@@ -34189,6 +34196,278 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
 
+        // ── Local Photosensitive Flash Protection ──
+        {
+            id: 'photosensitiveFlashProtection',
+            name: t('feature_photosensitiveFlashProtection_name', 'Photosensitive Flash Protection'),
+            description: t('feature_photosensitiveFlashProtection_desc', 'Sample video frames locally and briefly dim the player when a large luminance change is detected.'),
+            group: 'Video Player',
+            icon: 'eye',
+            pages: [PageTypes.WATCH],
+            _styleEl: null,
+            _alert: null,
+            _alertTimer: null,
+            _mountTaskId: 'feature:photosensitiveFlashProtection',
+            _settingsHandler: null,
+            _mutationObserver: null,
+            _navRule: null,
+            _fallbackSampler: null,
+            _fallbackCanvas: null,
+            _fallbackContext: null,
+            _fallbackPreviousLuminance: null,
+            _lastEvent: '',
+            _lastFailure: '',
+            _runtimeDisabled: false,
+
+            _tools() {
+                return globalThis.YTKitFeatures?.videoFilters || {};
+            },
+
+            _setting(key, fallback) {
+                const tools = this._tools();
+                if (typeof tools.readPhotosensitiveSetting === 'function') {
+                    return tools.readPhotosensitiveSetting(appState.settings, key);
+                }
+                const bounds = key === 'photosensitiveDimPercent'
+                    ? { min: 10, max: 80, fallback: 35 }
+                    : { min: 0.05, max: 0.8, fallback: 0.2 };
+                const value = Number(appState.settings?.[key]);
+                if (!Number.isFinite(value)) return fallback ?? bounds.fallback;
+                return Math.max(bounds.min, Math.min(bounds.max, value));
+            },
+
+            _syncBridge() {
+                const root = document.documentElement;
+                if (!root) return;
+                const enabled = appState.settings.photosensitiveFlashProtection === true && !this._runtimeDisabled;
+                if (!enabled) {
+                    root.setAttribute('data-ytkit-photosensitive', 'off');
+                    return;
+                }
+                root.setAttribute('data-ytkit-photosensitive-threshold', String(this._setting('photosensitiveFlashThreshold', 0.2)));
+                root.setAttribute('data-ytkit-photosensitive-dim', String(this._setting('photosensitiveDimPercent', 35)));
+                root.setAttribute('data-ytkit-photosensitive', 'on');
+            },
+
+            _buildAlert(player) {
+                if (!this._alert) {
+                    const alert = document.createElement('div');
+                    alert.className = 'ytkit-photosensitive-alert';
+                    alert.hidden = true;
+                    alert.setAttribute('role', 'status');
+                    alert.setAttribute('aria-live', 'polite');
+                    const label = document.createElement('span');
+                    label.className = 'ytkit-photosensitive-alert__label';
+                    label.textContent = t('photosensitiveFlashDetected', 'Flashing content detected — dimmed');
+                    alert.appendChild(label);
+                    this._alert = alert;
+                }
+                if (this._alert.parentNode !== player) player.appendChild(this._alert);
+                this._alert.style.setProperty('--ytkit-photosensitive-dim', String(this._setting('photosensitiveDimPercent', 35) / 100));
+                return this._alert;
+            },
+
+            _showAlert(eventValue) {
+                if (!eventValue || eventValue === this._lastEvent) return;
+                this._lastEvent = eventValue;
+                if (!this._alert) return;
+                this._alert.hidden = false;
+                this._alert.setAttribute('aria-hidden', 'false');
+                if (this._alertTimer) clearTimeout(this._alertTimer);
+                this._alertTimer = setTimeout(() => {
+                    this._alertTimer = null;
+                    if (this._alert) {
+                        this._alert.hidden = true;
+                        this._alert.setAttribute('aria-hidden', 'true');
+                    }
+                }, this._tools().PHOTOSENSITIVE_FLASH_HOLD_MS || 900);
+            },
+
+            _stopFallbackSampler() {
+                this._fallbackSampler?.stop?.();
+                this._fallbackSampler = null;
+                this._fallbackPreviousLuminance = null;
+            },
+
+            _runtimeFailure(error) {
+                if (this._runtimeDisabled) return;
+                this._runtimeDisabled = true;
+                this._stopFallbackSampler();
+                this._syncBridge();
+                _recordFeatureRuntimeFailure(this.id, error);
+            },
+
+            _fallbackFrame(video) {
+                const tools = this._tools();
+                if (!this._fallbackCanvas) {
+                    this._fallbackCanvas = document.createElement('canvas');
+                    this._fallbackCanvas.width = 2;
+                    this._fallbackCanvas.height = 2;
+                    this._fallbackContext = this._fallbackCanvas.getContext('2d', { willReadFrequently: true });
+                }
+                if (!this._fallbackContext) throw new Error('photosensitive canvas readback unavailable');
+                if (typeof tools.sampleVideoLuminance !== 'function') return;
+                const luminance = tools.sampleVideoLuminance(video, this._fallbackCanvas, this._fallbackContext);
+                const result = typeof tools.detectPhotosensitiveFlash === 'function'
+                    ? tools.detectPhotosensitiveFlash(this._fallbackPreviousLuminance, luminance, this._setting('photosensitiveFlashThreshold', 0.2))
+                    : { luminance, delta: Math.abs(Number(luminance) - Number(this._fallbackPreviousLuminance)), triggered: false };
+                this._fallbackPreviousLuminance = result.luminance;
+                if (!result.triggered) return;
+                this._showAlert('fallback:' + Date.now());
+                document.documentElement.setAttribute('data-ytkit-photosensitive-event', 'fallback:' + Date.now() + ':' + result.delta);
+            },
+
+            _startFallbackSampler(video) {
+                if (hasExtensionContext() || this._runtimeDisabled) return true;
+                const factory = globalThis.YTKitCore?.createVideoFrameSampler;
+                if (typeof factory !== 'function' || !video) return true;
+                if (this._fallbackSampler?.isRunning?.() && this._fallbackSampler.getVideo?.() === video) return true;
+                this._stopFallbackSampler();
+                this._fallbackSampler = factory({
+                    getVideo: () => getMainVideoElement(),
+                    budgetMs: this._tools().PHOTOSENSITIVE_FRAME_BUDGET_MS || 1,
+                    onFrame: (frameVideo) => this._fallbackFrame(frameVideo),
+                    onUnsupported: () => {},
+                    onError: (error) => this._runtimeFailure(error),
+                    onBudgetExceeded: (duration) => this._runtimeFailure(new Error(`frame sample took ${duration.toFixed(2)}ms`))
+                });
+                this._fallbackSampler.start(video);
+                return true;
+            },
+
+            _mount(ctx = {}) {
+                if (this._runtimeDisabled) return true;
+                const player = ctx.player || getMoviePlayerElement();
+                if (!player) return false;
+                this._buildAlert(player);
+                this._startFallbackSampler(ctx.video || getMainVideoElement());
+                return true;
+            },
+
+            _scheduleMount(delay = 0, reason = 'manual') {
+                schedulePlayerTask(this._mountTaskId, (ctx) => this._mount(ctx), {
+                    owner: this.id,
+                    reason,
+                    delay,
+                    needsVideo: true,
+                    needsPlayer: true,
+                    events: ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'],
+                    retryDelays: [0, 150, 400, 1000, 1800, 3000],
+                    maxAttempts: 6
+                });
+            },
+
+            init() {
+                const tools = this._tools();
+                const css = typeof tools.buildPhotosensitiveOverlayCss === 'function'
+                    ? tools.buildPhotosensitiveOverlayCss()
+                    : '.ytkit-photosensitive-alert[hidden] { display: none !important; }';
+                this._styleEl = injectStyle(css, 'photosensitiveFlashProtection', true);
+                this._runtimeDisabled = false;
+                this._lastEvent = '';
+                this._lastFailure = document.documentElement?.getAttribute('data-ytkit-photosensitive-failure') || '';
+                this._settingsHandler = (event) => {
+                    const keys = event?.detail?.keys;
+                    if (!keys || keys.some((key) => [
+                        'photosensitiveFlashProtection',
+                        'photosensitiveFlashThreshold',
+                        'photosensitiveDimPercent'
+                    ].includes(key))) {
+                        this._syncBridge();
+                        if (this._alert) this._alert.style.setProperty('--ytkit-photosensitive-dim', String(this._setting('photosensitiveDimPercent', 35) / 100));
+                    }
+                };
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
+                this._mutationObserver = new MutationObserver(() => {
+                    const root = document.documentElement;
+                    const eventValue = root?.getAttribute('data-ytkit-photosensitive-event') || '';
+                    const failure = root?.getAttribute('data-ytkit-photosensitive-failure') || '';
+                    if (failure && failure !== this._lastFailure) {
+                        this._lastFailure = failure;
+                        this._runtimeFailure(new Error(failure));
+                    }
+                    this._showAlert(eventValue);
+                });
+                this._mutationObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: [
+                        'data-ytkit-photosensitive-event',
+                        'data-ytkit-photosensitive-failure'
+                    ]
+                });
+                this._syncBridge();
+                this._scheduleMount(0, 'init');
+                this._navRule = () => {
+                    this._lastEvent = '';
+                    this._scheduleMount(0, 'navigate');
+                };
+                addNavigateRule(this.id, this._navRule);
+            },
+
+            destroy() {
+                cancelPlayerTask(this._mountTaskId);
+                removeNavigateRule(this.id);
+                if (this._settingsHandler) document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                this._settingsHandler = null;
+                this._mutationObserver?.disconnect();
+                this._mutationObserver = null;
+                this._stopFallbackSampler();
+                if (this._alertTimer) clearTimeout(this._alertTimer);
+                this._alertTimer = null;
+                this._alert?.remove();
+                this._alert = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
+                const root = document.documentElement;
+                root?.setAttribute('data-ytkit-photosensitive', 'off');
+                root?.removeAttribute('data-ytkit-photosensitive-threshold');
+                root?.removeAttribute('data-ytkit-photosensitive-dim');
+                root?.removeAttribute('data-ytkit-photosensitive-event');
+                root?.removeAttribute('data-ytkit-photosensitive-status');
+                root?.removeAttribute('data-ytkit-photosensitive-failure');
+            }
+        },
+        {
+            id: 'photosensitiveFlashThreshold',
+            name: t('feature_photosensitiveFlashThreshold_name', 'Flash Sensitivity'),
+            description: t('feature_photosensitiveFlashThreshold_desc', 'Minimum frame luminance change that triggers protection.'),
+            group: 'Video Player',
+            icon: 'sliders',
+            isSubFeature: true,
+            parentId: 'photosensitiveFlashProtection',
+            dependsOn: 'photosensitiveFlashProtection',
+            type: 'range',
+            min: 0.05,
+            max: 0.8,
+            step: 0.05,
+            formatValue: (value) => `${Math.round(Number(value) * 100)}% change`,
+            init() {
+                const parent = getFeatureById(this.parentId);
+                if (parent?._initialized) parent._syncBridge();
+            },
+            destroy() {}
+        },
+        {
+            id: 'photosensitiveDimPercent',
+            name: t('feature_photosensitiveDimPercent_name', 'Dim Strength'),
+            description: t('feature_photosensitiveDimPercent_desc', 'How strongly to dim the player while flashing content is detected.'),
+            group: 'Video Player',
+            icon: 'sun',
+            isSubFeature: true,
+            parentId: 'photosensitiveFlashProtection',
+            dependsOn: 'photosensitiveFlashProtection',
+            type: 'range',
+            min: 10,
+            max: 80,
+            step: 5,
+            formatValue: (value) => `${value}% dim`,
+            init() {
+                const parent = getFeatureById(this.parentId);
+                if (parent?._initialized) parent._syncBridge();
+            },
+            destroy() {}
+        },
+
         // ── DeArrow "Show Original" Peek ──
         {
             id: 'dearrowPeekButton',
@@ -56304,6 +56583,19 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         const _featureCrashCounts = StorageManager.get('ytkit_crash_counts', {});
         const MAX_FEATURE_CRASHES = 3;
         const _persistCrashCounts = () => StorageManager.set('ytkit_crash_counts', _featureCrashCounts);
+        _recordFeatureRuntimeFailure = (featureId, error) => {
+            if (!featureId) return 0;
+            _featureCrashCounts[featureId] = (_featureCrashCounts[featureId] || 0) + 1;
+            _persistCrashCounts();
+            const count = _featureCrashCounts[featureId];
+            console.warn(`[YTKit] Runtime failure in "${featureId}" (${count}/${MAX_FEATURE_CRASHES}):`, error);
+            if (count >= MAX_FEATURE_CRASHES) {
+                appState.settings[featureId] = false;
+                void settingsManager.save(appState.settings);
+                console.warn(`[YTKit] Feature "${featureId}" auto-disabled after ${MAX_FEATURE_CRASHES} runtime failures`);
+            }
+            return count;
+        };
 
         if (isSafeMode) {
             console.log('%c[YTKit] SAFE MODE — All features disabled. ytkit.unsafe() to exit.', 'color:#f97316;font-weight:bold;font-size:16px;');

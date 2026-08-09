@@ -11,7 +11,7 @@ const LOADER_MODULE = 'runtime-core-loader.mjs';
 
 const FEATURE_SETTINGS = Object.freeze({
     'features/subtitles/index.js': ['autoSubtitles', 'autoSubtitlesWhenMuted', 'dualLanguageSubtitles', 'subtitleDownload', 'subtitlesOnRewind'],
-    'features/video-filters/index.js': ['videoVisualFilters'],
+    'features/video-filters/index.js': ['videoVisualFilters', 'photosensitiveFlashProtection'],
     'features/blue-light-filter/index.js': ['blueLightFilter'],
     'features/theme-css/index.js': ['colorTheme', 'oledTheme', 'themeAccentColor'],
     'features/home-subs-css/index.js': ['fullWidthSubscriptions', 'hideSubscriptionOptions', 'hideVoiceSearch', 'widenSearchBar'],

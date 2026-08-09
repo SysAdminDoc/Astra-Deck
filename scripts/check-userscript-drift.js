@@ -206,6 +206,11 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     transcriptAiHandoff: 'unsafe-in-userscript',
     videoAgeColors: 'not-yet-ported',
     videoInsights: 'intentional-extension-only',
+    // The userscript bundles the pure luminance helpers but the settings-backed
+    // feature lifecycle is owned by the MV3 MAIN-world bridge.
+    photosensitiveFlashProtection: 'intentional-extension-only',
+    photosensitiveFlashThreshold: 'intentional-extension-only',
+    photosensitiveDimPercent: 'intentional-extension-only',
     vlcMpvHandoff: 'native-companion',
     volumeBoost: 'intentional-extension-only',
     volumeBoostLevel: 'intentional-extension-only',
