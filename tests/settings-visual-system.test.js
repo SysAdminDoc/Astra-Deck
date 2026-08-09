@@ -18,24 +18,37 @@ const settingsPanel = fs.readFileSync(
 const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
+const commandDeckCss = visualSystemSource.slice(
+    visualSystemSource.indexOf('/* v5 command-deck parity overrides')
+);
 
-test('settings visual system renders the premium control-center hierarchy', () => {
-    assert.match(visualSystemSource, /settings visual system v4 — premium control-center UI/);
+test('settings visual system renders the imagegen-matched command-deck hierarchy', () => {
+    assert.match(visualSystemSource, /settings visual system v5 — imagegen-matched command deck/);
     assert.match(
-        visualSystemSource,
-        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*76px[\s\S]*?border:\s*0[\s\S]*?border-bottom:\s*1px solid var\(--ytkit-v3-border\)[\s\S]*?background:\s*rgba\(255,255,255,0\.008\)/
+        commandDeckCss,
+        /\.ytkit-feature-card\s*\{[\s\S]*?min-height:\s*70px[\s\S]*?background:\s*transparent/
     );
-    assert.match(visualSystemSource, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*29px/);
-    assert.match(visualSystemSource, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
-    assert.match(visualSystemSource, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*14px[\s\S]*?white-space:\s*nowrap/);
+    assert.match(commandDeckCss, /\.ytkit-pane-title h2\s*\{[\s\S]*?font-size:\s*30px/);
+    assert.match(commandDeckCss, /\.ytkit-feature-name\s*\{[\s\S]*?font-size:\s*16px/);
+    assert.match(commandDeckCss, /\.ytkit-feature-desc\s*\{[\s\S]*?font-size:\s*14px[\s\S]*?white-space:\s*normal/);
     assert.match(
-        visualSystemSource,
-        /\.ytkit-feature-glyph\s*\{[\s\S]*?display:\s*grid[\s\S]*?width:\s*28px/
+        commandDeckCss,
+        /\.ytkit-feature-glyph\s*\{[\s\S]*?display:\s*grid[\s\S]*?width:\s*44px/
     );
-    assert.match(visualSystemSource, /\.ytkit-nav-group-label\s*\{[\s\S]*?display:\s*block[\s\S]*?text-transform:\s*uppercase/);
-    assert.match(visualSystemSource, /\.ytkit-pane-context\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+    assert.match(commandDeckCss, /\.ytkit-nav-group-label\s*\{[\s\S]*?display:\s*none/);
+    assert.match(commandDeckCss, /\.ytkit-pane-context\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+    assert.match(commandDeckCss, /\.ytkit-pane-icon\s*\{[\s\S]*?width:\s*78px[\s\S]*?linear-gradient/);
+    assert.match(commandDeckCss, /\.ytkit-feature-section-title\s*\{[\s\S]*?text-transform:\s*uppercase/);
+    assert.match(commandDeckCss, /\.ytkit-feature-section-body\s*\{[\s\S]*?background:[\s\S]*?var\(--ytkit-v3-panel\)/);
+    assert.match(commandDeckCss, /\.ytkit-header-live-switch\s*\{[\s\S]*?background:\s*var\(--ytkit-v3-accent\)/);
+    assert.match(commandDeckCss, /\.ytkit-panel-status::before\s*\{[\s\S]*?content:\s*"✓"/);
     assert.match(settingsPanel, /categoryGroupLabels = \{[\s\S]*?panelNavGroupPlayer[\s\S]*?panelNavGroupSystem/);
     assert.match(settingsPanel, /paneContextFeatures[\s\S]*?ytkit-pane-context-value/);
+    for (const source of [settingsPanel, shell]) {
+        assert.match(source, /categorySections\[cat\]/);
+        assert.match(source, /featureSection\.className = 'ytkit-feature-section'/);
+        assert.match(source, /sortedParentFeatures\.slice\(0, 3\)/);
+    }
     assert.match(visualSystemSource, /\.ytkit-info-card\s*\{\s*grid-column:\s*1 \/ -1/);
     assert.doesNotMatch(settingsPanel, /card\.style\.cssText = 'background: linear-gradient/);
     // The enabled state must be visible without tracking the switch at the far
@@ -87,13 +100,14 @@ test('the settings panel keeps three distinct elevation planes', () => {
     const [lRail, lBg, lPanel] = [rail, bg, panel].map(luminance);
     assert.ok(lRail < lBg, `the nav rail (${rail}) must sit below the content plane (${bg})`);
     assert.ok(lPanel > lBg, `the settings table (${panel}) must sit above the content plane (${bg})`);
-    // And the content plane must be off the floor: #090e14 was 0.0056.
-    assert.ok(lBg > 0.009, `the content plane (${bg}) must not be near-black (got ${lBg.toFixed(4)})`);
+    // The v5 content plane is intentionally midnight navy, but must remain
+    // measurably lifted above the old #090e14 floor (0.0056).
+    assert.ok(lBg > 0.0065, `the content plane (${bg}) must not collapse to near-black (got ${lBg.toFixed(4)})`);
 
     assert.match(visualSystemSource, /\.ytkit-sidebar \{[^}]*background:\s*var\(--ytkit-v3-rail\)/,
         'the sidebar must paint the rail plane');
-    assert.match(visualSystemSource, /\.ytkit-features-grid \{[^}]*background:\s*var\(--ytkit-v3-panel\)/,
-        'the features table must paint the panel plane');
+    assert.match(commandDeckCss, /\.ytkit-feature-section-body \{[\s\S]*?background:[\s\S]*?var\(--ytkit-v3-panel\)/,
+        'each semantic control section must paint the panel plane');
     assert.match(
         visualSystemSource,
         /\.ytkit-mediadl-banner\[data-state\][\s\S]*?background:\s*transparent[\s\S]*?\.ytkit-mediadl-banner__status[\s\S]*?color:\s*var\(--ytkit-v3-muted\)/
@@ -125,6 +139,44 @@ test('the settings panel keeps three distinct elevation planes', () => {
         assert.match(source, /footerStatus\.textContent = 'Saved'/);
         assert.match(source, /id: 'ytkit-close-footer',[\s\S]*?label: 'Done'/);
         assert.match(source, /paneDescription\.title = paneDescription\.textContent/);
+    }
+});
+
+test('all ten menu pages define semantic command-deck sections', () => {
+    const previousCore = globalThis.YTKitCore;
+    const modulePath = require.resolve(visualSystemPath);
+    delete require.cache[modulePath];
+    globalThis.YTKitCore = {};
+
+    try {
+        const { SETTINGS_CATEGORY_SECTIONS } = require(modulePath);
+        const categories = [
+            'Video Player',
+            'Playback',
+            'Comments',
+            'Watch Page',
+            'Content',
+            'Home / Subscriptions',
+            'Theme',
+            'Live Chat',
+            'Downloads',
+            'Advanced'
+        ];
+        assert.deepEqual(Object.keys(SETTINGS_CATEGORY_SECTIONS), categories);
+        for (const category of categories) {
+            const sections = SETTINGS_CATEGORY_SECTIONS[category];
+            assert.ok(sections.length >= 3, `${category} must have at least three semantic sections`);
+            assert.equal(new Set(sections.map(({ labelKey }) => labelKey)).size, sections.length,
+                `${category} section locale keys must be unique`);
+            assert.ok(sections.every(({ labelKey, fallback }) =>
+                /^settingsSection[A-Z]/.test(labelKey) && typeof fallback === 'string' && fallback.length > 0
+            ), `${category} sections must expose locale keys and readable fallbacks`);
+            assert.equal(sections.at(-1).match.test('__future_feature__'), true,
+                `${category} must end with a catch-all section for forward compatibility`);
+        }
+    } finally {
+        globalThis.YTKitCore = previousCore;
+        delete require.cache[modulePath];
     }
 });
 
@@ -229,7 +281,7 @@ test('settings visual-system injection is safe and idempotent', () => {
     const visualSystem = require(modulePath);
 
     try {
-        const existing = { id: 'yt-suite-style-ytkit-settings-visual-v4' };
+        const existing = { id: 'yt-suite-style-ytkit-settings-visual-v5' };
         const existingDocument = { getElementById: () => existing };
         assert.equal(visualSystem.ensureSettingsVisualSystem(existingDocument), existing);
         assert.equal(injections.length, 0);

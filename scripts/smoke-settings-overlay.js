@@ -7,12 +7,13 @@
 // source contracts but cannot prove the settings window actually RENDERS.
 // This smoke stages the real ISOLATED-world content-script stack onto a
 // local fixture page with a minimal chrome-API stub, opens the overlay
-// through the real YTKIT_OPEN_PANEL message path in a headless Chromium,
+// through the real YTKIT_OPEN_PANEL message path in Chromium,
 // captures desktop/mobile screenshots for dark/light/RTL states, and fails
 // on blank render, horizontal overflow, a missing close/focus target, or
 // unreadable primary controls.
 //
 // Usage: npm run smoke:settings-overlay [-- --browser <path>] [--keep-stage]
+//        YTKIT_VISUAL_ISOLATED=1 node scripts/smoke-settings-overlay.js --headed-private
 // Screenshots land in build/settings-overlay-smoke/.
 
 const fs = require('fs');
@@ -42,12 +43,19 @@ const STATES = [
 ];
 
 function parseArgs(argv) {
-    const opts = { browser: '', keepStage: false, fallbackOnly: false, timeoutMs: 45000 };
+    const opts = {
+        browser: '',
+        keepStage: false,
+        fallbackOnly: false,
+        headedPrivate: false,
+        timeoutMs: 45000
+    };
     for (let i = 0; i < argv.length; i += 1) {
         const arg = argv[i];
         if (arg === '--browser') { opts.browser = path.resolve(argv[++i] || ''); continue; }
         if (arg === '--keep-stage') { opts.keepStage = true; continue; }
         if (arg === '--fallback-only') { opts.fallbackOnly = true; continue; }
+        if (arg === '--headed-private') { opts.headedPrivate = true; continue; }
         if (arg === '--timeout') { opts.timeoutMs = Number(argv[++i]) || opts.timeoutMs; continue; }
         throw new Error(`unknown argument: ${arg}`);
     }
@@ -238,7 +246,7 @@ const IN_PAGE_CHECKS = `(() => {
         if (featureName && parseFloat(getComputedStyle(featureName).fontSize) < 16) failures.push('desktop setting names are undersized');
         if (featureDescription && parseFloat(getComputedStyle(featureDescription).fontSize) < 14) failures.push('desktop setting descriptions are undersized');
         if (headerRect && headerRect.height > 66) failures.push('desktop settings header is taller than 66px');
-        if (footerRect && footerRect.height > 60) failures.push('desktop settings footer is taller than 60px');
+        if (footerRect && footerRect.height > 66) failures.push('desktop settings footer is taller than 66px');
     }
     const inactiveSwitch = panel.querySelector('#ytkit-toggle-videoScreenshot')?.closest('.ytkit-switch');
     const activeSwitch = panel.querySelector('#ytkit-toggle-autoMaxResolution')?.closest('.ytkit-switch');
@@ -397,6 +405,61 @@ const SCROLLED_HEADER_CHECKS = `(() => {
     return JSON.stringify({ failures });
 })()`;
 
+const CATEGORY_PARITY_CHECKS = `(() => {
+    const failures = [];
+    const pane = document.querySelector('#ytkit-settings-panel .ytkit-pane.active');
+    if (!pane) return JSON.stringify({ failures: ['active category pane is missing'] });
+    const paneId = pane.id.replace('ytkit-pane-', '');
+    const mission = pane.querySelector(':scope > .ytkit-pane-header');
+    const lead = mission?.querySelector('.ytkit-pane-lead');
+    const icon = mission?.querySelector('.ytkit-pane-icon');
+    const title = mission?.querySelector('.ytkit-pane-title h2');
+    const contextItems = Array.from(mission?.querySelectorAll('.ytkit-pane-context-item') || []);
+    const sections = Array.from(pane.querySelectorAll(':scope > .ytkit-features-grid > .ytkit-feature-section'))
+        .filter((section) => getComputedStyle(section).display !== 'none');
+    const grid = pane.querySelector(':scope > .ytkit-features-grid');
+    const parentCards = Array.from(pane.querySelectorAll(':scope > .ytkit-features-grid .ytkit-feature-card:not(.ytkit-sub-card)'))
+        .filter((card) => getComputedStyle(card).display !== 'none');
+    const sectionCards = sections.flatMap((section) => Array.from(
+        section.querySelectorAll(':scope > .ytkit-feature-section-body > .ytkit-feature-card:not(.ytkit-sub-card)')
+    )).filter((card) => getComputedStyle(card).display !== 'none');
+    if (!mission || !lead || !icon || !title?.textContent?.trim()) {
+        failures.push('mission card is missing its lead, icon, or title');
+    }
+    if (icon) {
+        const rect = icon.getBoundingClientRect();
+        if (rect.width < 72 || rect.height < 72) failures.push('mission icon tile is undersized at ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
+    }
+    if (window.innerWidth > 1180 && contextItems.length !== 3) {
+        failures.push('mission card expected 3 live preference chips, found ' + contextItems.length);
+    }
+    if (sections.length < 2) failures.push('expected at least 2 visible semantic control sections, found ' + sections.length);
+    if (window.innerWidth > 900 && grid) {
+        const gridWidth = grid.getBoundingClientRect().width;
+        for (const section of sections) {
+            const width = section.getBoundingClientRect().width;
+            if (width < gridWidth * 0.9) failures.push('semantic section is only ' + Math.round(width) + 'px of a ' + Math.round(gridWidth) + 'px content column');
+        }
+    }
+    for (const section of sections) {
+        const heading = section.querySelector(':scope > .ytkit-feature-section-title');
+        const body = section.querySelector(':scope > .ytkit-feature-section-body');
+        if (!heading?.textContent?.trim() || !body) failures.push('semantic section is missing its heading or body');
+        if (heading && getComputedStyle(heading).textTransform !== 'uppercase') failures.push('semantic section heading is not uppercase');
+    }
+    if (sectionCards.length !== parentCards.length) {
+        failures.push('semantic sections contain ' + sectionCards.length + ' of ' + parentCards.length + ' parent controls');
+    }
+    return JSON.stringify({
+        failures,
+        paneId,
+        title: title?.textContent?.trim() || '',
+        sections: sections.map((section) => section.querySelector('.ytkit-feature-section-title')?.textContent?.trim() || ''),
+        contextItems: contextItems.length,
+        parentCards: parentCards.length
+    });
+})()`;
+
 function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null } = {}) {
     copyDir(EXT_DIR, stageDir);
     const chromeStub = runtimeSettings
@@ -550,6 +613,9 @@ async function waitFor(fn, timeoutMs, label) {
 
 async function main() {
     const opts = parseArgs(process.argv.slice(2));
+    if (opts.headedPrivate && process.env.YTKIT_VISUAL_ISOLATED !== '1') {
+        throw new Error('--headed-private requires YTKIT_VISUAL_ISOLATED=1 and an external private-desktop launcher');
+    }
     const browserPath = findBrowser(opts.browser);
     if (!browserPath) {
         console.error('[settings-overlay-smoke] no Chromium-family browser found; set CHROME_PATH/EDGE_PATH or pass --browser');
@@ -565,8 +631,8 @@ async function main() {
 
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-overlay-smoke-'));
     const fixtureUrl = 'file:///' + fixturePath.split(path.sep).join('/');
-    const browser = spawn(browserPath, [
-        '--headless=new',
+    const browserArgs = [
+        ...(opts.headedPrivate ? ['--window-size=1356,920'] : ['--headless=new']),
         '--disable-gpu',
         '--no-first-run',
         '--no-default-browser-check',
@@ -574,7 +640,11 @@ async function main() {
         '--allow-file-access-from-files',
         `--user-data-dir=${profileDir}`,
         fixtureUrl
-    ], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    ];
+    const browser = spawn(browserPath, browserArgs, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: !opts.headedPrivate
+    });
 
     let stderrBuf = '';
     const devtoolsUrl = await new Promise((resolve, reject) => {
@@ -588,6 +658,7 @@ async function main() {
     });
 
     const failuresByState = {};
+    const progressPath = path.join(outDir, 'progress.json');
     try {
         const port = new URL(devtoolsUrl).port;
         const pages = await waitFor(async () => {
@@ -687,6 +758,10 @@ async function main() {
                     }
                     await sleep(120);
                     const categorySlug = String(categoryId).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    const parityReport = JSON.parse(await client.evaluate(CATEGORY_PARITY_CHECKS));
+                    failuresByState[state.name].push(
+                        ...(parityReport.failures || []).map((failure) => `${categoryId}: ${failure}`)
+                    );
                     if (!opts.fallbackOnly) {
                         await client.evaluate('window.scrollTo(0, 0)');
                         const categoryShot = await client.send('Page.captureScreenshot', {
@@ -890,26 +965,32 @@ async function main() {
                 await client.evaluate('globalThis.__ytkitA11y?.closeDownload?.()');
             }
             console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
+            fs.writeFileSync(progressPath, `${JSON.stringify({ completedState: state.name, failuresByState }, null, 2)}\n`, 'utf8');
         }
         ws.close();
     } finally {
         const browserExit = browser.exitCode !== null
             ? Promise.resolve()
             : new Promise((resolve) => browser.once('exit', resolve));
-        browser.kill();
-        await Promise.race([browserExit, sleep(3000)]);
-        if (browser.exitCode === null && browser.pid) {
-            if (process.platform === 'win32') {
-                try {
-                    execFileSync('taskkill', ['/PID', String(browser.pid), '/T', '/F'], { stdio: 'ignore' });
-                } catch (_) { /* reason: browser may have exited between the state check and taskkill */ }
-            } else {
-                browser.kill('SIGKILL');
-            }
-            await Promise.race([browserExit, sleep(2000)]);
+        if (process.platform === 'win32' && browser.pid) {
+            try {
+                execFileSync('taskkill', ['/PID', String(browser.pid), '/T', '/F'], { stdio: 'ignore' });
+            } catch (_) { /* reason: browser may already have exited */ }
+        } else {
+            browser.kill();
         }
-        if (!opts.keepStage) fs.rmSync(stageDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
-        fs.rmSync(profileDir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
+        await Promise.race([browserExit, sleep(3000)]);
+        const cleanupFailures = [];
+        const removeTempTree = (target, label) => {
+            try {
+                fs.rmSync(target, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 });
+            } catch (err) {
+                cleanupFailures.push(`${label} cleanup failed: ${err.message}`);
+            }
+        };
+        if (!opts.keepStage) removeTempTree(stageDir, 'fixture stage');
+        removeTempTree(profileDir, 'browser profile');
+        if (cleanupFailures.length) failuresByState.cleanup = cleanupFailures;
     }
 
     let failed = false;
@@ -919,6 +1000,14 @@ async function main() {
             console.error(`[settings-overlay-smoke] ${state}: ${failure}`);
         }
     }
+    const result = {
+        mode: opts.fallbackOnly ? 'fallback' : 'module',
+        browserMode: opts.headedPrivate ? 'headed-private' : 'headless',
+        passed: !failed,
+        states: failuresByState
+    };
+    fs.writeFileSync(path.join(outDir, 'result.json'), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
+    fs.rmSync(progressPath, { force: true });
     console.log(`[settings-overlay-smoke] screenshots: ${path.relative(REPO_ROOT, outDir).replace(/\\/g, '/')}`);
     if (failed) process.exit(1);
     console.log('[settings-overlay-smoke] PASS — all states rendered with close/focus targets and readable primary controls');
@@ -927,6 +1016,17 @@ async function main() {
 if (require.main === module) {
     main().catch((err) => {
         console.error('[settings-overlay-smoke] ' + err.message);
+        try {
+            const outDir = process.argv.includes('--fallback-only')
+                ? path.join(OUT_DIR, 'fallback')
+                : OUT_DIR;
+            fs.mkdirSync(outDir, { recursive: true });
+            fs.writeFileSync(
+                path.join(outDir, 'fatal-result.json'),
+                `${JSON.stringify({ passed: false, fatal: err.stack || err.message }, null, 2)}\n`,
+                'utf8'
+            );
+        } catch (_) { /* reason: the original failure is more actionable than report I/O */ }
         process.exit(1);
     });
 }
@@ -934,6 +1034,7 @@ if (require.main === module) {
 module.exports = {
     buildFixture,
     CHROME_STUB,
+    CATEGORY_PARITY_CHECKS,
     SCROLLED_HEADER_CHECKS,
     DevtoolsClient,
     findBrowser,

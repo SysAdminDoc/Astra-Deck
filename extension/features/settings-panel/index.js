@@ -265,6 +265,7 @@ function buildSettingsPanel() {
             'Live Chat': t('panelNavGroupCommunity', 'Community'),
             'Advanced': t('panelNavGroupSystem', 'System'),
         };
+        const categorySections = globalThis.YTKitCore?.SETTINGS_CATEGORY_SECTIONS || {};
         const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
         liveFeatureList.forEach(f => {
             if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f);
@@ -374,8 +375,15 @@ function buildSettingsPanel() {
         liveDot.setAttribute('aria-hidden', 'true');
         const liveCopy = document.createElement('span');
         liveCopy.textContent = t('panelLiveApplyBadge', 'Live apply');
+        const liveSwitch = document.createElement('span');
+        liveSwitch.className = 'ytkit-header-live-switch';
+        liveSwitch.setAttribute('aria-hidden', 'true');
+        const liveSwitchThumb = document.createElement('span');
+        liveSwitchThumb.className = 'ytkit-header-live-switch-thumb';
+        liveSwitch.appendChild(liveSwitchThumb);
         liveBadge.appendChild(liveDot);
         liveBadge.appendChild(liveCopy);
+        liveBadge.appendChild(liveSwitch);
         headerActions.appendChild(liveBadge);
         headerActions.appendChild(closeBtn);
 
@@ -1815,11 +1823,19 @@ function buildSettingsPanel() {
             const pane = document.createElement('section');
             pane.id = `ytkit-pane-${catId}`;
             pane.className = 'ytkit-pane' + (index === 0 ? ' active' : '');
+            pane.dataset.category = catId;
+            pane.style.setProperty('--cat-color', config.color);
 
             // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
 
+            const paneLead = document.createElement('div');
+            paneLead.className = 'ytkit-pane-lead';
+            const paneIcon = document.createElement('div');
+            paneIcon.className = 'ytkit-pane-icon';
+            paneIcon.setAttribute('aria-hidden', 'true');
+            paneIcon.appendChild((ICONS[config.icon] || ICONS.settings)());
             const paneTitle = document.createElement('div');
             paneTitle.className = 'ytkit-pane-title';
 
@@ -1850,10 +1866,24 @@ function buildSettingsPanel() {
             paneTitle.appendChild(paneTitleH2);
             paneTitle.appendChild(paneDescription);
             paneTitle.appendChild(paneMeta);
+            paneLead.appendChild(paneIcon);
+            paneLead.appendChild(paneTitle);
 
-            const paneContextFeatures = sortedParentFeatures
-                .filter((feature) => feature.type === 'select')
-                .slice(0, 3);
+            const getPaneContextValue = (feature) => {
+                const settingKey = feature.settingKey || feature.id;
+                const currentValue = appState.settings[settingKey] ?? settingsManager.defaults[settingKey];
+                if (feature.type === 'select') {
+                    const options = normalizeSelectOptions(feature.options);
+                    const normalizedValue = String(currentValue ?? options[0]?.value ?? '');
+                    return options.find((option) => option.value === normalizedValue)?.label || normalizedValue;
+                }
+                if (feature.type === 'range') {
+                    return feature.formatValue ? feature.formatValue(currentValue) : String(currentValue ?? '');
+                }
+                if (feature.type === 'color') return String(currentValue || 'Default');
+                return currentValue ? t('toggleStateOn', 'On') : t('toggleStateOff', 'Off');
+            };
+            const paneContextFeatures = sortedParentFeatures.slice(0, 3);
             const paneContext = document.createElement('div');
             paneContext.className = 'ytkit-pane-context';
             paneContext.setAttribute(
@@ -1862,12 +1892,14 @@ function buildSettingsPanel() {
                     .replace('{category}', cat)
             );
             paneContextFeatures.forEach((feature) => {
-                const settingKey = feature.settingKey || feature.id;
-                const options = normalizeSelectOptions(feature.options);
-                const currentValue = String(appState.settings[settingKey] ?? options[0]?.value ?? '');
-                const currentLabel = options.find((option) => option.value === currentValue)?.label || currentValue;
                 const item = document.createElement('div');
                 item.className = 'ytkit-pane-context-item';
+                const icon = document.createElement('span');
+                icon.className = 'ytkit-pane-context-icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.appendChild((ICONS[feature.icon] || ICONS.settings)());
+                const copy = document.createElement('span');
+                copy.className = 'ytkit-pane-context-copy';
                 const label = document.createElement('span');
                 label.className = 'ytkit-pane-context-label';
                 const fullFeatureName = getFeatureName(feature);
@@ -1878,10 +1910,12 @@ function buildSettingsPanel() {
                 const value = document.createElement('strong');
                 value.className = 'ytkit-pane-context-value';
                 value.dataset.featureId = feature.id;
-                value.textContent = currentLabel;
-                value.title = currentLabel;
-                item.appendChild(label);
-                item.appendChild(value);
+                value.textContent = getPaneContextValue(feature);
+                value.title = value.textContent;
+                copy.appendChild(label);
+                copy.appendChild(value);
+                item.appendChild(icon);
+                item.appendChild(copy);
                 paneContext.appendChild(item);
             });
 
@@ -1949,11 +1983,8 @@ function buildSettingsPanel() {
                 if (input) input.value = value ?? '';
                 const contextValue = document.querySelector(`.ytkit-pane-context-value[data-feature-id="${feature.id}"]`);
                 if (contextValue) {
-                    const options = normalizeSelectOptions(feature.options);
-                    const current = String(value ?? options[0]?.value ?? '');
-                    const label = options.find((option) => option.value === current)?.label || current;
-                    contextValue.textContent = label;
-                    contextValue.title = label;
+                    contextValue.textContent = getPaneContextValue(feature);
+                    contextValue.title = contextValue.textContent;
                 }
             };
             const applyFeatureValue = (feature, value, reason) => {
@@ -1997,7 +2028,7 @@ function buildSettingsPanel() {
             paneActions.appendChild(resetBtn);
             paneActions.appendChild(toggleAllLabel);
 
-            paneHeader.appendChild(paneTitle);
+            paneHeader.appendChild(paneLead);
             if (paneContextFeatures.length > 0) paneHeader.appendChild(paneContext);
             paneHeader.appendChild(paneActions);
             pane.appendChild(paneHeader);
@@ -2165,23 +2196,47 @@ function buildSettingsPanel() {
             // Features grid
             const grid = document.createElement('div');
             grid.className = 'ytkit-features-grid';
-
-            sortedParentFeatures.forEach(f => {
-                const card = buildFeatureCard(f, config.color);
-                grid.appendChild(card);
-
-                // Add sub-features if any
-                const children = subFeatures.filter(sf => sf.parentId === f.id);
-                if (children.length > 0) {
-                    const subContainer = document.createElement('div');
-                    subContainer.className = 'ytkit-sub-features';
-                    subContainer.dataset.parentId = f.id;
-                    children.forEach(sf => {
-                        subContainer.appendChild(buildFeatureCard(sf, config.color, true));
-                    });
-                    setSubFeatureAvailability(subContainer, !!appState.settings[f.id]);
-                    grid.appendChild(subContainer);
-                }
+            const sectionDefinitions = categorySections[cat] || [{
+                labelKey: 'settingsSectionControls',
+                fallback: 'Controls',
+                match: /.*/
+            }];
+            const sectionBuckets = sectionDefinitions.map(() => []);
+            sortedParentFeatures.forEach((feature) => {
+                const sectionIndex = sectionDefinitions.findIndex((section) => section.match.test(feature.id));
+                sectionBuckets[Math.max(0, sectionIndex)].push(feature);
+            });
+            sectionDefinitions.forEach((sectionDefinition, sectionIndex) => {
+                const sectionFeatures = sectionBuckets[sectionIndex];
+                if (!sectionFeatures.length) return;
+                const sectionLabel = t(sectionDefinition.labelKey, sectionDefinition.fallback);
+                const featureSection = document.createElement('section');
+                featureSection.className = 'ytkit-feature-section';
+                featureSection.dataset.section = sectionDefinition.labelKey;
+                const sectionHeading = document.createElement('h3');
+                sectionHeading.className = 'ytkit-feature-section-title';
+                sectionHeading.id = `ytkit-section-${catId}-${sectionIndex}`;
+                sectionHeading.textContent = sectionLabel;
+                featureSection.setAttribute('aria-labelledby', sectionHeading.id);
+                const sectionBody = document.createElement('div');
+                sectionBody.className = 'ytkit-feature-section-body';
+                sectionFeatures.forEach((feature) => {
+                    sectionBody.appendChild(buildFeatureCard(feature, config.color));
+                    const children = subFeatures.filter((subFeature) => subFeature.parentId === feature.id);
+                    if (children.length > 0) {
+                        const subContainer = document.createElement('div');
+                        subContainer.className = 'ytkit-sub-features';
+                        subContainer.dataset.parentId = feature.id;
+                        children.forEach((subFeature) => {
+                            subContainer.appendChild(buildFeatureCard(subFeature, config.color, true));
+                        });
+                        setSubFeatureAvailability(subContainer, !!appState.settings[feature.id]);
+                        sectionBody.appendChild(subContainer);
+                    }
+                });
+                featureSection.appendChild(sectionHeading);
+                featureSection.appendChild(sectionBody);
+                grid.appendChild(featureSection);
             });
 
             pane.appendChild(grid);
@@ -2403,7 +2458,7 @@ function buildSettingsPanel() {
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-close-footer',
             label: 'Done',
-            icon: 'close',
+            icon: 'check',
             variant: 'primary',
             ariaLabel: t('panelCloseAria', 'Close settings')
         }));
@@ -2986,6 +3041,9 @@ function attachUIEventListeners() {
                 card.classList.remove('ytkit-search-context-card');
                 delete card.dataset.searchMatched;
             });
+            doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
+                section.style.display = '';
+            });
             allPanes.forEach(pane => pane.classList.remove('ytkit-search-active', 'ytkit-search-empty-pane'));
             allNavBtns.forEach(btn => btn.classList.remove('ytkit-search-empty-nav'));
 
@@ -3068,6 +3126,11 @@ function attachUIEventListeners() {
                     }
                 }
             });
+            doc.querySelectorAll('.ytkit-feature-section').forEach((section) => {
+                const visibleCards = Array.from(section.querySelectorAll('.ytkit-feature-card'))
+                    .some((card) => card.style.display !== 'none');
+                section.style.display = visibleCards ? '' : 'none';
+            });
 
             // Update nav buttons with match counts
             let visibleSectionCount = 0;
@@ -3139,6 +3202,13 @@ function attachUIEventListeners() {
                 const cardEl = input.closest('.ytkit-feature-card');
                 if (cardEl && !cardEl.classList.contains('ytkit-sub-card')) {
                     cardEl.classList.toggle('ytkit-card-enabled', isEnabled);
+                }
+                const contextValue = doc.querySelector(
+                    `.ytkit-pane-context-value[data-feature-id="${featureId}"]`
+                );
+                if (contextValue) {
+                    contextValue.textContent = isEnabled ? t('toggleStateOn', 'On') : t('toggleStateOff', 'Off');
+                    contextValue.title = contextValue.textContent;
                 }
 
                 // Array-toggle sub-features: modify parent array instead of boolean

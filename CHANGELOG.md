@@ -35,6 +35,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   the original title visible beneath the crowdsourced replacement on cards and
   watch pages, with teardown restoring YouTube's native title state.
 
+### Changed
+
+- **Full Settings now use the imagegen-guided Command Deck across all ten menu
+  pages.** Each category opens with a mission card, enabled/item counts, and
+  three live preference summaries; controls are organized into full-width
+  semantic sections with visible enabled rails and nested dependency branches.
+  The modular extension and userscript fallback share the same responsive,
+  light-theme, and RTL visual contract.
+
 ## [4.57.0] - 2026-08-06
 
 ### Fixed

@@ -2,30 +2,94 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    const STYLE_ID = 'ytkit-settings-visual-v4';
+    const STYLE_ID = 'ytkit-settings-visual-v5';
+
+    const SETTINGS_CATEGORY_SECTIONS = Object.freeze({
+        'Video Player': [
+            { labelKey: 'settingsSectionPlaybackQuality', fallback: 'Playback & quality', match: /^(persistentSpeed|codecSelector|autoMaxResolution|forceH264|forceStandardFps|musicVideoSpeedLock|qualityProfileMatrix|perChannelSpeed|fineSpeedControl|customSpeedButtons|speedIndicatorOverlay)$/ },
+            { labelKey: 'settingsSectionTransformDisplay', fallback: 'Transform & display', match: /^(videoRotation|videoFlip|videoZoom|videoVisualFilters|photosensitiveFlashProtection|cinemaAmbientGlow|fitPlayerToWindow|adaptiveLiveLayout|fullscreenScroll|fullscreenOnDoubleClick|autoTheaterMode|miniPlayerBar|popOutPlayer|disableMiniPlayer|hideVideoEndContent|hideJumpAheadButton|hiddenPlayerControlsManager|playbackStatsOverlay|pipButton|frameByFrameButtons|chapterJumpButtons|hideAirplayButton|videoLoopButton|abLoop|sleepTimer)$/ },
+            { labelKey: 'settingsSectionAudio', fallback: 'Audio', match: /^(audio|volume|mono|disableLoudness|preferDescriptive|notifyAutoDubbed|bufferPreload)/ },
+            { labelKey: 'settingsSectionCaptureSubtitles', fallback: 'Capture & subtitles', match: /^(downloadScreenshotFormat|videoScreenshot|downloadSubtitlesWithScreenshot|subtitleStyling|dualLanguageSubtitles)$/ },
+            { labelKey: 'settingsSectionPlayerStateControls', fallback: 'Player state & controls', match: /.*/ }
+        ],
+        Playback: [
+            { labelKey: 'settingsSectionSession', fallback: 'Session', match: /^(autoDismissStillWatching|resumePlayback|rememberVolume|pauseOtherTabs|autoPauseOnSwitch|disableAutoplayNext|preventAutoplay|ageRestrictionBypass|autoDismissContentWarning)$/ },
+            { labelKey: 'settingsSectionTiming', fallback: 'Timing', match: /^(remainingTimeDisplay|showPlaylistDuration|showTimeInTabTitle|liveSpeedReset|scrollWheelSpeed|playbackSpeedOSD)$/ },
+            { labelKey: 'settingsSectionCaptionsNavigation', fallback: 'Captions & navigation', match: /^(autoSubtitles|autoSubtitlesWhenMuted|subtitlesOnRewind|autoOpenChapters|autoOpenTranscript|preloadComments|reversePlaylist)$/ },
+            { labelKey: 'settingsSectionRecoveryFullscreen', fallback: 'Recovery & fullscreen', match: /.*/ }
+        ],
+        Comments: [
+            { labelKey: 'settingsSectionComposition', fallback: 'Composition', match: /^(hideCommentComposer|hideCommentReplyButton|chatStyleComments)$/ },
+            { labelKey: 'settingsSectionThreadBehavior', fallback: 'Thread behavior', match: /^(hidePinnedComments|hideCommentDislikeButton|autoExpandComments|commentEnhancements|sortCommentsNewest|creatorCommentHighlight)$/ },
+            { labelKey: 'settingsSectionDiscoveryTranslation', fallback: 'Discovery & translation', match: /^(commentSearch|commentNavigator|commentTranslate)$/ },
+            { labelKey: 'settingsSectionFilters', fallback: 'Filters', match: /.*/ }
+        ],
+        'Watch Page': [
+            { labelKey: 'settingsSectionTranscriptAi', fallback: 'Transcript & AI', match: /^(transcriptAiHandoff|transcriptViewer|aiVideoSummary|keyMoments|copyChapterMarkdown)$/ },
+            { labelKey: 'settingsSectionPlayerChrome', fallback: 'Player chrome', match: /^(removeScrubber|softBottomGradient|alwaysShowProgressBar|autoSkipChapters|chapterNavButtons|hideAutoplayToggle|floatingLogoOnWatch|stickyVideo|scrollToPlayer|playlistEnhancer|playlistSearch|watchPageTabs|focusedMode|zenMode)$/ },
+            { labelKey: 'settingsSectionPageElements', fallback: 'Page elements', match: /^(hiddenWatchElementsManager|hidePaidContentOverlay|hideInfoPanels|hideRelatedVideos|hideDescription|hideMerch|hideAsk|hideGemini|hideAi|hideHashtags|hideComment|condenseComments|hidePaidPromotionWatch|hideChannelJoinButton|hideFundraiser|hiddenActionButtonsManager|hideInfoCards)/ },
+            { labelKey: 'settingsSectionInsightsNotes', fallback: 'Insights & notes', match: /^(preciseViewCounts|videoInsights|showChannelVideoCount|timestampBookmarks|videoNotes|watchTimeTracker|likeViewRatio|channelAgeDisplay|channelSubCount|redditComments|watchHistoryAnalytics)$/ },
+            { labelKey: 'settingsSectionSharingActions', fallback: 'Sharing & actions', match: /.*/ }
+        ],
+        Content: [
+            { labelKey: 'settingsSectionFeedVisibility', fallback: 'Feed visibility', match: /^(hideWatchedVideos|searchFilterDefaults|searchHide|hideCollaborations|hideVideosFromHome|titleNormalization|watchProgress|antiTranslate|notInterestedButton|thumbnail|watchLaterQuickAdd|grayscaleThumbnails|openInNewTab|hideLatestPosts)$/ },
+            { labelKey: 'settingsSectionShortsDiscovery', fallback: 'Shorts & discovery', match: /^(removeAllShorts|redirectShorts|shorts)/ },
+            { labelKey: 'settingsSectionSponsorblockDearrow', fallback: 'SponsorBlock & DeArrow', match: /^(sponsorBlock|sbPerChannelProfiles|deArrow)/ },
+            { labelKey: 'settingsSectionFeedToolsAutomation', fallback: 'Feed tools & automation', match: /.*/ }
+        ],
+        'Home / Subscriptions': [
+            { labelKey: 'settingsSectionFeedLayout', fallback: 'Feed layout', match: /^(videosPerRow|titleCaseTransform|subscriptionsGrid|homepageGridAlign|fullWidthSubscriptions|listFeedLayout|fullTitles|videoAgeColors|disableInfiniteScroll|hideQueueOnThumbnails)$/ },
+            { labelKey: 'settingsSectionHeader', fallback: 'Header', match: /^(hideCreateButton|hideVoiceSearch|logoToSubscriptions|widenSearchBar|hideOwnAvatar|compactUnfixedHeader|hideNotificationBadge|squareSearchBar)$/ },
+            { labelKey: 'settingsSectionNavigation', fallback: 'Navigation', match: /^(hiddenGuideElementsManager|hideSidebar|quickLinkMenu|rssFeedLink|redirectHomeToSubs|redirectToVideosTab)$/ },
+            { labelKey: 'settingsSectionDiscovery', fallback: 'Discovery', match: /.*/ }
+        ],
+        Theme: [
+            { labelKey: 'settingsSectionFoundation', fallback: 'Foundation', match: /^(uiFontFamily|uiStyleManager|colorThemeManager|uiFontSize|themeAccentColor)$/ },
+            { labelKey: 'settingsSectionDensity', fallback: 'Density', match: /^(styledFilterChips|compactLayout|thinScrollbar|cleanUiPreset)$/ },
+            { labelKey: 'settingsSectionCustomCss', fallback: 'Custom CSS', match: /^customCssInjection$/ },
+            { labelKey: 'settingsSectionSurfaces', fallback: 'Surfaces', match: /.*/ }
+        ],
+        'Live Chat': [
+            { labelKey: 'settingsSectionPresentation', fallback: 'Presentation', match: /^(hideLiveChatEngagement|premiumLiveChat|stickyChat)$/ },
+            { labelKey: 'settingsSectionVisibility', fallback: 'Visibility', match: /^hiddenChatElementsManager$/ },
+            { labelKey: 'settingsSectionMessages', fallback: 'Messages', match: /.*/ }
+        ],
+        Downloads: [
+            { labelKey: 'settingsSectionFormats', fallback: 'Formats', match: /^(downloadQuality|downloadVideoFormat|downloadAudioFormat)$/ },
+            { labelKey: 'settingsSectionEntryPoints', fallback: 'Entry points', match: /^(showLocalDownloadButton|videoContextMenu)$/ },
+            { labelKey: 'settingsSectionAutomation', fallback: 'Automation', match: /^(autoDownloadOnVisit|subtitleDownload)$/ },
+            { labelKey: 'settingsSectionToolsHealth', fallback: 'Tools & health', match: /.*/ }
+        ],
+        Advanced: [
+            { labelKey: 'settingsSectionNotifications', fallback: 'Notifications', match: /^chronologicalNotifications$/ },
+            { labelKey: 'settingsSectionPerformance', fallback: 'Performance', match: /^(enableCPU_Tamer|disableSpaNavigation|storageQuotaLRU)$/ },
+            { labelKey: 'settingsSectionDiagnostics', fallback: 'Diagnostics', match: /^(enableHandleRevealer|showStatisticsDashboard|debugMode|diagnosticLog|selectorHealthPanel)$/ },
+            { labelKey: 'settingsSectionProfilesWellbeing', fallback: 'Profiles & wellbeing', match: /.*/ }
+        ]
+    });
 
     const SETTINGS_VISUAL_SYSTEM_CSS = `
-        /* Astra Deck settings visual system v4 — premium control-center UI. */
+        /* Astra Deck settings visual system v5 — imagegen-matched command deck. */
         #ytkit-settings-panel {
             inset: auto;
             margin: 0;
-            --ytkit-v3-bg: #171c25;
+            --ytkit-v3-bg: #0b1421;
             /* Three planes, not one. Everything used to paint --ytkit-v3-bg,
                so the rail, the content and the settings table were the same
                near-black slab with hairlines drawn on it. */
-            --ytkit-v3-rail: #11151d;
-            --ytkit-v3-panel: #1c222c;
-            --ytkit-v3-surface: #232a37;
-            --ytkit-v3-surface-raised: #2d3543;
-            --ytkit-v3-hover: rgba(255,255,255,0.055);
-            --ytkit-v3-border: rgba(220,230,242,0.15);
-            --ytkit-v3-border-strong: rgba(220,230,242,0.24);
-            --ytkit-v3-control-stroke: rgba(220,230,242,0.1);
-            --ytkit-v3-text: #f3f5f7;
-            --ytkit-v3-muted: #aab3bf;
+            --ytkit-v3-rail: #08111d;
+            --ytkit-v3-panel: #111d2b;
+            --ytkit-v3-surface: #172437;
+            --ytkit-v3-surface-raised: #203149;
+            --ytkit-v3-hover: rgba(154,190,228,0.08);
+            --ytkit-v3-border: rgba(151,178,208,0.18);
+            --ytkit-v3-border-strong: rgba(151,178,208,0.30);
+            --ytkit-v3-control-stroke: rgba(151,178,208,0.16);
+            --ytkit-v3-text: #f4f7fb;
+            --ytkit-v3-muted: #b8c3d1;
             /* #7f8996 was 4.5:1 against the old black and only just holds at
                the lifted surface; #8b95a3 restores the margin (5.3:1). */
-            --ytkit-v3-subtle: #8b95a3;
+            --ytkit-v3-subtle: #8594a7;
             --ytkit-v3-accent: #ff5a4f;
             --ytkit-v3-accent-rgb: 255,90,79;
             /* Filled controls carrying white text need a darker coral than
@@ -1487,6 +1551,643 @@
             }
         }
 
+        /* v5 command-deck parity overrides. Kept after every legacy breakpoint
+           so the imagegen-approved hierarchy is the final rendered contract. */
+        #ytkit-settings-panel {
+            width: min(1540px, calc(100vw - 24px)) !important;
+            height: min(96vh, 980px) !important;
+            max-height: min(96vh, 980px) !important;
+            border-radius: 14px !important;
+            background:
+                radial-gradient(circle at 8% 0%, rgba(16,185,129,0.07), transparent 28%),
+                radial-gradient(circle at 92% 0%, rgba(var(--ytkit-v3-accent-rgb),0.06), transparent 26%),
+                var(--ytkit-v3-bg) !important;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.58) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-header {
+            grid-template-columns: 300px minmax(320px, 1fr) auto !important;
+            gap: 22px !important;
+            min-height: 66px !important;
+            padding: 0 24px !important;
+            background: rgba(8,17,29,0.82) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-command-search {
+            height: 48px !important;
+            min-height: 48px !important;
+            border-radius: 9px !important;
+            background: rgba(17,29,43,0.92) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-header-live {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 9px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-header-live-switch {
+            position: relative !important;
+            display: inline-block !important;
+            width: 38px !important;
+            height: 22px !important;
+            margin-inline-start: 2px !important;
+            border-radius: 12px !important;
+            background: var(--ytkit-v3-accent) !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.13) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-header-live-switch-thumb {
+            position: absolute !important;
+            top: 3px !important;
+            inset-inline-end: 3px !important;
+            display: block !important;
+            width: 16px !important;
+            height: 16px !important;
+            border-radius: 50% !important;
+            background: #fff !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.34) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-body {
+            grid-template-columns: 300px minmax(0, 1fr) !important;
+            background: transparent !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sidebar {
+            padding: 20px 16px 14px !important;
+            background:
+                linear-gradient(180deg, rgba(12,25,42,0.96), rgba(8,17,29,0.99)),
+                var(--ytkit-v3-rail) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-list {
+            gap: 4px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-group-label {
+            display: none !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn {
+            grid-template-columns: 30px minmax(0, 1fr) auto !important;
+            min-height: 50px !important;
+            padding: 0 14px !important;
+            border-radius: 8px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn::before {
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 3px !important;
+            border-radius: 0 3px 3px 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.active {
+            background:
+                linear-gradient(90deg, rgba(var(--ytkit-v3-accent-rgb),0.15), rgba(var(--ytkit-v3-accent-rgb),0.06)) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-label {
+            font-size: 15.5px !important;
+            font-weight: 620 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-count {
+            min-width: 39px !important;
+            padding: 3px 6px !important;
+            border-radius: 5px !important;
+            background: rgba(151,178,208,0.07) !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 11.5px !important;
+            font-variant-numeric: tabular-nums !important;
+            text-align: center !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.active .ytkit-nav-count {
+            background: rgba(var(--ytkit-v3-accent-rgb),0.10) !important;
+            color: var(--ytkit-v3-text) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-content {
+            padding: 18px 22px 30px !important;
+            background:
+                radial-gradient(circle at 12% 5%, rgba(31,119,180,0.06), transparent 34%),
+                transparent !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-header {
+            grid-template-columns: minmax(360px, 1fr) minmax(390px, 0.95fr) !important;
+            grid-template-areas:
+                "lead context"
+                "lead actions" !important;
+            gap: 8px 20px !important;
+            min-height: 132px !important;
+            margin: 0 !important;
+            padding: 16px 18px !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 12px !important;
+            background:
+                linear-gradient(110deg, rgba(32,49,73,0.82), rgba(17,29,43,0.95) 58%, rgba(14,26,42,0.98)),
+                var(--ytkit-v3-bg) !important;
+            background-color: var(--ytkit-v3-bg) !important;
+            box-shadow: 0 -20px 0 var(--ytkit-v3-bg), 0 10px 28px rgba(0,0,0,0.18) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-lead {
+            grid-area: lead !important;
+            display: grid !important;
+            grid-template-columns: 82px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 18px !important;
+            min-width: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-icon {
+            position: relative !important;
+            display: grid !important;
+            place-items: center !important;
+            width: 78px !important;
+            height: 78px !important;
+            border: 1px solid color-mix(in srgb, var(--cat-color, var(--ytkit-v3-accent)) 38%, transparent) !important;
+            border-radius: 15px !important;
+            background:
+                linear-gradient(145deg, rgba(16,185,129,0.18), rgba(245,158,11,0.17) 68%, rgba(var(--ytkit-v3-accent-rgb),0.16)) !important;
+            color: var(--ytkit-v3-text) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 24px rgba(0,0,0,0.16) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-icon svg {
+            width: 36px !important;
+            height: 36px !important;
+            stroke-width: 1.65 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-title h2 {
+            font-size: 30px !important;
+            font-weight: 735 !important;
+            line-height: 1.08 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-description {
+            max-width: 600px !important;
+            margin-top: 7px !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 14.5px !important;
+            white-space: normal !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-meta {
+            margin-top: 11px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-chip {
+            font-size: 10.5px !important;
+            font-weight: 670 !important;
+            letter-spacing: 0.09em !important;
+            text-transform: uppercase !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context {
+            grid-area: context !important;
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+            min-width: 0 !important;
+            border: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-item {
+            display: grid !important;
+            grid-template-columns: 28px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 9px !important;
+            min-width: 0 !important;
+            min-height: 60px !important;
+            padding: 9px 11px !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 9px !important;
+            background: rgba(8,17,29,0.28) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-icon {
+            display: grid !important;
+            place-items: center !important;
+            width: 28px !important;
+            height: 28px !important;
+            color: var(--ytkit-v3-muted) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-icon svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-copy {
+            display: block !important;
+            min-width: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-label {
+            color: var(--ytkit-v3-subtle) !important;
+            font-size: 10.5px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-value {
+            margin-top: 3px !important;
+            font-size: 12.5px !important;
+            font-weight: 650 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-actions {
+            grid-area: actions !important;
+            grid-column: auto !important;
+            justify-self: end !important;
+            gap: 8px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-reset-group-btn,
+        #ytkit-settings-panel .ytkit-toggle-all {
+            min-height: 32px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-features-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 16px !important;
+            margin: 16px 0 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            overflow: visible !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-section {
+            display: block !important;
+            min-width: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-section-title {
+            margin: 0 0 7px 14px !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 10.5px !important;
+            font-weight: 680 !important;
+            line-height: 1.2 !important;
+            letter-spacing: 0.09em !important;
+            text-transform: uppercase !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-section-body {
+            overflow: hidden !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 10px !important;
+            background:
+                linear-gradient(100deg, rgba(20,34,51,0.96), rgba(17,29,43,0.92)),
+                var(--ytkit-v3-panel) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-card {
+            grid-template-columns: minmax(0, 1fr) minmax(190px, 300px) !important;
+            gap: 28px !important;
+            min-height: 70px !important;
+            padding: 10px 16px !important;
+            background: transparent !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled {
+            background:
+                linear-gradient(90deg, rgba(var(--ytkit-v3-accent-rgb),0.095), rgba(var(--ytkit-v3-accent-rgb),0.035)) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled::before {
+            display: block !important;
+            width: 3px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-main {
+            grid-template-columns: 48px minmax(0, 1fr) !important;
+            gap: 14px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-glyph {
+            display: grid !important;
+            place-items: center !important;
+            width: 44px !important;
+            min-width: 44px !important;
+            height: 44px !important;
+            border: 1px solid var(--ytkit-v3-control-stroke) !important;
+            border-radius: 8px !important;
+            background: rgba(23,36,55,0.72) !important;
+            color: var(--ytkit-v3-muted) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-glyph svg {
+            width: 21px !important;
+            height: 21px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-name {
+            font-size: 16px !important;
+            font-weight: 650 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-desc {
+            margin-top: 3px !important;
+            overflow: visible !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+        }
+
+        #ytkit-settings-panel .ytkit-select,
+        #ytkit-settings-panel .ytkit-input {
+            min-height: 44px !important;
+            border-radius: 8px !important;
+            background: rgba(23,36,55,0.96) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sub-features {
+            margin: 0 0 0 24px !important;
+            padding: 0 0 0 18px !important;
+            border-inline-start: 1px solid rgba(var(--ytkit-v3-accent-rgb),0.38) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-sub-features .ytkit-feature-card {
+            min-height: 62px !important;
+            padding-block: 8px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-mediadl-banner,
+        #ytkit-settings-panel .ytkit-mediadl-banner[data-state] {
+            margin: 14px 0 0 !important;
+            padding: 12px 14px !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 10px !important;
+            background: rgba(17,29,43,0.92) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-mediadl-banner__btn {
+            min-height: 42px !important;
+            padding-inline: 14px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer {
+            min-height: 64px !important;
+            padding: 0 24px !important;
+            background: rgba(8,17,29,0.96) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-panel-status {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 9px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-panel-status::before {
+            content: "✓" !important;
+            display: grid !important;
+            place-items: center !important;
+            width: 22px !important;
+            height: 22px !important;
+            border: 1px solid currentColor !important;
+            border-radius: 50% !important;
+            font-size: 12px !important;
+            line-height: 1 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn {
+            min-height: 44px !important;
+            padding-inline: 17px !important;
+            border-color: var(--ytkit-v3-border) !important;
+            background: rgba(17,29,43,0.9) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
+            min-width: 126px !important;
+            border-color: transparent !important;
+            background: linear-gradient(135deg, var(--ytkit-v3-accent-fill), #ef3c35) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-header,
+        html:not([dark]) #ytkit-settings-panel .ytkit-footer {
+            background: rgba(247,248,250,0.96) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-command-search,
+        html:not([dark]) #ytkit-settings-panel .ytkit-select,
+        html:not([dark]) #ytkit-settings-panel .ytkit-input,
+        html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn {
+            background: rgba(238,241,245,0.98) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-sidebar {
+            background: linear-gradient(180deg, rgba(239,243,247,0.98), rgba(232,237,243,0.99)) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-pane-header {
+            background: linear-gradient(110deg, rgba(255,255,255,0.99), rgba(243,246,250,0.98)), var(--ytkit-v3-bg) !important;
+            background-color: var(--ytkit-v3-bg) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-pane-context-item,
+        html:not([dark]) #ytkit-settings-panel .ytkit-feature-section-body,
+        html:not([dark]) #ytkit-settings-panel .ytkit-mediadl-banner,
+        html:not([dark]) #ytkit-settings-panel .ytkit-mediadl-banner[data-state] {
+            background: rgba(255,255,255,0.92) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-feature-glyph {
+            background: rgba(238,241,245,0.88) !important;
+        }
+
+        @media (max-width: 1180px) and (min-width: 901px) {
+            #ytkit-settings-panel .ytkit-header {
+                grid-template-columns: 220px minmax(280px, 1fr) auto !important;
+            }
+
+            #ytkit-settings-panel .ytkit-body {
+                grid-template-columns: 220px minmax(0, 1fr) !important;
+            }
+
+            #ytkit-settings-panel .ytkit-content {
+                padding-inline: 18px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-header {
+                grid-template-columns: minmax(0, 1fr) !important;
+                grid-template-areas:
+                    "lead"
+                    "context"
+                    "actions" !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-context {
+                display: grid !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            #ytkit-settings-panel {
+                width: min(100vw - 20px, 760px) !important;
+                height: min(95vh, 920px) !important;
+                max-height: min(95vh, 920px) !important;
+            }
+
+            #ytkit-settings-panel .ytkit-header {
+                grid-template-columns: minmax(0, 1fr) auto !important;
+                grid-template-areas:
+                    "brand actions"
+                    "search search" !important;
+                gap: 12px !important;
+                min-height: auto !important;
+                padding: 14px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-body {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            #ytkit-settings-panel .ytkit-sidebar {
+                display: block !important;
+                flex: 0 0 66px !important;
+                width: 100% !important;
+                height: 66px !important;
+                min-height: 66px !important;
+                padding: 8px 12px !important;
+                border-right: 0 !important;
+                border-bottom: 1px solid var(--ytkit-v3-border) !important;
+            }
+
+            #ytkit-settings-panel .ytkit-nav-list {
+                display: grid !important;
+                grid-template-columns: none !important;
+                grid-auto-flow: column !important;
+                grid-auto-columns: minmax(150px, 178px) !important;
+                height: 50px !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+            }
+
+            #ytkit-settings-panel .ytkit-content {
+                flex: 1 1 auto !important;
+                padding: 18px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-header {
+                grid-template-columns: minmax(0, 1fr) !important;
+                grid-template-areas:
+                    "lead"
+                    "actions" !important;
+                min-height: 0 !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-context {
+                display: none !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-actions {
+                justify-self: stretch !important;
+                justify-content: space-between !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            #ytkit-settings-panel {
+                width: 100vw !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            #ytkit-settings-panel .ytkit-header-live-switch {
+                display: none !important;
+            }
+
+            #ytkit-settings-panel .ytkit-content {
+                padding: 14px 12px 22px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-header {
+                display: grid !important;
+                margin: 0 !important;
+                padding: 14px !important;
+                border-radius: 10px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-lead {
+                grid-template-columns: 54px minmax(0, 1fr) !important;
+                gap: 12px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-icon {
+                width: 52px !important;
+                height: 52px !important;
+                border-radius: 11px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-icon svg {
+                width: 26px !important;
+                height: 26px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-title h2 {
+                font-size: 23px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-pane-description {
+                font-size: 13px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-features-grid {
+                gap: 14px !important;
+                padding: 0 !important;
+            }
+
+            #ytkit-settings-panel .ytkit-feature-section-title {
+                margin-inline-start: 8px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-feature-card,
+            #ytkit-settings-panel .ytkit-textarea-card,
+            #ytkit-settings-panel .ytkit-range-card,
+            #ytkit-settings-panel .ytkit-color-card,
+            #ytkit-settings-panel .ytkit-feature-card:has(.ytkit-feature-custom) {
+                grid-template-columns: minmax(0, 1fr) !important;
+                gap: 12px !important;
+                min-height: 0 !important;
+                padding: 14px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-feature-main {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+
+            #ytkit-settings-panel .ytkit-feature-glyph {
+                display: none !important;
+            }
+
+            #ytkit-settings-panel .ytkit-sub-features {
+                margin-inline-start: 10px !important;
+                padding-inline-start: 10px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-footer {
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+                min-height: 0 !important;
+                padding: 10px 12px !important;
+            }
+
+            #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
+                min-width: 0 !important;
+            }
+        }
+
         @media (forced-colors: active) {
             #ytkit-settings-panel,
             #ytkit-settings-panel .ytkit-command-search,
@@ -1527,12 +2228,14 @@
     }
 
     Object.assign(core, {
+        SETTINGS_CATEGORY_SECTIONS,
         SETTINGS_VISUAL_SYSTEM_CSS,
         ensureSettingsVisualSystem
     });
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
+            SETTINGS_CATEGORY_SECTIONS,
             SETTINGS_VISUAL_SYSTEM_CSS,
             STYLE_ID,
             ensureSettingsVisualSystem

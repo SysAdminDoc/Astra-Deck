@@ -40,6 +40,7 @@ const BOUNDED_SESSION_MS = 750;
 // consecutive over-budget callbacks; keep this contract visible beside the
 // startup budget so performance changes are reviewed with the same gate.
 const PHOTOSENSITIVE_FRAME_BUDGET_MS = 1;
+const HEADED_PRIVATE = process.env.YTKIT_BENCH_HEADED_PRIVATE === '1';
 const DEFAULT_TOLERANCE = Object.freeze({
     relative: 0.35,
     absoluteMs: 25,
@@ -572,7 +573,7 @@ async function runIteration(browserPath, fixturePath, timeoutMs) {
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-startup-bench-profile-'));
     const fixtureUrl = pathToFileURL(fixturePath).href;
     const browser = spawn(browserPath, [
-        '--headless=new',
+        ...(HEADED_PRIVATE ? ['--window-size=1356,920'] : ['--headless=new']),
         '--disable-gpu',
         '--no-first-run',
         '--no-default-browser-check',
@@ -584,7 +585,7 @@ async function runIteration(browserPath, fixturePath, timeoutMs) {
     ], {
         cwd: REPO_ROOT,
         stdio: ['ignore', 'pipe', 'pipe'],
-        windowsHide: true,
+        windowsHide: !HEADED_PRIVATE,
     });
     let client = null;
     try {
@@ -681,6 +682,9 @@ async function runBenchmark(options, browserPath, { forceSynthetic = false } = {
 }
 
 async function main(argv = process.argv.slice(2)) {
+    if (HEADED_PRIVATE && process.env.YTKIT_VISUAL_ISOLATED !== '1') {
+        throw new Error('YTKIT_BENCH_HEADED_PRIVATE requires YTKIT_VISUAL_ISOLATED=1 and a private-desktop launcher');
+    }
     const options = parseArgs(argv);
     const browserPath = findBrowser(options.browser);
     if (!browserPath) {

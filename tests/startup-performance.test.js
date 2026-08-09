@@ -77,7 +77,9 @@ test('startup benchmark CLI and check gate are wired to the real fixture', () =>
     assert.match(packageJson.scripts.check, /npm run check:startup/);
     assert.match(source, /buildFixture\(stageDir(?:,\s*\{\s*runtimeSettings\s*\})?\)/);
     assert.match(source, /--headless=new/);
-    assert.match(source, /windowsHide: true/);
+    assert.match(source, /HEADED_PRIVATE = process\.env\.YTKIT_BENCH_HEADED_PRIVATE === '1'/);
+    assert.match(source, /windowsHide: !HEADED_PRIVATE/);
+    assert.match(source, /YTKIT_BENCH_HEADED_PRIVATE requires YTKIT_VISUAL_ISOLATED=1/);
     assert.match(source, /__ytkitSmoke\?\.listenerCount\?\.\(\) > 0/);
     assert.match(source, /firstFeaturePaintAt/);
     assert.match(source, /WatchPage\.mhtml/);
