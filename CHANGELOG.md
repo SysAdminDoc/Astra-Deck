@@ -18,6 +18,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The settings panel's Done button is legible again in YouTube's light
+  theme. A light-theme rule for secondary buttons also matched the primary
+  one, painting white text on a near-white fill.
+- The Video Hider settings page now follows the light theme instead of
+  rendering its cards, tab strip and input as dark panels inside a light
+  window.
 - The settings panel now runs its own module instead of an inline copy of
   itself. The module registers after the main script loads, and the first
   lookup cached the not-yet-registered result for the rest of the session,

@@ -55424,6 +55424,118 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.2);
         }
 
+        /* LIGHT LANE — YouTube light theme simply omits the dark attribute.
+           Every surface above paints white-alpha text on a near-black fill, so
+           inside the light settings panel the whole Video Hider pane rendered as
+           dark islands. These map the same surfaces onto the panel's light
+           tokens rather than restating literal colours. */
+        html:not([dark]) .ytkit-vh-hero,
+        html:not([dark]) .ytkit-vh-section,
+        html:not([dark]) .ytkit-vh-card,
+        html:not([dark]) .ytkit-vh-stat-card {
+            border-color: rgba(15,23,42,0.12) !important;
+            background: #ffffff !important;
+            box-shadow: 0 10px 24px rgba(15,23,42,0.08) !important;
+        }
+
+        html:not([dark]) .ytkit-vh-hero.is-empty {
+            border-color: rgba(197,106,32,0.28) !important;
+            background: linear-gradient(180deg, rgba(255,173,117,0.14), rgba(255,255,255,0.9)), #ffffff !important;
+        }
+
+        html:not([dark]) .ytkit-vh-hero__title,
+        html:not([dark]) .ytkit-vh-section-title,
+        html:not([dark]) .ytkit-vh-item-title,
+        html:not([dark]) .ytkit-vh-toggle-title,
+        html:not([dark]) .ytkit-vh-stat-value {
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-hero__copy,
+        html:not([dark]) .ytkit-vh-section-copy,
+        html:not([dark]) .ytkit-vh-item-meta,
+        html:not([dark]) .ytkit-vh-toggle-desc,
+        html:not([dark]) .ytkit-vh-stat-label,
+        html:not([dark]) .ytkit-vh-inline-note,
+        html:not([dark]) .ytkit-vh-item-label {
+            color: #5a6673 !important;
+        }
+
+        html:not([dark]) .ytkit-vh-hero__eyebrow,
+        html:not([dark]) .ytkit-vh-tab__badge,
+        html:not([dark]) .ytkit-vh-pill {
+            border-color: rgba(15,23,42,0.12) !important;
+            background: rgba(15,23,42,0.05) !important;
+            color: #46525f !important;
+        }
+
+        html:not([dark]) .ytkit-vh-tab {
+            color: #46525f !important;
+        }
+
+        html:not([dark]) .ytkit-vh-tab:hover {
+            background: rgba(15,23,42,0.05) !important;
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-tab.active {
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-tab.active .ytkit-vh-tab__badge {
+            border-color: rgba(15,23,42,0.16) !important;
+            background: rgba(15,23,42,0.08) !important;
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-toggle-row,
+        html:not([dark]) .ytkit-vh-input-row {
+            border-color: rgba(15,23,42,0.10) !important;
+        }
+
+        html:not([dark]) .ytkit-vh-number,
+        html:not([dark]) .ytkit-vh-list-btn,
+        html:not([dark]) .ytkit-vh-clear-btn {
+            border-color: rgba(15,23,42,0.14) !important;
+            background: rgba(15,23,42,0.04) !important;
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-list-btn:hover,
+        html:not([dark]) .ytkit-vh-clear-btn:hover {
+            background: rgba(15,23,42,0.08) !important;
+            border-color: rgba(15,23,42,0.2) !important;
+            color: #0f172a !important;
+        }
+
+        html:not([dark]) .ytkit-vh-thumb-fallback,
+        html:not([dark]) .ytkit-vh-avatar {
+            background: rgba(15,23,42,0.06) !important;
+            color: #46525f !important;
+        }
+
+        html:not([dark]) .ytkit-vh-link {
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-tabs {
+            border-color: rgba(15,23,42,0.12) !important;
+            background: rgba(15,23,42,0.04) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
+        }
+
+        html:not([dark]) .ytkit-vh-text-input,
+        html:not([dark]) .ytkit-vh-textarea {
+            border-color: rgba(15,23,42,0.14) !important;
+            background: #ffffff !important;
+            color: #17202b !important;
+        }
+
+        html:not([dark]) .ytkit-vh-text-input::placeholder,
+        html:not([dark]) .ytkit-vh-textarea::placeholder {
+            color: #6b7683 !important;
+        }
+
         .ytkit-hide-all-btn:hover {
             background: rgba(239,68,68,0.18) !important;
             border-color: rgba(239,68,68,0.3) !important;
