@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- The thumbnail hide control now idles as a neutral dark circle on the
+  inline-start corner and turns red on hover or focus. It stays mounted
+  rather than waiting for a hover rule to match, but no longer paints a
+  permanent red dot on every thumbnail nor shares the corner YouTube uses
+  for its own Watch Later and queue controls.
+- Mark-as-watched controls follow the same always-mounted model, which also
+  removes an invisible but clickable control from playlist cards.
+
+### Fixed
+
+- The captions mirror in the player dock now binds the watch player's
+  subtitles button instead of whichever player appears first in the
+  document, so it can no longer toggle captions on the inline preview player.
+- The captions state observer no longer attaches on pages where no mirror
+  button is mounted.
+- Video Hider processes each card once instead of once per matching host
+  element, halving the scan cost on feeds that nest a lockup inside a rich
+  item renderer.
+- A quick-settings toggle whose rollback throws no longer leaves its card
+  permanently disabled.
+
 ---
 
 ## [4.58.6] - 2026-08-10
