@@ -98,6 +98,58 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     // The extension loads this minimal frame runtime instead of the normal-page
     // monolith. The userscript keeps its existing live-chat implementation.
     'features/live-chat/index.js': 'intentional-extension-only',
+
+    // Core modules the EXTENSION loads as separate files while the
+    // userscript keeps the equivalent implementation inside its
+    // monolith. Listing them explicitly is the point: a NEW core module
+    // added to the manifest now fails this gate until someone decides
+    // whether userscript users should get it.
+    'core/browser-api.js': 'intentional-extension-only',
+    'core/diagnostic-log.js': 'intentional-extension-only',
+    'core/env.js': 'intentional-extension-only',
+    'core/icons.js': 'intentional-extension-only',
+    'core/page.js': 'intentional-extension-only',
+    'core/persisted-domains.js': 'intentional-extension-only',
+    'core/playability.js': 'intentional-extension-only',
+    'core/predicate-sandbox.js': 'intentional-extension-only',
+    'core/registry.js': 'intentional-extension-only',
+    'core/selector-packs/appShell.js': 'intentional-extension-only',
+    'core/selector-packs/commentComposer.js': 'intentional-extension-only',
+    'core/selector-packs/comments.js': 'intentional-extension-only',
+    'core/selector-packs/engagementPanels.js': 'intentional-extension-only',
+    'core/selector-packs/feed.js': 'intentional-extension-only',
+    'core/selector-packs/feedCard.js': 'intentional-extension-only',
+    'core/selector-packs/feedExperimentChips.js': 'intentional-extension-only',
+    'core/selector-packs/feedPlayables.js': 'intentional-extension-only',
+    'core/selector-packs/feedPrompt.js': 'intentional-extension-only',
+    'core/selector-packs/feedSponsored.js': 'intentional-extension-only',
+    'core/selector-packs/leftNav.js': 'intentional-extension-only',
+    'core/selector-packs/liveChat.js': 'intentional-extension-only',
+    'core/selector-packs/liveChatFrame.js': 'intentional-extension-only',
+    'core/selector-packs/liveChatPlaceholder.js': 'intentional-extension-only',
+    'core/selector-packs/mainVideo.js': 'intentional-extension-only',
+    'core/selector-packs/media.js': 'intentional-extension-only',
+    'core/selector-packs/modals.js': 'intentional-extension-only',
+    'core/selector-packs/nav.js': 'intentional-extension-only',
+    'core/selector-packs/notifications.js': 'intentional-extension-only',
+    'core/selector-packs/player.js': 'intentional-extension-only',
+    'core/selector-packs/playerChrome.js': 'intentional-extension-only',
+    'core/selector-packs/playerSettings.js': 'intentional-extension-only',
+    'core/selector-packs/profile.js': 'intentional-extension-only',
+    'core/selector-packs/relatedSidebar.js': 'intentional-extension-only',
+    'core/selector-packs/search.js': 'intentional-extension-only',
+    'core/selector-packs/settingsOverlay.js': 'intentional-extension-only',
+    'core/selector-packs/shortsShelf.js': 'intentional-extension-only',
+    'core/selector-packs/sidebar.js': 'intentional-extension-only',
+    'core/selector-packs/thumbnail.js': 'intentional-extension-only',
+    'core/selector-packs/transcriptPanel.js': 'intentional-extension-only',
+    'core/selector-packs/watch.js': 'intentional-extension-only',
+    'core/selectors.js': 'intentional-extension-only',
+    'core/storage-manager.js': 'intentional-extension-only',
+    'core/storage.js': 'intentional-extension-only',
+    'core/trusted-html.js': 'intentional-extension-only',
+    'core/url.js': 'intentional-extension-only',
+    'core/video-type.js': 'intentional-extension-only',
 });
 
 const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
@@ -245,11 +297,16 @@ for (const [modulePath, parityClass] of Object.entries(EXTENSION_ONLY_MANIFEST_M
 }
 
 for (const js of manifestJsFiles) {
-    if (!js.startsWith('features/')) continue;
+    // core/ modules are covered too: the exemption used to stop at features/,
+    // so a NEW shared-surface core module (the settings-schema / policy-profile
+    // class this file's header names as "must stay in sync") could be added to
+    // the manifest and silently never reach userscript users, with a green
+    // gate. Unclassified is a failure, not a pass.
+    if (!js.startsWith('features/') && !js.startsWith('core/')) continue;
     if (Object.hasOwn(EXTENSION_ONLY_MANIFEST_MODULES, js)) continue;
     const relative = 'extension/' + js;
     if (!bundleSet.has(relative)) {
-        errors.push(`Manifest content_scripts includes "${js}" but V5_BUNDLE_MODULES does not — add it to sync-userscript.js or document the exclusion`);
+        errors.push(`Manifest content_scripts includes "${js}" but V5_BUNDLE_MODULES does not — add it to sync-userscript.js or classify it in EXTENSION_ONLY_MANIFEST_MODULES`);
     }
 }
 

@@ -228,24 +228,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — Predicate sandbox: eval budget is post-hoc, so a permitted polynomial regex gets one free slow eval
-  Category: reliability
-  Where: `extension/core/predicate-sandbox.js:66-78` (≤4 open-ended quantifiers allowed), `:384-403` (budget checked after eval)
-  Problem: The 5 ms budget opens the circuit only after a synchronous `re.test()` returns; `.*.*.*.*x`-class patterns pass the quantifier screen, giving O(n⁴) backtracking for one eval — bounded to one-time main-thread jank (targets are short title/channel strings, pattern ≤200 chars). Containment otherwise verified sound (no escape found).
-  Fix: lower the open-ended-quantifier allowance to 2-3, or cap the ctx string length fed to `test()`.
-  Acceptance: the worst accepted pattern on the longest realistic ctx string completes under ~10 ms in a bench assertion.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Settings mutation service enforces no size bounds on string/array/object values
-  Category: reliability
-  Where: `extension/core/settings-controller.js:73-97`; `settings-schema.js` has zero maxLength/maxItems (grep-confirmed)
-  Problem: The designated validation choke point for cross-context writes bounds numbers and enums only; a single oversized value (e.g. `customCssInjection`) relies entirely on downstream quota-failure handling.
-  Fix: conservative per-value byte ceiling in `isValueValid` (or schema `maxLength` enforced in `clampValue`).
-  Acceptance: a `YTKIT_MUTATE_SETTING` write with a 5 MB string is rejected with a typed error.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — EXT_FETCH validates only the final redirect hop on non-credentialed requests
   Category: security (residual, low exploitability)
   Where: `extension/background.js:1210-1223`
@@ -263,24 +245,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Acceptance: one source of token truth; both pages render unchanged (screenshot compare); zero drifted duplicates.
   Confidence: Verified
   Effort: M
-
-- [ ] P3 — Userscript drift gate exempts new shared-surface core modules from classification
-  Category: testing (gate coverage)
-  Where: `scripts/check-userscript-drift.js:247-254`
-  Problem: Only manifest scripts starting `features/` must be in V5_BUNDLE_MODULES or classified; a new shared-surface `core/` module (the settings-schema/policy-profile class the header itself names as "must stay in sync") added to `x-ytkit-runtime-modules` is exempt — it silently never reaches userscript users with a green gate.
-  Fix: require classification for new `core/` manifest entries too (like EXTENSION_ONLY_MANIFEST_MODULES), failing on unclassified.
-  Acceptance: adding an unclassified `core/`, manifest-listed module fails the gate (bait-verify).
-  Confidence: Verified
-  Effort: M
-
-- [ ] P3 — check-settings proves schema↔defaults parity but not that a schema key is implemented
-  Category: testing (gate coverage; no live defect)
-  Where: `scripts/check-settings.js`
-  Problem: A future orphaned setting (implementation deleted, key kept) passes every gate. Probed both directions at the working tree: 0 orphan schema keys; the 4 schema-less feature ids (`uiStyleManager`, `colorThemeManager`, `quickLinkEditor`, `selectorHealthPanel`) are legitimate settingKey/info-type entries.
-  Fix: add a reference-existence assertion (corpus scan for each schema key outside schema/defaults) to check-settings.js.
-  Acceptance: deleting a feature implementation while keeping its key fails the gate (bait-verify).
-  Confidence: Verified (gap)
-  Effort: S
 
 - [ ] P3 — EN messages.json sorted-insert ordering has drifted
   Category: maintainability

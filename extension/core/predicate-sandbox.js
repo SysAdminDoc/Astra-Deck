@@ -28,6 +28,10 @@
         }
     }
 
+    // Longest string a user predicate will ever be asked to match: real
+    // ctx fields are card titles, channel names and URLs.
+    const MAX_MATCH_INPUT_LENGTH = 4096;
+
     function createPredicateSandbox(options = {}) {
         const debugLog = typeof options.debugLog === 'function'
             ? options.debugLog
@@ -355,7 +359,17 @@
                         try {
                             const re = node._compiledRegex || new RegExp(args[0], args[1] || '');
                             if (re.lastIndex) re.lastIndex = 0;
-                            return re.test(target);
+                            // Bound the INPUT rather than the pattern. The eval
+                            // budget is only checked once a synchronous test()
+                            // returns, so it cannot interrupt one; a permitted
+                            // pattern with several open-ended quantifiers (real
+                            // URL filters need them) would otherwise get one
+                            // free backtrack over an arbitrarily long string.
+                            // Card titles and channel names are far shorter
+                            // than this, so matching is unaffected.
+                            return re.test(target.length > MAX_MATCH_INPUT_LENGTH
+                                ? target.slice(0, MAX_MATCH_INPUT_LENGTH)
+                                : target);
                         } catch { return false; }
                     }
                     if (STRING_METHODS.has(node.method) && typeof target === 'string') {
