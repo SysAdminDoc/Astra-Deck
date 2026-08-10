@@ -9180,7 +9180,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _ccButton: null,
             _getNativeCcButton() {
                 if (typeof document === 'undefined') return null;
-                return document.querySelector('#movie_player .ytp-subtitles-button, .ytp-subtitles-button');
+                return document.querySelector('#movie_player .ytp-subtitles-button')
+                    || document.querySelector('.ytp-subtitles-button');
             },
             _syncCcButton() {
                 const button = this._ccButton;
@@ -9201,6 +9202,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _watchCcState() {
                 this._ccObserver?.disconnect();
                 this._ccObserver = null;
+                if (!this._ccButton) return;
                 const rightControls = typeof document !== 'undefined'
                     ? document.querySelector('.ytp-right-controls')
                     : null;
@@ -18521,7 +18523,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return Object.freeze(ctx);
             },
 
+            _isNestedCardHost(element) {
+                return !!element?.parentElement?.closest?.(this._VIDEO_SELECTORS);
+            },
+
             _processVideoElement(element) {
+                if (this._isNestedCardHost(element)) return;
                 element.dataset.ytkitHideProcessed = 'true';
                 const videoId = this._extractVideoId(element);
                 if (videoId) element.dataset.ytkitVideoId = videoId;
@@ -18535,6 +18542,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _processVideoElementWithResult(element) {
+                if (this._isNestedCardHost(element)) return false;
                 element.dataset.ytkitHideProcessed = 'true';
                 const videoId = this._extractVideoId(element);
                 if (videoId) element.dataset.ytkitVideoId = videoId;
@@ -18861,14 +18869,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 const css = `
+                    /* Inline-start corner: the top-end corner belongs to
+                       YouTube's own hover overlay (Watch Later / Add to queue),
+                       and sharing it made the two controls trade places under
+                       the cursor. Idle is neutral so a feed does not read as a
+                       wall of red dots; the destructive tint arrives on
+                       hover/focus, when the click is actually imminent. */
                     .ytkit-video-hide-btn {
                         position: absolute !important;
                         top: 8px !important;
-                        right: 8px !important;
+                        inset-inline-start: 8px !important;
                         width: 28px;
                         height: 28px;
-                        background: rgba(220, 38, 38, 0.96) !important;
-                        border: 1px solid rgba(255, 255, 255, 0.32) !important;
+                        background: rgba(8, 11, 16, 0.86) !important;
+                        border: 1px solid rgba(255, 255, 255, 0.28) !important;
                         border-radius: 50%;
                         cursor: pointer;
                         display: flex !important;
@@ -18892,22 +18906,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: #fff;
                         backdrop-filter: none;
                     }
-                    .ytkit-video-hide-btn:hover {
-                        background: rgba(185, 28, 28, 1) !important;
+                    .ytkit-video-hide-btn:hover,
+                    .ytkit-video-hide-btn:focus-visible {
+                        background: rgba(220, 38, 38, 0.96) !important;
                         border-color: rgba(255, 255, 255, 0.5) !important;
                         transform: scale(1.08);
                     }
                     .ytkit-video-hide-btn:focus-visible {
-                        opacity: 1;
                         outline: none;
                         box-shadow: var(--ytkit-focus-ring);
                     }
                     .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff !important; pointer-events: none; }
-                    ytd-rich-item-renderer:hover .ytkit-video-hide-btn,
-                    ytd-video-renderer:hover .ytkit-video-hide-btn,
-                    ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
-                    ytd-compact-video-renderer:hover .ytkit-video-hide-btn,
-                    yt-lockup-view-model:hover .ytkit-video-hide-btn { opacity: 1; }
                     .ytkit-video-hidden { display: none !important; }
                     .ytkit-video-hidden-placeholder {
                         box-sizing: border-box;
@@ -50823,18 +50832,23 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                 } catch (err) {
                     DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
                     reconcile(previousSettings, 'quick-settings-rollback');
+                } finally {
+                    // finally, not a trailing statement: a reconcile() that
+                    // throws while rolling back would otherwise escape with the
+                    // card still disabled, leaving the control dead until the
+                    // panel is rebuilt.
+                    const finalValue = appState.settings[fid] === true;
+                    card.classList.toggle('on', finalValue);
+                    card.setAttribute('aria-checked', String(finalValue));
+                    card.setAttribute('aria-label', `${featureName}. ${finalValue ? 'Enabled' : 'Disabled'}.`);
+                    cardState.classList.toggle('on', finalValue);
+                    cardState.textContent = finalValue ? 'On' : 'Off';
+                    const nextEnabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;
+                    updatePageModalEnabledCount(nextEnabledCount);
+                    // Update all matching dock pills if any remain
+                    document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
+                    card.disabled = false;
                 }
-                const finalValue = appState.settings[fid] === true;
-                card.classList.toggle('on', finalValue);
-                card.setAttribute('aria-checked', String(finalValue));
-                card.setAttribute('aria-label', `${featureName}. ${finalValue ? 'Enabled' : 'Disabled'}.`);
-                cardState.classList.toggle('on', finalValue);
-                cardState.textContent = finalValue ? 'On' : 'Off';
-                const nextEnabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;
-                updatePageModalEnabledCount(nextEnabledCount);
-                // Update all matching dock pills if any remain
-                document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
-                card.disabled = false;
             });
 
             grid.appendChild(card);
@@ -53357,25 +53371,6 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             border-color: rgba(239,68,68,0.32) !important;
             color: #fff !important;
             transform: none !important;
-        }
-
-        .ytkit-video-hide-btn {
-            position: absolute !important;
-            top: 8px !important;
-            right: 8px !important;
-            z-index: 1000 !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            pointer-events: auto !important;
-            background: rgba(220,38,38,0.96) !important;
-            border-color: rgba(255,255,255,0.32) !important;
-            border-radius: 50% !important;
-            color: #fff !important;
-        }
-
-        .ytkit-video-hide-btn:hover {
-            background: rgba(185,28,28,1) !important;
-            border-color: rgba(255,255,255,0.5) !important;
         }
 
         .ytkit-wl-btn:hover {
