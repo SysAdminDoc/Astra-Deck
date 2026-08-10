@@ -264,42 +264,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — Storage banner copy contradicts the storage model and steers users at data destruction
-  Category: ux
-  Where: `extension/popup.js:2040-2042` (`storageBannerSoftTpl`/`storageBannerHardTpl`)
-  Problem: Soft tier says "heading toward the ceiling" — the extension declares `unlimitedStorage` (as the comment 40 lines up states), so there is no ceiling. Hard tier says "consider Reset." — a full wipe — rather than pointing at the list-trim levers the contributors detail already names.
-  Fix: reword to describe large-store health (what is big, what trimming it does) and link the specific trim actions; keep Reset out of the first suggestion.
-  Acceptance: banner copy names the top contributor and a non-destructive action; localized via the generate-locales tables.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — One toggle, three names: display-name drift across popup, sidepanel, and settings panel; companion naming drift including a wrong product name
-  Category: ux
-  Where: `extension/popup.js:19-31` (qt_ fallbacks) vs `extension/sidepanel.js:574-591` (spq_) vs `feature_*` keys; `extension/_locales/en/messages.json` (`settingsDlDownloadTitle`, `settingsDlNotConnected`, `subscriptionArchiveUnavailable`, `updateCompanionAria`)
-  Problem: `disableInfiniteScroll` = "Cap Scroll" / "Cap Infinite Scroll" / "Disable Infinite Scroll"; `debugMode` = "Debug Mode" / "Diagnostic Logging"; `disableAutoplayNext` = "No Autoplay" / "Disable Autoplay"; `autoTheaterMode` = "Auto Theater" / "Auto Theater Mode". The companion is "Astra Downloader", "the Astra Downloader companion", "the setup helper" — and `settingsDlDownloadTitle` says "Download the Astra Deck setup file" for the button that downloads the Astra **Downloader** installer (tells users they're reinstalling the extension).
-  Fix: one display name per feature across `qt_`/`spq_`/`feature_` keys; standardize "Astra Downloader"; fix `settingsDlDownloadTitle` first. Route changes through the generate-locales tables.
-  Acceptance: grep for the drifted names returns one canonical name per feature; the download button names the right product in all locales.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Assorted microcopy defects (catalog-wins strings shipping in every locale)
-  Category: ux
-  Where: `extension/_locales/en/messages.json`
-  Problem: (a) `spMeta_api` = "Api" → "API". (b) Untranslatable "(s)" pluralization: `reactionSenderRunningTpl`, `reactionSenderSelectedTpl`, `watchLaterRemoveFailed`, `wlwbRemovedToastTpl`. (c) `aiCredentialInputPlaceholder` "Enter to set or replace" ambiguous (press Enter vs type a value) in a product that bans keyboard shortcuts. (d) `videoHiderUnmarkedWatched` toast "Mark removed" is cryptic ("Watched mark removed"). (e) `dlProgressConnectAudio`/`dlProgressConnectVideo` byte-identical duplicates. (f) Punctuation drift in sibling status strings: `popup.js:4152` "Import aborted - …" (spaced hyphen) vs `:4853` "Reset aborted — …" (em-dash).
-  Fix: copy pass through the generate-locales tables; count-aware phrasing for (b); em-dash everywhere for (f).
-  Acceptance: the listed keys read per the fixes in EN + a sampled locale; copy-gate baseline updated in the same change.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Schema Overview a11y: switch accessible name is the raw camelCase key; JSON parse error not announced; cleared number field is a silent no-op
-  Category: a11y / ux
-  Where: `extension/popup.js:2884` (aria-label = entry.key), `:3089-3101` (errorPill), `:2921-2922` (number editor)
-  Problem: Screen readers hear "removeAllShorts (on)" while the visible label is the humanized string — a label-in-name mismatch that breaks voice-control targeting. The invalid-JSON pill has no `role="alert"`/`aria-describedby`, so the parse error is visual-only. Clearing a number field returns silently with no feedback.
-  Fix: use the humanized label in aria-label; `role="alert"` + `aria-describedby` on the pill; hint or treat-clear-as-reset on the number editor. (Concrete instances — distinct from the tracked "make audits see rendered output" item.)
-  Acceptance: the static a11y audit (extended) or a DOM unit test asserts the three behaviors.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Userscript drift gate exempts new shared-surface core modules from classification
   Category: testing (gate coverage)
   Where: `scripts/check-userscript-drift.js:247-254`

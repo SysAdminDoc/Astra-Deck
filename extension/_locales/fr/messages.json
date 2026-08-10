@@ -6,7 +6,7 @@
     "message": "Identifiant IA supprimé."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "Saisir pour définir ou remplacer"
+    "message": "Collez votre clé d’API"
   },
   "aiCredentialInputRequired": {
     "message": "Saisissez un identifiant à enregistrer."
@@ -3950,7 +3950,7 @@
     "message": "Enregistrer des diagnostics locaux détaillés"
   },
   "qt_debugMode_name": {
-    "message": "Mode débogage"
+    "message": "Journalisation de diagnostic"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Suivre les pauses et le visionnage quotidien"
@@ -3962,13 +3962,13 @@
     "message": "Empêcher la vidéo suivante de démarrer"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "Pas de lecture auto"
+    "message": "Désactiver la lecture automatique"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Arrêter le chargement infini du flux"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Limiter défilement"
+    "message": "Limiter le défilement infini"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Vider la colonne latérale de la page de visionnage"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Télécharger le fichier d’installation d’Astra Downloader et l’afficher dans Téléchargements"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -5032,7 +5032,7 @@
     "message": "Données de stockage corrompues — Réinitialiser pour récupérer."
   },
   "storageBannerHardTpl": {
-    "message": "Stockage à {size} — envisagez Réinitialiser."
+    "message": "Astra Deck stocke {size}. Réduire les plus grandes listes ci-dessous préserve la rapidité."
   },
   "storageBannerReset": {
     "message": "Réinitialiser"
@@ -5041,7 +5041,7 @@
     "message": "Réinitialiser toutes les données locales"
   },
   "storageBannerSoftTpl": {
-    "message": "Stockage à {size} — vous approchez du plafond."
+    "message": "Astra Deck stocke {size} de données sur cet appareil."
   },
   "storageBannerTitle": {
     "message": "Stockage saturé"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "Marque « vu » supprimée"
   },
   "videoInsightsCategory": {
     "message": "Catégorie"

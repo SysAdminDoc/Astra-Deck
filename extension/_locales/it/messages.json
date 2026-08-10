@@ -6,7 +6,7 @@
     "message": "Credenziale IA eliminata."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "Digita per impostare o sostituire"
+    "message": "Incolla la tua chiave API"
   },
   "aiCredentialInputRequired": {
     "message": "Inserisci una credenziale da salvare."
@@ -3950,7 +3950,7 @@
     "message": "Registra diagnostica locale dettagliata"
   },
   "qt_debugMode_name": {
-    "message": "Modalità debug"
+    "message": "Registrazione diagnostica"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Monitora pause e visione giornaliera"
@@ -3962,13 +3962,13 @@
     "message": "Impedisci l'avvio del video successivo"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "No riproduzione automatica"
+    "message": "Disattiva la riproduzione automatica"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Ferma il caricamento infinito del feed"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Limita scorrimento"
+    "message": "Limita lo scorrimento infinito"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Pulisci la barra laterale della pagina di visione"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Scarica il file di installazione di Astra Downloader e mostralo in Download"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -4783,7 +4783,7 @@
     "message": "Impedisce l'avvio automatico del video successivo."
   },
   "spq_disableAutoplayNext_name": {
-    "message": "Disattiva riproduzione automatica"
+    "message": "Disattiva la riproduzione automatica"
   },
   "spq_disableInfiniteScroll_desc": {
     "message": "Impedisce ai feed di caricarsi all'infinito."
@@ -5032,7 +5032,7 @@
     "message": "Dati di archivio corrotti — Ripristina per recuperare."
   },
   "storageBannerHardTpl": {
-    "message": "Archivio a {size} — considera Ripristina."
+    "message": "Astra Deck memorizza {size}. Ridurre gli elenchi più grandi qui sotto lo mantiene veloce."
   },
   "storageBannerReset": {
     "message": "Reimposta"
@@ -5041,7 +5041,7 @@
     "message": "Ripristina tutti i dati locali"
   },
   "storageBannerSoftTpl": {
-    "message": "Archivio a {size} — ti avvicini al limite."
+    "message": "Astra Deck memorizza {size} di dati su questo dispositivo."
   },
   "storageBannerTitle": {
     "message": "Utilizzo archivio elevato"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "Contrassegno Guardato rimosso"
   },
   "videoInsightsCategory": {
     "message": "Categoria"

@@ -6,7 +6,7 @@
     "message": "已删除 AI 凭据。"
   },
   "aiCredentialInputPlaceholder": {
-    "message": "输入以设置或替换"
+    "message": "粘贴你的 API 密钥"
   },
   "aiCredentialInputRequired": {
     "message": "请输入要保存的凭据。"
@@ -3920,7 +3920,7 @@
     "message": "默认使用影院视图"
   },
   "qt_autoTheaterMode_name": {
-    "message": "自动影院模式"
+    "message": "自动剧场模式"
   },
   "qt_blueLightFilter_desc": {
     "message": "更暖的色调"
@@ -3950,7 +3950,7 @@
     "message": "详细的控制台日志记录"
   },
   "qt_debugMode_name": {
-    "message": "调试模式"
+    "message": "诊断日志"
   },
   "qt_digitalWellbeing_desc": {
     "message": "休息提醒 + 每日上限"
@@ -3968,7 +3968,7 @@
     "message": "停止无限滚动"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "限制滚动"
+    "message": "限制无限滚动"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "观看页不显示相关视频面板"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "下载 Astra Downloader 安装文件并在下载内容中显示"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -5032,7 +5032,7 @@
     "message": "存储数据损坏 — 重置以恢复。"
   },
   "storageBannerHardTpl": {
-    "message": "存储 {size} — 建议重置。"
+    "message": "Astra Deck 存储了 {size}。精简下方最大的列表可保持流畅。"
   },
   "storageBannerReset": {
     "message": "重置"
@@ -5041,7 +5041,7 @@
     "message": "重置所有本地数据"
   },
   "storageBannerSoftTpl": {
-    "message": "存储 {size} — 接近上限。"
+    "message": "Astra Deck 在此设备上存储了 {size} 数据。"
   },
   "storageBannerTitle": {
     "message": "存储用量较高"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "已移除观看标记"
   },
   "videoInsightsCategory": {
     "message": "类别"

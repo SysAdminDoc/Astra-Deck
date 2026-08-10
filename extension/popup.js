@@ -16,19 +16,19 @@ function callExtensionApi(target, method, ...args) {
 const QUICK_TOGGLES = [
     { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts shelves and links' },
     { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'Clear the watch-page side rail' },
-    { key: 'disableInfiniteScroll',  group: 'Feed Cleanup',      name: 'Cap Scroll',             desc: 'Stop endless feed loading' },
+    { key: 'disableInfiniteScroll',  group: 'Feed Cleanup',      name: 'Cap Infinite Scroll',    desc: 'Stop endless feed loading' },
     { key: 'sponsorBlock',           group: 'Watch Flow',        name: 'SponsorBlock',           desc: 'Skip crowd-marked sponsor segments' },
     { key: 'deArrow',                group: 'Watch Flow',        name: 'DeArrow',                desc: 'Replace clickbait titles and thumbnails' },
     { key: 'commentSearch',          group: 'Watch Flow',        name: 'Comment Search',         desc: 'Filter watch-page comments inline' },
-    { key: 'disableAutoplayNext',    group: 'Playback',          name: 'No Autoplay',            desc: 'Stop the next video from starting' },
+    { key: 'disableAutoplayNext',    group: 'Playback',          name: 'Disable Autoplay',       desc: 'Stop the next video from starting' },
     { key: 'persistentSpeed',        group: 'Playback',          name: 'Persistent Speed',       desc: 'Keep playback speed consistent' },
-    { key: 'autoTheaterMode',        group: 'Playback',          name: 'Auto Theater',           desc: 'Open videos in theater view' },
+    { key: 'autoTheaterMode',        group: 'Playback',          name: 'Auto Theater Mode',      desc: 'Open videos in theater view' },
     { key: 'blueLightFilter',        group: 'Focus',             name: 'Blue-Light Filter',      desc: 'Warm the player for late viewing' },
     { key: 'miniPlayerBar',          group: 'Focus',             name: 'Mini Player Bar',        desc: 'Keep controls visible while scrolling' },
     { key: 'digitalWellbeing',       group: 'Focus',             name: 'Digital Wellbeing',      desc: 'Track breaks and daily viewing' },
     { key: 'cleanShareUrls',         group: 'Utilities',         name: 'Clean URLs',             desc: 'Remove tracking from share links' },
     { key: 'transcriptViewer',       group: 'Utilities',         name: 'Transcript Sidebar',     desc: 'Read, jump, and export captions' },
-    { key: 'debugMode',              group: 'Utilities',         name: 'Debug Mode',             desc: 'Record detailed local diagnostics' },
+    { key: 'debugMode',              group: 'Utilities',         name: 'Diagnostic Logging',     desc: 'Record detailed local diagnostics' },
     // v4.15.0: privacy + profile toggles surfaced in the popup so the
     // v4.10.0 data-flow panel + v4.7.0 policy-profile machinery are
     // actually discoverable. safeStoreProfile stays on by default; the
@@ -2052,8 +2052,11 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
     if (Number.isFinite(bookmarks) && bookmarks > 0) parts.push(bookmarks + ' bookmarks');
     const contributors = parts.length ? ' — ' + parts.join(' · ') : '';
     const baseTpl = tier === 'hard'
-        ? t('storageBannerHardTpl', `Storage at ${sizeText} — consider Reset.`)
-        : t('storageBannerSoftTpl', `Storage at ${sizeText} — heading toward the ceiling.`);
+        // The extension declares unlimitedStorage, so there is no ceiling to
+        // head toward, and steering at Reset offered a full wipe as the answer
+        // to a size report. Name the size and point at trimming instead.
+        ? t('storageBannerHardTpl', `Astra Deck is storing ${sizeText}. Trimming the largest lists below keeps it fast.`)
+        : t('storageBannerSoftTpl', `Astra Deck is storing ${sizeText} of data on this device.`);
     storageBannerDetail.textContent = baseTpl.replace('{size}', sizeText) + contributors;
     storageBanner.hidden = false;
 }
@@ -2895,7 +2898,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         btn.className = 'so-key-switch' + (on ? ' on' : '');
         btn.setAttribute('role', 'switch');
         btn.setAttribute('aria-checked', String(on));
-        btn.setAttribute('aria-label', entry.key + ' (' + (on ? 'on' : 'off') + ')');
+        // Accessible name must CONTAIN the visible label, or voice control
+        // cannot target the row: the switch used to announce the raw storage
+        // key while the row reads a humanised label.
+        btn.setAttribute('aria-label', label.textContent + ' (' + (on ? 'on' : 'off') + ')');
         btn.dataset.key = entry.key;
         btn.addEventListener('click', async () => {
             // Settings persist sparsely, so an untouched default-on key is
@@ -3112,6 +3118,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         const errorPill = document.createElement('span');
         errorPill.className = 'so-key-json-error';
         errorPill.hidden = true;
+        // Announce parse failures: the pill was visual-only, so a screen-reader
+        // user got no feedback that their edit had been rejected.
+        errorPill.id = 'so-json-error-' + entry.key;
+        errorPill.setAttribute('role', 'alert');
+        textarea.setAttribute('aria-describedby', errorPill.id);
         const persist = async () => {
             const raw = textarea.value;
             let parsed;

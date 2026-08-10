@@ -6,7 +6,7 @@
     "message": "Credencial de IA excluída."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "Digite para definir ou substituir"
+    "message": "Cole sua chave de API"
   },
   "aiCredentialInputRequired": {
     "message": "Insira uma credencial para salvar."
@@ -3950,7 +3950,7 @@
     "message": "Registrar diagnósticos locais detalhados"
   },
   "qt_debugMode_name": {
-    "message": "Modo de depuração"
+    "message": "Registro de diagnóstico"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Rastrear pausas e visualização diária"
@@ -3962,13 +3962,13 @@
     "message": "Impedir o próximo vídeo de iniciar"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "Sem reprodução automática"
+    "message": "Desativar reprodução automática"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Parar carregamento infinito do feed"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Limitar rolagem"
+    "message": "Limitar rolagem infinita"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Limpar a barra lateral da página de exibição"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Baixar o instalador do Astra Downloader e mostrá-lo em Downloads"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -5032,7 +5032,7 @@
     "message": "Dados de armazenamento corrompidos — Redefina para recuperar."
   },
   "storageBannerHardTpl": {
-    "message": "Armazenamento em {size} — considere Redefinir."
+    "message": "O Astra Deck está armazenando {size}. Reduzir as maiores listas abaixo mantém tudo rápido."
   },
   "storageBannerReset": {
     "message": "Redefinir"
@@ -5041,7 +5041,7 @@
     "message": "Redefinir todos os dados locais"
   },
   "storageBannerSoftTpl": {
-    "message": "Armazenamento em {size} — aproximando-se do limite."
+    "message": "O Astra Deck está armazenando {size} de dados neste dispositivo."
   },
   "storageBannerTitle": {
     "message": "Uso de armazenamento alto"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "Marca de assistido removida"
   },
   "videoInsightsCategory": {
     "message": "Categoria"

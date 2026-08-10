@@ -6,7 +6,7 @@
     "message": "AI 자격 증명이 삭제되었습니다."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "입력하여 설정 또는 교체"
+    "message": "API 키를 붙여넣으세요"
   },
   "aiCredentialInputRequired": {
     "message": "저장할 자격 증명을 입력하세요."
@@ -3950,7 +3950,7 @@
     "message": "상세 로컬 진단 기록"
   },
   "qt_debugMode_name": {
-    "message": "디버그 모드"
+    "message": "진단 로깅"
   },
   "qt_digitalWellbeing_desc": {
     "message": "휴식과 일일 시청 시간 추적"
@@ -3962,13 +3962,13 @@
     "message": "다음 동영상 자동 시작 방지"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "자동재생 없음"
+    "message": "자동 재생 끄기"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "끝없는 피드 로딩 중지"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "스크롤 제한"
+    "message": "무한 스크롤 제한"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "시청 페이지 사이드 레일 비우기"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Astra Downloader 설치 파일을 다운로드하고 다운로드에서 표시"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -5032,7 +5032,7 @@
     "message": "저장 공간 데이터가 손상됨 — 초기화하여 복구하세요."
   },
   "storageBannerHardTpl": {
-    "message": "저장 공간 {size} — 초기화를 고려하세요."
+    "message": "Astra Deck가 {size}를 저장하고 있습니다. 아래의 큰 목록을 정리하면 빠르게 유지됩니다."
   },
   "storageBannerReset": {
     "message": "재설정"
@@ -5041,7 +5041,7 @@
     "message": "모든 로컬 데이터 초기화"
   },
   "storageBannerSoftTpl": {
-    "message": "저장 공간 {size} — 한도에 가까워지고 있습니다."
+    "message": "Astra Deck가 이 기기에 {size}의 데이터를 저장하고 있습니다."
   },
   "storageBannerTitle": {
     "message": "저장 공간 사용량이 많음"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "시청함 표시를 제거했습니다"
   },
   "videoInsightsCategory": {
     "message": "카테고리"

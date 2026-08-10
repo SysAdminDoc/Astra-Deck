@@ -6,7 +6,7 @@
     "message": "AI credential deleted."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "Enter to set or replace"
+    "message": "Paste your API key"
   },
   "aiCredentialInputRequired": {
     "message": "Enter a credential to save."
@@ -3920,7 +3920,7 @@
     "message": "Open videos in theater view"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Auto Theater"
+    "message": "Auto Theater Mode"
   },
   "qt_blueLightFilter_desc": {
     "message": "Warm the player for late viewing"
@@ -3950,7 +3950,7 @@
     "message": "Record detailed local diagnostics"
   },
   "qt_debugMode_name": {
-    "message": "Debug Mode"
+    "message": "Diagnostic Logging"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Track breaks and daily viewing"
@@ -3962,13 +3962,13 @@
     "message": "Stop the next video from starting"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "No Autoplay"
+    "message": "Disable Autoplay"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Stop endless feed loading"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Cap Scroll"
+    "message": "Cap Infinite Scroll"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Clear the watch-page side rail"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Download the Astra Downloader setup file and reveal it in Downloads"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -4489,7 +4489,7 @@
     "message": "Local only"
   },
   "spMeta_api": {
-    "message": "Api"
+    "message": "API"
   },
   "spMeta_comments": {
     "message": "Comments"
@@ -5032,7 +5032,7 @@
     "message": "Storage data malformed — Reset to recover."
   },
   "storageBannerHardTpl": {
-    "message": "Storage at {size} — consider Reset."
+    "message": "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast."
   },
   "storageBannerReset": {
     "message": "Reset"
@@ -5041,7 +5041,7 @@
     "message": "Reset all local data"
   },
   "storageBannerSoftTpl": {
-    "message": "Storage at {size} — heading toward the ceiling."
+    "message": "Astra Deck is storing {size} of data on this device."
   },
   "storageBannerTitle": {
     "message": "Storage usage high"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "Watched mark removed"
   },
   "videoInsightsCategory": {
     "message": "Category"
