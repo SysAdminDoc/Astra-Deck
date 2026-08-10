@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "Les filtres du masqueur de vidéos ont ciblé {count} cartes sur {total} : elles restent visibles."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "Afficher une courte note à côté de chaque carte masquée pour expliquer quelle règle locale a correspondu."
   },

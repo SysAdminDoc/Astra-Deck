@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "Video Hider filters matched {count} of {total} cards, so they were left visible."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "Show a small note beside each hidden card explaining which local rule matched."
   },

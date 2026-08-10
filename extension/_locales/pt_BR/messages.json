@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "Os filtros do ocultador de vídeos corresponderam a {count} de {total} cards, então eles foram mantidos visíveis."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "Mostrar uma pequena nota ao lado de cada card oculto explicando qual regra local correspondeu."
   },

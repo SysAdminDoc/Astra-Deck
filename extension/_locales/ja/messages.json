@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "動画非表示のフィルターが {total} 件中 {count} 件に一致したため、表示を維持しました。"
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "非表示カードの横に、どのローカルルールが一致したかを説明する短いメモを表示します。"
   },

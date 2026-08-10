@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "طابقت مرشحات إخفاء الفيديو {count} من {total} بطاقة، لذا ظلت ظاهرة."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "إظهار ملاحظة صغيرة بجانب كل بطاقة مخفية توضّح القاعدة المحلية التي طابقتها."
   },

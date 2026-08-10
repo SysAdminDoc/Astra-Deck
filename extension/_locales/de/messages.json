@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "Video-Ausblender-Filter trafen {count} von {total} Karten und wurden daher sichtbar gelassen."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "Eine kurze Notiz neben jeder ausgeblendeten Karte anzeigen, die erklärt, welche lokale Regel zutraf."
   },

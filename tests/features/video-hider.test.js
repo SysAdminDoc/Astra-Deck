@@ -993,3 +993,62 @@ test('Video Hider processes a nested lockup card once, not once per matching hos
     assert.equal(feature._processVideoElementWithResult(inner), false,
         'the result-returning path must also skip nested hosts');
 });
+
+test('rule-driven filters fail open when they would hide most of a feed', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({ appState: { settings: {} } });
+
+    // A card that reports a hidden state plus the reason that hid it, the way
+    // _applyVideoHiddenState leaves it.
+    const makeCard = (reason) => {
+        const classes = new Set(reason ? ['ytkit-video-hidden'] : []);
+        return {
+            dataset: reason ? { ytkitFilterReason: reason } : {},
+            classList: {
+                contains: (name) => classes.has(name),
+                add: (name) => classes.add(name),
+                remove: (name) => classes.delete(name)
+            },
+            _classes: classes
+        };
+    };
+
+    const revealed = [];
+    feature._applyVideoHiddenState = (el, shouldHide) => {
+        if (!shouldHide) { el.classList.remove('ytkit-video-hidden'); revealed.push(el); }
+        return !!shouldHide;
+    };
+
+    // 10 cards, 6 hidden by a keyword rule: far over the 25% ceiling.
+    const overreaching = Array.from({ length: 6 }, () => makeCard('keyword'))
+        .concat(Array.from({ length: 4 }, () => makeCard(null)));
+    assert.equal(feature._enforceRuleHideRatioGuard(overreaching), true,
+        'a rule matching 60% of the feed must fail open');
+    assert.equal(revealed.length, 6, 'every rule-hidden card must be revealed');
+    assert.deepEqual(feature._lastRuleHideGuard, { hidden: 6, total: 10 });
+
+    // Two of ten is within the ceiling and must stay hidden.
+    revealed.length = 0;
+    const reasonable = Array.from({ length: 2 }, () => makeCard('predicate'))
+        .concat(Array.from({ length: 8 }, () => makeCard(null)));
+    assert.equal(feature._enforceRuleHideRatioGuard(reasonable), false);
+    assert.equal(revealed.length, 0, 'a normal match rate must not be disturbed');
+
+    // Deliberate choices are exempt: a user who blocked channels or hid videos
+    // by hand keeps them hidden however much of the feed that covers, and
+    // allowlist mode hides everything unlisted by design.
+    for (const reason of ['manual', 'blockedChannel', 'marked-watched', 'channelNotAllowed']) {
+        revealed.length = 0;
+        const deliberate = Array.from({ length: 9 }, () => makeCard(reason))
+            .concat([makeCard(null)]);
+        assert.equal(feature._enforceRuleHideRatioGuard(deliberate), false,
+            `${reason} is a deliberate choice and must not be second-guessed`);
+        assert.equal(revealed.length, 0, `${reason} hides must survive the guard`);
+    }
+
+    // Small feeds are exempt: 3 of 4 is not evidence of a misfiring rule.
+    revealed.length = 0;
+    const small = Array.from({ length: 3 }, () => makeCard('keyword')).concat([makeCard(null)]);
+    assert.equal(feature._enforceRuleHideRatioGuard(small), false,
+        'the guard needs a reasonably sized feed before it can judge a ratio');
+});
