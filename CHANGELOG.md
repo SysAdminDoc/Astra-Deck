@@ -8,6 +8,21 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [4.59.1] - 2026-08-10
+
+### Changed
+
+- The thumbnail hide control now sits on the **top-end** corner of the
+  thumbnail (top-right in left-to-right languages) instead of the top-start
+  corner, alongside the mark-watched control that shares its row. YouTube
+  mounts its own Watch Later / Add to queue overlay in that corner on hover;
+  enable **Hide Queue On Thumbnails** if you want the corner to itself.
+  Measured on a real captured Subscriptions feed: 96 rendered cards, every
+  control 8px from the thumbnail's end edge and 8px from its top, fully
+  inside the thumbnail bounds.
+
+---
+
 ## [4.59.0] - 2026-08-10
 
 ### Changed

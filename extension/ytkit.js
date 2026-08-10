@@ -970,7 +970,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.59.0';
+    const YTKIT_VERSION = '4.59.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -18913,16 +18913,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 const css = `
-                    /* Inline-start corner: the top-end corner belongs to
-                       YouTube's own hover overlay (Watch Later / Add to queue),
-                       and sharing it made the two controls trade places under
-                       the cursor. Idle is neutral so a feed does not read as a
-                       wall of red dots; the destructive tint arrives on
-                       hover/focus, when the click is actually imminent. */
+                    /* Inline-end corner, which YouTube also uses for its own
+                       hover overlay (Watch Later / Add to queue) — the two
+                       stack while the cursor is on the card, and the Hide
+                       Queue On Thumbnails setting clears YouTube's pair for
+                       anyone who wants the corner to itself. Idle is neutral
+                       so a feed does not read as a wall of red dots; the
+                       destructive tint arrives on hover/focus, when the click
+                       is actually imminent. */
                     .ytkit-video-hide-btn {
                         position: absolute !important;
                         top: 8px !important;
-                        inset-inline-start: 8px !important;
+                        inset-inline-end: 8px !important;
                         width: 28px;
                         height: 28px;
                         background: rgba(8, 11, 16, 0.86) !important;
