@@ -18,6 +18,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The settings panel now runs its own module instead of an inline copy of
+  itself. The module registers after the main script loads, and the first
+  lookup cached the not-yet-registered result for the rest of the session,
+  so every panel came from a duplicate that had to be kept in sync by hand.
 - Popup Schema Overview editors now read a setting's effective value rather
   than raw storage. Because only changed settings are stored, focusing and
   blurring a text or JSON field on an untouched setting could save an empty
