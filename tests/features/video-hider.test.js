@@ -173,13 +173,12 @@ test('Video Hider processes current card hosts and keeps the thumbnail control m
         const styleStart = source.indexOf('.ytkit-video-hide-btn {');
         const buttonStyle = source.slice(styleStart, styleStart + 1600);
         // The control stays mounted (that is the whole point of the v4.58.6
-        // fix) but idles neutral on the INLINE-START corner: the top-end corner
-        // is YouTube's own hover overlay, and a feed of permanently red dots
-        // reads as damage rather than as a control.
+        // fix) and sits on the INLINE-END corner, but idles neutral: a feed of
+        // permanently red dots reads as damage rather than as a control.
         assert.match(buttonStyle, /opacity:\s*1\s*!important/,
             `${label} should keep the hide control visibly mounted`);
-        assert.match(buttonStyle, /inset-inline-start:\s*8px\s*!important/,
-            `${label} should place the hide control clear of YouTube's own overlay corner`);
+        assert.match(buttonStyle, /inset-inline-end:\s*8px\s*!important/,
+            `${label} should place the hide control on the thumbnail's top-end corner`);
         assert.doesNotMatch(buttonStyle, /background:\s*rgba\(220,\s*38,\s*38/,
             `${label} should not paint the destructive tint at idle`);
 

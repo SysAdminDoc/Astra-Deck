@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.59.0
+// @name         YTKit v4.59.1
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.59.0
+// @version      4.59.1
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
@@ -20522,17 +20522,19 @@
 
                 init() {
                     const css = `
-                        /* Both overlay controls sit on the INLINE-START corner and
-                           stay visible. Top-end is YouTube's own hover overlay
-                           (Watch Later / Add to queue); sharing that corner made
-                           the two controls trade places under the cursor. Idle is
+                        /* Both overlay controls sit on the INLINE-END corner and
+                           stay visible. That corner is also where YouTube mounts
+                           its own hover overlay (Watch Later / Add to queue), so
+                           the two stack while the cursor is on the card; the
+                           Hide Queue On Thumbnails setting clears YouTube's pair
+                           for anyone who wants the corner to itself. Idle is
                            neutral so a feed of thumbnails doesn't read as a wall of
                            red dots — the destructive tint arrives on hover/focus,
                            when the click is actually imminent. */
                         .ytkit-video-hide-btn {
                             position: absolute !important;
                             top: 8px !important;
-                            inset-inline-start: 8px !important;
+                            inset-inline-end: 8px !important;
                             width: 28px;
                             height: 28px;
                             background: rgba(8, 11, 16, 0.86) !important;
@@ -20574,7 +20576,7 @@
                         .ytkit-video-mark-watched-btn {
                             position: absolute;
                             top: 8px;
-                            inset-inline-start: 42px;
+                            inset-inline-end: 42px;
                             width: 28px;
                             height: 28px;
                             background: rgba(8, 11, 16, 0.86);
@@ -31156,7 +31158,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.59.0';
+    const YTKIT_VERSION = '4.59.1';
 
     // ── Z-Index Hierarchy ──
     const Z = {
