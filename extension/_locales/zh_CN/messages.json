@@ -4914,8 +4914,8 @@
   "statusOpenWorkspaceFail": {
     "message": "无法打开完整工作区。请重试。"
   },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
+  "statusPerKeyResetTpl": {
+    "message": "{key} 已重置为默认值。"
   },
   "statusPerKeyResetFail": {
     "message": "Could not reset"

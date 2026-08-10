@@ -3206,8 +3206,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                 resetBtn.disabled = true;
                 try {
                     await writeSetting(entry.key, entry.defaultValue);
-                    showStatus(t('statusPerKeyReset',
-                        `${entry.key} reset to default.`), 'ok', 2400);
+                    // Tpl + token: the catalogue wins over this fallback in the
+                    // extension, and the old tokenless message meant every
+                    // reset toasted the same context-free "… reset to default."
+                    showStatus(t('statusPerKeyResetTpl', '{key} reset to default.')
+                        .replace('{key}', entry.key), 'ok', 2400);
                     renderSchemaOverview();
                     // The rebuild removed this reset button (value is back
                     // at default) — refocus the row's remaining control so

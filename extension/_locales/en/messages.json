@@ -4914,8 +4914,8 @@
   "statusOpenWorkspaceFail": {
     "message": "Could not open the full workspace. Try again."
   },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
+  "statusPerKeyResetTpl": {
+    "message": "{key} reset to default."
   },
   "statusPerKeyResetFail": {
     "message": "Could not reset"
@@ -5866,7 +5866,7 @@
     "message": "Video note restored"
   },
   "videoNotesSaveFailed": {
-    "message": "Couldn\\u2019t save \\u2014 storage full or unavailable."
+    "message": "Couldn’t save — storage full or unavailable."
   },
   "videoNotesSaved": {
     "message": "Saved locally."

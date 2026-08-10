@@ -4914,8 +4914,8 @@
   "statusOpenWorkspaceFail": {
     "message": "تعذّر فتح مساحة العمل الكاملة. حاول مرة أخرى."
   },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
+  "statusPerKeyResetTpl": {
+    "message": "تمت إعادة تعيين {key} إلى الافتراضي."
   },
   "statusPerKeyResetFail": {
     "message": "Could not reset"

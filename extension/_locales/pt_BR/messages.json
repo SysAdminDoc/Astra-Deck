@@ -4914,8 +4914,8 @@
   "statusOpenWorkspaceFail": {
     "message": "Não foi possível abrir o espaço de trabalho completo. Tente novamente."
   },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
+  "statusPerKeyResetTpl": {
+    "message": "{key} redefinido para o padrão."
   },
   "statusPerKeyResetFail": {
     "message": "Could not reset"

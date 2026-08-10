@@ -4914,8 +4914,8 @@
   "statusOpenWorkspaceFail": {
     "message": "完全なワークスペースを開けませんでした。再試行してください。"
   },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
+  "statusPerKeyResetTpl": {
+    "message": "{key} を既定値にリセットしました。"
   },
   "statusPerKeyResetFail": {
     "message": "Could not reset"
