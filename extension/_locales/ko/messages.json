@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "동영상 숨기기 필터가 {total}개 중 {count}개에 일치하여 그대로 표시했습니다."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "각 숨긴 카드 옆에 어떤 로컬 규칙이 일치했는지 설명하는 짧은 메모를 표시합니다."
   },

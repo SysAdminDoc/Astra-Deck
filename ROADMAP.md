@@ -190,16 +190,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P2 — The v4.58.1 fail-open invariant stops at hideCollaborations: Video Hider's auto-rules got wider surfaces and still have no ratio bail
-  Category: reliability
-  Where: `extension/features/video-hider/index.js` (no ratio guard anywhere); the invariant implementation lives only in `extension/ytkit.js:17163-17193` (`_MAX_HIDDEN_RATIO`/`_RATIO_GUARD_MIN_CARDS` inside hideCollaborations)
-  Problem: The repo's own invariant (CLAUDE.md 2026-08-09: "a feed filter that would hide >25% of a >=8-card feed must fail open, reveal what it hid, and log it — any future feed-hiding feature gets the same treatment") was never applied to Video Hider's rule-driven hides (keyword, low-view, watched-ratio, predicate DSL, blocked channels), and the in-flight diff widens their reach to watch-sidebar lockup cards and `/playlist` pages including Watch Later (scope `other`, default enabled). All auto sub-filters default off, so out-of-the-box nothing mass-hides — but one over-matching user rule now silently empties a playlist with no bail, and only Video Hider hides get the "Explain hidden cards" annotation.
-  Evidence: grepped `_MAX_HIDDEN_RATIO|failOpen|0.25` across module + monolith — present only in hideCollaborations.
-  Fix: apply the ratio-bail (or at minimum the DiagnosticLog + reveal) to `_processAllVideos` batch results for rule-driven (non-manual) hides, reusing the hideCollaborations constants; manual per-video/channel hides stay exempt.
-  Acceptance: a fixture feed where a keyword rule matches >25% of ≥8 cards fails open with a logged reveal; manual hides are unaffected; test drives the real batch path.
-  Confidence: Verified (guard absence)
-  Effort: M
-
 - [ ] P2 — The v4.58.3/4 persistence fixes and CC control are covered by source-text pins only
   Category: testing
   Where: `tests/features/settings-panel.test.js:178-227`, `tests/features/player-dock.test.js:31-45`

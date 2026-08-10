@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "Фильтры скрытия видео совпали с {count} из {total} карточек, поэтому они остались видимыми."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "Показывать рядом с каждой скрытой карточкой небольшую заметку с объяснением, какое локальное правило сработало."
   },

@@ -18564,6 +18564,44 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _processAllDebounceTimer: null,
             _chipSecondPassTimer: null,
+            // v4.58.1 invariant, extended to the rule-driven filters: a feed
+            // filter that would hide more than a quarter of a reasonably sized
+            // feed is misfiring, so it must fail OPEN, reveal what it hid and
+            // say so. Only the HEURISTIC reasons are guarded - keyword,
+            // duration and predicate rules are the ones that silently empty a
+            // feed when a rule over-matches. Deliberate choices are exempt:
+            // manual hides, blocked channels, marked-watched, and allowlist
+            // mode, where hiding everything unlisted is the entire point.
+            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate']),
+            _MAX_RULE_HIDDEN_RATIO: 0.25,
+            _RATIO_GUARD_MIN_CARDS: 8,
+            _lastRuleHideGuard: null,
+            _enforceRuleHideRatioGuard(cards) {
+                if (!Array.isArray(cards) || cards.length < this._RATIO_GUARD_MIN_CARDS) return false;
+                const guarded = this._RULE_HIDE_REASONS;
+                const overreaching = cards.filter((el) => {
+                    const reason = el?.dataset?.ytkitFilterReason;
+                    return !!reason
+                        && guarded.includes(reason)
+                        && el.classList?.contains?.('ytkit-video-hidden');
+                });
+                if (overreaching.length / cards.length <= this._MAX_RULE_HIDDEN_RATIO) {
+                    this._lastRuleHideGuard = null;
+                    return false;
+                }
+                for (const el of overreaching) this._applyVideoHiddenState(el, false);
+                this._lastRuleHideGuard = { hidden: overreaching.length, total: cards.length };
+                const message = `refused to hide ${overreaching.length}/${cards.length} cards by rule`;
+                try { DiagnosticLog?.record?.('videoHider', message); } catch (e) { void e; }
+                DebugManager.log('VideoHider', `Rule filter bailed: ${message}`);
+                try {
+                    showToast?.(t('videoHiderRuleGuardTpl',
+                        'Video Hider filters matched {count} of {total} cards, so they were left visible.')
+                        .replace('{count}', String(overreaching.length))
+                        .replace('{total}', String(cards.length)), undefined, { tone: 'warning' });
+                } catch (e) { void e; }
+                return true;
+            },
             _processAllVideos() {
                 // Clear pending batch to prevent race with MutationObserver
                 this._clearBatchBuffer?.();
@@ -18579,6 +18617,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return;
                 }
                 videos.forEach(el => this._processVideoElement(el));
+                this._enforceRuleHideRatioGuard(Array.from(videos));
                 this._updatePageActionButtons();
             },
             _processAllVideosDebounced(delay = 300) {

@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "I filtri di Video Hider hanno coinciso con {count} schede su {total}, quindi sono rimaste visibili."
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "Mostra una breve nota accanto a ogni scheda nascosta per spiegare quale regola locale ha trovato una corrispondenza."
   },

@@ -5766,6 +5766,9 @@
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRuleGuardTpl": {
+    "message": "视频隐藏过滤器匹配了 {total} 张卡片中的 {count} 张，因此它们保持可见。"
+  },
   "videoHiderShowFilterReasonDesc": {
     "message": "在每张隐藏卡片旁显示一条小提示，说明匹配的是哪条本地规则。"
   },

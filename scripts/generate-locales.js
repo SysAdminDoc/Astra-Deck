@@ -48,6 +48,7 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Video-Ausblender-Filter trafen {count} von {total} Karten und wurden daher sichtbar gelassen.",
   "Canonical — sponsor.ajay.app": "Kanonisch — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Spiegel — sponsorblock.kavin.rocks",
   "Dim Strength": "Abdunklungsstärke",
@@ -260,6 +261,7 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Los filtros del ocultador de vídeos coincidieron con {count} de {total} tarjetas, por lo que se dejaron visibles.",
   "Canonical — sponsor.ajay.app": "Canónico — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Espejo — sponsorblock.kavin.rocks",
   "Dim Strength": "Intensidad de atenuación",
@@ -460,6 +462,7 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Фильтры скрытия видео совпали с {count} из {total} карточек, поэтому они остались видимыми.",
   "Canonical — sponsor.ajay.app": "Канонический — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Зеркало — sponsorblock.kavin.rocks",
   "Dim Strength": "Сила затемнения",
@@ -660,6 +663,7 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Les filtres du masqueur de vidéos ont ciblé {count} cartes sur {total} : elles restent visibles.",
   "Canonical — sponsor.ajay.app": "Canonique — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Miroir — sponsorblock.kavin.rocks",
   "Dim Strength": "Intensité d’assombrissement",
@@ -858,6 +862,7 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "I filtri di Video Hider hanno coinciso con {count} schede su {total}, quindi sono rimaste visibili.",
   "Canonical — sponsor.ajay.app": "Canonico — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Mirror — sponsorblock.kavin.rocks",
   "Dim Strength": "Intensità oscuramento",
@@ -1049,6 +1054,7 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Os filtros do ocultador de vídeos corresponderam a {count} de {total} cards, então eles foram mantidos visíveis.",
   "Canonical — sponsor.ajay.app": "Canônico — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Espelho — sponsorblock.kavin.rocks",
   "Dim Strength": "Intensidade do escurecimento",
@@ -1240,6 +1246,7 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "動画非表示のフィルターが {total} 件中 {count} 件に一致したため、表示を維持しました。",
   "Canonical — sponsor.ajay.app": "正規 — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "ミラー — sponsorblock.kavin.rocks",
   "Dim Strength": "暗くする強さ",
@@ -1434,6 +1441,7 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  "Video Hider filters matched {count} of {total} cards, so they were left visible.": "동영상 숨기기 필터가 {total}개 중 {count}개에 일치하여 그대로 표시했습니다.",
   "Canonical — sponsor.ajay.app": "정규 — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "미러 — sponsorblock.kavin.rocks",
   "Dim Strength": "어둡게 하기 강도",

@@ -18,6 +18,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Video Hider's keyword, duration and predicate filters now refuse to hide
+  more than a quarter of a feed. A rule that over-matches leaves the cards
+  visible and says so instead of silently emptying the page. Hides you chose
+  yourself - single videos, blocked channels, watched markers and allowlist
+  mode - are never second-guessed.
 - Release preparation now runs the full verification suite and re-derives the
   userscript bundle before certifying a release, so an unsynced module can no
   longer ship a stale bundle to userscript installs.
