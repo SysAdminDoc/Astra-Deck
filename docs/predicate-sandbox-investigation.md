@@ -1,6 +1,9 @@
 # Advanced Local Predicate Sandbox — Investigation
 
-> Status: investigation. Default off. Not yet enabled in any shipped feature.
+> Status: SHIPPED. Default off, opt-in per user. The evaluator in
+> `extension/core/predicate-sandbox.js` backs the Video Hider advanced filter:
+> a compiled predicate contributes the `predicate` hide reason, which the
+> rule-ratio guard can bail on like any other heuristic rule.
 > Scope: v3.25.0 BlockTube parity work.
 > Settings keys: `advancedLocalPredicate` (boolean, default off),
 > `advancedLocalPredicateCode` (string, default empty, capped 20000 chars).

@@ -134,13 +134,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: a "changed from defaults" view lists every non-default key with its current and default value, is copyable into a bug report, and is included in the diagnostics bundle.
   Complexity: S
 
-- [ ] P3 — Clear the references the companion split left behind
-  Why: a published design doc and a local audit-tooling config both point at code that no longer exists, so the doc misinforms the next reader and two audit tasks silently scan nothing.
-  Evidence: `docs/predicate-sandbox-investigation.md` says the sandbox is "not yet enabled in any shipped feature" while `extension/core/predicate-sandbox.js` is the live DSL evaluator behind Video Hider; `.factory/audit-workflow.js:94-100` (gitignored, local tooling) still targets `astra_downloader/astra_downloader.py` for its security and threading audits.
-  Touches: `docs/predicate-sandbox-investigation.md`, `.factory/audit-workflow.js`
-  Acceptance: the predicate-sandbox doc describes the shipped wiring; no file in `docs/` or `extension/` references a path that left in `a6bb685f` as if it were current; the two audit tasks target extension paths.
-  Complexity: S
-
 - [ ] P1 — Restore a clean dependency-security gate for Firefox tooling
   Why: npm run check is not green even though production dependencies pass audit. The failing chain is development-only, but it is part of the release and verification path.
   Evidence: [image-size ICNS advisory](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr), [image-size JXL/HEIF advisory](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq), and the verified local graph web-ext 10.6.0 → addons-linter 10.10.0 → image-size 2.0.2; npm audit fix --force proposes a breaking web-ext 5.5.0 downgrade.
