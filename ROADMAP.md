@@ -402,16 +402,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
 
 ### Follow-up findings — 2026-08-10 (user-reported: hide "X" button missing from thumbnails)
 
-- [ ] P2 — Add a capture-driven resolution-rate regression gate for card discovery
-  Category: testing
-  Where: new test beside `tests/features/video-hider.test.js`; fixture source `scripts/build-selector-fixtures.js`; the two gitignored captures at repo root are the raw material
-  Problem: Nothing asserts that the discovery chain (`_VIDEO_SELECTORS` → `_findThumbnailContainer` → `_extractVideoId` → hover-anchor coverage) resolves on real current YouTube markup. That is why the lockup migration blinded the watch sidebar (0/21) with every gate green, why the missing button shipped in a published release, and why the v4.58.5/6 session had to iterate blind (hover selectors added, then always-visible forced). The existing quick-hide test (`tests/features/video-hider.test.js:191-249`) drives a hand-built fake card, which cannot notice YouTube drift.
-  Evidence: grep of tests/ finds no capture/fixture-driven discovery assertion for video-hider; the empirical 0/21 → 21/21 split above was produced in minutes from the existing captures, proving the check is cheap.
-  Fix: extract sanitized card-DOM fixtures from both captures via the existing `build-selector-fixtures.js` pipeline (committed fixtures, not the gitignored mhtml — strip PHI/channel identity per repo fixture conventions), then a test that computes, per fixture surface: cards matched, thumbnail containers resolved, video ids resolved, and hover-anchor coverage — failing under 100% on known surfaces. Bait-verify by removing `yt-lockup-view-model` from `_VIDEO_SELECTORS` (must fail 0/21 on the watch fixture) before keeping.
-  Acceptance: the new test fails against v4.58.2's selector list and passes against the landed tree; refreshing a capture and rebuilding fixtures is a documented one-command step so the gate tracks future YouTube drift.
-  Confidence: Verified (gap + method)
-  Effort: M
-
 ### Unaudited — needs a pass (scope records, not implementable as-is)
 
 - [ ] P3 — Unaudited this pass (2026-08-10): live-browser behavior on real YouTube (all findings above are from source trace, fixtures, and headless renders — no logged-in youtube.com session was driven); the Firefox runtime lane beyond `check:firefox`/`smoke:firefox` static+startup coverage; the popup rendered in a real extension context (audits are static + code trace); `theater-split.user.js` and `YT_Reaction_Spammer.user.js` contents (only their gate coverage was audited); `HARDENING.md`/`SECURITY.md` doc accuracy against current code; the `archive/` and `mhtml/` directories; CRX/XPI packaging internals beyond what the gates assert.
