@@ -5406,9 +5406,14 @@ return response;
     function getSettingsPanelRuntime() {
         if (!_settingsPanelRuntimeReady) return null;
         if (_settingsPanelRuntimeInitialized) return _settingsPanelRuntime;
-        _settingsPanelRuntimeInitialized = true;
         const factory = globalThis.YTKitFeatures?.settingsPanel?.createSettingsPanelRuntime;
+        // Latch only once a factory actually exists. In the extension the
+        // deferred feature modules are imported AFTER ytkit.js, so an early
+        // caller (isSettingsPanelOpen during init) used to memoise null for the
+        // whole session and every panel fell back to the inline copy — which is
+        // why panel changes had to be written twice and drifted apart.
         if (typeof factory !== 'function') return null;
+        _settingsPanelRuntimeInitialized = true;
         try {
             _settingsPanelRuntime = factory({
                 BRAND,
