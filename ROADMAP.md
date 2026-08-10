@@ -200,25 +200,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P2 — Live-chat per-message verdicts and author initials survive renderer recycling
-  Category: correctness
-  Where: `extension/features/live-chat/index.js:236-257` (`scanMessageFilters` signature early-return), `:200-214` (`scanPremiumMessages` enhanced-marker skip); enhanced-marker twin `extension/ytkit.js:15493,15880`
-  Problem: The filter signature encodes settings only (hideBots + keyword list), not message content; the premium scan skips `[data-ytkit-livechat-enhanced]` nodes outright. If live chat recycles `yt-live-chat-text-message-renderer` nodes (the same Polymer pool behavior this repo documented for `<video>` and card renderers), a recycled keyword-hidden node keeps `display:none` for its new innocent content (messages silently vanish), a clean verdict sticks to content that should be filtered, and the fallback avatar initial goes stale for the new author. Only the feature-disable restore paths clear the markers.
-  Evidence: traced both scan paths and the marker lifecycle; recycling in the live-chat iframe not directly observed this pass.
-  Fix: fold an author+text hash into the signature (compare a stored content stamp; re-evaluate on mismatch), and recompute `ytkitAuthorInitial` when `#author-name` text differs from the stamped value — the titleNormalization content-keyed pattern is the in-repo reference.
-  Acceptance: a fixture test that rebinds new text/author into a marked node re-evaluates it (hidden→shown and shown→hidden both covered).
-  Confidence: Needs-repro (mechanism traced; recycling behavior in the chat iframe unconfirmed)
-  Effort: S
-
-- [ ] P3 — Settings-import transaction: concurrent run()/undo() can silently revert a just-applied import
-  Category: reliability
-  Where: `extension/core/settings-import-transaction.js:30-45` (finalize), `:98-124` (undo)
-  Problem: `checkpoint` is shared mutable state; `undo()`'s async settle nulls it unconditionally and `run()`'s finalize overwrites it unconditionally. Clicking the seconds-long Undo toast and starting a new import while the restore write is in flight can (a) wipe the new import's checkpoint and (b) land the undo's restore flush after the new import's apply flush — final storage = pre-import snapshot while the UI reports success. Single-transaction paths are correct; only cross-operation interleaving is unguarded.
-  Fix: generation token on settle/finalize (`if (checkpoint === expected)`) and serialize run/undo through one promise chain.
-  Acceptance: an interleaving test (undo settle delayed past a second run) preserves the second import's checkpoint and final state.
-  Confidence: Likely (interleaving traced; needs a UI-level race to trigger)
-  Effort: M
-
 - [ ] P3 — `toTrustedHTML` is a sanitization-free Trusted Types launderer exposed to all feature code
   Category: security (hardening, no current exploit)
   Where: `extension/core/trusted-html.js:9-33`; re-exposed via `extension/ytkit.js:1661-1673`

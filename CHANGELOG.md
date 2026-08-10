@@ -18,6 +18,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Live chat no longer keeps a filtered message hidden after the chat reuses
+  that row for a new message, and the fallback avatar letter follows the
+  current author.
+- Undoing an import while starting another one can no longer leave your
+  settings at the pre-import state while reporting the new import succeeded.
 - The storage notice now reports how much data Astra Deck is holding and
   suggests trimming the largest lists, instead of warning about a ceiling
   that does not exist and pointing at a full reset.

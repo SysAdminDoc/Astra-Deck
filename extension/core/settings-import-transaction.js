@@ -4,6 +4,7 @@
     function createSettingsImportTransaction(options = {}) {
         const now = typeof options.now === 'function' ? options.now : () => Date.now();
         let checkpoint = null;
+        let operationGeneration = 0;
 
         function validateOperation(operation) {
             if (!operation || typeof operation !== 'object') throw new TypeError('Import operation is required');
@@ -27,13 +28,20 @@
             }
 
             const createdAt = now();
+            const generation = ++operationGeneration;
             const finalize = (value) => {
-                checkpoint = {
-                    snapshot,
-                    summary: operation.summary || null,
-                    restore: operation.restore,
-                    createdAt
-                };
+                // Only the newest operation owns the checkpoint. Without this,
+                // an undo still settling from the previous import could clear
+                // the checkpoint this import just wrote.
+                if (generation === operationGeneration) {
+                    checkpoint = {
+                        snapshot,
+                        summary: operation.summary || null,
+                        restore: operation.restore,
+                        createdAt,
+                        generation
+                    };
+                }
                 return {
                     ok: true,
                     phase: 'applied',
@@ -101,7 +109,10 @@
             // The checkpoint is only cleared once the restore writes confirm;
             // a failed undo must stay retryable.
             const settle = () => {
-                checkpoint = null;
+                // Clear only the checkpoint this undo was started for: a new
+                // import may have written its own while the restore was in
+                // flight, and wiping that one would strand it with no recovery.
+                if (checkpoint === active) checkpoint = null;
                 return {
                     ok: true,
                     phase: 'undone',

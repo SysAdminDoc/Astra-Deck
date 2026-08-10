@@ -32,3 +32,30 @@ test('live-chat popout and subscribe-tooltip matches are not English-only', () =
     assert.match(tooltip, /people will be able to see that you subscribe to this channel/,
         'the English phrase stays as a fallback for other layouts');
 });
+
+test('recycled chat renderers re-evaluate instead of keeping the previous message verdict', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'live-chat', 'index.js'), 'utf8');
+
+    // Live chat recycles yt-live-chat-text-message-renderer nodes the same way
+    // the feed recycles card renderers. A settings-only signature let a
+    // recycled node keep the verdict computed for the message it used to hold,
+    // so a hidden node stayed hidden over innocent new text.
+    const scanStart = source.indexOf('function scanMessageFilters()');
+    const scanBody = source.slice(scanStart, source.indexOf('function createReactionController'));
+    assert.match(scanBody, /const settingsSignature = /,
+        'the settings part of the signature must be named separately');
+    assert.match(scanBody, /const signature = `\$\{settingsSignature\}[\s\S]{0,80}\$\{author\}/,
+        'the per-message signature must include the author');
+    assert.match(scanBody, /text\.slice\(0, 120\)/,
+        'the per-message signature must include the message text');
+    assert.ok(scanBody.indexOf('const signature =') > scanBody.indexOf('const author ='),
+        'the signature must be computed after reading the content it covers');
+
+    const premiumStart = source.indexOf('function scanPremiumMessages()');
+    const premiumBody = source.slice(premiumStart, source.indexOf('function scanMessageFilters'));
+    assert.doesNotMatch(premiumBody, /renderer:not\(\[data-ytkit-livechat-enhanced\]\)/,
+        'skipping every marked node leaves a recycled node showing the previous author initial');
+    assert.match(premiumBody, /ytkitLivechatAuthor === author/,
+        'the premium scan must re-derive when the author changes');
+});
