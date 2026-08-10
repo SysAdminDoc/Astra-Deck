@@ -180,16 +180,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P1 — Settings-panel module runtime never runs in the extension: the memoize-null latch fires before the deferred module registers
-  Category: correctness (architecture)
-  Where: `extension/ytkit.js:5406-5411` (`getSettingsPanelRuntime` latches `_settingsPanelRuntimeInitialized = true` before the `typeof factory !== 'function'` check), `:45187` (`_settingsPanelRuntimeReady = true` at monolith top-level), `extension/runtime-bootstrap.js:260-273` (deferred feature imports run after `runtime-core-loader.mjs`, which imports ytkit.js last)
-  Problem: ytkit.js finishes executing (ready=true) before `features/settings-panel/index.js` registers its factory; the first `getSettingsPanelRuntime()` call in that window latches `_settingsPanelRuntime = null` for the whole session, so the ytkit.js inline fallback builds every panel and the peeled module only ever reaches userscript users. Consequence: every settings-panel change must be hand-mirrored in both copies forever (the v4.58.3 persistence fix had to be), and drift between them is the defect class that shipped five dead controls in v4.50.7.
-  Evidence: empirically proven 2026-08-09 by stamping `panel.dataset.panelSource` in both copies — the smoke read `monolith` (CLAUDE.md v4.58.0 notes); code unchanged since (`_settingsPanelRuntimeReady` predates that proof — commit d698d948). Documented in CLAUDE.md but tracked nowhere; the related `Roadmap_Blocked.md` "one canonical implementation per extracted feature" item is browser-gated structural work, this is a one-line ordering fix.
-  Fix: move the `_settingsPanelRuntimeInitialized = true` assignment below the `typeof factory !== 'function'` early return (so a pre-registration call returns null without latching). This silently swaps the live panel implementation from monolith fallback to module — so verify: re-stamp `panelSource` in both copies temporarily, run `npm run smoke:settings-overlay`, and confirm the module copy renders identically (the smoke's 6 states + `CATEGORY_PARITY_CHECKS`) before shipping.
-  Acceptance: a temporary `panelSource` stamp read by the smoke reports `module` in the extension lane; all settings-overlay smoke states and the full suite pass.
-  Confidence: Verified (defect); the swap needs the described verification
-  Effort: S code / M verification
-
 - [ ] P2 — Summarizer capability probe checks an API shape the features never use — working features render "unavailable"
   Category: correctness
   Where: `extension/core/capability-probe.js:45-56` vs `extension/ytkit.js:41254,42202-42203,42230` and `extension/features/subscription-groups/index.js:1803`
