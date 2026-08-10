@@ -230,26 +230,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified (guard absence)
   Effort: M
 
-- [ ] P2 — Light theme: the settings panel's primary "Done" button renders white-on-pale-gray (illegible)
-  Category: visual
-  Where: `extension/core/settings-visual-system.js` — light-lane rule (~line 1978-1983) `html:not([dark]) #ytkit-settings-panel … .ytkit-footer-actions .ytkit-btn { background: rgba(238,241,245,0.98) !important }` vs `.ytkit-btn-primary { background: …accent… !important; color: #fff !important }` (~1192-1198, 1968-1971)
-  Problem: The light-lane `.ytkit-btn` background override (specificity 1,3,1 with `html:not([dark])`) also matches the primary button and beats the primary's accent background (1,2,0), while `color: #fff !important` survives — the primary action renders white text on near-white. Observed in the rendered smoke: `build/settings-overlay-smoke/desktop-light-category-*.png` bottom-right.
-  Evidence: rendered screenshots (desktop-light states, 2026-08-10) + specificity trace above. The smoke's own checks pass because they assert presence/focusability, not contrast.
-  Fix: exclude the primary from the light-lane neutral rule (`.ytkit-btn:not(.ytkit-btn-primary)`) or add an explicit `html:not([dark]) … .ytkit-btn-primary` rule keeping the accent fill. Edit the v4 visual system only (the ytkit.js panel layers are inert — CLAUDE.md v4.56.0).
-  Acceptance: `npm run smoke:settings-overlay` light states show the Done button with accent background; `npm run probe:panel-colors` reports the accent fill for the footer primary in the light lane.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — Light theme: the Video Hider pane body stays dark inside the light panel
-  Category: visual
-  Where: the `.ytkit-vh-pane` styles (settings-panel module + ytkit.js monolith copy; zero `html:not([dark])` rules exist for `ytkit-vh-*` — grep-confirmed)
-  Problem: In light mode the panel shell, sidebar and header go light, but the entire Video Hider pane content (tab strip, "No hidden videos yet" card, "Add Hidden Video" card) keeps hardcoded dark surfaces — dark islands on a white panel. Readable but visibly broken against every sibling pane.
-  Evidence: rendered `build/settings-overlay-smoke/desktop-light-category-video-hider.png` (2026-08-10) vs `desktop-light-category-playback.png`; `grep -c "html:not(\[dark\]).*ytkit-vh"` = 0 in both copies.
-  Fix: restyle the pane on the panel's `--ytkit-v3-*` tokens (which the light lane already redefines) instead of hardcoded dark colors; keep edits in the v4 visual system / pane builder in BOTH copies (module + monolith) + `node sync-userscript.js`. Related to (not covered by) the tracked P3 light-theme burndown: this is a new v4.58.0 surface inside the flagship panel, not a legacy accepted one.
-  Acceptance: the light smoke render shows the pane on light surfaces with AA-readable text; dark render unchanged.
-  Confidence: Verified
-  Effort: S–M
-
 - [ ] P2 — Companion-port HTML load-order gate passes when the anchor script is deleted
   Category: testing (gate integrity)
   Where: `scripts/check-companion-port-catalogue.js:114-118`

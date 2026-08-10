@@ -1979,8 +1979,17 @@
         html:not([dark]) #ytkit-settings-panel .ytkit-command-search,
         html:not([dark]) #ytkit-settings-panel .ytkit-select,
         html:not([dark]) #ytkit-settings-panel .ytkit-input,
-        html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn {
+        /* :not(.ytkit-btn-primary) — this light-lane rule carries a higher
+           specificity than the primary button's accent fill, so without the
+           exclusion the Done button painted itself pale grey while keeping
+           color:#fff, i.e. white text on near-white. */
+        html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:not(.ytkit-btn-primary) {
             background: rgba(238,241,245,0.98) !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
+            background: linear-gradient(135deg, var(--ytkit-v3-accent-fill), #ef3c35) !important;
+            color: #fff !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-sidebar {
