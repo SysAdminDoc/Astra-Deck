@@ -56,7 +56,13 @@
             _ccButton: null,
             _getNativeCcButton() {
                 if (typeof document === 'undefined') return null;
-                return document.querySelector('#movie_player .ytp-subtitles-button, .ytp-subtitles-button');
+                // Two queries, not a selector list: a list resolves in DOCUMENT
+                // order, so the unscoped fallback would win whenever the inline
+                // hover-preview player (which precedes ytd-page-manager) has an
+                // instantiated subtitles button — mirroring and toggling
+                // captions on a hidden player instead of the watch player.
+                return document.querySelector('#movie_player .ytp-subtitles-button')
+                    || document.querySelector('.ytp-subtitles-button');
             },
             _syncCcButton() {
                 const button = this._ccButton;
@@ -77,6 +83,12 @@
             _watchCcState() {
                 this._ccObserver?.disconnect();
                 this._ccObserver = null;
+                // Nothing to mirror without our own button: the navigate rule
+                // runs on every route, and the home feed's inline preview player
+                // also owns a .ytp-right-controls, so without this guard every
+                // non-watch navigation re-attached a subtree observer whose
+                // callback had no button to sync.
+                if (!this._ccButton) return;
                 const rightControls = typeof document !== 'undefined'
                     ? document.querySelector('.ytp-right-controls')
                     : null;

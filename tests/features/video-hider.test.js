@@ -154,7 +154,7 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
     }
 });
 
-test('Video Hider processes current card hosts and keeps the red thumbnail control visible', () => {
+test('Video Hider processes current card hosts and keeps the thumbnail control mounted', () => {
     for (const [label, source] of [
         ['module', MODULE_SOURCE],
         ['monolith', sources.ytkit],
@@ -172,10 +172,26 @@ test('Video Hider processes current card hosts and keeps the red thumbnail contr
 
         const styleStart = source.indexOf('.ytkit-video-hide-btn {');
         const buttonStyle = source.slice(styleStart, styleStart + 1600);
-        assert.match(buttonStyle, /background:\s*rgba\(220,\s*38,\s*38,\s*0\.96\)\s*!important/,
-            `${label} should render the hide control red without waiting for hover`);
+        // The control stays mounted (that is the whole point of the v4.58.6
+        // fix) but idles neutral on the INLINE-START corner: the top-end corner
+        // is YouTube's own hover overlay, and a feed of permanently red dots
+        // reads as damage rather than as a control.
         assert.match(buttonStyle, /opacity:\s*1\s*!important/,
             `${label} should keep the hide control visibly mounted`);
+        assert.match(buttonStyle, /inset-inline-start:\s*8px\s*!important/,
+            `${label} should place the hide control clear of YouTube's own overlay corner`);
+        assert.doesNotMatch(buttonStyle, /background:\s*rgba\(220,\s*38,\s*38/,
+            `${label} should not paint the destructive tint at idle`);
+
+        const hoverStart = source.indexOf('.ytkit-video-hide-btn:hover');
+        const hoverStyle = source.slice(hoverStart, hoverStart + 400);
+        assert.match(hoverStyle, /background:\s*rgba\(220,\s*38,\s*38,\s*0\.96\)\s*!important/,
+            `${label} should reveal the destructive tint on hover/focus`);
+
+        // The hover-reveal rules the always-visible control superseded must be
+        // gone, not left behind reading as if hover-reveal still governs.
+        assert.doesNotMatch(source, /:hover \.ytkit-video-hide-btn \{ opacity: 1; \}/,
+            `${label} should not retain dead hover-reveal rules for the hide control`);
     }
 });
 
@@ -922,4 +938,58 @@ test('isMovie and isAutoDubbed match localised metadata, not just English', () =
         assert.equal(plain.isMovie, false, `plain row must not match isMovie: ${row}`);
         assert.equal(plain.isAutoDubbed, false, `plain row must not match isAutoDubbed: ${row}`);
     }
+});
+
+test('Video Hider processes a nested lockup card once, not once per matching host', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState: { settings: {} }
+    });
+
+    // Current feeds render ytd-rich-item-renderer > yt-lockup-view-model, and
+    // both tags are scanned, so without the guard every card is extracted,
+    // predicate-evaluated and painted twice per pass.
+    const makeHost = (tagName, parent) => {
+        const node = { tagName, dataset: {}, parentElement: parent || null };
+        node.closest = (selector) => {
+            let cursor = node;
+            while (cursor) {
+                if (selector.split(',').some(part => part.trim().toLowerCase() === cursor.tagName.toLowerCase())) {
+                    return cursor;
+                }
+                cursor = cursor.parentElement;
+            }
+            return null;
+        };
+        return node;
+    };
+
+    const outer = makeHost('ytd-rich-item-renderer', null);
+    const inner = makeHost('yt-lockup-view-model', outer);
+
+    assert.equal(feature._isNestedCardHost(outer), false,
+        'the outer card host owns the verdict and must be processed');
+    assert.equal(feature._isNestedCardHost(inner), true,
+        'the inner lockup of an already-scanned card must be skipped');
+
+    const standalone = makeHost('yt-lockup-view-model', null);
+    assert.equal(feature._isNestedCardHost(standalone), false,
+        'a bare lockup card (watch sidebar) has no scanned ancestor and must be processed');
+
+    const processed = [];
+    feature._isScopeEnabledForPath = () => true;
+    feature._extractVideoId = () => 'A1234567890';
+    feature._shouldHide = () => false;
+    feature._applyVideoHiddenState = (el) => { processed.push(el.tagName); return false; };
+    feature._applyMarkedWatchedState = () => {};
+    feature._syncQuickHideButton = () => {};
+    feature._syncMarkWatchedButton = () => {};
+
+    feature._processVideoElement(outer);
+    feature._processVideoElement(inner);
+    assert.deepEqual(processed, ['ytd-rich-item-renderer'],
+        'only the outer host should reach the hidden-state pass');
+
+    assert.equal(feature._processVideoElementWithResult(inner), false,
+        'the result-returning path must also skip nested hosts');
 });

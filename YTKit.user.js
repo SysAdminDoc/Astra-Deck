@@ -20010,7 +20010,17 @@
                     return Object.freeze(ctx);
                 },
 
+                _isNestedCardHost(element) {
+                    // Current feeds render ytd-rich-item-renderer > yt-lockup-view-model
+                    // (older layouts, > ytd-rich-grid-media). All of those tags are in
+                    // _VIDEO_SELECTORS so a card matches twice per pass; the outer host
+                    // owns the verdict, so the inner one is skipped rather than
+                    // re-running extraction and predicate evaluation on the same card.
+                    return !!element?.parentElement?.closest?.(this._VIDEO_SELECTORS);
+                },
+
                 _processVideoElement(element) {
+                    if (this._isNestedCardHost(element)) return;
                     element.dataset.ytkitHideProcessed = 'true';
                     const videoId = this._extractVideoId(element);
                     if (videoId) element.dataset.ytkitVideoId = videoId;
@@ -20028,6 +20038,7 @@
                 },
 
                 _processVideoElementWithResult(element) {
+                    if (this._isNestedCardHost(element)) return false;
                     element.dataset.ytkitHideProcessed = 'true';
                     const videoId = this._extractVideoId(element);
                     if (videoId) element.dataset.ytkitVideoId = videoId;
@@ -20389,14 +20400,21 @@
 
                 init() {
                     const css = `
+                        /* Both overlay controls sit on the INLINE-START corner and
+                           stay visible. Top-end is YouTube's own hover overlay
+                           (Watch Later / Add to queue); sharing that corner made
+                           the two controls trade places under the cursor. Idle is
+                           neutral so a feed of thumbnails doesn't read as a wall of
+                           red dots — the destructive tint arrives on hover/focus,
+                           when the click is actually imminent. */
                         .ytkit-video-hide-btn {
                             position: absolute !important;
                             top: 8px !important;
-                            right: 8px !important;
+                            inset-inline-start: 8px !important;
                             width: 28px;
                             height: 28px;
-                            background: rgba(220, 38, 38, 0.96) !important;
-                            border: 1px solid rgba(255, 255, 255, 0.32) !important;
+                            background: rgba(8, 11, 16, 0.86) !important;
+                            border: 1px solid rgba(255, 255, 255, 0.28) !important;
                             border-radius: 50%;
                             cursor: pointer;
                             display: flex !important;
@@ -20420,50 +20438,41 @@
                             color: #fff;
                             backdrop-filter: none;
                         }
-                        .ytkit-video-hide-btn:hover {
-                            background: rgba(185, 28, 28, 1) !important;
+                        .ytkit-video-hide-btn:hover,
+                        .ytkit-video-hide-btn:focus-visible {
+                            background: rgba(220, 38, 38, 0.96) !important;
                             border-color: rgba(255, 255, 255, 0.5) !important;
                             transform: scale(1.08);
                         }
                         .ytkit-video-hide-btn:focus-visible {
-                            opacity: 1;
                             outline: none;
                             box-shadow: var(--ytkit-focus-ring);
                         }
                         .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff !important; pointer-events: none; }
-                        ytd-rich-item-renderer:hover .ytkit-video-hide-btn,
-                        ytd-video-renderer:hover .ytkit-video-hide-btn,
-                        ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
-                        ytd-compact-video-renderer:hover .ytkit-video-hide-btn,
-                        yt-lockup-view-model:hover .ytkit-video-hide-btn { opacity: 1; }
                         .ytkit-video-mark-watched-btn {
                             position: absolute;
                             top: 8px;
-                            right: 42px;
+                            inset-inline-start: 42px;
                             width: 28px;
                             height: 28px;
-                            background: rgba(14, 116, 144, 0.82);
-                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            background: rgba(8, 11, 16, 0.86);
+                            border: 1px solid rgba(255, 255, 255, 0.28);
                             border-radius: 50%;
                             cursor: pointer;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                             z-index: ${Z.HIDE_BTN};
-                            opacity: 0;
+                            opacity: 1;
                             transition: opacity 180ms var(--ytkit-ease-out), background-color 180ms var(--ytkit-ease-out), border-color 180ms var(--ytkit-ease-out), transform 180ms var(--ytkit-ease-out);
                             padding: 0;
                             color: #fff;
                             backdrop-filter: none;
                         }
-                        .ytkit-video-mark-watched-btn:hover { background: rgba(8, 145, 178, 0.96); border-color: rgba(255, 255, 255, 0.2); transform: scale(1.08); }
-                        .ytkit-video-mark-watched-btn:focus-visible { opacity: 1; outline: none; box-shadow: var(--ytkit-focus-ring); }
+                        .ytkit-video-mark-watched-btn:hover,
+                        .ytkit-video-mark-watched-btn:focus-visible { background: rgba(8, 145, 178, 0.96); border-color: rgba(255, 255, 255, 0.4); transform: scale(1.08); }
+                        .ytkit-video-mark-watched-btn:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring); }
                         .ytkit-video-mark-watched-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
-                        ytd-rich-item-renderer:hover .ytkit-video-mark-watched-btn,
-                        ytd-video-renderer:hover .ytkit-video-mark-watched-btn,
-                        ytd-grid-video-renderer:hover .ytkit-video-mark-watched-btn,
-                        ytd-compact-video-renderer:hover .ytkit-video-mark-watched-btn,
-                        yt-lockup-view-model:hover .ytkit-video-mark-watched-btn { opacity: 1; }
                         .ytkit-video-marked-watched { opacity: 0.48 !important; filter: saturate(0.72); }
                         .ytkit-video-hidden { display: none !important; }
                         .ytkit-video-hidden-placeholder {
@@ -28225,7 +28234,13 @@
                 _ccButton: null,
                 _getNativeCcButton() {
                     if (typeof document === 'undefined') return null;
-                    return document.querySelector('#movie_player .ytp-subtitles-button, .ytp-subtitles-button');
+                    // Two queries, not a selector list: a list resolves in DOCUMENT
+                    // order, so the unscoped fallback would win whenever the inline
+                    // hover-preview player (which precedes ytd-page-manager) has an
+                    // instantiated subtitles button — mirroring and toggling
+                    // captions on a hidden player instead of the watch player.
+                    return document.querySelector('#movie_player .ytp-subtitles-button')
+                        || document.querySelector('.ytp-subtitles-button');
                 },
                 _syncCcButton() {
                     const button = this._ccButton;
@@ -28246,6 +28261,12 @@
                 _watchCcState() {
                     this._ccObserver?.disconnect();
                     this._ccObserver = null;
+                    // Nothing to mirror without our own button: the navigate rule
+                    // runs on every route, and the home feed's inline preview player
+                    // also owns a .ytp-right-controls, so without this guard every
+                    // non-watch navigation re-attached a subtree observer whose
+                    // callback had no button to sync.
+                    if (!this._ccButton) return;
                     const rightControls = typeof document !== 'undefined'
                         ? document.querySelector('.ytp-right-controls')
                         : null;
