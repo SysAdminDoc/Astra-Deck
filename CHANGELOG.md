@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+---
+
+## [4.59.0] - 2026-08-10
+
 ### Changed
 
 - The thumbnail hide control now idles as a neutral dark circle on the
