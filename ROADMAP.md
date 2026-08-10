@@ -180,36 +180,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P2 — Summarizer capability probe checks an API shape the features never use — working features render "unavailable"
-  Category: correctness
-  Where: `extension/core/capability-probe.js:45-56` vs `extension/ytkit.js:41254,42202-42203,42230` and `extension/features/subscription-groups/index.js:1803`
-  Problem: `hasSummarizerApi()` requires `globalThis.ai.Summarizer` (capital S under `ai`). Both consumers detect `window.Summarizer || window.ai?.summarizer`. The probe's shape matches neither — Chrome stable ships the global `Summarizer`; the retired origin-trial shape was lowercase `ai.summarizer`. On a browser where the features fully work, `settings-schema.js:697,703` (`requires: ["summarizerApi"]`) makes the popup render a permanent "unavailable" chip for `subscriptionAiTags` and `localAiSummary` ("Toggling the setting has no effect until the capability becomes available") — while toggling it does work.
-  Evidence: shapes compared in source; probe true is unreachable on stable Chrome.
-  Fix: `typeof globalThis.Summarizer === 'function' || typeof globalThis.ai?.summarizer !== 'undefined'`; fix the stale comment at settings-schema.js:56.
-  Acceptance: on Chromium ≥138 with `Summarizer` present, the popup chips for the two features show available; a unit test pins the probe against both modern and legacy shapes.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — `videoNotesSaveFailed` ships double-escaped `’`/`—` sequences as literal text in all 11 locales
-  Category: correctness (user-visible copy)
-  Where: `extension/_locales/en/messages.json` key `videoNotesSaveFailed` (and the same broken string propagated to all 10 non-EN locales)
-  Problem: The catalog message is `"Couldn\\u2019t save \\u2014 storage full or unavailable."` — double-escaped, so users see raw `Couldn’t save — …` in the Video Notes save-failure status. `t()` prefers the catalog over the correct inline fallback (`features/video-notes/index.js:160`), so the broken string always wins, everywhere.
-  Evidence: `node -e "console.log(require('./extension/_locales/en/messages.json').videoNotesSaveFailed.message)"` → `Couldn’t save — storage full or unavailable.`
-  Fix: put real ’ and — characters in EN, re-run `node scripts/generate-locales.js` + placeholder baseline; add a cheap gate greping all locale files for literal `\\u[0-9a-fA-F]{4}` sequences so this class cannot ship again.
-  Acceptance: the parsed message contains ’ and —; the new gate fails when a `\\uXXXX` literal is reintroduced (bait-test it).
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — Per-key reset toast lost its key token: every reset says "… reset to default." with no key name
-  Category: ux
-  Where: `extension/popup.js:3183-3184`; `extension/_locales/en/messages.json` key `statusPerKeyReset`
-  Problem: The inline fallback interpolates `${entry.key}`, but the catalog message is the tokenless `"… reset to default."` and the catalog wins in the extension — so every per-key reset in the Schema Overview shows the same context-free toast (which also visibly begins with a stray ellipsis). No locale can ever include the key.
-  Evidence: catalog message read directly; popup `t()` (popup.js:244-253) prefers catalog.
-  Fix: convert to `statusPerKeyResetTpl` carrying `{key}` + `.replace('{key}', entry.key)`; add to generate-locales tables before regenerating.
-  Acceptance: resetting a key toasts its name in EN and a sampled non-EN locale; check-i18n substitution gate covers the new Tpl key.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — EN catalog descriptions have drifted from what features actually do, and no gate can see it
   Category: correctness (settings copy) + testing
   Where: `extension/_locales/en/messages.json` `feature_*_desc` keys vs the inline literals in `extension/ytkit.js`; worst confirmed: `feature_hideAiSummary_desc` ("Remove AI-generated summaries and Ask AI buttons" — Ask AI is the separate `hideAskAi` toggle, cross-checked against distinct `body.ytkit-hideAskAi`/`body.ytkit-hideAiSummary` lanes in early.css:54-78); also `feature_playlistEnhancer_desc`, `feature_codecSelector_desc`, `feature_bulkCardActions_desc`, `feature_storageQuotaLRU_desc` (store list omits videoNotesData/bookmarks/watch-progress/watch-time — code at ytkit.js:34998), `feature_researchSpacedReview_desc`, plus scope drift on sbPerChannelProfiles, deArrowVoting, audioPan, restoreNativeYouTubeUi, localAiTranscriptQa, subscriptionGroups

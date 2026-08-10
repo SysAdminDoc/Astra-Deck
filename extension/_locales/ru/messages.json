@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "Насколько сильно затемнять плеер при обнаружении мерцающего контента."
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "Сила затемнения"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "Анализирует кадры локально и ненадолго затемняет плеер при резком скачке яркости."
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "Защита от вспышек"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "Минимальное изменение яркости кадра, запускающее защиту."
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "Чувствительность к вспышкам"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "Сколько секунд видео по запросу держать в буфере заранее. Большие значения переживают более длительные обрывы связи; плеер всё равно может ограничить очень большие значения на длинных видео."
@@ -1680,10 +1680,10 @@
     "message": "Показать оригинал при наведении"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "Показывает исходный заголовок под заменой DeArrow"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "Показывать исходный заголовок"
   },
   "feature_daTitleFormat_desc": {
     "message": "Как форматировать заменённые заголовки"
@@ -2964,25 +2964,25 @@
     "message": "Профили SponsorBlock по каналам"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "Выбирает основной HTTPS-хост для SponsorBlock и DeArrow."
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "Хост API SponsorBlock"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "Канонический — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "Отключено"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "Зеркало — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "Однократно пробует это одобренное зеркало, если основной хост недоступен."
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "Резервный хост SponsorBlock"
   },
   "feature_scrollToPlayer_desc": {
     "message": "Автоматическая прокрутка к верху страницы при переходе к новому видео"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "Обнаружен мерцающий контент — затемнено"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -4468,7 +4468,7 @@
     "message": "резерв {state}"
   },
   "spExternalHostTpl": {
-    "message": "host {host}"
+    "message": "хост {host}"
   },
   "spExternalKicker": {
     "message": "Интеграции"

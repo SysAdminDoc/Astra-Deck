@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "مدى تعتيم المشغل أثناء اكتشاف محتوى وامض."
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "شدة التعتيم"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "يحلل إطارات الفيديو محلياً ويعتم المشغل لفترة وجيزة عند اكتشاف تغيّر كبير في السطوع."
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "الحماية من الوميض الضوئي"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "أدنى تغيّر في سطوع الإطار يُفعّل الحماية."
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "حساسية الوميض"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "عدد الثواني التي يتم تخزينها مؤقتًا مسبقًا من فيديو عند الطلب. القيم الأعلى تتحمل انقطاعات اتصال أطول؛ وقد يظل المشغّل يحدّ من الأهداف الكبيرة جدًا في مقاطع الفيديو الطويلة."
@@ -1680,10 +1680,10 @@
     "message": "إظهار الأصلي عند التمرير"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "يعرض العنوان الأصلي أسفل بديل DeArrow"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "إظهار العنوان الأصلي"
   },
   "feature_daTitleFormat_desc": {
     "message": "كيفية تنسيق العناوين البديلة"
@@ -2964,25 +2964,25 @@
     "message": "ملفات SponsorBlock لكل قناة"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "يحدد مضيف HTTPS الأساسي المستخدم من SponsorBlock وDeArrow."
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "مضيف واجهة SponsorBlock"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "الأساسي — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "Disabled"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "مرآة — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "يجرّب هذه المرآة المعتمدة مرة واحدة عند فشل المضيف الأساسي."
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "مضيف SponsorBlock الاحتياطي"
   },
   "feature_scrollToPlayer_desc": {
     "message": "التمرير تلقائياً إلى أعلى الصفحة عند الانتقال إلى فيديو جديد"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "تم اكتشاف محتوى وامض — تم التعتيم"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -4468,7 +4468,7 @@
     "message": "الاحتياطي {state}"
   },
   "spExternalHostTpl": {
-    "message": "host {host}"
+    "message": "المضيف {host}"
   },
   "spExternalKicker": {
     "message": "عمليات الدمج"

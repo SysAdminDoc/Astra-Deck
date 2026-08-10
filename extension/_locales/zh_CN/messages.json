@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "检测到闪烁内容时播放器变暗的程度。"
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "变暗强度"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "在本地分析视频帧，检测到亮度大幅变化时短暂调暗播放器。"
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "光敏闪烁保护"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "触发保护所需的最小帧亮度变化。"
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "闪烁灵敏度"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "为点播视频提前缓冲多少秒。数值越大越能承受较长的断连；对于长视频，播放器仍可能限制过大的目标值。"
@@ -1680,10 +1680,10 @@
     "message": "悬停显示原始标题"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "在 DeArrow 替换标题下方显示原始标题"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "显示原始标题"
   },
   "feature_daTitleFormat_desc": {
     "message": "如何格式化替换标题"
@@ -2964,25 +2964,25 @@
     "message": "SponsorBlock 按频道配置"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "选择 SponsorBlock 和 DeArrow 使用的主 HTTPS 主机。"
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "SponsorBlock API 主机"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "正式 — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "Disabled"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "镜像 — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "当主 API 主机失败时，尝试一次此已批准的镜像。"
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "SponsorBlock 备用主机"
   },
   "feature_scrollToPlayer_desc": {
     "message": "导航到新视频时自动滚动到页面顶部"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "检测到闪烁内容 — 已调暗"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -4468,7 +4468,7 @@
     "message": "回退 {state}"
   },
   "spExternalHostTpl": {
-    "message": "host {host}"
+    "message": "主机 {host}"
   },
   "spExternalKicker": {
     "message": "集成"

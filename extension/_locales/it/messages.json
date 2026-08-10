@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "Quanto oscurare il player mentre viene rilevato contenuto lampeggiante."
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "Intensità oscuramento"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "Analizza i fotogrammi in locale e oscura brevemente il player quando rileva un forte salto di luminanza."
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "Protezione dai lampi luminosi"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "Variazione minima di luminanza che attiva la protezione."
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "Sensibilità ai lampi"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "Quanti secondi di un video on demand mantenere nel buffer in anticipo. Valori più alti resistono a cadute di connessione più lunghe; il player può comunque limitare obiettivi molto grandi sui video lunghi."
@@ -1680,10 +1680,10 @@
     "message": "Mostra originale al passaggio mouse"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "Mostra il titolo originale sotto la sostituzione DeArrow"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "Mostra il titolo originale"
   },
   "feature_daTitleFormat_desc": {
     "message": "Come formattare i titoli sostitutivi"
@@ -2964,13 +2964,13 @@
     "message": "Profili SponsorBlock per canale"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "Sceglie l’host HTTPS principale usato da SponsorBlock e DeArrow."
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "Host API SponsorBlock"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "Canonico — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "Disattivato"
@@ -2979,10 +2979,10 @@
     "message": "Mirror — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "Prova questo mirror approvato una volta se l’host principale non risponde."
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "Host di riserva SponsorBlock"
   },
   "feature_scrollToPlayer_desc": {
     "message": "Scorri automaticamente all'inizio della pagina quando navighi verso un nuovo video"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "Contenuto lampeggiante rilevato – oscurato"
   },
   "popupTitle": {
     "message": "Astra Deck"

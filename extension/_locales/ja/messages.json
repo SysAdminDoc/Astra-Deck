@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "点滅するコンテンツを検出している間、プレーヤーをどの程度暗くするか。"
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "暗くする強さ"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "フレームをローカルで解析し、輝度の急激な変化を検出するとプレーヤーを一時的に暗くします。"
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "光過敏性フラッシュ保護"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "保護を発動する最小のフレーム輝度変化。"
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "フラッシュ感度"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "オンデマンド動画を何秒先までバッファするか。値を大きくすると長い接続切断にも耐えられます。長時間の動画では、プレーヤーが大きな目標値を制限する場合があります。"
@@ -1680,10 +1680,10 @@
     "message": "ホバーで元のタイトルを表示"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "DeArrow の置き換えタイトルの下に元のタイトルを表示します"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "元のタイトルを表示"
   },
   "feature_daTitleFormat_desc": {
     "message": "置換タイトルのフォーマット方法"
@@ -2964,25 +2964,25 @@
     "message": "SponsorBlock チャンネル別プロファイル"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "SponsorBlock と DeArrow が使用する主要な HTTPS ホストを選択します。"
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "SponsorBlock API ホスト"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "正規 — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "無効"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "ミラー — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "主要 API ホストが失敗したとき、この承認済みミラーを一度試します。"
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "SponsorBlock 予備ホスト"
   },
   "feature_scrollToPlayer_desc": {
     "message": "新しい動画に移動したとき自動的にページ上部にスクロール"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "点滅するコンテンツを検出 — 暗くしました"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -4468,7 +4468,7 @@
     "message": "フォールバック {state}"
   },
   "spExternalHostTpl": {
-    "message": "host {host}"
+    "message": "ホスト {host}"
   },
   "spExternalKicker": {
     "message": "連携"

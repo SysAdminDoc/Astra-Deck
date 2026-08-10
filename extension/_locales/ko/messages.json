@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "깜박이는 콘텐츠가 감지되는 동안 플레이어를 얼마나 어둡게 할지 설정합니다."
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "어둡게 하기 강도"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "프레임을 로컬에서 분석하여 큰 휘도 변화가 감지되면 플레이어를 잠시 어둡게 합니다."
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "광과민성 섬광 보호"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "보호를 실행하는 최소 프레임 휘도 변화입니다."
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "섬광 민감도"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "주문형 동영상을 몇 초 앞까지 버퍼링할지 정합니다. 값이 클수록 긴 연결 끊김을 견딥니다. 긴 동영상에서는 플레이어가 매우 큰 목표값을 제한할 수 있습니다."
@@ -1680,10 +1680,10 @@
     "message": "마우스 오버 시 원본 표시"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "DeArrow 대체 제목 아래에 원래 제목을 표시합니다"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "원래 제목 표시"
   },
   "feature_daTitleFormat_desc": {
     "message": "교체 제목의 형식 지정 방법"
@@ -2964,25 +2964,25 @@
     "message": "SponsorBlock 채널별 프로필"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "SponsorBlock과 DeArrow가 사용하는 기본 HTTPS 호스트를 선택합니다."
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "SponsorBlock API 호스트"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "정규 — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "비활성화됨"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "미러 — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "기본 API 호스트가 실패하면 승인된 이 미러를 한 번 시도합니다."
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "SponsorBlock 대체 호스트"
   },
   "feature_scrollToPlayer_desc": {
     "message": "새 동영상으로 이동할 때 자동으로 페이지 상단으로 스크롤"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "깜박이는 콘텐츠 감지됨 — 어둡게 처리"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -4468,7 +4468,7 @@
     "message": "대체 {state}"
   },
   "spExternalHostTpl": {
-    "message": "host {host}"
+    "message": "호스트 {host}"
   },
   "spExternalKicker": {
     "message": "통합"
