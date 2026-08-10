@@ -25,6 +25,7 @@
             YTKIT_VERSION,
             _i18n,
             appState,
+            applyExternalSettingsUpdate = null,
             createBrandImage,
             createToast,
             destroyFeatureLifecycle,
@@ -762,17 +763,47 @@ function buildSettingsPanel() {
             toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
             const toggleInput = document.createElement('input');
             toggleInput.type = 'checkbox';
-            toggleInput.id = 'ytkit-toggle-hideVideosFromHome';
+            // Keep this pane control distinct from the generic feature card
+            // toggle, which uses the setting-derived id.
+            toggleInput.id = 'ytkit-video-hider-enabled';
             toggleInput.name = 'hideVideosFromHome';
             toggleInput.setAttribute('aria-label', 'Enable Video Hider');
             toggleInput.checked = appState.settings.hideVideosFromHome;
-            toggleInput.onchange = async () => {
-                appState.settings.hideVideosFromHome = toggleInput.checked;
-                toggleSwitch.classList.toggle('active', toggleInput.checked);
-                settingsManager.save(appState.settings);
-                if (toggleInput.checked) safeInitFeature(videoHiderFeature, 'video-hider-pane');
-                else safeDestroyFeature(videoHiderFeature, 'video-hider-pane');
+            const reconcileVideoHiderSetting = (nextSettings, source) => {
+                if (typeof applyExternalSettingsUpdate === 'function') {
+                    applyExternalSettingsUpdate({ source, nextSettings });
+                    return;
+                }
+                appState.settings = nextSettings;
+                if (nextSettings.hideVideosFromHome) safeInitFeature(videoHiderFeature, source);
+                else safeDestroyFeature(videoHiderFeature, source);
+            };
+            const syncVideoHiderToggle = () => {
+                const isEnabled = appState.settings.hideVideosFromHome === true;
+                toggleInput.checked = isEnabled;
+                toggleSwitch.classList.toggle('active', isEnabled);
                 updateVideoHiderMeta();
+            };
+            toggleInput.onchange = async () => {
+                const previousSettings = { ...appState.settings };
+                const nextSettings = {
+                    ...previousSettings,
+                    hideVideosFromHome: toggleInput.checked
+                };
+                try {
+                    const saveResult = settingsManager.save(nextSettings);
+                    // Replace the settings object before the async storage
+                    // echo arrives so feature lifecycle and UI use one path.
+                    reconcileVideoHiderSetting(nextSettings, 'video-hider-pane');
+                    const result = await saveResult;
+                    if (result?.ok === false) {
+                        reconcileVideoHiderSetting(result.settings || previousSettings, 'video-hider-pane-rollback');
+                    }
+                } catch (error) {
+                    DebugManager?.log?.('Settings', `Video Hider setting update failed: ${error?.message || 'unknown error'}`);
+                    reconcileVideoHiderSetting(previousSettings, 'video-hider-pane-rollback');
+                }
+                syncVideoHiderToggle();
                 updateAllToggleStates();
             };
             const toggleTrack = document.createElement('span');
@@ -1869,6 +1900,7 @@ function buildSettingsPanel() {
             // stale the moment anything is hidden on the page. The nav handler
             // re-renders the open tab whenever the pane is selected.
             pane._ytkitRefresh = () => renderTabContent(activeTabId);
+            pane._ytkitSyncVideoHiderToggle = syncVideoHiderToggle;
             return pane;
         }
 
@@ -2815,6 +2847,8 @@ function updateAllToggleStates() {
             }
         });
 
+        document.getElementById('ytkit-pane-Video-Hider')?._ytkitSyncVideoHiderToggle?.();
+
         // Update nav counts
         document.querySelectorAll('.ytkit-nav-btn').forEach(btn => {
             const catId = btn.dataset.tab;
@@ -3302,6 +3336,7 @@ function attachUIEventListeners() {
                     contextValue.title = contextValue.textContent;
                 }
 
+                let finalEnabled = isEnabled;
                 // Array-toggle sub-features: modify parent array instead of boolean
                 if (feature?._arrayKey) {
                     let arr = appState.settings[feature._arrayKey] || [];
@@ -3326,8 +3361,38 @@ function attachUIEventListeners() {
                         }
                     }
                 } else {
-                    appState.settings[featureId] = isEnabled;
-                    settingsManager.save(appState.settings);
+                    const useSharedVideoHiderReconciliation = featureId === 'hideVideosFromHome'
+                        && typeof applyExternalSettingsUpdate === 'function';
+                    if (useSharedVideoHiderReconciliation) {
+                        const previousSettings = { ...appState.settings };
+                        const nextSettings = {
+                            ...previousSettings,
+                            hideVideosFromHome: isEnabled
+                        };
+                        try {
+                            const saveResult = settingsManager.save(nextSettings);
+                            applyExternalSettingsUpdate({ source: 'toggle', nextSettings });
+                            const result = await saveResult;
+                            if (result?.ok === false) {
+                                applyExternalSettingsUpdate({
+                                    source: 'toggle-rollback',
+                                    nextSettings: result.settings || previousSettings
+                                });
+                                input.checked = appState.settings.hideVideosFromHome === true;
+                            }
+                        } catch (error) {
+                            DebugManager?.log?.('Settings', `Video Hider toggle failed: ${error?.message || 'unknown error'}`);
+                            applyExternalSettingsUpdate({
+                                source: 'toggle-rollback',
+                                nextSettings: previousSettings
+                            });
+                            input.checked = appState.settings.hideVideosFromHome === true;
+                        }
+                        finalEnabled = appState.settings.hideVideosFromHome === true;
+                    } else {
+                        appState.settings[featureId] = isEnabled;
+                        settingsManager.save(appState.settings);
+                    }
 
                     // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
@@ -3359,7 +3424,7 @@ function attachUIEventListeners() {
                         }
                     }
 
-                    if (feature) {
+                    if (feature && !useSharedVideoHiderReconciliation) {
                         if (isEnabled) {
                             // Reset crash counter on manual toggle-on
                             delete getFeatureCrashCounts()[featureId]; persistCrashCounts();
@@ -3396,7 +3461,7 @@ function attachUIEventListeners() {
                 }
 
                 updateAllToggleStates();
-                setPanelStatus(`${getFeatureName(feature) || featureId} ${isEnabled ? 'enabled' : 'disabled'}.`, 'success');
+                setPanelStatus(`${getFeatureName(feature) || featureId} ${finalEnabled ? 'enabled' : 'disabled'}.`, 'success');
             }
 
             // Toggle all

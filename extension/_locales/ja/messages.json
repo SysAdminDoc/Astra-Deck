@@ -3746,6 +3746,12 @@
   "playerGearTitleTpl": {
     "message": "{brand} の設定"
   },
+  "playerCcAria": {
+    "message": "字幕を切り替え"
+  },
+  "playerCcTitle": {
+    "message": "字幕"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

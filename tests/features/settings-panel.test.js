@@ -10,6 +10,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const MODULE_PATH = '../../extension/features/settings-panel/index.js';
@@ -172,4 +173,51 @@ test('settingsPanel refuses to open when the host says this is not the primary U
             'a non-primary frame must refuse rather than build a duplicate panel');
         assert.equal(body.classes.has(PANEL_OPEN_CLASS), false, 'and must not mark the body open');
     });
+});
+
+test('Video Hider pane uses its own toggle and shared settings reconciliation', () => {
+    const moduleSource = fs.readFileSync(
+        require.resolve(MODULE_PATH), 'utf8');
+    for (const [label, source] of [
+        ['settings-panel module', moduleSource],
+        ['extension inline fallback', fs.readFileSync(
+            require.resolve('../../extension/ytkit.js'), 'utf8')],
+        ['userscript runtime', fs.readFileSync(
+            path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8')]
+    ]) {
+        assert.match(source, /ytkit-video-hider-enabled/,
+            `${label} must give the dedicated Video Hider toggle a unique id`);
+        assert.match(source, /const nextSettings = \{[\s\S]{0,180}hideVideosFromHome: toggleInput\.checked/,
+            `${label} must build a replacement settings object for Video Hider`);
+        assert.match(source, /applyExternalSettingsUpdate/,
+            `${label} must use the shared settings reconciler when available`);
+        assert.match(source, /useSharedVideoHiderReconciliation/,
+            `${label} must reconcile the generic Video Hider card toggle too`);
+        assert.match(source, /_ytkitSyncVideoHiderToggle/,
+            `${label} must keep the dedicated toggle synchronized after storage reconciliation`);
+    }
+});
+
+test('page quick controls reconcile feature settings without in-place mutation', () => {
+    for (const [label, source] of [
+        ['extension runtime', fs.readFileSync(
+            require.resolve('../../extension/ytkit.js'), 'utf8')],
+        ['userscript runtime', fs.readFileSync(
+            path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8')]
+    ]) {
+        const start = source.indexOf('const PAGE_MODAL_CONFIG =');
+        const end = source.indexOf('function injectPageModalButton', start);
+        assert.ok(start > -1 && end > start, `${label} must contain the page quick-controls runtime`);
+        const block = source.slice(start, end);
+        assert.match(block, /card\.addEventListener\('click', async \(\) =>/,
+            `${label} quick controls must await their settings write`);
+        assert.match(block, /const previousSettings = \{ \.\.\.appState\.settings \};/,
+            `${label} quick controls must snapshot settings before toggling`);
+        assert.match(block, /const nextSettings = \{[\s\S]{0,120}\[fid\]: !previousSettings\[fid\]/,
+            `${label} quick controls must build a replacement settings object`);
+        assert.match(block, /quick-settings-rollback/,
+            `${label} quick controls must restore the prior setting after a failed write`);
+        assert.doesNotMatch(block, /appState\.settings\[fid\] = newVal/,
+            `${label} quick controls must not mutate the live settings object in place`);
+    }
 });

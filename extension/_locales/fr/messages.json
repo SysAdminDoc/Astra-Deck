@@ -3746,6 +3746,12 @@
   "playerGearTitleTpl": {
     "message": "Paramètres {brand}"
   },
+  "playerCcAria": {
+    "message": "Activer ou désactiver les sous-titres"
+  },
+  "playerCcTitle": {
+    "message": "Sous-titres"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

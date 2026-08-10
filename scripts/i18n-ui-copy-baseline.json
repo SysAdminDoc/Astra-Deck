@@ -103,9 +103,9 @@
     },
     "extension/ytkit.js": {
       "count": 1273,
-      "digest": "203b30425daed8350eb791bbeefa29350269cb8c64c90b916000f618fc1f5a54",
+      "digest": "5c7ec38bab877132a2cd4694c2e5511c15dfbd34c314137e5c6e92bf406ac53c",
       "strictCount": 614,
-      "strictDigest": "6a00a824dea16590f9ff0780dd95151308518941fd019004e2b3bc6b65098570"
+      "strictDigest": "5955eafdabcf58fbc87e73a4b49d09277968dedf856dfc609656df600fc91012"
     }
   }
 }
